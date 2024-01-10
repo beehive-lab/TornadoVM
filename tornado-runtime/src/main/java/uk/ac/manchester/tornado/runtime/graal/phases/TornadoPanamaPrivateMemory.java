@@ -34,27 +34,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
 
 public class TornadoPanamaPrivateMemory extends BasePhase<TornadoSketchTierContext> {
 
-    @Override
-    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
-        return ALWAYS_APPLICABLE;
-    }
-
-    @Override
-    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        // replace PanamaPrivateMemoryNodes with NewArrayNodes
-        for (PanamaPrivateMemoryNode privatePanama : graph.getNodes().filter(PanamaPrivateMemoryNode.class)) {
-            NewArrayNode privateArray = new NewArrayNode(privatePanama.getResolvedJavaType(), privatePanama.getLength(), true);
-            graph.addOrUnique(privateArray);
-            if (privatePanama.predecessor() instanceof NewInstanceNode) {
-                NewInstanceNode newPanamaTypeInstance = (NewInstanceNode) privatePanama.predecessor();
-                newPanamaTypeInstance.replaceAtUsages(privateArray);
-                removeFixed(newPanamaTypeInstance);
-            }
-            insertFixed(privatePanama, privateArray);
-        }
-
-    }
-
     public static void removeFixed(Node n) {
         if (!n.isDeleted()) {
             Node pred = n.predecessor();
@@ -77,5 +56,25 @@ public class TornadoPanamaPrivateMemory extends BasePhase<TornadoSketchTierConte
         Node pred = panama.predecessor();
         pred.replaceFirstSuccessor(panama, array);
         array.replaceFirstSuccessor(null, panama);
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        // replace PanamaPrivateMemoryNodes with NewArrayNodes
+        for (PanamaPrivateMemoryNode privatePanama : graph.getNodes().filter(PanamaPrivateMemoryNode.class)) {
+            NewArrayNode privateArray = new NewArrayNode(privatePanama.getResolvedJavaType(), privatePanama.getLength(), true);
+            graph.addOrUnique(privateArray);
+            if (privatePanama.predecessor() instanceof NewInstanceNode newPanamaTypeInstance) {
+                newPanamaTypeInstance.replaceAtUsages(privateArray);
+                removeFixed(newPanamaTypeInstance);
+            }
+            insertFixed(privatePanama, privateArray);
+        }
+
     }
 }
