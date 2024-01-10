@@ -49,66 +49,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierContext> {
 
-    @Override
-    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
-        return ALWAYS_APPLICABLE;
-    }
-
-    private int getElementKindSize(LoadFieldNode baseIndexNode) {
-        int kindElement = 0;
-        Annotation[] declaredAnnotations = baseIndexNode.field().getDeclaringClass().getDeclaredAnnotations();
-        if (declaredAnnotations.length == 0) {
-            throw new TornadoRuntimeException("Annotation is missing");
-        } else {
-            for (Annotation annotation : declaredAnnotations) {
-                if (annotation instanceof SegmentElementSize panamaElementSize) {
-                    kindElement = panamaElementSize.size();
-                }
-            }
-        }
-        return kindElement;
-    }
-
-    @Override
-    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
-            if (loadFieldSegment.toString().contains("segment")) {
-
-                // Remove the loadField#baseIndex and replace it with a Constant value
-                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
-                    int elementKindSize = getElementKindSize(baseIndexNode);
-                    int panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
-                    int baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
-                    ConstantNode constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
-                    baseIndexNode.replaceAtUsages(constantNode);
-                    deleteFixed(baseIndexNode);
-                }
-
-                // Remove FixedGuard nodes with its PI Node
-                if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
-                    FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
-                    removeFixedGuardNodes(fixedGuardNode, loadFieldSegment);
-                }
-
-                for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class)) {
-                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class)) {
-                        offsetAddressNode.replaceFirstInput(loadFieldSegment, piNode);
-                    }
-                }
-
-                if (loadFieldSegment.predecessor() instanceof FixedGuardNode) {
-                    FixedGuardNode fixedGuardNode = (FixedGuardNode) loadFieldSegment.predecessor();
-                    deleteFixed(loadFieldSegment);
-                    if (fixedGuardNode.predecessor() instanceof LoadFieldNode ldf) {
-                        removeFixedGuardNodes(fixedGuardNode, ldf);
-                    }
-                } else {
-                    deleteFixed(loadFieldSegment);
-                }
-            }
-        }
-    }
-
     private static void removeFixedGuardNodes(FixedGuardNode fixedGuardNode, LoadFieldNode loadFieldSegment) {
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
         nodesToBeRemoved.add(fixedGuardNode);
@@ -202,6 +142,65 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             }
             node.clearInputs();
             node.safeDelete();
+        }
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    private int getElementKindSize(LoadFieldNode baseIndexNode) {
+        int kindElement = 0;
+        Annotation[] declaredAnnotations = baseIndexNode.field().getDeclaringClass().getDeclaredAnnotations();
+        if (declaredAnnotations.length == 0) {
+            throw new TornadoRuntimeException("Annotation is missing");
+        } else {
+            for (Annotation annotation : declaredAnnotations) {
+                if (annotation instanceof SegmentElementSize panamaElementSize) {
+                    kindElement = panamaElementSize.size();
+                }
+            }
+        }
+        return kindElement;
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
+            if (loadFieldSegment.toString().contains("segment")) {
+
+                // Remove the loadField#baseIndex and replace it with a Constant value
+                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
+                    int elementKindSize = getElementKindSize(baseIndexNode);
+                    int panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+                    int baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
+                    ConstantNode constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
+                    baseIndexNode.replaceAtUsages(constantNode);
+                    deleteFixed(baseIndexNode);
+                }
+
+                // Remove FixedGuard nodes with its PI Node
+                if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
+                    FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
+                    removeFixedGuardNodes(fixedGuardNode, loadFieldSegment);
+                }
+
+                for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class)) {
+                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class)) {
+                        offsetAddressNode.replaceFirstInput(loadFieldSegment, piNode);
+                    }
+                }
+
+                if (loadFieldSegment.predecessor() instanceof FixedGuardNode fixedGuardNode) {
+                    deleteFixed(loadFieldSegment);
+                    if (fixedGuardNode.predecessor() instanceof LoadFieldNode ldf) {
+                        removeFixedGuardNodes(fixedGuardNode, ldf);
+                    }
+                } else {
+                    deleteFixed(loadFieldSegment);
+                }
+            }
         }
     }
 }
