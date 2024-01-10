@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -38,7 +38,7 @@ import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;

@@ -8,6 +8,6 @@ module tornado.drivers.common {
     exports uk.ac.manchester.tornado.drivers.common.architecture;
     exports uk.ac.manchester.tornado.drivers.common.mm;
     exports uk.ac.manchester.tornado.drivers.common.code;
-    exports uk.ac.manchester.tornado.drivers.common.graal.compiler;
+    exports uk.ac.manchester.tornado.drivers.common.compiler.phases;
     exports uk.ac.manchester.tornado.drivers.common.logging;
 }

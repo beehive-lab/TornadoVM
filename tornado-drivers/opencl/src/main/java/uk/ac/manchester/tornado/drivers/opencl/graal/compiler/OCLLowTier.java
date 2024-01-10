@@ -37,7 +37,7 @@ import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP64SupportPhase;
