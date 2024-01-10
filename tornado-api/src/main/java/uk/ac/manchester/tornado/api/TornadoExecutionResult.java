@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,11 @@ package uk.ac.manchester.tornado.api;
  * profiler information (e.g., read/write time, kernel time, etc.) through the
  * {@link TornadoProfilerResult} object.
  *
- * @since TornadoVM-0.15
+ * @since 0.15.0
  */
 public class TornadoExecutionResult {
 
-    private TornadoProfilerResult tornadoProfilerResult;
+    private final TornadoProfilerResult tornadoProfilerResult;
 
     TornadoExecutionResult(TornadoProfilerResult profilerResult) {
         this.tornadoProfilerResult = profilerResult;
@@ -40,6 +40,8 @@ public class TornadoExecutionResult {
      * the execution plan enables the profiler.
      *
      * @return {@link TornadoProfilerResult}
+     *
+     * @since 0.15.0
      */
     public TornadoProfilerResult getProfilerResult() {
         return tornadoProfilerResult;
@@ -57,12 +59,26 @@ public class TornadoExecutionResult {
      *     Host objects to transfer the data to.
      *
      * @return {@link TornadoExecutionResult}
+     *
+     * @since 0.15.0
      */
     public TornadoExecutionResult transferToHost(Object... objects) {
         tornadoProfilerResult.getExecutor().transferToHost(objects);
         return this;
     }
 
+    /**
+     * Partial data transfer from the device to the host. This is applied for all immutable
+     * task-graphs within an executor. This indicates the runtime to not to copy-out the data
+     * en every iteration and transfer the data under demand. The sub-region to be copied is
+     * specified in the data range.
+     *
+     * @param dataRange
+     *     Range of type: {@link DataRange}
+     * @return {@link TornadoExecutionResult}
+     *
+     * @since v1.0.1
+     */
     public TornadoExecutionResult transferToHost(DataRange dataRange) {
         tornadoProfilerResult.getExecutor().partialTransferToHost(dataRange);
         return this;
@@ -73,6 +89,8 @@ public class TornadoExecutionResult {
      * execution.
      *
      * @return boolean
+     *
+     * @since 0.15.0
      */
     public boolean isReady() {
         return tornadoProfilerResult.getExecutor().isFinished();
