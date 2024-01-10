@@ -175,8 +175,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                         node.usages().filter(ArrayLengthNode.class).forEach(arrayLength -> evaluate(graph, arrayLength, value));
                     }
                     break;
-                case Illegal:
-                case Void:
+                case Illegal, Void:
                 default:
                     break;
             }
@@ -257,10 +256,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private ConstantNode createConstantFromObject(Object obj) {
         ConstantNode result = null;
         switch (obj) {
-            case Float aFloat -> result = ConstantNode.forFloat((float) obj);
-            case Integer integer -> result = ConstantNode.forInt((int) obj);
-            case Double aDouble -> result = ConstantNode.forDouble((double) obj);
-            case Long aLong -> result = ConstantNode.forLong((long) obj);
+            case Float objFloat -> result = ConstantNode.forFloat(objFloat);
+            case Integer objInteger -> result = ConstantNode.forInt(objInteger);
+            case Double objDouble -> result = ConstantNode.forDouble(objDouble);
+            case Long objLong -> result = ConstantNode.forLong(objLong);
             case null, default -> unimplemented("createConstantFromObject: %s", obj);
         }
         return result;
