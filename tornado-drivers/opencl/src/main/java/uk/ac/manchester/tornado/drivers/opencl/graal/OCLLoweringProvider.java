@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder.GPU_MEMORY_MODE;
+import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
 import java.util.Iterator;
 

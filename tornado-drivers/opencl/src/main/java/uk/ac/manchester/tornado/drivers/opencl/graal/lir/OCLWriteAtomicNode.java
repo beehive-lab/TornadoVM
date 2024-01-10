@@ -47,8 +47,8 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
+import uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder;
 
 /**
  * Writes a given {@linkplain #value() value} a {@linkplain FixedAccessNode
@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 @NodeInfo(nameTemplate = "OCLAtomicWrite#{p#location/s}")
 public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerableAccess {
 
+    public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
     @Input(InputType.Association)
     private AddressNode address;
     @Input
@@ -64,24 +65,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     private Stamp accStamp;
     private JavaKind elementKind;
     private ATOMIC_OPERATION operation;
-
-    @Override
-    public MemoryOrderMode getMemoryOrder() {
-        return null;
-    }
-
-    //@formatter:off
-    public enum ATOMIC_OPERATION {
-        ADD,
-        MUL,
-        MAX,
-        MIN,
-        SUB,
-        CUSTOM;
-    }
-    //@formatter:on
-
-    public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
 
     public OCLWriteAtomicNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, ValueNode acc, Stamp accStamp, JavaKind elementKind,
             ATOMIC_OPERATION operation) {
@@ -93,10 +76,20 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         this.elementKind = elementKind;
         this.operation = operation;
     }
+    //@formatter:on
 
     protected OCLWriteAtomicNode(NodeClass<? extends OCLWriteAtomicNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType) {
         super(c, address, location, value, barrierType);
         this.address = address;
+    }
+
+    public static void store() {
+
+    }
+
+    @Override
+    public MemoryOrderMode getMemoryOrder() {
+        return null;
     }
 
     @Override
@@ -129,10 +122,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 throw new RuntimeException("Operation for reduction not supported yet: " + operation);
         }
         return oclStamp;
-    }
-
-    public static void store() {
-
     }
 
     @Override
@@ -180,5 +169,15 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     public NodeIterable<FrameState> states() {
         unimplemented();
         return null;
+    }
+
+    //@formatter:off
+    public enum ATOMIC_OPERATION {
+        ADD,
+        MUL,
+        MAX,
+        MIN,
+        SUB,
+        CUSTOM;
     }
 }

@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -18,37 +18,16 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-package uk.ac.manchester.tornado.drivers.graal;
+package uk.ac.manchester.tornado.drivers.providers;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
+import org.graalvm.compiler.word.WordTypes;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.MetaAccessProvider;
 
-public class TornadoMetaAccessExtensionProvider implements MetaAccessExtensionProvider {
+public class TornadoWordTypes extends WordTypes {
 
-    @Override
-    public JavaKind getStorageKind(JavaType type) {
-        return type.getJavaKind();
-    }
-
-    @Override
-    public boolean canConstantFoldDynamicAllocation(ResolvedJavaType type) {
-        unimplemented();
-        return false;
-    }
-
-    @Override
-    public boolean isGuaranteedSafepoint(ResolvedJavaMethod method, boolean isDirect) {
-        return false;
-    }
-
-    @Override
-    public boolean canVirtualize(ResolvedJavaType instanceType) {
-        return true;
+    public TornadoWordTypes(MetaAccessProvider metaAccess, JavaKind wordKind) {
+        super(metaAccess, wordKind);
     }
 }
