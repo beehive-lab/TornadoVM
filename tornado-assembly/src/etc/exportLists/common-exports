@@ -86,3 +86,5 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime,tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.common
+
