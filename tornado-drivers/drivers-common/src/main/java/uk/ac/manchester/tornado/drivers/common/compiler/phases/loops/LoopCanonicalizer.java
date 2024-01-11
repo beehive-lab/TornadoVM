@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.graal.loop;
+package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;

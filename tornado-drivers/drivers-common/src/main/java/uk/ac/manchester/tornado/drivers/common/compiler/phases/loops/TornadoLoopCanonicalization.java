@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
-import static uk.ac.manchester.tornado.runtime.graal.loop.LoopCanonicalizer.canonicalizeLoop;
+import static uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.LoopCanonicalizer.canonicalizeLoop;
 
 import java.util.Collections;
 import java.util.List;

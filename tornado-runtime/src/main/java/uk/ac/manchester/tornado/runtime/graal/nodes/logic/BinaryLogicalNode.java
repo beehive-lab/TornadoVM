@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.LogicalCompareNode;
 
 @NodeInfo
 public abstract class BinaryLogicalNode extends LogicNode implements IterableNodeType, Canonicalizable.Binary<LogicNode>, LogicalCompareNode {
