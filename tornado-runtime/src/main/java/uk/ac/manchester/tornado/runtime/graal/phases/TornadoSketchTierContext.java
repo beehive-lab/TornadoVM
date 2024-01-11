@@ -28,7 +28,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.runtime.graal.phases.sketch.tier.TornadoDataflowAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
 
 public class TornadoSketchTierContext extends HighTierContext {
 

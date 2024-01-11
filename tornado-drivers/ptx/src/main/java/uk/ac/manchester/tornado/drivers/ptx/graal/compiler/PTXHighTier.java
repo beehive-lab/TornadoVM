@@ -57,8 +57,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoTaskSpecialisati
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.sketch.tier.TornadoFullInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.sketch.tier.TornadoPartialInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoFullInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPartialInliningPolicy;
 
 public class PTXHighTier extends TornadoHighTier {
 
