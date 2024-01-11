@@ -337,11 +337,11 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     @Override
     public void read(Object object) {
         // XXX: offset 0
-        read(object, 0, null, false);
+        read(object, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object object, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         buffer.position(buffer.capacity());
         int event = deviceContext.readBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         for (int i = 0; i < fields.length; i++) {

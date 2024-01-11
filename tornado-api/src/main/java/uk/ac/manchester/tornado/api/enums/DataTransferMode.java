@@ -44,5 +44,5 @@ public class DataTransferMode {
      * {@link uk.ac.manchester.tornado.api.TornadoExecutionResult#transferToHost(Object...)}
      * method.
      */
-    public static final int USER_DEFINED = 2;
+    public static final int UNDER_DEMAND = 2;
 }

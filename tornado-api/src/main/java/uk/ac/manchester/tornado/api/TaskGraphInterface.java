@@ -559,7 +559,7 @@ public interface TaskGraphInterface {
      * </p>
      *
      * </p>
-     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#USER_DEFINED}: it
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#UNDER_DEMAND}: it
      * transfers data only under demand. Data are not transferred unless the
      * execution-plan, an {@link TornadoExecutionPlan} object, invokes the
      * `transferToHost` function. This is used for optimization of data transfers.

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -95,7 +95,7 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         final E[] elements = innerCast(values);
         // XXX: Offset is 0
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].read(elements[i], 0, null, false);
+            wrappers[i].read(elements[i], 0, 0, null, false);
         }
         deviceContext.enqueueBarrier(deviceContext.getDeviceIndex());
         return 0;

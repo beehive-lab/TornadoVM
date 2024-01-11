@@ -46,7 +46,9 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Constructs a new instance of the {@code FloatArray} that will store a user-specified number of elements.
-     * @param numberOfElements The number of elements in the array.
+     *
+     * @param numberOfElements
+     *     The number of elements in the array.
      */
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
@@ -60,7 +62,9 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Internal method used to create a new instance of the {@code FloatArray} from on-heap data.
-     * @param values The on-heap float array to create the instance from.
+     *
+     * @param values
+     *     The on-heap float array to create the instance from.
      * @return A new {@code FloatArray} instance, initialized with values of the on-heap float array.
      */
     private static FloatArray createSegment(float[] values) {
@@ -73,7 +77,9 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code FloatArray} class from an on-heap float array.
-     * @param values The on-heap float array to create the instance from.
+     *
+     * @param values
+     *     The on-heap float array to create the instance from.
      * @return A new {@code FloatArray} instance, initialized with values of the on-heap float array.
      */
     public static FloatArray fromArray(float[] values) {
@@ -82,7 +88,9 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code FloatArray} class from a set of float values.
-     * @param values The float values to initialize the array with.
+     *
+     * @param values
+     *     The float values to initialize the array with.
      * @return A new {@code FloatArray} instance, initialized with the given values.
      */
     public static FloatArray fromElements(float... values) {
@@ -91,7 +99,9 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code FloatArray} class from a {@link MemorySegment}.
-     * @param segment The {@link MemorySegment} containing the off-heap float data.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing the off-heap float data.
      * @return A new {@code FloatArray} instance, initialized with the segment data.
      */
     public static FloatArray fromSegment(MemorySegment segment) {
@@ -105,6 +115,7 @@ public final class FloatArray extends TornadoNativeArray {
     /**
      * Converts the float data from off-heap to on-heap, by copying the values of a {@code FloatArray}
      * instance into a new on-heap array.
+     *
      * @return A new on-heap float array, initialized with the values stored in the {@code FloatArray} instance.
      */
     public float[] toHeapArray() {
@@ -117,8 +128,11 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Sets the float value at a specified index of the {@code FloatArray} instance.
-     * @param index The index at which to set the float value.
-     * @param value The float value to store at the specified index.
+     *
+     * @param index
+     *     The index at which to set the float value.
+     * @param value
+     *     The float value to store at the specified index.
      */
     public void set(int index, float value) {
         segment.setAtIndex(JAVA_FLOAT, baseIndex + index, value);
@@ -126,7 +140,9 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Gets the float value stored at the specified index of the {@code FloatArray} instance.
-     * @param index The index of which to retrieve the float value.
+     *
+     * @param index
+     *     The index of which to retrieve the float value.
      * @return
      */
     public float get(int index) {
@@ -141,9 +157,16 @@ public final class FloatArray extends TornadoNativeArray {
         init(0.0f);
     }
 
+    @Override
+    public int getElementSize() {
+        return FLOAT_BYTES;
+    }
+
     /**
      * Initializes all the elements of the {@code FloatArray} instance with a specified value.
-     * @param value The float value to initialize the {@code FloatArray} instance with.
+     *
+     * @param value
+     *     The float value to initialize the {@code FloatArray} instance with.
      */
     public void init(float value) {
         for (int i = 0; i < getSize(); i++) {
@@ -153,6 +176,7 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Returns the number of float elements stored in the {@code FloatArray} instance.
+     *
      * @return
      */
     @Override
@@ -162,6 +186,7 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Returns the underlying {@link MemorySegment} of the {@code FloatArray} instance.
+     *
      * @return The {@link MemorySegment} associated with the {@code FloatArray} instance.
      */
     @Override
@@ -171,6 +196,7 @@ public final class FloatArray extends TornadoNativeArray {
 
     /**
      * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code FloatArray} instance, occupies.
+     *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
@@ -181,6 +207,7 @@ public final class FloatArray extends TornadoNativeArray {
     /**
      * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code FloatArray} instance,
      * excluding the header bytes.
+     *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override

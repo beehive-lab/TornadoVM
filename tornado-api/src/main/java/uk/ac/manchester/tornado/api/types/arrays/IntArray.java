@@ -43,7 +43,9 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Constructs a new instance of the {@code IntArray} that will store a user-specified number of elements.
-     * @param numberOfElements The number of elements in the array.
+     *
+     * @param numberOfElements
+     *     The number of elements in the array.
      */
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
@@ -57,7 +59,9 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Internal method used to create a new instance of the {@code IntArray} from on-heap data.
-     * @param values The on-heap int array to create the instance from.
+     *
+     * @param values
+     *     The on-heap int array to create the instance from.
      * @return A new {@code IntArray} instance, initialized with values of the on-heap int array.
      */
     private static IntArray createSegment(int[] values) {
@@ -70,7 +74,9 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code IntArray} class from an on-heap int array.
-     * @param values The on-heap int array to create the instance from.
+     *
+     * @param values
+     *     The on-heap int array to create the instance from.
      * @return A new {@code IntArray} instance, initialized with values of the on-heap int array.
      */
     public static IntArray fromArray(int[] values) {
@@ -79,7 +85,9 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code IntArray} class from a set of int values.
-     * @param values The int values to initialize the array with.
+     *
+     * @param values
+     *     The int values to initialize the array with.
      * @return A new {@code IntArray} instance, initialized with the given values.
      */
     public static IntArray fromElements(int... values) {
@@ -88,7 +96,9 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code IntArray} class from a {@link MemorySegment}.
-     * @param segment The {@link MemorySegment} containing the off-heap int data.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing the off-heap int data.
      * @return A new {@code IntArray} instance, initialized with the segment data.
      */
     public static IntArray fromSegment(MemorySegment segment) {
@@ -102,6 +112,7 @@ public final class IntArray extends TornadoNativeArray {
     /**
      * Converts the int data from off-heap to on-heap, by copying the values of a {@code IntArray}
      * instance into a new on-heap array.
+     *
      * @return A new on-heap int array, initialized with the values stored in the {@code IntArray} instance.
      */
     public int[] toHeapArray() {
@@ -114,8 +125,11 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Sets the int value at a specified index of the {@code IntArray} instance.
-     * @param index The index at which to set the int value.
-     * @param value The int value to store at the specified index.
+     *
+     * @param index
+     *     The index at which to set the int value.
+     * @param value
+     *     The int value to store at the specified index.
      */
     public void set(int index, int value) {
         segment.setAtIndex(JAVA_INT, baseIndex + index, value);
@@ -123,7 +137,9 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Gets the int value stored at the specified index of the {@code IntArray} instance.
-     * @param index The index of which to retrieve the int value.
+     *
+     * @param index
+     *     The index of which to retrieve the int value.
      * @return
      */
     public int get(int index) {
@@ -138,9 +154,16 @@ public final class IntArray extends TornadoNativeArray {
         init(0);
     }
 
+    @Override
+    public int getElementSize() {
+        return INT_BYTES;
+    }
+
     /**
      * Initializes all the elements of the {@code IntArray} instance with a specified value.
-     * @param value The int value to initialize the {@code IntArray} instance with.
+     *
+     * @param value
+     *     The int value to initialize the {@code IntArray} instance with.
      */
     public void init(int value) {
         for (int i = 0; i < getSize(); i++) {
@@ -150,6 +173,7 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Returns the number of int elements stored in the {@code IntArray} instance.
+     *
      * @return
      */
     @Override
@@ -159,6 +183,7 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code IntArray} instance, occupies.
+     *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
@@ -169,6 +194,7 @@ public final class IntArray extends TornadoNativeArray {
     /**
      * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code IntArray} instance,
      * excluding the header bytes.
+     *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override
@@ -178,6 +204,7 @@ public final class IntArray extends TornadoNativeArray {
 
     /**
      * Returns the underlying {@link MemorySegment} of the {@code IntArray} instance.
+     *
      * @return The {@link MemorySegment} associated with the {@code IntArray} instance.
      */
     @Override

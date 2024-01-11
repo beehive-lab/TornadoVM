@@ -28,6 +28,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.DataRange;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -188,6 +189,9 @@ public class TestAPI extends TornadoTestBase {
         }
     }
 
+    /**
+     * Perform the copy out under demand. It performs a copy from the device to the host of the entire array via the execution result.
+     */
     @Test
     public void testLazyCopyOut() {
         final int N = 1024;
@@ -201,7 +205,7 @@ public class TestAPI extends TornadoTestBase {
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestArrays::addAccumulator, data, 1) //
-                .transferToHost(DataTransferMode.USER_DEFINED, data);
+                .transferToHost(DataTransferMode.UNDER_DEMAND, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -219,6 +223,10 @@ public class TestAPI extends TornadoTestBase {
         }
     }
 
+    /**
+     * Perform the copy out under demand. It performs a copy from the device to the host of the entire array via the execution result.
+     * In this test, input and output use the same array.
+     */
     @Test
     public void testLazyCopyOut2() {
         final int N = 128;
@@ -233,7 +241,7 @@ public class TestAPI extends TornadoTestBase {
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
-        taskGraph.transferToHost(DataTransferMode.USER_DEFINED, data);
+        taskGraph.transferToHost(DataTransferMode.UNDER_DEMAND, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -243,6 +251,43 @@ public class TestAPI extends TornadoTestBase {
         executionResult.transferToHost(data);
 
         executionPlanPlan.freeDeviceMemory();
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(21, data.get(i));
+        }
+    }
+
+    /**
+     * Perform the copy out under demand. It performs a copy of a subset of the output array.
+     */
+    @Test
+    public void testLazyPartialCopyOut() {
+        final int N = 1024;
+        int size = 20;
+        IntArray data = new IntArray(N);
+
+        IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, size));
+
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
+
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
+
+        DataRange dataRange = new DataRange(data);
+
+        executionResult.transferToHost(dataRange.withSize(N / 2));
+
+        executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
+
+        // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
+        // device buffers for other execution plans.
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));
