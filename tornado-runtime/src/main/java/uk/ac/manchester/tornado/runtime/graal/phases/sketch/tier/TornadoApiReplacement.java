@@ -105,7 +105,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
         Map<Node, ParallelAnnotationProvider> parallelNodes = new HashMap<>();
 
-        graph.getNodes().filter(FrameState.class).forEach((fs) -> {
+        graph.getNodes().filter(FrameState.class).forEach(fs -> {
             if (methodToAnnotations.containsKey(fs.getMethod())) {
                 for (ParallelAnnotationProvider an : methodToAnnotations.get(fs.getMethod())) {
                     if (fs.bci >= an.getStart() && fs.bci < an.getStart() + an.getLength()) {
@@ -135,7 +135,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     ValueNode maxIterations;
                     List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
 
-                    final IntegerLessThanNode lessThan = conditions.get(0);
+                    final IntegerLessThanNode lessThan = conditions.getFirst();
 
                     maxIterations = lessThan.getY();
 
@@ -173,7 +173,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             inductionVar.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
             inductionVar.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
             // only replace this node in the loop condition
-            maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
+            maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.getFirst()));
 
         } else {
             throw new TornadoBailoutRuntimeException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device!");
