@@ -60,6 +60,7 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     public static final NodeClass<PTXFPBinaryIntrinsicNode> TYPE = NodeClass.create(PTXFPBinaryIntrinsicNode.class);
     protected final Operation operation;
+
     protected PTXFPBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
@@ -89,29 +90,21 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
     }
 
     private static double doCompute(double x, double y, Operation op) {
-        switch (op) {
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            case POW:
-                return Math.pow(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            case POW -> Math.pow(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static float doCompute(float x, float y, Operation op) {
-        switch (op) {
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            case POW:
-                return (float) Math.pow(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            case POW -> (float) Math.pow(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     @Override

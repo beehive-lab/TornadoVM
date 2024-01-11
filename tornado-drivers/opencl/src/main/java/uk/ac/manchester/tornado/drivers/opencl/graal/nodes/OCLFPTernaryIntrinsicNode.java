@@ -53,6 +53,7 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
 
     public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass.create(OCLFPTernaryIntrinsicNode.class);
     protected final Operation operation;
+
     protected OCLFPTernaryIntrinsicNode(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y, z);
         this.operation = op;
@@ -82,17 +83,11 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
     }
 
     private static double doCompute(double x, double y, double z, Operation op) {
-        switch (op) {
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+        throw new TornadoInternalError("unable to compute op %s", op);
     }
 
     private static float doCompute(float x, float y, float z, Operation op) {
-        switch (op) {
-            default:
-                throw new TornadoInternalError("unable to compute  op %s", op);
-        }
+        throw new TornadoInternalError("unable to compute  op %s", op);
     }
 
     @Override
@@ -115,20 +110,12 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
         Value z = builder.operand(getZ());
-        Value result;
-        switch (operation()) {
-            case FMA:
-                result = gen.genFloatFMA(x, y, z);
-                break;
-            case MAD:
-                result = gen.genFloatMAD(x, y, z);
-                break;
-            case REMQUO:
-                result = gen.genFloatRemquo(x, y, z);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
+        Value result = switch (operation()) {
+            case FMA -> gen.genFloatFMA(x, y, z);
+            case MAD -> gen.genFloatMAD(x, y, z);
+            case REMQUO -> gen.genFloatRemquo(x, y, z);
+            default -> throw shouldNotReachHere();
+        };
         Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);

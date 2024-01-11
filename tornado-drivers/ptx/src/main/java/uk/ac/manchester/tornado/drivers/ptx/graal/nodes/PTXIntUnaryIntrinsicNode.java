@@ -53,6 +53,7 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
 
     public static final NodeClass<PTXIntUnaryIntrinsicNode> TYPE = NodeClass.create(PTXIntUnaryIntrinsicNode.class);
     protected final Operation operation;
+
     protected PTXIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x);
         this.operation = op;
@@ -82,25 +83,19 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
     }
 
     private static long doCompute(long value, Operation op) {
-        switch (op) {
-            case ABS:
-                return Math.abs(value);
-            case POPCOUNT:
-                return Long.bitCount(value);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ABS -> Math.abs(value);
+            case POPCOUNT -> Long.bitCount(value);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static int doCompute(int value, Operation op) {
-        switch (op) {
-            case ABS:
-                return Math.abs(value);
-            case POPCOUNT:
-                return Integer.bitCount(value);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ABS -> Math.abs(value);
+            case POPCOUNT -> Integer.bitCount(value);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     @Override
@@ -118,19 +113,17 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getValue());
         Value result;
-        ValueKind valueKind = null;
-        switch (operation()) {
-            case ABS:
+        ValueKind valueKind = switch (operation()) {
+            case ABS -> {
                 result = gen.genIntAbs(x);
-                valueKind = result.getValueKind();
-                break;
-            case POPCOUNT:
+                yield result.getValueKind();
+            }
+            case POPCOUNT -> {
                 result = gen.genIntPopcount(x);
-                valueKind = LIRKind.value(PTXKind.U32);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
+                yield LIRKind.value(PTXKind.U32);
+            }
+            default -> throw shouldNotReachHere();
+        };
         Variable var = builder.getLIRGeneratorTool().newVariable(valueKind);
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);

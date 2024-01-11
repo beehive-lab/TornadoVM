@@ -51,6 +51,7 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
 
     public static final NodeClass<PTXIntBinaryIntrinsicNode> TYPE = NodeClass.create(PTXIntBinaryIntrinsicNode.class);
     protected final Operation operation;
+
     protected PTXIntBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
@@ -80,25 +81,19 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
     }
 
     private static long doCompute(long x, long y, Operation op) {
-        switch (op) {
-            case MIN:
-                return Math.min(x, y);
-            case MAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case MIN -> Math.min(x, y);
+            case MAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static int doCompute(int x, int y, Operation op) {
-        switch (op) {
-            case MIN:
-                return Math.min(x, y);
-            case MAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case MIN -> Math.min(x, y);
+            case MAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     @Override
@@ -131,17 +126,11 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
-        Value result;
-        switch (operation()) {
-            case MIN:
-                result = gen.genIntMin(x, y);
-                break;
-            case MAX:
-                result = gen.genIntMax(x, y);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
+        Value result = switch (operation()) {
+            case MIN -> gen.genIntMin(x, y);
+            case MAX -> gen.genIntMax(x, y);
+            default -> throw shouldNotReachHere();
+        };
         Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);

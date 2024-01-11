@@ -48,6 +48,8 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     private static final int LOOP_UNROLL_FACTOR_DEFAULT = 2;
     private static final int LOOP_BOUND_UPPER_LIMIT = 16384;
 
+    private static final int GRAPH_NODES_UPPER_LIMIT = 40000;
+
     private static void partialUnroll(StructuredGraph graph, MidTierContext context) {
         final LoopsData dataCounted = new TornadoLoopsData(graph);
 
@@ -70,7 +72,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     }
 
     private static int getUpperGraphLimit(int initialGraphNodeCount) {
-        return (initialGraphNodeCount + (20000 * 2));
+        return (initialGraphNodeCount + (GRAPH_NODES_UPPER_LIMIT));
     }
 
     private static boolean isPowerOfTwo(int number) {

@@ -65,6 +65,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     public static final NodeClass<PTXFPUnaryIntrinsicNode> TYPE = NodeClass.create(PTXFPUnaryIntrinsicNode.class);
     protected final Operation operation;
+
     protected PTXFPUnaryIntrinsicNode(ValueNode value, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);
         assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
@@ -96,37 +97,25 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     // @formatter:on
 
     private static double doCompute(double value, Operation op) {
-        switch (op) {
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return Math.exp(value);
-            case SQRT:
-                return Math.sqrt(value);
-            case FLOOR:
-                return Math.floor(value);
-            case LOG:
-                return Math.log(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+        return switch (op) {
+            case FABS -> Math.abs(value);
+            case EXP -> Math.exp(value);
+            case SQRT -> Math.sqrt(value);
+            case FLOOR -> Math.floor(value);
+            case LOG -> Math.log(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
     }
 
     private static float doCompute(float value, Operation op) {
-        switch (op) {
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return (float) Math.exp(value);
-            case SQRT:
-                return (float) Math.sqrt(value);
-            case FLOOR:
-                return (float) Math.floor(value);
-            case LOG:
-                return (float) Math.log(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+        return switch (op) {
+            case FABS -> Math.abs(value);
+            case EXP -> (float) Math.exp(value);
+            case SQRT -> (float) Math.sqrt(value);
+            case FLOOR -> (float) Math.floor(value);
+            case LOG -> (float) Math.log(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
     }
 
     @Override
@@ -395,5 +384,5 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         COSPI,
         SINPI,
     }
-
+    // @formatter:on
 }
