@@ -369,6 +369,10 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.common
+                                </arg>
+                                <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>

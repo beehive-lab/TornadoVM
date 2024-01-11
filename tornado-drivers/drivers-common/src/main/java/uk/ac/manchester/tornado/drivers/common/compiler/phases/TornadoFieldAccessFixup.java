@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -19,7 +19,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.graal.phases;
+package uk.ac.manchester.tornado.drivers.common.compiler.phases;
 
 import java.util.ArrayDeque;
 import java.util.Optional;
@@ -40,6 +40,7 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
     @Override
@@ -52,8 +53,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
         ArrayDeque<LoadFieldNode> worklist = new ArrayDeque<>();
         graph.getNodes().filter(ParameterNode.class).forEach(parameterNode -> {
             worklist.addAll(parameterNode.usages().filter(LoadFieldNode.class).snapshot());
-            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode)
-                    .forEach(usage -> worklist.addAll(usage.usages().filter(LoadFieldNode.class).snapshot()));
+            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode).forEach(usage -> worklist.addAll(usage.usages().filter(
+                    LoadFieldNode.class).snapshot()));
         });
 
         while (!worklist.isEmpty()) {
@@ -62,7 +63,6 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
 
             loadField.usages().forEach(usage -> {
                 if (usage instanceof AccessIndexedNode accessIndexedNode) {
-                    AccessIndexedNode loadStoreIndexed = accessIndexedNode;
                     ValueNode base = loadField.object();
                     if (base instanceof PiNode) {
                         base = ((PiNode) base).object();
@@ -71,9 +71,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                     }
                     TornadoAddressArithmeticNode addNode = new TornadoAddressArithmeticNode(base, loadField);
                     graph.addWithoutUnique(addNode);
-                    loadStoreIndexed.setArray(addNode);
-                } else if (usage instanceof AccessFieldNode) {
-                    AccessFieldNode accessFieldNode = (AccessFieldNode) usage;
+                    accessIndexedNode.setArray(addNode);
+                } else if (usage instanceof AccessFieldNode accessFieldNode) {
                     ValueNode base = loadField.object();
                     if (base instanceof PiNode) {
                         base = ((PiNode) base).object();
@@ -85,10 +84,9 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                     if (accessFieldNode instanceof LoadFieldNode) {
                         ((LoadFieldNode) accessFieldNode).setObject(addNode);
                     } else if (accessFieldNode instanceof StoreFieldNode storeFieldNodeUsage) {
-                        StoreFieldNode oldStoreNode = storeFieldNodeUsage;
-                        StoreFieldNode storeFieldNode = new StoreFieldNode(addNode, oldStoreNode.field(), oldStoreNode.value());
+                        StoreFieldNode storeFieldNode = new StoreFieldNode(addNode, storeFieldNodeUsage.field(), storeFieldNodeUsage.value());
                         graph.addWithoutUnique(storeFieldNode);
-                        graph.replaceFixedWithFixed(oldStoreNode, storeFieldNode);
+                        graph.replaceFixedWithFixed(storeFieldNodeUsage, storeFieldNode);
                     } else {
                         TornadoInternalError.shouldNotReachHere("Unexpected node type = %s", accessFieldNode.getClass().getName());
                     }

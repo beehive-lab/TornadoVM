@@ -87,4 +87,5 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime,tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.common
 

@@ -43,6 +43,7 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoFieldAccessFixup;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoPrivateArrayPiRemoval;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
@@ -51,7 +52,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialis
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFieldAccessFixup;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
