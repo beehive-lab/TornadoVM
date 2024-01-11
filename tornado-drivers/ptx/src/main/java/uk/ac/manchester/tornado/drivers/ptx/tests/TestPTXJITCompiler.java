@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
+import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
@@ -67,6 +67,11 @@ public class TestPTXJITCompiler {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = 0.12 * a[i] * b[i];
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.ptx.tests.TestPTXJITCompiler");
+        new TestPTXJITCompiler().test();
     }
 
     public MetaCompilation compileMethod(Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, Object... parameters) {
@@ -181,11 +186,6 @@ public class TestPTXJITCompiler {
             System.out.println(" ................ [PASS]");
         }
 
-    }
-
-    public static void main(String[] args) {
-        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.ptx.tests.TestPTXJITCompiler");
-        new TestPTXJITCompiler().test();
     }
 
 }
