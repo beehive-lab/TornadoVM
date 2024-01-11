@@ -19,7 +19,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.graal.phases;
+package uk.ac.manchester.tornado.drivers.common.compiler.phases;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 /**
  * It analyses the loop index space and determines the correct indices using
@@ -71,8 +72,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
             final List<LoopEx> loops = data.outerFirst();
 
-            for (int i = 0; i < loops.size(); i++) {
-                LoopEx loopEx = loops.get(i);
+            for (LoopEx loopEx : loops) {
                 LoopFragmentInside inside = loopEx.inside();
                 NodeBitMap nodes = inside.nodes();
 

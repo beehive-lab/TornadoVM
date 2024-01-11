@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoFieldAccessFixup;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
@@ -56,7 +57,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {

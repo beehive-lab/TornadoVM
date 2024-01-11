@@ -47,6 +47,7 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoTaskSpecialisation;
@@ -57,7 +58,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class PTXHighTier extends TornadoHighTier {
