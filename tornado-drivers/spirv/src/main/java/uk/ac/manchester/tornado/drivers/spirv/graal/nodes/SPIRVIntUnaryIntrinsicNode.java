@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
@@ -54,10 +54,6 @@ public class SPIRVIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticL
     protected SPIRVIntUnaryIntrinsicNode(SPIRVIntOperation operation, ValueNode value, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);
         this.operation = operation;
-    }
-
-    public enum SPIRVIntOperation {
-        ABS, CLZ, POPCOUNT;
     }
 
     public static ValueNode create(ValueNode x, SPIRVIntOperation op, JavaKind kind) {
@@ -145,6 +141,10 @@ public class SPIRVIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticL
         Variable result = builder.getLIRGeneratorTool().newVariable(computeIntrinsic.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, computeIntrinsic));
         builder.setResult(this, result);
+    }
+
+    public enum SPIRVIntOperation {
+        ABS, CLZ, POPCOUNT;
     }
 
 }

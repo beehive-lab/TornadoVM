@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
-import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAllocationStage;
 
 public class TornadoSuites {
 

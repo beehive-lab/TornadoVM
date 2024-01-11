@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
@@ -54,74 +54,12 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
     public static final NodeClass<SPIRVFPUnaryIntrinsicNode> TYPE = NodeClass.create(SPIRVFPUnaryIntrinsicNode.class);
     protected final SPIRVUnaryOperation operation;
 
-    // @formatter:off
-    public enum SPIRVUnaryOperation {
-        ACOS,
-        ACOSH,
-        ACOSPI,
-        ASIN,
-        ASINH,
-        ASINPI,
-        ATAN,
-        ATANH,
-        ATANPI,
-        CBRT,
-        CEIL,
-        COS,
-        COSH,
-        COSPI,
-        ERFC,
-        ERF,
-        EXP,
-        EXP2,
-        EXP10,
-        EXPM1,
-        FABS,
-        FLOOR,
-        ILOGB,
-        LGAMMA,
-        LOG,
-        LOG2,
-        LOG10,
-        LOG1P,
-        LOGB,
-        NAN,
-        RADIANS,
-        REMQUO,
-        RINT,
-        ROUND,
-        RSQRT,
-        SIGN,
-        SIN,
-        SINH,
-        SINPI,
-        SQRT,
-        TAN,
-        TANH,
-        TANPI,
-        TGAMMA,
-        TRUNC
-    }
-    // @formatter:on
-
     protected SPIRVFPUnaryIntrinsicNode(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);
         assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
         this.operation = op;
     }
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public SPIRVUnaryOperation getIntrinsicOperation() {
-        return operation;
-    }
-
-    public SPIRVUnaryOperation operation() {
-        return operation;
-    }
+    // @formatter:on
 
     public static ValueNode create(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
         ValueNode c = tryConstantFold(value, op, kind);
@@ -144,6 +82,73 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
             }
         }
         return result;
+    }
+
+    private static double doCompute(double value, SPIRVUnaryOperation op) {
+        switch (op) {
+            case ASIN:
+                return Math.asin(value);
+            case ACOS:
+                return Math.acos(value);
+            case FABS:
+                return Math.abs(value);
+            case EXP:
+                return Math.exp(value);
+            case SQRT:
+                return Math.sqrt(value);
+            case FLOOR:
+                return Math.floor(value);
+            case LOG:
+                return Math.log(value);
+            case COS:
+                return Math.cos(value);
+            case SIN:
+                return Math.sin(value);
+            case TAN:
+                return Math.tan(value);
+            default:
+                throw new TornadoInternalError("unable to compute op %s", op);
+        }
+    }
+
+    private static float doCompute(float value, SPIRVUnaryOperation op) {
+        switch (op) {
+            case ASIN:
+                return (float) Math.asin(value);
+            case ACOS:
+                return (float) Math.acos(value);
+            case FABS:
+                return Math.abs(value);
+            case EXP:
+                return (float) Math.exp(value);
+            case SQRT:
+                return (float) Math.sqrt(value);
+            case FLOOR:
+                return (float) Math.floor(value);
+            case LOG:
+                return (float) Math.log(value);
+            case COS:
+                return (float) Math.cos(value);
+            case SIN:
+                return (float) Math.sin(value);
+            case TAN:
+                return (float) Math.tan(value);
+            default:
+                throw new TornadoInternalError("unable to compute op %s", op);
+        }
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public SPIRVUnaryOperation getIntrinsicOperation() {
+        return operation;
+    }
+
+    public SPIRVUnaryOperation operation() {
+        return operation;
     }
 
     @Override
@@ -218,57 +223,52 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         builder.setResult(this, assignResult);
     }
 
-    private static double doCompute(double value, SPIRVUnaryOperation op) {
-        switch (op) {
-            case ASIN:
-                return Math.asin(value);
-            case ACOS:
-                return Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return Math.exp(value);
-            case SQRT:
-                return Math.sqrt(value);
-            case FLOOR:
-                return Math.floor(value);
-            case LOG:
-                return Math.log(value);
-            case COS:
-                return Math.cos(value);
-            case SIN:
-                return Math.sin(value);
-            case TAN:
-                return Math.tan(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
-    }
-
-    private static float doCompute(float value, SPIRVUnaryOperation op) {
-        switch (op) {
-            case ASIN:
-                return (float) Math.asin(value);
-            case ACOS:
-                return (float) Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return (float) Math.exp(value);
-            case SQRT:
-                return (float) Math.sqrt(value);
-            case FLOOR:
-                return (float) Math.floor(value);
-            case LOG:
-                return (float) Math.log(value);
-            case COS:
-                return (float) Math.cos(value);
-            case SIN:
-                return (float) Math.sin(value);
-            case TAN:
-                return (float) Math.tan(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+    // @formatter:off
+    public enum SPIRVUnaryOperation {
+        ACOS,
+        ACOSH,
+        ACOSPI,
+        ASIN,
+        ASINH,
+        ASINPI,
+        ATAN,
+        ATANH,
+        ATANPI,
+        CBRT,
+        CEIL,
+        COS,
+        COSH,
+        COSPI,
+        ERFC,
+        ERF,
+        EXP,
+        EXP2,
+        EXP10,
+        EXPM1,
+        FABS,
+        FLOOR,
+        ILOGB,
+        LGAMMA,
+        LOG,
+        LOG2,
+        LOG10,
+        LOG1P,
+        LOGB,
+        NAN,
+        RADIANS,
+        REMQUO,
+        RINT,
+        ROUND,
+        RSQRT,
+        SIGN,
+        SIN,
+        SINH,
+        SINPI,
+        SQRT,
+        TAN,
+        TANH,
+        TANPI,
+        TGAMMA,
+        TRUNC
     }
 }

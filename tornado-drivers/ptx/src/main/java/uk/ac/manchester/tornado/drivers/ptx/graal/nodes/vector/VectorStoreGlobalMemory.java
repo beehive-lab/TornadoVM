@@ -32,7 +32,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorStore;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 
 /**
  * The {@code VectorStoreGlobalMemory} represents a vector-write to global

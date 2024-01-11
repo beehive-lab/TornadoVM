@@ -45,70 +45,16 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
+    public static final NodeClass<OCLFPBinaryIntrinsicNode> TYPE = NodeClass.create(OCLFPBinaryIntrinsicNode.class);
+    protected final Operation operation;
     protected OCLFPBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
-    }
-
-    public static final NodeClass<OCLFPBinaryIntrinsicNode> TYPE = NodeClass.create(OCLFPBinaryIntrinsicNode.class);
-    protected final Operation operation;
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    // @formatter:off
-    public enum Operation {
-        ATAN2,
-        ATAN2PI,
-        COPYSIGN,
-        FDIM,
-        FMA,
-        FMAX,
-        FMIN,
-        FMOD,
-        FRACT,
-        FREXP,
-        HYPOT,
-        LDEXP,
-        MAD,
-        MAXMAG,
-        MINMAG,
-        MODF,
-        NEXTAFTER,
-        POW,
-        POWN,
-        POWR,
-        REMAINDER,
-        REMQUO,
-        ROOTN,
-        SINCOS
-    }
-    // @formatter:on
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool) {
-        return canonical(tool, getX(), getY());
-    }
-
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool builder) {
-        generate(builder, builder.getLIRGeneratorTool().getArithmetic());
-    }
-
-    public Operation operation() {
-        return operation;
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
@@ -133,34 +79,7 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
         }
         return result;
     }
-
-    @Override
-    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-        OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
-        Value x = builder.operand(getX());
-        Value y = builder.operand(getY());
-        Value result;
-        switch (operation()) {
-            case ATAN2:
-                result = gen.genFloatATan2(x, y);
-                break;
-            case FMIN:
-                result = gen.genFloatMin(x, y);
-                break;
-            case FMAX:
-                result = gen.genFloatMax(x, y);
-                break;
-            case POW:
-                result = gen.genFloatPow(x, y);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
-        Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
-        builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
-        builder.setResult(this, var);
-
-    }
+    // @formatter:on
 
     private static double doCompute(double x, double y, Operation op) {
         switch (op) {
@@ -191,12 +110,92 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
     }
 
     @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool builder) {
+        generate(builder, builder.getLIRGeneratorTool().getArithmetic());
+    }
+
+    public Operation operation() {
+        return operation;
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
+        OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
+        Value x = builder.operand(getX());
+        Value y = builder.operand(getY());
+        Value result;
+        switch (operation()) {
+            case ATAN2:
+                result = gen.genFloatATan2(x, y);
+                break;
+            case FMIN:
+                result = gen.genFloatMin(x, y);
+                break;
+            case FMAX:
+                result = gen.genFloatMax(x, y);
+                break;
+            case POW:
+                result = gen.genFloatPow(x, y);
+                break;
+            default:
+                throw shouldNotReachHere();
+        }
+        Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
+        builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
+        builder.setResult(this, var);
+
+    }
+
+    @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode x, ValueNode y) {
         ValueNode c = tryConstantFold(x, y, operation(), getStackKind());
         if (c != null) {
             return c;
         }
         return this;
+    }
+
+    // @formatter:off
+    public enum Operation {
+        ATAN2,
+        ATAN2PI,
+        COPYSIGN,
+        FDIM,
+        FMA,
+        FMAX,
+        FMIN,
+        FMOD,
+        FRACT,
+        FREXP,
+        HYPOT,
+        LDEXP,
+        MAD,
+        MAXMAG,
+        MINMAG,
+        MODF,
+        NEXTAFTER,
+        POW,
+        POWN,
+        POWR,
+        REMAINDER,
+        REMQUO,
+        ROOTN,
+        SINCOS
     }
 
 }

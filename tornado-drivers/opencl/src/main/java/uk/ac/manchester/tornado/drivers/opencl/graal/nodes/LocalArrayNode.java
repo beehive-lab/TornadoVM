@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -36,6 +35,7 @@ import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkLocalArray;
 
 @NodeInfo
 public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray, MemoryKill {
@@ -52,10 +52,9 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
 
     @Input
     protected ConstantNode length;
-
-    private OCLKind kind;
     protected OCLArchitecture.OCLMemoryBase memoryRegister;
     protected OCLAssembler.OCLBinaryTemplate arrayTemplate;
+    private OCLKind kind;
 
     public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));

@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkGlobalThreadID;
 
 @NodeInfo(shortName = "SPIRV-Thread-ID")
 public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, MarkGlobalThreadID {

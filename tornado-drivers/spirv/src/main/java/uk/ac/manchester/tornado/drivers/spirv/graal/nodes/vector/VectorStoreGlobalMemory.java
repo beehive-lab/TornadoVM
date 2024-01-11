@@ -32,7 +32,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorStore;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 
 /**
  * The {@code VectorStoreGlobalMemory} represents a vector-write to global

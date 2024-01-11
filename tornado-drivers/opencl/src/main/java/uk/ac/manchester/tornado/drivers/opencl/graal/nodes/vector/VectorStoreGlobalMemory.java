@@ -35,7 +35,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorStore;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 
 /**
  * The {@code VectorStoreGlobalMemory} represents a vector-write to global

@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorAssign;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorValueNode;
 
 @NodeInfo(nameTemplate = "{p#spirvKind/s}")
 public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {

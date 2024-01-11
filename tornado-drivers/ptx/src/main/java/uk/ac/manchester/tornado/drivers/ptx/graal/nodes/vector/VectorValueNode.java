@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorAssign;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorValueNode;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
 public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {

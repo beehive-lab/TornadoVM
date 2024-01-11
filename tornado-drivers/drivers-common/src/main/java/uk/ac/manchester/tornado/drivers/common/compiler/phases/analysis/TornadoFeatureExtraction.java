@@ -63,14 +63,14 @@ import org.graalvm.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLWriteNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorLoad;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkCastNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkGlobalThreadID;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkLocalArray;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkOCLWriteNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorLoad;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorValueNode;
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 

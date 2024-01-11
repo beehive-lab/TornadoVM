@@ -30,6 +30,7 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.tasks.meta;
     exports uk.ac.manchester.tornado.runtime.utils;
     exports uk.ac.manchester.tornado.runtime.graal.phases.sketch.tier;
+    exports uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
     uses uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 }

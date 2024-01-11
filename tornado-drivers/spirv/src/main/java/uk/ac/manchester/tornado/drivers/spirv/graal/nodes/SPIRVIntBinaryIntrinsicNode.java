@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
@@ -52,50 +52,11 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
     public static final NodeClass<SPIRVIntBinaryIntrinsicNode> TYPE = NodeClass.create(SPIRVIntBinaryIntrinsicNode.class);
     protected final SPIRVIntOperation operation;
 
-    //@formatter:off
-    public enum SPIRVIntOperation {
-        ABS_DIFF,
-        ABS_SAT,
-        HADD,
-        RHADD,
-        MAX,
-        MIN,
-        MUL_HI,
-        ROTATE,
-        SUB_SAT,
-        UPSAMPLE,
-        MUL24,
-    }
-    //@formatter:on
-
     protected SPIRVIntBinaryIntrinsicNode(ValueNode x, ValueNode y, SPIRVIntOperation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
     }
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool) {
-        return canonical(tool, getX(), getY());
-    }
-
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool tool) {
-        generate(tool, tool.getLIRGeneratorTool().getArithmetic());
-    }
-
-    public SPIRVIntOperation operation() {
-        return operation;
-    }
+    //@formatter:on
 
     public static ValueNode create(ValueNode x, ValueNode y, SPIRVIntOperation op, JavaKind kind) {
         ValueNode c = tryConstantFold(x, y, op, kind);
@@ -143,6 +104,30 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
     }
 
     @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool tool) {
+        generate(tool, tool.getLIRGeneratorTool().getArithmetic());
+    }
+
+    public SPIRVIntOperation operation() {
+        return operation;
+    }
+
+    @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode x, ValueNode y) {
         ValueNode c = tryConstantFold(x, y, operation(), getStackKind());
         if (c != null) {
@@ -170,6 +155,21 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
         Variable result = builder.getLIRGeneratorTool().newVariable(computeIntrinsic.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, computeIntrinsic));
         builder.setResult(this, result);
+    }
+
+    //@formatter:off
+    public enum SPIRVIntOperation {
+        ABS_DIFF,
+        ABS_SAT,
+        HADD,
+        RHADD,
+        MAX,
+        MIN,
+        MUL_HI,
+        ROTATE,
+        SUB_SAT,
+        UPSAMPLE,
+        MUL24,
     }
 
 }

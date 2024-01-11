@@ -65,9 +65,9 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNodeExtension;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntrinsicsNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {

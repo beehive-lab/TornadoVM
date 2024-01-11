@@ -110,7 +110,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkLocalArray;
 
 /**
  * Lower IR from one representation to another (e.g., from TornadoVM High-IR to

@@ -20,12 +20,11 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-package uk.ac.manchester.tornado.runtime.graal.phases;
+package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
 /**
- * This interface is used for accessing all dedicated nodes for Int OpenCL math
- * functions outside the scope of opencl-driver package.
+ * This interface is used for accessing the Global thread ID node type outside
+ * the scope of opencl-driver package.
  */
-public interface MarkIntIntrinsicNode extends MarkIntrinsicsNode {
-
+public interface MarkGlobalThreadID {
 }

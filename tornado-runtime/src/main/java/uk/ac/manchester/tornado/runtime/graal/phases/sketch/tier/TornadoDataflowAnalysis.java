@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorStore;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorStore;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {

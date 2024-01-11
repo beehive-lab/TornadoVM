@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,15 +20,11 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-package uk.ac.manchester.tornado.runtime.graal.phases;
+package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
-public interface MarkIntrinsicsNode {
-
-    /**
-     * Method used to return the intrinsic operation from the driver to the runtime
-     * without breaking the dependencies.
-     *
-     * @return String
-     */
-    String getOperation();
+/**
+ * This interface is used for accessing the Cast node type outside the scope of
+ * opencl-driver package.
+ */
+public interface MarkCastNode {
 }

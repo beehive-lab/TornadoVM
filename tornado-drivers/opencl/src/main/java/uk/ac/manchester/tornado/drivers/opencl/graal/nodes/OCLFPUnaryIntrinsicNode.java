@@ -47,80 +47,17 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
+    public static final NodeClass<OCLFPUnaryIntrinsicNode> TYPE = NodeClass.create(OCLFPUnaryIntrinsicNode.class);
+    protected final Operation operation;
     protected OCLFPUnaryIntrinsicNode(ValueNode value, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);
         assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
         this.operation = op;
-    }
-
-    public static final NodeClass<OCLFPUnaryIntrinsicNode> TYPE = NodeClass.create(OCLFPUnaryIntrinsicNode.class);
-    protected final Operation operation;
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public Operation getIntrinsicOperation() {
-        return operation;
-    }
-
-    // @formatter:off
-    public enum Operation {
-        ACOS,
-        ACOSH,
-        ACOSPI,
-        ASIN,
-        ASINH,
-        ASINPI,
-        ATAN,
-        ATANH,
-        ATANPI,
-        CBRT,
-        CEIL,
-        COS,
-        COSH,
-        COSPI,
-        ERFC,
-        ERF,
-        EXP,
-        EXP2,
-        EXP10,
-        EXPM1,
-        FABS,
-        FLOOR,
-        ILOGB,
-        LGAMMA,
-        LOG,
-        LOG2,
-        LOG10,
-        LOG1P,
-        LOGB,
-        NAN,
-        RADIANS,
-        REMQUO,
-        RINT,
-        ROUND,
-        RSQRT,
-        SIN,
-        SINH,
-        SINPI,
-        SQRT,
-        TAN,
-        TANH,
-        TANPI,
-        TGAMMA,
-        TRUNC
-    }
-    // @formatter:on
-
-    public Operation operation() {
-        return operation;
     }
 
     public static ValueNode create(ValueNode value, Operation op, JavaKind kind) {
@@ -144,6 +81,62 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             }
         }
         return result;
+    }
+
+    private static double doCompute(double value, Operation op) {
+        switch (op) {
+            case ASIN:
+                return Math.asin(value);
+            case ACOS:
+                return Math.acos(value);
+            case FABS:
+                return Math.abs(value);
+            case EXP:
+                return Math.exp(value);
+            case SQRT:
+                return Math.sqrt(value);
+            case FLOOR:
+                return Math.floor(value);
+            case LOG:
+                return Math.log(value);
+            default:
+                throw new TornadoInternalError("unable to compute op %s", op);
+        }
+    }
+    // @formatter:on
+
+    private static float doCompute(float value, Operation op) {
+        switch (op) {
+            case ASIN:
+                return (float) Math.asin(value);
+            case ACOS:
+                return (float) Math.acos(value);
+            case FABS:
+                return Math.abs(value);
+            case EXP:
+                return (float) Math.exp(value);
+            case SQRT:
+                return (float) Math.sqrt(value);
+            case FLOOR:
+                return (float) Math.floor(value);
+            case LOG:
+                return (float) Math.log(value);
+            default:
+                throw new TornadoInternalError("unable to compute op %s", op);
+        }
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public Operation getIntrinsicOperation() {
+        return operation;
+    }
+
+    public Operation operation() {
+        return operation;
     }
 
     @Override
@@ -215,46 +208,52 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     }
 
-    private static double doCompute(double value, Operation op) {
-        switch (op) {
-            case ASIN:
-                return Math.asin(value);
-            case ACOS:
-                return Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return Math.exp(value);
-            case SQRT:
-                return Math.sqrt(value);
-            case FLOOR:
-                return Math.floor(value);
-            case LOG:
-                return Math.log(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
-    }
-
-    private static float doCompute(float value, Operation op) {
-        switch (op) {
-            case ASIN:
-                return (float) Math.asin(value);
-            case ACOS:
-                return (float) Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return (float) Math.exp(value);
-            case SQRT:
-                return (float) Math.sqrt(value);
-            case FLOOR:
-                return (float) Math.floor(value);
-            case LOG:
-                return (float) Math.log(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+    // @formatter:off
+    public enum Operation {
+        ACOS,
+        ACOSH,
+        ACOSPI,
+        ASIN,
+        ASINH,
+        ASINPI,
+        ATAN,
+        ATANH,
+        ATANPI,
+        CBRT,
+        CEIL,
+        COS,
+        COSH,
+        COSPI,
+        ERFC,
+        ERF,
+        EXP,
+        EXP2,
+        EXP10,
+        EXPM1,
+        FABS,
+        FLOOR,
+        ILOGB,
+        LGAMMA,
+        LOG,
+        LOG2,
+        LOG10,
+        LOG1P,
+        LOGB,
+        NAN,
+        RADIANS,
+        REMQUO,
+        RINT,
+        ROUND,
+        RSQRT,
+        SIN,
+        SINH,
+        SINPI,
+        SQRT,
+        TAN,
+        TANH,
+        TANPI,
+        TGAMMA,
+        TRUNC
     }
 
 }

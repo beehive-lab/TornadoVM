@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,43 +44,14 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
-    // @formatter:off
-    public enum SPIRVOperation {
-        ATAN2,
-        ATAN2PI,
-        COPYSIGN,
-        FDIM,
-        FMA,
-        FMAX,
-        FMIN,
-        FMOD,
-        FRACT,
-        FREXP,
-        HYPOT,
-        LDEXP,
-        MAD,
-        MAXMAG,
-        MINMAG,
-        MODF,
-        NEXTAFTER,
-        POW,
-        POWN,
-        POWR,
-        REMAINDER,
-        REMQUO,
-        ROOTN,
-        SINCOS
-    }
-    // @formatter:on
-
-    protected final SPIRVOperation operation;
     public static final NodeClass<SPIRVFPBinaryIntrinsicNode> TYPE = NodeClass.create(SPIRVFPBinaryIntrinsicNode.class);
-
+    // @formatter:on
+    protected final SPIRVOperation operation;
     protected SPIRVFPBinaryIntrinsicNode(ValueNode x, ValueNode y, SPIRVOperation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
@@ -92,16 +63,6 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
             return c;
         }
         return new SPIRVFPBinaryIntrinsicNode(x, y, op, kind);
-    }
-
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool) {
-        return canonical(tool, getX(), getY());
     }
 
     private static double doCompute(double x, double y, SPIRVOperation op) {
@@ -145,6 +106,16 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
             }
         }
         return result;
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
     }
 
     @Override
@@ -197,6 +168,34 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
         Variable variable = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(variable, result));
         builder.setResult(this, variable);
+    }
+
+    // @formatter:off
+    public enum SPIRVOperation {
+        ATAN2,
+        ATAN2PI,
+        COPYSIGN,
+        FDIM,
+        FMA,
+        FMAX,
+        FMIN,
+        FMOD,
+        FRACT,
+        FREXP,
+        HYPOT,
+        LDEXP,
+        MAD,
+        MAXMAG,
+        MINMAG,
+        MODF,
+        NEXTAFTER,
+        POW,
+        POWN,
+        POWR,
+        REMAINDER,
+        REMQUO,
+        ROOTN,
+        SINCOS
     }
 
 }
