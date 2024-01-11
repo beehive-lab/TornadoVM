@@ -52,6 +52,7 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
     public static final NodeClass<SPIRVFPBinaryIntrinsicNode> TYPE = NodeClass.create(SPIRVFPBinaryIntrinsicNode.class);
     // @formatter:on
     protected final SPIRVOperation operation;
+
     protected SPIRVFPBinaryIntrinsicNode(ValueNode x, ValueNode y, SPIRVOperation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
@@ -66,31 +67,22 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
     }
 
     private static double doCompute(double x, double y, SPIRVOperation op) {
-        switch (op) {
-            case ATAN2:
-                return Math.atan2(x, y);
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            case POW:
-                return Math.pow(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ATAN2 -> Math.atan2(x, y);
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            case POW -> Math.pow(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static float doCompute(float x, float y, SPIRVOperation op) {
-        switch (op) {
-            case ATAN2:
-                return (float) Math.atan2(x, y);
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ATAN2 -> (float) Math.atan2(x, y);
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     protected static ValueNode tryConstantFold(ValueNode x, ValueNode y, SPIRVOperation op, JavaKind kind) {
@@ -148,23 +140,13 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
 
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
-        Value result;
-        switch (operation()) {
-            case ATAN2:
-                result = gen.genFloatATan2(x, y);
-                break;
-            case FMIN:
-                result = gen.genFloatMin(x, y);
-                break;
-            case FMAX:
-                result = gen.genFloatMax(x, y);
-                break;
-            case POW:
-                result = gen.genFloatPow(x, y);
-                break;
-            default:
-                throw new RuntimeException("Math operation not supported yet");
-        }
+        Value result = switch (operation()) {
+            case ATAN2 -> gen.genFloatATan2(x, y);
+            case FMIN -> gen.genFloatMin(x, y);
+            case FMAX -> gen.genFloatMax(x, y);
+            case POW -> gen.genFloatPow(x, y);
+            default -> throw new RuntimeException("Math operation not supported yet");
+        };
         Variable variable = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(variable, result));
         builder.setResult(this, variable);
@@ -197,5 +179,6 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
         ROOTN,
         SINCOS
     }
+    // @formatter:on
 
 }
