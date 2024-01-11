@@ -56,7 +56,6 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
         super(TYPE, StampFactory.forKind(kind), x, y);
         this.operation = op;
     }
-    //@formatter:on
 
     public static ValueNode create(ValueNode x, ValueNode y, SPIRVIntOperation op, JavaKind kind) {
         ValueNode c = tryConstantFold(x, y, op, kind);
@@ -82,25 +81,19 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
     }
 
     private static long doCompute(long x, long y, SPIRVIntOperation op) {
-        switch (op) {
-            case MIN:
-                return Math.min(x, y);
-            case MAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case MIN -> Math.min(x, y);
+            case MAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static int doCompute(int x, int y, SPIRVIntOperation op) {
-        switch (op) {
-            case MIN:
-                return Math.min(x, y);
-            case MAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case MIN -> Math.min(x, y);
+            case MAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     @Override
@@ -141,17 +134,11 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
         SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGeneratorTool).getGen().getSpirvBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
-        Value computeIntrinsic;
-        switch (operation) {
-            case MIN:
-                computeIntrinsic = gen.genIntMin(x, y);
-                break;
-            case MAX:
-                computeIntrinsic = gen.genIntMax(x, y);
-                break;
-            default:
-                throw new RuntimeException("Int binary intrinsic not supported yet");
-        }
+        Value computeIntrinsic = switch (operation) {
+            case MIN -> gen.genIntMin(x, y);
+            case MAX -> gen.genIntMax(x, y);
+            default -> throw new RuntimeException("Int binary intrinsic not supported yet");
+        };
         Variable result = builder.getLIRGeneratorTool().newVariable(computeIntrinsic.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, computeIntrinsic));
         builder.setResult(this, result);
@@ -171,5 +158,6 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
         UPSAMPLE,
         MUL24,
     }
+    //@formatter:on
 
 }

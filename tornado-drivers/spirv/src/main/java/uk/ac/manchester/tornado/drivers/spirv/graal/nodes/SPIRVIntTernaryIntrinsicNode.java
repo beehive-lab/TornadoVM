@@ -127,14 +127,10 @@ public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements Arithme
         Value z = builder.operand(getZ());
         LIRKind lirKind = builder.getLIRGeneratorTool().getLIRKind(stamp);
         Variable result = builder.getLIRGeneratorTool().newVariable(lirKind);
-        Value expr;
-        switch (operation()) {
-            case CLAMP:
-                expr = gen.genIntClamp(result, x, y, z);
-                break;
-            default:
-                throw new RuntimeException("Ternary Intrinsic not supported: " + operation);
-        }
+        Value expr = switch (operation()) {
+            case CLAMP -> gen.genIntClamp(result, x, y, z);
+            default -> throw new RuntimeException("Ternary Intrinsic not supported: " + operation);
+        };
 
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, expr));
         builder.setResult(this, result);

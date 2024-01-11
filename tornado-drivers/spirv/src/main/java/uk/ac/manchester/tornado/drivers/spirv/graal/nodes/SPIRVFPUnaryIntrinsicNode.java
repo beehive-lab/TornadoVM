@@ -85,57 +85,35 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
     }
 
     private static double doCompute(double value, SPIRVUnaryOperation op) {
-        switch (op) {
-            case ASIN:
-                return Math.asin(value);
-            case ACOS:
-                return Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return Math.exp(value);
-            case SQRT:
-                return Math.sqrt(value);
-            case FLOOR:
-                return Math.floor(value);
-            case LOG:
-                return Math.log(value);
-            case COS:
-                return Math.cos(value);
-            case SIN:
-                return Math.sin(value);
-            case TAN:
-                return Math.tan(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+        return switch (op) {
+            case ASIN -> Math.asin(value);
+            case ACOS -> Math.acos(value);
+            case FABS -> Math.abs(value);
+            case EXP -> Math.exp(value);
+            case SQRT -> Math.sqrt(value);
+            case FLOOR -> Math.floor(value);
+            case LOG -> Math.log(value);
+            case COS -> Math.cos(value);
+            case SIN -> Math.sin(value);
+            case TAN -> Math.tan(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
     }
 
     private static float doCompute(float value, SPIRVUnaryOperation op) {
-        switch (op) {
-            case ASIN:
-                return (float) Math.asin(value);
-            case ACOS:
-                return (float) Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return (float) Math.exp(value);
-            case SQRT:
-                return (float) Math.sqrt(value);
-            case FLOOR:
-                return (float) Math.floor(value);
-            case LOG:
-                return (float) Math.log(value);
-            case COS:
-                return (float) Math.cos(value);
-            case SIN:
-                return (float) Math.sin(value);
-            case TAN:
-                return (float) Math.tan(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+        return switch (op) {
+            case ASIN -> (float) Math.asin(value);
+            case ACOS -> (float) Math.acos(value);
+            case FABS -> Math.abs(value);
+            case EXP -> (float) Math.exp(value);
+            case SQRT -> (float) Math.sqrt(value);
+            case FLOOR -> (float) Math.floor(value);
+            case LOG -> (float) Math.log(value);
+            case COS -> (float) Math.cos(value);
+            case SIN -> (float) Math.sin(value);
+            case TAN -> (float) Math.tan(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
     }
 
     @Override
@@ -165,59 +143,25 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
 
         SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGen).getGen().getSpirvBuiltinTool();
         Value input = builder.operand(getValue());
-        Value result;
-        switch (operation()) {
-            case ASIN:
-                result = gen.genFloatASin(input);
-                break;
-            case ACOS:
-                result = gen.genFloatACos(input);
-                break;
-            case FABS:
-                result = gen.genFloatAbs(input);
-                break;
-            case EXP:
-                result = gen.genFloatExp(input);
-                break;
-            case SIGN:
-                result = gen.generateSign(input);
-                break;
-            case SQRT:
-                result = gen.genFloatSqrt(input);
-                break;
-            case FLOOR:
-                result = gen.genFloatFloor(input);
-                break;
-            case LOG:
-                result = gen.genFloatLog(input);
-                break;
-            case COS:
-                result = gen.genFloatCos(input);
-                break;
-            case SIN:
-                result = gen.genFloatSin(input);
-                break;
-            case ATAN:
-                result = gen.genFloatATan(input);
-                break;
-            case TAN:
-                result = gen.genFloatTan(input);
-                break;
-            case TANH:
-                result = gen.genFloatTanh(input);
-                break;
-            case RADIANS:
-                result = gen.genFloatRadians(input);
-                break;
-            case COSPI:
-                result = gen.genFloatCospi(input);
-                break;
-            case SINPI:
-                result = gen.genFloatSinpi(input);
-                break;
-            default:
-                throw new RuntimeException("Operation not supported");
-        }
+        Value result = switch (operation()) {
+            case ASIN -> gen.genFloatASin(input);
+            case ACOS -> gen.genFloatACos(input);
+            case FABS -> gen.genFloatAbs(input);
+            case EXP -> gen.genFloatExp(input);
+            case SIGN -> gen.generateSign(input);
+            case SQRT -> gen.genFloatSqrt(input);
+            case FLOOR -> gen.genFloatFloor(input);
+            case LOG -> gen.genFloatLog(input);
+            case COS -> gen.genFloatCos(input);
+            case SIN -> gen.genFloatSin(input);
+            case ATAN -> gen.genFloatATan(input);
+            case TAN -> gen.genFloatTan(input);
+            case TANH -> gen.genFloatTanh(input);
+            case RADIANS -> gen.genFloatRadians(input);
+            case COSPI -> gen.genFloatCospi(input);
+            case SINPI -> gen.genFloatSinpi(input);
+            default -> throw new RuntimeException("Operation not supported");
+        };
         Variable assignResult = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(assignResult, result));
         builder.setResult(this, assignResult);
@@ -271,4 +215,6 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         TGAMMA,
         TRUNC
     }
+    //@formatter:on
+
 }

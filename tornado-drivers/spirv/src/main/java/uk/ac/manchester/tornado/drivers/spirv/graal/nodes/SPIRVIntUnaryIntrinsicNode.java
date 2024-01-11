@@ -65,29 +65,21 @@ public class SPIRVIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticL
     }
 
     private static long doCompute(long value, SPIRVIntOperation op) {
-        switch (op) {
-            case ABS:
-                return Math.abs(value);
-            case CLZ:
-                return Long.numberOfLeadingZeros(value);
-            case POPCOUNT:
-                return Long.bitCount(value);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ABS -> Math.abs(value);
+            case CLZ -> Long.numberOfLeadingZeros(value);
+            case POPCOUNT -> Long.bitCount(value);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static int doCompute(int value, SPIRVIntOperation op) {
-        switch (op) {
-            case ABS:
-                return Math.abs(value);
-            case CLZ:
-                return Integer.numberOfLeadingZeros(value);
-            case POPCOUNT:
-                return Integer.bitCount(value);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ABS -> Math.abs(value);
+            case CLZ -> Integer.numberOfLeadingZeros(value);
+            case POPCOUNT -> Integer.bitCount(value);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     protected static ValueNode tryConstantFold(ValueNode x, SPIRVIntOperation op, JavaKind kind) {
@@ -127,17 +119,11 @@ public class SPIRVIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticL
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGeneratorTool) {
         SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGeneratorTool).getGen().getSpirvBuiltinTool();
         Value x = builder.operand(getValue());
-        Value computeIntrinsic;
-        switch (operation) {
-            case ABS:
-                computeIntrinsic = gen.genIntAbs(x);
-                break;
-            case POPCOUNT:
-                computeIntrinsic = gen.genIntPopcount(x);
-                break;
-            default:
-                throw new RuntimeException("Int binary intrinsic not supported yet");
-        }
+        Value computeIntrinsic = switch (operation) {
+            case ABS -> gen.genIntAbs(x);
+            case POPCOUNT -> gen.genIntPopcount(x);
+            default -> throw new RuntimeException("Int binary intrinsic not supported yet");
+        };
         Variable result = builder.getLIRGeneratorTool().newVariable(computeIntrinsic.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, computeIntrinsic));
         builder.setResult(this, result);
