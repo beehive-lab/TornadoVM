@@ -138,7 +138,7 @@ public class TornadoSketcher {
     private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex,
             int deviceIndex) {
         info("Building sketch of %s", resolvedMethod.getName());
-        TornadoCompilerIdentifier id = new TornadoCompilerIdentifier(STR."sketch-\{resolvedMethod.getName()}", sketchId.getAndIncrement());
+        TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
