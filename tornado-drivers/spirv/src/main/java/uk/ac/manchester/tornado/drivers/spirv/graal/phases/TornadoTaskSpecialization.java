@@ -58,13 +58,13 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoValueTypeReplacement;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVKernelContextAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext> {
 

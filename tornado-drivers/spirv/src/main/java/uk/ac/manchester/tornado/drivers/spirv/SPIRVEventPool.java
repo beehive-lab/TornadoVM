@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -31,7 +31,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 
 /**
@@ -43,10 +43,9 @@ public class SPIRVEventPool {
 
     private final int poolSize;
     private final BitSet retain;
-    private int eventPositionIndex;
-
     private final HashMap<Integer, LinkedList<TimeStamp>> events;
     private final EventDescriptor[] descriptors;
+    private int eventPositionIndex;
 
     protected SPIRVEventPool(int poolSize) {
         this.poolSize = poolSize;

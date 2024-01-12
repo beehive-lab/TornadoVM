@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -46,30 +46,17 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
-    protected PTXIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {
-        super(TYPE, StampFactory.forKind(kind), x);
-        this.operation = op;
-    }
-
     public static final NodeClass<PTXIntUnaryIntrinsicNode> TYPE = NodeClass.create(PTXIntUnaryIntrinsicNode.class);
     protected final Operation operation;
 
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public enum Operation {
-        ABS, POPCOUNT
-    }
-
-    public Operation operation() {
-        return operation;
+    protected PTXIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind), x);
+        this.operation = op;
     }
 
     public static ValueNode create(ValueNode x, Operation op, JavaKind kind) {
@@ -95,51 +82,52 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         return result;
     }
 
+    private static long doCompute(long value, Operation op) {
+        return switch (op) {
+            case ABS -> Math.abs(value);
+            case POPCOUNT -> Long.bitCount(value);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
+    }
+
+    private static int doCompute(int value, Operation op) {
+        return switch (op) {
+            case ABS -> Math.abs(value);
+            case POPCOUNT -> Integer.bitCount(value);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public Operation operation() {
+        return operation;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPTXIntUnaryIntrinsic: op=%s, x=%s", operation, getValue());
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getValue());
         Value result;
-        ValueKind valueKind = null;
-        switch (operation()) {
-            case ABS:
+        ValueKind valueKind = switch (operation()) {
+            case ABS -> {
                 result = gen.genIntAbs(x);
-                valueKind = result.getValueKind();
-                break;
-            case POPCOUNT:
+                yield result.getValueKind();
+            }
+            case POPCOUNT -> {
                 result = gen.genIntPopcount(x);
-                valueKind = LIRKind.value(PTXKind.U32);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
+                yield LIRKind.value(PTXKind.U32);
+            }
+            default -> throw shouldNotReachHere();
+        };
         Variable var = builder.getLIRGeneratorTool().newVariable(valueKind);
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);
 
-    }
-
-    private static long doCompute(long value, Operation op) {
-        switch (op) {
-            case ABS:
-                return Math.abs(value);
-            case POPCOUNT:
-                return Long.bitCount(value);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
-    }
-
-    private static int doCompute(int value, Operation op) {
-        switch (op) {
-            case ABS:
-                return Math.abs(value);
-            case POPCOUNT:
-                return Integer.bitCount(value);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
     }
 
     @Override
@@ -149,6 +137,10 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
             return c;
         }
         return this;
+    }
+
+    public enum Operation {
+        ABS, POPCOUNT
     }
 
 }

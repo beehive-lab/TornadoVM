@@ -28,6 +28,18 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
@@ -40,18 +52,6 @@ import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
@@ -106,7 +106,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void read(final Object reference) {
-        read(reference, 0, null, false);
+        read(reference, 0, 0, null, false);
     }
 
     private MemorySegment getSegment(final Object reference) {
@@ -135,15 +135,19 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int read(final Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         MemorySegment segment;
         segment = getSegment(reference);
-
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
-        if (batchSize <= 0) {
+        if (partialReadSize != 0) {
+            // Partial Copy Out due to a under demand copy by the user
+            returnEvent = deviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
+        } else if (batchSize <= 0) {
+            // Partial Copy Out due to batch processing
             returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
+            // Full copy out (default)
             returnEvent = deviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
 

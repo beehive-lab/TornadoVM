@@ -131,12 +131,13 @@ def clone_opencl_headers():
         os.chdir(current)
         shutil.rmtree(tmpDirectory)
 
-def build_levelzero_jni_lib():
+def build_levelzero_jni_lib(rebuild=False):
     """
     Pulls and Builds the Level Zero JNI library
     """
     current = os.getcwd()
     levelzeroLib = "levelzero-jni"
+    build=False
     if not os.path.exists(levelzeroLib):
         ## clone only if directory does not exist
         subprocess.run(
@@ -146,33 +147,38 @@ def build_levelzero_jni_lib():
                 "https://github.com/beehive-lab/levelzero-jni",
             ],
         )
+        build=True
 
-    os.chdir(levelzeroLib)
+    if (rebuild or build):
+        os.chdir(levelzeroLib)
 
-    ## Always pull for the latest changes
-    subprocess.run(["git", "pull", "origin", "master"])
-    subprocess.run(["mvn", "clean", "install"])
+        ## Always pull for the latest changes
+        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["mvn", "clean", "install"])
 
-    ## Build native library
-    os.chdir("levelZeroLib")
-    levelzero_build_directory_cpp = "build"
-    if not os.path.exists(levelzero_build_directory_cpp):
-        os.mkdir(levelzero_build_directory_cpp)
+        ## Build native library
+        os.chdir("levelZeroLib")
+        levelzero_build_directory_cpp = "build"
+        if not os.path.exists(levelzero_build_directory_cpp):
+            os.mkdir(levelzero_build_directory_cpp)
+            os.chdir(levelzero_build_directory_cpp)
+        else:
+            os.chdir(levelzero_build_directory_cpp)
+            subprocess.run(["make", "clean", ],)
 
-    os.chdir(levelzero_build_directory_cpp)
-    subprocess.run(["cmake", "..", ],)
-    subprocess.run(["make", "-j", "8"],)
+        subprocess.run(["cmake", "..", ],)
+        subprocess.run(["make", "-j", "8"],)
 
-    os.chdir(current)
+        os.chdir(current)
 
 
-def build_spirv_toolkit_and_level_zero():
+def build_spirv_toolkit_and_level_zero(rebuild=False):
     """
     Builds the SPIR-V Toolkit and Level Zero libraries.
     """
     current = os.getcwd()
     spirv_tool_kit = "beehive-spirv-toolkit"
-
+    build=True
     if not os.path.exists(spirv_tool_kit):
         subprocess.run(
             [
@@ -181,23 +187,25 @@ def build_spirv_toolkit_and_level_zero():
                 "https://github.com/beehive-lab/beehive-spirv-toolkit.git",
             ],
         )
+        build = True
 
-    os.chdir(spirv_tool_kit)
-    subprocess.run(["git", "pull", "origin", "master"])
-    subprocess.run(["mvn", "clean", "package"])
-    subprocess.run(["mvn", "install"])
-    os.chdir(current)
-
-    level_zero_lib = "level-zero"
-
-    if not os.path.exists(level_zero_lib):
-        subprocess.run(["git", "clone", "https://github.com/oneapi-src/level-zero"])
-        os.chdir(level_zero_lib)
-        os.mkdir("build")
-        os.chdir("build")
-        subprocess.run(["cmake", ".."])
-        subprocess.run(["cmake", "--build", ".", "--config", "Release"])
+    if (rebuild or build):
+        os.chdir(spirv_tool_kit)
+        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["mvn", "clean", "package"])
+        subprocess.run(["mvn", "install"])
         os.chdir(current)
+
+        level_zero_lib = "level-zero"
+
+        if not os.path.exists(level_zero_lib):
+            subprocess.run(["git", "clone", "https://github.com/oneapi-src/level-zero"])
+            os.chdir(level_zero_lib)
+            os.mkdir("build")
+            os.chdir("build")
+            subprocess.run(["cmake", ".."])
+            subprocess.run(["cmake", "--build", ".", "--config", "Release"])
+            os.chdir(current)
 
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
         current, "level-zero/build/lib/libze_loader.so"
@@ -225,7 +233,7 @@ def build_tornadovm(args, backend_profiles):
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
-        args (object): The arguments passed by the user. The JDK version as well as other options (e.g., offline (bool) and polyglot (bool) are used.
+        args (object): The arguments passed by the user. The JDK version as well as other options (e.g., if polyglot is used).
         backend_profiles (str): The processed backend options.
 
     Returns:
@@ -235,8 +243,6 @@ def build_tornadovm(args, backend_profiles):
         options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles},graalvm-polyglot "
     else:
         options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles} "
-    if args.offline:
-        options = "-o " + options
 
     print(f"mvn {options} install")
     try:
@@ -317,18 +323,18 @@ def parse_args():
     )
     parser.add_argument("--backends", help="e.g., opencl,ptx,spirv")
     parser.add_argument(
-        "--offline",
-        action="store_true",
-        dest="offline",
-        default=False,
-        help="Optional flag: OFFLINE",
-    )
-    parser.add_argument(
         "--polyglot",
         action="store_true",
         dest="polyglot",
         default=False,
         help="To enable interoperability with Truffle Programming Languages."
+    )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        dest="rebuild",
+        default=False,
+        help="Enable pull and rebuild of the external dependencies."
     )
 
     args = parser.parse_args()
@@ -351,11 +357,10 @@ def main():
 
     if "spirv" in args.backends:
         # 1) Build the SPIR-V Toolkit
-        build_spirv_toolkit_and_level_zero()
+        build_spirv_toolkit_and_level_zero(args.rebuild)
 
         # 2) Build the Level Zero JNI library
-        build_levelzero_jni_lib()
-
+        build_levelzero_jni_lib(args.rebuild)
 
     mvn_build_result = build_tornadovm(args, backend_profiles)
 

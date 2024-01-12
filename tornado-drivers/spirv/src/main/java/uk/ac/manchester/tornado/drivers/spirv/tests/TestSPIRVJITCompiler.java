@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -33,8 +33,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
+import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
@@ -61,7 +61,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * How to run?
  *
  * <code>
- *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler
  * </code>
  */
 public class TestSPIRVJITCompiler {
@@ -70,6 +70,11 @@ public class TestSPIRVJITCompiler {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = 0.12 * a[i] * b[i];
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
+        new TestSPIRVJITCompiler().test();
     }
 
     public MetaCompilation compileMethod(Class<?> klass, String methodName, Object... parameters) {
@@ -178,10 +183,5 @@ public class TestSPIRVJITCompiler {
         } else {
             System.out.println(" ................ [PASS]");
         }
-    }
-
-    public static void main(String[] args) {
-        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
-        new TestSPIRVJITCompiler().test();
     }
 }

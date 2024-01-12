@@ -314,12 +314,12 @@ public class PTXObjectWrapper implements ObjectBuffer {
 
     @Override
     public void read(Object object) {
-        // XXX: offset 0
-        read(object, 0, null, false);
+        // XXX: offset and partial size set to 0
+        read(object, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object object, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         int event = -1;
         buffer.position(buffer.capacity());
         event = deviceContext.readBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);

@@ -35,7 +35,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkGlobalThreadID;
 
 @NodeInfo
 public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, MarkGlobalThreadID {

@@ -46,35 +46,17 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLFPTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
-    protected OCLFPTernaryIntrinsicNode(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
-        super(TYPE, StampFactory.forKind(kind), x, y, z);
-        this.operation = op;
-    }
-
     public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass.create(OCLFPTernaryIntrinsicNode.class);
     protected final Operation operation;
 
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY, Stamp stampZ) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public enum Operation {
-        FMA, MAD, REMQUO
-    }
-
-    public Operation operation() {
-        return operation;
+    protected OCLFPTernaryIntrinsicNode(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind), x, y, z);
+        this.operation = op;
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
@@ -100,44 +82,44 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
         return result;
     }
 
+    private static double doCompute(double x, double y, double z, Operation op) {
+        throw new TornadoInternalError("unable to compute op %s", op);
+    }
+
+    private static float doCompute(float x, float y, float z, Operation op) {
+        throw new TornadoInternalError("unable to compute  op %s", op);
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY, Stamp stampZ) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public Operation operation() {
+        return operation;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
         OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
         Value z = builder.operand(getZ());
-        Value result;
-        switch (operation()) {
-            case FMA:
-                result = gen.genFloatFMA(x, y, z);
-                break;
-            case MAD:
-                result = gen.genFloatMAD(x, y, z);
-                break;
-            case REMQUO:
-                result = gen.genFloatRemquo(x, y, z);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
+        Value result = switch (operation()) {
+            case FMA -> gen.genFloatFMA(x, y, z);
+            case MAD -> gen.genFloatMAD(x, y, z);
+            case REMQUO -> gen.genFloatRemquo(x, y, z);
+            default -> throw shouldNotReachHere();
+        };
         Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);
 
-    }
-
-    private static double doCompute(double x, double y, double z, Operation op) {
-        switch (op) {
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
-    }
-
-    private static float doCompute(float x, float y, float z, Operation op) {
-        switch (op) {
-            default:
-                throw new TornadoInternalError("unable to compute  op %s", op);
-        }
     }
 
     @Override
@@ -147,6 +129,10 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
             return c;
         }
         return this;
+    }
+
+    public enum Operation {
+        FMA, MAD, REMQUO
     }
 
 }

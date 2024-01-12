@@ -75,6 +75,8 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void syncRuntimeTransferToHost(Object... objects);
 
+    void syncRuntimeTransferToHost(Object objects, long offset, long partialCopySize);
+
     String getId();
 
     TaskMetaDataInterface meta();

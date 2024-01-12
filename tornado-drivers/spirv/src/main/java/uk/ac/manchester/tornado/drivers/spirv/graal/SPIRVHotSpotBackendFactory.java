@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -45,9 +45,9 @@ import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
-import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
-import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
+import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
+import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
+import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
@@ -84,8 +84,8 @@ public class SPIRVHotSpotBackendFactory {
 
         // We specify an architecture of 64 bits
         SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_INT_64, device.getByteOrder());
-        SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT,
-                device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
+        SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT, device
+                .isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
         SPIRVDeviceContext deviceContext = context.getDeviceContext(device.getDeviceIndex());
 
@@ -130,9 +130,9 @@ public class SPIRVHotSpotBackendFactory {
      * Create the Plugins and register the SPIRV Plugins
      *
      * @param metaAccess
-     *            {@link HotSpotMetaAccessProvider}
+     *     {@link HotSpotMetaAccessProvider}
      * @param replacements
-     *            {@link TornadoReplacements}
+     *     {@link TornadoReplacements}
      * @return Plugins for SPIRV
      */
     private static Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements, SnippetReflectionProvider snippetReflectionProvider,

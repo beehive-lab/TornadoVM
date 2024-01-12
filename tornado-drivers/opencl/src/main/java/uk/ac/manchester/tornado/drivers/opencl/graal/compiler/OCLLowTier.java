@@ -37,7 +37,9 @@ import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP64SupportPhase;
@@ -47,8 +49,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParame
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsScheduling;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
 
 public class OCLLowTier extends TornadoLowTier {
 

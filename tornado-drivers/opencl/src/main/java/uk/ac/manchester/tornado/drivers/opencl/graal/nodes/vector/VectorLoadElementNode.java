@@ -26,7 +26,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorLoad;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkVectorLoad;
 
 /**
  * The {@code LoadIndexedNode} represents a read from an element of an array.

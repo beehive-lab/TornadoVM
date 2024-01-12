@@ -113,7 +113,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void read(Object object) {
-        read(object, 0, null, false);
+        read(object, 0, 0, null, false);
     }
 
     /*
@@ -144,7 +144,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         final T array = cast(reference);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");

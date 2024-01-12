@@ -86,3 +86,13 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime,tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.common

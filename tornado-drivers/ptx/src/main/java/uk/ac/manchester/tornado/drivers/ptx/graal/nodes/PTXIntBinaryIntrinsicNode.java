@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,46 +44,17 @@ import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
-    protected PTXIntBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
-        super(TYPE, StampFactory.forKind(kind), x, y);
-        this.operation = op;
-    }
-
     public static final NodeClass<PTXIntBinaryIntrinsicNode> TYPE = NodeClass.create(PTXIntBinaryIntrinsicNode.class);
     protected final Operation operation;
 
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public enum Operation {
-        MAX, //
-        MIN, //
-    }
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool) {
-        return canonical(tool, getX(), getY());
-    }
-
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool tool) {
-        generate(tool, tool.getLIRGeneratorTool().getArithmetic());
-    }
-
-    public Operation operation() {
-        return operation;
+    protected PTXIntBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind), x, y);
+        this.operation = op;
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
@@ -109,49 +80,61 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
         return result;
     }
 
+    private static long doCompute(long x, long y, Operation op) {
+        return switch (op) {
+            case MIN -> Math.min(x, y);
+            case MAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
+    }
+
+    private static int doCompute(int x, int y, Operation op) {
+        return switch (op) {
+            case MIN -> Math.min(x, y);
+            case MAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool tool) {
+        generate(tool, tool.getLIRGeneratorTool().getArithmetic());
+    }
+
+    public Operation operation() {
+        return operation;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPTXIntBinaryIntrinsic: op=%s, x=%s, y=%s", operation, x, y);
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
-        Value result;
-        switch (operation()) {
-            case MIN:
-                result = gen.genIntMin(x, y);
-                break;
-            case MAX:
-                result = gen.genIntMax(x, y);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
+        Value result = switch (operation()) {
+            case MIN -> gen.genIntMin(x, y);
+            case MAX -> gen.genIntMax(x, y);
+            default -> throw shouldNotReachHere();
+        };
         Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);
 
-    }
-
-    private static long doCompute(long x, long y, Operation op) {
-        switch (op) {
-            case MIN:
-                return Math.min(x, y);
-            case MAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
-    }
-
-    private static int doCompute(int x, int y, Operation op) {
-        switch (op) {
-            case MIN:
-                return Math.min(x, y);
-            case MAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
     }
 
     @Override
@@ -161,6 +144,11 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
             return c;
         }
         return this;
+    }
+
+    public enum Operation {
+        MAX, //
+        MIN, //
     }
 
 }

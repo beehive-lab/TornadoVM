@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -46,13 +46,126 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
     public static final NodeClass<SPIRVFPUnaryIntrinsicNode> TYPE = NodeClass.create(SPIRVFPUnaryIntrinsicNode.class);
     protected final SPIRVUnaryOperation operation;
+
+    protected SPIRVFPUnaryIntrinsicNode(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind), value);
+        assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
+        this.operation = op;
+    }
+    // @formatter:on
+
+    public static ValueNode create(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
+        ValueNode c = tryConstantFold(value, op, kind);
+        if (c != null) {
+            return c;
+        }
+        return new SPIRVFPUnaryIntrinsicNode(value, op, kind);
+    }
+
+    protected static ValueNode tryConstantFold(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
+        ConstantNode result = null;
+
+        if (value.isConstant()) {
+            if (kind == JavaKind.Double) {
+                double ret = doCompute(value.asJavaConstant().asDouble(), op);
+                result = ConstantNode.forDouble(ret);
+            } else if (kind == JavaKind.Float) {
+                float ret = doCompute(value.asJavaConstant().asFloat(), op);
+                result = ConstantNode.forFloat(ret);
+            }
+        }
+        return result;
+    }
+
+    private static double doCompute(double value, SPIRVUnaryOperation op) {
+        return switch (op) {
+            case ASIN -> Math.asin(value);
+            case ACOS -> Math.acos(value);
+            case FABS -> Math.abs(value);
+            case EXP -> Math.exp(value);
+            case SQRT -> Math.sqrt(value);
+            case FLOOR -> Math.floor(value);
+            case LOG -> Math.log(value);
+            case COS -> Math.cos(value);
+            case SIN -> Math.sin(value);
+            case TAN -> Math.tan(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
+    }
+
+    private static float doCompute(float value, SPIRVUnaryOperation op) {
+        return switch (op) {
+            case ASIN -> (float) Math.asin(value);
+            case ACOS -> (float) Math.acos(value);
+            case FABS -> Math.abs(value);
+            case EXP -> (float) Math.exp(value);
+            case SQRT -> (float) Math.sqrt(value);
+            case FLOOR -> (float) Math.floor(value);
+            case LOG -> (float) Math.log(value);
+            case COS -> (float) Math.cos(value);
+            case SIN -> (float) Math.sin(value);
+            case TAN -> (float) Math.tan(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public SPIRVUnaryOperation getIntrinsicOperation() {
+        return operation;
+    }
+
+    public SPIRVUnaryOperation operation() {
+        return operation;
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool tool, ValueNode forValue) {
+        ValueNode c = tryConstantFold(forValue, operation(), forValue.getStackKind());
+        if (c != null) {
+            return c;
+        }
+        return this;
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
+
+        SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGen).getGen().getSpirvBuiltinTool();
+        Value input = builder.operand(getValue());
+        Value result = switch (operation()) {
+            case ASIN -> gen.genFloatASin(input);
+            case ACOS -> gen.genFloatACos(input);
+            case FABS -> gen.genFloatAbs(input);
+            case EXP -> gen.genFloatExp(input);
+            case SIGN -> gen.generateSign(input);
+            case SQRT -> gen.genFloatSqrt(input);
+            case FLOOR -> gen.genFloatFloor(input);
+            case LOG -> gen.genFloatLog(input);
+            case COS -> gen.genFloatCos(input);
+            case SIN -> gen.genFloatSin(input);
+            case ATAN -> gen.genFloatATan(input);
+            case TAN -> gen.genFloatTan(input);
+            case TANH -> gen.genFloatTanh(input);
+            case RADIANS -> gen.genFloatRadians(input);
+            case COSPI -> gen.genFloatCospi(input);
+            case SINPI -> gen.genFloatSinpi(input);
+            default -> throw new RuntimeException("Operation not supported");
+        };
+        Variable assignResult = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
+        builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(assignResult, result));
+        builder.setResult(this, assignResult);
+    }
 
     // @formatter:off
     public enum SPIRVUnaryOperation {
@@ -102,173 +215,6 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         TGAMMA,
         TRUNC
     }
-    // @formatter:on
+    //@formatter:on
 
-    protected SPIRVFPUnaryIntrinsicNode(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
-        super(TYPE, StampFactory.forKind(kind), value);
-        assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
-        this.operation = op;
-    }
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public SPIRVUnaryOperation getIntrinsicOperation() {
-        return operation;
-    }
-
-    public SPIRVUnaryOperation operation() {
-        return operation;
-    }
-
-    public static ValueNode create(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
-        ValueNode c = tryConstantFold(value, op, kind);
-        if (c != null) {
-            return c;
-        }
-        return new SPIRVFPUnaryIntrinsicNode(value, op, kind);
-    }
-
-    protected static ValueNode tryConstantFold(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
-        ConstantNode result = null;
-
-        if (value.isConstant()) {
-            if (kind == JavaKind.Double) {
-                double ret = doCompute(value.asJavaConstant().asDouble(), op);
-                result = ConstantNode.forDouble(ret);
-            } else if (kind == JavaKind.Float) {
-                float ret = doCompute(value.asJavaConstant().asFloat(), op);
-                result = ConstantNode.forFloat(ret);
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public Node canonical(CanonicalizerTool tool, ValueNode forValue) {
-        ValueNode c = tryConstantFold(forValue, operation(), forValue.getStackKind());
-        if (c != null) {
-            return c;
-        }
-        return this;
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-
-        SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGen).getGen().getSpirvBuiltinTool();
-        Value input = builder.operand(getValue());
-        Value result;
-        switch (operation()) {
-            case ASIN:
-                result = gen.genFloatASin(input);
-                break;
-            case ACOS:
-                result = gen.genFloatACos(input);
-                break;
-            case FABS:
-                result = gen.genFloatAbs(input);
-                break;
-            case EXP:
-                result = gen.genFloatExp(input);
-                break;
-            case SIGN:
-                result = gen.generateSign(input);
-                break;
-            case SQRT:
-                result = gen.genFloatSqrt(input);
-                break;
-            case FLOOR:
-                result = gen.genFloatFloor(input);
-                break;
-            case LOG:
-                result = gen.genFloatLog(input);
-                break;
-            case COS:
-                result = gen.genFloatCos(input);
-                break;
-            case SIN:
-                result = gen.genFloatSin(input);
-                break;
-            case ATAN:
-                result = gen.genFloatATan(input);
-                break;
-            case TAN:
-                result = gen.genFloatTan(input);
-                break;
-            case TANH:
-                result = gen.genFloatTanh(input);
-                break;
-            case RADIANS:
-                result = gen.genFloatRadians(input);
-                break;
-            case COSPI:
-                result = gen.genFloatCospi(input);
-                break;
-            case SINPI:
-                result = gen.genFloatSinpi(input);
-                break;
-            default:
-                throw new RuntimeException("Operation not supported");
-        }
-        Variable assignResult = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
-        builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(assignResult, result));
-        builder.setResult(this, assignResult);
-    }
-
-    private static double doCompute(double value, SPIRVUnaryOperation op) {
-        switch (op) {
-            case ASIN:
-                return Math.asin(value);
-            case ACOS:
-                return Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return Math.exp(value);
-            case SQRT:
-                return Math.sqrt(value);
-            case FLOOR:
-                return Math.floor(value);
-            case LOG:
-                return Math.log(value);
-            case COS:
-                return Math.cos(value);
-            case SIN:
-                return Math.sin(value);
-            case TAN:
-                return Math.tan(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
-    }
-
-    private static float doCompute(float value, SPIRVUnaryOperation op) {
-        switch (op) {
-            case ASIN:
-                return (float) Math.asin(value);
-            case ACOS:
-                return (float) Math.acos(value);
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return (float) Math.exp(value);
-            case SQRT:
-                return (float) Math.sqrt(value);
-            case FLOOR:
-                return (float) Math.floor(value);
-            case LOG:
-                return (float) Math.log(value);
-            case COS:
-                return (float) Math.cos(value);
-            case SIN:
-                return (float) Math.sin(value);
-            case TAN:
-                return (float) Math.tan(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
-    }
 }

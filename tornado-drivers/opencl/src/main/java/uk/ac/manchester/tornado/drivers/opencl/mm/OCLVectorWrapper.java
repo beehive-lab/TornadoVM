@@ -216,11 +216,11 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public void read(final Object value) {
         // TODO: reading with offset != 0
-        read(value, 0, null, false);
+        read(value, 0, 0, null, false);
     }
 
     @Override
-    public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object value, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
         final Object array = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (array == null) {
@@ -341,7 +341,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class) {
             return JavaKind.Object;
-        }  else {
+        } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);
         }
         return null;
