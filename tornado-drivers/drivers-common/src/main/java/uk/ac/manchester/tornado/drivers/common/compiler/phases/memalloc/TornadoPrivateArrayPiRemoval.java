@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, 2024 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
