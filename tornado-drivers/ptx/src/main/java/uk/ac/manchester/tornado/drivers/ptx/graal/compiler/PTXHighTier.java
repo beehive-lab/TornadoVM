@@ -45,20 +45,20 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
-import uk.ac.manchester.tornado.drivers.common.graal.compiler.TornadoPrivateArrayPiRemoval;
-import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoNewArrayDevirtualizationReplacement;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoShapeAnalysis;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionSuppression;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.TornadoValueTypeCleanup;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoLocalMemoryAllocation;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoNewArrayDevirtualizationReplacement;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPrivateArrayPiRemoval;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
-import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoFullInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPartialInliningPolicy;
 
 public class PTXHighTier extends TornadoHighTier {
 

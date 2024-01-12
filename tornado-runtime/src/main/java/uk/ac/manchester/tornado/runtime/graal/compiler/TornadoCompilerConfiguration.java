@@ -34,7 +34,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAllocationStage;
 
 public interface TornadoCompilerConfiguration {
 

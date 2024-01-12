@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
@@ -127,14 +127,10 @@ public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements Arithme
         Value z = builder.operand(getZ());
         LIRKind lirKind = builder.getLIRGeneratorTool().getLIRKind(stamp);
         Variable result = builder.getLIRGeneratorTool().newVariable(lirKind);
-        Value expr;
-        switch (operation()) {
-            case CLAMP:
-                expr = gen.genIntClamp(result, x, y, z);
-                break;
-            default:
-                throw new RuntimeException("Ternary Intrinsic not supported: " + operation);
-        }
+        Value expr = switch (operation()) {
+            case CLAMP -> gen.genIntClamp(result, x, y, z);
+            default -> throw new RuntimeException("Ternary Intrinsic not supported: " + operation);
+        };
 
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, expr));
         builder.setResult(this, result);

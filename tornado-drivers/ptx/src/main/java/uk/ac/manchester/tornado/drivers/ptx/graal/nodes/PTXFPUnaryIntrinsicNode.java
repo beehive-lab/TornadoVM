@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -58,46 +58,18 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
+
+    public static final NodeClass<PTXFPUnaryIntrinsicNode> TYPE = NodeClass.create(PTXFPUnaryIntrinsicNode.class);
+    protected final Operation operation;
 
     protected PTXFPUnaryIntrinsicNode(ValueNode value, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);
         assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
         this.operation = op;
-    }
-
-    public static final NodeClass<PTXFPUnaryIntrinsicNode> TYPE = NodeClass.create(PTXFPUnaryIntrinsicNode.class);
-    protected final Operation operation;
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    // @formatter:off
-    public enum Operation {
-        ATAN,
-        COS,
-        EXP,
-        FABS,
-        FLOOR,
-        LOG,
-        RADIANS,
-        SIGN,
-        SIN,
-        SQRT,
-        TAN,
-        TANH,
-        COSPI,
-        SINPI,
-    }
-    // @formatter:on
-
-    public Operation operation() {
-        return operation;
     }
 
     public static ValueNode create(ValueNode value, Operation op, JavaKind kind) {
@@ -121,6 +93,38 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             }
         }
         return result;
+    }
+    // @formatter:on
+
+    private static double doCompute(double value, Operation op) {
+        return switch (op) {
+            case FABS -> Math.abs(value);
+            case EXP -> Math.exp(value);
+            case SQRT -> Math.sqrt(value);
+            case FLOOR -> Math.floor(value);
+            case LOG -> Math.log(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
+    }
+
+    private static float doCompute(float value, Operation op) {
+        return switch (op) {
+            case FABS -> Math.abs(value);
+            case EXP -> (float) Math.exp(value);
+            case SQRT -> (float) Math.sqrt(value);
+            case FLOOR -> (float) Math.floor(value);
+            case LOG -> (float) Math.log(value);
+            default -> throw new TornadoInternalError("unable to compute op %s", op);
+        };
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public Operation operation() {
+        return operation;
     }
 
     @Override
@@ -247,8 +251,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         PTXLIRGenerator ptxlirGenerator = (PTXLIRGenerator) builder.getLIRGeneratorTool();
 
         Variable equalZeroPred = ptxlirGenerator.newVariable(LIRKind.value(PTXKind.PRED));
-        ptxlirGenerator.append(new AssignStmt(equalZeroPred,
-                new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_EQ, LIRKind.value(PTXKind.F32), x, new ConstantValue(LIRKind.value(PTXKind.F32), PrimitiveConstant.FLOAT_0))));
+        ptxlirGenerator.append(new AssignStmt(equalZeroPred, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_EQ, LIRKind.value(PTXKind.F32), x, new ConstantValue(LIRKind.value(PTXKind.F32),
+                PrimitiveConstant.FLOAT_0))));
 
         Variable isNanPred = ptxlirGenerator.newVariable(LIRKind.value(PTXKind.PRED));
         ptxlirGenerator.append(new PTXLIRStmt.AssignStmt(isNanPred, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.TESTP_NOTANUMBER, LIRKind.value(x.getPlatformKind()), x)));
@@ -336,8 +340,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     private boolean shouldConvertInput(Value input) {
-        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP
-                || operation() == Operation.LOG) && !((PTXKind) input.getPlatformKind()).isF32();
+        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP || operation() == Operation.LOG) && !((PTXKind) input
+                .getPlatformKind()).isF32();
     }
 
     /**
@@ -363,38 +367,22 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         return new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(PTXAssemblerConstants.PI));
     }
 
-    private static double doCompute(double value, Operation op) {
-        switch (op) {
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return Math.exp(value);
-            case SQRT:
-                return Math.sqrt(value);
-            case FLOOR:
-                return Math.floor(value);
-            case LOG:
-                return Math.log(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
+    // @formatter:off
+    public enum Operation {
+        ATAN,
+        COS,
+        EXP,
+        FABS,
+        FLOOR,
+        LOG,
+        RADIANS,
+        SIGN,
+        SIN,
+        SQRT,
+        TAN,
+        TANH,
+        COSPI,
+        SINPI,
     }
-
-    private static float doCompute(float value, Operation op) {
-        switch (op) {
-            case FABS:
-                return Math.abs(value);
-            case EXP:
-                return (float) Math.exp(value);
-            case SQRT:
-                return (float) Math.sqrt(value);
-            case FLOOR:
-                return (float) Math.floor(value);
-            case LOG:
-                return (float) Math.log(value);
-            default:
-                throw new TornadoInternalError("unable to compute op %s", op);
-        }
-    }
-
+    // @formatter:on
 }

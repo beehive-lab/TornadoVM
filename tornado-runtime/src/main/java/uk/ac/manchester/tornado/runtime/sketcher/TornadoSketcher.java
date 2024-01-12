@@ -1,28 +1,28 @@
 /*
-* This file is part of Tornado: A heterogeneous programming framework:
-* https://github.com/beehive-lab/tornadovm
-*
-* Copyright (c) 2020, 2023 APT Group, Department of Computer Science,
-* School of Engineering, The University of Manchester. All rights reserved.
-* Copyright (c) 2013-2020, APT Group, Department of Computer Science,
-* The University of Manchester. All rights reserved.
-* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-*
-* This code is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License version 2 only, as
-* published by the Free Software Foundation.
-*
-* This code is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* version 2 for more details (a copy is included in the LICENSE file that
-* accompanied this code).
-*
-* You should have received a copy of the GNU General Public License version
-* 2 along with this work; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-*
-*/
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2020, 2023 APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
@@ -115,11 +115,11 @@ public class TornadoSketcher {
                 e.printStackTrace();
             }
             final Throwable cause = e.getCause();
-            if (cause instanceof TornadoRuntimeException) {
-                throw (TornadoRuntimeException) cause;
+            if (cause instanceof TornadoRuntimeException runtimeException) {
+                throw runtimeException;
             }
-            if (cause instanceof TornadoBailoutRuntimeException) {
-                throw (TornadoBailoutRuntimeException) cause;
+            if (cause instanceof TornadoBailoutRuntimeException bailoutRuntimeException) {
+                throw bailoutRuntimeException;
             }
             throw new TornadoInternalError(cause);
         }
@@ -142,12 +142,12 @@ public class TornadoSketcher {
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
-        builder.name("sketch-" + resolvedMethod.getName());
+        builder.name(STR."sketch-\{resolvedMethod.getName()}");
         final StructuredGraph graph = builder.build();
 
         // Check legal Kernel Name
         if (OCLTokens.openCLTokens.contains(resolvedMethod.getName())) {
-            throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + resolvedMethod.getName());
+            throw new TornadoRuntimeException(STR."[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: \{resolvedMethod.getName()}");
         }
 
         try (DebugContext.Scope ignored = getDebugContext().scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(getDebugContext())) {
@@ -167,7 +167,7 @@ public class TornadoSketcher {
                     .forEach(invoke -> { //
                         if (OCLTokens.openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
                             throw new TornadoRuntimeException(
-                                    "[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
+                                    STR."[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: \{invoke.callTarget().targetMethod().getName()}");
                         }
                         SketchRequest newRequest = new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, driverIndex, deviceIndex);
                         buildSketch(newRequest);
@@ -187,7 +187,7 @@ public class TornadoSketcher {
             if (Tornado.DEBUG) {
                 e.printStackTrace();
             }
-            throw new TornadoBailoutRuntimeException("Unable to build sketch for method: " + resolvedMethod.getName() + "(" + e.getMessage() + ")");
+            throw new TornadoBailoutRuntimeException(STR."Unable to build sketch for method: \{resolvedMethod.getName()}(\{e.getMessage()})");
         }
     }
 
@@ -216,10 +216,9 @@ public class TornadoSketcher {
 
         for (; index < callArgs.size(); index++) {
             ValueNode callArg = callArgs.get(index);
-            if (!(callArg instanceof ParameterNode)) {
+            if (!(callArg instanceof ParameterNode param)) {
                 continue;
             }
-            ParameterNode param = (ParameterNode) callArg;
             int paramIndex = param.index();
 
             Access calleeAcc = calleeAccesses[index];

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -47,9 +47,9 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
-import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
-import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
+import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
+import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
+import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;

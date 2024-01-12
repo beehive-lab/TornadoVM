@@ -37,13 +37,13 @@ import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
 import org.graalvm.compiler.phases.common.ReassociationPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
-import uk.ac.manchester.tornado.drivers.common.graal.compiler.TornadoPanamaSegmentsHeaderPhase;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.BoundCheckEliminationPhase;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoPartialLoopUnroll;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.BoundCheckEliminationPhase;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionCheckingElimination;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPanamaSegmentsHeaderPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
-import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 
 /**
  * SPIR-V backend reuses from the OCL the following phases:

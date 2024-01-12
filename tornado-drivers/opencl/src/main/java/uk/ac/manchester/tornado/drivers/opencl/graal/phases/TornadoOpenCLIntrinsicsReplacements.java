@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,15 +25,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import java.util.Optional;
+
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.CallTargetNode;
@@ -44,6 +40,11 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLoweringProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
@@ -156,8 +157,7 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
         CallTargetNode callTarget = newArray.callTarget();
         final StructuredGraph graph = newArray.graph();
         final ValueNode secondInput = callTarget.arguments().get(1);
-        if (secondInput instanceof ConstantNode) {
-            final ConstantNode lengthNode = (ConstantNode) secondInput;
+        if (secondInput instanceof ConstantNode lengthNode) {
             if (lengthNode.getValue() instanceof PrimitiveConstant) {
                 final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
                 JavaKind elementKind = getJavaKindFromConstantNode((ConstantNode) callTarget.arguments().get(0));
@@ -182,20 +182,16 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
 
     private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
         switch (signatureNode.getValue().toValueString()) {
-            case "Class:int":
-            case "Class:uk.ac.manchester.tornado.api.types.arrays.IntArray":
+            case "Class:int", "Class:uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 return JavaKind.Int;
-            case "Class:long":
-            case "Class:uk.ac.manchester.tornado.api.types.arrays.LongArray":
+            case "Class:long", "Class:uk.ac.manchester.tornado.api.types.arrays.LongArray":
                 return JavaKind.Long;
-            case "Class:float":
-            case "Class:uk.ac.manchester.tornado.api.types.arrays.FloatArray":
+            case "Class:float", "Class:uk.ac.manchester.tornado.api.types.arrays.FloatArray":
                 return JavaKind.Float;
-            case "Class:double":
-            case "Class:uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
+            case "Class:double", "Class:uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 return JavaKind.Double;
             default:
-                unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
+                unimplemented(STR."Other types not supported yet: \{signatureNode.getValue().toValueString()}");
         }
         return null;
     }

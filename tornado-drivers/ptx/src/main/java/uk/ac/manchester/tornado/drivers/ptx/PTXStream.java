@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;

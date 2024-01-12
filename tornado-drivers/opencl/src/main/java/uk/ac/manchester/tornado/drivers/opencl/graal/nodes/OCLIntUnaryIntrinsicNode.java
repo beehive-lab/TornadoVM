@@ -42,30 +42,16 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
+    public static final NodeClass<OCLIntUnaryIntrinsicNode> TYPE = NodeClass.create(OCLIntUnaryIntrinsicNode.class);
+    protected final Operation operation;
     protected OCLIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x);
         this.operation = op;
-    }
-
-    public static final NodeClass<OCLIntUnaryIntrinsicNode> TYPE = NodeClass.create(OCLIntUnaryIntrinsicNode.class);
-    protected final Operation operation;
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public enum Operation {
-        ABS, CLZ, POPCOUNT
-    }
-
-    public Operation operation() {
-        return operation;
     }
 
     public static ValueNode create(ValueNode x, Operation op, JavaKind kind) {
@@ -89,30 +75,6 @@ public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
             }
         }
         return result;
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-        OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
-        Value x = builder.operand(getValue());
-        Value result;
-        switch (operation()) {
-            case ABS:
-                result = gen.genIntAbs(x);
-                break;
-            case CLZ:
-                result = gen.genIntClz(x);
-                break;
-            case POPCOUNT:
-                result = gen.genIntPopcount(x);
-                break;
-            default:
-                throw shouldNotReachHere();
-        }
-        Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
-        builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
-        builder.setResult(this, var);
-
     }
 
     private static long doCompute(long value, Operation op) {
@@ -142,12 +104,49 @@ public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
     }
 
     @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    public Operation operation() {
+        return operation;
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
+        OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
+        Value x = builder.operand(getValue());
+        Value result;
+        switch (operation()) {
+            case ABS:
+                result = gen.genIntAbs(x);
+                break;
+            case CLZ:
+                result = gen.genIntClz(x);
+                break;
+            case POPCOUNT:
+                result = gen.genIntPopcount(x);
+                break;
+            default:
+                throw shouldNotReachHere();
+        }
+        Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
+        builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
+        builder.setResult(this, var);
+
+    }
+
+    @Override
     public Node canonical(CanonicalizerTool tool, ValueNode value) {
         ValueNode c = tryConstantFold(value, operation(), getStackKind());
         if (c != null) {
             return c;
         }
         return this;
+    }
+
+    public enum Operation {
+        ABS, CLZ, POPCOUNT
     }
 
 }

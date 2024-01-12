@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -53,47 +53,17 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
-    protected PTXFPBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
-        super(TYPE, StampFactory.forKind(kind), x, y);
-        this.operation = op;
-    }
-
     public static final NodeClass<PTXFPBinaryIntrinsicNode> TYPE = NodeClass.create(PTXFPBinaryIntrinsicNode.class);
     protected final Operation operation;
 
-    @Override
-    public String getOperation() {
-        return operation.toString();
-    }
-
-    public enum Operation {
-        FMAX, //
-        FMIN, //
-        POW //
-    }
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool) {
-        return canonical(tool, getX(), getY());
-    }
-
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public void generate(NodeLIRBuilderTool builder) {
-        generate(builder, builder.getLIRGeneratorTool().getArithmetic());
-    }
-
-    public Operation operation() {
-        return operation;
+    protected PTXFPBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind), x, y);
+        this.operation = op;
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
@@ -117,6 +87,48 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
             }
         }
         return result;
+    }
+
+    private static double doCompute(double x, double y, Operation op) {
+        return switch (op) {
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            case POW -> Math.pow(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
+    }
+
+    private static float doCompute(float x, float y, Operation op) {
+        return switch (op) {
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            case POW -> (float) Math.pow(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool builder) {
+        generate(builder, builder.getLIRGeneratorTool().getArithmetic());
+    }
+
+    public Operation operation() {
+        return operation;
     }
 
     @Override
@@ -159,15 +171,15 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
      *
      * Because the log function only operates on single precision FPU , we must
      * convert the inputs and output to and from double precision FPU, if necessary.
-     * 
+     *
      * This snipet generates the following code:
-     * 
+     *
      * <code>
-     *     	cvt.rn.f32.f64	rfi1, rfd0;
-     * 	    mul.rn.f32	rfi2, rfi1, 0F3FB8AA3B;
-     * 	    ex2.approx.f32	rfi3, rfi2;
+     * cvt.rn.f32.f64 rfi1, rfd0;
+     * mul.rn.f32 rfi2, rfi1, 0F3FB8AA3B;
+     * ex2.approx.f32 rfi3, rfi2;
      * </code>
-     * 
+     *
      */
     private void generatePow(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x, Value y) {
         LIRGeneratorTool genTool = builder.getLIRGeneratorTool();
@@ -191,11 +203,10 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
         // log2 function is only defined for (0, +infinity). In case x < 0 then we need
         // to change the sign of x.
-        genTool.append(new AssignStmt(signPred,
-                new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_LT, LIRKind.value(PTXKind.F32), a, new ConstantValue(LIRKind.value(PTXKind.F32), PrimitiveConstant.FLOAT_0))));
-        genTool.append(new PTXLIRStmt.ConditionalStatement(
-                new AssignStmt(auxVar, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, LIRKind.value(PTXKind.F32), a, new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(-1)))),
-                signPred, false));
+        genTool.append(new AssignStmt(signPred, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_LT, LIRKind.value(PTXKind.F32), a, new ConstantValue(LIRKind.value(PTXKind.F32),
+                PrimitiveConstant.FLOAT_0))));
+        genTool.append(new PTXLIRStmt.ConditionalStatement(new AssignStmt(auxVar, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, LIRKind.value(PTXKind.F32), a, new ConstantValue(LIRKind.value(
+                PTXKind.F32), JavaConstant.forFloat(-1)))), signPred, false));
         genTool.append(new PTXLIRStmt.ConditionalStatement(new AssignStmt(auxVar, a), signPred, true));
 
         // we use x^y = 2^(y*log2(x))
@@ -205,15 +216,14 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
         // if x < 0 && y % 2 == 1 then result = -result
         genTool.append(new AssignStmt(auxInt, b));
-        genTool.append(
-                new AssignStmt(auxInt, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.REM, LIRKind.value(PTXKind.S32), auxInt, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_2))));
-        genTool.append(new AssignStmt(remPred,
-                new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_EQ, LIRKind.value(PTXKind.S32), auxInt, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_1))));
+        genTool.append(new AssignStmt(auxInt, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.REM, LIRKind.value(PTXKind.S32), auxInt, new ConstantValue(LIRKind.value(PTXKind.S32),
+                PrimitiveConstant.INT_2))));
+        genTool.append(new AssignStmt(remPred, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_EQ, LIRKind.value(PTXKind.S32), auxInt, new ConstantValue(LIRKind.value(PTXKind.S32),
+                PrimitiveConstant.INT_1))));
         genTool.append(new AssignStmt(signPred, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.BITWISE_AND, LIRKind.value(PTXKind.PRED), signPred, remPred)));
 
-        genTool.append(new PTXLIRStmt.ConditionalStatement(
-                new AssignStmt(auxVar, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, LIRKind.value(PTXKind.F32), auxVar, new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(-1)))),
-                signPred, false));
+        genTool.append(new PTXLIRStmt.ConditionalStatement(new AssignStmt(auxVar, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, LIRKind.value(PTXKind.F32), auxVar, new ConstantValue(LIRKind.value(
+                PTXKind.F32), JavaConstant.forFloat(-1)))), signPred, false));
         genTool.append(new PTXLIRStmt.ConditionalStatement(new AssignStmt(auxVar, auxVar), signPred, true));
 
         // pow only operates on f32 values. We must convert back
@@ -225,32 +235,6 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
         builder.setResult(this, auxVar);
     }
 
-    private static double doCompute(double x, double y, Operation op) {
-        switch (op) {
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            case POW:
-                return Math.pow(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
-    }
-
-    private static float doCompute(float x, float y, Operation op) {
-        switch (op) {
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            case POW:
-                return (float) Math.pow(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
-    }
-
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode x, ValueNode y) {
         ValueNode c = tryConstantFold(x, y, operation(), getStackKind());
@@ -258,6 +242,12 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
             return c;
         }
         return this;
+    }
+
+    public enum Operation {
+        FMAX, //
+        FMIN, //
+        POW //
     }
 
 }
