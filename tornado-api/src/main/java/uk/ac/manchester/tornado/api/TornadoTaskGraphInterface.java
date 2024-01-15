@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -89,15 +88,9 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void addTask(TaskPackage taskPackage);
 
-    void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
-
-    void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
-
-    void addScalaTask(String id, Object function, Object[] args);
+    void addPrebuiltTask(TaskPackage taskPackage);
 
     String getTaskGraphName();
-
-    void replaceParameter(Object oldParameter, Object newParameter);
 
     void useDefaultThreadScheduler(boolean use);
 

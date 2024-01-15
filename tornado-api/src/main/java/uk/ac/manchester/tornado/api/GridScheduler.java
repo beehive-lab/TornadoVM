@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GridScheduler {
@@ -42,5 +43,9 @@ public class GridScheduler {
 
     public boolean contains(String taskScheduleName, String taskName) {
         return gridTaskMap.containsKey(taskScheduleName + "." + taskName);
+    }
+
+    public Set<String> keySet() {
+        return gridTaskMap.keySet();
     }
 }

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,15 +30,15 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *      tornado-test -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
+ * tornado-test -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
  * </code>
  *
  */
@@ -49,7 +49,7 @@ public class TestGridScheduler {
         vectorAddFloat(a, b, c);
 
         for (int i = 0; i < c.getSize(); i++) {
-       // for (float v : c) {
+            // for (float v : c) {
             acc += c.get(i);
         }
         return acc;
@@ -138,8 +138,7 @@ public class TestGridScheduler {
 
         ImmutableTaskGraph immutableTaskGraph1 = s1.snapshot();
         TornadoExecutionPlan executionPlan1 = new TornadoExecutionPlan(immutableTaskGraph1);
-        executionPlan1.withGridScheduler(gridScheduler) //
-                .execute();
+        executionPlan1.execute();
 
         // Final SUM
         float finalSum = tornadoC.get(0);
