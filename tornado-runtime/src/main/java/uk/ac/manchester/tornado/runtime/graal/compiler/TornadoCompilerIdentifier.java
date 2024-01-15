@@ -37,5 +37,4 @@ public class TornadoCompilerIdentifier implements CompilationIdentifier {
     public String toString(Verbosity verbosity) {
         return STR."\{name}-\{id}";
     }
-
 }

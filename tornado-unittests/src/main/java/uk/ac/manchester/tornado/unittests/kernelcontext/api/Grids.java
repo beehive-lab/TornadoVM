@@ -42,6 +42,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class Grids extends TornadoTestBase {
 
+    final int gridSize = 32;
+    final int size = 100000;
+
     private static void psKernel(KernelContext kc, FloatArray tArray, FloatArray vArray, FloatArray results) {
         int idx = kc.localIdx;
 
@@ -54,27 +57,22 @@ public class Grids extends TornadoTestBase {
 
     @Test
     public void testWithCorrectNames() {
-        final int gridSize = 32;
 
-        final int size = 100000;
-
-        // Prepare : convert the arrays to Tornado Native off-heap arrays
         FloatArray timesArray = new FloatArray(size);
         FloatArray obsArray = new FloatArray(size);
 
         FloatArray resArray = new FloatArray(100000);
         resArray.init(0.0f);
 
-        // We need the worker & grid to be able to allocate shared memory on the device
         WorkerGrid worker = new WorkerGrid1D(gridSize);
-        GridScheduler gridScheduler = new GridScheduler("PeriodSearchTaskGraph.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
         KernelContext context = new KernelContext();
         worker.setLocalWork(gridSize, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("PeriodSearchTaskGraph");
+        TaskGraph taskGraph = new TaskGraph("foo");
 
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
-                .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
+                .task("bar", Grids::psKernel, context, timesArray, obsArray, resArray) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, resArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -87,24 +85,18 @@ public class Grids extends TornadoTestBase {
 
     @Test(expected = TornadoRuntimeException.class)
     public void testWithIncorrectGraphName() {
-        final int gridSize = 32;
-
-        final int size = 100000;
-
-        // Prepare : convert the arrays to Tornado Native off-heap arrays
         FloatArray timesArray = new FloatArray(size);
         FloatArray obsArray = new FloatArray(size);
 
         FloatArray resArray = new FloatArray(100000);
         resArray.init(0.0f);
 
-        // We need the worker & grid to be able to allocate shared memory on the device
         WorkerGrid worker = new WorkerGrid1D(gridSize);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
         worker.setLocalWork(gridSize, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("PeriodSearchTaskGraph");
+        TaskGraph taskGraph = new TaskGraph("foo");
 
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
                 .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
@@ -120,24 +112,18 @@ public class Grids extends TornadoTestBase {
 
     @Test(expected = TornadoRuntimeException.class)
     public void testWithIncorrectGraphAndTaskName() {
-        final int gridSize = 32;
-
-        final int size = 100000;
-
-        // Prepare : convert the arrays to Tornado Native off-heap arrays
         FloatArray timesArray = new FloatArray(size);
         FloatArray obsArray = new FloatArray(size);
 
         FloatArray resArray = new FloatArray(100000);
         resArray.init(0.0f);
 
-        // We need the worker & grid to be able to allocate shared memory on the device
         WorkerGrid worker = new WorkerGrid1D(gridSize);
         GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
         KernelContext context = new KernelContext();
         worker.setLocalWork(gridSize, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("PeriodSearchTaskGraph");
+        TaskGraph taskGraph = new TaskGraph("t0");
 
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
                 .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
