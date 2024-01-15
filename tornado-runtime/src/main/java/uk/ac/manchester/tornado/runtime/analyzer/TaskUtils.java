@@ -307,28 +307,21 @@ public class TaskUtils {
 
     }
 
-    public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage prebuiltTaskPackage) {
-        DomainTree domain = buildDomainTree(prebuiltTaskPackage.getDimensions());
+    public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage taskPackage) {
+        DomainTree domain = buildDomainTree(taskPackage.getDimensions());
         PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
-                prebuiltTaskPackage.getId(), //
-                prebuiltTaskPackage.getEntryPoint(), //
-                prebuiltTaskPackage.getFilename(), //
-                prebuiltTaskPackage.getArgs(),  //
-                prebuiltTaskPackage.getAccesses(), //
-                prebuiltTaskPackage.getDevice(), //
+                taskPackage.getId(), //
+                taskPackage.getEntryPoint(), //
+                taskPackage.getFilename(), //
+                taskPackage.getArgs(),  //
+                taskPackage.getAccesses(), //
+                taskPackage.getDevice(), //
                 domain);
-        if (prebuiltTaskPackage.getAtomics() != null) {
-            prebuiltTask.withAtomics(prebuiltTaskPackage.getAtomics());
+        if (taskPackage.getAtomics() != null) {
+            prebuiltTask.withAtomics(taskPackage.getAtomics());
         }
         return prebuiltTask;
     }
-
-    //    public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage prebuiltTaskPackage) {
-    //        DomainTree domain = buildDomainTree(prebuiltTaskPackage.getDimensions());
-    //        PrebuiltTask prebuiltTask = new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain);
-    //        prebuiltTask.withAtomics(atomics);
-    //        return prebuiltTask;
-    //    }
 
     private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
