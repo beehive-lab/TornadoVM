@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
@@ -630,7 +631,8 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         checkTaskName(id);
-        taskGraphImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        TaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        taskGraphImpl.addPrebuiltTask(prebuiltTask);
         return this;
     }
 
@@ -659,7 +661,9 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
         checkTaskName(id);
-        taskGraphImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions, atomics);
+        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        prebuiltTask.withAtomics(atomics);
+        taskGraphImpl.addPrebuiltTask(prebuiltTask);
         return this;
     }
 

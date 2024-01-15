@@ -38,8 +38,7 @@ import org.graalvm.compiler.bytecode.Bytecodes;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
@@ -299,23 +298,37 @@ public class TaskUtils {
         return cvs;
     }
 
-    public static PrebuiltTask createTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dims) {
+    private static DomainTree buildDomainTree(int[] dims) {
         final DomainTree domain = new DomainTree(dims.length);
         for (int i = 0; i < dims.length; i++) {
             domain.set(i, new IntDomain(0, 1, dims[i]));
         }
+        return domain;
 
-        return new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain);
     }
 
-    public static PrebuiltTask createTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dims, int[] atomics) {
-        final DomainTree domain = new DomainTree(dims.length);
-        for (int i = 0; i < dims.length; i++) {
-            domain.set(i, new IntDomain(0, 1, dims[i]));
+    public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage prebuiltTaskPackage) {
+        DomainTree domain = buildDomainTree(prebuiltTaskPackage.getDimensions());
+        PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
+                prebuiltTaskPackage.getId(), //
+                prebuiltTaskPackage.getEntryPoint(), //
+                prebuiltTaskPackage.getFilename(), //
+                prebuiltTaskPackage.getArgs(),  //
+                prebuiltTaskPackage.getAccesses(), //
+                prebuiltTaskPackage.getDevice(), //
+                domain);
+        if (prebuiltTaskPackage.getAtomics() != null) {
+            prebuiltTask.withAtomics(prebuiltTaskPackage.getAtomics());
         }
-
-        return new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain, atomics);
+        return prebuiltTask;
     }
+
+    //    public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage prebuiltTaskPackage) {
+    //        DomainTree domain = buildDomainTree(prebuiltTaskPackage.getDimensions());
+    //        PrebuiltTask prebuiltTask = new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain);
+    //        prebuiltTask.withAtomics(atomics);
+    //        return prebuiltTask;
+    //    }
 
     private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
