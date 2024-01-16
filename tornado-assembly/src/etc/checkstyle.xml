@@ -19,6 +19,11 @@
         <property name="offCommentFormat" value="CHECKSTYLE.OFF"/>
         <property name="onCommentFormat" value="CHECKSTYLE.ON"/>
     </module>
+    <property name="haltOnException" value="false"/>
+    <!-- This a temporary workaround until they add proper support for String Templates-->
+    <module name="SuppressionSingleFilter">
+        <property name="message" value=".*IllegalStateException occurred while parsing file.*"/>
+    </module>
     <module name="TreeWalker">
         <module name="AvoidStarImport">
             <property name="allowClassImports" value="false"/>
