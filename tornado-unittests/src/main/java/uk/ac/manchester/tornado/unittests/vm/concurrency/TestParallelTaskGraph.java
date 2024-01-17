@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -50,33 +51,34 @@ public class TestParallelTaskGraph extends TornadoTestBase {
 
     final int SIZE = 1024;
 
-    public static void init(float[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = i;
+    public static void init(FloatArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, i);
         }
     }
 
-    public static void multiply(float[] a, float alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (a[i] * i) + alpha;
+    public static void multiply(FloatArray a, float alpha) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            float temp = (a.get(i) * i) + alpha;
+            a.set(i, temp);
         }
     }
 
     @Test
     public void testTwoDevicesSerial() {
 
-        float[] a = new float[SIZE];
-        float[] b = new float[SIZE];
-        float[] refB = new float[SIZE];
-        float[] refA = new float[SIZE];
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray refB = new FloatArray(SIZE);
+        FloatArray refA = new FloatArray(SIZE);
         float alpha = 0.12f;
 
         Random r = new Random(31);
         IntStream.range(0, SIZE).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-            refA[i] = a[i];
-            refB[i] = b[i];
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
+            refA.set(i, a.get(i));
+            refB.set(i, b.get(i));
         });
 
         TaskGraph taskGraph = new TaskGraph("graph") //
@@ -104,9 +106,9 @@ public class TestParallelTaskGraph extends TornadoTestBase {
 
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i, a[i], DELTA);
-            assertEquals((refB[i] * i) + alpha, b[i], DELTA);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i, a.get(i), DELTA);
+            assertEquals((refB.get(i) * i) + alpha, b.get(i), DELTA);
         }
 
     }
@@ -114,18 +116,18 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesSerial2() {
 
-        float[] a = new float[SIZE];
-        float[] b = new float[SIZE];
-        float[] refB = new float[SIZE];
-        float[] refA = new float[SIZE];
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray refB = new FloatArray(SIZE);
+        FloatArray refA = new FloatArray(SIZE);
         float alpha = 0.12f;
 
         Random r = new Random(31);
         IntStream.range(0, SIZE).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-            refA[i] = a[i];
-            refB[i] = b[i];
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
+            refA.set(i, a.get(i));
+            refB.set(i, b.get(i));
         });
 
         TaskGraph taskGraph = new TaskGraph("graph") //
@@ -143,27 +145,27 @@ public class TestParallelTaskGraph extends TornadoTestBase {
 
         executionPlan.withDevice(device).execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i, a[i], DELTA);
-            assertEquals((refB[i] * i) + alpha, b[i], DELTA);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i, a.get(i), DELTA);
+            assertEquals((refB.get(i) * i) + alpha, b.get(i), DELTA);
         }
     }
 
     @Test
     public void testTwoDevicesSerial3() {
 
-        float[] a = new float[SIZE];
-        float[] b = new float[SIZE];
-        float[] refB = new float[SIZE];
-        float[] refA = new float[SIZE];
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray refB = new FloatArray(SIZE);
+        FloatArray refA = new FloatArray(SIZE);
         float alpha = 0.12f;
 
         Random r = new Random(31);
         IntStream.range(0, SIZE).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-            refA[i] = a[i];
-            refB[i] = b[i];
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
+            refA.set(i, a.get(i));
+            refB.set(i, b.get(i));
         });
 
         TaskGraph taskGraph = new TaskGraph("graph") //
@@ -198,9 +200,9 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         multiply(refB, alpha);
         multiply(refB, alpha);
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i, a[i], DELTA);
-            assertEquals(refB[i], b[i], DELTA_05);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i, a.get(i), DELTA);
+            assertEquals(refB.get(i), b.get(i), DELTA_05);
         }
 
     }
@@ -208,18 +210,18 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesSerial4() {
 
-        float[] a = new float[SIZE];
-        float[] b = new float[SIZE];
-        float[] refB = new float[SIZE];
-        float[] refA = new float[SIZE];
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray refB = new FloatArray(SIZE);
+        FloatArray refA = new FloatArray(SIZE);
         float alpha = 0.12f;
 
         Random r = new Random(31);
         IntStream.range(0, SIZE).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-            refA[i] = a[i];
-            refB[i] = b[i];
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
+            refA.set(i, a.get(i));
+            refB.set(i, b.get(i));
         });
 
         TaskGraph taskGraph = new TaskGraph("graph") //
@@ -253,9 +255,9 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         multiply(refB, alpha);
         multiply(refB, alpha);
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i, a[i], DELTA);
-            assertEquals(refB[i], b[i], DELTA_05);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i, a.get(i), DELTA);
+            assertEquals(refB.get(i), b.get(i), DELTA_05);
         }
 
     }
@@ -263,21 +265,19 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesConcurrent() {
 
-        final int SIZE = 1024;
-        float[] a = new float[SIZE];
-        float[] b = new float[SIZE];
-        float[] refB = new float[SIZE];
-        float[] refA = new float[SIZE];
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray refB = new FloatArray(SIZE);
+        FloatArray refA = new FloatArray(SIZE);
         float alpha = 0.12f;
 
         Random r = new Random(31);
         IntStream.range(0, SIZE).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-            refA[i] = a[i];
-            refB[i] = b[i];
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
+            refA.set(i, a.get(i));
+            refB.set(i, b.get(i));
         });
-
         TaskGraph taskGraph = new TaskGraph("graph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("task0", TestParallelTaskGraph::init, a) //
@@ -304,27 +304,27 @@ public class TestParallelTaskGraph extends TornadoTestBase {
 
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i, a[i], DELTA);
-            assertEquals((refB[i] * i) + alpha, b[i], DELTA);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i, a.get(i), DELTA);
+            assertEquals((refB.get(i) * i) + alpha, b.get(i), DELTA);
         }
     }
 
     @Test
     public void testTwoDevicesConcurrentOnAndOff() {
 
-        float[] a = new float[SIZE];
-        float[] b = new float[SIZE];
-        float[] refB = new float[SIZE];
-        float[] refA = new float[SIZE];
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray refB = new FloatArray(SIZE);
+        FloatArray refA = new FloatArray(SIZE);
         float alpha = 0.12f;
 
         Random r = new Random(31);
         IntStream.range(0, SIZE).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-            refA[i] = a[i];
-            refB[i] = b[i];
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
+            refA.set(i, a.get(i));
+            refB.set(i, b.get(i));
         });
 
         TaskGraph taskGraph = new TaskGraph("graph") //
@@ -361,9 +361,9 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         multiply(refB, alpha);
         multiply(refB, alpha);
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i, a[i], DELTA);
-            assertEquals(refB[i], b[i], DELTA_05);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(i, a.get(i), DELTA);
+            assertEquals(refB.get(i), b.get(i), DELTA_05);
         }
     }
 }
