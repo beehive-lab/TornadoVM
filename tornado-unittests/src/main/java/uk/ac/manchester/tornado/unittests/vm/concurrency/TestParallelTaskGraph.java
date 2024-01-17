@@ -102,7 +102,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         // Extension for multi-device: This will run one task after the other
         // (sequentially)
         executionPlan.withDevice("graph.task0", device0) //
-                .withDevice("graph.task1", device1);
+                .withDevice("graph.task1", device1); //
 
         executionPlan.execute();
 
@@ -114,45 +114,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     }
 
     @Test
-    public void testTwoDevicesSerial2() {
-
-        FloatArray a = new FloatArray(SIZE);
-        FloatArray b = new FloatArray(SIZE);
-        FloatArray refB = new FloatArray(SIZE);
-        FloatArray refA = new FloatArray(SIZE);
-        float alpha = 0.12f;
-
-        Random r = new Random(31);
-        IntStream.range(0, SIZE).forEach(i -> {
-            a.set(i, r.nextFloat());
-            b.set(i, r.nextFloat());
-            refA.set(i, a.get(i));
-            refB.set(i, b.get(i));
-        });
-
-        TaskGraph taskGraph = new TaskGraph("graph") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("task0", TestParallelTaskGraph::init, a) //
-                .task("task1", TestParallelTaskGraph::multiply, b, alpha) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(1);
-
-        executionPlan.execute();
-
-        executionPlan.withDevice(device).execute();
-
-        for (int i = 0; i < a.getSize(); i++) {
-            assertEquals(i, a.get(i), DELTA);
-            assertEquals((refB.get(i) * i) + alpha, b.get(i), DELTA);
-        }
-    }
-
-    @Test
-    public void testTwoDevicesSerial3() {
+    public void testTwoDevicesSerial1() {
 
         FloatArray a = new FloatArray(SIZE);
         FloatArray b = new FloatArray(SIZE);
@@ -197,6 +159,8 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         executionPlan.withDevice("graph.task0", device2) //
                 .withDevice("graph.task1", device2);
 
+        executionPlan.execute();
+
         multiply(refB, alpha);
         multiply(refB, alpha);
 
@@ -208,7 +172,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     }
 
     @Test
-    public void testTwoDevicesSerial4() {
+    public void testTwoDevicesSerial2() {
 
         FloatArray a = new FloatArray(SIZE);
         FloatArray b = new FloatArray(SIZE);
@@ -225,7 +189,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("graph") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("task0", TestParallelTaskGraph::init, a) //
                 .task("task1", TestParallelTaskGraph::multiply, b, alpha) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
@@ -235,8 +199,8 @@ public class TestParallelTaskGraph extends TornadoTestBase {
 
         // Assume that the first drivers finds, at least two devices
         int deviceCount = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-        if (deviceCount < 3) {
-            throw new UnsupportedConfigurationException("Test requires at least three devices");
+        if (deviceCount < 2) {
+            throw new UnsupportedConfigurationException("Test requires at least two devices");
         }
 
         TornadoDevice device0 = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
@@ -252,6 +216,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         executionPlan.withDevice("graph.task0", device1) //
                 .withDevice("graph.task1", device0);
 
+        executionPlan.execute();
         multiply(refB, alpha);
         multiply(refB, alpha);
 
