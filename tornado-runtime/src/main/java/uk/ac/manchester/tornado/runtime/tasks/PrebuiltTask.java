@@ -68,9 +68,9 @@ public class PrebuiltTask implements SchedulableTask {
 
     }
 
-    public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain, int[] atomics) {
-        this(scheduleMeta, id, entryPoint, filename, args, access, device, domain);
+    public PrebuiltTask withAtomics(int[] atomics) {
         this.atomics = atomics;
+        return this;
     }
 
     @Override
@@ -115,7 +115,7 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public String getFullName() {
-        return "task - " + meta.getId() + "[" + entryPoint + "]";
+        return STR."task - \{meta.getId()}[\{entryPoint}]";
     }
 
     @Override
@@ -143,11 +143,9 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof CompilableTask) {
-            CompilableTask other = (CompilableTask) obj;
+        if (obj instanceof CompilableTask other) {
             return getId().equals(other.getId());
         }
-
         return false;
     }
 

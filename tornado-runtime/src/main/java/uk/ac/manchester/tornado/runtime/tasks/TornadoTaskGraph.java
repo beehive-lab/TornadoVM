@@ -60,8 +60,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -366,43 +366,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
         argumentsLookUp.remove(oldRef);
         argumentsLookUp.add(newRef);
-    }
-
-    @Override
-    public void replaceParameter(Object oldParameter, Object newParameter) {
-        // 1. Update from the streamIn list of objects
-        updateReference(oldParameter, newParameter, streamInObjects);
-
-        // 2. Update from the stream out list of objects
-        updateReference(oldParameter, newParameter, streamOutObjects);
-
-        // 3. Update from graphContext and replace the object state.
-        // Otherwise, if the object is copied in (via COPY_IN), we might think the
-        // object is already on the device heap.
-        executionContext.replaceObjectState(oldParameter, newParameter);
-
-        // 4. Update the global states array in the vm.
-        if (vm != null) {
-            vm.fetchGlobalStates();
-        }
-
-        // 5. Set the update data flag to true in order to create a new call wrapper
-        // on the device.
-        updateData = true;
-
-        // 6. Update task-parameters
-        // Force to recompile the task-sketcher
-        for (TaskPackage tp : taskPackages) {
-            Object[] params = tp.getTaskParameters();
-            for (int k = 1; k < params.length; k++) {
-                if (params[k].equals(oldParameter)) {
-                    params[k] = newParameter;
-                }
-            }
-        }
-        if (this.gridScheduler == null) {
-            triggerRecompile();
-        }
     }
 
     @Override
@@ -1343,7 +1306,29 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public TornadoTaskGraphInterface schedule(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
+        // check schedule names
+        checkGridSchedulerNames();
+        // Schedule the task-graph
         return schedule();
+    }
+
+    private boolean isTaskNamePresent(String taskName) {
+        for (TaskPackage taskPackage : taskPackages) {
+            if (taskName.equals(STR."\{taskGraphName}.\{taskPackage.getId()}")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void checkGridSchedulerNames() {
+        Set<String> gridTaskNames = gridScheduler.keySet();
+        for (String gridName : gridTaskNames) {
+            if (!isTaskNamePresent(gridName)) {
+                throw new TornadoRuntimeException(STR."[ERROR] Grid scheduler with name \{gridName} not found in the Task-Graph");
+            }
+        }
+
     }
 
     @SuppressWarnings("unchecked")
@@ -2147,18 +2132,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
-        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
-    }
-
-    @Override
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
-        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions, atomics));
-    }
-
-    @Override
-    public void addScalaTask(String id, Object function, Object[] args) {
-        addInner(TaskUtils.scalaTask(id, function, args));
+    public void addPrebuiltTask(TaskPackage taskPackage) {
+        taskPackages.add(taskPackage);
+        PrebuiltTaskPackage prebuiltTaskPackage = (PrebuiltTaskPackage) taskPackage;
+        addInner(TaskUtils.createTask(meta(), prebuiltTaskPackage));
     }
 
     @Override
