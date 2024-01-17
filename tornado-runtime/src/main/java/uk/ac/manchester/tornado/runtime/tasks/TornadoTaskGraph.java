@@ -513,8 +513,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         TornadoDevice oldDevice = meta().getLogicDevice();
 
-        // meta().setDevice(device);
-
         // Make sure that a sketch is available for the device.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
