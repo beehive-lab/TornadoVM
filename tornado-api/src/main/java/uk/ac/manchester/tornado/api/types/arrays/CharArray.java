@@ -44,7 +44,9 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Constructs a new instance of the {@code CharArray} that will store a user-specified number of elements.
-     * @param numberOfElements The number of elements in the array.
+     *
+     * @param numberOfElements
+     *     The number of elements in the array.
      */
     public CharArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
@@ -64,9 +66,16 @@ public final class CharArray extends TornadoNativeArray {
         init('\u0000');
     }
 
+    @Override
+    public int getElementSize() {
+        return CHAR_BYTES;
+    }
+
     /**
      * Internal method used to create a new instance of the {@code CharArray} from on-heap data.
-     * @param values The on-heap char array to create the instance from.
+     *
+     * @param values
+     *     The on-heap char array to create the instance from.
      * @return A new {@code CharArray} instance, initialized with values of the on-heap char array.
      */
     private static CharArray createSegment(char[] values) {
@@ -79,7 +88,9 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code CharArray} class from an on-heap char array.
-     * @param values The on-heap char array to create the instance from.
+     *
+     * @param values
+     *     The on-heap char array to create the instance from.
      * @return A new {@code CharArray} instance, initialized with values of the on-heap char array.
      */
     public static CharArray fromArray(char[] values) {
@@ -88,7 +99,9 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code CharArray} class from a set of char values.
-     * @param values The char values to initialize the array with.
+     *
+     * @param values
+     *     The char values to initialize the array with.
      * @return A new {@code CharArray} instance, initialized with the given values.
      */
     public static CharArray fromElements(char... values) {
@@ -97,7 +110,9 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code CharArray} class from a {@link MemorySegment}.
-     * @param segment The {@link MemorySegment} containing the off-heap char data.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing the off-heap char data.
      * @return A new {@code CharArray} instance, initialized with the segment data.
      */
     public static CharArray fromSegment(MemorySegment segment) {
@@ -111,6 +126,7 @@ public final class CharArray extends TornadoNativeArray {
     /**
      * Converts the char data from off-heap to on-heap, by copying the values of a {@code CharArray}
      * instance into a new on-heap array.
+     *
      * @return A new on-heap char array, initialized with the values stored in the {@code CharArray} instance.
      */
     public char[] toHeapArray() {
@@ -123,8 +139,11 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Sets the char value at a specified index of the {@code CharArray} instance.
-     * @param index The index at which to set the char value.
-     * @param value The char value to store at the specified index.
+     *
+     * @param index
+     *     The index at which to set the char value.
+     * @param value
+     *     The char value to store at the specified index.
      */
     public void set(int index, char value) {
         segment.setAtIndex(JAVA_CHAR, baseIndex + index, value);
@@ -132,7 +151,9 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Gets the char value stored at the specified index of the {@code CharArray} instance.
-     * @param index The index of which to retrieve the char value.
+     *
+     * @param index
+     *     The index of which to retrieve the char value.
      * @return
      */
     public char get(int index) {
@@ -141,7 +162,9 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Initializes all the elements of the {@code CharArray} instance with a specified value.
-     * @param value The char value to initialize the {@code ByteArray} instance with.
+     *
+     * @param value
+     *     The char value to initialize the {@code ByteArray} instance with.
      */
     public void init(char value) {
         for (int i = 0; i < getSize(); i++) {
@@ -151,6 +174,7 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Returns the number of char elements stored in the {@code CharArray} instance.
+     *
      * @return
      */
     @Override
@@ -160,6 +184,7 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Returns the underlying {@link MemorySegment} of the {@code CharArray} instance.
+     *
      * @return The {@link MemorySegment} associated with the {@code CharArray} instance.
      */
     @Override
@@ -169,6 +194,7 @@ public final class CharArray extends TornadoNativeArray {
 
     /**
      * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code CharArray} instance, occupies.
+     *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
@@ -179,6 +205,7 @@ public final class CharArray extends TornadoNativeArray {
     /**
      * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code CharArray} instance,
      * excluding the header bytes.
+     *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override

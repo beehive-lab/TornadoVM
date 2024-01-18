@@ -90,11 +90,11 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void read(Object reference) {
-        read(reference, 0, null, false);
+        read(reference, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         T array = cast(reference);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");

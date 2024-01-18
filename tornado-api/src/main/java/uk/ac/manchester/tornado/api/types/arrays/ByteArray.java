@@ -45,7 +45,9 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Constructs a new instance of the {@code ByteArray} that will store a user-specified number of elements.
-     * @param numberOfElements The number of elements in the array.
+     *
+     * @param numberOfElements
+     *     The number of elements in the array.
      */
     public ByteArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
@@ -60,7 +62,9 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Internal method used to create a new instance of the {@code ByteArray} from on-heap data.
-     * @param values The on-heap byte array to create the instance from.
+     *
+     * @param values
+     *     The on-heap byte array to create the instance from.
      * @return A new {@code ByteArray} instance, initialized with values of the on-heap byte array.
      */
     private static ByteArray createSegment(byte[] values) {
@@ -73,7 +77,9 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code ByteArray} class from an on-heap byte array.
-     * @param values The on-heap byte array to create the instance from.
+     *
+     * @param values
+     *     The on-heap byte array to create the instance from.
      * @return A new {@code ByteArray} instance, initialized with values of the on-heap byte array.
      */
     public static ByteArray fromArray(byte[] values) {
@@ -82,7 +88,9 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code ByteArray} class from a set of byte values.
-     * @param values The byte values to initialize the array with.
+     *
+     * @param values
+     *     The byte values to initialize the array with.
      * @return A new {@code ByteArray} instance, initialized with the given values.
      */
     public static ByteArray fromElements(byte... values) {
@@ -91,7 +99,9 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code ByteArray} class from a {@link MemorySegment}.
-     * @param segment The {@link MemorySegment} containing the off-heap byte data.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing the off-heap byte data.
      * @return A new {@code ByteArray} instance, initialized with the segment data.
      */
     public static ByteArray fromSegment(MemorySegment segment) {
@@ -105,6 +115,7 @@ public final class ByteArray extends TornadoNativeArray {
     /**
      * Converts the byte data from off-heap to on-heap, by copying the values of a {@code ByteArray}
      * instance into a new on-heap array.
+     *
      * @return A new on-heap byte array, initialized with the values stored in the {@code ByteArray} instance.
      */
     public byte[] toHeapArray() {
@@ -117,8 +128,11 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Sets the byte value at a specified index of the {@code ByteArray} instance.
-     * @param index The index at which to set the byte value.
-     * @param value The byte value to store at the specified index.
+     *
+     * @param index
+     *     The index at which to set the byte value.
+     * @param value
+     *     The byte value to store at the specified index.
      */
     public void set(int index, byte value) {
         segment.setAtIndex(JAVA_BYTE, baseIndex + index, value);
@@ -126,8 +140,10 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Gets the byte value stored at the specified index of the {@code ByteArray} instance.
-     * @param index The index of which to retrieve the byte value.
-     * @return
+     *
+     * @param index
+     *     The index of which to retrieve the byte value.
+     * @return en element byte of the off-heap array
      */
     public byte get(int index) {
         return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
@@ -141,9 +157,16 @@ public final class ByteArray extends TornadoNativeArray {
         init((byte) 0);
     }
 
+    @Override
+    public int getElementSize() {
+        return BYTE_BYTES;
+    }
+
     /**
      * Initializes all the elements of the {@code ByteArray} instance with a specified value.
-     * @param value The byte value to initialize the {@code ByteArray} instance with.
+     *
+     * @param value
+     *     The byte value to initialize the {@code ByteArray} instance with.
      */
     public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
@@ -152,8 +175,8 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the number of byte elements stored in the {@code ByteArray} instance.
-     * @return
+     * @return Returns the number of byte elements stored in the {@code ByteArray} instance.
+     *
      */
     @Override
     public int getSize() {
@@ -162,6 +185,7 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Returns the underlying {@link MemorySegment} of the {@code ByteArray} instance.
+     *
      * @return The {@link MemorySegment} associated with the {@code ByteArray} instance.
      */
     @Override
@@ -171,6 +195,7 @@ public final class ByteArray extends TornadoNativeArray {
 
     /**
      * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code ByteArray} instance, occupies.
+     *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
@@ -181,6 +206,7 @@ public final class ByteArray extends TornadoNativeArray {
     /**
      * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code ByteArray} instance,
      * excluding the header bytes.
+     *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override

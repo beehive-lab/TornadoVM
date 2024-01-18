@@ -27,7 +27,7 @@ import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 
-import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAllocationStage;
 
 public class TornadoLIRSuites {
 

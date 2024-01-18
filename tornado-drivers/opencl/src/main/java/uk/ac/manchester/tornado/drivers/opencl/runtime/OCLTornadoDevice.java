@@ -630,6 +630,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
+        long partialCopySize = state.getPartialCopySize();
         if (state.isAtomicRegionPresent()) {
             int eventID = state.getObjectBuffer().enqueueRead(null, 0, null, false);
             if (object instanceof AtomicInteger) {
@@ -640,7 +641,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return eventID;
         } else {
             TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-            return state.getObjectBuffer().read(object, hostOffset, events, events == null);
+            return state.getObjectBuffer().read(object, hostOffset, partialCopySize, events, events == null);
         }
     }
 

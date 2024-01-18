@@ -25,8 +25,10 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
 
 public class TornadoSketchTierContext extends HighTierContext {
 

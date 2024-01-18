@@ -57,10 +57,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLVectorAssign;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
-public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
+public class VectorValueNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<VectorValueNode> TYPE = NodeClass.create(VectorValueNode.class);
     private final OCLKind kind;

@@ -103,7 +103,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public void read(final Object reference) {
-        read(reference, 0, null, false);
+        read(reference, 0, 0, null, false);
     }
 
     private MemorySegment getSegment(final Object reference) {
@@ -133,12 +133,15 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     }
 
     @Override
-    public int read(final Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
-        if (batchSize <= 0) {
+        if (partialReadSize != 0) {
+            // Partial Copy Out due to a copy under demand copy by the user
+            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
+        } else if (batchSize <= 0) {
             returnEvent = deviceContext.readBuffer(toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
             returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)

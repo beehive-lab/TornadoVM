@@ -143,6 +143,11 @@ public final class HalfFloatArray extends TornadoNativeArray {
         init(new HalfFloat(0.0f));
     }
 
+    @Override
+    public int getElementSize() {
+        return HALF_FLOAT_BYTES;
+    }
+
     /**
      * Initializes all the elements of the {@code HalfFloatArray} instance with a specified value.
      *

@@ -417,6 +417,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+        long partialSize = objectState.getPartialCopySize();
         if (objectState.isAtomicRegionPresent()) {
             int eventID = objectState.getObjectBuffer().enqueueRead(null, 0, null, false);
             if (object instanceof AtomicInteger) {
@@ -425,9 +426,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             return eventID;
         } else {
             TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-            int event = objectState.getObjectBuffer().read(object, hostOffset, events, events == null);
-            // We force a blocking copy -> we need to close the command list and command
-            // queue
+            int event = objectState.getObjectBuffer().read(object, hostOffset, partialSize, events, events == null);
+            // We force a blocking copy -> we need to close the command list and command queue
             flush();
             return event;
         }
@@ -589,6 +589,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      * Move Data from the device region that corresponds to buffer A into buffer B.
      */
     public void moveDataFromDeviceBufferToHost(DeviceObjectState objectStateA, Object b) {
-        objectStateA.getObjectBuffer().read(b, 0, null, false);
+        objectStateA.getObjectBuffer().read(b, 0, 0, null, false);
     }
 }

@@ -58,15 +58,16 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 
 /**
  * Code analysis class for reductions in TornadoVM.
@@ -389,6 +390,11 @@ public class ReduceCodeAnalysis {
         HashMap<Integer, MetaReduceTasks> tableMetaDataReduce = new HashMap<>();
 
         for (TaskPackage taskMetadata : taskPackages) {
+
+            if (taskMetadata instanceof PrebuiltTaskPackage) {
+                // We skip analysis of pre-built tasks
+                continue;
+            }
 
             Object taskCode = taskMetadata.getTaskParameters()[0];
             StructuredGraph graph = CodeAnalysis.buildHighLevelGraalGraph(taskCode);

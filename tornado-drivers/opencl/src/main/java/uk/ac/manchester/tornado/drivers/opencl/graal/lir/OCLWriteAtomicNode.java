@@ -47,8 +47,8 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
+import uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder;
 
 /**
  * Writes a given {@linkplain #value() value} a {@linkplain FixedAccessNode
@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 @NodeInfo(nameTemplate = "OCLAtomicWrite#{p#location/s}")
 public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerableAccess {
 
+    public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
     @Input(InputType.Association)
     private AddressNode address;
     @Input
@@ -64,24 +65,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     private Stamp accStamp;
     private JavaKind elementKind;
     private ATOMIC_OPERATION operation;
-
-    @Override
-    public MemoryOrderMode getMemoryOrder() {
-        return null;
-    }
-
-    //@formatter:off
-    public enum ATOMIC_OPERATION {
-        ADD,
-        MUL,
-        MAX,
-        MIN,
-        SUB,
-        CUSTOM;
-    }
-    //@formatter:on
-
-    public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
 
     public OCLWriteAtomicNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, ValueNode acc, Stamp accStamp, JavaKind elementKind,
             ATOMIC_OPERATION operation) {
@@ -93,10 +76,20 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         this.elementKind = elementKind;
         this.operation = operation;
     }
+    //@formatter:on
 
     protected OCLWriteAtomicNode(NodeClass<? extends OCLWriteAtomicNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType) {
         super(c, address, location, value, barrierType);
         this.address = address;
+    }
+
+    public static void store() {
+
+    }
+
+    @Override
+    public MemoryOrderMode getMemoryOrder() {
+        return null;
     }
 
     @Override
@@ -105,18 +98,11 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     }
 
     public OCLStamp getStampInt() {
-        OCLStamp oclStamp = null;
-        switch (operation) {
-            case ADD:
-                oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
-                break;
-            case MUL:
-                oclStamp = new OCLStamp(OCLKind.ATOMIC_MUL_INT);
-                break;
-            default:
-                throw new RuntimeException("Operation for reduction not supported yet: " + operation);
-        }
-        return oclStamp;
+        return switch (operation) {
+            case ADD -> new OCLStamp(OCLKind.ATOMIC_ADD_INT);
+            case MUL -> new OCLStamp(OCLKind.ATOMIC_MUL_INT);
+            default -> throw new RuntimeException(STR."Operation for reduction not supported yet: \{operation}");
+        };
     }
 
     public OCLStamp getStampFloat() {
@@ -126,34 +112,23 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_FLOAT);
                 break;
             default:
-                throw new RuntimeException("Operation for reduction not supported yet: " + operation);
+                throw new RuntimeException(STR."Operation for reduction not supported yet: \{operation}");
         }
         return oclStamp;
-    }
-
-    public static void store() {
-
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
 
         // New OpenCL nodes for atomic add
-        OCLStamp oclStamp = null;
-        switch (elementKind) {
-            case Int:
-                oclStamp = getStampInt();
-                break;
-            case Long:
+        OCLStamp oclStamp = switch (elementKind) {
+            case Int -> getStampInt();
+            case Long ->
                 // DUE TO UNSUPPORTED FEATURE IN INTEL OpenCL PLATFORM
-                oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
-                break;
-            case Float:
-                oclStamp = getStampFloat();
-                break;
-            default:
-                throw new RuntimeException("Data type for reduction not supported yet: " + elementKind);
-        }
+                new OCLStamp(OCLKind.ATOMIC_ADD_INT);
+            case Float -> getStampFloat();
+            default -> throw new RuntimeException(STR."Data type for reduction not supported yet: \{elementKind}");
+        };
 
         LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(oclStamp);
         LIRKind accKind = gen.getLIRGeneratorTool().getLIRKind(accStamp);
@@ -181,4 +156,15 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         unimplemented();
         return null;
     }
+
+    //@formatter:off
+    public enum ATOMIC_OPERATION {
+        ADD,
+        MUL,
+        MAX,
+        MIN,
+        SUB,
+        CUSTOM;
+    }
+    //@formatter:on
 }

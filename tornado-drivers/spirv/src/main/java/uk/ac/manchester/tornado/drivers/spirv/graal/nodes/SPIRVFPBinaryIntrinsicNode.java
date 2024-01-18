@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,42 +44,14 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
-    // @formatter:off
-    public enum SPIRVOperation {
-        ATAN2,
-        ATAN2PI,
-        COPYSIGN,
-        FDIM,
-        FMA,
-        FMAX,
-        FMIN,
-        FMOD,
-        FRACT,
-        FREXP,
-        HYPOT,
-        LDEXP,
-        MAD,
-        MAXMAG,
-        MINMAG,
-        MODF,
-        NEXTAFTER,
-        POW,
-        POWN,
-        POWR,
-        REMAINDER,
-        REMQUO,
-        ROOTN,
-        SINCOS
-    }
-    // @formatter:on
-
-    protected final SPIRVOperation operation;
     public static final NodeClass<SPIRVFPBinaryIntrinsicNode> TYPE = NodeClass.create(SPIRVFPBinaryIntrinsicNode.class);
+    // @formatter:on
+    protected final SPIRVOperation operation;
 
     protected SPIRVFPBinaryIntrinsicNode(ValueNode x, ValueNode y, SPIRVOperation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
@@ -94,42 +66,23 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
         return new SPIRVFPBinaryIntrinsicNode(x, y, op, kind);
     }
 
-    @Override
-    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp(NodeView.DEFAULT);
-    }
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool) {
-        return canonical(tool, getX(), getY());
-    }
-
     private static double doCompute(double x, double y, SPIRVOperation op) {
-        switch (op) {
-            case ATAN2:
-                return Math.atan2(x, y);
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            case POW:
-                return Math.pow(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ATAN2 -> Math.atan2(x, y);
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            case POW -> Math.pow(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     private static float doCompute(float x, float y, SPIRVOperation op) {
-        switch (op) {
-            case ATAN2:
-                return (float) Math.atan2(x, y);
-            case FMIN:
-                return Math.min(x, y);
-            case FMAX:
-                return Math.max(x, y);
-            default:
-                throw new TornadoInternalError("unknown op %s", op);
-        }
+        return switch (op) {
+            case ATAN2 -> (float) Math.atan2(x, y);
+            case FMIN -> Math.min(x, y);
+            case FMAX -> Math.max(x, y);
+            default -> throw new TornadoInternalError("unknown op %s", op);
+        };
     }
 
     protected static ValueNode tryConstantFold(ValueNode x, ValueNode y, SPIRVOperation op, JavaKind kind) {
@@ -145,6 +98,16 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
             }
         }
         return result;
+    }
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
     }
 
     @Override
@@ -177,26 +140,45 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
 
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
-        Value result;
-        switch (operation()) {
-            case ATAN2:
-                result = gen.genFloatATan2(x, y);
-                break;
-            case FMIN:
-                result = gen.genFloatMin(x, y);
-                break;
-            case FMAX:
-                result = gen.genFloatMax(x, y);
-                break;
-            case POW:
-                result = gen.genFloatPow(x, y);
-                break;
-            default:
-                throw new RuntimeException("Math operation not supported yet");
-        }
+        Value result = switch (operation()) {
+            case ATAN2 -> gen.genFloatATan2(x, y);
+            case FMIN -> gen.genFloatMin(x, y);
+            case FMAX -> gen.genFloatMax(x, y);
+            case POW -> gen.genFloatPow(x, y);
+            default -> throw new RuntimeException("Math operation not supported yet");
+        };
         Variable variable = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(variable, result));
         builder.setResult(this, variable);
     }
+
+    // @formatter:off
+    public enum SPIRVOperation {
+        ATAN2,
+        ATAN2PI,
+        COPYSIGN,
+        FDIM,
+        FMA,
+        FMAX,
+        FMIN,
+        FMOD,
+        FRACT,
+        FREXP,
+        HYPOT,
+        LDEXP,
+        MAD,
+        MAXMAG,
+        MINMAG,
+        MODF,
+        NEXTAFTER,
+        POW,
+        POWN,
+        POWR,
+        REMAINDER,
+        REMQUO,
+        ROOTN,
+        SINCOS
+    }
+    // @formatter:on
 
 }

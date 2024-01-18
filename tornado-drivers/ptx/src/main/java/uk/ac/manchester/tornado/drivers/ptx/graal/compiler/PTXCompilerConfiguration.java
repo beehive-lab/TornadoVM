@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
-import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAllocationStage;
 
 public class PTXCompilerConfiguration implements TornadoCompilerConfiguration {
 

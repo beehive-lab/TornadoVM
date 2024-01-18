@@ -74,4 +74,6 @@ public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, Do
      */
     protected abstract void clear();
 
+    public abstract int getElementSize();
+
 }

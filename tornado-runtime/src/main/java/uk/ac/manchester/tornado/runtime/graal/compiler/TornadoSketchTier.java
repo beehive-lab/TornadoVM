@@ -36,19 +36,19 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatFixedGuardElimination;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoKernelContextReplacement;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNativeTypeElimination;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNumericPromotionPhase;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPanamaPrivateMemory;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoApiReplacement;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoAutoParalleliser;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoFullInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatFixedGuardElimination;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoKernelContextReplacement;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoNativeTypeElimination;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoNumericPromotionPhase;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPanamaPrivateMemory;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPartialInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoReduceReplacement;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoStampResolver;
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 

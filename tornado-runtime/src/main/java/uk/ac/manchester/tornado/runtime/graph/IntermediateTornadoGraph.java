@@ -100,8 +100,8 @@ public class IntermediateTornadoGraph {
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
             if (input instanceof ContextOpNode) {
-                if (input instanceof DependentReadNode) {
-                    dependencies.set(((DependentReadNode) input).getDependent().getId());
+                if (input instanceof DependentReadNode dependentReadNode) {
+                    dependencies.set((dependentReadNode).getDependent().getId());
                 } else {
                     dependencies.set(input.getId());
                 }

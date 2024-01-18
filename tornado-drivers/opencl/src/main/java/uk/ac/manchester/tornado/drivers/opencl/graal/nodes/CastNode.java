@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkCastNode;
 
 @NodeInfo
 public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode {

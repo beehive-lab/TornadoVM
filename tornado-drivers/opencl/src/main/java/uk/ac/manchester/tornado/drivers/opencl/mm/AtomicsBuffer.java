@@ -66,7 +66,7 @@ public class AtomicsBuffer implements ObjectBuffer {
     }
 
     @Override
-    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         throw new TornadoRuntimeException("Not implemented");
     }
 

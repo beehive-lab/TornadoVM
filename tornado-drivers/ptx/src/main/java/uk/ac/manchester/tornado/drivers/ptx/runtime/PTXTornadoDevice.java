@@ -469,7 +469,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-        return objectState.getObjectBuffer().read(object, hostOffset, events, events != null);
+        return objectState.getObjectBuffer().read(object, hostOffset, objectState.getPartialCopySize(), events, events != null);
     }
 
     /**
