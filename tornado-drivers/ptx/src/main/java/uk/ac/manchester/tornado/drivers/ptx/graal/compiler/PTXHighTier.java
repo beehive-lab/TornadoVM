@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,7 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoHalfFloatReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoParallelScheduler;
@@ -85,6 +86,8 @@ public class PTXHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
 
         appendPhase(new TornadoNewArrayDevirtualizationReplacement());
+
+        appendPhase(new TornadoHalfFloatReplacement());
 
         if (PartialEscapeAnalysis.getValue(options)) {
             appendPhase(new PartialEscapePhase(true, canonicalizer, options));

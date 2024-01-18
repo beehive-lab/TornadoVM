@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -160,7 +160,7 @@ public class PTXAssembler extends Assembler {
      * generated format strings.
      *
      * @param input
-     *            The {@link Value} input to be converted.
+     *     The {@link Value} input to be converted.
      * @return The converted format string in the PTX backend format.
      */
     public static String convertValueFromGraalFormat(Value input) {
@@ -184,8 +184,8 @@ public class PTXAssembler extends Assembler {
             }
 
             // Find the PTXVariablePrefix corresponding to the input's platform type.
-            PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(input.getPlatformKind().name().toLowerCase())).findFirst()
-                    .orElseThrow(AssertionError::new);
+            PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(input.getPlatformKind().name().toLowerCase())).findFirst().orElseThrow(
+                    AssertionError::new);
 
             // Create the formatted index value.
             String indexValue = isArray ? arraylocalIndexes.get(ptxKind).toString() : String.valueOf(localIndexes.get(ptxKind));
@@ -621,6 +621,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp MUL_WIDE = new PTXBinaryOp("mul.wide");
         public static final PTXBinaryOp DIV = new PTXBinaryOp("div");
         public static final PTXBinaryOp DIV_FULL = new PTXBinaryOp("div.full", false);
+        public static final PTXBinaryOp DIV_APPROX = new PTXBinaryOp("div.approx", false);
         public static final PTXBinaryOp REM = new PTXBinaryOp("rem", false);
 
         public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
