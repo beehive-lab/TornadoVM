@@ -37,10 +37,11 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryIndexedAccess;
 
 @NodeInfo
 public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
@@ -61,10 +62,18 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
 
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
+
         Value addressValue = generator.operand(addressNode);
-        SPIRVArchitecture.SPIRVMemoryBase base = ((SPIRVUnary.MemoryAccess) (addressValue)).getMemoryRegion();
-        SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(addressValue, base, LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_16));
-        Value input = generator.operand(valueNode);
-        tool.append(new SPIRVLIRStmt.StoreStmt(cast, (SPIRVUnary.MemoryAccess) addressValue, input));
+        Value valueToStore = generator.operand(valueNode);
+
+        if (addressValue instanceof MemoryAccess memoryAccess) {
+            SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(memoryAccess.getValue(), memoryAccess.getMemoryRegion(), LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_16));
+            if (memoryAccess.getIndex() == null) {
+                tool.append(new SPIRVLIRStmt.StoreStmt(cast, memoryAccess, valueToStore));
+            }
+        } else if (addressValue instanceof MemoryIndexedAccess indexedAccess) {
+            tool.append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, valueToStore));
+        }
+
     }
 }

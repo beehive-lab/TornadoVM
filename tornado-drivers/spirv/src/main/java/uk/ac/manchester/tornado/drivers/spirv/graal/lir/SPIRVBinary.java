@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -227,8 +227,8 @@ public class SPIRVBinary {
 
             SPIRVId typeResultOperationId = asm.primitives.getTypePrimitive(resultKind);
 
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV,
-                    "emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation
+                    .getOpcode() + " " + y + "  Result Kind: " + resultKind);
 
             SPIRVId operationId = obtainPhiValueIdIfNeeded(asm);
 

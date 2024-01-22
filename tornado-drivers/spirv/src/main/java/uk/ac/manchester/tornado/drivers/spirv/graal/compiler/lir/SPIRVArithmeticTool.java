@@ -159,6 +159,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 break;
             case OP_TYPE_FLOAT_64:
             case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_16:
                 binaryOp = SPIRVBinaryOp.SUB_FLOAT;
                 break;
             default:
@@ -205,6 +206,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 break;
             case OP_TYPE_FLOAT_64:
             case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_16:
                 binaryOp = SPIRVBinaryOp.MULT_FLOAT;
                 break;
             default:
@@ -252,6 +254,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 break;
             case OP_TYPE_FLOAT_64:
             case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_16:
                 binaryOp = SPIRVBinaryOp.DIV_FLOAT;
                 break;
             default:

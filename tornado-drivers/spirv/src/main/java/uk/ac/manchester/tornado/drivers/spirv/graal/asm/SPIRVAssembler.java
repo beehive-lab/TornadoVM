@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -320,7 +320,7 @@ public final class SPIRVAssembler extends Assembler {
      * If we want to return the same names per module, just return the labelName.
      *
      * @param labelName
-     *            String
+     *     String
      * @return a new label name.
      */
     public String composeUniqueLabelName(String labelName) {
@@ -392,7 +392,7 @@ public final class SPIRVAssembler extends Assembler {
      * follows:
      *
      * <code>
-     *     Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>>
+     * Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>>
      * </code>
      *
      * If we have the same number of parameters with the same return type, when we
@@ -400,9 +400,9 @@ public final class SPIRVAssembler extends Assembler {
      * parameter (stored in the {@link FunctionTable ) class).
      *
      * @param returnType
-     *            ID with the return value.
+     *     ID with the return value.
      * @param operands
-     *            List of IDs for the operads.
+     *     List of IDs for the operads.
      * @return A {@link SPIRVId} for the {@link SPIRVOpFunction}
      */
     public SPIRVId emitOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
@@ -445,7 +445,7 @@ public final class SPIRVAssembler extends Assembler {
         return functionSignature;
     }
 
-    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean fp64Capability) {
+    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean fp64Capability, boolean fp16Capability) {
         mainFunctionID = module.getNextId();
 
         SPIRVMultipleOperands operands;
@@ -480,7 +480,7 @@ public final class SPIRVAssembler extends Assembler {
             operands = new SPIRVMultipleOperands(array);
         }
 
-        if (fp64Capability) {
+        if (fp64Capability && fp16Capability) {
             module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
         }
 
@@ -634,8 +634,8 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitValueOrOp(SPIRVCompilationResultBuilder crb, Value value) {
-        if (value instanceof SPIRVLIROp) {
-            ((SPIRVLIROp) value).emit(crb, this);
+        if (value instanceof SPIRVLIROp spirvValue) {
+            spirvValue.emit(crb, this);
         } else {
             emitValue(crb, value);
         }
