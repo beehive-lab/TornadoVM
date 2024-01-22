@@ -119,6 +119,11 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
+    public String getNormalizedName() {
+        return STR."\{meta.getId()}.\{entryPoint}";
+    }
+
+    @Override
     public String getTaskName() {
         return entryPoint;
     }

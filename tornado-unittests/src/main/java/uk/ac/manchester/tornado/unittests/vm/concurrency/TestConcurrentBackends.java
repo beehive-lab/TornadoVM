@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,9 +27,9 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices;
@@ -37,13 +37,17 @@ import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
 /**
  * Test running two and three tasks in serial and concurrent on two devices and
  * three devices on different backends if are available. You need to build with
- * multiple backends (e.g. make graal-jdk-11-plus BACKEND=opencl,ptx,spirv).
+ * multiple backends (e.g. make graal-jdk-21 BACKEND=opencl,ptx,spirv).
  *
- * How to test?
+ * <p>
+ * How to test?:
+ * </p>
  *
+ * <p>
  * <code>
- *     tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Ds0.t0.device=0:0 -Ds0.t1.device=1:0 -Ds0.t2.device=2:0 " uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
+ * tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Ds0.t0.device=0:0 -Ds0.t1.device=1:0 -Ds0.t2.device=2:0 " uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
  * </code>
+ * </p>
  */
 public class TestConcurrentBackends extends TornadoTestBase {
     private static final String[] DEVICES_FOR_TASKS = { "s0.t0.device", "s0.t1.device", "s0.t2.device" };

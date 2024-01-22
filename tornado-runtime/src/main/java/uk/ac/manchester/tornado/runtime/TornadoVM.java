@@ -100,16 +100,16 @@ public class TornadoVM extends TornadoLogger {
      *
      * @return An {@link Event} indicating the completion of execution.
      */
-    public Event execute() {
-        if (calculateNumberOfJavaThreads() != 1) {
-            return executeInterpreterThreadManager();
+    public Event execute(boolean isParallel) {
+        if (calculateNumberOfJavaThreads(isParallel) != 1) {
+            return executeInterpreterThreadManager(isParallel);
         } else {
             return executeSingleThreaded();
         }
     }
 
-    private int calculateNumberOfJavaThreads() {
-        return shouldRunConcurrently() ? executionContext.getValidContextSize() : 1;
+    private int calculateNumberOfJavaThreads(boolean isTaskGraphConcurrent) {
+        return shouldRunConcurrently(isTaskGraphConcurrent) ? executionContext.getValidContextSize() : 1;
     }
 
     private Event executeSingleThreaded() {
@@ -125,9 +125,9 @@ public class TornadoVM extends TornadoLogger {
      *
      * @return An {@link Event} indicating the completion of execution.
      */
-    private Event executeInterpreterThreadManager() {
+    private Event executeInterpreterThreadManager(boolean isParallel) {
         // Create a thread pool with a fixed number of threads
-        int numberOfJavaThreads = calculateNumberOfJavaThreads();
+        int numberOfJavaThreads = calculateNumberOfJavaThreads(isParallel);
         ExecutorService executor = Executors.newFixedThreadPool(numberOfJavaThreads);
 
         // Create a list to hold the futures of each execution
@@ -164,8 +164,8 @@ public class TornadoVM extends TornadoLogger {
         return new EmptyEvent();
     }
 
-    private boolean shouldRunConcurrently() {
-        return TornadoOptions.CONCURRENT_INTERPRETERS && (executionContext.getValidContextSize() > 1);
+    private boolean shouldRunConcurrently(boolean isTaskGraphConcurrent) {
+        return (isTaskGraphConcurrent || TornadoOptions.CONCURRENT_INTERPRETERS) && (executionContext.getValidContextSize() > 1);
     }
 
     public void executeActionOnInterpreters(Consumer<TornadoVMInterpreter> action) {

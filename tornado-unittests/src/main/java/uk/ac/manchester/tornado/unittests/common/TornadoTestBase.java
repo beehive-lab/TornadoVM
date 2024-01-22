@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,6 +29,10 @@ import uk.ac.manchester.tornado.unittests.tools.TornadoHelper;
 
 public abstract class TornadoTestBase {
 
+    public static final float DELTA = 0.001f;
+    public static final float DELTA_001 = 0.01f;
+    public static final float DELTA_01 = 0.1f;
+    public static final float DELTA_05 = 0.5f;
     protected static boolean wasDeviceInspected = false;
 
     public static TornadoRuntimeInterface getTornadoRuntime() {
@@ -84,12 +88,10 @@ public abstract class TornadoTestBase {
         int driverIndex = getTornadoRuntime().getDefaultDevice().getDriverIndex();
         if (getTornadoRuntime().getBackendType(driverIndex) == backend) {
             switch (backend) {
-                case PTX:
-                    throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
-                case OPENCL:
-                    throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
-                case SPIRV:
-                    throw new TornadoVMSPIRVNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the SPIR-V backend");
+                case PTX -> throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
+                case OPENCL -> throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
+                case SPIRV -> throw new TornadoVMSPIRVNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the SPIR-V backend");
+                default -> throw new IllegalStateException(STR."Unexpected value for backend: \{backend}");
             }
         }
     }
@@ -119,7 +121,7 @@ public abstract class TornadoTestBase {
      * @return {@link TornadoDevice} with SPIRV support, or null if not found.
      */
     protected TornadoDevice getSPIRVSupportedDevice() {
-        TornadoTestBase.Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
+        Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
 
         // Check if a specific device has been selected for testing
         if (driverAndDeviceIndex.f0() != 0) {
