@@ -656,7 +656,6 @@ public class TaskGraph implements TaskGraphInterface {
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraph}
-     *
      */
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
@@ -749,6 +748,16 @@ public class TaskGraph implements TaskGraphInterface {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
+    TaskGraph setDevice(TornadoDevice device) {
+        taskGraphImpl.setDevice(device);
+        return this;
+    }
+
+    TaskGraph setDevice(String taskName, TornadoDevice device) {
+        taskGraphImpl.setDevice(taskName, device);
+        return this;
+    }
+
     TaskGraph batch(String batchSize) {
         taskGraphImpl.batch(batchSize);
         return this;
@@ -805,11 +814,6 @@ public class TaskGraph implements TaskGraphInterface {
 
     TornadoDevice getDevice() {
         return taskGraphImpl.getDevice();
-    }
-
-    TaskGraph setDevice(TornadoDevice device) {
-        taskGraphImpl.setDevice(device);
-        return this;
     }
 
     TaskGraph useDefaultThreadScheduler(boolean use) {
@@ -882,5 +886,13 @@ public class TaskGraph implements TaskGraphInterface {
 
     void disableProfiler(ProfilerMode profilerMode) {
         taskGraphImpl.disableProfiler(profilerMode);
+    }
+
+    public void withConcurrentDevices() {
+        taskGraphImpl.withConcurrentDevices();
+    }
+
+    public void withoutConcurrentDevices() {
+        taskGraphImpl.withoutConcurrentDevices();
     }
 }

@@ -188,6 +188,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private ProfilerMode profilerMode;
 
+    private boolean cocurrentDevices;
+
     /**
      * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
      *
@@ -439,6 +441,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withConcurrentDevices() {
+        this.cocurrentDevices = true;
+    }
+
+    @Override
+    public void withoutConcurrentDevices() {
+        this.cocurrentDevices = false;
+    }
+
+    @Override
     public SchedulableTask getTask(String id) {
         return executionContext.getTask(id);
     }
@@ -494,6 +506,38 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             reuseDeviceBufferObject(localState, device);
         }
+    }
+
+    @Override
+    public void setDevice(String taskName, TornadoDevice device) {
+
+        TornadoDevice oldDevice = meta().getLogicDevice();
+
+        // Make sure that a sketch is available for the device.
+        for (int i = 0; i < executionContext.getTaskCount(); i++) {
+            SchedulableTask task = executionContext.getTask(i);
+            String name = task.getId();
+            if (name.equals(taskName)) {
+                task.meta().setDevice(device);
+                if (task instanceof CompilableTask) {
+                    ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+                    if (!task.getDevice().getDeviceContext().isCached(method.getName(), task)) {
+                        updateInner(i, task);
+                    }
+                }
+            }
+        }
+
+        // Release locked buffers from the old device and lock them on the new one.
+        for (LocalObjectState localState : executionContext.getObjectStates()) {
+            final GlobalObjectState globalState = localState.getGlobalState();
+            final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
+            if (deviceState.isLockedBuffer()) {
+                releaseObjectFromDeviceMemory(localState, oldDevice);
+                reuseDeviceBufferObject(localState, device);
+            }
+        }
+
     }
 
     private void triggerRecompile() {
@@ -775,6 +819,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void scheduleInner() {
+
         boolean compile = compileToTornadoVMBytecode();
         TornadoAcceleratorDevice deviceForTask = executionContext.getDeviceForTask(0);
         if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {
@@ -782,7 +827,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         try {
-            event = vm.execute();
+            event = vm.execute(cocurrentDevices);
             timeProfiler.stop(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             updateProfiler();
         } catch (TornadoBailoutRuntimeException e) {
