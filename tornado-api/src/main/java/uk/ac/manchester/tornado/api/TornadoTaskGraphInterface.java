@@ -36,6 +36,8 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void setDevice(TornadoDevice device);
 
+    void setDevice(String taskName, TornadoDevice device);
+
     TornadoDevice getDeviceForTask(String id);
 
     void addInner(SchedulableTask task);
@@ -105,4 +107,8 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
     void enableProfiler(ProfilerMode profilerMode);
 
     void disableProfiler(ProfilerMode profilerMode);
+
+    void withConcurrentDevices();
+
+    void withoutConcurrentDevices();
 }
