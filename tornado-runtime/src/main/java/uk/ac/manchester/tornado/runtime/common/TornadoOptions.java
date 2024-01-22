@@ -43,7 +43,7 @@ public class TornadoOptions {
      * Priority of the OpenCL Backend. The higher the number, the more priority over
      * the rest of the backends.
      */
-    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "12"));
+    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
     /**
      * Priority of the SPIRV Backend. The higher the number, the more priority over
      * the rest of the backends.
