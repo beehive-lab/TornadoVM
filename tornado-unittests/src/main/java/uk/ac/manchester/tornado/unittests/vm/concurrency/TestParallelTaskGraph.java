@@ -37,9 +37,7 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
 
 /**
  *
- * <p>
- * How to test?:
- * </p>
+ * How to test?
  *
  * <p>
  * <code>
