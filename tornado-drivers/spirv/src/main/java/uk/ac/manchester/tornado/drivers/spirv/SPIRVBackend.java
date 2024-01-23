@@ -104,6 +104,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptio
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -112,6 +113,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.common.utils.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
@@ -384,7 +386,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private SPIRVLiteralContextDependentNumber buildLiteralContextNumber(SPIRVKind kind, Constant value) {
-        if (kind == SPIRVKind.OP_TYPE_INT_32) {
+        if (kind == SPIRVKind.OP_TYPE_FLOAT_16) {
+            return new SPIRVContextDependentFloat(Float.parseFloat(value.toValueString()));
+        } else if (kind == SPIRVKind.OP_TYPE_INT_32) {
             return new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(value.toValueString())));
         } else if (kind == SPIRVKind.OP_TYPE_INT_64) {
             return new SPIRVContextDependentLong(BigInteger.valueOf(Long.parseLong(value.toValueString())));
@@ -775,7 +779,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
 
         if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-            throw new RuntimeException("FPGA Thread Attributes not supported yet.");
+            throw new TornadoBailoutRuntimeException("FPGA Thread Attributes not supported yet.");
         }
 
         emitSPIRVCapabilities(module);
@@ -820,12 +824,18 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             JavaKind stackKind = constantNode.getStackKind();
             Constant value = constantNode.getValue();
 
-            SPIRVKind kind = SPIRVKind.fromJavaKind(stackKind);
+            SPIRVKind kind;
+            if (constantNode.usages().filter(WriteHalfFloatNode.class).isNotEmpty()) {
+                kind = SPIRVKind.OP_TYPE_FLOAT_16;
+            } else {
+                kind = SPIRVKind.fromJavaKind(stackKind);
+            }
+
             SPIRVId typeId;
             if (kind.isPrimitive()) {
                 typeId = asm.primitives.getTypePrimitive(kind);
             } else {
-                throw new RuntimeException("Type not supported");
+                throw new TornadoRuntimeException("Type not supported");
             }
 
             SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
@@ -840,7 +850,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         while (!stack.isEmpty()) {
             TypeConstant t = stack.pop();
             SPIRVId idConstant = module.getNextId();
-            module.add(new SPIRVOpConstant(t.typeID, idConstant, t.n));
+            module.add(new SPIRVOpConstant(t.typeID, idConstant, t.literalContextNumber));
             asm.getConstants().put(new SPIRVAssembler.ConstantKeyPair(t.valueString, t.kind), idConstant);
         }
 
@@ -881,13 +891,13 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     private static class TypeConstant {
         public SPIRVId typeID;
-        public SPIRVLiteralContextDependentNumber n;
+        public SPIRVLiteralContextDependentNumber literalContextNumber;
         public String valueString;
         public SPIRVKind kind;
 
-        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber n, String valueString, SPIRVKind kind) {
+        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber literal, String valueString, SPIRVKind kind) {
             this.typeID = typeID;
-            this.n = n;
+            this.literalContextNumber = literal;
             this.valueString = valueString;
             this.kind = kind;
         }

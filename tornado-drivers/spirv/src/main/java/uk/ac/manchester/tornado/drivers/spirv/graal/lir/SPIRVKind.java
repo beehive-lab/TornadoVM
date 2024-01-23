@@ -86,7 +86,7 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.types.vectors.Int4.TYPE, OP_TYPE_INT_64),
     OP_TYPE_VECTORINT4_INT_32(4, uk.ac.manchester.tornado.api.types.collections.VectorInt4.TYPE, OP_TYPE_INT_32),
 
-    // OP_TYPE_VECTOR 8 
+    // OP_TYPE_VECTOR 8
     OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.vectors.Int16.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_64),
@@ -200,54 +200,35 @@ public enum SPIRVKind implements PlatformKind {
     }
 
     public static SPIRVKind fromJavaKind(JavaKind stackKind) {
-        switch (stackKind) {
-            case Void:
-                return SPIRVKind.OP_TYPE_VOID;
-            case Boolean:
-                return SPIRVKind.OP_TYPE_BOOL;
-            case Byte:
-                return SPIRVKind.OP_TYPE_INT_8;
-            case Short:
-                return SPIRVKind.OP_TYPE_INT_16;
-            case Int:
-                return SPIRVKind.OP_TYPE_INT_32;
-            case Long:
-                return SPIRVKind.OP_TYPE_INT_64;
-            case Float:
-                return SPIRVKind.OP_TYPE_FLOAT_32;
-            case Double:
-                return SPIRVKind.OP_TYPE_FLOAT_64;
-            default:
-                throw new TornadoRuntimeException("Java type not supported: " + stackKind);
-        }
+        return switch (stackKind) {
+            case Void -> SPIRVKind.OP_TYPE_VOID;
+            case Boolean -> SPIRVKind.OP_TYPE_BOOL;
+            case Byte -> SPIRVKind.OP_TYPE_INT_8;
+            case Short -> SPIRVKind.OP_TYPE_INT_16;
+            case Int -> SPIRVKind.OP_TYPE_INT_32;
+            case Long -> SPIRVKind.OP_TYPE_INT_64;
+            case Float -> SPIRVKind.OP_TYPE_FLOAT_32;
+            case Double -> SPIRVKind.OP_TYPE_FLOAT_64;
+            default -> throw new TornadoRuntimeException("Java type not supported: " + stackKind);
+        };
     }
 
     public static SPIRVKind fromJavaKindForMethodCalls(JavaKind stackKind) {
-        switch (stackKind) {
-            case Void:
-                return SPIRVKind.OP_TYPE_VOID;
-            case Boolean:
-                return SPIRVKind.OP_TYPE_BOOL;
-            case Char:
-                return SPIRVKind.OP_TYPE_INT_8;
-            case Byte:
-                return SPIRVKind.OP_TYPE_INT_8;
-            case Short:
-                return SPIRVKind.OP_TYPE_INT_16;
-            case Int:
-                return SPIRVKind.OP_TYPE_INT_32;
-            case Long:
-                return SPIRVKind.OP_TYPE_INT_64;
-            case Float:
-                return SPIRVKind.OP_TYPE_FLOAT_32;
-            case Double:
-                return SPIRVKind.OP_TYPE_FLOAT_64;
-            case Object:
+        return switch (stackKind) {
+            case Void -> SPIRVKind.OP_TYPE_VOID;
+            case Boolean -> SPIRVKind.OP_TYPE_BOOL;
+            case Char -> SPIRVKind.OP_TYPE_INT_8;
+            case Byte -> SPIRVKind.OP_TYPE_INT_8;
+            case Short -> SPIRVKind.OP_TYPE_INT_16;
+            case Int -> SPIRVKind.OP_TYPE_INT_32;
+            case Long -> SPIRVKind.OP_TYPE_INT_64;
+            case Float -> SPIRVKind.OP_TYPE_FLOAT_32;
+            case Double -> SPIRVKind.OP_TYPE_FLOAT_64;
+            case Object ->
                 // we return a 64-bit long value
-                return SPIRVKind.OP_TYPE_INT_64;
-            default:
-                throw new TornadoRuntimeException("Java type not supported: " + stackKind);
-        }
+                SPIRVKind.OP_TYPE_INT_64;
+            default -> throw new TornadoRuntimeException("Java type not supported: " + stackKind);
+        };
     }
 
     public static SPIRVKind fromResolvedJavaTypeToVectorKind(ResolvedJavaType type) {
@@ -307,55 +288,20 @@ public enum SPIRVKind implements PlatformKind {
 
     @Override
     public char getTypeChar() {
-        switch (kind) {
-            case OP_TYPE_BOOL:
-                return 'z';
-            case OP_TYPE_INT_8:
-                return 'c';
-            case OP_TYPE_INT_16:
-                return 's';
-            case OP_TYPE_INT_32:
-                return 'i';
-            case OP_TYPE_INT_64:
-                return 'l';
-            case OP_TYPE_FLOAT_32:
-                return 'f';
-            case OP_TYPE_FLOAT_64:
-                return 'd';
-            case OP_TYPE_VECTOR2_INT_16:
-            case OP_TYPE_VECTOR2_INT_32:
-            case OP_TYPE_VECTOR2_INT_64:
-
-            case OP_TYPE_VECTOR3_INT_8:
-            case OP_TYPE_VECTOR3_INT_16:
-            case OP_TYPE_VECTOR3_INT_32:
-            case OP_TYPE_VECTOR3_INT_64:
-
-            case OP_TYPE_VECTOR4_INT_8:
-            case OP_TYPE_VECTOR4_INT_32:
-            case OP_TYPE_VECTOR4_INT_64:
-
-            case OP_TYPE_VECTOR8_INT_32:
-            case OP_TYPE_VECTOR8_INT_64:
-
-            case OP_TYPE_VECTOR2_FLOAT_16:
-            case OP_TYPE_VECTOR2_FLOAT_32:
-            case OP_TYPE_VECTOR2_FLOAT_64:
-
-            case OP_TYPE_VECTOR4_FLOAT_16:
-            case OP_TYPE_VECTOR4_FLOAT_32:
-            case OP_TYPE_VECTOR4_FLOAT_64:
-
-            case OP_TYPE_VECTOR8_FLOAT_16:
-            case OP_TYPE_VECTOR8_FLOAT_32:
-            case OP_TYPE_VECTOR8_FLOAT_64:
-            case OP_TYPE_VECTOR16_FLOAT_32:
-            case OP_TYPE_VECTOR16_INT_32:
-            case OP_TYPE_VECTOR16_FLOAT_64:
-                return 'v';
-            default:
-                return '-';
-        }
+        return switch (kind) {
+            case OP_TYPE_BOOL -> 'z';
+            case OP_TYPE_INT_8 -> 'c';
+            case OP_TYPE_INT_16 -> 's';
+            case OP_TYPE_INT_32 -> 'i';
+            case OP_TYPE_INT_64 -> 'l';
+            case OP_TYPE_FLOAT_32 -> 'f';
+            case OP_TYPE_FLOAT_64 -> 'd';
+            case OP_TYPE_VECTOR2_INT_16, OP_TYPE_VECTOR2_INT_32, OP_TYPE_VECTOR2_INT_64, OP_TYPE_VECTOR3_INT_8, OP_TYPE_VECTOR3_INT_16, OP_TYPE_VECTOR3_INT_32, OP_TYPE_VECTOR3_INT_64,
+                    OP_TYPE_VECTOR4_INT_8, OP_TYPE_VECTOR4_INT_32, OP_TYPE_VECTOR4_INT_64, OP_TYPE_VECTOR8_INT_32, OP_TYPE_VECTOR8_INT_64, OP_TYPE_VECTOR2_FLOAT_16, OP_TYPE_VECTOR2_FLOAT_32,
+                    OP_TYPE_VECTOR2_FLOAT_64, OP_TYPE_VECTOR4_FLOAT_16, OP_TYPE_VECTOR4_FLOAT_32, OP_TYPE_VECTOR4_FLOAT_64, OP_TYPE_VECTOR8_FLOAT_16, OP_TYPE_VECTOR8_FLOAT_32,
+                    OP_TYPE_VECTOR8_FLOAT_64, OP_TYPE_VECTOR16_FLOAT_32, OP_TYPE_VECTOR16_INT_32, OP_TYPE_VECTOR16_FLOAT_64 -> 'v';
+            default -> '-';
+        };
     }
 
     @Override

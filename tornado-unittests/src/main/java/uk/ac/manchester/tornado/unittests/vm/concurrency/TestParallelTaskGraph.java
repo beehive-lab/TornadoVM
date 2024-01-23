@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
 /**
  *
  * <p>
- * How to test?:
+ * How to test? This test requires at least two devices.
  * </p>
  *
  * <p>

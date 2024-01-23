@@ -40,6 +40,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVCapab
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 public class SPIRVPrimitiveTypes {
@@ -118,6 +119,7 @@ public class SPIRVPrimitiveTypes {
                     break;
                 case OP_TYPE_FLOAT_16:
                     if (!capabilities.contains(primitive)) {
+                        module.add(new SPIRVOpCapability(SPIRVCapability.Float16Buffer()));
                         module.add(new SPIRVOpCapability(SPIRVCapability.Float16()));
                     }
                     module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
@@ -132,7 +134,7 @@ public class SPIRVPrimitiveTypes {
                     module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
                     break;
                 default:
-                    throw new RuntimeException("DataType Not supported yet");
+                    throw new TornadoRuntimeException("DataType Not supported yet");
             }
             primitives.put(primitive, typeID);
         }

@@ -1044,9 +1044,15 @@ public class SPIRVLIRStmt {
 
             cast.emit(crb, asm);
 
+            boolean isFP16Cast = cast.getLIRKind().getPlatformKind() == SPIRVKind.OP_TYPE_FLOAT_16;
+
             SPIRVId value;
             if (rhs instanceof ConstantValue) {
-                value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+                if (isFP16Cast) {
+                    value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), SPIRVKind.OP_TYPE_FLOAT_16);
+                } else {
+                    value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+                }
             } else {
                 value = asm.lookUpLIRInstructions(rhs);
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {

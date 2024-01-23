@@ -81,6 +81,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeFunction
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentFloat;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentHalfFloat;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentInt;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVDecoration;
@@ -95,6 +96,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -545,23 +547,13 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVId newConstantId = module.getNextId();
         SPIRVId typeID = primitives.getTypePrimitive(type);
         switch (type) {
-            case OP_TYPE_INT_8:
-            case OP_TYPE_INT_16:
-            case OP_TYPE_INT_32:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
-                break;
-            case OP_TYPE_INT_64:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentLong(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
-                break;
-            case OP_TYPE_FLOAT_16:
-            case OP_TYPE_FLOAT_32:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
-                break;
-            case OP_TYPE_FLOAT_64:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentDouble(Double.parseDouble(valueConstant))));
-                break;
-            default:
-                throw new RuntimeException("Data type not supported yet: " + type);
+            case OP_TYPE_INT_8, OP_TYPE_INT_16, OP_TYPE_INT_32 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(
+                    valueConstant)))));
+            case OP_TYPE_INT_64 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentLong(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
+            case OP_TYPE_FLOAT_16 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentHalfFloat(Float.floatToFloat16(Float.parseFloat(valueConstant)))));
+            case OP_TYPE_FLOAT_32 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
+            case OP_TYPE_FLOAT_64 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentDouble(Double.parseDouble(valueConstant))));
+            default -> throw new TornadoRuntimeException(STR."Data type not supported yet: \{type}");
         }
         return newConstantId;
     }

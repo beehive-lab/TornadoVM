@@ -119,7 +119,7 @@ public class TestArrays extends TornadoTestBase {
 
     public static void initHalfFloatVector(HalfFloatArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
-            c.set(i, new HalfFloat(13.0f));
+            c.set(i, new HalfFloat(100.0f));
         }
     }
 
@@ -530,7 +530,7 @@ public class TestArrays extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(c.get(i).getFloat32(), 13.0f, 0.01f);
+            assertEquals(100.0f, c.get(i).getFloat32(), 0.01f);
         }
     }
 
@@ -553,7 +553,7 @@ public class TestArrays extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(c.get(i).getFloat32(), 8.0f, 0.01f);
+            assertEquals(8.0f, c.get(i).getFloat32(), 0.01f);
         }
     }
 
@@ -575,7 +575,7 @@ public class TestArrays extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(c.get(i).getFloat32(), 4.0f, 0.01f);
+            assertEquals(4.0f, c.get(i).getFloat32(), 0.01f);
         }
     }
 
@@ -598,7 +598,7 @@ public class TestArrays extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(c.get(i).getFloat32(), 12.0f, 0.01f);
+            assertEquals(12.0f, c.get(i).getFloat32(), 0.01f);
         }
     }
 
@@ -621,7 +621,7 @@ public class TestArrays extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(c.get(i).getFloat32(), 3.0f, 0.01f);
+            assertEquals(3.0f, c.get(i).getFloat32(), 0.01f);
         }
     }
 
