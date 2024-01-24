@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,9 +33,7 @@ import java.lang.foreign.MemorySegment;
  * The constant {@code ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
-public abstract sealed class TornadoNativeArray permits //
-        IntArray, FloatArray, DoubleArray, LongArray, ShortArray, //
-        ByteArray, CharArray {
+public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, IntArray, LongArray, ShortArray, HalfFloatArray {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through

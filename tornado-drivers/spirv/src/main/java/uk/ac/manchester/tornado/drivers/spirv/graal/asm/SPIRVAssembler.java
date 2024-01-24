@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -81,6 +81,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeFunction
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentFloat;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentHalfFloat;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentInt;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVDecoration;
@@ -95,6 +96,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -320,7 +322,7 @@ public final class SPIRVAssembler extends Assembler {
      * If we want to return the same names per module, just return the labelName.
      *
      * @param labelName
-     *            String
+     *     String
      * @return a new label name.
      */
     public String composeUniqueLabelName(String labelName) {
@@ -392,7 +394,7 @@ public final class SPIRVAssembler extends Assembler {
      * follows:
      *
      * <code>
-     *     Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>>
+     * Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>>
      * </code>
      *
      * If we have the same number of parameters with the same return type, when we
@@ -400,9 +402,9 @@ public final class SPIRVAssembler extends Assembler {
      * parameter (stored in the {@link FunctionTable ) class).
      *
      * @param returnType
-     *            ID with the return value.
+     *     ID with the return value.
      * @param operands
-     *            List of IDs for the operads.
+     *     List of IDs for the operads.
      * @return A {@link SPIRVId} for the {@link SPIRVOpFunction}
      */
     public SPIRVId emitOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
@@ -445,7 +447,7 @@ public final class SPIRVAssembler extends Assembler {
         return functionSignature;
     }
 
-    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean fp64Capability) {
+    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean fp64Capability, boolean fp16Capability) {
         mainFunctionID = module.getNextId();
 
         SPIRVMultipleOperands operands;
@@ -480,7 +482,7 @@ public final class SPIRVAssembler extends Assembler {
             operands = new SPIRVMultipleOperands(array);
         }
 
-        if (fp64Capability) {
+        if (fp64Capability && fp16Capability) {
             module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
         }
 
@@ -545,23 +547,13 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVId newConstantId = module.getNextId();
         SPIRVId typeID = primitives.getTypePrimitive(type);
         switch (type) {
-            case OP_TYPE_INT_8:
-            case OP_TYPE_INT_16:
-            case OP_TYPE_INT_32:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
-                break;
-            case OP_TYPE_INT_64:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentLong(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
-                break;
-            case OP_TYPE_FLOAT_16:
-            case OP_TYPE_FLOAT_32:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
-                break;
-            case OP_TYPE_FLOAT_64:
-                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentDouble(Double.parseDouble(valueConstant))));
-                break;
-            default:
-                throw new RuntimeException("Data type not supported yet: " + type);
+            case OP_TYPE_INT_8, OP_TYPE_INT_16, OP_TYPE_INT_32 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(
+                    valueConstant)))));
+            case OP_TYPE_INT_64 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentLong(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
+            case OP_TYPE_FLOAT_16 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentHalfFloat(Float.floatToFloat16(Float.parseFloat(valueConstant)))));
+            case OP_TYPE_FLOAT_32 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
+            case OP_TYPE_FLOAT_64 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentDouble(Double.parseDouble(valueConstant))));
+            default -> throw new TornadoRuntimeException(STR."Data type not supported yet: \{type}");
         }
         return newConstantId;
     }
@@ -634,8 +626,8 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitValueOrOp(SPIRVCompilationResultBuilder crb, Value value) {
-        if (value instanceof SPIRVLIROp) {
-            ((SPIRVLIROp) value).emit(crb, this);
+        if (value instanceof SPIRVLIROp spirvValue) {
+            spirvValue.emit(crb, this);
         } else {
             emitValue(crb, value);
         }

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,9 +25,11 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.DIV_APPROX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ASSIGN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT_RN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_OPEN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
@@ -71,6 +73,122 @@ public class PTXLIRStmt {
         }
 
         public abstract void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm);
+    }
+
+    @Opcode("DIVHALF")
+    public static class DivideHalfFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<DivideHalfFloatStmt> TYPE = LIRInstructionClass.create(DivideHalfFloatStmt.class);
+
+        @Use
+        protected Value dividend;
+        @Use
+        protected Value divisor;
+        @Def
+        protected Value dividendFloat;
+        @Def
+        protected Value divisorFloat;
+        @Def
+        protected Value floatResult;
+        @Def
+        protected Value halfFloatResult;
+
+        public DivideHalfFloatStmt(Value dividend, Value divisor, Value dividendFloat, Value divisorFloat, Value floatResult, Value halfFloatResult) {
+            super(TYPE);
+            this.dividend = dividend;
+            this.divisor = divisor;
+            this.dividendFloat = dividendFloat;
+            this.divisorFloat = divisorFloat;
+            this.floatResult = floatResult;
+            this.halfFloatResult = halfFloatResult;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // convert divident from half-float to float
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT + DOT + dividendFloat.getPlatformKind() + DOT + dividend.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dividendFloat);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(dividend);
+            asm.delimiter();
+            asm.eol();
+            //convert divisor from half-float to float
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT + DOT + divisorFloat.getPlatformKind() + DOT + divisor.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(divisorFloat);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(divisor);
+            asm.delimiter();
+            asm.eol();
+            // divide the two float values
+            asm.emitSymbol(TAB);
+            asm.emit(DIV_APPROX + DOT + floatResult.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(floatResult);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(dividendFloat);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(divisorFloat);
+            asm.delimiter();
+            asm.eol();
+            //convert the result from float to half-float
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT_RN + DOT + halfFloatResult.getPlatformKind() + DOT + floatResult.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(halfFloatResult);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(floatResult);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("CONVERTHALF")
+    public static class ConvertHalfFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertHalfFloatStmt> TYPE = LIRInstructionClass.create(ConvertHalfFloatStmt.class);
+
+        @Def
+        protected Value halfFloatVariable;
+        @Use
+        protected Value input;
+        @Def
+        protected Value intermediate;
+
+        public ConvertHalfFloatStmt(Value halfFloatVariable, Value input, Value intermediate) {
+            super(TYPE);
+            this.halfFloatVariable = halfFloatVariable;
+            this.input = input;
+            this.intermediate = intermediate;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // move value to a float variable
+            asm.emitSymbol(TAB);
+            asm.emit(MOVE + DOT + intermediate.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(intermediate);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(input);
+            asm.delimiter();
+            asm.eol();
+
+            // convert float to half float
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT_RN + DOT + halfFloatVariable.getPlatformKind() + DOT + intermediate.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(halfFloatVariable);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(intermediate);
+            asm.delimiter();
+            asm.eol();
+        }
+
     }
 
     @Opcode("ASSIGN")
@@ -265,6 +383,43 @@ public class PTXLIRStmt {
         }
     }
 
+    @Opcode("HALFLOAD")
+    public static class HalfFloatLoadStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<HalfFloatLoadStmt> TYPE = LIRInstructionClass.create(HalfFloatLoadStmt.class);
+
+        @Use
+        protected Variable dest;
+
+        @Use
+        PTXUnary.MemoryAccess address;
+
+        @Use
+        PTXNullaryOp loadOp;
+
+        public HalfFloatLoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op) {
+            super(TYPE);
+            this.dest = dest;
+            this.loadOp = op;
+            this.address = address;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            loadOp.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit(address.getBase().memorySpace.getName());
+            asm.emit(DOT + PTXKind.B16);
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA);
+            asm.space();
+            address.emit(crb, asm, null);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("VLOAD")
     public static class VectorLoadStmt extends AbstractInstruction {
 
@@ -360,6 +515,44 @@ public class PTXLIRStmt {
 
         public PTXUnary.MemoryAccess getAddress() {
             return address;
+        }
+    }
+
+    @Opcode("STOREHALF")
+    public static class HalfFloatStoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<HalfFloatStoreStmt> TYPE = LIRInstructionClass.create(HalfFloatStoreStmt.class);
+
+        @Use
+        protected Value rhs;
+        @Use
+        protected PTXUnary.MemoryAccess address;
+
+        public HalfFloatStoreStmt(PTXUnary.MemoryAccess address, Value rhs) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.address = address;
+        }
+
+        public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            PTXNullaryOp.ST.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit(address.getBase().memorySpace.getName());
+            asm.emit(DOT + PTXKind.B16);
+            asm.emitSymbol(TAB);
+
+            address.emit(crb, asm, null);
+            asm.emitSymbol(COMMA);
+            asm.space();
+
+            asm.emitValueOrOp(crb, rhs, null);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            emitNormalCode(crb, asm);
         }
     }
 

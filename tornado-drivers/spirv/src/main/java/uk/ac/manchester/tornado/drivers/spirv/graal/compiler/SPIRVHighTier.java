@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoF
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoHalfFloatReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoSPIRVIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoTaskSpecialization;
@@ -87,6 +88,8 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
 
         appendPhase(new TornadoNewArrayDevirtualizationReplacement());
+
+        appendPhase(new TornadoHalfFloatReplacement());
 
         if (PartialEscapeAnalysis.getValue(options)) {
             appendPhase(new PartialEscapePhase(true, canonicalizer, options));

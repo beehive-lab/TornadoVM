@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -30,7 +30,6 @@ import org.graalvm.compiler.lir.ConstantValue;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVModule;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralInteger;
@@ -43,15 +42,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class SPIRVLIROp extends Value {
 
-    // protected SPIRVModule module;
-
     protected SPIRVLIROp(LIRKind valueKind) {
         super(valueKind);
-    }
-
-    protected SPIRVLIROp(LIRKind valueKind, SPIRVModule module) {
-        super(valueKind);
-        // this.module = module;
     }
 
     public final void emit(SPIRVCompilationResultBuilder crb) {

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -534,13 +534,10 @@ public class SPIRVUnary {
 
     public static class SPIRVAddressCast extends UnaryConsumer {
 
-        private final SPIRVMemoryBase base;
-
         private final Value address;
 
         public SPIRVAddressCast(Value address, SPIRVMemoryBase base, LIRKind valueKind) {
             super(null, null, valueKind, address);
-            this.base = base;
             this.address = address;
         }
 
@@ -562,6 +559,7 @@ public class SPIRVUnary {
 
             final SPIRVId idLoad;
             SPIRVId addressId = asm.lookUpLIRInstructions(this.address);
+
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 idLoad = addressId;
             } else {
@@ -604,9 +602,7 @@ public class SPIRVUnary {
          * </code>
          *
          * <code>
-         * %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
-         * %call = OpCompositeExtract %ulong %37 0
-         * %conv = OpUConvert %uint %call
+         * %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32 %call = OpCompositeExtract %ulong %37 0 %conv = OpUConvert %uint %call
          * </code>
          */
         @Override
@@ -740,15 +736,13 @@ public class SPIRVUnary {
         }
 
         /**
-         * Following this:
-         * {@url https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpSConvert}
+         * Following this: {@url https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpSConvert}
          *
          * <code>
          * Convert signed width. This is either a truncate or a sign extend.
          * </code>
          * <p>
-         * OpSConvert can be used for sign extend as well as truncate. The "S" symbol
-         * represents signed format.
+         * OpSConvert can be used for sign extend as well as truncate. The "S" symbol represents signed format.
          *
          * @param crb
          *     {@link SPIRVCompilationResultBuilder}
@@ -932,14 +926,11 @@ public class SPIRVUnary {
     }
 
     /**
-     * OpenCL Extended Instruction Set Intrinsics. As specified in the SPIR-V 1.0
-     * standard, the following intrinsics in SPIR-V represents builtin functions
-     * from the OpenCL standard.
+     * OpenCL Extended Instruction Set Intrinsics. As specified in the SPIR-V 1.0 standard, the following intrinsics in SPIR-V represents builtin functions from the OpenCL standard.
      *
      * For obtaining the correct Int-Reference of the function:
      *
      * <url>https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html</url>
-     *
      */
     public static class Intrinsic extends UnaryConsumer {
 

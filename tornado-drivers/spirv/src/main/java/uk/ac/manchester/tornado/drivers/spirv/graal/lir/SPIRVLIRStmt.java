@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -484,15 +484,15 @@ public class SPIRVLIRStmt {
          * in the ASM lookup tables.
          *
          * @param asm
-         *            {@link SPIRVAssembler} Assembler
+         *     {@link SPIRVAssembler} Assembler
          * @param previousID
-         *            {@link SPIRVId} Previous ID in SPIRVId format
+         *     {@link SPIRVId} Previous ID in SPIRVId format
          * @param previousBranch
-         *            {@link SPIRVId} of the previous branch
+         *     {@link SPIRVId} of the previous branch
          * @param newID
-         *            {@link SPIRVId} of the new ID
+         *     {@link SPIRVId} of the new ID
          * @param currentBranch
-         *            {@link SPIRVId} basic block of the new ID
+         *     {@link SPIRVId} basic block of the new ID
          * @return {@link SPIRVMultipleOperands<SPIRVPairIdRefIdRef>}
          */
         private SPIRVMultipleOperands<SPIRVPairIdRefIdRef> composeOperands(SPIRVAssembler asm, SPIRVId previousID, SPIRVId previousBranch, SPIRVId newID, SPIRVId currentBranch) {
@@ -601,9 +601,9 @@ public class SPIRVLIRStmt {
          * </code>
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -657,9 +657,9 @@ public class SPIRVLIRStmt {
          * Loads the stack frame. This version optimizes Loads/Stores.
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -706,9 +706,9 @@ public class SPIRVLIRStmt {
          * Loads the stack frame. This version optimizes Loads/Stores.
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -758,9 +758,9 @@ public class SPIRVLIRStmt {
          * </code>
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -940,20 +940,20 @@ public class SPIRVLIRStmt {
          * Then the SPIR-V Optimizer is not enabled:
          *
          * <code>
-         *          %43 = OpLoad %_ptr_CrossWorkgroup_ulong %frame Aligned 8
-         *          %44 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_ulong %43 %uint_3
-         *          %45 = OpLoad %ulong %44 Aligned 8
-         *                OpStore %spirv_l_0F0 %45 Aligned 8
-         *          %46 = OpLoad %ulong %spirv_l_0F0 Aligned 8
-         *          %48 = OpConvertUToPtr %_ptr_CrossWorkgroup_float %46
-         *          %49 = OpExtInst %v2float %1 vloadn %ulong_0 %48 2
-         *                OpStore %spirv_v2f_1F0 %49 Aligned 8
+         * %43 = OpLoad %_ptr_CrossWorkgroup_ulong %frame Aligned 8
+         * %44 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_ulong %43 %uint_3
+         * %45 = OpLoad %ulong %44 Aligned 8
+         * OpStore %spirv_l_0F0 %45 Aligned 8
+         * %46 = OpLoad %ulong %spirv_l_0F0 Aligned 8
+         * %48 = OpConvertUToPtr %_ptr_CrossWorkgroup_float %46
+         * %49 = OpExtInst %v2float %1 vloadn %ulong_0 %48 2
+         * OpStore %spirv_v2f_1F0 %49 Aligned 8
          * </code>
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -1040,12 +1040,19 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreStmt in address: " + cast + " <- " + rhs);
 
             cast.emit(crb, asm);
 
+            boolean isFP16Cast = cast.getLIRKind().getPlatformKind() == SPIRVKind.OP_TYPE_FLOAT_16;
+
             SPIRVId value;
             if (rhs instanceof ConstantValue) {
-                value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+                if (isFP16Cast) {
+                    value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), SPIRVKind.OP_TYPE_FLOAT_16);
+                } else {
+                    value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+                }
             } else {
                 value = asm.lookUpLIRInstructions(rhs);
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
@@ -1478,8 +1485,8 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV,
-                    "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace()
+                    .getName());
 
             SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
@@ -1525,22 +1532,22 @@ public class SPIRVLIRStmt {
          * (e.g., VectorFloat2)
          *
          * <code>
-         *         %301 = OpInBoundsPtrAccessChain %_ptr_Function_double %spirv_d_1F0 %ulong_0 %ulong_0
-         *         %302 = OpPtrCastToGeneric %_ptr_Generic_double %301
-         *         %303 = OpExtInst %v2double %1 vloadn %ulong_0 %302 2
-         *                OpStore %spirv_v2d_50F0 %303 Aligned 16
+         * %301 = OpInBoundsPtrAccessChain %_ptr_Function_double %spirv_d_1F0 %ulong_0 %ulong_0
+         * %302 = OpPtrCastToGeneric %_ptr_Generic_double %301
+         * %303 = OpExtInst %v2double %1 vloadn %ulong_0 %302 2
+         * OpStore %spirv_v2d_50F0 %303 Aligned 16
          * </code>
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV,
-                    "emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion()
+                    .getMemorySpace().getName());
 
             SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -94,7 +94,7 @@ public enum OCLKind implements PlatformKind {
     UINT(4, null),
     LONG(8, java.lang.Long.TYPE),
     ULONG(8, null),
-    HALF(2, null),
+    HALF(2, java.lang.Short.TYPE),
     FLOAT(4, java.lang.Float.TYPE),
     DOUBLE(8, java.lang.Double.TYPE),
     CHAR2(2, null, CHAR),

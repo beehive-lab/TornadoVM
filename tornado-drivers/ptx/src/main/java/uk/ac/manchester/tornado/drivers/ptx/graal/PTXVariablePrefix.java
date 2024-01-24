@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2023, APT Group, Department of Computer Science, The University
+ * Copyright (c) 2023, 2024, APT Group, Department of Computer Science, The University
  * of Manchester. All rights reserved. DO NOT ALTER OR REMOVE COPYRIGHT NOTICES
  * OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@ public enum PTXVariablePrefix {
      */
     // @formatter:off
         B8("b8", "rub"),
+        B16("b16", "rufh"),
         B32("b32", "rui"),
         B64("b64", "rbd"),
         S8("s8", "rsb"),
@@ -37,6 +38,7 @@ public enum PTXVariablePrefix {
         S64("s64", "rsd"),
         U32("u32", "rui"),
         U64("u64", "rud"),
+        F16("f16", "rfh"),
         F32("f32", "rfi"),
         F64("f64", "rfd"),
         PRED("pred", "rpb");

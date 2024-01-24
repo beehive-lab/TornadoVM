@@ -191,7 +191,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
 
     if (rebuild or build):
         os.chdir(spirv_tool_kit)
-        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["git", "pull", "origin", "feat/half"])
         subprocess.run(["mvn", "clean", "package"])
         subprocess.run(["mvn", "install"])
         os.chdir(current)

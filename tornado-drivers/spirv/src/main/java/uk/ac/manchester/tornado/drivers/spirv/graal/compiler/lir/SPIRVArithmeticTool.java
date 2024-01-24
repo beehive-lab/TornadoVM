@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -119,6 +119,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.ADD_INTEGER;
                 break;
+            case OP_TYPE_FLOAT_16:
             case OP_TYPE_FLOAT_32:
             case OP_TYPE_FLOAT_64:
                 binaryOp = SPIRVBinaryOp.ADD_FLOAT;
@@ -158,6 +159,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 break;
             case OP_TYPE_FLOAT_64:
             case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_16:
                 binaryOp = SPIRVBinaryOp.SUB_FLOAT;
                 break;
             default:
@@ -204,6 +206,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 break;
             case OP_TYPE_FLOAT_64:
             case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_16:
                 binaryOp = SPIRVBinaryOp.MULT_FLOAT;
                 break;
             default:
@@ -251,6 +254,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 break;
             case OP_TYPE_FLOAT_64:
             case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_16:
                 binaryOp = SPIRVBinaryOp.DIV_FLOAT;
                 break;
             default:

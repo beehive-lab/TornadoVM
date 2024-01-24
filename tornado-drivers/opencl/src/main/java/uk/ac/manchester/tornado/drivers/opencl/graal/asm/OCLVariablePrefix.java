@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,9 @@ public enum OCLVariablePrefix {
     BYTE16("byte16", "b16_"),
     SHORT("short", "sh_"),
     SHORT2("short2", "sh2_"),
-    SHORT3("short3", "sh3_");
+    SHORT3("short3", "sh3_"),
+    HALF("half", "half_");
+
 
     // @formatter:on
 

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -118,6 +119,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             case ShortArray shortArray -> shortArray.getSegment();
             case ByteArray byteArray -> byteArray.getSegment();
             case CharArray charArray -> charArray.getSegment();
+            case HalfFloatArray halfFloatArray -> halfFloatArray.getSegment();
             case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
             case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
             case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -84,7 +84,7 @@ public enum PTXKind implements PlatformKind {
     B8(1, null),
 
     S16(2, Short.TYPE),
-    F16(2, null),
+    F16(2, Short.TYPE),
     U16(2, Character.TYPE),
     B16(2, null),
 
@@ -151,6 +151,7 @@ public enum PTXKind implements PlatformKind {
     private final PTXKind kind;
     private final PTXKind elementKind;
     private final Class<?> javaClass;
+
     PTXKind(int size, Class<?> javaClass) {
         this(size, javaClass, null);
     }

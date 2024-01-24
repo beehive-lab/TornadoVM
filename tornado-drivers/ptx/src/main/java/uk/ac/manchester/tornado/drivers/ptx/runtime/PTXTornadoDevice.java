@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -271,6 +272,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object instanceof ByteArray) {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
             } else if (object instanceof CharArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof HalfFloatArray) {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
             } else {
                 result = new PTXObjectWrapper(getDeviceContext(), object);
