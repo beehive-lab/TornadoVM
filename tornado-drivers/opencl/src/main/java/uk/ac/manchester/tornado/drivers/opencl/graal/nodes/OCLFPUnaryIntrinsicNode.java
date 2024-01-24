@@ -141,6 +141,7 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case ASIN -> gen.genFloatASin(input);
             case ACOS -> gen.genFloatACos(input);
             case ATAN -> gen.genFloatATan(input);
+            case CEIL -> gen.genFloatCeil(input);
             case COS -> gen.genFloatCos(input);
             case FABS -> gen.genFloatAbs(input);
             case EXP -> gen.genFloatExp(input);

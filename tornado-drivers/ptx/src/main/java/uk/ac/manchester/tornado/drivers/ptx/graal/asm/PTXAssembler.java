@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEAREST_EVEN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEGATIVE_INFINITY_INTEGER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_POSITIVE_INFINITY_INTEGER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_TOWARD_ZERO_INTEGER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
@@ -559,6 +560,8 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic ABS = new PTXUnaryIntrinsic("abs", null);
         public static final PTXUnaryIntrinsic EXP2 = new PTXUnaryIntrinsic("ex2.approx", null);
         public static final PTXUnaryIntrinsic SQRT = new PTXUnaryIntrinsic("sqrt");
+
+        public static final PTXUnaryIntrinsic CEIL = new PTXUnaryIntrinsic("cvt", ROUND_POSITIVE_INFINITY_INTEGER);
         public static final PTXUnaryIntrinsic LOG2 = new PTXUnaryIntrinsic("lg2.approx", null);
         public static final PTXUnaryIntrinsic SIN = new PTXUnaryIntrinsic("sin.approx", null);
         public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", null);
@@ -571,13 +574,12 @@ public class PTXAssembler extends Assembler {
             public void emit(PTXCompilationResultBuilder crb, Value x, Variable dest) {
                 final PTXAssembler asm = crb.getAssembler();
                 emitOpcode(asm);
-                PTXKind destType = (PTXKind) dest.getPlatformKind();
 
                 PTXKind instructionKind = PTXKind.B32;
                 if (((PTXKind) x.getPlatformKind()).is64Bit()) {
                     instructionKind = PTXKind.B64;
                 }
-                asm.emit("." + instructionKind);
+                asm.emit(STR.".\{instructionKind}" );
 
                 asm.emitSymbol(TAB);
                 asm.emitValues(new Value[] { dest, x });

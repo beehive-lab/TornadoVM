@@ -9,7 +9,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBin
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.INT_MIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.RADIANS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.ABS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.CEIL;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.COS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.EXP2;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.FLOAT_FLOOR;
@@ -99,8 +100,8 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatCeil(Value input) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "genCeil: ceil(%s)", input);
+        return new PTXUnary.Intrinsic(CEIL, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCos(Value input) {
@@ -157,9 +158,9 @@ public class PTXBuiltinTool {
      * while the second argument that corresponds to the degrees is value y.
      *
      * @param x
-     *            the constant value of (pi/180)
+     *     the constant value of (pi/180)
      * @param y
-     *            the angle value measured in degrees
+     *     the angle value measured in degrees
      * @return Value: the approximately equivalent angle measured in radians
      */
     public Value genFloatRadians(Value x, Value y) {

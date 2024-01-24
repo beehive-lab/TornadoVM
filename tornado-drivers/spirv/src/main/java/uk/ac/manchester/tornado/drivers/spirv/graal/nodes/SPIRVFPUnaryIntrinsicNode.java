@@ -146,6 +146,7 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         Value result = switch (operation()) {
             case ASIN -> gen.genFloatASin(input);
             case ACOS -> gen.genFloatACos(input);
+            case CEIL -> gen.genFloatCeil(input);
             case FABS -> gen.genFloatAbs(input);
             case EXP -> gen.genFloatExp(input);
             case SIGN -> gen.generateSign(input);

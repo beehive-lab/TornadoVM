@@ -157,6 +157,9 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case ATAN:
                 result = gen.genFloatATan(auxValue);
                 break;
+            case CEIL:
+                result = gen.genFloatCeil(auxValue);
+                break;
             case COS:
                 result = gen.genFloatCos(auxValue);
                 break;
@@ -370,6 +373,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     // @formatter:off
     public enum Operation {
         ATAN,
+        CEIL,
         COS,
         EXP,
         FABS,

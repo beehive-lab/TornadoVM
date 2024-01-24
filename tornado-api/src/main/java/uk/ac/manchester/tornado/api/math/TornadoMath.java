@@ -404,4 +404,12 @@ public class TornadoMath {
         return new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
     }
 
+    public static float ceil(float value) {
+        return (float) Math.ceil(value);
+    }
+
+    public static double ceil(double value) {
+        return Math.ceil(value);
+    }
+
 }

@@ -112,6 +112,14 @@ public class SPIRVMathPlugins {
                 return true;
             }
         });
+
+        r.register(new InvocationPlugin("ceil", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.CEIL, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerTrigonometric1Plugins(InvocationPlugins.Registration r, Class<?> type, JavaKind kind) {

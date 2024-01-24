@@ -706,6 +706,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic WRITE_MEM_FENCE = new OCLUnaryIntrinsic("write_mem_fence");
 
         public static final OCLUnaryIntrinsic ABS = new OCLUnaryIntrinsic("abs");
+
+        public static final OCLUnaryIntrinsic CEIL = new OCLUnaryIntrinsic("ceil");
         public static final OCLUnaryIntrinsic EXP = new OCLUnaryIntrinsic("exp");
         public static final OCLUnaryIntrinsic SQRT = new OCLUnaryIntrinsic("sqrt");
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
