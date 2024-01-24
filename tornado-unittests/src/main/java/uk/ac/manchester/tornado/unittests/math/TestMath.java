@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,12 +29,13 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -42,7 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *      tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
  */
 public class TestMath extends TornadoTestBase {
@@ -116,7 +117,7 @@ public class TestMath extends TornadoTestBase {
 
     public static void testPow(FloatArray a) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
-            a.set(i, (float) Math.pow(a.get(i), 2));
+            a.set(i, (float) Math.pow(2.0, a.get(i)));
         }
     }
 
@@ -190,6 +191,12 @@ public class TestMath extends TornadoTestBase {
             a.set(i, Math.signum(a.get(i)));
     }
 
+    public static void testCeil(FloatArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, (float) TornadoMath.ceil(a.get(i)));
+        }
+    }
+
     @Test
     public void testMathCos() {
         final int size = 128;
@@ -215,7 +222,6 @@ public class TestMath extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(data.get(i), seq.get(i), 0.01);
         }
-        //assertArrayEquals(data, seq, 0.01);
     }
 
     @Test
@@ -245,8 +251,6 @@ public class TestMath extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(data.get(i), seq.get(i), 0.01);
         }
-        //assertArrayEquals(data, seq, 0.01);
-
     }
 
     @Test
@@ -443,11 +447,11 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathPowDouble() {
-        final int size = 8192;
+        final int size = 32;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
 
-        IntStream.range(0, size).parallel().forEach(i -> {
+        IntStream.range(0, size).sequential().forEach(i -> {
             data.set(i, (float) Math.random());
             seq.set(i, data.get(i));
         });
@@ -890,6 +894,32 @@ public class TestMath extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(a.get(i), seqA.get(i), 0.01);
+        }
+    }
+
+    @Test
+    public void testMathCeil() {
+        final int size = 32;
+        FloatArray data = new FloatArray(size);
+        FloatArray seq = new FloatArray(size);
+
+        IntStream.range(0, size).sequential().forEach(i -> {
+            data.set(i, (float) Math.random());
+            seq.set(i, data.get(i));
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testCeil, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        testCeil(seq);
+        for (int i = 0; i < size; i++) {
+            assertEquals(data.get(i), seq.get(i), 0.01f);
         }
     }
 

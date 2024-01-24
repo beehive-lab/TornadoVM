@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrin
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.CEIL;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COSPI;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
@@ -191,6 +192,15 @@ public class PTXMathPlugins {
                 return true;
             }
         });
+
+        r.register(new InvocationPlugin("ceil", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, CEIL, kind)));
+                return true;
+            }
+        });
+
     }
 
     private static void registerFloatMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
