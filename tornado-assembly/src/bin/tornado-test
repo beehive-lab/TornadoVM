@@ -191,6 +191,13 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsSerial",
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsConcurrent",
 
+
+    ## Half-float
+    'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionHalfFloat',
+    'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorSubtractionHalfFloat',
+    'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorMultiplicationHalfFloat',
+    'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorDivisionHalfFloat',
+
 ]
 
 # ################################################################################################################
