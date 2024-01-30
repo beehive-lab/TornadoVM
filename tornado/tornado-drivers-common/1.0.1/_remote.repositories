@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Jan 30 09:33:07 CET 2024
+tornado-drivers-common-1.0.1.jar>=
+tornado-drivers-common-1.0.1.pom>=

@@ -9,7 +9,7 @@ then
 	exit 0
 fi
 
-VERSION=1.0
+VERSION=1.0.1
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 
@@ -47,18 +47,6 @@ mvn install:install-file \
 	-DartifactId=tornado-drivers-ptx-jni \
 	-Dversion=$VERSION \
 	-Dfile=${API_PATH}/tornado-drivers-ptx-jni-${VERSION}-libs.jar \
-	-Dpackaging=jar \
-	-DgeneratePom=true \
-	-DlocalRepositoryPath=. \
-	 -DcreateChecksum=true 
-
-
-echo "Installing artifact: tornado-drivers-spirv-levelzero-jni"
-mvn install:install-file \
-	-DgroupId=${GROUPID} \
-	-DartifactId=tornado-drivers-spirv-levelzero-jni \
-	-Dversion=$VERSION \
-	-Dfile=${API_PATH}/tornado-drivers-spirv-levelzero-jni-${VERSION}-libs.jar \
 	-Dpackaging=jar \
 	-DgeneratePom=true \
 	-DlocalRepositoryPath=. \
