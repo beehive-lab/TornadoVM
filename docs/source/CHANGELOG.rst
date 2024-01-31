@@ -5,6 +5,38 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.1
+----------------
+30/01/2024
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- `#305 <https://github.com/beehive-lab/TornadoVM/pull/305>`_: Under-demand data transfer for custom data ranges.
+- `#313 <https://github.com/beehive-lab/TornadoVM/pull/313>`_: Initial support for Half-Precision (FP16) data types.
+- `#311 <https://github.com/beehive-lab/TornadoVM/pull/311>`_: Enable Multi-Task Multiple Device (MTMD) model from the ``TornadoExecutionPlan`` API:
+- `#315 <https://github.com/beehive-lab/TornadoVM/pull/315>`_: Math ``Ceil`` function added
+
+
+Compatibility/Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- `#294 <https://github.com/beehive-lab/TornadoVM/pull/294>`_: Separation of the OpenCL Headers from the code base.
+- `#297 <https://github.com/beehive-lab/TornadoVM/pull/297>`_: Separation of the LevelZero JNI API in a separate repository.
+- `#301 <https://github.com/beehive-lab/TornadoVM/pull/301>`_: Temurin configuration supported.
+- `#304 <https://github.com/beehive-lab/TornadoVM/pull/304>`_: Refactor of the common phases for the JIT compiler.
+- `#316 <https://github.com/beehive-lab/TornadoVM/pull/316>`_: Beehive SPIR-V Toolkit version updated.
+
+Bug Fixes
+~~~~~~~~~~~~~~~~~~
+
+- `#298 <https://github.com/beehive-lab/TornadoVM/pull/298>`_: OpenCL Codegen fixed open-close brackets.
+- `#300 <https://github.com/beehive-lab/TornadoVM/pull/300>`_: Python Dependencies fixed for AWS
+- `#308 <https://github.com/beehive-lab/TornadoVM/pull/308>`_: Runtime check for Grid-Scheduler names
+- `#309 <https://github.com/beehive-lab/TornadoVM/pull/309>`_: Fix check-style to support STR templates
+- `#314 <https://github.com/beehive-lab/TornadoVM/pull/314>`_: emit Vector16 Capability for 16-width vectors
+
+
 TornadoVM 1.0
 ----------------
 05/12/2023
