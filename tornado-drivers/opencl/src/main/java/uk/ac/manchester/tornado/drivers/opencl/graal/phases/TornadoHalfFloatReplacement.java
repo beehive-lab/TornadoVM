@@ -23,8 +23,11 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import java.util.Optional;
 
+import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.GraphState;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
@@ -33,6 +36,7 @@ import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
+import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -118,7 +122,17 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
             AddNode addNode = new AddNode(addHalfFloatNode.getX(), addHalfFloatNode.getY());
             graph.addWithoutUnique(addNode);
-            addHalfFloatNode.replaceAtUsages(addNode);
+            if (addHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+                PiNode piNode = addHalfFloatNode.usages().filter(PiNode.class).first();
+                if (piNode.inputs().filter(ValueAnchorNode.class).isNotEmpty()) {
+                    ValueAnchorNode anchorNode = piNode.inputs().filter(ValueAnchorNode.class).first();
+                    deleteFixed(anchorNode);
+                    piNode.replaceAtUsages(addNode);
+                    piNode.safeDelete();
+                }
+            } else {
+                addHalfFloatNode.replaceAtUsages(addNode);
+            }
             addHalfFloatNode.safeDelete();
         }
     }

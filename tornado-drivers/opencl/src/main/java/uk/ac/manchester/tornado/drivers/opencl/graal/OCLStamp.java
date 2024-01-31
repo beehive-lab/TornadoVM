@@ -82,6 +82,7 @@ public class OCLStamp extends ObjectStamp {
                     return JavaKind.Byte;
                 case SHORT:
                 case USHORT:
+                case HALF:
                     return JavaKind.Short;
                 case UINT:
                 case INT:

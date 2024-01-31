@@ -50,6 +50,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -127,6 +128,9 @@ public final class OCLVectorPlugins {
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT16, FloatArray.class, float.class);
 
+            // Adding half floats
+            registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
+
             // Adding ints
             registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT3, IntArray.class, int.class);
@@ -165,6 +169,8 @@ public final class OCLVectorPlugins {
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
+
+            //registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALFFLOAT2, HalfFloatArray.class, Float2.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);

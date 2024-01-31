@@ -26,6 +26,7 @@ import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
@@ -182,6 +183,14 @@ public class TornadoMath {
         boolean result = true;
         for (int i = 0; i < a.getSize() && result; i++) {
             result = compareBits(a.get(i), b.get(i));
+        }
+        return result;
+    }
+
+    public static boolean isEqual(HalfFloatArray a, HalfFloatArray b) {
+        boolean result = true;
+        for (int i = 0; i < a.getSize() && result; i++) {
+            result = compareBits(a.get(i).getHalfFloatValue(), b.get(i).getHalfFloatValue());
         }
         return result;
     }

@@ -67,6 +67,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -108,9 +109,11 @@ public enum OCLKind implements PlatformKind {
     ULONG2(2, null, ULONG),
     FLOAT2(2, Float2.TYPE, FLOAT),
     DOUBLE2(2, Double2.TYPE, DOUBLE),
+    HALF2(2, Half2.TYPE, HALF),
     VECTORDOUBLE2(2, VectorDouble2.TYPE, DOUBLE),
     VECTORINT2(2, VectorInt2.TYPE, INT),
     VECTORFLOAT2(2, VectorFloat2.TYPE, FLOAT),
+
     CHAR3(3, Byte3.TYPE, CHAR),
     IMAGEBYTE3(3, ImageByte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
@@ -517,6 +520,7 @@ public enum OCLKind implements PlatformKind {
                     return JavaKind.Byte;
                 case SHORT:
                 case USHORT:
+                case HALF:
                     return JavaKind.Short;
                 case INT:
                 case UINT:
