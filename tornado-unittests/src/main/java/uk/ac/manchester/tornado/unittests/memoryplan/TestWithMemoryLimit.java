@@ -75,8 +75,7 @@ public class TestWithMemoryLimit extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-//    @Test(expected = TornadoMemoryException.class)
-    @Test
+    @Test(expected = TornadoMemoryException.class)
     public void testWithMemoryLimitUnder() {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
