@@ -413,7 +413,21 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // The graph object is used when rewriting task-graphs (e.g., reductions)
         newTaskGraph.compilationGraph = this.compilationGraph;
 
+        if (memoryLimitSizeBytes>0 && exceedMemoryLimit()) {
+
+        }
         return newTaskGraph;
+    }
+
+//    private static volatile Instrumentation globalInstrumentation;
+
+    private boolean exceedMemoryLimit() {
+        long totalBuffer = 0l;
+
+        for (Object obj : executionContext.getObjects()) {
+            System.out.println(" Obj " + obj.getOb);
+        }
+
     }
 
     @Override

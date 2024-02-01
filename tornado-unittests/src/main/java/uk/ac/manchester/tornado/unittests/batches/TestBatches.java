@@ -164,7 +164,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test100MBSmall() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(100, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(100, MemSize.MB);
 
         // Fill 120MB of float array
         int size = 30000000;
@@ -197,7 +197,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test100MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(100, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(100, MemSize.MB);
 
         // Fill 800MB of float array
         int size = 200000000;
@@ -230,7 +230,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test300MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(300, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(300, MemSize.MB);
 
         // Fill 1.0GB
         int size = 250_000_000;
@@ -264,7 +264,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test512MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(512, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(512, MemSize.MB);
 
         // Fill 800MB
         int size = 200000000;
@@ -296,7 +296,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(50, MemSize.MB);
 
         // Fill 80MB of input Array
         int size = 20000000;
@@ -333,7 +333,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBInteger() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(50, MemSize.MB);
 
         // Fill 80MB of input Array
         int size = 20000000;
@@ -369,7 +369,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBShort() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(50, MemSize.MB);
 
         // Fill 160MB of input Array
         int size = 80000000;
@@ -406,7 +406,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBDouble() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(50, MemSize.MB);
 
         int size = 20000000;
         // or as much as we can
@@ -441,7 +441,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBLong() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(50, MemSize.MB);
 
         // Fill 160MB of input Array
         int size = 20000000;
@@ -477,7 +477,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeAndTypeRestriction() {
         // total input size mismatch for IntArray
-        checkMaxHeapAllocation(5, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(5, MemSize.MB);
         IntArray a0 = new IntArray(2 * 1_000_000);
         IntArray a1 = new IntArray(3 * 1_000_000);
 
@@ -494,7 +494,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeAndTypeRestrictionJavaArrays() {
         // total input size mismatch for int[]
-        checkMaxHeapAllocation(5, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(5, MemSize.MB);
         int[] a0 = new int[2 * 1_000_000];
         int[] a1 = new int[3 * 1_000_000];
 
@@ -511,7 +511,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputTypeRestriction() {
         // IntArray is NOT compatible with LongArray even if the total input size is equal
-        checkMaxHeapAllocation(6, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(6, MemSize.MB);
         IntArray a0 = new IntArray(4 * 1_000_000);
         LongArray a1 = new LongArray(2 * 1_000_000);
 
@@ -528,7 +528,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputTypeRestrictionJavaArrays() {
         // int[] is NOT compatible with long[] even if the total input size is equal
-        checkMaxHeapAllocation(6, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(6, MemSize.MB);
         int[] a0 = new int[4 * 1_000_000];
         long[] a1 = new long[2 * 1_000_000];
 
@@ -545,7 +545,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSize() {
         // IntArray is compatible with FloatArray for the same # of elements
-        checkMaxHeapAllocation(4, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(4, MemSize.MB);
         IntArray a0 = new IntArray(2 * 1_000_000);
         IntStream.range(0, a0.getSize()).forEach(i -> a0.set(i, i));
         FloatArray a1 = new FloatArray(2 * 1_000_000);
@@ -559,7 +559,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("1MB").execute();
 
         for (int i = 0; i < a1.getSize(); i++) {
-            Assert.assertEquals(a0.get(i), a1.get(i), 1e-20);
+            assertEquals(a0.get(i), a1.get(i), 1e-20);
         }
         executionPlan.freeDeviceMemory();
     }
@@ -567,7 +567,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeJavaArrays() {
         // int[] is compatible with float[] for the same # of elements
-        checkMaxHeapAllocation(4, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(4, MemSize.MB);
         int[] a0 = new int[2 * 1_000_000];
         IntStream.range(0, a0.length).forEach(i -> a0[i] = i);
         float[] a1 = new float[2 * 1_000_000];
@@ -581,7 +581,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("1MB").execute();
 
         for (int i = 0; i < a1.length; i++) {
-            Assert.assertEquals(a0[i], a1[i], 1e-20);
+            assertEquals(a0[i], a1[i], 1e-20);
         }
         executionPlan.freeDeviceMemory();
     }
@@ -589,7 +589,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeJavaToTornado() {
         // int[] is compatible with FloatArray for the same # of elements
-        checkMaxHeapAllocation(4, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(4, MemSize.MB);
         int[] a0 = new int[2 * 1_000_000];
         IntStream.range(0, a0.length).forEach(i -> a0[i] = i);
         FloatArray a1 = new FloatArray(2 * 1_000_000);
@@ -603,7 +603,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("1MB").execute();
 
         for (int i = 0; i < a1.getSize(); i++) {
-            Assert.assertEquals(a0[i], a1.get(i), 1e-20);
+            assertEquals(a0[i], a1.get(i), 1e-20);
         }
         executionPlan.freeDeviceMemory();
     }
@@ -611,7 +611,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeTornadoToJava() {
         // IntArray is compatible with float[] for the same # of elements
-        checkMaxHeapAllocation(4, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(4, MemSize.MB);
         IntArray a0 = new IntArray(2 * 1_000_000);
         IntStream.range(0, a0.getSize()).forEach(i -> a0.set(i, i));
         float[] a1 = new float[2 * 1_000_000];
@@ -625,7 +625,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("1MB").execute();
 
         for (int i = 0; i < a1.length; i++) {
-            Assert.assertEquals(a0.get(i), a1[i], 1e-20);
+            assertEquals(a0.get(i), a1[i], 1e-20);
         }
         executionPlan.freeDeviceMemory();
     }
@@ -633,7 +633,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeAndTypeJavaToTornado() {
         // int[] is compatible with IntArray for the same # of elements
-        checkMaxHeapAllocation(4, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(4, MemSize.MB);
         int[] a0 = new int[2 * 1_000_000];
         IntStream.range(0, a0.length).forEach(i -> a0[i] = i);
         IntArray a1 = new IntArray(2 * 1_000_000);
@@ -647,7 +647,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("1MB").execute();
 
         for (int i = 0; i < a1.getSize(); i++) {
-            Assert.assertEquals(a0[i], a1.get(i));
+            assertEquals(a0[i], a1.get(i));
         }
         executionPlan.freeDeviceMemory();
     }
@@ -655,7 +655,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void testSameInputSizeAndTypeTornadoToJava() {
         // IntArray is compatible with int[] for the same # of elements
-        checkMaxHeapAllocation(4, MemSize.MB);
+        checkMaxHeapAllocationOnDevice(4, MemSize.MB);
         IntArray a0 = new IntArray(2 * 1_000_000);
         IntStream.range(0, a0.getSize()).forEach(i -> a0.set(i, i));
         int[] a1 = new int[2 * 1_000_000];
@@ -669,28 +669,20 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("1MB").execute();
 
         for (int i = 0; i < a1.length; i++) {
-            Assert.assertEquals(a0.get(i), a1[i]);
+            assertEquals(a0.get(i), a1[i]);
         }
         executionPlan.freeDeviceMemory();
     }
 
-    private long checkMaxHeapAllocation(int size, MemSize memSize) throws UnsupportedConfigurationException {
+    private long checkMaxHeapAllocationOnDevice(int size, MemSize memSize) throws UnsupportedConfigurationException {
         long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
 
-        long memThreshold = 0;
-
-        switch (memSize) {
-            case GB:
-                memThreshold = (long) size * 1024 * 1024 * 1024;
-                break;
-            case MB:
-                memThreshold = (long) size * 1024 * 1024;
-                break;
-            case TB:
-                memThreshold = (long) size * 1024 * 1024 * 1024 * 1024;
-                break;
-
-        }
+        long memThreshold = switch (memSize) {
+            case GB -> (long) size * 1024 * 1024 * 1024;
+            case MB -> (long) size * 1024 * 1024;
+            case TB -> (long) size * 1024 * 1024 * 1024 * 1024;
+            default -> throw new IllegalStateException(STR."Unexpected value: \{memSize}");
+        };
 
         // check if there is enough memory for at least one chunk
         if (maxAllocMemory < memThreshold) {
