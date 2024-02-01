@@ -288,15 +288,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
     }
 
-    private void debugInfo(final TaskMetaData meta) {
-        if (meta.isDebug()) {
-            meta.printThreadDims();
-        }
-    }
-
     private int submitSequential(final TaskMetaData meta) {
         final int task;
-        debugInfo(meta);
 
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
