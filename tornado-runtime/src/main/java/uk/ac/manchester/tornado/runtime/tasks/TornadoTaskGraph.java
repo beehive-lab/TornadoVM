@@ -2144,6 +2144,25 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void memoryLimit(String memoryLimit) {
+        // parse value and units
+        Matcher matcher = PATTERN_BATCH.matcher(memoryLimit);
+        long value = 0;
+        String units = null;
+        if (matcher.find()) {
+            value = Long.parseLong(matcher.group(1));
+            units = matcher.group(2).toUpperCase();
+        }
+
+        // compute bytes
+        this.batchSizeBytes = switch (Objects.requireNonNull(units)) {
+            case "MB" -> value * 1_000_000;
+            case "GB" -> value * 1_000_000_000;
+            default -> throw new TornadoRuntimeException(STR."Units not supported: \{units}");
+        };
+    }
+
+    @Override
     public long getTotalTime() {
         return getProfilerTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
     }

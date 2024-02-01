@@ -136,7 +136,6 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * @return
      */
     public TornadoExecutionPlan withConcurrentDevices() {
         tornadoExecutor.withConcurrentDevices();
@@ -259,6 +258,11 @@ public class TornadoExecutionPlan {
         return this;
     }
 
+    public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
+        tornadoExecutor.withMemoryLimit(memoryLimit);
+        return this;
+    }
+
     /**
      * Reset the execution context for the current execution plan. The TornadoVM
      * runtime system will clean the code cache and all events associated with the
@@ -311,6 +315,9 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
         }
 
+        void withMemoryLimit(String memoryLimit){
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withMemoryLimit(memoryLimit));
+        }
         /**
          * For all task-graphs contained in an Executor, update the device.
          *

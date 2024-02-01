@@ -72,6 +72,7 @@ public class TornadoExecutionContext {
     private int nextTask;
 
     private long batchSize;
+    private long executionPlanMemoryLimit;
     private Set<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
@@ -95,6 +96,7 @@ public class TornadoExecutionContext {
         Arrays.fill(taskToDeviceMapTable, null);
         nextTask = 0;
         batchSize = -1;
+        executionPlanMemoryLimit = -1;
         lastDevices = new HashSet<>();
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
@@ -129,6 +131,14 @@ public class TornadoExecutionContext {
 
     public void setBatchSize(long size) {
         this.batchSize = size;
+    }
+
+    public void setExecutionPlanMemoryLimit(long memoryLimitSize) {
+        this.executionPlanMemoryLimit = memoryLimitSize;
+    }
+
+    public long getExecutionPlanMemoryLimit() {
+        return executionPlanMemoryLimit;
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
@@ -255,7 +265,7 @@ public class TornadoExecutionContext {
         if (target instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
             accelerator = tornadoAcceleratorDevice;
         } else {
-            throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
+            throw new TornadoRuntimeException(STR."Device \{target.getClass()} not supported yet");
         }
 
         setDevice(accelerator);
@@ -438,7 +448,7 @@ public class TornadoExecutionContext {
     }
 
     private String canonicalizeId(String id) {
-        return id.startsWith(getId()) ? id : getId() + "." + id;
+        return id.startsWith(getId()) ? id : STR."\{getId()}.\{id}";
     }
 
     public TornadoAcceleratorDevice getDeviceForTask(String id) {
@@ -447,7 +457,7 @@ public class TornadoExecutionContext {
         if (device instanceof TornadoAcceleratorDevice) {
             tornadoDevice = (TornadoAcceleratorDevice) device;
         } else {
-            throw new RuntimeException("Device " + device.getClass() + " not supported yet");
+            throw new RuntimeException(STR."Device \{device.getClass()} not supported yet");
         }
         return getTask(id) == null ? null : tornadoDevice;
     }
