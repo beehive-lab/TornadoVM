@@ -17,8 +17,66 @@
  */
 package uk.ac.manchester.tornado.unittests.memoryplan;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class TestWithMemoryLimit extends TornadoTestBase {
 
+import static org.junit.Assert.assertEquals;
+
+public class TestWithMemoryLimit extends TornadoTestBase {
+    private static final int NUM_ELEMENTS = 16;
+    private static IntArray a = new IntArray(NUM_ELEMENTS);
+    private static IntArray b = new IntArray(NUM_ELEMENTS);
+    private static IntArray c = new IntArray(NUM_ELEMENTS);
+    @BeforeClass
+    public static void setUpBeforeClass() {
+
+        a = new IntArray(NUM_ELEMENTS);
+        b = new IntArray(NUM_ELEMENTS);
+        c = new IntArray(NUM_ELEMENTS);
+
+
+        a.init(1);
+        b.init(2);
+
+    }
+    @Test
+    public void testWithMemoryLimitOver() {
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withMemoryLimit("512MB").execute();
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
+        }
+    }
+
+    @Test
+    public void testWithMemoryLimitUnder() {
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withMemoryLimit("1GB").execute();
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
+        }
+    }
 }
