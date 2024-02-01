@@ -45,6 +45,15 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  * provides methods to compute chunk sizes based on the batch size and input
  * objects.
  */
+/**
+ * How to test?
+ *
+ * <p>
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
+ * </code>
+ * </p>
+ */
 public class BatchConfiguration {
 
     private final int totalChunks;
@@ -75,7 +84,7 @@ public class BatchConfiguration {
         HashSet<Long> inputSizes = new HashSet<>();
         LinkedHashSet<Byte> elementSizes = new LinkedHashSet<>();
 
-        for (Object o : inputObjects) {
+        for (Object o : context.getObjects()) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
                 DataTypeSize dataTypeSize = findDataTypeSize(componentType);
@@ -125,7 +134,7 @@ public class BatchConfiguration {
         return new BatchConfiguration(totalChunks, remainingChunkSize, elementSizes.getFirst());
     }
 
-    private static DataTypeSize findDataTypeSize(Class<?> dataType) {
+    public static DataTypeSize findDataTypeSize(Class<?> dataType) {
         return Arrays.stream(DataTypeSize.values()).filter(size -> size.getDataType().equals(dataType)).findFirst().orElse(null);
     }
 
@@ -141,7 +150,7 @@ public class BatchConfiguration {
         return numBytesType;
     }
 
-    private enum DataTypeSize {
+    public enum DataTypeSize {
         BYTE(byte.class, (byte) 1), //
         CHAR(char.class, (byte) 2), //
         SHORT(short.class, (byte) 2), //

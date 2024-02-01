@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -30,8 +31,17 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * How to test?
+ *
+ * <p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.memoryplan.TestWithMemoryLimit
+ * </code>
+ * </p>
+ */
 public class TestWithMemoryLimit extends TornadoTestBase {
-    private static final int NUM_ELEMENTS = 16;
+    private static final int NUM_ELEMENTS = 50000000;
     private static IntArray a = new IntArray(NUM_ELEMENTS);
     private static IntArray b = new IntArray(NUM_ELEMENTS);
     private static IntArray c = new IntArray(NUM_ELEMENTS);
@@ -57,13 +67,15 @@ public class TestWithMemoryLimit extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withMemoryLimit("512MB").execute();
+        executionPlan.withMemoryLimit("1GB").execute();
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
         }
+        executionPlan.freeDeviceMemory();
     }
 
+//    @Test(expected = TornadoMemoryException.class)
     @Test
     public void testWithMemoryLimitUnder() {
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -73,7 +85,7 @@ public class TestWithMemoryLimit extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withMemoryLimit("1GB").execute();
+        executionPlan.withMemoryLimit("512MB").execute();
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);

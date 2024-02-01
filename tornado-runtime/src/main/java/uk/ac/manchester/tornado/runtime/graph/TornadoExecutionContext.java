@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
+import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,6 +48,15 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -141,6 +152,44 @@ public class TornadoExecutionContext {
         return executionPlanMemoryLimit;
     }
 
+    public boolean doesExceedExecPlanLimit() {
+        long totalSize = 0;
+
+        HashSet<Long> inputSizes = new HashSet<>();
+        LinkedHashSet<Byte> elementSizes = new LinkedHashSet<>();
+
+        for (Object o : getObjects()) {
+            if (o.getClass().isArray()) {
+                Class<?> componentType = o.getClass().getComponentType();
+                BatchConfiguration.DataTypeSize dataTypeSize = BatchConfiguration.findDataTypeSize(componentType);
+                if (dataTypeSize == null) {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
+                }
+                long size = Array.getLength(o);
+                totalSize = size * dataTypeSize.getSize();
+
+                elementSizes.add(dataTypeSize.getSize());
+                inputSizes.add(totalSize);
+            } else if (o instanceof TornadoNativeArray tornadoNativeArray) {
+                totalSize = tornadoNativeArray.getNumBytesWithoutHeader();
+                inputSizes.add(totalSize);
+                byte elementSize = switch (tornadoNativeArray) {
+                    case IntArray _ -> BatchConfiguration.DataTypeSize.INT.getSize();
+                    case FloatArray _ -> BatchConfiguration.DataTypeSize.FLOAT.getSize();
+                    case DoubleArray _ -> BatchConfiguration.DataTypeSize.DOUBLE.getSize();
+                    case LongArray _ -> BatchConfiguration.DataTypeSize.LONG.getSize();
+                    case ShortArray _ -> BatchConfiguration.DataTypeSize.SHORT.getSize();
+                    case ByteArray _ -> BatchConfiguration.DataTypeSize.BYTE.getSize();
+                    case CharArray _ -> BatchConfiguration.DataTypeSize.CHAR.getSize();
+                    default -> throw new TornadoRuntimeException(STR."Unsupported array type: \{o.getClass()}");
+                };
+                elementSizes.add(elementSize);
+            } else {
+                throw new TornadoRuntimeException(STR."Unsupported type: \{o.getClass()}");
+            }
+        }
+        return totalSize > getExecutionPlanMemoryLimit();
+    }
     public int replaceVariable(Object oldObj, Object newObj) {
         /*
          * Use the same index the oldObj was assigned. The argument indices are
