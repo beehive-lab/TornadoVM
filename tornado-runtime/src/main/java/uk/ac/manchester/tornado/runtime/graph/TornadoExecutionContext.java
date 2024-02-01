@@ -188,7 +188,8 @@ public class TornadoExecutionContext {
                 throw new TornadoRuntimeException(STR."Unsupported type: \{o.getClass()}");
             }
         }
-        return totalSize > getExecutionPlanMemoryLimit();
+
+        return getExecutionPlanMemoryLimit() != -1 && totalSize > getExecutionPlanMemoryLimit();
     }
     public int replaceVariable(Object oldObj, Object newObj) {
         /*
