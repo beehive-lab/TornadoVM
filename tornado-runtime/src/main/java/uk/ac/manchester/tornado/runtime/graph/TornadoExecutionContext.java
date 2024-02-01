@@ -166,12 +166,12 @@ public class TornadoExecutionContext {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
                 long size = Array.getLength(o);
-                totalSize = size * dataTypeSize.getSize();
+                totalSize += size * dataTypeSize.getSize();
 
                 elementSizes.add(dataTypeSize.getSize());
                 inputSizes.add(totalSize);
             } else if (o instanceof TornadoNativeArray tornadoNativeArray) {
-                totalSize = tornadoNativeArray.getNumBytesWithoutHeader();
+                totalSize += tornadoNativeArray.getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 byte elementSize = switch (tornadoNativeArray) {
                     case IntArray _ -> BatchConfiguration.DataTypeSize.INT.getSize();
@@ -188,7 +188,6 @@ public class TornadoExecutionContext {
                 throw new TornadoRuntimeException(STR."Unsupported type: \{o.getClass()}");
             }
         }
-
         return getExecutionPlanMemoryLimit() != -1 && totalSize > getExecutionPlanMemoryLimit();
     }
     public int replaceVariable(Object oldObj, Object newObj) {

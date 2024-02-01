@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
  * </p>
  */
 public class TestWithMemoryLimit extends TornadoTestBase {
-    private static final int NUM_ELEMENTS = 50000000;
+    private static final int NUM_ELEMENTS = 78643200;
     private static IntArray a = new IntArray(NUM_ELEMENTS);
     private static IntArray b = new IntArray(NUM_ELEMENTS);
     private static IntArray c = new IntArray(NUM_ELEMENTS);
