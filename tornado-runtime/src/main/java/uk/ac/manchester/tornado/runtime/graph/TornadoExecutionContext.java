@@ -231,11 +231,11 @@ public class TornadoExecutionContext {
     public void mapAllTasksToSingleDevice(TornadoDevice tornadoDevice) {
         if (tornadoDevice instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
             devices.clear();
-            devices.add(0, tornadoAcceleratorDevice);
+            devices.addFirst(tornadoAcceleratorDevice);
             apply(task -> task.mapTo(tornadoDevice));
             Arrays.fill(taskToDeviceMapTable, tornadoDevice);
         } else {
-            throw new TornadoRuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
+            throw new TornadoRuntimeException(STR."Device \{tornadoDevice.getClass()} not supported yet");
         }
     }
 
@@ -548,23 +548,23 @@ public class TornadoExecutionContext {
         final String ansiPurple = "\u001B[35m";
         final String ansiGreen = "\u001B[32m";
         System.out.println("-----------------------------------");
-        System.out.println(ansiCyan + "Device Table:" + ansiReset);
+        System.out.println(STR."\{ansiCyan}Device Table:\{ansiReset}");
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
         }
 
-        System.out.println(ansiYellow + "Constant Table:" + ansiReset);
+        System.out.println(STR."\{ansiYellow}Constant Table:\{ansiReset}");
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
         }
 
-        System.out.println(ansiPurple + "Object Table:" + ansiReset);
+        System.out.println(STR."\{ansiPurple}Object Table:\{ansiReset}");
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj);
         }
 
-        System.out.println(ansiGreen + "Task Table:" + ansiReset);
+        System.out.println(STR."\{ansiGreen}Task Table:\{ansiReset}");
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());
