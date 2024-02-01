@@ -763,6 +763,11 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    TaskGraph memoryLimit(String memoryLimit) {
+        taskGraphImpl.memoryLimit(memoryLimit);
+        return this;
+    }
+
     void execute() {
         taskGraphImpl.schedule().waitOn();
     }
