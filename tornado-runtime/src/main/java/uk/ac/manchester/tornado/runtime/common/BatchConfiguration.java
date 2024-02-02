@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 
 /**
@@ -150,29 +151,4 @@ public class BatchConfiguration {
         return numBytesType;
     }
 
-    public enum DataTypeSize {
-        BYTE(byte.class, (byte) 1), //
-        CHAR(char.class, (byte) 2), //
-        SHORT(short.class, (byte) 2), //
-        INT(int.class, (byte) 4), //
-        FLOAT(float.class, (byte) 4), //
-        LONG(long.class, (byte) 8), //
-        DOUBLE(double.class, (byte) 8);
-
-        private final Class<?> dataType;
-        private final byte size;
-
-        DataTypeSize(Class<?> dataType, byte size) {
-            this.dataType = dataType;
-            this.size = size;
-        }
-
-        public Class<?> getDataType() {
-            return dataType;
-        }
-
-        public byte getSize() {
-            return size;
-        }
-    }
 }

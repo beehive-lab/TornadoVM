@@ -62,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -161,7 +162,7 @@ public class TornadoExecutionContext {
         for (Object o : getObjects()) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
-                BatchConfiguration.DataTypeSize dataTypeSize = BatchConfiguration.findDataTypeSize(componentType);
+                DataTypeSize dataTypeSize = BatchConfiguration.findDataTypeSize(componentType);
                 if (dataTypeSize == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
@@ -174,13 +175,13 @@ public class TornadoExecutionContext {
                 totalSize += tornadoNativeArray.getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 byte elementSize = switch (tornadoNativeArray) {
-                    case IntArray _ -> BatchConfiguration.DataTypeSize.INT.getSize();
-                    case FloatArray _ -> BatchConfiguration.DataTypeSize.FLOAT.getSize();
-                    case DoubleArray _ -> BatchConfiguration.DataTypeSize.DOUBLE.getSize();
-                    case LongArray _ -> BatchConfiguration.DataTypeSize.LONG.getSize();
-                    case ShortArray _ -> BatchConfiguration.DataTypeSize.SHORT.getSize();
-                    case ByteArray _ -> BatchConfiguration.DataTypeSize.BYTE.getSize();
-                    case CharArray _ -> BatchConfiguration.DataTypeSize.CHAR.getSize();
+                    case IntArray _ -> DataTypeSize.INT.getSize();
+                    case FloatArray _ -> DataTypeSize.FLOAT.getSize();
+                    case DoubleArray _ -> DataTypeSize.DOUBLE.getSize();
+                    case LongArray _ -> DataTypeSize.LONG.getSize();
+                    case ShortArray _ -> DataTypeSize.SHORT.getSize();
+                    case ByteArray _ -> DataTypeSize.BYTE.getSize();
+                    case CharArray _ -> DataTypeSize.CHAR.getSize();
                     default -> throw new TornadoRuntimeException(STR."Unsupported array type: \{o.getClass()}");
                 };
                 elementSizes.add(elementSize);

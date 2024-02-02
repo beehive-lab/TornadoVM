@@ -743,7 +743,7 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public ImmutableTaskGraph snapshot() {
         TaskGraph cloneTaskGraph = new TaskGraph(this.getTaskGraphName());
-        cloneTaskGraph.taskGraphImpl = this.taskGraphImpl.ocreateImmutableTaskGraph();
+        cloneTaskGraph.taskGraphImpl = this.taskGraphImpl.createImmutableTaskGraph();
         cloneTaskGraph.taskNames = this.taskNames;
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
