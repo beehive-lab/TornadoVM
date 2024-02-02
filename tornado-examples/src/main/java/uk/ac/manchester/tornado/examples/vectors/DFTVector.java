@@ -88,7 +88,7 @@ public class DFTVector {
             Float2 sumReal = new Float2(0, 0);
             Float2 simImag = new Float2(0, 0);
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * TornadoMath.floatPI() * t * k) / n);
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
 
                 Float2 partA = Float2.mult(inreal.get(t), TornadoMath.cos(angle));
                 Float2 partB = Float2.mult(inimag.get(t), TornadoMath.sin(angle));
@@ -138,7 +138,7 @@ public class DFTVector {
             Float8 sumReal = new Float8(0, 0, 0, 0, 0, 0, 0, 0);
             Float8 simImag = new Float8(0, 0, 0, 0, 0, 0, 0, 0);
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * TornadoMath.floatPI() * t * k) / n);
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
 
                 Float8 partA = Float8.mult(inreal.get(t), TornadoMath.cos(angle));
                 Float8 partB = Float8.mult(inimag.get(t), TornadoMath.sin(angle));
@@ -164,7 +164,7 @@ public class DFTVector {
             Float16 sumImag = new Float16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * TornadoMath.floatPI() * t * k) / n);
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
 
                 Float16 partA = Float16.mult(inreal.get(t), TornadoMath.cos(angle));
                 Float16 partB = Float16.mult(inimag.get(t), TornadoMath.sin(angle));

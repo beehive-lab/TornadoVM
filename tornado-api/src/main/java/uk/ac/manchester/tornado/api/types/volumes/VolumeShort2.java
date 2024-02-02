@@ -30,19 +30,19 @@ public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> 
     /**
      * backing array.
      */
-    protected final ShortArray storage;
+    private final ShortArray storage;
     /**
      * Size in Y dimension.
      */
-    protected final int Y;
+    private final int Y;
     /**
      * Size in X dimension.
      */
-    protected final int X;
+    private final int X;
     /**
      * Size in Y dimension.
      */
-    protected final int Z;
+    private final int Z;
     /**
      * number of elements in the storage.
      */

@@ -37,7 +37,7 @@ public final class Matrix2DFloat4 extends Matrix2DType implements TornadoMatrixI
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
     /**
      * number of elements in the storage.
      */

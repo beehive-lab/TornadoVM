@@ -32,15 +32,15 @@ public final class ImageFloat8 implements TornadoImagesInterface<FloatBuffer> {
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
     /**
      * Number of rows.
      */
-    protected final int Y;
+    private final int Y;
     /**
      * Number of columns.
      */
-    protected final int X;
+    private final int X;
     /**
      * number of elements in the storage.
      */

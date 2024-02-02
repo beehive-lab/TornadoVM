@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
@@ -396,10 +397,20 @@ public class ComputeTests extends TornadoTestBase {
     }
 
     private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
-        for (@Parallel int i = 0; i < vector.size(); i++) {
+        for (@Parallel int i = 0; i < matrix.getNumRows(); i++) {
             float sum = 0.0f;
             for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum += vector.get(i) * matrix.get(i, i);
+                sum += matrix.get(i, j) * vector.get(j);
+            }
+            output.set(i, sum);
+        }
+    }
+
+    private static void computeMatrixVectorFloat4(Matrix2DFloat4 matrix, VectorFloat4 vector, VectorFloat output) {
+        for (@Parallel int i = 0; i < matrix.getNumRows(); i++) {
+            float sum = 0;
+            for (int j = 0; j < matrix.getNumColumns(); j++) {
+                sum += Float4.sum(Float4.mult(matrix.get(i, j), vector.get(j)));
             }
             output.set(i, sum);
         }
@@ -848,28 +859,20 @@ public class ComputeTests extends TornadoTestBase {
     public void matrixVector() {
         int size = 4096;
 
-        // Create a matrix of M rows and N columns (MxN)
         Matrix2DFloat matrix2DFloat = new Matrix2DFloat(size, size);
-
-        // Vector must be of size N
         VectorFloat vectorFloat = new VectorFloat(size);
-
-        // Output
         VectorFloat result = new VectorFloat(size);
-
         VectorFloat resultSeq = new VectorFloat(size);
 
         Random r = new Random();
-
         final int s = size;
 
-        // Init Data
         IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
         IntStream.range(0, size).forEach(idx -> IntStream.range(0, s).forEach(jdx -> {
             matrix2DFloat.set(idx, jdx, r.nextFloat());
         }));
 
-        TaskGraph taskGraph = new TaskGraph("la") //
+        TaskGraph taskGraph = new TaskGraph("graph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix2DFloat, vectorFloat) //
                 .task("mv", ComputeTests::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
@@ -880,7 +883,58 @@ public class ComputeTests extends TornadoTestBase {
 
         computeMatrixVector(matrix2DFloat, vectorFloat, resultSeq);
         for (int i = 0; i < vectorFloat.size(); i++) {
-            assertEquals(resultSeq.get(i), resultSeq.get(i), 0.1);
+            assertEquals(resultSeq.get(i), result.get(i), 0.01f);
+        }
+    }
+
+    @Test
+    public void matrixVectorFloat4() {
+        int M = 2048;
+        int N = 4096;
+
+        Matrix2DFloat4 matrix2DFloat = new Matrix2DFloat4(M, N);
+        VectorFloat4 vectorFloat = new VectorFloat4(N);
+        VectorFloat result = new VectorFloat(M);
+
+        Matrix2DFloat inputA = new Matrix2DFloat(M, N * 4);
+        VectorFloat inputB = new VectorFloat(N * 4);
+        VectorFloat resultSeq = new VectorFloat(M);
+
+        Random r = new Random(11);
+        // Init Data
+        for (int i = 0; i < vectorFloat.getLength(); i++) {
+            Float4 f = new Float4(0, 1, 2, 3);
+            int indexI = i * 4;
+            inputB.set(indexI, f.getX());
+            inputB.set(indexI + 1, f.getY());
+            inputB.set(indexI + 2, f.getZ());
+            inputB.set(indexI + 3, f.getW());
+            vectorFloat.set(i, f);
+        }
+        for (int i = 0; i < matrix2DFloat.getNumRows(); i++) {
+            for (int j = 0; j < matrix2DFloat.getNumColumns(); j++) {
+                Float4 f = new Float4(0, 1, 2, 3);
+                matrix2DFloat.set(i, j, f);
+                int indexJ = j * 4;
+                inputA.set(i, indexJ, f.getX());
+                inputA.set(i, indexJ + 1, f.getY());
+                inputA.set(i, indexJ + 2, f.getZ());
+                inputA.set(i, indexJ + 3, f.getW());
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("graph") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix2DFloat, vectorFloat) //
+                .task("mv", ComputeTests::computeMatrixVectorFloat4, matrix2DFloat, vectorFloat, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        computeMatrixVector(inputA, inputB, resultSeq);
+        for (int i = 0; i < result.getLength(); i++) {
+            assertEquals(resultSeq.get(i), result.get(i), 0.01f);
         }
     }
     // CHECKSTYLE:ON

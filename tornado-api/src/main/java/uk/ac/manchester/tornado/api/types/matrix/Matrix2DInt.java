@@ -27,10 +27,11 @@ import uk.ac.manchester.tornado.api.types.utils.IntOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
 
 public final class Matrix2DInt extends Matrix2DType implements TornadoMatrixInterface<IntBuffer> {
+
     /**
      * backing array.
      */
-    protected final IntArray storage;
+    private final IntArray storage;
 
     /**
      * number of elements in the storage.
@@ -109,13 +110,12 @@ public final class Matrix2DInt extends Matrix2DType implements TornadoMatrixInte
     }
 
     public VectorInt row(int row) {
-        int index = toRowMajor(row, 0, COLUMNS);
-        int from = index;
-        int to = getFinalIndexOfRange(index);
-        int size = to - from;
+        int baseIndex = toRowMajor(row, 0, COLUMNS);
+        int to = getFinalIndexOfRange(baseIndex);
+        int size = to - baseIndex;
         IntArray f = new IntArray(size);
         int j = 0;
-        for (int i = from; i < to; i++) {
+        for (int i = baseIndex; i < to; i++) {
             f.set(j, storage.get(i));
             j++;
         }
@@ -151,20 +151,6 @@ public final class Matrix2DInt extends Matrix2DType implements TornadoMatrixInte
                 int sum = 0;
                 for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
-                }
-                set(row, col, sum);
-            }
-        }
-    }
-
-    public void tmultiply(Matrix2DInt a, Matrix2DInt b) {
-        System.out.printf("tmult: M=%d (expect %d)\n", getNumRows(), a.getNumRows());
-        System.out.printf("tmult: N=%d (expect %d)\n", getNumColumns(), b.getNumRows());
-        for (int row = 0; row < getNumRows(); row++) {
-            for (int col = 0; col < b.getNumRows(); col++) {
-                int sum = 0;
-                for (int k = 0; k < b.getNumColumns(); k++) {
-                    sum += a.get(row, k) * b.get(col, k);
                 }
                 set(row, col, sum);
             }
