@@ -30,7 +30,7 @@ public final class VectorFloat4 implements TornadoCollectionInterface<FloatBuffe
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -44,7 +44,7 @@ public final class VectorFloat4 implements TornadoCollectionInterface<FloatBuffe
      * @param array
      *     Array to be stored
      */
-    protected VectorFloat4(int numElements, FloatArray array) {
+    private VectorFloat4(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }

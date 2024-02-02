@@ -33,15 +33,15 @@ public final class ImageByte4 implements TornadoImagesInterface<ByteBuffer> {
     /**
      * backing array.
      */
-    protected final ByteArray storage;
+    private final ByteArray storage;
     /**
      * Number of rows.
      */
-    protected final int Y;
+    private final int Y;
     /**
      * Number of columns.
      */
-    protected final int X;
+    private final int X;
     /**
      * number of elements in the storage.
      */

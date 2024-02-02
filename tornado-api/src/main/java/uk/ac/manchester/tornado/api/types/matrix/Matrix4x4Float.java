@@ -31,11 +31,11 @@ public final class Matrix4x4Float implements TornadoMatrixInterface<FloatBuffer>
     /**
      * Number of rows.
      */
-    protected static final int ROWS = 4;
+    private static final int ROWS = 4;
     /**
      * Number of columns.
      */
-    protected static final int COLUMNS = 4;
+    private static final int COLUMNS = 4;
     /**
      * number of elements in the storage.
      */
@@ -43,7 +43,7 @@ public final class Matrix4x4Float implements TornadoMatrixInterface<FloatBuffer>
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
 
     public Matrix4x4Float() {
         this(new FloatArray(NUM_ELEMENTS));

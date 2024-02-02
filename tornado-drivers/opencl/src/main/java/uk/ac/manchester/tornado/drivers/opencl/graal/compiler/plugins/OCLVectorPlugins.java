@@ -365,7 +365,6 @@ public final class OCLVectorPlugins {
                 return true;
             }
         });
-
     }
 
     static void registerParameterPlugins(Plugins plugins) {

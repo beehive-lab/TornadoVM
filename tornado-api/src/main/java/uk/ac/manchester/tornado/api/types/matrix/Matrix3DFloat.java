@@ -28,7 +28,7 @@ public final class Matrix3DFloat extends Matrix3DType implements TornadoMatrixIn
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
 
     /**
      * number of elements in the storage.

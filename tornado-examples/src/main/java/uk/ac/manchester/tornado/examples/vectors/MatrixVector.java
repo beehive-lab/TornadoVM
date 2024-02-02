@@ -63,20 +63,20 @@ public class MatrixVector {
     public static final int ITERATIONS = 100;
 
     private static void compute(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
-        for (@Parallel int i = 0; i < vector.size(); i++) {
+        for (@Parallel int i = 0; i < matrix.getNumRows(); i++) {
             float sum = 0.0f;
             for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum += vector.get(i) * matrix.get(i, i);
+                sum += matrix.get(i, j) * vector.get(j);
             }
             output.set(i, sum);
         }
     }
 
-    private static void computeWithVectors(Matrix2DFloat4 matrix, VectorFloat4 vector, VectorFloat4 output) {
-        for (@Parallel int i = 0; i < vector.getLength(); i++) {
-            Float4 sum = new Float4(0, 0, 0, 0);
+    private static void computeWithVectors(Matrix2DFloat4 matrix, VectorFloat4 vector, VectorFloat output) {
+        for (@Parallel int i = 0; i < matrix.getNumRows(); i++) {
+            float sum = 0;
             for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum = Float4.add(sum, Float4.mult(vector.get(i), matrix.get(i, i)));
+                sum += Float4.sum(Float4.mult(matrix.get(i, j), vector.get(j)));
             }
             output.set(i, sum);
         }
@@ -90,7 +90,7 @@ public class MatrixVector {
         VectorFloat4 vectorFloat = new VectorFloat4(size);
 
         // Output
-        VectorFloat4 result = new VectorFloat4(size);
+        VectorFloat result = new VectorFloat(size);
 
         Random r = new Random();
         final int s = size;
@@ -186,7 +186,7 @@ public class MatrixVector {
         IntStream.range(0, size).parallel().forEach(i -> {
             float sum = 0.0f;
             for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum += vector.get(i) * matrix.get(i, i);
+                sum +=  matrix.get(i, j) * vector.get(j);
             }
             output.set(i, sum);
         });
@@ -246,7 +246,7 @@ public class MatrixVector {
             }
         }
 
-        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 2);
+        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 0);
 
         if (version.startsWith("vector")) {
             runWithVectorTypes(size, device);

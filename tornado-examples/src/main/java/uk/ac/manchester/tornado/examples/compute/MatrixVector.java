@@ -61,10 +61,10 @@ public class MatrixVector {
     public static final int MAX_ITERATIONS = 100;
 
     private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
-        for (@Parallel int i = 0; i < vector.size(); i++) {
+        for (@Parallel int i = 0; i < matrix.getNumRows(); i++) {
             float sum = 0.0f;
             for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum += vector.get(i) * matrix.get(i, i);
+                sum += matrix.get(i, j) * vector.get(j);
             }
             output.set(i, sum);
         }
@@ -77,7 +77,8 @@ public class MatrixVector {
             try {
                 size = Integer.parseInt(args[0]);
             } catch (NumberFormatException numberFormatException) {
-                size = 8192;
+                numberFormatException.printStackTrace();
+                throw new NullPointerException();
             }
         }
 
