@@ -154,7 +154,7 @@ public class ImmutableTaskGraph {
     }
 
     void withMemoryLimit(String memoryLimit) {
-        taskGraph.memoryLimit(memoryLimit);
+        taskGraph.withMemoryLimit(memoryLimit);
     }
 
     TornadoDevice getDevice() {

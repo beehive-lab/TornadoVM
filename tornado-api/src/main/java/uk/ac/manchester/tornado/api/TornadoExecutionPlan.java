@@ -257,6 +257,11 @@ public class TornadoExecutionPlan {
         this.disableProfiler = true;
         return this;
     }
+    /**
+     * Prevents the TornadoExecutionPlan to execute if the I/O buffers exceed the provided limit.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
 
     public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
         tornadoExecutor.withMemoryLimit(memoryLimit);

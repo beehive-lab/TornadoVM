@@ -743,7 +743,7 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public ImmutableTaskGraph snapshot() {
         TaskGraph cloneTaskGraph = new TaskGraph(this.getTaskGraphName());
-        cloneTaskGraph.taskGraphImpl = this.taskGraphImpl.createImmutableTaskGraph();
+        cloneTaskGraph.taskGraphImpl = this.taskGraphImpl.ocreateImmutableTaskGraph();
         cloneTaskGraph.taskNames = this.taskNames;
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
@@ -763,8 +763,8 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
-    TaskGraph memoryLimit(String memoryLimit) {
-        taskGraphImpl.memoryLimit(memoryLimit);
+    TaskGraph withMemoryLimit(String memoryLimit) {
+        taskGraphImpl.withMemoryLimit(memoryLimit);
         return this;
     }
 

@@ -2132,7 +2132,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void memoryLimit(String memoryLimit) {
+    public void withMemoryLimit(String memoryLimit) {
        this.memoryLimitSizeBytes = parseSizeToBytes(memoryLimit);
        executionContext.setExecutionPlanMemoryLimit(this.memoryLimitSizeBytes);
     }
