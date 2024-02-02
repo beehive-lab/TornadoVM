@@ -31,7 +31,7 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
 
     /**
      * number of elements in the storage.
@@ -110,13 +110,12 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
     }
 
     public VectorFloat row(int row) {
-        int index = toRowMajor(row, 0, COLUMNS);
-        int from = index;
-        int to = getFinalIndexOfRange(index);
-        int size = to - from;
+        int baseIndex = toRowMajor(row, 0, COLUMNS);
+        int to = getFinalIndexOfRange(baseIndex);
+        int size = to - baseIndex;
         FloatArray f = new FloatArray(size);
         int j = 0;
-        for (int i = from; i < to; i++) {
+        for (int i = baseIndex; i < to; i++) {
             f.set(j, storage.get(i));
             j++;
         }

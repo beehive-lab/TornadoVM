@@ -243,9 +243,7 @@ public class VectorAddTest {
     }
 
     private static void computeWithStreams(final int size, FloatArray a, FloatArray b, FloatArray results) {
-        IntStream.range(0, size).parallel().forEach(i -> {
-            results.set(i, a.get(i) + b.get(i));
-        });
+        IntStream.range(0, size).parallel().forEach(i -> results.set(i, a.get(i) + b.get(i)));
     }
 
     private static void runWithJavaStreams(int size) {
@@ -295,7 +293,7 @@ public class VectorAddTest {
             }
         }
 
-        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 2);
+        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 0);
 
         if (version.startsWith("vector4")) {
             runWithVectorTypes4(size, device);

@@ -30,7 +30,7 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
     /**
      * backing array.
      */
-    protected final DoubleArray storage;
+    private final DoubleArray storage;
 
     /**
      * number of elements in the storage.
@@ -103,23 +103,22 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
     }
 
     public VectorDouble row(int row) {
-        int index = toRowMajor(row, 0, COLUMNS);
-        int from = index;
-        int to = getFinalIndexOfRange(index);
-        int size = to - from;
+        int baseIndex = toRowMajor(row, 0, COLUMNS);
+        int to = getFinalIndexOfRange(baseIndex);
+        int size = to - baseIndex;
         DoubleArray f = new DoubleArray(size);
         int j = 0;
-        for (int i = from; i < to; i++, j++) {
+        for (int i = baseIndex; i < to; i++, j++) {
             f.set(j, storage.get(i));
         }
         return new VectorDouble(COLUMNS, f);
     }
 
     public VectorDouble column(int col) {
-        int index = StorageFormats.toRowMajor(0, col, COLUMNS);
+        int baseIndex = StorageFormats.toRowMajor(0, col, COLUMNS);
         final VectorDouble v = new VectorDouble(ROWS);
         for (int i = 0; i < ROWS; i++) {
-            v.set(i, storage.get(index + (i * COLUMNS)));
+            v.set(i, storage.get(baseIndex + (i * COLUMNS)));
         }
         return v;
     }

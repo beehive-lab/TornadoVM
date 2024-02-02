@@ -38,6 +38,7 @@ public final class StorageFormats {
      *     length of a column
      * @return int
      */
+    @Deprecated
     public static int toColumnMajor(int i, int j, int ld) {
         return (j * ld) + i;
     }
@@ -49,16 +50,16 @@ public final class StorageFormats {
      *     row index
      * @param j
      *     column index
-     * @param yMax
+     * @param numColumns
      *     length of a row
      * @return int
      */
-    public static int toRowMajor(int i, int j, int yMax) {
-        return (i * yMax) + j;
+    public static int toRowMajor(int i, int j, int numColumns) {
+        return (i * numColumns) + j;
     }
 
     public static int toRowMajorVector(int i, int j, int numColumns, int vectorElements) {
-        return (i * numColumns * vectorElements) + j;
+        return ((i * numColumns) + j) * vectorElements;
     }
 
     public static int toRowMajor3D(int i, int j, int k, int zMax, int yMax) {
