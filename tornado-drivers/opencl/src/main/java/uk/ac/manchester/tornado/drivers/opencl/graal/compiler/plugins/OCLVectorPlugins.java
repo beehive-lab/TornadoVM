@@ -130,6 +130,8 @@ public final class OCLVectorPlugins {
 
             // Adding half floats
             registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloat.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloat.class, short.class);
 
             // Adding ints
             registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);

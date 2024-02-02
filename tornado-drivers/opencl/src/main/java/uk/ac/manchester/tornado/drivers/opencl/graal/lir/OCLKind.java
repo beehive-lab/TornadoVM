@@ -68,6 +68,8 @@ import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
+import uk.ac.manchester.tornado.api.types.vectors.Half3;
+import uk.ac.manchester.tornado.api.types.vectors.Half4;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -125,6 +127,7 @@ public enum OCLKind implements PlatformKind {
     ULONG3(3, null, ULONG),
     FLOAT3(3, Float3.TYPE, FLOAT),
     DOUBLE3(3, Double3.TYPE, DOUBLE),
+    HALF3(3, Half3.TYPE, HALF),
     VECTORDOUBLE3(3, VectorDouble3.TYPE, DOUBLE),
     VECTORINT3(3, VectorInt3.TYPE, INT),
     VECTORFLOAT3(3, VectorFloat3.TYPE, FLOAT),
@@ -139,6 +142,7 @@ public enum OCLKind implements PlatformKind {
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
     FLOAT4(4, Float4.TYPE, FLOAT),
+    HALF4(4, Half4.TYPE, HALF),
     MATRIX2DFLOAT4(4, Matrix2DFloat4.TYPE, FLOAT),
     MATRIX3DFLOAT4(4, Matrix3DFloat4.TYPE, FLOAT),
     MATRIX4X4FLOAT(4, Matrix4x4Float.TYPE, FLOAT),
