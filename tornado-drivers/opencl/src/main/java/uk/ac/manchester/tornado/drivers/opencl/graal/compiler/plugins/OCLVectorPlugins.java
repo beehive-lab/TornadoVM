@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
@@ -68,6 +69,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -172,7 +174,7 @@ public final class OCLVectorPlugins {
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
 
-            //registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALFFLOAT2, HalfFloatArray.class, Float2.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
@@ -222,6 +224,8 @@ public final class OCLVectorPlugins {
             return double.class;
         } else if (panamaType.contains("FloatArray")) {
             return float.class;
+        } else if (panamaType.contains("HalfFloatArray")) {
+            return short.class;
         } else {
             throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
         }
@@ -269,7 +273,7 @@ public final class OCLVectorPlugins {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                 if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
-                        "IntArray.<init>(int)"))) {
+                        "IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
                     Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;
