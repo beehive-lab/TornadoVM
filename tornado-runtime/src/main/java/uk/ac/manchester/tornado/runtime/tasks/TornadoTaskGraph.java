@@ -414,7 +414,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // The graph object is used when rewriting task-graphs (e.g., reductions)
         newTaskGraph.compilationGraph = this.compilationGraph;
 
-
         return newTaskGraph;
     }
 
@@ -2133,8 +2132,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void withMemoryLimit(String memoryLimit) {
-       this.memoryLimitSizeBytes = parseSizeToBytes(memoryLimit);
-       executionContext.setExecutionPlanMemoryLimit(this.memoryLimitSizeBytes);
+        this.memoryLimitSizeBytes = parseSizeToBytes(memoryLimit);
+        executionContext.setExecutionPlanMemoryLimit(this.memoryLimitSizeBytes);
     }
 
     private long parseSizeToBytes(String sizeStr) {
@@ -2152,6 +2151,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             default -> throw new TornadoRuntimeException(STR + "Units not supported: " + units);
         };
     }
+
     @Override
     public long getTotalTime() {
         return getProfilerTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
