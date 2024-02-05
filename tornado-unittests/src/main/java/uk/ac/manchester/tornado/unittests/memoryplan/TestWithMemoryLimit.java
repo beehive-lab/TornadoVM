@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +28,6 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -36,7 +35,7 @@ import static org.junit.Assert.assertEquals;
  *
  * <p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.memoryplan.TestWithMemoryLimit
+ * tornado-test -V uk.ac.manchester.tornado.unittests.memoryplan.TestWithMemoryLimit
  * </code>
  * </p>
  */
@@ -45,18 +44,16 @@ public class TestWithMemoryLimit extends TornadoTestBase {
     private static IntArray a = new IntArray(NUM_ELEMENTS);
     private static IntArray b = new IntArray(NUM_ELEMENTS);
     private static IntArray c = new IntArray(NUM_ELEMENTS);
+
     @BeforeClass
     public static void setUpBeforeClass() {
-
         a = new IntArray(NUM_ELEMENTS);
         b = new IntArray(NUM_ELEMENTS);
         c = new IntArray(NUM_ELEMENTS);
-
-
         a.init(1);
         b.init(2);
-
     }
+
     @Test
     public void testWithMemoryLimitOver() {
 
