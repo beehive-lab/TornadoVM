@@ -162,7 +162,7 @@ public class TornadoExecutionContext {
         for (Object o : getObjects()) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
-                DataTypeSize dataTypeSize = BatchConfiguration.findDataTypeSize(componentType);
+                DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);
                 if (dataTypeSize == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
@@ -191,6 +191,7 @@ public class TornadoExecutionContext {
         }
         return getExecutionPlanMemoryLimit() != -1 && totalSize > getExecutionPlanMemoryLimit();
     }
+
     public int replaceVariable(Object oldObj, Object newObj) {
         /*
          * Use the same index the oldObj was assigned. The argument indices are

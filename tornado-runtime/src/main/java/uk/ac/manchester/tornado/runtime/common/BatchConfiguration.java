@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  *
  * <p>
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
  * </code>
  * </p>
  */
@@ -88,7 +88,7 @@ public class BatchConfiguration {
         for (Object o : context.getObjects()) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
-                DataTypeSize dataTypeSize = findDataTypeSize(componentType);
+                DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);
                 if (dataTypeSize == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
@@ -133,10 +133,6 @@ public class BatchConfiguration {
             System.out.println(STR."remainingChunkSize: \{remainingChunkSize}");
         }
         return new BatchConfiguration(totalChunks, remainingChunkSize, elementSizes.getFirst());
-    }
-
-    public static DataTypeSize findDataTypeSize(Class<?> dataType) {
-        return Arrays.stream(DataTypeSize.values()).filter(size -> size.getDataType().equals(dataType)).findFirst().orElse(null);
     }
 
     public int getTotalChunks() {
