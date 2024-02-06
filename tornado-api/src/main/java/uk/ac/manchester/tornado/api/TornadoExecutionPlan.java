@@ -257,6 +257,7 @@ public class TornadoExecutionPlan {
         this.disableProfiler = true;
         return this;
     }
+
     /**
      * Prevents the TornadoExecutionPlan to execute if the I/O buffers exceed the provided limit.
      *
@@ -320,9 +321,10 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
         }
 
-        void withMemoryLimit(String memoryLimit){
+        void withMemoryLimit(String memoryLimit) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withMemoryLimit(memoryLimit));
         }
+
         /**
          * For all task-graphs contained in an Executor, update the device.
          *
