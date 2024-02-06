@@ -23,4 +23,6 @@ import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 public sealed interface TornadoVolumesInterface<T extends Buffer> //
         extends PrimitiveStorage<T> permits VolumeShort2 {
+
+    long getNumBytes();
 }

@@ -28,10 +28,12 @@ public final class VectorDouble2 implements TornadoCollectionInterface<DoubleBuf
 
     public static final Class<VectorDouble2> TYPE = VectorDouble2.class;
     private static final int ELEMENT_SIZE = 2;
+
     /**
      * backing array.
      */
-    protected final DoubleArray storage;
+    private final DoubleArray storage;
+
     /**
      * number of elements in the storage.
      */
@@ -43,7 +45,7 @@ public final class VectorDouble2 implements TornadoCollectionInterface<DoubleBuf
      * @param numElements
      * @param array
      */
-    protected VectorDouble2(int numElements, DoubleArray array) {
+    VectorDouble2(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -208,6 +210,11 @@ public final class VectorDouble2 implements TornadoCollectionInterface<DoubleBuf
 
     public void clear() {
         storage.clear();
+    }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
     }
 
 }

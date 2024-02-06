@@ -238,4 +238,9 @@ public final class VectorDouble implements TornadoCollectionInterface<DoubleBuff
     public void clear() {
         storage.clear();
     }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
+    }
 }

@@ -214,4 +214,9 @@ public final class Int3 implements TornadoVectorsInterface<IntBuffer> {
         return NUM_ELEMENTS;
     }
 
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 4;
+    }
+
 }

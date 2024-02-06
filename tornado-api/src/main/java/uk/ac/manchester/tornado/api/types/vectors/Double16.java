@@ -374,4 +374,9 @@ public final class Double16 implements TornadoVectorsInterface<DoubleBuffer> {
     public double[] toArray() {
         return storage;
     }
+
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 8;
+    }
 }

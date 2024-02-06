@@ -243,11 +243,15 @@ public class TornadoVMInterpreter extends TornadoLogger {
         finishedWarmup = true;
     }
 
+    private boolean isMemoryLimitEnabled() {
+        return executionContext.isMemoryLimited();
+    }
+
     private Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         deviceForInterpreter.enableThreadSharing();
 
-        if (this.executionContext.doesExceedExecPlanLimit()) {
+        if (isMemoryLimitEnabled() && executionContext.doesExceedExecutionPlanLimit()) {
             throw new TornadoMemoryException(STR."OutofMemoryException due to executionPlan.withMemoryLimit of \{executionContext.getExecutionPlanMemoryLimit()}");
         }
 

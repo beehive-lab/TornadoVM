@@ -161,4 +161,9 @@ public final class Matrix3DFloat4 extends Matrix3DType implements TornadoMatrixI
     public int size() {
         return numElements;
     }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesWithoutHeader();
+    }
 }

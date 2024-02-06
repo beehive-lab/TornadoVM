@@ -233,4 +233,9 @@ public final class ImageFloat4 implements TornadoImagesInterface<FloatBuffer> {
         storage.clear();
     }
 
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesWithoutHeader();
+    }
+
 }
