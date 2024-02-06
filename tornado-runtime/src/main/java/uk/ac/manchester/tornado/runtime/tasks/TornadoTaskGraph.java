@@ -86,6 +86,7 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDynamicReconfigurationException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -143,7 +144,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
     private static final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
     private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
-    private static final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+    private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
 
     private static ConcurrentHashMap<Integer, TaskGraph> globalTaskGraphIndex = new ConcurrentHashMap<>();
     private static int baseGlobalIndex = 0;
@@ -154,6 +155,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private ByteBuffer hlBuffer;
     private TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder;
     private long batchSizeBytes = -1;
+    private long memoryLimitSizeBytes = -1;
     private boolean bailout = false;
     // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
@@ -2124,23 +2126,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void batch(String batchSize) {
+        this.batchSizeBytes = parseSizeToBytes(batchSize);
+        executionContext.setBatchSize(this.batchSizeBytes);
+    }
 
-        // parse value and units
-        Matcher matcher = PATTERN_BATCH.matcher(batchSize);
-        long value = 0;
-        String units = null;
-        if (matcher.find()) {
-            value = Long.parseLong(matcher.group(1));
-            units = matcher.group(2).toUpperCase();
+    @Override
+    public void withMemoryLimit(String memoryLimit) {
+        this.memoryLimitSizeBytes = parseSizeToBytes(memoryLimit);
+        executionContext.setExecutionPlanMemoryLimit(this.memoryLimitSizeBytes);
+    }
+
+    private long parseSizeToBytes(String sizeStr) {
+        Matcher matcher = SIZE_PATTERN.matcher(sizeStr);
+        if (!matcher.find()) {
+            throw new IllegalArgumentException("Invalid size format");
         }
 
-        // compute bytes
-        this.batchSizeBytes = switch (Objects.requireNonNull(units)) {
+        long value = Long.parseLong(matcher.group(1));
+        String units = matcher.group(2).toUpperCase();
+
+        return switch (Objects.requireNonNull(units)) {
             case "MB" -> value * 1_000_000;
             case "GB" -> value * 1_000_000_000;
-            default -> throw new TornadoRuntimeException(STR."Units not supported: \{units}");
+            default -> throw new TornadoRuntimeException(STR + "Units not supported: " + units);
         };
-        executionContext.setBatchSize(this.batchSizeBytes);
     }
 
     @Override

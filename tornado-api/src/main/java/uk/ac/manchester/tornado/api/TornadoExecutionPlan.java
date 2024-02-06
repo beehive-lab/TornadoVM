@@ -136,7 +136,6 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * @return
      */
     public TornadoExecutionPlan withConcurrentDevices() {
         tornadoExecutor.withConcurrentDevices();
@@ -258,6 +257,16 @@ public class TornadoExecutionPlan {
         this.disableProfiler = true;
         return this;
     }
+    /**
+     * Prevents the TornadoExecutionPlan to execute if the I/O buffers exceed the provided limit.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+
+    public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
+        tornadoExecutor.withMemoryLimit(memoryLimit);
+        return this;
+    }
 
     /**
      * Reset the execution context for the current execution plan. The TornadoVM
@@ -311,6 +320,9 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
         }
 
+        void withMemoryLimit(String memoryLimit){
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withMemoryLimit(memoryLimit));
+        }
         /**
          * For all task-graphs contained in an Executor, update the device.
          *

@@ -153,6 +153,10 @@ public class ImmutableTaskGraph {
         taskGraph.batch(batchSize);
     }
 
+    void withMemoryLimit(String memoryLimit) {
+        taskGraph.withMemoryLimit(memoryLimit);
+    }
+
     TornadoDevice getDevice() {
         return taskGraph.getDevice();
     }
