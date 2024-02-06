@@ -283,9 +283,10 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Set a limit to the amount of memory used on the target hardware accelerator.
-     * The TornadoVM runtime will check that the current instance of the
-     * {@link TornadoExecutionPlan} does not exceed the limit that was fixed.
+     * This method sets a limit to the amount of memory used on the target
+     * hardware accelerator. The TornadoVM runtime will check that the
+     * current instance of the {@link TornadoExecutionPlan} does not exceed
+     * the limit that was specified.
      *
      * @param memoryLimit
      *     Specify the limit in a string format. E.g., "1GB", "512MB".
