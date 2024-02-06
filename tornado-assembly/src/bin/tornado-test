@@ -549,7 +549,7 @@ def writeStatusInFile():
 
 def getJavaVersion():
     # Get the java version
-    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'',
+    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\\.] -v OFS=. \'NR==1{print $2,$3}\'',
                             stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
 
 
