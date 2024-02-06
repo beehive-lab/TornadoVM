@@ -92,7 +92,7 @@ public class TornadoExecutionContext {
 
     private TornadoProfiler profiler;
 
-    private static int INIT_VALUE = -1;
+    public static int INIT_VALUE = -1;
 
     public TornadoExecutionContext(String id) {
         name = id;

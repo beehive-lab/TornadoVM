@@ -768,6 +768,10 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    public void withoutMemoryLimit() {
+        taskGraphImpl.withoutMemoryLimit();
+    }
+
     void execute() {
         taskGraphImpl.schedule().waitOn();
     }
@@ -900,4 +904,5 @@ public class TaskGraph implements TaskGraphInterface {
     public void withoutConcurrentDevices() {
         taskGraphImpl.withoutConcurrentDevices();
     }
+
 }
