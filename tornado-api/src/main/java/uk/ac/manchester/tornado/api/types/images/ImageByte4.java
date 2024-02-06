@@ -260,4 +260,9 @@ public final class ImageByte4 implements TornadoImagesInterface<ByteBuffer> {
     public void clear() {
         storage.clear();
     }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesWithoutHeader();
+    }
 }

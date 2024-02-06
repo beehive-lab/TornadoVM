@@ -33,13 +33,14 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -48,15 +49,12 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
+import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
+import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
+import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
+import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
+import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -94,6 +92,8 @@ public class TornadoExecutionContext {
 
     private TornadoProfiler profiler;
 
+    private static int INIT_VALUE = -1;
+
     public TornadoExecutionContext(String id) {
         name = id;
         meta = new ScheduleMetaData(name);
@@ -108,7 +108,7 @@ public class TornadoExecutionContext {
         Arrays.fill(taskToDeviceMapTable, null);
         nextTask = 0;
         batchSize = -1;
-        executionPlanMemoryLimit = -1;
+        executionPlanMemoryLimit = INIT_VALUE;
         lastDevices = new HashSet<>();
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
@@ -153,43 +153,41 @@ public class TornadoExecutionContext {
         return executionPlanMemoryLimit;
     }
 
-    public boolean doesExceedExecPlanLimit() {
+    public boolean isMemoryLimited() {
+        return getExecutionPlanMemoryLimit() != INIT_VALUE;
+    }
+
+    public boolean doesExceedExecutionPlanLimit() {
         long totalSize = 0;
-
-        HashSet<Long> inputSizes = new HashSet<>();
-        LinkedHashSet<Byte> elementSizes = new LinkedHashSet<>();
-
-        for (Object o : getObjects()) {
-            if (o.getClass().isArray()) {
-                Class<?> componentType = o.getClass().getComponentType();
+        
+        for (Object parameter : getObjects()) {
+            if (parameter.getClass().isArray()) {
+                Class<?> componentType = parameter.getClass().getComponentType();
                 DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);
                 if (dataTypeSize == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
-                long size = Array.getLength(o);
+                long size = Array.getLength(parameter);
                 totalSize += size * dataTypeSize.getSize();
-
-                elementSizes.add(dataTypeSize.getSize());
-                inputSizes.add(totalSize);
-            } else if (o instanceof TornadoNativeArray tornadoNativeArray) {
+            } else if (parameter instanceof TornadoNativeArray tornadoNativeArray) {
                 totalSize += tornadoNativeArray.getNumBytesWithoutHeader();
-                inputSizes.add(totalSize);
-                byte elementSize = switch (tornadoNativeArray) {
-                    case IntArray _ -> DataTypeSize.INT.getSize();
-                    case FloatArray _ -> DataTypeSize.FLOAT.getSize();
-                    case DoubleArray _ -> DataTypeSize.DOUBLE.getSize();
-                    case LongArray _ -> DataTypeSize.LONG.getSize();
-                    case ShortArray _ -> DataTypeSize.SHORT.getSize();
-                    case ByteArray _ -> DataTypeSize.BYTE.getSize();
-                    case CharArray _ -> DataTypeSize.CHAR.getSize();
-                    default -> throw new TornadoRuntimeException(STR."Unsupported array type: \{o.getClass()}");
-                };
-                elementSizes.add(elementSize);
+            } else if (parameter instanceof TornadoVectorsInterface<?> tornadoVector) {
+                totalSize += tornadoVector.getNumBytes();
+            } else if (parameter instanceof TornadoCollectionInterface<?> collection) {
+                totalSize += collection.getNumBytes();
+            } else if (parameter instanceof TornadoVolumesInterface<?> tornadoVolume) {
+                totalSize += tornadoVolume.getNumBytes();
+            } else if (parameter instanceof TornadoMatrixInterface<?> tornadoMatrix) {
+                totalSize += tornadoMatrix.getNumBytes();
+            } else if (parameter instanceof TornadoImagesInterface<?> tornadoImage) {
+                totalSize += tornadoImage.getNumBytes();
+            } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
+                // ignore
             } else {
-                throw new TornadoRuntimeException(STR."Unsupported type: \{o.getClass()}");
+                throw new TornadoRuntimeException(STR."Unsupported type: \{parameter.getClass()}");
             }
         }
-        return getExecutionPlanMemoryLimit() != -1 && totalSize > getExecutionPlanMemoryLimit();
+        return totalSize > getExecutionPlanMemoryLimit();
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {

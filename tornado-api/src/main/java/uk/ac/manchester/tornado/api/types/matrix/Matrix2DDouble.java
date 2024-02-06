@@ -195,4 +195,9 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
     public int size() {
         return numElements;
     }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesWithoutHeader();
+    }
 }

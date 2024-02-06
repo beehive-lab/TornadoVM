@@ -228,4 +228,9 @@ public final class VectorFloat implements TornadoCollectionInterface<FloatBuffer
     public void clear() {
         storage.clear();
     }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
+    }
 }

@@ -291,4 +291,9 @@ public final class Double4 implements TornadoVectorsInterface<DoubleBuffer> {
     public double[] toArray() {
         return storage;
     }
+
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 8;
+    }
 }
