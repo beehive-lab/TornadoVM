@@ -130,7 +130,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private static final boolean EXPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
-    private static final int PERFORMANCE_WARMUP = 3;
+    private static final int PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL = 3;
     private static final boolean TIME_IN_NANOSECONDS = TornadoOptions.TIME_IN_NANOSECONDS;
     private static final String TASK_GRAPH_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
@@ -144,6 +144,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
     private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+    private static final int MAX_ITERATIONS_DYNAMIC_RECONF_SEQUENTIAL = 100;
 
     private static ConcurrentHashMap<Integer, TaskGraph> globalTaskGraphIndex = new ConcurrentHashMap<>();
     private static int baseGlobalIndex = 0;
@@ -805,9 +806,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private void dumpDeoptReason(TornadoBailoutRuntimeException e) {
         if (!Tornado.DEBUG) {
             System.err.println(STR."\{RED}[Bailout] Running the sequential implementation. Enable --debug to see the reason.\{RESET}");
-        }else
-
-    {
+        } else {
             System.err.println(e.getMessage());
             for (StackTraceElement s : e.getStackTrace()) {
                 System.err.println(STR."\t\{s}");
@@ -1496,7 +1495,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             Thread.currentThread().setName("Thread-sequential");
 
             if (policy == Policy.PERFORMANCE) {
-                for (int k = 0; k < 100; k++) {
+                for (int k = 0; k < MAX_ITERATIONS_DYNAMIC_RECONF_SEQUENTIAL; k++) {
                     runAllTasksJavaSequential();
                 }
             }
@@ -1544,7 +1543,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
                 if (policy == Policy.PERFORMANCE) {
                     // first warm up
-                    for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
+                    for (int k = 0; k < PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL; k++) {
                         executor.execute();
                     }
                 }
@@ -1720,7 +1719,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void runSequentialTaskGraph(Policy policy, Timer timer, long[] totalTimers, int indexSequential) {
         if (policy == Policy.PERFORMANCE) {
-            for (int k = 0; k < 100; k++) {
+            for (int k = 0; k < MAX_ITERATIONS_DYNAMIC_RECONF_SEQUENTIAL; k++) {
                 runAllTasksJavaSequential();
             }
         }
@@ -1773,7 +1772,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
             if (policy == Policy.PERFORMANCE) {
-                for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
+                for (int k = 0; k < PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL; k++) {
                     executor.execute();
                 }
             }
@@ -1873,7 +1872,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 System.out.println(getListDevices());
                 System.out.println(STR."BEST Position: #\{deviceWinnerIndex} \{Arrays.toString(totalTimers)}");
             }
-        } 
+        }
     }
 
     /**
