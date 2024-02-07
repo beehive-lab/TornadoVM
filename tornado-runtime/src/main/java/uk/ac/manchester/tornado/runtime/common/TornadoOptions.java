@@ -66,12 +66,7 @@ public class TornadoOptions {
      * Option to print TornadoVM Internal Bytecodes.
      */
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
-    /**
-     * Option to debug dynamic reconfiguration policies.
-     * <p>
-     * Use `-Dtornado.dynamic.verbose=True`.
-     */
-    public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", FALSE);
+
     /**
      * Option to enable experimental and new option for performing automatic full
      * reductions.
@@ -88,7 +83,7 @@ public class TornadoOptions {
     /**
      * Enable/Disable FMA Optimizations. True by default.
      */
-    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
+    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
