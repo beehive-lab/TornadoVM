@@ -157,6 +157,10 @@ public class ImmutableTaskGraph {
         taskGraph.withMemoryLimit(memoryLimit);
     }
 
+    public void withoutMemoryLimit() {
+        taskGraph.withoutMemoryLimit();
+    }
+
     TornadoDevice getDevice() {
         return taskGraph.getDevice();
     }
@@ -180,4 +184,5 @@ public class ImmutableTaskGraph {
     public void withoutConcurrentDevices() {
         taskGraph.withoutConcurrentDevices();
     }
+
 }

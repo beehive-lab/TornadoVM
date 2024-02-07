@@ -2136,6 +2136,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         executionContext.setExecutionPlanMemoryLimit(this.memoryLimitSizeBytes);
     }
 
+    @Override
+    public void withoutMemoryLimit() {
+        executionContext.setExecutionPlanMemoryLimit(TornadoExecutionContext.INIT_VALUE);
+    }
+
     private long parseSizeToBytes(String sizeStr) {
         Matcher matcher = SIZE_PATTERN.matcher(sizeStr);
         if (!matcher.find()) {
