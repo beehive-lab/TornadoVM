@@ -1247,7 +1247,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void setupProfiler() {
         if (timeProfiler == null) {
-            if (TornadoOptions.isProfilerEnabled()) {
+            if (isProfilerEnabled()) {
                 this.timeProfiler = new TimeProfiler();
             } else {
                 this.timeProfiler = new EmptyProfiler();
@@ -2265,7 +2265,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     boolean isProfilerEnabled() {
-        return timeProfiler != null;
+        return (getProfilerMode() != null || TornadoOptions.isProfilerEnabled());
     }
 
     ProfilerMode getProfilerMode() {
