@@ -34,6 +34,7 @@ add_library(tornado-opencl SHARED
 		source/OCLKernel.cpp
 		source/OCLPlatform.cpp
 		source/OCLProgram.cpp
+		source/OCLNvml.cpp
 		source/OpenCL.cpp
 		source/utils.cpp
 		source/opencl_time_utils.cpp)
@@ -41,7 +42,7 @@ add_library(tornado-opencl SHARED
 if(APPLE)
     target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 else()
-    target_link_libraries(tornado-opencl -lOpenCL ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+    target_link_libraries(tornado-opencl -lOpenCL -lnvidia-ml ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 endif()
 if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-opencl PROPERTIES PREFIX "")

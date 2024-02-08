@@ -56,6 +56,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     private final OCLTargetDevice device;
     private final OCLCommandQueue queue;
     private final OCLContext context;
+    private final OCLNvml nvml;
     private final OCLMemoryManager memoryManager;
     private final long bumpBuffer;
     private final OCLCodeCache codeCache;
@@ -70,6 +71,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
+        this.nvml = new OCLNvml(this);
 
         this.oclEventPool = new OCLEventPool(EVENT_WINDOW);
 
@@ -185,7 +187,11 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     }
 
     public long getPowerUsage() {
-        return -1;
+        long[] device = new long[1];
+        long[] powerUsage = new long[1];
+        nvml.clNvmlDeviceGetHandleByIndex(device);
+        nvml.clNvmlDeviceGetPowerUsage(device, powerUsage);
+        return powerUsage[0];
     }
 
     public ByteOrder getByteOrder() {
