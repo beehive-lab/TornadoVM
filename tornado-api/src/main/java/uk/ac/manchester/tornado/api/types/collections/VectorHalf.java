@@ -7,13 +7,13 @@ import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
 import java.nio.ShortBuffer;
 
-public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBuffer> {
+public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;
     private final HalfFloatArray storage;
 
-    public VectorHalfFloat(int numElements, HalfFloatArray array) {
+    public VectorHalf(int numElements, HalfFloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -24,7 +24,7 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      * @param numElements
      *     Number of elements
      */
-    public VectorHalfFloat(int numElements) {
+    public VectorHalf(int numElements) {
         this(numElements, new HalfFloatArray(numElements));
     }
 
@@ -34,7 +34,7 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      * @param storage
      *     Array to be stored
      */
-    public VectorHalfFloat(HalfFloatArray storage) {
+    public VectorHalf(HalfFloatArray storage) {
         this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
@@ -59,7 +59,7 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      *
      * @return dot-product value
      */
-    public static float dot(VectorHalfFloat a, VectorHalfFloat b) {
+    public static float dot(VectorHalf a, VectorHalf b) {
         float sum = 0;
         for (int i = 0; i < a.size(); i++) {
             sum += HalfFloat.mult(a.get(i), b.get(i)).getHalfFloatValue();
@@ -100,7 +100,7 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      * @param values
      *     VectorFloat4
      */
-    public void set(VectorHalfFloat values) {
+    public void set(VectorHalf values) {
         for (int i = 0; i < values.storage.getSize(); i++) {
             storage.set(i, values.storage.get(i));
         }
@@ -135,8 +135,8 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      * @param length
      *     number of elements
      */
-    public VectorHalfFloat subVector(int start, int length) {
-        final VectorHalfFloat v = new VectorHalfFloat(length);
+    public VectorHalf subVector(int start, int length) {
+        final VectorHalf v = new VectorHalf(length);
         for (int i = 0; i < length; i++) {
             v.storage.set(i, storage.get(i + start));
         }
@@ -147,12 +147,12 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      * Duplicates this vector.
      *
      */
-    public VectorHalfFloat duplicate() {
+    public VectorHalf duplicate() {
         HalfFloatArray cp = new HalfFloatArray(storage.getSize());
         for (int i = 0; i < cp.getSize(); i++) {
             cp.set(i, storage.get(i));
         }
-        return new VectorHalfFloat(cp);
+        return new VectorHalf(cp);
     }
 
     /**
@@ -162,7 +162,7 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
      *     input vector
      * @return true if vectors match
      */
-    public boolean isEqual(VectorHalfFloat vector) {
+    public boolean isEqual(VectorHalf vector) {
         return TornadoMath.isEqual(storage, vector.storage);
     }
 
