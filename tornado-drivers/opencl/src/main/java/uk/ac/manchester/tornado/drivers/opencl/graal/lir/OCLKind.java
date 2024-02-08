@@ -68,9 +68,11 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half16;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.types.vectors.Half3;
 import uk.ac.manchester.tornado.api.types.vectors.Half4;
+import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -163,6 +165,7 @@ public enum OCLKind implements PlatformKind {
     ULONG8(8, null, ULONG),
     FLOAT8(8, Float8.TYPE, FLOAT),
     DOUBLE8(8, Double8.TYPE, DOUBLE),
+    HALF8(8, Half8.TYPE, HALF),
     VECTORDOUBLE8(8, VectorDouble8.TYPE, DOUBLE),
     VECTORDOUBLE16(16, VectorDouble16.TYPE, DOUBLE),
     VECTORINT8(8, VectorInt8.TYPE, INT),
@@ -180,6 +183,7 @@ public enum OCLKind implements PlatformKind {
     ULONG16(16, null, ULONG),
     DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
+    HALF16(16, Half16.TYPE, HALF),
 
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);

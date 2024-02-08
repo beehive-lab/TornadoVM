@@ -71,8 +71,9 @@ public enum OCLVariablePrefix {
     HALF("half", "half_"),
     HALF2("half2", "v2hf_"),
     HALF3("half3", "v3hf_"),
-    HALF4("half4", "v4hf_");
-
+    HALF4("half4", "v4hf_"),
+    HALF8("half8", "v8hf_"),
+    HALF16("half16", "v16hf_");
 
     // @formatter:on
 
