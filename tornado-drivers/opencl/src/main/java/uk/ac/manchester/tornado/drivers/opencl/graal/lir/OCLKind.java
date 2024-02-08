@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf2;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf3;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf4;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
@@ -157,6 +158,7 @@ public enum OCLKind implements PlatformKind {
     VECTORDOUBLE4(4, VectorDouble4.TYPE, DOUBLE),
     VECTORINT4(4, VectorInt4.TYPE, INT),
     VECTORFLOAT4(4, VectorFloat4.TYPE, FLOAT),
+    VECTORHALF4(4, VectorHalf4.TYPE, HALF),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
