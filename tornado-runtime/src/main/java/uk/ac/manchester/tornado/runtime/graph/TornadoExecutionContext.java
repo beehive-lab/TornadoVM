@@ -107,7 +107,7 @@ public class TornadoExecutionContext {
         taskToDeviceMapTable = new TornadoAcceleratorDevice[MAX_TASKS];
         Arrays.fill(taskToDeviceMapTable, null);
         nextTask = 0;
-        batchSize = -1;
+        batchSize = INIT_VALUE;
         executionPlanMemoryLimit = INIT_VALUE;
         lastDevices = new HashSet<>();
         this.profiler = null;
