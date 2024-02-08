@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
  * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestHalfs
  * </code>
  */
-public class TestHalfs extends TornadoTestBase {
+public class TestHalfFloats extends TornadoTestBase {
 
     public static final double DELTA = 0.001;
 
@@ -248,7 +248,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::dotMethodHalf2, a, b, output) //
+                .task("t0", TestHalfFloats::dotMethodHalf2, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -266,7 +266,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::dotMethodHalf3, a, b, output) //
+                .task("t0", TestHalfFloats::dotMethodHalf3, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -284,7 +284,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::dotMethodHalf4, a, b, output) //
+                .task("t0", TestHalfFloats::dotMethodHalf4, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -302,7 +302,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::dotMethodHalf8, a, b, output) //
+                .task("t0", TestHalfFloats::dotMethodHalf8, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -322,7 +322,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::dotMethodHalf16, a, b, output) //
+                .task("t0", TestHalfFloats::dotMethodHalf16, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -341,7 +341,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::testFloat3Add, a, b, output) //
+                .task("t0", TestHalfFloats::testFloat3Add, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -370,7 +370,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::addVectorHalf2, a, b, output) //
+                .task("t0", TestHalfFloats::addVectorHalf2, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -399,7 +399,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::addVectorHalf3, a, b, output) //
+                .task("t0", TestHalfFloats::addVectorHalf3, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -429,7 +429,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::addVectorHalf3, a, b, output)//
+                .task("t0", TestHalfFloats::addVectorHalf3, a, b, output)//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -453,7 +453,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::addVectorHalf4, a, b, output) //
+                .task("t0", TestHalfFloats::addVectorHalf4, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -488,7 +488,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::addVectorHalf16, a, b, output) //
+                .task("t0", TestHalfFloats::addVectorHalf16, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -534,7 +534,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHalfs::addVectorHalf8, a, b, output) //
+                .task("t0", TestHalfFloats::addVectorHalf8, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -568,7 +568,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .task("t0", TestHalfs::testVectorHalf8Storage, a, output) //
+                .task("t0", TestHalfFloats::testVectorHalf8Storage, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -635,7 +635,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
-                .task("t0", TestHalfs::vectorPhiTest, input, output) //
+                .task("t0", TestHalfFloats::vectorPhiTest, input, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -655,7 +655,7 @@ public class TestHalfs extends TornadoTestBase {
         VectorHalf2 tornadoOutput = new VectorHalf2(size);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestHalfs::testPrivateVectorHalf2, tornadoOutput);
+        taskGraph.task("t0", TestHalfFloats::testPrivateVectorHalf2, tornadoOutput);
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -677,7 +677,7 @@ public class TestHalfs extends TornadoTestBase {
         VectorHalf4 tornadoOutput = new VectorHalf4(size);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestHalfs::testPrivateVectorHalf4, tornadoOutput);
+        taskGraph.task("t0", TestHalfFloats::testPrivateVectorHalf4, tornadoOutput);
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -701,7 +701,7 @@ public class TestHalfs extends TornadoTestBase {
         VectorHalf8 tornadoOutput = new VectorHalf8(16);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestHalfs::testPrivateVectorHalf8, tornadoOutput);
+        taskGraph.task("t0", TestHalfFloats::testPrivateVectorHalf8, tornadoOutput);
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -729,7 +729,7 @@ public class TestHalfs extends TornadoTestBase {
         VectorHalf4 output = new VectorHalf4(size);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestHalfs::vectorHalfUnary, output);
+        taskGraph.task("t0", TestHalfFloats::vectorHalfUnary, output);
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -763,7 +763,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
-                .task("t0", TestHalfs::vectorComputation01, tornadoInput, tornadoOutput) //
+                .task("t0", TestHalfFloats::vectorComputation01, tornadoInput, tornadoOutput) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
@@ -796,7 +796,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
-                .task("t0", TestHalfs::vectorComputation02, tornadoInput, tornadoOutput) //
+                .task("t0", TestHalfFloats::vectorComputation02, tornadoInput, tornadoOutput) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
@@ -830,7 +830,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
-                .task("t0", TestHalfs::vectorComputation03, tornadoInput, tornadoOutput) //
+                .task("t0", TestHalfFloats::vectorComputation03, tornadoInput, tornadoOutput) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
@@ -865,7 +865,7 @@ public class TestHalfs extends TornadoTestBase {
 
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
-                .task("t0", TestHalfs::vectorComputation04, tornadoInput, tornadoOutput) //
+                .task("t0", TestHalfFloats::vectorComputation04, tornadoInput, tornadoOutput) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
