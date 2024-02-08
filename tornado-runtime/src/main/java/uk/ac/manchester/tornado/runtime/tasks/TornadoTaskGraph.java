@@ -542,22 +542,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     }
 
-    private void triggerRecompile() {
-        // 1. Force to recompile the task-sketcher
-        int i = 0;
-        for (TaskPackage tp : taskPackages) {
-            updateTask(tp, i);
-            i++;
-        }
-
-        // 2. Clear the code caches in every instance of a TornadoVMInterpreter that
-        // TornadoVM instantiated
-        if (vm != null) {
-            vm.clearInstalledCode();
-            vm.setCompileUpdate();
-        }
-    }
-
     @Override
     public TornadoAcceleratorDevice getDeviceForTask(String id) {
         return executionContext.getDeviceForTask(id);
@@ -2141,7 +2125,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void batch(String batchSize) {
+    public void withBatch(String batchSize) {
         this.batchSizeBytes = parseSizeToBytes(batchSize);
         executionContext.setBatchSize(this.batchSizeBytes);
     }

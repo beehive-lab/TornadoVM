@@ -759,7 +759,7 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     TaskGraph batch(String batchSize) {
-        taskGraphImpl.batch(batchSize);
+        taskGraphImpl.withBatch(batchSize);
         return this;
     }
 

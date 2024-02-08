@@ -176,10 +176,6 @@ public class TornadoVM extends TornadoLogger {
         executeActionOnInterpreters(TornadoVMInterpreter::clearInstalledCode);
     }
 
-    public void setCompileUpdate() {
-        executeActionOnInterpreters(TornadoVMInterpreter::setCompileUpdate);
-    }
-
     public void dumpProfiles() {
         executeActionOnInterpreters(TornadoVMInterpreter::dumpProfiles);
     }
