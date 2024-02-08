@@ -234,10 +234,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
-    public void setCompileUpdate() {
-        this.doUpdate = true;
-    }
-
     public void warmup() {
         execute(true);
         finishedWarmup = true;
@@ -605,8 +601,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
-
         if (!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
+            task.forceCompilation();
             installedCodes[globalToLocalTaskIndex(taskIndex)].invalidate();
         }
         // Set the batch size in the task information
@@ -622,7 +618,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
             task.mapTo(deviceForInterpreter);
             try {
                 task.attachProfiler(timeProfiler);
-                if (taskIndex == (tasks.size() - 1) || doUpdate) {
+                if (taskIndex == (tasks.size() - 1)) {
                     // If it is the last task within the task-schedule or doUpdate is true -> we
                     // force compilation. This is useful when compiling code for Xilinx/Altera
                     // FPGAs, that has to be a single source.
@@ -630,7 +626,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 }
                 installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
-                doUpdate = false;
             } catch (TornadoBailoutRuntimeException e) {
                 throw new TornadoBailoutRuntimeException("Unable to compile " + task.getFullName() + "\n" + "The internal error is: " + e.getMessage() + "\n" + "Stacktrace: " + Arrays.toString(e
                         .getStackTrace()), e);

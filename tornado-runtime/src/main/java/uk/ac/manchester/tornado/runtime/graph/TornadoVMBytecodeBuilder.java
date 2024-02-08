@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -153,7 +153,7 @@ public class TornadoVMBytecodeBuilder {
          * It constructs a new {@link TornadoVMBytecodeAssembler} instance.
          *
          * @param code
-         *            The byte array to hold the assembled bytecode.
+         *     The byte array to hold the assembled bytecode.
          */
         TornadoVMBytecodeAssembler(byte[] code) {
             buffer = ByteBuffer.wrap(code);
@@ -262,8 +262,8 @@ public class TornadoVMBytecodeBuilder {
          */
         public void dump() {
             final int width = 16;
-            System.out.printf("code  : capacity = %s, in use = %s   \n", RuntimeUtilities.humanReadableByteCount(buffer.capacity(), true),
-                    RuntimeUtilities.humanReadableByteCount(buffer.position(), true));
+            System.out.printf("code  : capacity = %s, in use = %s   \n", RuntimeUtilities.humanReadableByteCount(buffer.capacity(), true), RuntimeUtilities.humanReadableByteCount(buffer.position(),
+                    true));
             for (int i = 0; i < buffer.position(); i += width) {
                 System.out.printf("[0x%04x]: ", i);
                 for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {

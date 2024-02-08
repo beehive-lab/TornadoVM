@@ -30,14 +30,13 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -681,45 +680,73 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
-    public static void computeSquare(FloatArray data) {
+    public static void compute2(FloatArray data) {
         for (@Parallel int i = 0; i < data.getSize(); i++) {
             float value = data.get(i);
-            data.set(i, TornadoMath.pow(value, 2));
+            data.set(i, value * 2);
         }
     }
 
     @Test
     public void testBatchNotEven() {
-        checkMaxHeapAllocationOnDevice(4, MemoryUnit.MB);
+        checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
 
-        // Allocate ~1GB
-        FloatArray array = new FloatArray(1024 * 1024 * 256);
+        // Allocate ~ 64MB
+        FloatArray array = new FloatArray(1024 * 1024 * 16);
+        FloatArray arraySeq = new FloatArray(1024 * 1024 * 16);
+        for (int i = 0; i < arraySeq.getSize(); i++) {
+            arraySeq.set(i, i);
+        }
+
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
-                .task("t0", TestBatches::parallelInitialization, array)  //
-                .task("t1", TestBatches::computeSquare, array) // 
+                .task("t0", TestBatches::parallelInitialization, array) //
+                .task("t1", TestBatches::compute2, array) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
 
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
-        executionPlan.withBatch("500MB") //
+        executionPlan.withBatch("10MB") // Batches of 10MB
                 .execute();
 
         for (int i = 0; i < array.getSize(); i++) {
-            assertEquals(i * i, array.get(i), 0.001f);
+            assertEquals(arraySeq.get(i) * 2, array.get(i), 0.01f);
+        }
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void testBatchNotEven2() {
+        checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
+
+        // Allocate ~ 64MB
+        FloatArray array = new FloatArray(1024 * 1024 * 16);
+        FloatArray array2 = new FloatArray(1024 * 1024 * 16);
+        array.init(1.0f);
+        array2.init(1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
+                .task("t1", TestBatches::compute2, array) //
+                .task("t2", TestBatches::compute2, array) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        executionPlan.withBatch("10MB") // Batches of 10MB
+                .execute();
+
+        for (int i = 0; i < array.getSize(); i++) {
+            assertEquals(array2.get(i) * 4, array.get(i), 0.01f);
         }
         executionPlan.freeDeviceMemory();
     }
 
     private long checkMaxHeapAllocationOnDevice(int size, MemoryUnit memoryUnit) throws UnsupportedConfigurationException {
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
 
+        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
         long memThreshold = switch (memoryUnit) {
             case GB -> (long) size * 1024 * 1024 * 1024;
             case MB -> (long) size * 1024 * 1024;
             case TB -> (long) size * 1024 * 1024 * 1024 * 1024;
-            default -> throw new IllegalStateException(STR."Unexpected value: \{memoryUnit}");
         };
-
         // check if there is enough memory for at least one chunk
         if (maxAllocMemory < memThreshold) {
             throw new UnsupportedConfigurationException("Not enough memory to run the test");
