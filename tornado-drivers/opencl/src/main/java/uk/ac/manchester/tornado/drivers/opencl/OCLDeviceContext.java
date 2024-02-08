@@ -184,6 +184,10 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
                 : null), EventDescriptor.DESC_PARALLEL_KERNEL, queue);
     }
 
+    public long getPowerUsage() {
+        return -1;
+    }
+
     public ByteOrder getByteOrder() {
         return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
