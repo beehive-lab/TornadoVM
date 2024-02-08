@@ -690,7 +690,9 @@ public class TestBatches extends TornadoTestBase {
 
     @Test
     public void testBatchNotEven() {
-        // Allocate ~1GB 
+        checkMaxHeapAllocationOnDevice(4, MemoryUnit.MB);
+
+        // Allocate ~1GB
         FloatArray array = new FloatArray(1024 * 1024 * 256);
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
@@ -706,7 +708,6 @@ public class TestBatches extends TornadoTestBase {
             assertEquals(i * i, array.get(i), 0.001f);
         }
         executionPlan.freeDeviceMemory();
-
     }
 
     private long checkMaxHeapAllocationOnDevice(int size, MemoryUnit memoryUnit) throws UnsupportedConfigurationException {
