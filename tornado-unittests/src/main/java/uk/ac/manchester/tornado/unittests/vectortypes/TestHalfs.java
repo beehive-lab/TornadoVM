@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf16;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf2;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf3;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf4;
@@ -104,13 +105,12 @@ public class TestHalfs extends TornadoTestBase {
         }
     }
 
-    //
-    //    public static void addVectorFloat16(VectorFloat16 a, VectorFloat16 b, VectorFloat16 results) {
-    //        for (@Parallel int i = 0; i < a.getLength(); i++) {
-    //            results.set(i, Float16.add(a.get(i), b.get(i)));
-    //        }
-    //    }
-    //
+    public static void addVectorHalf16(VectorHalf16 a, VectorHalf16 b, VectorHalf16 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Half16.add(a.get(i), b.get(i)));
+        }
+    }
+
     public static void testVectorHalf8Storage(VectorHalf8 a, VectorHalf8 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, a.get(i));
@@ -157,7 +157,6 @@ public class TestHalfs extends TornadoTestBase {
         output.set(0, sum);
     }
 
-    //TODO VectorHalf4, 8
     public static void testPrivateVectorHalf4(VectorHalf4 output) {
         VectorHalf4 vectorHalf4 = new VectorHalf4(output.getLength());
 
@@ -226,7 +225,6 @@ public class TestHalfs extends TornadoTestBase {
         return output;
     }
 
-    //TODO: VectorFloat8
     private static void vectorComputation03(VectorHalf4 value, VectorHalf3 output) {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
             output.set(i, vectorComputation03(value.get(i)));
@@ -439,7 +437,6 @@ public class TestHalfs extends TornadoTestBase {
         executionPlan.execute();
     }
 
-    //TODO: VectorHalf16
     @Test
     public void testVectorHalf4() {
 
@@ -472,51 +469,55 @@ public class TestHalfs extends TornadoTestBase {
         }
     }
 
-    //
-    //    @Test
-    //    public void testVectorFloat16() {
-    //        int size = 16;
-    //
-    //        VectorFloat16 a = new VectorFloat16(size);
-    //        VectorFloat16 b = new VectorFloat16(size);
-    //        VectorFloat16 output = new VectorFloat16(size);
-    //
-    //        for (int i = 0; i < size; i++) {
-    //            a.set(i, new Float16(i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i));
-    //            b.set(i, new Float16(size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size));
-    //        }
-    //
-    //        TaskGraph taskGraph = new TaskGraph("s0") //
-    //                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-    //                .task("t0", TestFloats::addVectorFloat16, a, b, output) //
-    //                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
-    //
-    //        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-    //        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-    //        executionPlan.execute();
-    //
-    //        for (int i = 0; i < size; i++) {
-    //            Float16 sequential = new Float16(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i),
-    //                    i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
-    //            assertEquals(sequential.getS0(), output.get(i).getS0(), DELTA);
-    //            assertEquals(sequential.getS1(), output.get(i).getS1(), DELTA);
-    //            assertEquals(sequential.getS2(), output.get(i).getS2(), DELTA);
-    //            assertEquals(sequential.getS3(), output.get(i).getS3(), DELTA);
-    //            assertEquals(sequential.getS4(), output.get(i).getS4(), DELTA);
-    //            assertEquals(sequential.getS5(), output.get(i).getS5(), DELTA);
-    //            assertEquals(sequential.getS6(), output.get(i).getS6(), DELTA);
-    //            assertEquals(sequential.getS7(), output.get(i).getS7(), DELTA);
-    //            assertEquals(sequential.getS8(), output.get(i).getS8(), DELTA);
-    //            assertEquals(sequential.getS9(), output.get(i).getS9(), DELTA);
-    //            assertEquals(sequential.getS10(), output.get(i).getS10(), DELTA);
-    //            assertEquals(sequential.getS11(), output.get(i).getS11(), DELTA);
-    //            assertEquals(sequential.getS12(), output.get(i).getS12(), DELTA);
-    //            assertEquals(sequential.getS13(), output.get(i).getS13(), DELTA);
-    //            assertEquals(sequential.getS14(), output.get(i).getS14(), DELTA);
-    //            assertEquals(sequential.getS15(), output.get(i).getS15(), DELTA);
-    //        }
-    //    }
-    //
+    @Test
+    public void testVectorHalf16() {
+        int size = 16;
+
+        VectorHalf16 a = new VectorHalf16(size);
+        VectorHalf16 b = new VectorHalf16(size);
+        VectorHalf16 output = new VectorHalf16(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Half16(new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i),
+                    new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i)));
+            b.set(i, new Half16(new HalfFloat((float) size - i), new HalfFloat((float) size - i), new HalfFloat((float) size - i), new HalfFloat((float) size), new HalfFloat((float) size - i),
+                    new HalfFloat((float) size - i), new HalfFloat((float) size - i), new HalfFloat((float) size), new HalfFloat((float) size - i), new HalfFloat((float) size - i), new HalfFloat(
+                            (float) size - i), new HalfFloat((float) size), new HalfFloat((float) size - i), new HalfFloat((float) size - i), new HalfFloat((float) size - i), new HalfFloat(
+                                    (float) size)));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHalfs::addVectorHalf16, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < size; i++) {
+            Half16 sequential = new Half16(new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + size), new HalfFloat(i + (size - i)),
+                    new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + size), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)),
+                    new HalfFloat(i + size), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + size));
+            assertEquals(sequential.getS0().getFloat32(), output.get(i).getS0().getFloat32(), DELTA);
+            assertEquals(sequential.getS1().getFloat32(), output.get(i).getS1().getFloat32(), DELTA);
+            assertEquals(sequential.getS2().getFloat32(), output.get(i).getS2().getFloat32(), DELTA);
+            assertEquals(sequential.getS3().getFloat32(), output.get(i).getS3().getFloat32(), DELTA);
+            assertEquals(sequential.getS4().getFloat32(), output.get(i).getS4().getFloat32(), DELTA);
+            assertEquals(sequential.getS5().getFloat32(), output.get(i).getS5().getFloat32(), DELTA);
+            assertEquals(sequential.getS6().getFloat32(), output.get(i).getS6().getFloat32(), DELTA);
+            assertEquals(sequential.getS7().getFloat32(), output.get(i).getS7().getFloat32(), DELTA);
+            assertEquals(sequential.getS8().getFloat32(), output.get(i).getS8().getFloat32(), DELTA);
+            assertEquals(sequential.getS9().getFloat32(), output.get(i).getS9().getFloat32(), DELTA);
+            assertEquals(sequential.getS10().getFloat32(), output.get(i).getS10().getFloat32(), DELTA);
+            assertEquals(sequential.getS11().getFloat32(), output.get(i).getS11().getFloat32(), DELTA);
+            assertEquals(sequential.getS12().getFloat32(), output.get(i).getS12().getFloat32(), DELTA);
+            assertEquals(sequential.getS13().getFloat32(), output.get(i).getS13().getFloat32(), DELTA);
+            assertEquals(sequential.getS14().getFloat32(), output.get(i).getS14().getFloat32(), DELTA);
+            assertEquals(sequential.getS15().getFloat32(), output.get(i).getS15().getFloat32(), DELTA);
+        }
+    }
+
     @Test
     public void testVectorHalf8() {
         int size = 8;
@@ -669,7 +670,6 @@ public class TestHalfs extends TornadoTestBase {
         }
     }
 
-    //TODO: VectorHalf8
     @Test
     public void privateVectorHalf4() {
         int size = 16;

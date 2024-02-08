@@ -69,6 +69,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half16;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 import uk.ac.manchester.tornado.api.types.vectors.Half3;
 import uk.ac.manchester.tornado.api.types.vectors.Half4;
@@ -183,6 +184,7 @@ public final class OCLVectorPlugins {
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF16, HalfFloatArray.class, Half16.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
