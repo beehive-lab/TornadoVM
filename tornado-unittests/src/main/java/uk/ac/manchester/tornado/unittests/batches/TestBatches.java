@@ -29,8 +29,11 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -672,6 +675,40 @@ public class TestBatches extends TornadoTestBase {
             assertEquals(a0.get(i), a1[i]);
         }
         executionPlan.freeDeviceMemory();
+    }
+
+    public static void parallelInitialization(FloatArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            data.set(i, i);
+        }
+    }
+
+    public static void computeSquare(FloatArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            float value = data.get(i);
+            data.set(i, TornadoMath.pow(value, 2));
+        }
+    }
+
+    @Test
+    public void testBatchNotEven() {
+        // Allocate ~1GB 
+        FloatArray array = new FloatArray(1024 * 1024 * 256);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
+                .task("t0", TestBatches::parallelInitialization, array)  //
+                .task("t1", TestBatches::computeSquare, array) // 
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        executionPlan.withBatch("500MB") //
+                .execute();
+
+        for (int i = 0; i < array.getSize(); i++) {
+            assertEquals(i * i, array.get(i), 0.001f);
+        }
+        executionPlan.freeDeviceMemory();
+
     }
 
     private long checkMaxHeapAllocationOnDevice(int size, MemSize memSize) throws UnsupportedConfigurationException {
