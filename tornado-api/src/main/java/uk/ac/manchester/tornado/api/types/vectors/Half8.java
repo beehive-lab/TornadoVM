@@ -280,4 +280,10 @@ public final class Half8 implements TornadoVectorsInterface<ShortBuffer> {
     public short[] toArray() {
         return storage;
     }
+
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 2;
+    }
+
 }

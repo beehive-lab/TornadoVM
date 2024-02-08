@@ -198,4 +198,9 @@ public final class Half4 implements TornadoVectorsInterface<ShortBuffer> {
         return storage;
     }
 
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 2;
+    }
+
 }

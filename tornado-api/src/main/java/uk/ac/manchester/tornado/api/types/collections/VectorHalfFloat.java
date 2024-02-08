@@ -216,4 +216,9 @@ public final class VectorHalfFloat implements TornadoCollectionInterface<ShortBu
         storage.clear();
     }
 
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
+    }
+
 }

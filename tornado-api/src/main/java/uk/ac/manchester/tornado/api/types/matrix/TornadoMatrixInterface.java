@@ -24,4 +24,6 @@ import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 public sealed interface TornadoMatrixInterface<T extends Buffer> extends PrimitiveStorage<T> //
         permits Matrix2DDouble, Matrix2DFloat, Matrix2DFloat4, Matrix2DInt, //
         Matrix3DFloat, Matrix3DFloat4, Matrix4x4Float  {
+
+    long getNumBytes();
 }

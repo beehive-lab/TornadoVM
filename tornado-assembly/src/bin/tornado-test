@@ -75,6 +75,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.memoryplan.TestMemoryLimit"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
@@ -190,7 +191,6 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsConcurrent",
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsSerial",
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsConcurrent",
-
 
     ## Half-float
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionHalfFloat',
@@ -549,7 +549,7 @@ def writeStatusInFile():
 
 def getJavaVersion():
     # Get the java version
-    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'',
+    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\\.] -v OFS=. \'NR==1{print $2,$3}\'',
                             stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
 
 

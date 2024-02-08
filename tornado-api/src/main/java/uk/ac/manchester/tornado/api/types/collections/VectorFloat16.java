@@ -27,10 +27,10 @@ public final class VectorFloat16 implements TornadoCollectionInterface<FloatBuff
     public static final Class<VectorFloat16> TYPE = VectorFloat16.class;
 
     private static final int ELEMENT_SIZE = 16;
-    protected final FloatArray storage;
+    private final FloatArray storage;
     private final int numElements;
 
-    protected VectorFloat16(int numElements, FloatArray array) {
+    VectorFloat16(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -158,5 +158,10 @@ public final class VectorFloat16 implements TornadoCollectionInterface<FloatBuff
 
     public void clear() {
         storage.clear();
+    }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
     }
 }

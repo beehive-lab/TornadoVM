@@ -44,7 +44,7 @@ public final class VectorInt3 implements TornadoCollectionInterface<IntBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorInt3(int numElements, IntArray array) {
+    VectorInt3(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -208,6 +208,11 @@ public final class VectorInt3 implements TornadoCollectionInterface<IntBuffer> {
 
     public void clear() {
         storage.clear();
+    }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
     }
 
 }

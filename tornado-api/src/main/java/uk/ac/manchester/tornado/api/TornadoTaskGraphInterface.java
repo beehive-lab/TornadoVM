@@ -48,6 +48,10 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void batch(String batchSize);
 
+    void withMemoryLimit(String memoryLimit);
+
+    void withoutMemoryLimit();
+
     void apply(Consumer<SchedulableTask> consumer);
 
     void mapAllToInner(TornadoDevice device);

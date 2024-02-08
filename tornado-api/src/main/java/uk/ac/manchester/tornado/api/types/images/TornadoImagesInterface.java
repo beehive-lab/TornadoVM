@@ -25,4 +25,6 @@ public sealed interface TornadoImagesInterface<T extends Buffer> //
         extends PrimitiveStorage<T> //
         permits ImageByte3, ImageByte4, //
         ImageFloat, ImageFloat3, ImageFloat4, ImageFloat8 {
+
+    long getNumBytes();
 }

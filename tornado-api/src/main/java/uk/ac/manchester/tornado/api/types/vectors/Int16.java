@@ -369,4 +369,9 @@ public final class Int16 implements TornadoVectorsInterface<IntBuffer> {
     public int size() {
         return NUM_ELEMENTS;
     }
+
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 4;
+    }
 }

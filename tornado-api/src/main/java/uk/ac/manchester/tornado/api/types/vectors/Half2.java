@@ -253,4 +253,10 @@ public final class Half2 implements TornadoVectorsInterface<ShortBuffer> {
     public short[] toArray() {
         return storage;
     }
+
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 2;
+    }
+
 }

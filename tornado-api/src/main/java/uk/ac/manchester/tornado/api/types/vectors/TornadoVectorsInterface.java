@@ -30,4 +30,5 @@ permits Byte3, Byte4, //
         Float2, Float3, Float4, Float8, Float16, //
         Int2, Int3, Int4, Int8, Int16, //
         Short2, Short3, Half2, Half3, Half4, Half8, Half16 {
+    long getNumBytes();
 }

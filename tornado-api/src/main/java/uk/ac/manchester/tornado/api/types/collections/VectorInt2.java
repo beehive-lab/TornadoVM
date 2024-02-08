@@ -32,7 +32,7 @@ public final class VectorInt2 implements TornadoCollectionInterface<IntBuffer> {
     /**
      * backing array.
      */
-    protected final IntArray storage;
+    private final IntArray storage;
     /**
      * number of elements in the storage.
      */
@@ -44,7 +44,7 @@ public final class VectorInt2 implements TornadoCollectionInterface<IntBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorInt2(int numElements, IntArray array) {
+    VectorInt2(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -206,6 +206,11 @@ public final class VectorInt2 implements TornadoCollectionInterface<IntBuffer> {
 
     public void clear() {
         storage.clear();
+    }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
     }
 
 }

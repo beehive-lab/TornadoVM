@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -242,9 +243,18 @@ public class TornadoVMInterpreter extends TornadoLogger {
         finishedWarmup = true;
     }
 
+    private boolean isMemoryLimitEnabled() {
+        return executionContext.isMemoryLimited();
+    }
+
     private Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         deviceForInterpreter.enableThreadSharing();
+
+        if (isMemoryLimitEnabled() && executionContext.doesExceedExecutionPlanLimit()) {
+            throw new TornadoMemoryException(STR."OutofMemoryException due to executionPlan.withMemoryLimit of \{executionContext.getExecutionPlanMemoryLimit()}");
+        }
+
         final long t0 = System.nanoTime();
         int lastEvent = -1;
         initWaitEventList();

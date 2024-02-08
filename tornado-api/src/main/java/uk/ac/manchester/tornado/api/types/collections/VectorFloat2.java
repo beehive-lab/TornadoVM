@@ -32,7 +32,7 @@ public final class VectorFloat2 implements TornadoCollectionInterface<FloatBuffe
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
 
     /**
      * number of elements in the storage.
@@ -45,7 +45,7 @@ public final class VectorFloat2 implements TornadoCollectionInterface<FloatBuffe
      * @param numElements
      * @param array
      */
-    protected VectorFloat2(int numElements, FloatArray array) {
+    VectorFloat2(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -206,5 +206,10 @@ public final class VectorFloat2 implements TornadoCollectionInterface<FloatBuffe
 
     public void clear() {
         storage.clear();
+    }
+
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
     }
 }

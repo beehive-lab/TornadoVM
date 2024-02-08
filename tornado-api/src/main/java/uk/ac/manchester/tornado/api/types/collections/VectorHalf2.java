@@ -198,4 +198,9 @@ public final class VectorHalf2 implements TornadoCollectionInterface<ShortBuffer
         storage.clear();
     }
 
+    @Override
+    public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
+    }
+
 }

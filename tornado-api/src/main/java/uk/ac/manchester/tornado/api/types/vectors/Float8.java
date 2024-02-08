@@ -307,4 +307,9 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
         return storage;
     }
 
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 4;
+    }
+
 }

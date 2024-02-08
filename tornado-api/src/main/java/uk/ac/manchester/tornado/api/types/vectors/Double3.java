@@ -285,4 +285,9 @@ public final class Double3 implements TornadoVectorsInterface<DoubleBuffer> {
         return storage;
     }
 
+    @Override
+    public long getNumBytes() {
+        return NUM_ELEMENTS * 8;
+    }
+
 }

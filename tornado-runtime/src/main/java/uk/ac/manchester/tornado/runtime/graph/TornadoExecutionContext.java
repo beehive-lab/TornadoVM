@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
+import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,8 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -46,11 +49,18 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
+import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
+import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
+import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
+import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -72,6 +82,7 @@ public class TornadoExecutionContext {
     private int nextTask;
 
     private long batchSize;
+    private long executionPlanMemoryLimit;
     private Set<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
@@ -80,6 +91,8 @@ public class TornadoExecutionContext {
     private boolean isDataDependencyDetected;
 
     private TornadoProfiler profiler;
+
+    public static int INIT_VALUE = -1;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -95,6 +108,7 @@ public class TornadoExecutionContext {
         Arrays.fill(taskToDeviceMapTable, null);
         nextTask = 0;
         batchSize = -1;
+        executionPlanMemoryLimit = INIT_VALUE;
         lastDevices = new HashSet<>();
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
@@ -129,6 +143,51 @@ public class TornadoExecutionContext {
 
     public void setBatchSize(long size) {
         this.batchSize = size;
+    }
+
+    public void setExecutionPlanMemoryLimit(long memoryLimitSize) {
+        this.executionPlanMemoryLimit = memoryLimitSize;
+    }
+
+    public long getExecutionPlanMemoryLimit() {
+        return executionPlanMemoryLimit;
+    }
+
+    public boolean isMemoryLimited() {
+        return getExecutionPlanMemoryLimit() != INIT_VALUE;
+    }
+
+    public boolean doesExceedExecutionPlanLimit() {
+        long totalSize = 0;
+        
+        for (Object parameter : getObjects()) {
+            if (parameter.getClass().isArray()) {
+                Class<?> componentType = parameter.getClass().getComponentType();
+                DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);
+                if (dataTypeSize == null) {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
+                }
+                long size = Array.getLength(parameter);
+                totalSize += size * dataTypeSize.getSize();
+            } else if (parameter instanceof TornadoNativeArray tornadoNativeArray) {
+                totalSize += tornadoNativeArray.getNumBytesWithoutHeader();
+            } else if (parameter instanceof TornadoVectorsInterface<?> tornadoVector) {
+                totalSize += tornadoVector.getNumBytes();
+            } else if (parameter instanceof TornadoCollectionInterface<?> collection) {
+                totalSize += collection.getNumBytes();
+            } else if (parameter instanceof TornadoVolumesInterface<?> tornadoVolume) {
+                totalSize += tornadoVolume.getNumBytes();
+            } else if (parameter instanceof TornadoMatrixInterface<?> tornadoMatrix) {
+                totalSize += tornadoMatrix.getNumBytes();
+            } else if (parameter instanceof TornadoImagesInterface<?> tornadoImage) {
+                totalSize += tornadoImage.getNumBytes();
+            } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
+                // ignore
+            } else {
+                throw new TornadoRuntimeException(STR."Unsupported type: \{parameter.getClass()}");
+            }
+        }
+        return totalSize > getExecutionPlanMemoryLimit();
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
@@ -221,11 +280,11 @@ public class TornadoExecutionContext {
     public void mapAllTasksToSingleDevice(TornadoDevice tornadoDevice) {
         if (tornadoDevice instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
             devices.clear();
-            devices.add(0, tornadoAcceleratorDevice);
+            devices.addFirst(tornadoAcceleratorDevice);
             apply(task -> task.mapTo(tornadoDevice));
             Arrays.fill(taskToDeviceMapTable, tornadoDevice);
         } else {
-            throw new TornadoRuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
+            throw new TornadoRuntimeException(STR."Device \{tornadoDevice.getClass()} not supported yet");
         }
     }
 
@@ -255,7 +314,7 @@ public class TornadoExecutionContext {
         if (target instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
             accelerator = tornadoAcceleratorDevice;
         } else {
-            throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
+            throw new TornadoRuntimeException(STR."Device \{target.getClass()} not supported yet");
         }
 
         setDevice(accelerator);
@@ -438,7 +497,7 @@ public class TornadoExecutionContext {
     }
 
     private String canonicalizeId(String id) {
-        return id.startsWith(getId()) ? id : getId() + "." + id;
+        return id.startsWith(getId()) ? id : STR."\{getId()}.\{id}";
     }
 
     public TornadoAcceleratorDevice getDeviceForTask(String id) {
@@ -447,7 +506,7 @@ public class TornadoExecutionContext {
         if (device instanceof TornadoAcceleratorDevice) {
             tornadoDevice = (TornadoAcceleratorDevice) device;
         } else {
-            throw new RuntimeException("Device " + device.getClass() + " not supported yet");
+            throw new RuntimeException(STR."Device \{device.getClass()} not supported yet");
         }
         return getTask(id) == null ? null : tornadoDevice;
     }
@@ -538,23 +597,23 @@ public class TornadoExecutionContext {
         final String ansiPurple = "\u001B[35m";
         final String ansiGreen = "\u001B[32m";
         System.out.println("-----------------------------------");
-        System.out.println(ansiCyan + "Device Table:" + ansiReset);
+        System.out.println(STR."\{ansiCyan}Device Table:\{ansiReset}");
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
         }
 
-        System.out.println(ansiYellow + "Constant Table:" + ansiReset);
+        System.out.println(STR."\{ansiYellow}Constant Table:\{ansiReset}");
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
         }
 
-        System.out.println(ansiPurple + "Object Table:" + ansiReset);
+        System.out.println(STR."\{ansiPurple}Object Table:\{ansiReset}");
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj);
         }
 
-        System.out.println(ansiGreen + "Task Table:" + ansiReset);
+        System.out.println(STR."\{ansiGreen}Task Table:\{ansiReset}");
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());

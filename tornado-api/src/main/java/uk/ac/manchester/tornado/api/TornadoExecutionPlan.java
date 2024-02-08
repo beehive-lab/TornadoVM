@@ -130,19 +130,42 @@ public class TornadoExecutionPlan {
         return this;
     }
 
+    /**
+     * It selects a specific device for one particular task of the task-graph.
+     * 
+     * @param taskName
+     *     The task-name is identified by the task-graph name followed by a dot (".") and
+     *     the task name. For example: "graph.task1".
+     * @param device
+     *     The device is an instance of a {@link TornadoDevice}
+     * 
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withDevice(String taskName, TornadoDevice device) {
         tornadoExecutor.setDevice(taskName, device);
         return this;
     }
 
     /**
-     * @return
+     * It enables multiple tasks in a task graph to run concurrently on the same
+     * or different devices. Note that the TornadoVM runtime does not check for
+     * data dependencies across tasks when using this API call. Thus, it is
+     * the responsability of the programmer to provide tasks with no data dependencies
+     * when invoking the method {@link TornadoExecutionPlan#withConcurrentDevices()}.
+     *
+     * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withConcurrentDevices() {
         tornadoExecutor.withConcurrentDevices();
         return this;
     }
 
+    /**
+     * It disables multiple tasks in a task graph to run concurrently on the same
+     * or different devices.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withoutConcurrentDevices() {
         tornadoExecutor.withoutConcurrentDevices();
         return this;
@@ -237,7 +260,7 @@ public class TornadoExecutionPlan {
     /**
      * Enables the profiler. The profiler includes options to query device kernel
      * time, data transfers and compilation at different stages (JIT, driver
-     * compilation, Graal, etc).
+     * compilation, Graal, etc.).
      *
      * @param profilerMode
      *     {@link ProfilerMode}
@@ -256,6 +279,37 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionPlan withoutProfiler() {
         this.disableProfiler = true;
+        return this;
+    }
+
+    /**
+     * This method sets a limit to the amount of memory used on the target
+     * hardware accelerator. The TornadoVM runtime will check that the
+     * current instance of the {@link TornadoExecutionPlan} does not exceed
+     * the limit that was specified.
+     *
+     * @param memoryLimit
+     *     Specify the limit in a string format. E.g., "1GB", "512MB".
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
+        tornadoExecutor.withMemoryLimit(memoryLimit);
+        return this;
+    }
+
+    /**
+     * It disables the memory limit for the current instance of an
+     * {@link TornadoExecutionPlan}. This is the default action.
+     * If the memory limit is not set, then the maximum memory to use
+     * is set to the maximum buffer allocation (e.g., 1/4 of the total
+     * capacity using the OpenCL backend), or the maximum memory available
+     * on the target device.
+     * 
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withoutMemoryLimit() {
+        tornadoExecutor.withoutMemoryLimit();
         return this;
     }
 
@@ -309,6 +363,14 @@ public class TornadoExecutionPlan {
 
         void withBatch(String batchSize) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
+        }
+
+        void withMemoryLimit(String memoryLimit) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withMemoryLimit(memoryLimit));
+        }
+
+        public void withoutMemoryLimit() {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withoutMemoryLimit());
         }
 
         /**
@@ -411,8 +473,8 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::clearProfiles);
         }
 
-        void useDefaultScheduler(boolean useDefaultScheduler) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.useDefaultScheduler(useDefaultScheduler));
+        void useDefaultScheduler(boolean isDefaultScheduler) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.useDefaultScheduler(isDefaultScheduler));
         }
 
         TornadoDevice getDevice(int immutableTaskGraphIndex) {
@@ -436,5 +498,4 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.disableProfiler(profilerMode));
         }
     }
-
 }
