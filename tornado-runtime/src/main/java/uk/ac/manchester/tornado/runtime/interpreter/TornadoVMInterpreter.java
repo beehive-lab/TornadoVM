@@ -93,7 +93,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final List<SchedulableTask> tasks;
     private final List<SchedulableTask> localTaskList;
 
-    private final TornadoProfiler timeProfiler;
+    private TornadoProfiler timeProfiler;
     private final TornadoExecutionContext executionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
     private double totalTime;
@@ -158,6 +158,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
         debug("interpreter for device %s is ready to go", device.toString());
 
         this.bytecodeResult.mark();
+    }
+
+    public void setTimeProfiler(TornadoProfiler tornadoProfiler) {
+        this.timeProfiler = tornadoProfiler;
     }
 
     public void fetchGlobalStates() {
@@ -614,6 +618,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
             task.setGridScheduler(gridScheduler);
         }
 
+        if (timeProfiler instanceof TimeProfiler) {
+            // Register the backends only when the profiler is enabled
+            timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
+            timeProfiler.registerDeviceID(task.getId(), task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex());
+            timeProfiler.registerDeviceName(task.getId(), task.getDevice().getPhysicalDevice().getDeviceName());
+        }
+
         if (shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)])) {
             task.mapTo(deviceForInterpreter);
             try {
@@ -624,6 +635,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     // FPGAs, that has to be a single source.
                     task.forceCompilation();
                 }
+
                 installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
             } catch (TornadoBailoutRuntimeException e) {

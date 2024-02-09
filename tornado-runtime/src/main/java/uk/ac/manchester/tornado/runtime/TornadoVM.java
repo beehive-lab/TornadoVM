@@ -58,7 +58,7 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 public class TornadoVM extends TornadoLogger {
     private final TornadoExecutionContext executionContext;
 
-    private final TornadoProfiler timeProfiler;
+    private TornadoProfiler timeProfiler;
 
     private final TornadoVMBytecodeResult[] tornadoVMBytecodes;
 
@@ -100,7 +100,11 @@ public class TornadoVM extends TornadoLogger {
      *
      * @return An {@link Event} indicating the completion of execution.
      */
-    public Event execute(boolean isParallel) {
+    public Event execute(boolean isParallel, TornadoProfiler profiler) {
+        this.timeProfiler = profiler;
+        // Set the profiler
+        Arrays.stream(tornadoVMInterpreters).forEach(tornadoVMInterpreter -> tornadoVMInterpreter.setTimeProfiler(timeProfiler));
+
         if (calculateNumberOfJavaThreads(isParallel) != 1) {
             return executeInterpreterThreadManager(isParallel);
         } else {

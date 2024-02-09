@@ -132,13 +132,13 @@ public class TornadoExecutionPlan {
 
     /**
      * It selects a specific device for one particular task of the task-graph.
-     * 
+     *
      * @param taskName
      *     The task-name is identified by the task-graph name followed by a dot (".") and
      *     the task name. For example: "graph.task1".
      * @param device
      *     The device is an instance of a {@link TornadoDevice}
-     * 
+     *
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDevice(String taskName, TornadoDevice device) {
@@ -305,7 +305,7 @@ public class TornadoExecutionPlan {
      * is set to the maximum buffer allocation (e.g., 1/4 of the total
      * capacity using the OpenCL backend), or the maximum memory available
      * on the target device.
-     * 
+     *
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withoutMemoryLimit() {

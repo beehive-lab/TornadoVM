@@ -242,8 +242,12 @@ public class TornadoOptions {
     public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
     public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
-    public static String PROFILER_LOG = "tornado.log.profiler";
-    public static String PROFILER = "tornado.profiler";
+    private static String PROFILER_LOG = "tornado.log.profiler";
+    private static String PROFILER = "tornado.profiler";
+
+    public static boolean TORNADO_PROFILER_LOG = false;
+
+    public static boolean TORNADO_PROFILER = false;
     /**
      * Option to load FPGA pre-compiled binaries.
      */
@@ -253,7 +257,7 @@ public class TornadoOptions {
      * Option for enabling saving the profiler into a file.
      */
     public static boolean PROFILER_LOGS_ACCUMULATE() {
-        return getBooleanValue(PROFILER_LOG, FALSE);
+        return TornadoOptions.TORNADO_PROFILER_LOG || getBooleanValue(PROFILER_LOG, FALSE);
     }
 
     /**
@@ -270,7 +274,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue(PROFILER, FALSE);
+        return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
 
     /**
