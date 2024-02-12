@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
  * How to run.
  * </p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestHalfs
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats
  * </code>
  */
 public class TestHalfFloats extends TornadoTestBase {
