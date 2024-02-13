@@ -23,8 +23,6 @@ import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
 
 public interface TornadoRuntimeInterface {
 
-    void clearObjectState();
-
     TornadoDriver getDriver(int index);
 
     void setDefaultDriver(int index);
@@ -36,8 +34,6 @@ public interface TornadoRuntimeInterface {
     int getNumDrivers();
 
     TornadoDevice getDefaultDevice();
-
-    TornadoGlobalObjectState resolveObject(Object object);
 
     <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass);
 

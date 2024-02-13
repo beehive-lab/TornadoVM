@@ -46,10 +46,6 @@ public class TornadoRuntime {
         return runtimeImpl.isProfilerEnabled();
     }
 
-    public void clearObjectState() {
-        runtimeImpl.clearObjectState();
-    }
-
     public static void setProperty(String key, String value) {
         tornadoImpl.setTornadoProperty(key, value);
     }

@@ -190,7 +190,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private ProfilerMode profilerMode;
 
-    private boolean cocurrentDevices;
+    private boolean isConcurrentDevicesEnabled;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
@@ -225,7 +225,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case 0:
                 break;
             case 1:
-                task.transferToDevice(dataTransferMode, inputObjects.get(0));
+                task.transferToDevice(dataTransferMode, inputObjects.getFirst());
                 break;
             case 2:
                 task.transferToDevice(dataTransferMode, inputObjects.get(0), inputObjects.get(1));
@@ -295,7 +295,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case 0:
                 break;
             case 1:
-                task.transferToHost(mode, outputArrays.get(0));
+                task.transferToHost(mode, outputArrays.getFirst());
                 break;
             case 2:
                 task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1));
@@ -396,7 +396,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
 
-        this.executionContext.createImmutableExecutionContext(newTaskGraph.executionContext);
+        newTaskGraph.executionContext = this.executionContext.clone();
 
         newTaskGraph.taskPackages = Collections.unmodifiableList(this.taskPackages);
         newTaskGraph.argumentsLookUp = Collections.unmodifiableSet(this.argumentsLookUp);
@@ -441,12 +441,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void withConcurrentDevices() {
-        this.cocurrentDevices = true;
+        this.isConcurrentDevicesEnabled = true;
     }
 
     @Override
     public void withoutConcurrentDevices() {
-        this.cocurrentDevices = false;
+        this.isConcurrentDevicesEnabled = false;
     }
 
     @Override
@@ -783,7 +783,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    private void dumpDeoptReason(TornadoBailoutRuntimeException e) {
+    private void dumpDeoptimisationReason(TornadoBailoutRuntimeException e) {
         if (!Tornado.DEBUG) {
             System.err.println(STR."\{RED}[Bailout] Running the sequential implementation. Enable --debug to see the reason.\{RESET}");
         } else {
@@ -794,9 +794,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    private void deoptimizeToSequentialJava(TornadoBailoutRuntimeException e) {
-        // Execute the sequential code
-        dumpDeoptReason(e);
+    private void deoptimiseToSequentialJava(TornadoBailoutRuntimeException e) {
+        dumpDeoptimisationReason(e);
         runAllTasksJavaSequential();
     }
 
@@ -810,12 +809,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         try {
-            event = vm.execute(cocurrentDevices, timeProfiler);
+            event = vm.execute(isConcurrentDevicesEnabled, timeProfiler);
             timeProfiler.stop(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             updateProfiler();
         } catch (TornadoBailoutRuntimeException e) {
             if (TornadoOptions.RECOVER_BAILOUT) {
-                deoptimizeToSequentialJava(e);
+                deoptimiseToSequentialJava(e);
             } else {
                 if (Tornado.DEBUG) {
                     e.printStackTrace();
@@ -867,12 +866,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void transferToDevice(final int mode, Object... objects) {
-        for (Object functionParameter : objects) {
-            if (functionParameter == null) {
+        for (Object parameter : objects) {
+            if (parameter == null) {
                 throw new TornadoRuntimeException(STR."[ERROR] null object passed into streamIn() in schedule \{executionContext.getId()}");
             }
 
-            if (functionParameter instanceof Number) {
+            if (parameter instanceof Number) {
                 continue;
             }
 
@@ -880,20 +879,23 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // EVERY_EXECUTION
             boolean isObjectForStreaming = false;
             if (mode == DataTransferMode.EVERY_EXECUTION) {
-                streamInObjects.add(functionParameter);
+                streamInObjects.add(parameter);
                 isObjectForStreaming = true;
             }
 
-            executionContext.getObjectState(functionParameter).setStreamIn(isObjectForStreaming);
-
-            argumentsLookUp.add(functionParameter);
-
+            executionContext.getLocalStateObject(parameter).setStreamIn(isObjectForStreaming);
+            
             // List of input objects for the dynamic reconfiguration
-            inputModesObjects.add(new StreamingObject(mode, functionParameter));
+            inputModesObjects.add(new StreamingObject(mode, parameter));
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
-                lockObjectsInMemory(functionParameter);
+                if (!argumentsLookUp.contains(parameter)) {
+                    // We already set function parameter in transferToHost
+                    lockObjectsInMemory(parameter);
+                }
             }
+
+            argumentsLookUp.add(parameter);
         }
     }
 
@@ -921,17 +923,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // hash-set.
             if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
-                executionContext.getObjectState(functionParameter).setStreamOut(true);
+                executionContext.getLocalStateObject(functionParameter).setStreamOut(true);
             }
-
-            argumentsLookUp.add(functionParameter);
 
             // List of output objects for the dynamic reconfiguration
             outputModeObjects.add(new StreamingObject(mode, functionParameter));
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
-                lockObjectsInMemory(functionParameter);
+                if (!argumentsLookUp.contains(functionParameter)) {
+                    // We already set function parameter in transferToDevice
+                    lockObjectsInMemory(functionParameter);
+                }
             }
+
+            argumentsLookUp.add(functionParameter);
         }
     }
 
@@ -971,7 +976,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void reuseDeviceBufferObject(Object object) {
-        final LocalObjectState localState = executionContext.getObjectState(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object);
         reuseDeviceBufferObject(localState, meta().getLogicDevice());
     }
 
@@ -1001,7 +1006,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void freeDeviceMemoryObject(Object object) {
-        final LocalObjectState localState = executionContext.getObjectState(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object);
         releaseObjectFromDeviceMemory(localState, meta().getLogicDevice());
     }
 
@@ -1025,18 +1030,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private Event syncObjectInner(Object object) {
-        final LocalObjectState localState = executionContext.getObjectState(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object);
         final GlobalObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        System.out.println("Buffer is Locked???? " + deviceState.isLockedBuffer());
         if (deviceState.isLockedBuffer()) {
+            System.out.println("Performing the READ ");
             return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
         }
         return null;
     }
 
     private Event syncObjectInner(Object object, long offset, long partialCopySize) {
-        final LocalObjectState localState = executionContext.getObjectState(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object);
         final GlobalObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
@@ -1096,7 +1103,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 eventParameter.waitForEvents();
                 value += eventParameter.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
-                LocalObjectState localState = executionContext.getObjectState(objects[i]);
+                LocalObjectState localState = executionContext.getLocalStateObject(objects[i]);
                 DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
             }
@@ -1127,7 +1134,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 event.waitForEvents();
                 value += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
-                LocalObjectState localState = executionContext.getObjectState(object);
+                LocalObjectState localState = executionContext.getLocalStateObject(object);
                 DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
                 updateProfiler();

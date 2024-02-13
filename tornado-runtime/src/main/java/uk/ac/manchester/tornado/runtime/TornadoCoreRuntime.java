@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -56,6 +57,7 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -83,7 +85,7 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
     private static final int DEFAULT_DRIVER = 0;
     private static DebugContext debugContext = null;
     private static OptionValues options;
-    private final Map<Object, GlobalObjectState> objectMappings;
+
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfig vmConfig;
@@ -91,7 +93,6 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
     private int driverCount;
 
     private TornadoCoreRuntime() {
-        objectMappings = new WeakHashMap<>();
 
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
@@ -151,21 +152,14 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
         options = new OptionValues(opts);
     }
 
-    public void clearObjectState() {
-        for (GlobalObjectState gs : objectMappings.values()) {
-            gs.clear();
-        }
-        objectMappings.clear();
-    }
-
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
-        List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().collect(Collectors.toList());
+        List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
         TornadoAcceleratorDriver[] tornadoAcceleratorDrivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
             if (Tornado.FULL_DEBUG) {
-                System.out.println("Loading DRIVER: " + provider);
+                System.out.println("[INFO] Loading DRIVER: " + provider);
             }
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
@@ -180,13 +174,13 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
         return tornadoAcceleratorDrivers;
     }
 
-    public GlobalObjectState resolveObject(Object object) {
-        if (!objectMappings.containsKey(object)) {
-            final GlobalObjectState state = new GlobalObjectState();
-            objectMappings.put(object, state);
-        }
-        return objectMappings.get(object);
-    }
+    //    public GlobalObjectState resolveObject(Object object) {
+    //        if (!objectMappings.containsKey(object)) {
+    //            final GlobalObjectState state = new GlobalObjectState();
+    //            objectMappings.put(object, state);
+    //        }
+    //        return objectMappings.get(object);
+    //    }
 
     @Override
     public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {

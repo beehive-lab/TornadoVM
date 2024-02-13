@@ -44,9 +44,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      *
      * @param numArgs
      *     The number of arguments for the kernel call wrapper.
-     * @return The created {@link KernelArgs} object.
+     * @return The created {@link KernelStackFrame} object.
      */
-    KernelArgs createCallWrapper(int numArgs);
+    KernelStackFrame createKernelStackFrame(int numArgs);
 
     /**
      * It creates or reuses an atomic buffer for the specified integer array.

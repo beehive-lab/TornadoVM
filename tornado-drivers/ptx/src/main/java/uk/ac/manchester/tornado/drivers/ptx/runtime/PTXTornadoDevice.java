@@ -79,7 +79,7 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -114,7 +114,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelArgs createCallWrapper(int numArgs) {
+    public KernelStackFrame createKernelStackFrame(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
@@ -389,7 +389,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.hasContents() || BENCHMARKING_MODE) {
+        if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
             return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
         }

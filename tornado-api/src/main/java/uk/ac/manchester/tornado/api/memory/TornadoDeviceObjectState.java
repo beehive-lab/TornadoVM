@@ -31,7 +31,7 @@ public interface TornadoDeviceObjectState {
 
     boolean isLockedBuffer();
 
-    boolean hasContents();
+    boolean hasContent();
 
     void setContents(boolean value);
 

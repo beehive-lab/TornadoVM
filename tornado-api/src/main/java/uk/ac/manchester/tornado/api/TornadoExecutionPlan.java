@@ -370,7 +370,7 @@ public class TornadoExecutionPlan {
         }
 
         public void withoutMemoryLimit() {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withoutMemoryLimit());
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutMemoryLimit);
         }
 
         /**
@@ -388,11 +388,11 @@ public class TornadoExecutionPlan {
         }
 
         void withConcurrentDevices() {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withConcurrentDevices());
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withConcurrentDevices);
         }
 
         void withoutConcurrentDevices() {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withoutConcurrentDevices());
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutConcurrentDevices);
         }
 
         void freeDeviceMemory() {
@@ -479,7 +479,7 @@ public class TornadoExecutionPlan {
 
         TornadoDevice getDevice(int immutableTaskGraphIndex) {
             if (immutableTaskGraphList.size() < immutableTaskGraphIndex) {
-                throw new TornadoRuntimeException("TaskGraph index #" + immutableTaskGraphIndex + " does not exist in current executor");
+                throw new TornadoRuntimeException(STR."TaskGraph index #\{immutableTaskGraphIndex} does not exist in current executor");
             }
             return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
         }

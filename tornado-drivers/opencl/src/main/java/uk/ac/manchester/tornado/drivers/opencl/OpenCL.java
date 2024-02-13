@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -151,15 +151,15 @@ public class OpenCL {
      * Execute an OpenCL code compiled by Tornado on the target device
      *
      * @param tornadoDevice
-     *            OpenCL device to run the application.
+     *     OpenCL device to run the application.
      * @param openCLCode
-     *            OpenCL code to run.
+     *     OpenCL code to run.
      * @param taskMeta
-     *            TaskMetadata.
+     *     TaskMetadata.
      * @param accesses
-     *            Access of each parameter
+     *     Access of each parameter
      * @param parameters
-     *            List of parameters.
+     *     List of parameters.
      *
      */
     public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
@@ -193,7 +193,7 @@ public class OpenCL {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelArgs callWrapper = tornadoDevice.createCallWrapper(numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(numArgs);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values

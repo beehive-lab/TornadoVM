@@ -38,11 +38,6 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
     private long partialSize;
 
     public DeviceObjectState() {
-        objectBuffer = null;
-        atomicRegionPresent = false;
-        contents = false;
-        lockBuffer = false;
-        partialSize = 0;
     }
 
     public void setObjectBuffer(ObjectBuffer value) {
@@ -70,7 +65,7 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
         this.lockBuffer = lockBuffer;
     }
 
-    public boolean hasContents() {
+    public boolean hasContent() {
         return contents;
     }
 

@@ -86,7 +86,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -101,10 +101,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
-    private static final long OBJECT_HEADER_SIZE = TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
     private static OCLDriver driver = null;
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
-    private static Pattern namePattern = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
@@ -219,8 +218,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelArgs createCallWrapper(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
+    public KernelStackFrame createKernelStackFrame(int numArgs) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(Thread.currentThread().threadId(), numArgs);
     }
 
     @Override
@@ -607,7 +606,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
-        if (!state.hasContents() || BENCHMARKING_MODE) {
+        if (!state.hasContent() || BENCHMARKING_MODE) {
             state.setContents(true);
             return state.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }
@@ -654,8 +653,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof OCLTornadoDevice) {
-            final OCLTornadoDevice other = (OCLTornadoDevice) obj;
+        if (obj instanceof OCLTornadoDevice other) {
             return (other.deviceIndex == deviceIndex && other.platformIndex == platformIndex);
         }
         return false;
@@ -712,22 +710,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public TornadoDeviceType getDeviceType() {
         OCLDeviceType deviceType = device.getDeviceType();
-        switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
-                return TornadoDeviceType.CPU;
-            case CL_DEVICE_TYPE_GPU:
-                return TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR:
-                return TornadoDeviceType.ACCELERATOR;
-            case CL_DEVICE_TYPE_CUSTOM:
-                return TornadoDeviceType.CUSTOM;
-            case CL_DEVICE_TYPE_ALL:
-                return TornadoDeviceType.ALL;
-            case CL_DEVICE_TYPE_DEFAULT:
-                return TornadoDeviceType.DEFAULT;
-            default:
-                throw new RuntimeException("Device not supported");
-        }
+        return switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.ACCELERATOR;
+            case CL_DEVICE_TYPE_CUSTOM -> TornadoDeviceType.CUSTOM;
+            case CL_DEVICE_TYPE_ALL -> TornadoDeviceType.ALL;
+            case CL_DEVICE_TYPE_DEFAULT -> TornadoDeviceType.DEFAULT;
+            default -> throw new RuntimeException("Device not supported");
+        };
     }
 
     @Override
@@ -796,11 +787,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         String version = device.getDeviceContext().getPlatformContext().getPlatform().getVersion();
 
         if (version.contains("CUDA")) {
-            // Currently, the CUDA platform does not allow dispatching SPIRV kernels
+            // Currently, the CUDA platform does not allow dispatching SPIR-V kernels
             return false;
         }
 
-        Matcher matcher = namePattern.matcher(version);
+        Matcher matcher = NAME_PATTERN.matcher(version);
         int major = 0;
         int minor = 0;
         if (matcher.find()) {

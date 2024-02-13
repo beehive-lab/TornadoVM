@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -136,7 +136,7 @@ public class TestSPIRVJITCompiler {
         spirvTornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
-        KernelArgs callWrapper = spirvTornadoDevice.createCallWrapper(3);
+        KernelStackFrame callWrapper = spirvTornadoDevice.createKernelStackFrame(3);
         callWrapper.setKernelContext(new HashMap<>());
 
         // Add kernel arguments to the SPIR-V Call Stack

@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class GlobalObjectState implements TornadoGlobalObjectState {
 
-    private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
+    private ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
         deviceStates = new ConcurrentHashMap<>();
@@ -41,12 +41,23 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
 
     public DeviceObjectState getDeviceState(TornadoDevice device) {
         if (!(device instanceof TornadoAcceleratorDevice)) {
-            throw new TornadoRuntimeException("Device not compatible");
+            throw new TornadoRuntimeException("[ERROR] Device not compatible");
         }
-        deviceStates.computeIfAbsent((TornadoAcceleratorDevice) device, k -> new DeviceObjectState());
+        if (!deviceStates.containsKey(device)) {
+            deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
+        }
         return deviceStates.get(device);
     }
 
+    @Override
+    public GlobalObjectState clone() {
+        GlobalObjectState globalObjectState = new GlobalObjectState();
+        ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> copy = new ConcurrentHashMap<>(deviceStates);
+        globalObjectState.deviceStates = copy;
+        return globalObjectState;
+    }
+
+    @Override
     public void clear() {
         deviceStates.clear();
     }

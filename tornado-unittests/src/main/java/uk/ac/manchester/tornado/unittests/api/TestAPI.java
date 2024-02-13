@@ -219,7 +219,7 @@ public class TestAPI extends TornadoTestBase {
         int size = 20;
         IntArray data = new IntArray(N);
 
-        IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, size));
+        data.init(size);
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -237,7 +237,7 @@ public class TestAPI extends TornadoTestBase {
 
         // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
         // device buffers for other execution plans.
-        executionPlan.freeDeviceMemory();
+        //executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));

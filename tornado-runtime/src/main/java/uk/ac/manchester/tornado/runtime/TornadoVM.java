@@ -108,7 +108,7 @@ public class TornadoVM extends TornadoLogger {
         if (calculateNumberOfJavaThreads(isParallel) != 1) {
             return executeInterpreterThreadManager(isParallel);
         } else {
-            return executeSingleThreaded();
+            return executeInterpreterSingleThreaded();
         }
     }
 
@@ -116,7 +116,7 @@ public class TornadoVM extends TornadoLogger {
         return shouldRunConcurrently(isTaskGraphConcurrent) ? executionContext.getValidContextSize() : 1;
     }
 
-    private Event executeSingleThreaded() {
+    private Event executeInterpreterSingleThreaded() {
         // TODO: This is a temporary workaround until refactoring the
         // DynamicReconfiguration
         Arrays.stream(tornadoVMInterpreters).forEach(TornadoVMInterpreter::execute);
@@ -198,10 +198,6 @@ public class TornadoVM extends TornadoLogger {
 
     public void warmup() {
         executeActionOnInterpreters(TornadoVMInterpreter::warmup);
-    }
-
-    public void fetchGlobalStates() {
-        executeActionOnInterpreters(TornadoVMInterpreter::fetchGlobalStates);
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {

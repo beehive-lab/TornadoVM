@@ -69,7 +69,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -118,8 +118,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelArgs createCallWrapper(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
+    public KernelStackFrame createKernelStackFrame(int numArgs) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(Thread.currentThread().threadId(), numArgs);
     }
 
     @Override
@@ -387,7 +387,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long offset) {
-        if (!objectState.hasContents() || BENCHMARKING_MODE) {
+        if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
             return objectState.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }

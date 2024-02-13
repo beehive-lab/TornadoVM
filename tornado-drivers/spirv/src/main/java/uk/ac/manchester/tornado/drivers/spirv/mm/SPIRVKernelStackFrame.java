@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,23 +23,22 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
 // FIXME <REFACTOR> THis class has similarities with the rest of the backends
-public class SPIRVKernelArgs extends SPIRVByteBuffer implements KernelArgs {
+public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStackFrame {
 
     public static final int RESERVED_SLOTS = 3;
 
     private final ArrayList<CallArgument> callArguments;
 
-    public SPIRVKernelArgs(long bufferId, int numArgs, SPIRVDeviceContext device) {
-        super(device, bufferId, 0,RESERVED_SLOTS << 3);
+    public SPIRVKernelStackFrame(long bufferId, int numArgs, SPIRVDeviceContext device) {
+        super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
         buffer.clear();
     }

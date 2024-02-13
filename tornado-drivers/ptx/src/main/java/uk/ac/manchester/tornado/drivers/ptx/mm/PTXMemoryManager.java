@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import static uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelArgs.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
     private PTXDeviceContext deviceContext;
-    private PTXKernelArgs ptxKernelCallWrapper = null;
+    private PTXKernelStackFrame ptxKernelCallWrapper = null;
 
     public PTXMemoryManager(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -44,10 +44,10 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return DEVICE_AVAILABLE_MEMORY;
     }
 
-    public PTXKernelArgs createCallWrapper(final int maxArgs) {
+    public PTXKernelStackFrame createCallWrapper(final int maxArgs) {
         if (this.ptxKernelCallWrapper == null) {
             long kernelCallBuffer = deviceContext.getDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
-            this.ptxKernelCallWrapper = new PTXKernelArgs(kernelCallBuffer, maxArgs, deviceContext);
+            this.ptxKernelCallWrapper = new PTXKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext);
         }
         return this.ptxKernelCallWrapper;
     }
