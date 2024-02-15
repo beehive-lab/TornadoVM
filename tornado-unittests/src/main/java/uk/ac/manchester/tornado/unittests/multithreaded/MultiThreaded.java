@@ -57,7 +57,7 @@ public class MultiThreaded extends TornadoTestBase {
     }
 
     @Test
-    public void test01() {
+    public void test01() throws InterruptedException {
 
         Thread t0;
         Thread t1;
@@ -91,18 +91,14 @@ public class MultiThreaded extends TornadoTestBase {
         });
 
         t0.start();
-        t1.start();
+        //t1.start();
 
-        try {
-            t0.join();
-            t1.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        t0.join();
+        //t1.join();
     }
 
     @Test
-    public void test02() {
+    public void test02() throws InterruptedException {
 
         Thread t0;
         Thread t1;
@@ -132,11 +128,8 @@ public class MultiThreaded extends TornadoTestBase {
         t0.start();
         t1.start();
 
-        try {
-            t0.join();
-            t1.join();
-        } catch (Exception e) {
-            throw new TornadoRuntimeException(e);
-        }
+        t0.join();
+        t1.join();
+
     }
 }

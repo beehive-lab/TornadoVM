@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,10 +30,13 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
-    private PTXDeviceContext deviceContext;
-    private PTXKernelStackFrame ptxKernelCallWrapper = null;
+    private final PTXDeviceContext deviceContext;
+    private final Map<Long, PTXKernelStackFrame> ptxKernelStackFrame = new ConcurrentHashMap<>();
 
     public PTXMemoryManager(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -44,12 +47,11 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return DEVICE_AVAILABLE_MEMORY;
     }
 
-    public PTXKernelStackFrame createCallWrapper(final int maxArgs) {
-        if (this.ptxKernelCallWrapper == null) {
+    public PTXKernelStackFrame createCallWrapper(final long threadId, final int maxArgs) {
+        if (!ptxKernelStackFrame.containsKey(threadId)) {
             long kernelCallBuffer = deviceContext.getDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
-            this.ptxKernelCallWrapper = new PTXKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext);
+            ptxKernelStackFrame.put(threadId, new PTXKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
-        return this.ptxKernelCallWrapper;
+        return ptxKernelStackFrame.get(threadId);
     }
-
 }

@@ -101,11 +101,11 @@ public class TornadoVM extends TornadoLogger {
      * @return An {@link Event} indicating the completion of execution.
      */
     public Event execute(boolean isParallel, TornadoProfiler profiler) {
+        // Set the profiler for all interpreters
         this.timeProfiler = profiler;
-        // Set the profiler
         Arrays.stream(tornadoVMInterpreters).forEach(tornadoVMInterpreter -> tornadoVMInterpreter.setTimeProfiler(timeProfiler));
 
-        if (calculateNumberOfJavaThreads(isParallel) != 1) {
+        if (shouldInterpreterRunInParallel(isParallel)) {
             return executeInterpreterThreadManager(isParallel);
         } else {
             return executeInterpreterSingleThreaded();
@@ -116,9 +116,11 @@ public class TornadoVM extends TornadoLogger {
         return shouldRunConcurrently(isTaskGraphConcurrent) ? executionContext.getValidContextSize() : 1;
     }
 
+    private boolean shouldInterpreterRunInParallel(boolean isParallel) {
+        return calculateNumberOfJavaThreads(isParallel) != 1;
+    }
+
     private Event executeInterpreterSingleThreaded() {
-        // TODO: This is a temporary workaround until refactoring the
-        // DynamicReconfiguration
         Arrays.stream(tornadoVMInterpreters).forEach(TornadoVMInterpreter::execute);
         return new EmptyEvent();
     }

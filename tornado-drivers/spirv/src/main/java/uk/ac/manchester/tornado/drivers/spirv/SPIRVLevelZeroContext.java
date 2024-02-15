@@ -58,9 +58,9 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private static final String BUFFER_NOT_FOUND_ERROR_MESSAGE = "Should always have a buffer created at this point.";
 
-    private LevelZeroContext levelZeroContext;
-    private List<SPIRVDeviceContext> spirvDeviceContext;
-    private List<SPIRVLevelZeroCommandQueue> commandQueues;
+    private final LevelZeroContext levelZeroContext;
+    private final List<SPIRVDeviceContext> spirvDeviceContext;
+    private final List<SPIRVLevelZeroCommandQueue> commandQueues;
     // Maps buffer ID -> LevelZeroByteBuffer
     private final Map<Long, LevelZeroByteBuffer> deviceBufferMap;
 
@@ -79,7 +79,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         spirvDeviceContext = new ArrayList<>();
         deviceBufferMap = new HashMap<>();
 
-        // Create LevelZeroDeviceContext
+        // Create LevelZeroDeviceContext per level-zero device
         for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
             SPIRVDeviceContext deviceContext = new SPIRVLevelZeroDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
             devices.get(deviceIndex).setDeviceContext(deviceContext);
@@ -152,6 +152,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     @Override
     public SPIRVCommandQueue createCommandQueue(int deviceIndex) {
+        SPIRVDevice device = devices.get(deviceIndex);
+        LevelZeroCommandQueue commandQueue = createCommandQueue(levelZeroContext, device);
+        LevelZeroCommandList commandList = createCommandList(levelZeroContext, device);
+        commandQueues.set(deviceIndex, new SPIRVLevelZeroCommandQueue(commandQueue, commandList, (LevelZeroDevice) device.getDevice()));
         return getCommandQueueForDevice(deviceIndex);
     }
 

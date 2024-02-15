@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -107,7 +107,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
     }
 
     @Override
-    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
+    public synchronized SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
         ZeModuleHandle module = new ZeModuleHandle();
         ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();

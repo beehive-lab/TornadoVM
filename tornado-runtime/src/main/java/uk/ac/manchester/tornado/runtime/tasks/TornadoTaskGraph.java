@@ -157,8 +157,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private long batchSizeBytes = -1;
     private long memoryLimitSizeBytes = -1;
     private boolean bailout = false;
-    // One TornadoVM instance per TaskSchedule
-    private TornadoVM vm;
+
+    private TornadoVM vm;  // One TornadoVM instance per TornadoExecutionPlan
     private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
     private Event event;
     private String taskGraphName;

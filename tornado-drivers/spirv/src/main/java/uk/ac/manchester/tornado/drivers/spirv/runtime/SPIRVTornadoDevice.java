@@ -156,12 +156,11 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         TornadoProfiler profiler = task.getProfiler();
         final SPIRVDeviceContext deviceContext = getDeviceContext();
 
-        final CompilableTask executable = task;
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(task.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData taskMeta = executable.meta();
+        final TaskMetaData taskMeta = task.meta();
 
         // Return the code from the cache
         if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
@@ -178,7 +177,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             // Compile the code and insert the SPIRV binary into the code cache
             SPIRVProviders providers = (SPIRVProviders) getBackend().getProviders();
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            result = SPIRVCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
+            result = SPIRVCompiler.compileSketchForDevice(sketch, task, providers, getBackend(), task.getProfiler());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
@@ -294,12 +293,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
                     return createMultiArrayWrapper(componentType, type, deviceContext, batchSize);
                 } else {
-                    throw new TornadoRuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented");
+                    throw new TornadoRuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented.");
                 }
             }
         } else if (!type.isPrimitive()) {
             if (object instanceof AtomicInteger) {
-                throw new TornadoRuntimeException("Atomic Integers not supported yet");
+                throw new TornadoRuntimeException("[ERROR] AtomicInteger types are not supported yet.");
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 return new SPIRVVectorWrapper(deviceContext, object, batchSize);
             } else if (object instanceof MemorySegment) {
@@ -350,8 +349,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-
-        final Class<?> type = object.getClass();
         return -1;
     }
 
@@ -435,7 +432,11 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void ensureLoaded() {
+        // create command queue
 
+        // TODO: pass execution plan ID to map EP -> command queues
+        // TODO: This must be managed by a common context
+        // getDeviceContext().getSpirvContext().createCommandQueue(deviceIndex);
     }
 
     @Override

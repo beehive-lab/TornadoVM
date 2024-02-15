@@ -115,7 +115,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
+        return getDeviceContext().getMemoryManager().createCallWrapper(Thread.currentThread().threadId(), numArgs);
     }
 
     @Override
@@ -152,9 +152,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
         return switch (task) {
-            case CompilableTask compilableTask -> compileTask(task);
-            case PrebuiltTask prebuiltTask -> compilePreBuiltTask(task);
-            default -> throw new TornadoInternalError("task of unknown type: " + task.getClass().getSimpleName());
+            case CompilableTask _ -> compileTask(task);
+            case PrebuiltTask _ -> compilePreBuiltTask(task);
+            default -> throw new TornadoInternalError(STR."task of unknown type: \{task.getClass().getSimpleName()}");
         };
     }
 
@@ -307,7 +307,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         }
-
         return -1;
     }
 
