@@ -150,7 +150,7 @@ public class TornadoExecutionPlan {
      * It enables multiple tasks in a task graph to run concurrently on the same
      * or different devices. Note that the TornadoVM runtime does not check for
      * data dependencies across tasks when using this API call. Thus, it is
-     * the responsability of the programmer to provide tasks with no data dependencies
+     * the responsibility of the programmer to provide tasks with no data dependencies
      * when invoking the method {@link TornadoExecutionPlan#withConcurrentDevices()}.
      *
      * @return {@link TornadoExecutionPlan}
