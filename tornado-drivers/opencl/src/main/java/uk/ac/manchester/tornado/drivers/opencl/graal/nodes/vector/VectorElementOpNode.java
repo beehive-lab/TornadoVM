@@ -94,6 +94,10 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         return (lane instanceof ConstantNode) ? lane.asJavaConstant().asInt() : -1;
     }
 
+    public final ValueNode getLaneId() {
+        return this.lane;
+    }
+
     public ValueNode getVector() {
         return vector;
     }

@@ -323,6 +323,15 @@ public final class OCLVectorPlugins {
             }
         });
 
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                b.add(b.append(store));
+                return true;
+            }
+        });
+
         r.register(new InvocationPlugin("add", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);

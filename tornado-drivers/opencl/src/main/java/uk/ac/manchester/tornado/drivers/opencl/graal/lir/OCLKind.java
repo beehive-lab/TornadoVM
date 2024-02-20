@@ -308,6 +308,8 @@ public enum OCLKind implements PlatformKind {
                 return 3;
             case DOUBLE:
                 return 4;
+            case HALF:
+                return 5;
             default:
                 return -1;
         }
@@ -538,8 +540,9 @@ public enum OCLKind implements PlatformKind {
                     return JavaKind.Byte;
                 case SHORT:
                 case USHORT:
-                case HALF:
                     return JavaKind.Short;
+                case HALF:
+                    return JavaKind.Object;
                 case INT:
                 case UINT:
                     return JavaKind.Int;

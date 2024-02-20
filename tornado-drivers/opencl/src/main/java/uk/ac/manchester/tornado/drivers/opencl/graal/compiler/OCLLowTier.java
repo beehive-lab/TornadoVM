@@ -47,6 +47,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsScheduling;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoHalfFloatConstantReplacement;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoHalfFloatVectorOffset;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 
@@ -80,6 +82,10 @@ public class OCLLowTier extends TornadoLowTier {
             appendPhase(new OCLFPGAPragmaPhase(tornadoDeviceContext));
             appendPhase(new OCLFPGAThreadScheduler());
         }
+
+        appendPhase(new TornadoHalfFloatConstantReplacement());
+
+        appendPhase(new TornadoHalfFloatVectorOffset());
 
         appendPhase(new TornadoLoopCanonicalization());
 
