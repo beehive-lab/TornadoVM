@@ -23,6 +23,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -213,4 +214,19 @@ public final class ByteArray extends TornadoNativeArray {
     public long getNumBytesWithoutHeader() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
+
+    /**
+     * Factory method to initialize a {@link ByteArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code ByteArray} instance with.
+     */
+    public static void initialize(ByteArray array, byte value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
 }

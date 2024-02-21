@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 
 /**
  * This class represents an array of ints stored in native memory.
@@ -210,6 +212,20 @@ public final class IntArray extends TornadoNativeArray {
     @Override
     public MemorySegment getSegment() {
         return segment;
+    }
+
+    /**
+     * Factory method to initialize a {@link IntArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code IntArray} instance with.
+     */
+    public static void initialize(IntArray array, int value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
     }
 
 }
