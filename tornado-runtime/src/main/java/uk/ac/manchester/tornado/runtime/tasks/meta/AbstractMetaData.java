@@ -65,7 +65,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /*
      * Forces the executing kernel to output its arguments before execution
      */
-    private final boolean threadInfo;
+    private boolean threadInfo;
     private final boolean debug;
     private final boolean dumpEvents;
     private final boolean dumpProfiles;
@@ -113,6 +113,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Allows the OpenCL driver to select the size of local work groups
      */
     private boolean openclUseDriverScheduling;
+    private boolean printKernel;
 
     AbstractMetaData(String id, AbstractMetaData parent) {
         this.id = id;
@@ -153,6 +154,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         enableVectors = parseBoolean(getDefault("vectors.enable", id, TRUE));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, FALSE));
         threadInfo = parseBoolean(getDefault("threadInfo", id, FALSE));
+        printKernel = parseBoolean(getDefault("print.kernel", "null", FALSE));
         debug = parseBoolean(getDefault("debug", id, FALSE));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, FALSE));
         dumpEvents = parseBoolean(getDefault("events.dump", id, TRUE));
@@ -499,5 +501,35 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public boolean isGridSchedulerEnabled() {
         return this.useGridScheduler;
+    }
+
+    public void enableThreadInfo() {
+        this.threadInfo = true;
+    }
+
+    public void disableThreadInfo() {
+        this.threadInfo = false;
+    }
+
+    @Override
+    public boolean isPrintKernelEnabled() {
+        return printKernel;
+    }
+
+    @Override
+    public void setPrintKernelFlag(boolean printKernelEnabled) {
+        this.printKernel = printKernelEnabled;
+    }
+
+    public void enablePrintKernel() {
+        this.printKernel = true;
+    }
+
+    public void disablePrintKernel() {
+        this.printKernel = false;
+    }
+
+    public void setThreadInfo(boolean threadInfoEnabled) {
+        this.threadInfo = threadInfoEnabled;
     }
 }

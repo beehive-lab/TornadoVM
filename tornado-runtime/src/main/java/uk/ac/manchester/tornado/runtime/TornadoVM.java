@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
  * parallel device (e.g., a GPU).
  */
 public class TornadoVM extends TornadoLogger {
-    private final TornadoExecutionContext executionContext;
+    private TornadoExecutionContext executionContext;
 
     private TornadoProfiler timeProfiler;
 

@@ -92,10 +92,7 @@ public class TornadoOptions {
      * Enable/Disable events dumping on program finish. False by default.
      */
     public static final boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", FALSE));
-    /**
-     * Prints the generated code by the TornadoVM compiler. Default is False.
-     */
-    public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", FALSE));
+
     /**
      * Prints the generated code by the TornadoVM compiler. Default is False.
      */
@@ -300,5 +297,4 @@ public class TornadoOptions {
         String contextEmulatorXilinxFPGA = System.getenv("XCL_EMULATION_MODE");
         return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
     }
-
 }

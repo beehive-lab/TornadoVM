@@ -210,7 +210,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         try {
             byte[] source = Files.readAllBytes(path);
             source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(functionName, source, executable.getEntryPoint());
+            return deviceContext.installCode(functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
         } catch (IOException e) {
             e.printStackTrace();
         }

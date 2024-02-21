@@ -60,7 +60,7 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean globalWorkDefined;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
-        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
+        super(STR."\{scheduleMetaData.getId()}.\{taskID}", scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.constantSize = 0;
         this.localSize = 0;
@@ -424,8 +424,8 @@ public class TaskMetaData extends AbstractMetaData {
         return super.isCpuConfigDefined() || scheduleMetaData.isCpuConfigDefined();
     }
 
-    @Override
-    public String toString() {
-        return String.format("task meta data: domain=%s, global workgroup size=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
-    }
+    //    @Override
+    //    public String toString() {
+    //        return String.format("task meta data: domain=%s, global workgroup size=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
+    //    }
 }
