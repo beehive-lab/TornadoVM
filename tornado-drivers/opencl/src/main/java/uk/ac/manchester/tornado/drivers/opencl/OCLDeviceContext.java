@@ -54,7 +54,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
 
     private final OCLTargetDevice device;
-    private final OCLCommandQueue queue;
+    private final OCLCommandQueue commandQueue;
     private final OCLContext context;
     private final OCLMemoryManager memoryManager;
     private final long bumpBuffer;
@@ -66,7 +66,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
 
     protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
-        this.queue = queue;
+        this.commandQueue = queue;
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
@@ -141,9 +141,9 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     @Override
     public void sync() {
         if (USE_SYNC_FLUSH) {
-            queue.flush();
+            commandQueue.flush();
         }
-        queue.finish();
+        commandQueue.finish();
     }
 
     @Override
@@ -153,14 +153,14 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
 
     @Override
     public int enqueueBarrier() {
-        long oclEvent = queue.enqueueBarrier();
-        return (queue.getOpenclVersion() < 120) ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, queue);
+        long oclEvent = commandQueue.enqueueBarrier();
+        return (commandQueue.getOpenclVersion() < 120) ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
     @Override
     public int enqueueMarker() {
-        long oclEvent = queue.enqueueMarker();
-        return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, queue);
+        long oclEvent = commandQueue.enqueueMarker();
+        return commandQueue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
     @Override
@@ -179,9 +179,9 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     }
 
     public int enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_PARALLEL_KERNEL, queue);
+                : null), EventDescriptor.DESC_PARALLEL_KERNEL, commandQueue);
     }
 
     public ByteOrder getByteOrder() {
@@ -192,51 +192,51 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
      * Asynchronous writes to device
      */
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_BYTE, queue);
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_BYTE, queue);
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_INT, queue);
+                : null), EventDescriptor.DESC_WRITE_INT, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_LONG, queue);
+                : null), EventDescriptor.DESC_WRITE_LONG, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SHORT, queue);
+                : null), EventDescriptor.DESC_WRITE_SHORT, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_FLOAT, queue);
+                : null), EventDescriptor.DESC_WRITE_FLOAT, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_DOUBLE, queue);
+                : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
     }
 
     public int enqueueWriteBuffer(long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SEGMENT, queue);
+                : null), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
     }
 
     /*
@@ -244,164 +244,164 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
      *
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_BYTE, queue);
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_BYTE, queue);
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_INT, queue);
+                : null), EventDescriptor.DESC_READ_INT, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_LONG, queue);
+                : null), EventDescriptor.DESC_READ_LONG, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_FLOAT, queue);
+                : null), EventDescriptor.DESC_READ_FLOAT, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_DOUBLE, queue);
+                : null), EventDescriptor.DESC_READ_DOUBLE, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_SHORT, queue);
+                : null), EventDescriptor.DESC_READ_SHORT, commandQueue);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_SEGMENT, queue);
+                : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
     }
 
     /*
      * Synchronous writes to device
      */
     public void writeBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_BYTE, queue);
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_BYTE, queue);
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_INT, queue);
+                : null), EventDescriptor.DESC_WRITE_INT, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_LONG, queue);
+                : null), EventDescriptor.DESC_WRITE_LONG, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SHORT, queue);
+                : null), EventDescriptor.DESC_WRITE_SHORT, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_FLOAT, queue);
+                : null), EventDescriptor.DESC_WRITE_FLOAT, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_DOUBLE, queue);
+                : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        oclEventPool.registerEvent(queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        oclEventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SEGMENT, queue);
+                : null), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
     }
 
     /*
      * Synchronous reads from device
      */
     public int readBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_BYTE, queue);
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_BYTE, queue);
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_INT, queue);
+                : null), EventDescriptor.DESC_READ_INT, commandQueue);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_LONG, queue);
+                : null), EventDescriptor.DESC_READ_LONG, commandQueue);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_FLOAT, queue);
+                : null), EventDescriptor.DESC_READ_FLOAT, commandQueue);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_DOUBLE, queue);
+                : null), EventDescriptor.DESC_READ_DOUBLE, commandQueue);
 
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_SHORT, queue);
+                : null), EventDescriptor.DESC_READ_SHORT, commandQueue);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        return oclEventPool.registerEvent(queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue)
+        return oclEventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, commandQueue)
                 ? oclEventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_SEGMENT, queue);
+                : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
     }
 
     public int enqueueBarrier(int[] events) {
-        long oclEvent = queue.enqueueBarrier(oclEventPool.serialiseEvents(events, queue) ? oclEventPool.waitEventsBuffer : null);
-        return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, queue);
+        long oclEvent = commandQueue.enqueueBarrier(oclEventPool.serialiseEvents(events, commandQueue) ? oclEventPool.waitEventsBuffer : null);
+        return commandQueue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
     public int enqueueMarker(int[] events) {
-        long oclEvent = queue.enqueueMarker(oclEventPool.serialiseEvents(events, queue) ? oclEventPool.waitEventsBuffer : null);
-        return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, queue);
+        long oclEvent = commandQueue.enqueueMarker(oclEventPool.serialiseEvents(events, commandQueue) ? oclEventPool.waitEventsBuffer : null);
+        return commandQueue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
     public void reset() {
@@ -487,19 +487,19 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         if (event == -1) {
             return EMPTY_EVENT;
         }
-        return new OCLEvent(oclEventPool.getDescriptor(event).getNameDescription(), queue, event, oclEventPool.getOCLEvent(event));
+        return new OCLEvent(oclEventPool.getDescriptor(event).getNameDescription(), commandQueue, event, oclEventPool.getOCLEvent(event));
     }
 
     public void flush() {
-        queue.flush();
+        commandQueue.flush();
     }
 
     public void finish() {
-        queue.finish();
+        commandQueue.finish();
     }
 
     public void flushEvents() {
-        queue.flushEvents();
+        commandQueue.flushEvents();
     }
 
     public boolean isKernelAvailable() {

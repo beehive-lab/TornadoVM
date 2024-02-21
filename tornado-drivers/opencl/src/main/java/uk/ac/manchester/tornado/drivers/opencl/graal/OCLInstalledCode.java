@@ -353,7 +353,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
-    private void submitWithoutEvents(final OCLKernelStackFrame callWrapper, final ObjectBuffer atomicSpace, final TaskMetaData meta, long batchThreads) {
+    private void submitWithoutEvents(final OCLKernelStackFrame oclKernelStackFrame, final ObjectBuffer atomicSpace, final TaskMetaData meta, long batchThreads) {
 
         checkKernelNotNull();
 
@@ -361,14 +361,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
-        setKernelArgs(callWrapper, atomicSpace, meta);
-        int kernelContextWriteEventId = callWrapper.enqueueWrite();
-        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
+        setKernelArgs(oclKernelStackFrame, atomicSpace, meta);
+        int kernelContextWriteEventId = oclKernelStackFrame.enqueueWrite();
+        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, oclKernelStackFrame);
 
         if (meta == null) {
             executeSingleThread();
         } else {
-            launchKernel(callWrapper, meta, batchThreads);
+            launchKernel(oclKernelStackFrame, meta, batchThreads);
         }
     }
 

@@ -783,7 +783,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public boolean isSPIRVSupported() {
-        // An OpenCL device supports SPIRV if the version is >= 2.1
+        // An OpenCL device supports SPIR-V if the version is >= 2.1
         String version = device.getDeviceContext().getPlatformContext().getPlatform().getVersion();
 
         if (version.contains("CUDA")) {
