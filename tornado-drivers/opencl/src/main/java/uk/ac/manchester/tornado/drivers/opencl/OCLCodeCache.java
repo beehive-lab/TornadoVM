@@ -62,7 +62,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLCodeCache {
 
     private static final String FALSE = "False";
-    private static final String TRUE = "True";
     private static final int SPIRV_MAGIC_NUMBER = 119734787;
     private static final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));

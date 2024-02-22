@@ -34,6 +34,17 @@ public class TornadoOptions {
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
     public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
+
+    /**
+     * Enable thread deployment debugging from the TornadoVM runtime and code dispatcher.
+     */
+    public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);
+
+    /**
+     * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA PTX or SPIR-V) from the TornadoVM JIT Compiler.
+     */
+    public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.print.kernel", FALSE);
+
     /**
      * Priority of the PTX Backend. The higher the number, the more priority over
      * the rest of the backends.

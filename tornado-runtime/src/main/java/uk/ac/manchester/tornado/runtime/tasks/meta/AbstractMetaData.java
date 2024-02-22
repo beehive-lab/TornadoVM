@@ -153,8 +153,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         enableVectors = parseBoolean(getDefault("vectors.enable", id, TRUE));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, FALSE));
-        threadInfo = parseBoolean(getDefault("threadInfo", id, FALSE));
-        printKernel = parseBoolean(getDefault("print.kernel", "null", FALSE));
+        threadInfo = TornadoOptions.THREAD_INFO;
+        printKernel = TornadoOptions.PRINT_KERNEL_SOURCE;
         debug = parseBoolean(getDefault("debug", id, FALSE));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, FALSE));
         dumpEvents = parseBoolean(getDefault("events.dump", id, TRUE));
