@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class TestMemoryLimit extends TornadoTestBase {
 
     /**
-     * Set the number of elements to select ~300MB per array
+     * Set the number of elements to select ~300MB per array.
      */
     private static final int NUM_ELEMENTS = 78643200;   // 314MB for an array of Integers
     private static IntArray a = new IntArray(NUM_ELEMENTS);

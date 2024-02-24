@@ -177,11 +177,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             SPIRVCompilationResult result;
             // Compile the code and insert the SPIRV binary into the code cache
             SPIRVProviders providers = (SPIRVProviders) getBackend().getProviders();
-
-            // Attach the profiler
-            profiler.registerBackend(taskMeta.getId(), taskMeta.getLogicDevice().getTornadoVMBackend().name());
-            profiler.registerDeviceID(taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
-            profiler.registerDeviceName(taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             result = SPIRVCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
@@ -479,10 +474,15 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         device.getDeviceContext().flush(deviceIndex);
     }
 
+    private void disableProfilerOptions() {
+        TornadoOptions.TORNADO_PROFILER_LOG = false;
+        TornadoOptions.TORNADO_PROFILER = false;
+    }
+
     @Override
     public void reset() {
         device.getDeviceContext().reset();
-        // getBackend().reset();
+        disableProfilerOptions();
     }
 
     @Override

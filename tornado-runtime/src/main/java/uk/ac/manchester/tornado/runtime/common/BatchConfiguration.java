@@ -79,7 +79,6 @@ public class BatchConfiguration {
 
     public static BatchConfiguration computeChunkSizes(TornadoExecutionContext context, long batchSize) {
         // Get the size of the batch
-        List<Object> inputObjects = context.getObjects();
         long totalSize = 0;
 
         HashSet<Long> inputSizes = new HashSet<>();

@@ -46,7 +46,7 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void scheduleInner();
 
-    void batch(String batchSize);
+    void withBatch(String batchSize);
 
     void withMemoryLimit(String memoryLimit);
 

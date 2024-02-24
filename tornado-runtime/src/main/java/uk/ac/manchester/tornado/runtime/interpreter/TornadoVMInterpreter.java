@@ -93,7 +93,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final List<SchedulableTask> tasks;
     private final List<SchedulableTask> localTaskList;
 
-    private final TornadoProfiler timeProfiler;
+    private TornadoProfiler timeProfiler;
     private final TornadoExecutionContext executionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
     private double totalTime;
@@ -158,6 +158,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
         debug("interpreter for device %s is ready to go", device.toString());
 
         this.bytecodeResult.mark();
+    }
+
+    public void setTimeProfiler(TornadoProfiler tornadoProfiler) {
+        this.timeProfiler = tornadoProfiler;
     }
 
     public void fetchGlobalStates() {
@@ -232,10 +236,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 }
             }
         }
-    }
-
-    public void setCompileUpdate() {
-        this.doUpdate = true;
     }
 
     public void warmup() {
@@ -605,8 +605,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
-
         if (!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
+            task.forceCompilation();
             installedCodes[globalToLocalTaskIndex(taskIndex)].invalidate();
         }
         // Set the batch size in the task information
@@ -618,19 +618,26 @@ public class TornadoVMInterpreter extends TornadoLogger {
             task.setGridScheduler(gridScheduler);
         }
 
+        if (timeProfiler instanceof TimeProfiler) {
+            // Register the backends only when the profiler is enabled
+            timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
+            timeProfiler.registerDeviceID(task.getId(), task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex());
+            timeProfiler.registerDeviceName(task.getId(), task.getDevice().getPhysicalDevice().getDeviceName());
+        }
+
         if (shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)])) {
             task.mapTo(deviceForInterpreter);
             try {
                 task.attachProfiler(timeProfiler);
-                if (taskIndex == (tasks.size() - 1) || doUpdate) {
+                if (taskIndex == (tasks.size() - 1)) {
                     // If it is the last task within the task-schedule or doUpdate is true -> we
                     // force compilation. This is useful when compiling code for Xilinx/Altera
                     // FPGAs, that has to be a single source.
                     task.forceCompilation();
                 }
+
                 installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
-                doUpdate = false;
             } catch (TornadoBailoutRuntimeException e) {
                 throw new TornadoBailoutRuntimeException("Unable to compile " + task.getFullName() + "\n" + "The internal error is: " + e.getMessage() + "\n" + "Stacktrace: " + Arrays.toString(e
                         .getStackTrace()), e);

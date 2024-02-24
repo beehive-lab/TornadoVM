@@ -177,9 +177,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return driver.getBackend(platformIndex, deviceIndex);
     }
 
+    private void disableProfilerOptions() {
+        TornadoOptions.TORNADO_PROFILER_LOG = false;
+        TornadoOptions.TORNADO_PROFILER = false;
+    }
+
     @Override
     public void reset() {
         device.getDeviceContext().reset();
+        disableProfilerOptions();
     }
 
     @Override
@@ -251,10 +257,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
-            // profiler
-            profiler.registerBackend(taskMeta.getId(), taskMeta.getLogicDevice().getTornadoVMBackend().name());
-            profiler.registerDeviceID(taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
-            profiler.registerDeviceName(taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
 

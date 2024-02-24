@@ -66,12 +66,7 @@ public class TornadoOptions {
      * Option to print TornadoVM Internal Bytecodes.
      */
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
-    /**
-     * Option to debug dynamic reconfiguration policies.
-     * <p>
-     * Use `-Dtornado.dynamic.verbose=True`.
-     */
-    public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", FALSE);
+
     /**
      * Option to enable experimental and new option for performing automatic full
      * reductions.
@@ -88,7 +83,7 @@ public class TornadoOptions {
     /**
      * Enable/Disable FMA Optimizations. True by default.
      */
-    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
+    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
@@ -247,8 +242,12 @@ public class TornadoOptions {
     public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
     public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
-    public static String PROFILER_LOG = "tornado.log.profiler";
-    public static String PROFILER = "tornado.profiler";
+    private static String PROFILER_LOG = "tornado.log.profiler";
+    private static String PROFILER = "tornado.profiler";
+
+    public static boolean TORNADO_PROFILER_LOG = false;
+
+    public static boolean TORNADO_PROFILER = false;
     /**
      * Option to load FPGA pre-compiled binaries.
      */
@@ -258,7 +257,7 @@ public class TornadoOptions {
      * Option for enabling saving the profiler into a file.
      */
     public static boolean PROFILER_LOGS_ACCUMULATE() {
-        return getBooleanValue(PROFILER_LOG, FALSE);
+        return TornadoOptions.TORNADO_PROFILER_LOG || getBooleanValue(PROFILER_LOG, FALSE);
     }
 
     /**
@@ -275,7 +274,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue(PROFILER, FALSE);
+        return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
 
     /**

@@ -56,4 +56,5 @@ public interface TornadoProfiler {
     void setTaskPowerUsage(ProfilerType powerUsageType, String taskId, long power);
 
     void sum(ProfilerType type, long timer);
+
 }

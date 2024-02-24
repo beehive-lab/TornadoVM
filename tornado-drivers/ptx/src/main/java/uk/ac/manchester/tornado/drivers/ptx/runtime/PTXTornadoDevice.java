@@ -84,6 +84,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -175,10 +176,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             PTXCompilationResult result;
             if (!deviceContext.isCached(resolvedMethod.getName(), executable)) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
-                // profiler
-                profiler.registerBackend(taskMeta.getId(), taskMeta.getLogicDevice().getTornadoVMBackend().name());
-                profiler.registerDeviceID(taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
-                profiler.registerDeviceName(taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
@@ -540,9 +537,15 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         getDeviceContext().flush();
     }
 
+    private void disableProfilerOptions() {
+        TornadoOptions.TORNADO_PROFILER_LOG = false;
+        TornadoOptions.TORNADO_PROFILER = false;
+    }
+
     @Override
     public void reset() {
         device.getPTXContext().getDeviceContext().reset();
+        disableProfilerOptions();
     }
 
     @Override
