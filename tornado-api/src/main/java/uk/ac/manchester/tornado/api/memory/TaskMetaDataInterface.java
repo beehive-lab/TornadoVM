@@ -51,4 +51,8 @@ public interface TaskMetaDataInterface {
     int getDeviceIndex();
 
     void setDevice(TornadoDevice device);
+
+    boolean isPrintKernelEnabled();
+
+    void setPrintKernelFlag(boolean printKernelEnabled);
 }

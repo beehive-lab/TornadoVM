@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -140,7 +140,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
             throw new TornadoBailoutRuntimeException("[Build SPIR-V ERROR]" + errorMessage[0]);
         }
 
-        if (TornadoOptions.PRINT_SOURCE) {
+        if (meta.isPrintKernelEnabled()) {
             SPVFileReader reader = null;
             try {
                 reader = new SPVFileReader(pathToFile);

@@ -25,17 +25,9 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -382,22 +374,20 @@ public final class RuntimeUtilities {
         }
     }
 
-    public static void maybePrintSource(byte[] source) {
-        if (PRINT_SOURCE) {
-            String sourceCode = new String(source);
-            if (PRINT_SOURCE_DIRECTORY.isEmpty()) {
-                System.out.println(sourceCode);
-            } else {
-                File fileLog = new File(PRINT_SOURCE_DIRECTORY);
-                try {
-                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
-                        file.write(sourceCode);
-                        file.write("\n");
-                        file.flush();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+    public static void dumpKernel(byte[] source) {
+        String sourceCode = new String(source);
+        if (PRINT_SOURCE_DIRECTORY.isEmpty()) {
+            System.out.println(sourceCode);
+        } else {
+            File fileLog = new File(PRINT_SOURCE_DIRECTORY);
+            try {
+                try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
+                    file.write(sourceCode);
+                    file.write("\n");
+                    file.flush();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

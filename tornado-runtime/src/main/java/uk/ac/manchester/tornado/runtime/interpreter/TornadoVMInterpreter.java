@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
@@ -602,6 +603,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
+        TaskMetaDataInterface meta = task.meta();
+        meta.setPrintKernelFlag(executionContext.meta().isPrintKernelEnabled());
 
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
@@ -755,9 +758,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
         }
 
-        // We attach the profiler
+        // We attach the profiler information
         metadata.attachProfiler(timeProfiler);
         metadata.setGridScheduler(gridScheduler);
+        metadata.setThreadInfo(executionContext.meta().isThreadInfoEnabled());
 
         try {
             int lastEvent = useDependencies

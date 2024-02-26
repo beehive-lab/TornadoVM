@@ -190,7 +190,9 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
-            RuntimeUtilities.maybePrintSource(result.getTargetCode());
+            if (taskMeta.isPrintKernelEnabled()) {
+                RuntimeUtilities.dumpKernel(result.getTargetCode());
+            }
 
             return null;
         } catch (Exception e) {
@@ -208,8 +210,9 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-
-            RuntimeUtilities.maybePrintSource(source);
+            if (task.meta().isPrintKernelEnabled()) {
+                RuntimeUtilities.dumpKernel(source);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
