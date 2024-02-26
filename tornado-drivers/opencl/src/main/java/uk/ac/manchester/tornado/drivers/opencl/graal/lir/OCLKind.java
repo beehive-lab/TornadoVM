@@ -502,6 +502,13 @@ public enum OCLKind implements PlatformKind {
         return false;
     }
 
+    public boolean isHalf() {
+        if (kind == HALF2 || kind == HALF3 || kind == HALF4 || kind == HALF8 || kind == HALF16) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean isVector() {
         return vectorLength > 1;
     }

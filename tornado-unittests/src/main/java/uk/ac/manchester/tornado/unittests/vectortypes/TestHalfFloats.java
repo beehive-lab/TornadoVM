@@ -210,10 +210,10 @@ public class TestHalfFloats extends TornadoTestBase {
 
     private static void vectorComputation02(VectorHalf3 value, VectorHalf3 output) {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Half3 float3 = new Half3();
-            float3.setX(HalfFloat.add(value.get(i).getX(), value.get(i).getY()));
-            // float3.setY(HalfFloat.mult(value.get(i).getZ(), new HalfFloat(2)));
-            output.set(i, float3);
+            Half3 half3 = new Half3();
+            half3.setX(HalfFloat.add(value.get(i).getX(), value.get(i).getY()));
+            half3.setY(HalfFloat.mult(value.get(i).getZ(), new HalfFloat(2)));
+            output.set(i, half3);
         }
     }
 
@@ -788,7 +788,7 @@ public class TestHalfFloats extends TornadoTestBase {
         VectorHalf3 sequentialOutput = new VectorHalf3(size);
 
         for (int i = 0; i < size; i++) {
-            float value = 3.3f; //(float) Math.random();
+            float value = (float) Math.random();
             Half3 float3 = new Half3(new HalfFloat(value), new HalfFloat(value), new HalfFloat(value));
             tornadoInput.set(i, float3);
             sequentialInput.set(i, float3);

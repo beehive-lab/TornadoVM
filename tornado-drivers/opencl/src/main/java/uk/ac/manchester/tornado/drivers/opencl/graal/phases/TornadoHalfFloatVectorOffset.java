@@ -11,8 +11,10 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLAddressNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 
 import java.util.Optional;
@@ -28,13 +30,19 @@ public class TornadoHalfFloatVectorOffset extends Phase {
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {
             if (readNode.successors().filter(VectorHalfRead.class).isNotEmpty()) {
                 VectorHalfRead vectorHalfRead = readNode.successors().filter(VectorHalfRead.class).first();
-                replaceOffset(readNode, vectorHalfRead, graph);
+                replaceReadOffset(readNode, vectorHalfRead, graph);
                 deleteFixed(vectorHalfRead);
+            }
+        }
+
+        for (WriteNode writeNode : graph.getNodes().filter(WriteNode.class)) {
+            if (writeNode.value() instanceof VectorValueNode && ((VectorValueNode) writeNode.value()).getOCLKind().isHalf()) {
+                replaceWriteOffset(writeNode, graph);
             }
         }
     }
 
-    private static void replaceOffset(ReadNode readNode, VectorHalfRead vectorHalfRead, StructuredGraph graph) {
+    private static void replaceReadOffset(ReadNode readNode, VectorHalfRead vectorHalfRead, StructuredGraph graph) {
         OCLAddressNode oclAddressNode = (OCLAddressNode) readNode.getAddress();
         ValueNode index = oclAddressNode.getIndex();
         if (index instanceof ConstantNode) {
@@ -50,6 +58,24 @@ public class TornadoHalfFloatVectorOffset extends Phase {
                 }
             }
         } else if (index.inputs().filter(LeftShiftNode.class).isNotEmpty()) {
+            LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
+            ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
+            if (currentOffset.getValue().toValueString().equals("3")) {
+                Constant shortOffset = new RawConstant(1);
+                ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
+                graph.addWithoutUnique(shortOffsetNode);
+                leftShiftNode.replaceFirstInput(currentOffset, shortOffsetNode);
+                if (currentOffset.usages().isEmpty()) {
+                    currentOffset.safeDelete();
+                }
+            }
+        }
+    }
+
+    private static void replaceWriteOffset(WriteNode writeNode, StructuredGraph graph) {
+        OCLAddressNode oclAddressNode = (OCLAddressNode) writeNode.getAddress();
+        ValueNode index = oclAddressNode.getIndex();
+        if (index.inputs().filter(LeftShiftNode.class).isNotEmpty()) {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
             if (currentOffset.getValue().toValueString().equals("3")) {

@@ -177,7 +177,17 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 
     private Value getParam(NodeLIRBuilderTool gen, LIRGeneratorTool tool, int index) {
         final ValueNode valueNode = values.get(index);
+        if (valueNode instanceof VectorLoadElementNode && kind.isHalf()) {
+            return emitHalfFloatAssign(valueNode, tool, gen);
+        }
         return (valueNode == null) ? new ConstantValue(LIRKind.value(kind), kind.getDefaultValue()) : tool.emitMove(gen.operand(valueNode));
+    }
+
+    private Variable emitHalfFloatAssign(ValueNode vectorValue, LIRGeneratorTool tool, NodeLIRBuilderTool gen) {
+        Variable result = tool.newVariable(LIRKind.value(OCLKind.HALF));
+        Value vectorField = gen.operand(vectorValue);
+        tool.emitMove(result, vectorField);
+        return result;
     }
 
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {

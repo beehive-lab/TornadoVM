@@ -109,6 +109,194 @@ public class OCLLIRStmt {
         }
     }
 
+    @Opcode("VADD_HALF")
+    public static class VectorAddHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorAddHalfStmt> TYPE = LIRInstructionClass.create(VectorAddHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorAddHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (x instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectX = (OCLVectorElementSelect) x;
+                selectX.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, x);
+            }
+            asm.space();
+            asm.emitSymbol("+");
+            asm.space();
+            if (y instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectY = (OCLVectorElementSelect) y;
+                selectY.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, y);
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("VSUB_HALF")
+    public static class VectorSubHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorSubHalfStmt> TYPE = LIRInstructionClass.create(VectorSubHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorSubHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (x instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectX = (OCLVectorElementSelect) x;
+                selectX.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, x);
+            }
+            asm.space();
+            asm.emitSymbol("-");
+            asm.space();
+            if (y instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectY = (OCLVectorElementSelect) y;
+                selectY.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, y);
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("VMULT_HALF")
+    public static class VectorMultHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorMultHalfStmt> TYPE = LIRInstructionClass.create(VectorMultHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorMultHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (x instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectX = (OCLVectorElementSelect) x;
+                selectX.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, x);
+            }
+            asm.space();
+            asm.emitSymbol("*");
+            asm.space();
+            if (y instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectY = (OCLVectorElementSelect) y;
+                selectY.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, y);
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("VDIV_HALF")
+    public static class VectorDivHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorDivHalfStmt> TYPE = LIRInstructionClass.create(VectorDivHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorDivHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            if (x instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectX = (OCLVectorElementSelect) x;
+                selectX.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, x);
+            }
+            asm.space();
+            asm.emitSymbol("/");
+            asm.space();
+            if (y instanceof OCLVectorElementSelect) {
+                OCLVectorElementSelect selectY = (OCLVectorElementSelect) y;
+                selectY.emit(crb, asm);
+            } else {
+                asm.emitValue(crb, y);
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("MOVE")
     public static class MoveStmt extends AbstractInstruction {
 

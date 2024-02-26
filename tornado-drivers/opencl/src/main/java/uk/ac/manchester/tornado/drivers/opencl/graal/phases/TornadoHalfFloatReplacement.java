@@ -49,8 +49,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorAddHalfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorDivHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
-import uk.ac.manchester.tornado.runtime.graal.HalfFloatConstant;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorMultHalfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubHalfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
@@ -108,23 +112,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                     NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
                     ValueNode valueInput = newHalfFloatInstance.getValue();
-                    if (valueInput instanceof ConstantNode) {
-                        ConstantNode constantNode = (ConstantNode) valueInput;
-                        String value = constantNode.getValue().toValueString();
-                        Float valueFloat = Float.parseFloat(value);
-                        short shortValue = valueFloat.shortValue();
-                        Constant shortconst = new RawConstant(shortValue);
-                        ConstantNode newCostantNode = new ConstantNode(shortconst, StampFactory.forKind(JavaKind.Short));
-                        graph.addWithoutUnique(newCostantNode);
-                        HalfFloatConstant halfFloatConstant = new HalfFloatConstant(newCostantNode);
-                        graph.addWithoutUnique(halfFloatConstant);
-                        newInstanceNode.replaceAtUsages(halfFloatConstant);
-                        if (valueInput.usages().isEmpty()) {
-                            valueInput.safeDelete();
-                        }
-                    } else {
-                        newInstanceNode.replaceAtUsages(valueInput);
-                    }
+                    newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
                     deleteFixed(newHalfFloatInstance);
                 }
@@ -181,33 +169,49 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             graph.addAfterFixed(loadIndexedVectorNode, vectorHalfRead);
         }
 
+        for (VectorValueNode vectorValueNode : graph.getNodes().filter(VectorValueNode.class)) {
+            if (vectorValueNode.getOCLKind().isHalf()) {
+                for (Node vectorElement : vectorValueNode.inputs()) {
+                    if (vectorElement instanceof VectorLoadElementNode) {
+                        VectorLoadElementNode vectorLoad = (VectorLoadElementNode) vectorElement;
+                        VectorLoadElementNode vectorLoadShort = new VectorLoadElementNode(OCLKind.SHORT, vectorLoad.getVector(), vectorLoad.getLaneId());
+                        graph.addWithoutUnique(vectorLoadShort);
+                        vectorLoad.replaceAtUsages(vectorLoadShort);
+                        vectorLoad.safeDelete();
+                    }
+                }
+            }
+        }
+
     }
 
     private static void replaceAddHalfFloatNodes(StructuredGraph graph) {
         for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
-            //addHalfFloatNode.getX().setStamp(StampFactory.forKind(JavaKind.Short));
-            //addHalfFloatNode.getY().setStamp(StampFactory.forKind(JavaKind.Short));
-            ValueNode addX, addY;
+            ValueNode addX, addY, addNode;
             if (addHalfFloatNode.getX() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) addHalfFloatNode.getX();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                addX = newld;
+                VectorLoadElementNode loadElementNodeX = (VectorLoadElementNode) addHalfFloatNode.getX();
+                addX = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeX.getVector(), loadElementNodeX.getLaneId());
+                graph.addWithoutUnique(addX);
             } else {
                 addX = addHalfFloatNode.getX();
             }
 
             if (addHalfFloatNode.getY() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) addHalfFloatNode.getY();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                addY = newld;
+                VectorLoadElementNode loadElementNodeY = (VectorLoadElementNode) addHalfFloatNode.getY();
+                addY = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeY.getVector(), loadElementNodeY.getLaneId());
+                graph.addWithoutUnique(addY);
             } else {
                 addY = addHalfFloatNode.getY();
             }
 
-            AddNode addNode = new AddNode(addX, addY);
-            graph.addWithoutUnique(addNode);
+            if (addX instanceof VectorLoadElementNode || addY instanceof VectorLoadElementNode) {
+                addNode = new VectorAddHalfNode(addX, addY);
+                graph.addWithoutUnique(addNode);
+            } else {
+                addNode = new AddNode(addX, addY);
+                graph.addWithoutUnique(addNode);
+            }
+
             if (addHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
                 PiNode piNode = addHalfFloatNode.usages().filter(PiNode.class).first();
                 if (piNode.inputs().filter(ValueAnchorNode.class).isNotEmpty()) {
@@ -228,27 +232,31 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
         for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
-            ValueNode subX, subY;
+            ValueNode subX, subY, subNode;
             if (subHalfFloatNode.getX() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) subHalfFloatNode.getX();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                subX = newld;
+                VectorLoadElementNode loadElementNodeX = (VectorLoadElementNode) subHalfFloatNode.getX();
+                subX = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeX.getVector(), loadElementNodeX.getLaneId());
+                graph.addWithoutUnique(subX);
             } else {
                 subX = subHalfFloatNode.getX();
             }
 
             if (subHalfFloatNode.getY() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) subHalfFloatNode.getY();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                subY = newld;
+                VectorLoadElementNode loadElementNodeY = (VectorLoadElementNode) subHalfFloatNode.getY();
+                subY = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeY.getVector(), loadElementNodeY.getLaneId());
+                graph.addWithoutUnique(subY);
             } else {
                 subY = subHalfFloatNode.getY();
             }
 
-            SubNode subNode = new SubNode(subX, subY);
-            graph.addWithoutUnique(subNode);
+            if (subX instanceof VectorLoadElementNode || subY instanceof VectorLoadElementNode) {
+                subNode = new VectorSubHalfNode(subX, subY);
+                graph.addWithoutUnique(subNode);
+            } else {
+                subNode = new SubNode(subX, subY);
+                graph.addWithoutUnique(subNode);
+            }
+
             subHalfFloatNode.replaceAtUsages(subNode);
             subHalfFloatNode.safeDelete();
         }
@@ -256,55 +264,63 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     private static void replaceMultHalfFloatNodes(StructuredGraph graph) {
         for (MultHalfFloatNode multHalfFloatNode : graph.getNodes().filter(MultHalfFloatNode.class)) {
-            ValueNode multX, multY;
+            ValueNode multX, multY, multNode;
             if (multHalfFloatNode.getX() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) multHalfFloatNode.getX();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                multX = newld;
+                VectorLoadElementNode loadElementNodeX = (VectorLoadElementNode) multHalfFloatNode.getX();
+                multX = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeX.getVector(), loadElementNodeX.getLaneId());
+                graph.addWithoutUnique(multX);
             } else {
                 multX = multHalfFloatNode.getX();
             }
 
             if (multHalfFloatNode.getY() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) multHalfFloatNode.getY();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                multY = newld;
+                VectorLoadElementNode loadElementNodeY = (VectorLoadElementNode) multHalfFloatNode.getY();
+                multY = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeY.getVector(), loadElementNodeY.getLaneId());
+                graph.addWithoutUnique(multY);
             } else {
                 multY = multHalfFloatNode.getY();
             }
 
-            MulNode mulNode = new MulNode(multX, multY);
-            graph.addWithoutUnique(mulNode);
-            multHalfFloatNode.replaceAtUsages(mulNode);
+            if (multX instanceof VectorLoadElementNode || multY instanceof VectorLoadElementNode) {
+                multNode = new VectorMultHalfNode(multX, multY);
+                graph.addWithoutUnique(multNode);
+            } else {
+                multNode = new MulNode(multX, multY);
+                graph.addWithoutUnique(multNode);
+            }
+
+            multHalfFloatNode.replaceAtUsages(multNode);
             multHalfFloatNode.safeDelete();
         }
     }
 
     private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
         for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
-            ValueNode divX, divY;
+            ValueNode divX, divY, divNode;
             if (divHalfFloatNode.getX() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) divHalfFloatNode.getX();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                divX = newld;
+                VectorLoadElementNode loadElementNodeX = (VectorLoadElementNode) divHalfFloatNode.getX();
+                divX = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeX.getVector(), loadElementNodeX.getLaneId());
+                graph.addWithoutUnique(divX);
             } else {
                 divX = divHalfFloatNode.getX();
             }
 
             if (divHalfFloatNode.getY() instanceof VectorLoadElementNode) {
-                VectorLoadElementNode ld = (VectorLoadElementNode) divHalfFloatNode.getY();
-                VectorLoadElementNode newld = new VectorLoadElementNode(OCLKind.SHORT, ld.getVector(), ld.getLaneId());
-                graph.addWithoutUnique(newld);
-                divY = newld;
+                VectorLoadElementNode loadElementNodeY = (VectorLoadElementNode) divHalfFloatNode.getY();
+                divY = new VectorLoadElementNode(OCLKind.SHORT, loadElementNodeY.getVector(), loadElementNodeY.getLaneId());
+                graph.addWithoutUnique(divY);
             } else {
                 divY = divHalfFloatNode.getY();
             }
 
-            FloatDivNode divNode = new FloatDivNode(divX, divY);
-            graph.addWithoutUnique(divNode);
+            if (divX instanceof VectorLoadElementNode || divY instanceof VectorLoadElementNode) {
+                divNode = new VectorDivHalfNode(divX, divY);
+                graph.addWithoutUnique(divNode);
+            } else {
+                divNode = new FloatDivNode(divX, divY);
+                graph.addWithoutUnique(divNode);
+            }
+
             divHalfFloatNode.replaceAtUsages(divNode);
             divHalfFloatNode.safeDelete();
         }
