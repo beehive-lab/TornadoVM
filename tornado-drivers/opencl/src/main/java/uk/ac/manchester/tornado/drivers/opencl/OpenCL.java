@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OpenCL {
@@ -173,7 +173,7 @@ public class OpenCL {
             Access access = accesses[i];
             Object object = parameters[i];
 
-            GlobalObjectState globalState = new GlobalObjectState();
+            DataObjectState globalState = new DataObjectState();
             DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
 
             switch (access) {

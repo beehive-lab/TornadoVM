@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -85,7 +85,6 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -409,7 +408,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectState) {
         int[] atomicsArray = checkAtomicsForTask(task, array, paramIndex, value);
         mappingAtomics.put(value, getAtomicsGlobalIndexForTask(task, paramIndex));
         ObjectBuffer bufferAtomics = objectState.getObjectBuffer();
@@ -554,7 +553,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+    public int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
@@ -565,7 +564,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return -1;
     }
 
-    private ObjectBuffer newDeviceBufferAllocation(Object object, long batchSize, TornadoDeviceObjectState state) {
+    private ObjectBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceObjectState state) {
         final ObjectBuffer buffer;
         TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
@@ -575,7 +574,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceObjectState state) {
         final ObjectBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
@@ -593,7 +592,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int deallocate(TornadoDeviceObjectState state) {
+    public int deallocate(DeviceObjectState state) {
         if (state.isLockedBuffer()) {
             return -1;
         }
@@ -605,7 +604,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
         if (!state.hasContent() || BENCHMARKING_MODE) {
             state.setContents(true);
             return state.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
@@ -614,13 +613,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
         state.setContents(true);
         return state.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
     }
 
     @Override
-    public int streamOut(Object object, long offset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOut(Object object, long offset, DeviceObjectState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
         int event = state.getObjectBuffer().enqueueRead(object, offset, events, events == null);
         if (events != null) {
@@ -630,7 +629,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState state, int[] events) {
         long partialCopySize = state.getPartialCopySize();
         if (state.isAtomicRegionPresent()) {
             int eventID = state.getObjectBuffer().enqueueRead(null, 0, null, false);

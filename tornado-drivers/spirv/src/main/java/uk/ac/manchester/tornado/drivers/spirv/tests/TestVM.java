@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 
 /**
  * Test copies within TornadoVM and Level Zero driver.
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
  * How to run?
  *
  * <code>
- *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestVM
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestVM
  * </code>
  */
 public class TestVM {
@@ -68,15 +68,15 @@ public class TestVM {
         System.out.println("Running Runtime For Buffer creation and copy");
 
         // We allocate buffer A
-        GlobalObjectState stateA = new GlobalObjectState();
+        DataObjectState stateA = new DataObjectState();
         DeviceObjectState objectStateA = stateA.getDeviceState(device);
 
         // We allocate buffer B
-        GlobalObjectState stateB = new GlobalObjectState();
+        DataObjectState stateB = new DataObjectState();
         DeviceObjectState objectStateB = stateB.getDeviceState(device);
 
         // We allocate buffer C
-        GlobalObjectState stateC = new GlobalObjectState();
+        DataObjectState stateC = new DataObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(device);
 
         // Allocate a

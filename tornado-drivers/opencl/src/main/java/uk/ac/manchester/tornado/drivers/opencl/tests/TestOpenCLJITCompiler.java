@@ -35,7 +35,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
@@ -47,13 +47,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -119,16 +118,16 @@ public class TestOpenCLJITCompiler {
 
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
-        GlobalObjectState stateA = new GlobalObjectState();
-        DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
+        DataObjectState stateA = new DataObjectState();
+        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
 
-        GlobalObjectState stateB = new GlobalObjectState();
-        DeviceObjectState objectStateB = stateB.getDeviceState(tornadoDevice);
+        DataObjectState stateB = new DataObjectState();
+        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateB = stateB.getDeviceState(tornadoDevice);
 
-        GlobalObjectState stateC = new GlobalObjectState();
-        DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
+        DataObjectState stateC = new DataObjectState();
+        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);

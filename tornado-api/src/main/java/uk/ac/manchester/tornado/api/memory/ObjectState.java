@@ -17,26 +17,12 @@
  */
 package uk.ac.manchester.tornado.api.memory;
 
-public interface TornadoDeviceObjectState {
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
-    void setObjectBuffer(ObjectBuffer value);
+public interface ObjectState {
 
-    boolean hasObjectBuffer();
+    DeviceObjectState getDeviceState(TornadoDevice device);
 
-    ObjectBuffer getObjectBuffer();
-
-    boolean isAtomicRegionPresent();
-
-    void setAtomicRegion();
-
-    boolean isLockedBuffer();
-
-    boolean hasContent();
-
-    void setContents(boolean value);
-
-    void setPartialCopySize(long partialCopySize);
-
-    long getPartialCopySize();
+    void clear();
 
 }

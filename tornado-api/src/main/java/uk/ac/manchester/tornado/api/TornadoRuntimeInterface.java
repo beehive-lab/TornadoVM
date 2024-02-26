@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
 
 public interface TornadoRuntimeInterface {
 

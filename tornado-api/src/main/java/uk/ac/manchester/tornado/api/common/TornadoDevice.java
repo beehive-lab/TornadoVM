@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 
 public interface TornadoDevice {
@@ -40,14 +40,14 @@ public interface TornadoDevice {
      *     allocates the sizeof(object).
      * @param state
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceObjectState}
      * @return an event ID
      */
-    int allocate(Object object, long batchSize, TornadoDeviceObjectState state);
+    int allocate(Object object, long batchSize, DeviceObjectState state);
 
-    int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states);
+    int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states);
 
-    int deallocate(TornadoDeviceObjectState state);
+    int deallocate(DeviceObjectState state);
 
     /**
      * It allocates and copy in the content of the object to the target device.
@@ -56,7 +56,7 @@ public interface TornadoDevice {
      *     to be allocated
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceObjectState}
      * @param events
      *     list of pending events (dependencies)
      * @param batchSize
@@ -67,7 +67,7 @@ public interface TornadoDevice {
      *     object)
      * @return an event ID
      */
-    List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
+    List<Integer> ensurePresent(Object object, DeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
 
     /**
      * It always copies in the input data (object) from the host to the target
@@ -83,12 +83,12 @@ public interface TornadoDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceObjectState}
      * @param events
      *     list of previous events
      * @return and event ID
      */
-    List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    List<Integer> streamIn(Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
@@ -101,12 +101,12 @@ public interface TornadoDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceObjectState}
      * @param events
      *     of pending events
      * @return and event ID
      */
-    int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    int streamOut(Object object, long hostOffset, DeviceObjectState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
@@ -119,12 +119,12 @@ public interface TornadoDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceObjectState}
      * @param events
      *     of pending events
      * @return and event ID
      */
-    int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    int streamOutBlocking(Object object, long hostOffset, DeviceObjectState objectState, int[] events);
 
     /**
      * It resolves a pending event.

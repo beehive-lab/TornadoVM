@@ -27,8 +27,6 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-
 /**
  * Data structure to keep the state for each parameter used by the TornadoVM runtime.
  * The Local Object states identifies if a parameter is used for stream-in, stream-out,
@@ -57,16 +55,16 @@ public class LocalObjectState {
 
     /**
      * For each variable, we need to keep track of all devices in which there is a shadow
-     * copy. This is achieved by using the {@link GlobalObjectState} object.
+     * copy. This is achieved by using the {@link DataObjectState} object.
      */
-    private GlobalObjectState globalObjectState;
+    private DataObjectState globalObjectState;
 
     private Object object;
 
     public LocalObjectState(Object object) {
         //globalObjectState = getTornadoRuntime().resolveObject(object);
         this.object = object;
-        globalObjectState = new GlobalObjectState();
+        globalObjectState = new DataObjectState();
         streamIn = false;
         streamOut = false;
     }
@@ -99,7 +97,7 @@ public class LocalObjectState {
         this.streamOut = streamOut;
     }
 
-    public GlobalObjectState getGlobalState() {
+    public DataObjectState getGlobalState() {
         return globalObjectState;
     }
 

@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -68,7 +68,6 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -218,7 +217,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectState) {
         return null;
     }
 
@@ -314,7 +313,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+    public int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
@@ -325,7 +324,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         return -1;
     }
 
-    private ObjectBuffer createNewBufferAllocation(Object object, long batchSize, TornadoDeviceObjectState state) {
+    private ObjectBuffer createNewBufferAllocation(Object object, long batchSize, DeviceObjectState state) {
         final ObjectBuffer buffer;
         TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
@@ -335,7 +334,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceObjectState state) {
         final ObjectBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
@@ -353,7 +352,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int deallocate(TornadoDeviceObjectState state) {
+    public int deallocate(DeviceObjectState state) {
         if (state.isLockedBuffer()) {
             return -1;
         }
@@ -371,7 +370,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      *     to be allocated
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceObjectState}
      * @param events
      *     list of pending events (dependencies)
      * @param batchSize
@@ -383,7 +382,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      * @return A list of event IDs
      */
     @Override
-    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(Object object, DeviceObjectState objectState, int[] events, long batchSize, long offset) {
         if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
             return objectState.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
@@ -392,13 +391,13 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
         objectState.setContents(true);
         return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
     }
 
     @Override
-    public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+    public int streamOut(Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
         int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events == null);
         if (events != null) {
@@ -408,7 +407,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
         long partialSize = objectState.getPartialCopySize();
         if (objectState.isAtomicRegionPresent()) {
             int eventID = objectState.getObjectBuffer().enqueueRead(null, 0, null, false);
@@ -589,7 +588,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     /**
      * Move Data from the device region that corresponds to buffer A into buffer B.
      */
-    public void moveDataFromDeviceBufferToHost(DeviceObjectState objectStateA, Object b) {
+    public void moveDataFromDeviceBufferToHost(uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA, Object b) {
         objectStateA.getObjectBuffer().read(b, 0, 0, null, false);
     }
 }

@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -54,7 +54,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -250,7 +249,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectState) {
         return null;
     }
 
@@ -270,43 +269,43 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceObjectState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+    public int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int deallocate(TornadoDeviceObjectState state) {
+    public int deallocate(DeviceObjectState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
         unimplemented();
         return null;
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
         unimplemented();
         return null;
     }
 
     @Override
-    public int streamOut(Object object, long offset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOut(Object object, long offset, DeviceObjectState state, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState state, int[] events) {
         unimplemented();
         return -1;
     }

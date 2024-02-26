@@ -512,7 +512,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         //Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
-            final GlobalObjectState globalState = localState.getGlobalState();
+            final DataObjectState globalState = localState.getGlobalState();
             final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
@@ -549,7 +549,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
-            final GlobalObjectState globalState = localState.getGlobalState();
+            final DataObjectState globalState = localState.getGlobalState();
             final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
@@ -1001,7 +1001,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void reuseDeviceBufferObject(final LocalObjectState localState, final TornadoDevice device) {
-        final GlobalObjectState globalState = localState.getGlobalState();
+        final DataObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setLockBuffer(true);
     }
@@ -1031,7 +1031,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void releaseObjectFromDeviceMemory(final LocalObjectState localState, final TornadoDevice device) {
-        final GlobalObjectState globalState = localState.getGlobalState();
+        final DataObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setLockBuffer(false);
         if (deviceState.hasObjectBuffer()) {
@@ -1051,7 +1051,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private Event syncObjectInner(Object object) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
-        final GlobalObjectState globalState = localState.getGlobalState();
+        final DataObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         System.out.println("Buffer is Locked???? " + deviceState.isLockedBuffer());
@@ -1064,7 +1064,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private Event syncObjectInner(Object object, long offset, long partialCopySize) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
-        final GlobalObjectState globalState = localState.getGlobalState();
+        final DataObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setPartialCopySize(partialCopySize);

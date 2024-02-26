@@ -29,14 +29,10 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.graalvm.collections.EconomicMap;
@@ -57,14 +53,12 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
 public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeInterface {
 

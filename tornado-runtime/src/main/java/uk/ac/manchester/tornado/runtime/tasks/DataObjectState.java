@@ -27,15 +27,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
+import uk.ac.manchester.tornado.api.memory.ObjectState;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
-public class GlobalObjectState implements TornadoGlobalObjectState {
+public class DataObjectState implements ObjectState {
 
     private ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
-    public GlobalObjectState() {
+    public DataObjectState() {
         deviceStates = new ConcurrentHashMap<>();
     }
 
@@ -50,11 +50,10 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
     }
 
     @Override
-    public GlobalObjectState clone() {
-        GlobalObjectState globalObjectState = new GlobalObjectState();
-        ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> copy = new ConcurrentHashMap<>(deviceStates);
-        globalObjectState.deviceStates = copy;
-        return globalObjectState;
+    public DataObjectState clone() {
+        DataObjectState dataObjectState = new DataObjectState();
+        dataObjectState.deviceStates = new ConcurrentHashMap<>(deviceStates);
+        return dataObjectState;
     }
 
     @Override
