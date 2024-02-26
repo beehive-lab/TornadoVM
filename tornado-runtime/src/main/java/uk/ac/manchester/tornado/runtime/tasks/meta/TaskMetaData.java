@@ -424,8 +424,8 @@ public class TaskMetaData extends AbstractMetaData {
         return super.isCpuConfigDefined() || scheduleMetaData.isCpuConfigDefined();
     }
 
-    //    @Override
-    //    public String toString() {
-    //        return String.format("task meta data: domain=%s, global workgroup size=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
-    //    }
+    @Override
+    public String toString() {
+        return String.format("task meta data: domain=%s, global workgroup size=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
+    }
 }
