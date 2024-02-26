@@ -210,10 +210,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
         }
 
         if (bufferSize <= 0) {

@@ -32,29 +32,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
+import uk.ac.manchester.tornado.api.types.collections.*;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -116,14 +95,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
     private MemorySegment getSegment(final Object reference) {
         return switch (reference) {
-            case IntArray intArray -> intArray.getSegment();
-            case FloatArray floatArray -> floatArray.getSegment();
-            case DoubleArray doubleArray -> doubleArray.getSegment();
-            case LongArray longArray -> longArray.getSegment();
-            case ShortArray shortArray -> shortArray.getSegment();
-            case ByteArray byteArray -> byteArray.getSegment();
-            case CharArray charArray -> charArray.getSegment();
-            case HalfFloatArray halfFloatArray -> halfFloatArray.getSegment();
+            case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegment();
             case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
             case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
             case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();
@@ -208,10 +180,10 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment memorySegment = getSegment(reference);
         if (batchSize <= 0 && memorySegment != null) {
             bufferSize = memorySegment.byteSize();
-            bufferId = spirvDeviceContext.getBufferProvider().getBufferWithSize(bufferSize);
+            bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
         } else {
             bufferSize = batchSize;
-            bufferId = spirvDeviceContext.getBufferProvider().getBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
         }
 
         if (bufferSize <= 0) {

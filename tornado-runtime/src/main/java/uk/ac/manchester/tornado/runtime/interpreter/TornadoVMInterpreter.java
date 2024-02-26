@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
-import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -82,7 +82,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private final List<Object> objects;
 
-    private final DataObjectState[] globalStates;
+    private final GlobalObjectState[] globalStates;
     private final KernelStackFrame[] kernelStackFrame;
     private final int[][] events;
     private final int[] eventsIndexes;
@@ -105,10 +105,14 @@ public class TornadoVMInterpreter extends TornadoLogger {
     /**
      * It constructs a new TornadoVMInterpreter object.
      *
-     * @param executionContext The {@link TornadoExecutionContext}
-     * @param bytecodeResult   The {@link TornadoVMBytecodeResult}.
-     * @param timeProfiler     The {@link TornadoProfiler} for time measurements.
-     * @param device           The {@link TornadoAcceleratorDevice} device.
+     * @param executionContext
+     *     The {@link TornadoExecutionContext}
+     * @param bytecodeResult
+     *     The {@link TornadoVMBytecodeResult}.
+     * @param timeProfiler
+     *     The {@link TornadoProfiler} for time measurements.
+     * @param device
+     *     The {@link TornadoAcceleratorDevice} device.
      */
     public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
         this.executionContext = executionContext;
@@ -143,7 +147,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         debug("created %d event lists", events.length);
 
         objects = executionContext.getObjects();
-        globalStates = new DataObjectState[objects.size()];
+        globalStates = new GlobalObjectState[objects.size()];
         fetchGlobalStates();
 
         rewindBufferToBegin();
@@ -427,7 +431,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private static class DebugInterpreter {
         static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoAcceleratorDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList,
-                                            StringBuilder tornadoVMBytecodeList) {
+                StringBuilder tornadoVMBytecodeList) {
             // @formatter:off
             String coloredText = allEvents != null
                     ? InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE")
@@ -660,7 +664,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,
-                              ExecutionFrame executionFrame) {
+            ExecutionFrame executionFrame) {
 
         final SchedulableTask task = tasks.get(taskIndex);
         KernelStackFrame stackFrame = executionFrame.stackFrame;
@@ -711,7 +715,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     continue;
                 }
 
-                final DataObjectState globalState = resolveGlobalObjectState(argIndex);
+                final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(deviceForInterpreter);
 
                 if (!isObjectInAtomicRegion(objectState, deviceForInterpreter, task)) {
@@ -845,9 +849,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
      * Converts a global task index to a corresponding local task index within the
      * local task list. This is inorder to preserve the original task list.
      *
-     * @param taskIndex The global task index to convert.
+     * @param taskIndex
+     *     The global task index to convert.
      * @return The corresponding local task index, or 0 if the task is not found in
-     * the local task list.
+     *     the local task list.
      */
     private int globalToLocalTaskIndex(int taskIndex) {
         return localTaskList.indexOf(tasks.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(tasks.get(taskIndex));
@@ -860,7 +865,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
-    private DataObjectState resolveGlobalObjectState(int index) {
+    private GlobalObjectState resolveGlobalObjectState(int index) {
         return globalStates[index];
     }
 

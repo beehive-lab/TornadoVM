@@ -151,7 +151,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.address = deviceContext.getBufferProvider().getBufferWithSize(getObjectSize());
+        this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize());
 
         if (DEBUG) {
             debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);

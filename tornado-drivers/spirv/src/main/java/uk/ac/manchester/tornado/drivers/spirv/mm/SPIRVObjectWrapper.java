@@ -171,7 +171,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
         this.bufferOffset = 0;
         setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
 
