@@ -394,16 +394,19 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
                 : null), EventDescriptor.DESC_READ_SEGMENT, commandQueue);
     }
 
+    @Override
     public int enqueueBarrier(int[] events) {
         long oclEvent = commandQueue.enqueueBarrier(oclEventPool.serialiseEvents(events, commandQueue) ? oclEventPool.waitEventsBuffer : null);
         return commandQueue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
+    @Override
     public int enqueueMarker(int[] events) {
         long oclEvent = commandQueue.enqueueMarker(oclEventPool.serialiseEvents(events, commandQueue) ? oclEventPool.waitEventsBuffer : null);
         return commandQueue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
+    @Override
     public void reset() {
         oclEventPool.reset();
         codeCache.reset();
@@ -483,6 +486,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         oclEventPool.retainEvent(localEventId);
     }
 
+    @Override
     public Event resolveEvent(int event) {
         if (event == -1) {
             return EMPTY_EVENT;
@@ -490,6 +494,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         return new OCLEvent(oclEventPool.getDescriptor(event).getNameDescription(), commandQueue, event, oclEventPool.getOCLEvent(event));
     }
 
+    @Override
     public void flush() {
         commandQueue.flush();
     }
@@ -498,10 +503,12 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         commandQueue.finish();
     }
 
+    @Override
     public void flushEvents() {
         commandQueue.flushEvents();
     }
 
+    @Override
     public boolean isKernelAvailable() {
         return codeCache.isKernelAvailable();
     }
@@ -510,15 +517,18 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
+    @Override
     public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
         entryPoint = checkKernelName(entryPoint);
         return codeCache.installSource(meta, id, entryPoint, code);
     }
 
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile) {
-        return codeCache.installFPGASource(id, entryPoint, code, shouldCompile);
+    @Override
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel) {
+        return codeCache.installFPGASource(id, entryPoint, code, shouldCompile, printKernel);
     }
 
+    @Override
     public boolean isCached(String id, String entryPoint) {
         entryPoint = checkKernelName(entryPoint);
         return codeCache.isCached(id + "-" + entryPoint);
@@ -535,6 +545,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         return codeCache.getInstalledCode(id, entryPoint);
     }
 
+    @Override
     public OCLCodeCache getCodeCache() {
         return this.codeCache;
     }

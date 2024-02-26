@@ -450,6 +450,26 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withThreadInfo() {
+        meta().enableThreadInfo();
+    }
+
+    @Override
+    public void withoutThreadInfo() {
+        meta().disableThreadInfo();
+    }
+
+    @Override
+    public void withPrintKernel() {
+        meta().enablePrintKernel();
+    }
+
+    @Override
+    public void withoutPrintKernel() {
+        meta().disablePrintKernel();
+    }
+
+    @Override
     public SchedulableTask getTask(String id) {
         return executionContext.getTask(id);
     }

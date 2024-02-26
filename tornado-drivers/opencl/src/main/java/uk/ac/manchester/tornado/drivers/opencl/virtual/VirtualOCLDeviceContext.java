@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -153,10 +153,12 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
     public void flushEvents() {
     }
 
+    @Override
     public void reset() {
         wasReset = true;
     }
 
+    @Override
     public VirtualOCLTornadoDevice asMapping() {
         return new VirtualOCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
     }
@@ -165,6 +167,7 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
         return String.format("opencl-%d-%d", context.getPlatformIndex(), device.getIndex());
     }
 
+    @Override
     public void dumpEvents() {
     }
 
@@ -212,30 +215,37 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
         return context.getPlatformIndex();
     }
 
+    @Override
     public boolean isKernelAvailable() {
         return true;
     }
 
+    @Override
     public OCLInstalledCode installCode(OCLCompilationResult result) {
         return null;
     }
 
+    @Override
     public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
         return null;
     }
 
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile) {
+    @Override
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel) {
         return null;
     }
 
+    @Override
     public boolean isCached(String id, String entryPoint) {
         return false;
     }
 
+    @Override
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
         return null;
     }
 
+    @Override
     public OCLCodeCache getCodeCache() {
         return codeCache;
     }
