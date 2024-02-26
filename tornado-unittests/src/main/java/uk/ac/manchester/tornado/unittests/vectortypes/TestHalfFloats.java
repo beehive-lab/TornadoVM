@@ -38,6 +38,8 @@ import uk.ac.manchester.tornado.api.types.vectors.Half4;
 import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Random;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -123,15 +125,14 @@ public class TestHalfFloats extends TornadoTestBase {
         }
     }
 
-    //TODO how to do the +=
-    //    public static void dotProductFunctionReduce(HalfFloatArray input, HalfFloatArray results) {
-    //        float sum = 0.0f;
-    //        for (int i = 0; i < input.getSize(); i++) {
-    //            sum += input.get(i);
-    //        }
-    //        results.set(0, sum);
-    //    }
-    //
+    public static void dotProductFunctionReduce(HalfFloatArray input, HalfFloatArray results) {
+        HalfFloat sum = new HalfFloat(0.0f);
+        for (int i = 0; i < input.getSize(); i++) {
+            sum = HalfFloat.add(sum, input.get(i));
+        }
+        results.set(0, sum);
+    }
+
     private static void vectorPhiTest(VectorHalf3 input, VectorHalf3 output) {
         Half3 sum = new Half3();
         for (int i = 0; i < input.getLength(); i++) {
@@ -588,42 +589,41 @@ public class TestHalfFloats extends TornadoTestBase {
         }
     }
 
-    //TODO +=
-    //    @Test
-    //    public void testDotProduct() {
-    //
-    //        int size = 8;
-    //
-    //        FloatArray a = new FloatArray(size);
-    //        FloatArray b = new FloatArray(size);
-    //        FloatArray outputMap = new FloatArray(size);
-    //        FloatArray outputReduce = new FloatArray(1);
-    //
-    //        FloatArray seqMap = new FloatArray(size);
-    //        FloatArray seqReduce = new FloatArray(1);
-    //
-    //        Random r = new Random();
-    //        for (int i = 0; i < size; i++) {
-    //            a.set(i, r.nextFloat());
-    //            b.set(i, r.nextFloat());
-    //        }
-    //
-    //        // Sequential computation
-    //        dotProductFunctionMap(a, b, seqMap);
-    //        dotProductFunctionReduce(seqMap, seqReduce);
-    //
-    //        TaskGraph taskGraph = new TaskGraph("s0") //
-    //                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
-    //                .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap) //
-    //                .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce) //
-    //                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputReduce);
-    //
-    //        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-    //        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-    //        executionPlan.execute();
-    //
-    //        assertEquals(seqReduce.get(0), outputReduce.get(0), DELTA);
-    //    }
+    @Test
+    public void testDotProduct() {
+
+        int size = 8;
+
+        HalfFloatArray a = new HalfFloatArray(size);
+        HalfFloatArray b = new HalfFloatArray(size);
+        HalfFloatArray outputMap = new HalfFloatArray(size);
+        HalfFloatArray outputReduce = new HalfFloatArray(1);
+
+        HalfFloatArray seqMap = new HalfFloatArray(size);
+        HalfFloatArray seqReduce = new HalfFloatArray(1);
+
+        Random r = new Random();
+        for (int i = 0; i < size; i++) {
+            a.set(i, new HalfFloat(r.nextFloat()));
+            b.set(i, new HalfFloat(r.nextFloat()));
+        }
+
+        // Sequential computation
+        dotProductFunctionMap(a, b, seqMap);
+        dotProductFunctionReduce(seqMap, seqReduce);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
+                .task("t0-MAP", TestHalfFloats::dotProductFunctionMap, a, b, outputMap) //
+                .task("t1-REDUCE", TestHalfFloats::dotProductFunctionReduce, outputMap, outputReduce) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputReduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        assertEquals(seqReduce.get(0).getFloat32(), outputReduce.get(0).getFloat32(), DELTA);
+    }
 
     @Test
     public void vectorPhiTest() {

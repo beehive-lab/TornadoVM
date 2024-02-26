@@ -208,6 +208,13 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                 addNode = new VectorAddHalfNode(addX, addY);
                 graph.addWithoutUnique(addNode);
             } else {
+                if (addX instanceof ConstantNode) {
+                    ConstantNode c = (ConstantNode) addX;
+                    ConstantNode newConstant = new ConstantNode(c.getValue(), StampFactory.forKind(JavaKind.Short));
+                    graph.addWithoutUnique(newConstant);
+                    addX = newConstant;
+
+                }
                 addNode = new AddNode(addX, addY);
                 graph.addWithoutUnique(addNode);
             }
