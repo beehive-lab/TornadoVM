@@ -116,11 +116,11 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result, String resolvedMethodName) {
-        return codeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName);
+        return codeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName, result.metaData().isPrintKernelEnabled());
     }
 
-    public TornadoInstalledCode installCode(String name, byte[] code, String resolvedMethodName) {
-        return codeCache.installSource(name, code, resolvedMethodName);
+    public TornadoInstalledCode installCode(String name, byte[] code, String resolvedMethodName, boolean printKernel) {
+        return codeCache.installSource(name, code, resolvedMethodName, printKernel);
     }
 
     public TornadoInstalledCode getInstalledCode(String name) {

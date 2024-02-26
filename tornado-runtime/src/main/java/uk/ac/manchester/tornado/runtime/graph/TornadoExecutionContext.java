@@ -70,7 +70,7 @@ public class TornadoExecutionContext {
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
-    private final ScheduleMetaData meta;
+    private ScheduleMetaData meta;
     private KernelStackFrame[] kernelStackFrame;
     private List<SchedulableTask> tasks;
     private List<Object> constants;
@@ -93,6 +93,7 @@ public class TornadoExecutionContext {
     private TornadoProfiler profiler;
 
     public static int INIT_VALUE = -1;
+    private boolean isPrintKernel;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -560,6 +561,38 @@ public class TornadoExecutionContext {
         return defaultScheduler;
     }
 
+    public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
+
+        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>(tasks);
+        executionContext.tasks = schedulableTasksCopy;
+
+        List<Object> constantCopy = new ArrayList<>(constants);
+        executionContext.constants = constantCopy;
+
+        Map<Integer, Integer> objectsMapCopy = new HashMap<>(objectMap);
+        executionContext.objectMap = objectsMapCopy;
+
+        List<Object> objectsCopy = new ArrayList<>(objects);
+        executionContext.objects = objectsCopy;
+
+        List<LocalObjectState> objectStateCopy = new ArrayList<>(objectState);
+        executionContext.objectState = objectStateCopy;
+
+        List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
+        executionContext.devices = devicesCopy;
+
+        executionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
+
+        Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
+        executionContext.lastDevices = lastDeviceCopy;
+
+        executionContext.meta = meta;
+        executionContext.isPrintKernel = this.isPrintKernel;
+
+        executionContext.profiler = this.profiler;
+        executionContext.nextTask = this.nextTask;
+    }
+
     public void dumpExecutionContextMeta() {
         final String ansiReset = "\u001B[0m";
         final String ansiCyan = "\u001B[36m";
@@ -620,6 +653,8 @@ public class TornadoExecutionContext {
         newExecutionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
 
         newExecutionContext.lastDevices = new HashSet<>(lastDevices);
+
+        newExecutionContext.isPrintKernel = this.isPrintKernel;
 
         newExecutionContext.profiler = this.profiler;
         newExecutionContext.nextTask = this.nextTask;

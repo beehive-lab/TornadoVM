@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * How to test?
  *
  * <code>
- *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVTornadoCompiler
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVTornadoCompiler
  * </code>
  */
 public class TestSPIRVTornadoCompiler {
@@ -56,7 +56,7 @@ public class TestSPIRVTornadoCompiler {
         SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "add", "add", pathToSPIRVBinaryFile);
         String generatedCode = code.getGeneratedSourceCode();
 
-        if (TornadoOptions.PRINT_SOURCE) {
+        if (scheduleMetaData.isPrintKernelEnabled()) {
             System.out.println(generatedCode);
         }
     }

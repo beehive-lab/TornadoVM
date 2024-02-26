@@ -633,6 +633,18 @@ class ReduceTaskGraph {
             executionPlan.withoutProfiler();
         }
 
+        if (originalTaskGraph.meta().isPrintKernelEnabled()) {
+            executionPlan.withPrintKernel();
+        } else {
+            executionPlan.withoutPrintKernel();
+        }
+
+        if (originalTaskGraph.meta().isThreadInfoEnabled()) {
+            executionPlan.withThreadInfo();
+        } else {
+            executionPlan.withoutThreadInfo();
+        }
+
         // check parameter list
         if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
             checkAllArgumentsPerTask();

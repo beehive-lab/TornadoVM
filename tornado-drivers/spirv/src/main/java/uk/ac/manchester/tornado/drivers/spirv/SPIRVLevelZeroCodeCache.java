@@ -140,7 +140,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
             throw new TornadoBailoutRuntimeException("[Build SPIR-V ERROR]" + errorMessage[0]);
         }
 
-        if (TornadoOptions.PRINT_SOURCE) {
+        if (meta.isPrintKernelEnabled()) {
             SPVFileReader reader = null;
             try {
                 reader = new SPVFileReader(pathToFile);

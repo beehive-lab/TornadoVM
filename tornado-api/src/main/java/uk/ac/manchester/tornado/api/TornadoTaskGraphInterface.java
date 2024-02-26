@@ -115,4 +115,12 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
     void withConcurrentDevices();
 
     void withoutConcurrentDevices();
+
+    void withThreadInfo();
+
+    void withoutThreadInfo();
+
+    void withPrintKernel();
+
+    void withoutPrintKernel();
 }

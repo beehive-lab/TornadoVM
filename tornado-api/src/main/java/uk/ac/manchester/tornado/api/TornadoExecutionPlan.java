@@ -336,6 +336,26 @@ public class TornadoExecutionPlan {
         return this;
     }
 
+    public TornadoExecutionPlan withThreadInfo() {
+        tornadoExecutor.withThreadInfo();
+        return this;
+    }
+
+    public TornadoExecutionPlan withoutThreadInfo() {
+        tornadoExecutor.withoutThreadInfo();
+        return this;
+    }
+
+    public TornadoExecutionPlan withPrintKernel() {
+        tornadoExecutor.withPrintKernel();
+        return this;
+    }
+
+    public TornadoExecutionPlan withoutPrintKernel() {
+        tornadoExecutor.withoutPrintKernel();
+        return this;
+    }
+
     static class TornadoExecutor {
 
         private List<ImmutableTaskGraph> immutableTaskGraphList;
@@ -496,6 +516,22 @@ public class TornadoExecutionPlan {
 
         void disableProfiler(ProfilerMode profilerMode) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.disableProfiler(profilerMode));
+        }
+
+        void withThreadInfo() {
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
+        }
+
+        void withoutThreadInfo() {
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutThreadInfo);
+        }
+
+        void withPrintKernel() {
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withPrintKernel);
+        }
+
+        void withoutPrintKernel() {
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
         }
     }
 }
