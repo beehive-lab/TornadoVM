@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -82,7 +82,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private final List<Object> objects;
 
-    private final GlobalObjectState[] globalStates;
+    private final DataObjectState[] globalStates;
     private final KernelStackFrame[] kernelStackFrame;
     private final int[][] events;
     private final int[] eventsIndexes;
@@ -147,7 +147,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         debug("created %d event lists", events.length);
 
         objects = executionContext.getObjects();
-        globalStates = new GlobalObjectState[objects.size()];
+        globalStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 
         rewindBufferToBegin();
@@ -715,7 +715,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     continue;
                 }
 
-                final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
+                final DataObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(deviceForInterpreter);
 
                 if (!isObjectInAtomicRegion(objectState, deviceForInterpreter, task)) {
@@ -865,7 +865,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
-    private GlobalObjectState resolveGlobalObjectState(int index) {
+    private DataObjectState resolveGlobalObjectState(int index) {
         return globalStates[index];
     }
 
