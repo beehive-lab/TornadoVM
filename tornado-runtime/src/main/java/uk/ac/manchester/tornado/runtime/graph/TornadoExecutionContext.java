@@ -70,7 +70,7 @@ public class TornadoExecutionContext {
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
-    private final ScheduleMetaData meta;
+    private ScheduleMetaData meta;
     private final KernelArgs[] callWrappers;
     private List<SchedulableTask> tasks;
     private List<Object> constants;
@@ -93,6 +93,7 @@ public class TornadoExecutionContext {
     private TornadoProfiler profiler;
 
     public static int INIT_VALUE = -1;
+    private boolean isPrintKernel;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -586,6 +587,9 @@ public class TornadoExecutionContext {
         Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
         executionContext.lastDevices = lastDeviceCopy;
 
+        executionContext.meta = meta;
+        executionContext.isPrintKernel = this.isPrintKernel;
+
         executionContext.profiler = this.profiler;
         executionContext.nextTask = this.nextTask;
     }
@@ -624,4 +628,5 @@ public class TornadoExecutionContext {
     public void withProfiler(TornadoProfiler timeProfiler) {
         this.profiler = timeProfiler;
     }
+
 }

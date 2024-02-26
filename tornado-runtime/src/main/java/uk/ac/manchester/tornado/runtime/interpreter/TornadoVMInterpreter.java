@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
@@ -93,7 +94,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final List<SchedulableTask> tasks;
     private final List<SchedulableTask> localTaskList;
 
-    private final TornadoProfiler timeProfiler;
+    private TornadoProfiler timeProfiler;
     private final TornadoExecutionContext executionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
     private double totalTime;
@@ -158,6 +159,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
         debug("interpreter for device %s is ready to go", device.toString());
 
         this.bytecodeResult.mark();
+    }
+
+    public void setTimeProfiler(TornadoProfiler tornadoProfiler) {
+        this.timeProfiler = tornadoProfiler;
     }
 
     public void fetchGlobalStates() {
@@ -598,6 +603,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
+        TaskMetaDataInterface meta = task.meta();
+        meta.setPrintKernelFlag(executionContext.meta().isPrintKernelEnabled());
 
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
@@ -614,6 +621,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
             task.setGridScheduler(gridScheduler);
         }
 
+        if (timeProfiler instanceof TimeProfiler) {
+            // Register the backends only when the profiler is enabled
+            timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
+            timeProfiler.registerDeviceID(task.getId(), task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex());
+            timeProfiler.registerDeviceName(task.getId(), task.getDevice().getPhysicalDevice().getDeviceName());
+        }
+
         if (shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)])) {
             task.mapTo(deviceForInterpreter);
             try {
@@ -624,6 +638,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     // FPGAs, that has to be a single source.
                     task.forceCompilation();
                 }
+
                 installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
             } catch (TornadoBailoutRuntimeException e) {
@@ -743,9 +758,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
         }
 
-        // We attach the profiler
+        // We attach the profiler information
         metadata.attachProfiler(timeProfiler);
         metadata.setGridScheduler(gridScheduler);
+        metadata.setThreadInfo(executionContext.meta().isThreadInfoEnabled());
 
         try {
             int lastEvent = useDependencies

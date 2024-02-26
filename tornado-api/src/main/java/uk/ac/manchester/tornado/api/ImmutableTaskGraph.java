@@ -177,12 +177,27 @@ public class ImmutableTaskGraph {
         taskGraph.disableProfiler(profilerMode);
     }
 
-    public void withConcurrentDevices() {
+    void withConcurrentDevices() {
         taskGraph.withConcurrentDevices();
     }
 
-    public void withoutConcurrentDevices() {
+    void withoutConcurrentDevices() {
         taskGraph.withoutConcurrentDevices();
     }
 
+    void withThreadInfo() {
+        taskGraph.withThreadInfo();
+    }
+
+    void withoutThreadInfo() {
+        taskGraph.withoutThreadInfo();
+    }
+
+    void withPrintKernel() {
+        taskGraph.withPrintKernel();
+    }
+
+    void withoutPrintKernel() {
+        taskGraph.withoutPrintKernel();
+    }
 }

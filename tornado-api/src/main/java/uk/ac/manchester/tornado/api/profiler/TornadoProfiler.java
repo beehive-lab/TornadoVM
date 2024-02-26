@@ -54,4 +54,5 @@ public interface TornadoProfiler {
     void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer);
 
     void sum(ProfilerType type, long timer);
+
 }

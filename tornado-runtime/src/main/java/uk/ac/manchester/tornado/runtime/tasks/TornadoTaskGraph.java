@@ -422,22 +422,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return streamOutObjects;
     }
 
-    private void setProfiler(ProfilerMode profilerMode, String option) {
+    @Override
+    public void enableProfiler(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
-        System.setProperty(TornadoOptions.PROFILER, option);
+        TornadoOptions.TORNADO_PROFILER = true;
         if (profilerMode == ProfilerMode.SILENT) {
-            System.setProperty(TornadoOptions.PROFILER_LOG, option);
+            TornadoOptions.TORNADO_PROFILER_LOG = true;
         }
     }
 
     @Override
-    public void enableProfiler(ProfilerMode profilerMode) {
-        setProfiler(profilerMode, TornadoOptions.TRUE);
-    }
-
-    @Override
     public void disableProfiler(ProfilerMode profilerMode) {
-        setProfiler(profilerMode, TornadoOptions.FALSE);
+        TornadoOptions.TORNADO_PROFILER = false;
+        TornadoOptions.TORNADO_PROFILER_LOG = false;
         this.timeProfiler = null;
         this.profilerMode = null;
     }
@@ -450,6 +447,26 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void withoutConcurrentDevices() {
         this.cocurrentDevices = false;
+    }
+
+    @Override
+    public void withThreadInfo() {
+        meta().enableThreadInfo();
+    }
+
+    @Override
+    public void withoutThreadInfo() {
+        meta().disableThreadInfo();
+    }
+
+    @Override
+    public void withPrintKernel() {
+        meta().enablePrintKernel();
+    }
+
+    @Override
+    public void withoutPrintKernel() {
+        meta().disablePrintKernel();
     }
 
     @Override
@@ -613,7 +630,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     : STR."\{((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName()}.\{task.getTaskName()}";
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
         }
-
     }
 
     private void updateDeviceContext() {
@@ -814,7 +830,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         try {
-            event = vm.execute(cocurrentDevices);
+            event = vm.execute(cocurrentDevices, timeProfiler);
             timeProfiler.stop(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             updateProfiler();
         } catch (TornadoBailoutRuntimeException e) {
@@ -1230,16 +1246,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void setupProfiler() {
-        if (timeProfiler == null) {
-            if (isProfilerEnabled()) {
-                this.timeProfiler = new TimeProfiler();
-            } else {
-                this.timeProfiler = new EmptyProfiler();
-            }
-            executionContext.withProfiler(timeProfiler);
-            for (SchedulableTask task : executionContext.getTasks()) {
-                logTaskMethodHandle(task);
-            }
+        if (isProfilerEnabled()) {
+            this.timeProfiler = new TimeProfiler();
+        } else {
+            this.timeProfiler = new EmptyProfiler();
+        }
+        executionContext.withProfiler(timeProfiler);
+        for (SchedulableTask task : executionContext.getTasks()) {
+            logTaskMethodHandle(task);
         }
     }
 
