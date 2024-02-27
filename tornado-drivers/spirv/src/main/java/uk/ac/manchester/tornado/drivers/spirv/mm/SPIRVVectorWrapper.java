@@ -282,7 +282,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public void setBuffer(XPUBuffer.ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 

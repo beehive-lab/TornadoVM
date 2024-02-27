@@ -97,7 +97,7 @@ public class FieldBuffer {
         return objectBuffer.size();
     }
 
-    void setBuffer(XPUBuffer.ObjectBufferWrapper bufferWrapper) {
+    void setBuffer(XPUBuffer.XPUBufferWrapper bufferWrapper) {
         objectBuffer.setBuffer(bufferWrapper);
     }
 

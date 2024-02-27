@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, 2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,11 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
 public interface XPUBuffer {
 
-    class ObjectBufferWrapper {
+    class XPUBufferWrapper {
         public final long buffer;
         public long bufferOffset;
 
-        public ObjectBufferWrapper(long buffer, long bufferOffset) {
+        public XPUBufferWrapper(long buffer, long bufferOffset) {
             this.buffer = buffer;
             this.bufferOffset = bufferOffset;
         }
@@ -36,7 +36,7 @@ public interface XPUBuffer {
 
     long toBuffer();
 
-    void setBuffer(ObjectBufferWrapper bufferWrapper);
+    void setBuffer(XPUBufferWrapper bufferWrapper);
 
     long getBufferOffset();
 

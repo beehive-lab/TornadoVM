@@ -165,7 +165,7 @@ public class OCLObjectWrapper implements XPUBuffer {
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
         this.bufferOffset = 0;
-        setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
+        setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
         if (DEBUG) {
             debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
@@ -305,7 +305,7 @@ public class OCLObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 

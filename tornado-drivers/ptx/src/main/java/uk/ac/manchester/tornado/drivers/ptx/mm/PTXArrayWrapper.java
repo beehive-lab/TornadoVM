@@ -79,7 +79,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         TornadoInternalError.shouldNotReachHere();
     }
 
