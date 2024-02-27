@@ -17,8 +17,11 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
+import uk.ac.manchester.tornado.api.internal.annotations.CompilerIntrinsic;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
+@CompilerIntrinsic
 public class Debug {
 
     /**

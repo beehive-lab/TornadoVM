@@ -508,14 +508,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected Stamp loadCompressedStamp(ObjectStamp stamp) {
-        Debug.printf("OCLLoweringProvider::loadCompressedStamp");
         unimplemented();
         return null;
     }
 
     @Override
     protected ValueNode newCompressionNode(CompressionNode.CompressionOp op, ValueNode value) {
-        Debug.printf("OCLLoweringProvider::newCompressionNode");
         unimplemented();
         return null;
     }

@@ -151,6 +151,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private long memoryLimitSizeBytes = -1;
 
     private TornadoVM vm;  // One TornadoVM instance per TornadoExecutionPlan
+
+    // HashMap to keep an instance of the TornadoVM per Device 
     private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
     private Event event;
     private String taskGraphName;
@@ -184,6 +186,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private boolean isConcurrentDevicesEnabled;
     private long executionPlanId;
+    private boolean bailout;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
@@ -641,7 +644,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * @param setNewDevice:
      *     boolean that specifies if set a new device or not.
      */
-    private TornadoVM compile(boolean setNewDevice) {
+    private TornadoVM compileGraphAndBuildVM(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
@@ -721,12 +724,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return true;
     }
 
-    private boolean compileToTornadoVMBytecode() {
+    private boolean compileComputeGraphToTornadoVMBytecode() {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
             timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
             executionContext.scheduleTaskToDevices();
-            TornadoVM tornadoVM = compile(compileInfo.updateDevice);
+            TornadoVM tornadoVM = compileGraphAndBuildVM(compileInfo.updateDevice);
             vmTable.put(meta().getLogicDevice(), tornadoVM);
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
@@ -758,7 +761,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     /**
      * If current FPGA execution and JIT mode, then run warm-up.
      */
-    private void preCompilationForFPGA() {
+    private void preCompileForFPGAs() {
         boolean compile = false;
         if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
@@ -820,11 +823,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void scheduleInner() {
-
-        boolean compile = compileToTornadoVMBytecode();
+        boolean compile = compileComputeGraphToTornadoVMBytecode();
         TornadoAcceleratorDevice deviceForTask = executionContext.getDeviceForTask(0);
         if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {
-            preCompilationForFPGA();
+            preCompileForFPGAs();
         }
 
         try {
@@ -986,7 +988,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         getDevice().getDeviceContext().setResetToFalse();
         timeProfiler.clean();
 
-        compileToTornadoVMBytecode();
+        compileComputeGraphToTornadoVMBytecode();
         vm.warmup();
 
         if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
@@ -1270,18 +1272,29 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private TornadoTaskGraphInterface execute() {
-        setupProfiler();
-        executionContext.setExecutionId(executionPlanId);
-        isFinished = false;
-        timeProfiler.clean();
-        timeProfiler.start(ProfilerType.TOTAL_TASK_GRAPH_TIME);
-        TornadoTaskGraphInterface executionGraph = null;
-        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {
-            executionGraph = analyzeSkeletonAndRun();
+
+        // check if bailout due to task-rewriting
+        if (bailout) {
+            bailout();
         }
 
-        if (executionGraph != null) {
-            return executionGraph;
+        isFinished = false;
+        setupProfiler();
+        timeProfiler.clean();
+        timeProfiler.start(ProfilerType.TOTAL_TASK_GRAPH_TIME);
+
+        // Single context ID per execution plan.
+        // This is used to create/obtain low-level command queues from the driver
+        // and other resources (e.g., Level Zero Command Lists).
+        executionContext.setExecutionPlanId(executionPlanId);
+
+        TornadoTaskGraphInterface reduceTaskGraph = null;
+        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {
+            reduceTaskGraph = analyzeSkeletonAndRun();
+        }
+
+        if (reduceTaskGraph != null) {
+            return reduceTaskGraph;
         }
 
         // check parameter list

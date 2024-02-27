@@ -664,7 +664,11 @@ public class TornadoExecutionContext {
         return newExecutionContext;
     }
 
-    public void setExecutionId(long executionPlanId) {
+    public void setExecutionPlanId(long executionPlanId) {
         this.executionPlanId = executionPlanId;
+    }
+
+    public long getExecutionPlanId() {
+        return this.executionPlanId;
     }
 }
