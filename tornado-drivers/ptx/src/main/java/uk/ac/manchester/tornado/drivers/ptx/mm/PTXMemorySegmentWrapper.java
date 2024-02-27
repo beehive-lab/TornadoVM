@@ -51,13 +51,13 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
-public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuffer {
+public class PTXMemorySegmentWrapper extends TornadoLogger implements XPUBuffer {
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
@@ -247,12 +247,12 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public int[] getIntBuffer() {
-        return ObjectBuffer.super.getIntBuffer();
+        return XPUBuffer.super.getIntBuffer();
     }
 
     @Override
     public void setIntBuffer(int[] arr) {
-        ObjectBuffer.super.setIntBuffer(arr);
+        XPUBuffer.super.setIntBuffer(arr);
     }
 
 }

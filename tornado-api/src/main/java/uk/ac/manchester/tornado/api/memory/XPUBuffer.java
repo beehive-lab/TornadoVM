@@ -22,7 +22,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
-public interface ObjectBuffer {
+public interface XPUBuffer {
 
     class ObjectBufferWrapper {
         public final long buffer;

@@ -24,7 +24,7 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 
 /**
  * A Tornado accelerator device extending the {@link TornadoDevice} interface.
@@ -53,9 +53,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      *
      * @param arr
      *     The integer array for which to create or reuse an atomic buffer.
-     * @return The created or reused {@link ObjectBuffer}.
+     * @return The created or reused {@link XPUBuffer}.
      */
-    ObjectBuffer createOrReuseAtomicsBuffer(int[] arr);
+    XPUBuffer createOrReuseAtomicsBuffer(int[] arr);
 
     /**
      * It installs the Tornado code for the specified schedulable task.
@@ -164,11 +164,11 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     /**
      * It sets the atomic region for the Tornado accelerator device using the
-     * specified {@link ObjectBuffer}.
+     * specified {@link XPUBuffer}.
      *
      * @param bufferAtomics
-     *     The {@link ObjectBuffer} representing the atomic region.
+     *     The {@link XPUBuffer} representing the atomic region.
      */
-    void setAtomicRegion(ObjectBuffer bufferAtomics);
+    void setAtomicRegion(XPUBuffer bufferAtomics);
 
 }

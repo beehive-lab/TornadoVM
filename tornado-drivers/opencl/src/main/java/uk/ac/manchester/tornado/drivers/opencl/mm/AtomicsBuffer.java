@@ -29,10 +29,10 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
-public class AtomicsBuffer implements ObjectBuffer {
+public class AtomicsBuffer implements XPUBuffer {
 
     private int[] atomicsList;
     private static final int OFFSET = 0;

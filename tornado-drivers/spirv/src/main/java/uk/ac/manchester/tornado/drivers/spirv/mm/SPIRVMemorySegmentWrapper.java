@@ -31,7 +31,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.*;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
-public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
+public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
     private static final int INIT_VALUE = -1;
 

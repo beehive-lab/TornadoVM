@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -118,7 +118,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -236,8 +236,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return getDeviceContext().getInstalledCode(functionName);
     }
 
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, long batchSize) {
-        ObjectBuffer result = null;
+    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, long batchSize) {
+        XPUBuffer result = null;
         if (type.isArray()) {
 
             if (!type.getComponentType().isArray()) {
@@ -294,7 +294,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int allocate(Object object, long batchSize, DeviceObjectState state) {
-        final ObjectBuffer buffer;
+        final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize);
@@ -321,8 +321,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return -1;
     }
 
-    private ObjectBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {
-        ObjectBuffer result = null;
+    private XPUBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {
+        XPUBuffer result = null;
         if (type == int[].class) {
             result = new PTXIntArrayWrapper(deviceContext);
         } else if (type == short[].class) {
@@ -343,8 +343,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
-    private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, long batchSize) {
-        ObjectBuffer result = null;
+    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, long batchSize) {
+        XPUBuffer result = null;
         PTXDeviceContext deviceContext = getDeviceContext();
 
         if (componentType == int[].class) {
@@ -656,7 +656,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+    public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
     }
 

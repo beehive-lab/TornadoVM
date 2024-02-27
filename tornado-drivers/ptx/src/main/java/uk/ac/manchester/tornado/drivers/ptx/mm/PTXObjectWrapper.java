@@ -43,7 +43,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-public class PTXObjectWrapper implements ObjectBuffer {
+public class PTXObjectWrapper implements XPUBuffer {
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
     private final Class<?> type;
@@ -91,7 +91,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
                 trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
-            ObjectBuffer wrappedField = null;
+            XPUBuffer wrappedField = null;
             if (type.isArray()) {
                 if (type == int[].class) {
                     wrappedField = new PTXIntArrayWrapper(deviceContext);
@@ -434,12 +434,12 @@ public class PTXObjectWrapper implements ObjectBuffer {
 
     @Override
     public int[] getIntBuffer() {
-        return ObjectBuffer.super.getIntBuffer();
+        return XPUBuffer.super.getIntBuffer();
     }
 
     @Override
     public void setIntBuffer(int[] arr) {
-        ObjectBuffer.super.setIntBuffer(arr);
+        XPUBuffer.super.setIntBuffer(arr);
     }
 
 }

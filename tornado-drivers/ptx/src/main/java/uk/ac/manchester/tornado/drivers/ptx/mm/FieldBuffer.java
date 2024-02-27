@@ -34,14 +34,14 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 
 public class FieldBuffer {
     private final Field field;
 
-    private final ObjectBuffer objectBuffer;
+    private final XPUBuffer objectBuffer;
 
-    public FieldBuffer(final Field field, final ObjectBuffer objectBuffer) {
+    public FieldBuffer(final Field field, final XPUBuffer objectBuffer) {
         this.objectBuffer = objectBuffer;
         this.field = field;
     }

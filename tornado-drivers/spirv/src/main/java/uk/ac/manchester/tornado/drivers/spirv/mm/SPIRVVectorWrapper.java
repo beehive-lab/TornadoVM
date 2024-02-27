@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-public class SPIRVVectorWrapper implements ObjectBuffer {
+public class SPIRVVectorWrapper implements XPUBuffer {
 
     private static final int INIT_VALUE = -1;
 
@@ -282,7 +282,7 @@ public class SPIRVVectorWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void setBuffer(ObjectBuffer.ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBuffer.ObjectBufferWrapper bufferWrapper) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 

@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -122,7 +122,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -237,11 +237,11 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+    public void setAtomicRegion(XPUBuffer bufferAtomics) {
         throw new RuntimeException("Unsupported");
     }
 
-    private ObjectBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
+    private XPUBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
         if (klass == int[].class) {
             return new SPIRVIntArrayWrapper(device, batchSize);
         } else if (klass == float[].class) {
@@ -260,8 +260,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         throw new RuntimeException("[SPIRV] Array Wrapper Not Implemented yet: " + klass);
     }
 
-    private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
-        ObjectBuffer result = null;
+    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
+        XPUBuffer result = null;
 
         if (componentType == int[].class) {
             result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVIntArrayWrapper(context, batchSize), batchSize);
@@ -283,7 +283,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
+    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
         if (type.isArray()) {
             if (!type.getComponentType().isArray()) {
                 return createArrayWrapper(type, deviceContext, batchSize);
@@ -324,8 +324,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         return -1;
     }
 
-    private ObjectBuffer createNewBufferAllocation(Object object, long batchSize, DeviceObjectState state) {
-        final ObjectBuffer buffer;
+    private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceObjectState state) {
+        final XPUBuffer buffer;
         TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
         state.setObjectBuffer(buffer);
@@ -335,7 +335,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int allocate(Object object, long batchSize, DeviceObjectState state) {
-        final ObjectBuffer buffer;
+        final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
             if (batchSize != 0) {

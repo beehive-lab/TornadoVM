@@ -31,14 +31,14 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 
 public class FieldBuffer {
 
     private final Field field;
-    private final ObjectBuffer objectBuffer;
+    private final XPUBuffer objectBuffer;
 
-    public FieldBuffer(final Field field, final ObjectBuffer objectBuffer) {
+    public FieldBuffer(final Field field, final XPUBuffer objectBuffer) {
         this.objectBuffer = objectBuffer;
         this.field = field;
     }
@@ -96,7 +96,7 @@ public class FieldBuffer {
         return objectBuffer.size();
     }
 
-    void setBuffer(ObjectBuffer.ObjectBufferWrapper bufferWrapper) {
+    void setBuffer(XPUBuffer.ObjectBufferWrapper bufferWrapper) {
         objectBuffer.setBuffer(bufferWrapper);
     }
 

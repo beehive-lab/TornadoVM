@@ -26,15 +26,13 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,7 +62,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return oclKernelStackFrame.get(threadId);
     }
 
-    public ObjectBuffer createAtomicsBuffer(final int[] array) {
+    public XPUBuffer createAtomicsBuffer(final int[] array) {
         return new AtomicsBuffer(array, deviceContext);
     }
 
