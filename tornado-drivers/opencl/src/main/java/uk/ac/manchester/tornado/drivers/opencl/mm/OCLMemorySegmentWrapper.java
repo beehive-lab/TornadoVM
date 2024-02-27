@@ -143,7 +143,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (partialReadSize != 0) {
-            // Partial Copy Out due to a under demand copy by the user
+            // Partial Copy Out due to an under demand copy by the user
             returnEvent = deviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else if (batchSize <= 0) {
             // Partial Copy Out due to batch processing
