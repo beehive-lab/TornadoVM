@@ -21,7 +21,6 @@ import uk.ac.manchester.tornado.api.internal.annotations.CompilerIntrinsic;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-@CompilerIntrinsic
 public class Debug {
 
     /**
@@ -32,6 +31,7 @@ public class Debug {
      * @param args
      *     arguments to format
      */
+    @CompilerIntrinsic
     public static void printf(String msg, Object... args) {
         shouldNotReachHere();
     }
