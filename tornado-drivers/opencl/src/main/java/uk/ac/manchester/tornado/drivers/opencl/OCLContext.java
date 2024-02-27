@@ -252,12 +252,6 @@ public class OCLContext implements OCLExecutionEnvironment {
         return address;
     }
 
-    public ByteBuffer toByteBuffer(long address, long bytes) {
-        final ByteBuffer buffer = asByteBuffer(address, bytes);
-        buffer.order(OpenCL.BYTE_ORDER);
-        return buffer;
-    }
-
     public OCLBufferResult createBuffer(long flags, long bytes) {
         return createBuffer(flags, bytes, 0L);
     }
@@ -296,6 +290,9 @@ public class OCLContext implements OCLExecutionEnvironment {
         private final long address;
         private final int result;
 
+        /**
+         * Objects of this type are created in Native Code from the JNI-OpenCL layer of TornadoVM.
+         */
         public OCLBufferResult(long oclBuffer, long address, int result) {
             this.oclBuffer = oclBuffer;
             this.address = address;
