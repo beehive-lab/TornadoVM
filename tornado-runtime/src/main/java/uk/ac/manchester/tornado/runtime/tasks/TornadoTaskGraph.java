@@ -149,7 +149,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder;
     private long batchSizeBytes = -1;
     private long memoryLimitSizeBytes = -1;
-    private boolean bailout = false;
 
     private TornadoVM vm;  // One TornadoVM instance per TornadoExecutionPlan
     private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
@@ -184,6 +183,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private ProfilerMode profilerMode;
 
     private boolean isConcurrentDevicesEnabled;
+    private long executionPlanId;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
@@ -1053,9 +1053,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
-        System.out.println("Buffer is Locked???? " + deviceState.isLockedBuffer());
         if (deviceState.isLockedBuffer()) {
-            System.out.println("Performing the READ ");
             return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
         }
         return null;
@@ -1263,21 +1261,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    private void bailout() {
+        if (!TornadoOptions.RECOVER_BAILOUT) {
+            throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled");
+        } else {
+            runAllTasksJavaSequential();
+        }
+    }
+
     private TornadoTaskGraphInterface execute() {
         setupProfiler();
+        executionContext.setExecutionId(executionPlanId);
         isFinished = false;
-        if (bailout) {
-            if (!TornadoOptions.RECOVER_BAILOUT) {
-                throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled");
-            } else {
-                runAllTasksJavaSequential();
-                return this;
-            }
-        }
-
         timeProfiler.clean();
         timeProfiler.start(ProfilerType.TOTAL_TASK_GRAPH_TIME);
-
         TornadoTaskGraphInterface executionGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
@@ -1289,23 +1286,24 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // check parameter list
         if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
-            try {
-                checkAllArgumentsPerTask();
-            } catch (TornadoTaskRuntimeException e) {
-                throw new TornadoTaskRuntimeException(e.toString());
-            }
+            checkAllArgumentsPerTask();
         }
 
         lockInPendingFieldsObjects();
-
         analysisTaskGraph = null;
-        scheduleInner();
-        cleanUp();
+
+        try {
+            scheduleInner();
+            cleanUp();
+        } catch (TornadoRuntimeException e) {
+            bailout();
+        }
         return this;
     }
 
     @Override
     public TornadoTaskGraphInterface execute(ExecutorFrame executionPackage) {
+        executionPlanId = executionPackage.getId();
         if (executionPackage.getPolicy() == null) {
             return execute();
         } else {

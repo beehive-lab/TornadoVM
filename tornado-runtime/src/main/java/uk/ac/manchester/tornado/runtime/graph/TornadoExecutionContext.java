@@ -95,6 +95,8 @@ public class TornadoExecutionContext {
     public static int INIT_VALUE = -1;
     private boolean isPrintKernel;
 
+    private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
+
     public TornadoExecutionContext(String id) {
         name = id;
         meta = new ScheduleMetaData(name);
@@ -660,5 +662,9 @@ public class TornadoExecutionContext {
         newExecutionContext.nextTask = this.nextTask;
         newExecutionContext.executionPlanMemoryLimit = this.executionPlanMemoryLimit;
         return newExecutionContext;
+    }
+
+    public void setExecutionId(long executionPlanId) {
+        this.executionPlanId = executionPlanId;
     }
 }
