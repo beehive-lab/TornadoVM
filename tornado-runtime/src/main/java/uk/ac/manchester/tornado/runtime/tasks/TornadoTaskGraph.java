@@ -1305,7 +1305,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoTaskGraphInterface schedule(ExecutorFrame executionPackage) {
+    public TornadoTaskGraphInterface execute(ExecutorFrame executionPackage) {
         if (executionPackage.getPolicy() == null) {
             return execute();
         } else {
@@ -1667,8 +1667,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         executor.execute();
     }
 
-    @Override
-    public TornadoTaskGraphInterface scheduleDynamicReconfigurationParallel(Policy policy) {
+    private TornadoTaskGraphInterface scheduleDynamicReconfigurationParallel(Policy policy) {
         if (policyTimeTable.get(policy) == null) {
             runScheduleWithParallelProfiler(policy);
         } else {
@@ -1926,8 +1925,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return size;
     }
 
-    @Override
-    public TornadoTaskGraphInterface scheduleDynamicReconfigurationSequential(Policy policy) {
+    private TornadoTaskGraphInterface scheduleDynamicReconfigurationSequential(Policy policy) {
 
         if (policy == Policy.LATENCY) {
             if (Tornado.DEBUG) {

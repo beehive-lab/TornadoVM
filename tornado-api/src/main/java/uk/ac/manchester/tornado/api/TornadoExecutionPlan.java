@@ -368,7 +368,7 @@ public class TornadoExecutionPlan {
 
     static class TornadoExecutor {
 
-        private List<ImmutableTaskGraph> immutableTaskGraphList;
+        private final List<ImmutableTaskGraph> immutableTaskGraphList;
 
         TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
             immutableTaskGraphList = new ArrayList<>();

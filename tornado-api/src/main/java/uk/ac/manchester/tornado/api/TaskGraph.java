@@ -773,7 +773,7 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     void execute(ExecutorFrame executionPackage) {
-        taskGraphImpl.schedule(executionPackage).waitOn();
+        taskGraphImpl.execute(executionPackage).waitOn();
     }
 
     void warmup() {
