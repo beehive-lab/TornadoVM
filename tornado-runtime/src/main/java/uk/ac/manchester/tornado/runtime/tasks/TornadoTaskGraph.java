@@ -1305,7 +1305,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoTaskGraphInterface schedule(TornadoExecutionPlan.ExecutionPackage executionPackage) {
+    public TornadoTaskGraphInterface schedule(ExecutorFrame executionPackage) {
         if (executionPackage.getPolicy() == null) {
             return execute();
         } else {

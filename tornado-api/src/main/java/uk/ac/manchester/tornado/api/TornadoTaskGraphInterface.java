@@ -84,7 +84,7 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     TaskMetaDataInterface meta();
 
-    TornadoTaskGraphInterface schedule(TornadoExecutionPlan.ExecutionPackage executionPackage);
+    TornadoTaskGraphInterface schedule(ExecutorFrame executionPackage);
 
     TornadoTaskGraphInterface scheduleDynamicReconfigurationParallel(Policy policy);
 

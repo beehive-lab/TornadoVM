@@ -50,46 +50,7 @@ public class TornadoExecutionPlan {
 
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
 
-    private final ExecutionPackage executionPackage;
-
-    public static class ExecutionPackage {
-
-        private final long id;
-        private DRMode drMode;
-        private Policy policy;
-        private GridScheduler gridScheduler;
-
-        public ExecutionPackage(long id) {
-            this.id = id;
-        }
-
-        public ExecutionPackage withPolicy(Policy policy) {
-            this.policy = policy;
-            return this;
-        }
-
-        public ExecutionPackage withMode(DRMode drMode) {
-            this.drMode = drMode;
-            return this;
-        }
-
-        public ExecutionPackage withGridScheduler(GridScheduler gridScheduler) {
-            this.gridScheduler = gridScheduler;
-            return this;
-        }
-
-        public Policy getPolicy() {
-            return policy;
-        }
-
-        public DRMode getDRMode() {
-            return drMode;
-        }
-
-        public GridScheduler getGridScheduler() {
-            return gridScheduler;
-        }
-    }
+    private final ExecutorFrame executionPackage;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -104,7 +65,7 @@ public class TornadoExecutionPlan {
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         long id = globalExecutionPlanCounter.incrementAndGet();
-        executionPackage = new ExecutionPackage(id);
+        executionPackage = new ExecutorFrame(id);
     }
 
     /**
@@ -365,7 +326,7 @@ public class TornadoExecutionPlan {
      * Obtains the ID that was assigned to the execution plan.
      */
     public long getId() {
-        return executionPackage.id;
+        return executionPackage.getId();
     }
 
     /**
@@ -414,7 +375,7 @@ public class TornadoExecutionPlan {
             Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
         }
 
-        void execute(ExecutionPackage executionPackage) {
+        void execute(ExecutorFrame executionPackage) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
         }
 

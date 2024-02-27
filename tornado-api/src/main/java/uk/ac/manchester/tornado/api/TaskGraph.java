@@ -772,7 +772,7 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withoutMemoryLimit();
     }
 
-    void execute(TornadoExecutionPlan.ExecutionPackage executionPackage) {
+    void execute(ExecutorFrame executionPackage) {
         taskGraphImpl.schedule(executionPackage).waitOn();
     }
 

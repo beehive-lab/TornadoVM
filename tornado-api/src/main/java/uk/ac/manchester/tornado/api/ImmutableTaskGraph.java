@@ -18,7 +18,6 @@
 package uk.ac.manchester.tornado.api;
 
 import java.util.Collection;
-import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
@@ -45,7 +44,7 @@ public class ImmutableTaskGraph {
         this.taskGraph = taskGraph;
     }
 
-    void execute(TornadoExecutionPlan.ExecutionPackage executionPackage) {
+    void execute(ExecutorFrame executionPackage) {
         this.taskGraph.execute(executionPackage);
     }
 
