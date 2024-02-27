@@ -592,7 +592,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int deallocate(DeviceObjectState state) {
+    public synchronized int deallocate(DeviceObjectState state) {
         if (state.isLockedBuffer()) {
             return -1;
         }
