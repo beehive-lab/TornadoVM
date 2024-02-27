@@ -748,12 +748,12 @@ public class TaskGraph implements TaskGraphInterface {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    TaskGraph setDevice(TornadoDevice device) {
+    TaskGraph withDevice(TornadoDevice device) {
         taskGraphImpl.setDevice(device);
         return this;
     }
 
-    TaskGraph setDevice(String taskName, TornadoDevice device) {
+    TaskGraph withDevice(String taskName, TornadoDevice device) {
         taskGraphImpl.setDevice(taskName, device);
         return this;
     }
@@ -772,20 +772,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withoutMemoryLimit();
     }
 
-    void execute() {
-        taskGraphImpl.schedule().waitOn();
-    }
-
-    void execute(GridScheduler gridScheduler) {
-        taskGraphImpl.schedule(gridScheduler).waitOn();
-    }
-
-    void executeWithProfiler(Policy policy) {
-        taskGraphImpl.scheduleWithProfile(policy).waitOn();
-    }
-
-    void executeWithProfilerSequential(Policy policy) {
-        taskGraphImpl.scheduleWithProfileSequential(policy).waitOn();
+    void execute(TornadoExecutionPlan.ExecutionPackage executionPackage) {
+        taskGraphImpl.schedule(executionPackage).waitOn();
     }
 
     void warmup() {

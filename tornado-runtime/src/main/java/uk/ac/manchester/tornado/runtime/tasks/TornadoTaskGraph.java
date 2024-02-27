@@ -52,14 +52,7 @@ import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -1270,9 +1263,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    @Override
-    public TornadoTaskGraphInterface schedule() {
-
+    private TornadoTaskGraphInterface execute() {
         setupProfiler();
         isFinished = false;
         if (bailout) {
@@ -1314,12 +1305,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoTaskGraphInterface schedule(GridScheduler gridScheduler) {
-        this.gridScheduler = gridScheduler;
-        // check schedule names
-        checkGridSchedulerNames();
-        // Schedule the task-graph
-        return schedule();
+    public TornadoTaskGraphInterface schedule(TornadoExecutionPlan.ExecutionPackage executionPackage) {
+        if (executionPackage.getPolicy() == null) {
+            return execute();
+        } else {
+            if (executionPackage.getDRMode() == DRMode.SERIAL) {
+                return scheduleDynamicReconfigurationParallel(executionPackage.getPolicy());
+            } else if (executionPackage.getDRMode() == DRMode.PARALLEL) {
+                return scheduleDynamicReconfigurationSequential(executionPackage.getPolicy());
+            }
+            throw new TornadoRuntimeException("");
+        }
     }
 
     private boolean isTaskNamePresent(String taskName) {
@@ -1672,7 +1668,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoTaskGraphInterface scheduleWithProfile(Policy policy) {
+    public TornadoTaskGraphInterface scheduleDynamicReconfigurationParallel(Policy policy) {
         if (policyTimeTable.get(policy) == null) {
             runScheduleWithParallelProfiler(policy);
         } else {
@@ -1931,7 +1927,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoTaskGraphInterface scheduleWithProfileSequential(Policy policy) {
+    public TornadoTaskGraphInterface scheduleDynamicReconfigurationSequential(Policy policy) {
 
         if (policy == Policy.LATENCY) {
             if (Tornado.DEBUG) {

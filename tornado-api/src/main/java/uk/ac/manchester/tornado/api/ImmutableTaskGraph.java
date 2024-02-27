@@ -45,28 +45,20 @@ public class ImmutableTaskGraph {
         this.taskGraph = taskGraph;
     }
 
-    void execute() {
-        this.taskGraph.execute();
-    }
-
-    void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
-        if (Objects.requireNonNull(mode) == DRMode.SERIAL) {
-            taskGraph.executeWithProfilerSequential(policy);
-        } else if (mode == DRMode.PARALLEL) {
-            taskGraph.executeWithProfiler(policy);
-        }
+    void execute(TornadoExecutionPlan.ExecutionPackage executionPackage) {
+        this.taskGraph.execute(executionPackage);
     }
 
     void warmup() {
         taskGraph.warmup();
     }
 
-    void setDevice(TornadoDevice device) {
-        taskGraph.setDevice(device);
+    void withDevice(TornadoDevice device) {
+        taskGraph.withDevice(device);
     }
 
-    void setDevice(String taskName, TornadoDevice device) {
-        taskGraph.setDevice(taskName, device);
+    void withDevice(String taskName, TornadoDevice device) {
+        taskGraph.withDevice(taskName, device);
     }
 
     void freeDeviceMemory() {

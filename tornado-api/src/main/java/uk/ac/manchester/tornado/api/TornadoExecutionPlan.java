@@ -44,9 +44,7 @@ public class TornadoExecutionPlan {
      */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
     private final TornadoExecutor tornadoExecutor;
-    private GridScheduler gridScheduler;
-    private Policy policy = null;
-    private DRMode dynamicReconfigurationMode;
+
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
 
@@ -70,7 +68,7 @@ public class TornadoExecutionPlan {
             return this;
         }
 
-        public ExecutionPackage withDRMode(DRMode drMode) {
+        public ExecutionPackage withMode(DRMode drMode) {
             this.drMode = drMode;
             return this;
         }
@@ -132,14 +130,8 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionResult execute() {
-
         checkProfilerEnabled();
-
-        if (this.policy != null) {
-            tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
-        } else {
-            tornadoExecutor.execute();
-        }
+        tornadoExecutor.execute(executionPackage);
         return new TornadoExecutionResult(new TornadoProfilerResult(tornadoExecutor));
     }
 
@@ -257,8 +249,6 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         tornadoExecutor.withGridScheduler(gridScheduler);
-        //        executionPackage.withGridScheduler(gridScheduler);
-        //        this.gridScheduler = gridScheduler;
         return this;
     }
 
@@ -283,9 +273,7 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
-        executionPackage.withPolicy(policy).withDRMode(mode);
-        //        this.policy = policy;
-        //        this.dynamicReconfigurationMode = mode;
+        executionPackage.withPolicy(policy).withMode(mode);
         return this;
     }
 
@@ -426,12 +414,8 @@ public class TornadoExecutionPlan {
             Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
         }
 
-        void execute() {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute());
-        }
-
-        void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.executeWithDynamicReconfiguration(policy, mode));
+        void execute(ExecutionPackage executionPackage) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
         }
 
         void withGridScheduler(GridScheduler gridScheduler) {
@@ -461,11 +445,11 @@ public class TornadoExecutionPlan {
          *     {@link TornadoDevice} object
          */
         void setDevice(TornadoDevice device) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(device));
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withDevice(device));
         }
 
         void setDevice(String taskName, TornadoDevice device) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(taskName, device));
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withDevice(taskName, device));
         }
 
         void withConcurrentDevices() {
