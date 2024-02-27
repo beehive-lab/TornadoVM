@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.matrix;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -34,7 +35,7 @@ public final class Matrix3DFloat4 extends Matrix3DType implements TornadoMatrixI
     /**
      * backing array.
      */
-    protected final FloatArray storage;
+    private final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -165,5 +166,10 @@ public final class Matrix3DFloat4 extends Matrix3DType implements TornadoMatrixI
     @Override
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return storage.getSegment();
     }
 }

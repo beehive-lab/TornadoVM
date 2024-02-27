@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.volumes;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ShortBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -167,5 +168,10 @@ public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> 
     @Override
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
     }
 }

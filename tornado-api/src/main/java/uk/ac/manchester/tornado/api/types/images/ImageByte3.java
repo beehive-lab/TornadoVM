@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.images;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -183,5 +184,10 @@ public final class ImageByte3 implements TornadoImagesInterface<ByteBuffer> {
     @Override
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
     }
 }

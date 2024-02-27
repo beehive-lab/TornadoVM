@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.collections;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.math.TornadoMath;
@@ -242,5 +243,10 @@ public final class VectorDouble implements TornadoCollectionInterface<DoubleBuff
     @Override
     public long getNumBytes() {
         return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
     }
 }

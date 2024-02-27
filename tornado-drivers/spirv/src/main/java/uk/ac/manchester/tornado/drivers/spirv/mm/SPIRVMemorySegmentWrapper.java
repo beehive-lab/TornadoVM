@@ -34,6 +34,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.*;
+import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
+import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
+import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -96,21 +99,11 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     private MemorySegment getSegment(final Object reference) {
         return switch (reference) {
             case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegment();
-            case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
-            case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
-            case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();
-            case VectorFloat8 vectorFloat8 -> vectorFloat8.getArray().getSegment();
-            case VectorFloat16 vectorFloat16 -> vectorFloat16.getArray().getSegment();
-            case VectorDouble2 vectorDouble2 -> vectorDouble2.getArray().getSegment();
-            case VectorDouble3 vectorDouble3 -> vectorDouble3.getArray().getSegment();
-            case VectorDouble4 vectorDouble4 -> vectorDouble4.getArray().getSegment();
-            case VectorDouble8 vectorDouble8 -> vectorDouble8.getArray().getSegment();
-            case VectorDouble16 vectorDouble16 -> vectorDouble16.getArray().getSegment();
-            case VectorInt2 vectorInt2 -> vectorInt2.getArray().getSegment();
-            case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegment();
-            case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegment();
-            case VectorInt16 vectorInt16 -> vectorInt16.getArray().getSegment();
-            default -> (MemorySegment) reference;
+            case TornadoCollectionInterface<?> tornadoCollectionInterface -> tornadoCollectionInterface.getSegment();
+            case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegment();
+            case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegment();
+            case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegment();
+            default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
         };
     }
 
