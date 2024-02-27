@@ -470,6 +470,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void withGridScheduler(GridScheduler gridScheduler) {
+        this.gridScheduler = gridScheduler;
+        checkGridSchedulerNames();
+    }
+
+    @Override
     public SchedulableTask getTask(String id) {
         return executionContext.getTask(id);
     }

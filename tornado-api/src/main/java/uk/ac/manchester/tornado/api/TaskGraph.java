@@ -920,4 +920,8 @@ public class TaskGraph implements TaskGraphInterface {
     void withoutPrintKernel() {
         taskGraphImpl.withoutPrintKernel();
     }
+
+    void withGridScheduler(GridScheduler gridScheduler) {
+        taskGraphImpl.withGridScheduler(gridScheduler);
+    }
 }

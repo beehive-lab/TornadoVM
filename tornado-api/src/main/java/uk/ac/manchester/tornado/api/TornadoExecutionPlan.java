@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -49,6 +50,49 @@ public class TornadoExecutionPlan {
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
 
+    private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
+
+    private final ExecutionPackage executionPackage;
+
+    public static class ExecutionPackage {
+
+        private final long id;
+        private DRMode drMode;
+        private Policy policy;
+        private GridScheduler gridScheduler;
+
+        public ExecutionPackage(long id) {
+            this.id = id;
+        }
+
+        public ExecutionPackage withPolicy(Policy policy) {
+            this.policy = policy;
+            return this;
+        }
+
+        public ExecutionPackage withDRMode(DRMode drMode) {
+            this.drMode = drMode;
+            return this;
+        }
+
+        public ExecutionPackage withGridScheduler(GridScheduler gridScheduler) {
+            this.gridScheduler = gridScheduler;
+            return this;
+        }
+
+        public Policy getPolicy() {
+            return policy;
+        }
+
+        public DRMode getDRMode() {
+            return drMode;
+        }
+
+        public GridScheduler getGridScheduler() {
+            return gridScheduler;
+        }
+    }
+
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
      * running a set of immutable tasks-graphs. An executor plan contains an
@@ -61,6 +105,8 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
+        long id = globalExecutionPlanCounter.incrementAndGet();
+        executionPackage = new ExecutionPackage(id);
     }
 
     /**
@@ -91,8 +137,6 @@ public class TornadoExecutionPlan {
 
         if (this.policy != null) {
             tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
-        } else if (gridScheduler != null) {
-            tornadoExecutor.execute(gridScheduler);
         } else {
             tornadoExecutor.execute();
         }
@@ -212,17 +256,19 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
-        this.gridScheduler = gridScheduler;
+        tornadoExecutor.withGridScheduler(gridScheduler);
+        //        executionPackage.withGridScheduler(gridScheduler);
+        //        this.gridScheduler = gridScheduler;
         return this;
     }
 
     /**
-     * Notify the TornadoVM runtime that utilizes the default thread scheduler.
+     * Notify the TornadoVM runtime system to utilize the default thread scheduler.
      *
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDefaultScheduler() {
-        tornadoExecutor.useDefaultScheduler(true);
+        tornadoExecutor.withDefaultScheduler();
         return this;
     }
 
@@ -237,8 +283,9 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
-        this.policy = policy;
-        this.dynamicReconfigurationMode = mode;
+        executionPackage.withPolicy(policy).withDRMode(mode);
+        //        this.policy = policy;
+        //        this.dynamicReconfigurationMode = mode;
         return this;
     }
 
@@ -327,6 +374,20 @@ public class TornadoExecutionPlan {
     }
 
     /**
+     * Obtains the ID that was assigned to the execution plan.
+     */
+    public long getId() {
+        return executionPackage.id;
+    }
+
+    /**
+     * Obtains the total number of execution plans instantiated in a TornadoVM application.
+     */
+    public long getGlobalExecutionPlansCounter() {
+        return globalExecutionPlanCounter.get();
+    }
+
+    /**
      * Clean all events associated with previous executions.
      *
      * @return {@link TornadoExecutionPlan}
@@ -366,15 +427,15 @@ public class TornadoExecutionPlan {
         }
 
         void execute() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::execute);
-        }
-
-        void execute(GridScheduler gridScheduler) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(gridScheduler));
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute());
         }
 
         void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.executeWithDynamicReconfiguration(policy, mode));
+        }
+
+        void withGridScheduler(GridScheduler gridScheduler) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
         }
 
         void warmup() {
@@ -493,8 +554,8 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::clearProfiles);
         }
 
-        void useDefaultScheduler(boolean isDefaultScheduler) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.useDefaultScheduler(isDefaultScheduler));
+        void withDefaultScheduler() {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withDefaultScheduler(true));
         }
 
         TornadoDevice getDevice(int immutableTaskGraphIndex) {

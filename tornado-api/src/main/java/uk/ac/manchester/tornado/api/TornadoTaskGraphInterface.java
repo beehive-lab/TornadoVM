@@ -123,4 +123,6 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
     void withPrintKernel();
 
     void withoutPrintKernel();
+
+    void withGridScheduler(GridScheduler gridScheduler);
 }

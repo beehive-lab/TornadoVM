@@ -49,10 +49,6 @@ public class ImmutableTaskGraph {
         this.taskGraph.execute();
     }
 
-    void execute(GridScheduler gridScheduler) {
-        taskGraph.execute(gridScheduler);
-    }
-
     void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
         if (Objects.requireNonNull(mode) == DRMode.SERIAL) {
             taskGraph.executeWithProfilerSequential(policy);
@@ -145,7 +141,7 @@ public class ImmutableTaskGraph {
         taskGraph.clearProfiles();
     }
 
-    void useDefaultScheduler(boolean useDefaultScheduler) {
+    void withDefaultScheduler(boolean useDefaultScheduler) {
         taskGraph.useDefaultThreadScheduler(useDefaultScheduler);
     }
 
@@ -199,5 +195,9 @@ public class ImmutableTaskGraph {
 
     void withoutPrintKernel() {
         taskGraph.withoutPrintKernel();
+    }
+
+    void withGridScheduler(GridScheduler gridScheduler) {
+        taskGraph.withGridScheduler(gridScheduler);
     }
 }
