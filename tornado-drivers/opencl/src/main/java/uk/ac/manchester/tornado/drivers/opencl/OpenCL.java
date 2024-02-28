@@ -32,6 +32,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -65,23 +66,20 @@ public class OpenCL {
                 // Loading JNI OpenCL library
                 System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
             } catch (final UnsatisfiedLinkError e) {
-                throw new TornadoRuntimeException("OpenCL JNI Library not found");
+                throw new TornadoRuntimeException("[ERROR] OpenCL JNI Library not found");
             }
 
             try {
                 initialise();
             } catch (final TornadoRuntimeException e) {
-                e.printStackTrace();
+                throw new TornadoRuntimeException("[ERROR] Initialization of the OpenCL platform is not correct");
             }
 
             // add a shutdown hook to free-up all OpenCL resources on VM exit
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    setName("OpenCL-Cleanup-Thread");
-                    OpenCL.cleanup();
-                }
-            });
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                Thread.currentThread().setName("OpenCL-Cleanup-Thread");
+                OpenCL.cleanup();
+            }));
         }
     }
 
