@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
+public class PTXMemoryManager implements TornadoMemoryProvider {
 
     private final PTXDeviceContext deviceContext;
     private final Map<Long, PTXKernelStackFrame> ptxKernelStackFrame = new ConcurrentHashMap<>();

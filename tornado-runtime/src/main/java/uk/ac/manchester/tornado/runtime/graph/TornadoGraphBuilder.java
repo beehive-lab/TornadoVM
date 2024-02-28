@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
@@ -218,7 +218,7 @@ public class TornadoGraphBuilder {
                  * array.
                  *
                  */
-                TornadoAcceleratorDevice deviceForTask = executionContext.getDeviceForTask(taskIndex);
+                TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(taskIndex);
                 context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(deviceForTask), deviceForTask));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));

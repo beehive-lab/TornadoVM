@@ -39,14 +39,14 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.EventSet;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
 public class TaskMetaData extends AbstractMetaData {
 
     public static final String LOCAL_WORKGROUP_SUFFIX = ".local.workgroup.size";
     public static final String GLOBAL_WORKGROUP_SUFFIX = ".global.workgroup.size";
-    protected final Map<TornadoAcceleratorDevice, BitSet> profiles;
+    protected final Map<TornadoXPUDevice, BitSet> profiles;
     private final byte[] constantData;
     private final ScheduleMetaData scheduleMetaData;
     private final int constantSize;
@@ -139,7 +139,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void addProfile(int id) {
-        final TornadoAcceleratorDevice device = getLogicDevice();
+        final TornadoXPUDevice device = getLogicDevice();
         BitSet events;
         profiles.computeIfAbsent(device, _ -> new BitSet(EVENT_WINDOW));
         events = profiles.get(device);
@@ -205,7 +205,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public TornadoAcceleratorDevice getLogicDevice() {
+    public TornadoXPUDevice getLogicDevice() {
         if (scheduleMetaData.isDeviceManuallySet() || (scheduleMetaData.isDeviceDefined() && !isDeviceDefined())) {
             return scheduleMetaData.getLogicDevice();
         }
@@ -300,7 +300,7 @@ public class TaskMetaData extends AbstractMetaData {
     @Override
     public List<TornadoEvents> getProfiles() {
         final List<TornadoEvents> result = new ArrayList<>(profiles.keySet().size());
-        for (TornadoAcceleratorDevice device : profiles.keySet()) {
+        for (TornadoXPUDevice device : profiles.keySet()) {
             result.add(new EventSet(device, profiles.get(device)));
         }
         return result;
@@ -355,7 +355,7 @@ public class TaskMetaData extends AbstractMetaData {
         System.out.println(deviceDebug);
     }
 
-    public boolean isPTXDevice(TornadoAcceleratorDevice device) {
+    public boolean isPTXDevice(TornadoXPUDevice device) {
         return device.getTornadoVMBackend().equals(TornadoVMBackendType.PTX);
     }
 

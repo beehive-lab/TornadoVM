@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
+public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     private final OCLTargetDevice device;
     private final VirtualOCLContext context;

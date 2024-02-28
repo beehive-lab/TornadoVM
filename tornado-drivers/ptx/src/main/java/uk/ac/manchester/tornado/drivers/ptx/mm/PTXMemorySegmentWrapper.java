@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
-public class PTXMemorySegmentWrapper extends TornadoLogger implements XPUBuffer {
+public class PTXMemorySegmentWrapper implements XPUBuffer {
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
@@ -191,7 +191,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements XPUBuffer 
         }
 
         if (Tornado.FULL_DEBUG) {
-            info("allocated: %s", toString());
+            TornadoLogger.info("allocated: %s", toString());
         }
     }
 
@@ -203,7 +203,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements XPUBuffer 
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            info("deallocated: %s", toString());
+            TornadoLogger.info("deallocated: %s", toString());
         }
     }
 

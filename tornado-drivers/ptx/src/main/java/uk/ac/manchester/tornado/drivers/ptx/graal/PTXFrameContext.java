@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,16 +28,16 @@ import org.graalvm.compiler.lir.asm.FrameContext;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXFrameContext extends TornadoLogger implements FrameContext {
+public class PTXFrameContext implements FrameContext {
     @Override
     public void enter(CompilationResultBuilder crb) {
-        trace("FrameContext.enter()");
+        TornadoLogger.trace("FrameContext.enter()");
 
     }
 
     @Override
     public void leave(CompilationResultBuilder crb) {
-        trace("FrameContext.leave()");
+        TornadoLogger.trace("FrameContext.leave()");
     }
 
     @Override

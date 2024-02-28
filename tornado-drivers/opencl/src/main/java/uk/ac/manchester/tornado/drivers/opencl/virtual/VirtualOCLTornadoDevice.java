@@ -54,19 +54,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
+public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     private static OCLDriver driver = null;
     private final OCLTargetDevice device;
@@ -195,16 +190,15 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
             return null;
         } catch (Exception e) {
-            driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            driver.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
-            driver.fatal("exception: %s", e.toString());
+            TornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+            TornadoLogger.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
+            TornadoLogger.fatal("exception: %s", e.toString());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }
 
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
         final PrebuiltTask executable = (PrebuiltTask) task;
-
         final Path path = Paths.get(executable.getFilename());
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
@@ -213,7 +207,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
                 RuntimeUtilities.dumpKernel(source);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return null;
     }

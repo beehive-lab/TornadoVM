@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 /**
  * A Tornado accelerator device extending the {@link TornadoDevice} interface.
  */
-public interface TornadoAcceleratorDevice extends TornadoDevice {
+public interface TornadoXPUDevice extends TornadoDevice {
 
     /**
      * It returns the preferred scheduling strategy for the Tornado accelerator device.

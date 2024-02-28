@@ -34,14 +34,14 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class JVMMapping implements TornadoAcceleratorDevice {
+public class JVMMapping implements TornadoXPUDevice {
 
     @Override
     public void dumpEvents() {

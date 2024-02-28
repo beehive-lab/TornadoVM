@@ -97,7 +97,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
@@ -153,7 +153,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoVM vm;  // One TornadoVM instance per TornadoExecutionPlan
 
     // HashMap to keep an instance of the TornadoVM per Device 
-    private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
+    private Map<TornadoXPUDevice, TornadoVM> vmTable;
     private Event event;
     private String taskGraphName;
     private List<TaskPackage> taskPackages;
@@ -562,7 +562,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoAcceleratorDevice getDeviceForTask(String id) {
+    public TornadoXPUDevice getDeviceForTask(String id) {
         return executionContext.getDeviceForTask(id);
     }
 
@@ -668,7 +668,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return tornadoVM;
     }
 
-    private boolean compareDevices(Set<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
+    private boolean compareDevices(Set<TornadoXPUDevice> lastDevices, TornadoXPUDevice device2) {
         return lastDevices.contains(device2);
     }
 
@@ -765,7 +765,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         boolean compile = false;
         if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
-        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             if (tornadoAcceleratorDevice.isFullJITMode(executionContext.getTask(0))) {
                 compile = true;
             }
@@ -824,7 +824,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void scheduleInner() {
         boolean compile = compileComputeGraphToTornadoVMBytecode();
-        TornadoAcceleratorDevice deviceForTask = executionContext.getDeviceForTask(0);
+        TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(0);
         if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {
             preCompileForFPGAs();
         }
@@ -1053,7 +1053,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Event syncObjectInner(Object object) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
         final DataObjectState globalState = localState.getGlobalState();
-        final TornadoAcceleratorDevice device = meta().getLogicDevice();
+        final TornadoXPUDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
@@ -1064,7 +1064,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Event syncObjectInner(Object object, long offset, long partialCopySize) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
         final DataObjectState globalState = localState.getGlobalState();
-        final TornadoAcceleratorDevice device = meta().getLogicDevice();
+        final TornadoXPUDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setPartialCopySize(partialCopySize);
         if (deviceState.isLockedBuffer()) {

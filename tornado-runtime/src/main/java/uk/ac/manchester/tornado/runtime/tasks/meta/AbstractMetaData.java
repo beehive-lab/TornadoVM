@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
@@ -95,7 +95,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
     private String id;
-    private TornadoAcceleratorDevice device;
+    private TornadoXPUDevice device;
     private int driverIndex;
     private int deviceIndex;
     private boolean deviceManuallySet;
@@ -187,7 +187,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
     }
 
-    public TornadoAcceleratorDevice getLogicDevice() {
+    public TornadoXPUDevice getLogicDevice() {
         return device != null ? device : (device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex)));
     }
 
@@ -217,7 +217,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
         this.deviceIndex = getDeviceIndex(driverIndex, device);
-        if (device instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+        if (device instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             this.device = tornadoAcceleratorDevice;
         }
         deviceManuallySet = true;
@@ -229,9 +229,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * @param driverIndex
      *     Driver Index
      * @param device
-     *     {@link TornadoAcceleratorDevice}
+     *     {@link TornadoXPUDevice}
      */
-    public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
+    public void setDriverDevice(int driverIndex, TornadoXPUDevice device) {
         this.driverIndex = driverIndex;
         this.deviceIndex = getDeviceIndex(driverIndex, device);
         this.device = device;

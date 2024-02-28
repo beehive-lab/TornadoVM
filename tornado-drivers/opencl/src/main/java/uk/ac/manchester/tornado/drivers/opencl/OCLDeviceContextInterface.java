@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface OCLDeviceContextInterface extends TornadoDeviceContext {
@@ -52,7 +52,7 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     void reset();
 
-    TornadoAcceleratorDevice asMapping();
+    TornadoXPUDevice asMapping();
 
     void dumpEvents();
 

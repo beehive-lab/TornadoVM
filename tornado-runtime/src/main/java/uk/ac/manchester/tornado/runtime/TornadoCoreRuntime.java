@@ -54,13 +54,12 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
-public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeInterface {
+public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
 
     private static final ThreadFactory executorThreadFactory = new ThreadFactory() {
         private int threadId = 0;
@@ -233,8 +232,8 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
     }
 
     @Override
-    public TornadoAcceleratorDevice getDefaultDevice() {
-        return (tornadoVMDrivers == null || tornadoVMDrivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoAcceleratorDevice) tornadoVMDrivers[DEFAULT_DRIVER].getDefaultDevice();
+    public TornadoXPUDevice getDefaultDevice() {
+        return (tornadoVMDrivers == null || tornadoVMDrivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoXPUDevice) tornadoVMDrivers[DEFAULT_DRIVER].getDefaultDevice();
     }
 
 }

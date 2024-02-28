@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
+public class OCLMemoryManager implements TornadoMemoryProvider {
 
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;

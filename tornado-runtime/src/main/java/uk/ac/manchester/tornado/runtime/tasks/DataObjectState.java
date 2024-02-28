@@ -29,22 +29,22 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectState;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 public class DataObjectState implements ObjectState {
 
-    private ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
+    private ConcurrentHashMap<TornadoXPUDevice, DeviceObjectState> deviceStates;
 
     public DataObjectState() {
         deviceStates = new ConcurrentHashMap<>();
     }
 
     public DeviceObjectState getDeviceState(TornadoDevice device) {
-        if (!(device instanceof TornadoAcceleratorDevice)) {
+        if (!(device instanceof TornadoXPUDevice)) {
             throw new TornadoRuntimeException("[ERROR] Device not compatible");
         }
         if (!deviceStates.containsKey(device)) {
-            deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
+            deviceStates.put((TornadoXPUDevice) device, new DeviceObjectState());
         }
         return deviceStates.get(device);
     }
@@ -65,7 +65,7 @@ public class DataObjectState implements ObjectState {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
+        for (TornadoXPUDevice device : deviceStates.keySet()) {
             sb.append(device.toString()).append(" ");
         }
         sb.append("]");

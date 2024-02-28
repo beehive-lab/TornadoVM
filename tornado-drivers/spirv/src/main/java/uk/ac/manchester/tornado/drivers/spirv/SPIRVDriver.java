@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -36,11 +36,11 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public final class SPIRVDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+public final class SPIRVDriver implements TornadoAcceleratorDriver {
 
     /**
      * Matrix of backend instances. Each row has a driver implementation (e.g.,
@@ -151,7 +151,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
     }
 
     @Override
-    public TornadoAcceleratorDevice getDevice(int index) {
+    public TornadoXPUDevice getDevice(int index) {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {

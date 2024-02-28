@@ -85,20 +85,14 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLTornadoDevice implements TornadoAcceleratorDevice {
+public class OCLTornadoDevice implements TornadoXPUDevice {
 
     private static OCLDriver driver = null;
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
@@ -291,8 +285,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
             return installedCode;
         } catch (Exception e) {
-            driver.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            driver.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            TornadoLogger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
             } else {

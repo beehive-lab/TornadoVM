@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -74,7 +74,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * supported programming models. Additionally, it features a Just-In-Time (JIT)
  * compiler that compiles Java bytecode to OpenCL, PTX, and SPIR-V.
  */
-public class TornadoVMInterpreter extends TornadoLogger {
+public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
 
     private static final int MAX_EVENTS = 128;
@@ -86,7 +86,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final KernelStackFrame[] kernelStackFrame;
     private final int[][] events;
     private final int[] eventsIndexes;
-    private final TornadoAcceleratorDevice deviceForInterpreter;
+    private final TornadoXPUDevice deviceForInterpreter;
     private final TornadoInstalledCode[] installedCodes;
 
     private final List<Object> constants;
@@ -112,9 +112,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
      * @param timeProfiler
      *     The {@link TornadoProfiler} for time measurements.
      * @param device
-     *     The {@link TornadoAcceleratorDevice} device.
+     *     The {@link TornadoXPUDevice} device.
      */
-    public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
+    public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoXPUDevice device) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
         this.bytecodeResult = bytecodeResult;
@@ -126,7 +126,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         totalTime = 0;
         invocations = 0;
 
-        debug("init an instance of a TornadoVM interpreter...");
+        TornadoLogger.debug("init an instance of a TornadoVM interpreter...");
 
         this.bytecodeResult.getLong(); // Skips bytes not needed
 
@@ -143,8 +143,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
             eventsIndexes[i] = 0;
         }
 
-        debug("created %d kernelStackFrame", kernelStackFrame.length);
-        debug("created %d event lists", events.length);
+        TornadoLogger.debug("created %d kernelStackFrame", kernelStackFrame.length);
+        TornadoLogger.debug("created %d event lists", events.length);
 
         objects = executionContext.getObjects();
         globalStates = new DataObjectState[objects.size()];
@@ -155,7 +155,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         constants = executionContext.getConstants();
         tasks = executionContext.getTasks();
 
-        debug("interpreter for device %s is ready to go", device.toString());
+        TornadoLogger.debug("interpreter for device %s is ready to go", device.toString());
 
         this.bytecodeResult.mark();
     }
@@ -179,11 +179,11 @@ public class TornadoVMInterpreter extends TornadoLogger {
             TornadoInternalError.guarantee(op == TornadoVMBytecodes.CONTEXT.value(), "invalid code: 0x%x", op);
             final int deviceIndex = bytecodeResult.getInt();
             assert deviceIndex == deviceForInterpreter.getDeviceContext().getDeviceIndex();
-            debug("loading context %s", deviceForInterpreter.toString());
+            TornadoLogger.debug("loading context %s", deviceForInterpreter.toString());
             final long t0 = System.nanoTime();
             deviceForInterpreter.ensureLoaded();
             final long t1 = System.nanoTime();
-            debug("loaded in %.9f s", (t1 - t0) * 1e-9);
+            TornadoLogger.debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = bytecodeResult.get();
         }
     }
@@ -204,7 +204,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     public void dumpEvents() {
         if (!ENABLE_PROFILING || !executionContext.meta().shouldDumpEvents()) {
-            info("profiling and/or event dumping is not enabled");
+            TornadoLogger.info("profiling and/or event dumping is not enabled");
             return;
         }
 
@@ -213,7 +213,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     public void dumpProfiles() {
         if (!executionContext.meta().shouldDumpProfiles()) {
-            info("profiling is not enabled");
+            TornadoLogger.info("profiling is not enabled");
             return;
         }
 
@@ -223,7 +223,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 final BitSet profiles = eventSet.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
 
-                    if (eventSet.getDevice() instanceof TornadoAcceleratorDevice device) {
+                    if (eventSet.getDevice() instanceof TornadoXPUDevice device) {
                         final Event profile = device.resolveEvent(i);
                         if (profile.getStatus() == COMPLETE) {
                             System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
@@ -380,7 +380,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (executionContext.meta().isDebug()) {
-            debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
+            TornadoLogger.debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
         }
 
         bytecodeResult.reset();
@@ -474,9 +474,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(),
-                    object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose).append("\n");
+            DebugInterpreter.logTransferToDeviceAlways(object, deviceForInterpreter, sizeBatch, offset, eventList, tornadoVMBytecodeList);
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex);
@@ -785,7 +783,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private void throwErrorInterpreter(byte op) {
         if (executionContext.meta().isDebug()) {
-            debug("bc: invalid op 0x%x(%d)", op, op);
+            TornadoLogger.debug("bc: invalid op 0x%x(%d)", op, op);
         }
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
     }
@@ -808,9 +806,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
-    private KernelStackFrame resolveCallWrapper(int index, int numArgs, KernelStackFrame[] kernelStackFrame, TornadoAcceleratorDevice device, boolean redeployOnDevice) {
+    private KernelStackFrame resolveCallWrapper(int index, int numArgs, KernelStackFrame[] kernelStackFrame, TornadoXPUDevice device, boolean redeployOnDevice) {
         if (executionContext.meta().isDebug() && redeployOnDevice) {
-            debug("Recompiling task on device " + device);
+            TornadoLogger.debug("Recompiling task on device " + device);
         }
         if (kernelStackFrame[index] == null || redeployOnDevice) {
             kernelStackFrame[index] = device.createKernelStackFrame(numArgs);
@@ -846,7 +844,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         return globalStates[index];
     }
 
-    private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoAcceleratorDevice device, SchedulableTask task) {
+    private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoXPUDevice device, SchedulableTask task) {
         return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
     }
 
@@ -873,7 +871,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private static class DebugInterpreter {
-        static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoAcceleratorDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList,
+        static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoXPUDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList,
                 StringBuilder tornadoVMBytecodeList) {
             // @formatter:off
             String coloredText = allEvents != null
@@ -889,6 +887,18 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     offset,
                     eventList);
             // @formatter:on
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList,
+                                              StringBuilder tornadoVMBytecodeList) {
+            String verbose = String.format(STR."bc: \{InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS")} [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", //
+                    object.hashCode(), //
+                    object, //
+                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), //
+                    sizeBatch, //
+                    offset, //
+                    eventList); //
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
     }

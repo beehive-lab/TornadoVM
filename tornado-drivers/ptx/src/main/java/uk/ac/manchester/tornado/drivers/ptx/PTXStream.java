@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class PTXStream extends TornadoLogger {
+public class PTXStream {
 
     protected static final Event EMPTY_EVENT = new EmptyEvent();
 

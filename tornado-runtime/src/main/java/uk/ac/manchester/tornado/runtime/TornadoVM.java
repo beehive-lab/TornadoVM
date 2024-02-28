@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
  * Each TornadoVM contains the logic to orchestrate the execution on the
  * parallel device (e.g., a GPU).
  */
-public class TornadoVM extends TornadoLogger {
+public class TornadoVM {
     private TornadoExecutionContext executionContext;
 
     private TornadoProfiler timeProfiler;

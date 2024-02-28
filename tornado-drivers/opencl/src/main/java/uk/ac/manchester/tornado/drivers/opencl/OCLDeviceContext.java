@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
+public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     // FIXME: <REVISIT> Check the current utility of this buffer
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
@@ -83,7 +83,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
 
         if (needsBump) {
             bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE).getBuffer();
-            info("device requires bump buffer: %s", device.getDeviceName());
+            TornadoLogger.info("device requires bump buffer: %s", device.getDeviceName());
         } else {
             bumpBuffer = -1;
         }
