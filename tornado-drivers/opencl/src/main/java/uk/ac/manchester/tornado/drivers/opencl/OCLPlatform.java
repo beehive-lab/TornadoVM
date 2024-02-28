@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -43,6 +44,25 @@ public class OCLPlatform implements TornadoPlatform {
     // FIXME <REVISIT> It seems that this object is no longer needed
     private final Set<OCLContext> contexts;
 
+    private enum Vendor {
+        CODEPLAY("Codeplay"), //
+        INTEL("Intel"), //
+        AMD("AMD"), //
+        NVIDIA("Nvidia"), //
+        MESA("Mesa/X.org"), //
+        XILINX("Xilinx");
+
+        final String vendorName;
+
+        Vendor(String vendorName) {
+            this.vendorName = vendorName;
+        }
+
+        String getVendorName() {
+            return vendorName;
+        }
+    }
+
     public OCLPlatform(int index, long id) {
         this.index = index;
         this.id = id;
@@ -51,18 +71,18 @@ public class OCLPlatform implements TornadoPlatform {
 
         final int deviceCount;
 
-        if (isVendor("Xilinx") || isVendor("Codeplay")) {
+        if (isVendor(Vendor.XILINX) || isVendor(Vendor.CODEPLAY)) {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
-        } else if (isVendor("Mesa/X.org")) {
+        } else if (isVendor(Vendor.MESA)) {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_GPU.getValue());
         } else {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
         }
 
         final long[] ids = new long[deviceCount];
-        if (isVendor("Xilinx") || isVendor("Codeplay")) {
+        if (isVendor(Vendor.XILINX) || isVendor(Vendor.CODEPLAY)) {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
-        } else if (isVendor("Mesa/X.org")) {
+        } else if (isVendor(Vendor.MESA)) {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_GPU.getValue(), ids);
         } else {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
@@ -73,8 +93,8 @@ public class OCLPlatform implements TornadoPlatform {
 
     }
 
-    private boolean isVendor(String vendorName) {
-        return this.getVendor().toLowerCase().startsWith(vendorName.toLowerCase());
+    private boolean isVendor(Vendor vendor) {
+        return this.getVendor().toLowerCase().startsWith(vendor.getVendorName().toLowerCase());
     }
 
     static native String clGetPlatformInfo(long id, int info);
@@ -90,19 +110,18 @@ public class OCLPlatform implements TornadoPlatform {
     }
 
     public OCLContext createContext() {
-        OCLContext contextObject = null;
+        OCLContext contextObject;
         final LongBuffer deviceIds = LongBuffer.allocate(devices.size());
         for (OCLTargetDevice device : devices) {
             deviceIds.put(device.getId());
         }
-
         try {
             long contextId = clCreateContext(id, deviceIds.array());
             contextObject = new OCLContext(this, contextId, devices);
             contexts.add(contextObject);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
-            e.printStackTrace();
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+
         }
         return contextObject;
     }

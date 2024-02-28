@@ -28,27 +28,23 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_EVENTS;
 
 public class OCLContext implements OCLExecutionEnvironment {
 
     private final long contextID;
     private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
-    private final OCLCommandQueue[] queues;
+    private final OCLCommandQueue[] commandQueues;
     private final List<OCLProgram> programs;
     private final OCLPlatform platform;
 
@@ -57,7 +53,7 @@ public class OCLContext implements OCLExecutionEnvironment {
         this.contextID = id;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
-        this.queues = new OCLCommandQueue[devices.size()];
+        this.commandQueues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
     }
 
@@ -95,21 +91,21 @@ public class OCLContext implements OCLExecutionEnvironment {
     }
 
     public OCLCommandQueue[] queues() {
-        return queues;
+        return commandQueues;
     }
 
     public void createCommandQueue(int index, long properties) {
         OCLTargetDevice device = devices.get(index);
-        long queueId;
+        long commandQueuePtr;
         try {
-            queueId = clCreateCommandQueue(contextID, device.getId(), properties);
+            commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
             TornadoLogger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
             TornadoLogger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
-            queues[index] = new OCLCommandQueue(queueId, properties, deviceVersion);
+            commandQueues[index] = new OCLCommandQueue(commandQueuePtr, properties, deviceVersion);
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());
         }
@@ -117,12 +113,12 @@ public class OCLContext implements OCLExecutionEnvironment {
 
     public void createCommandQueue(int index) {
         long properties = 0;
-        if (ENABLE_PROFILING) {
-            properties |= CL_QUEUE_PROFILING_ENABLE;
+        if (Tornado.ENABLE_PROFILING) {
+            properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
         }
 
-        if (ENABLE_OOO_EXECUTION) {
-            properties |= CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+        if (Tornado.ENABLE_OOO_EXECUTION) {
+            properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         createCommandQueue(index, properties);
     }
@@ -135,9 +131,9 @@ public class OCLContext implements OCLExecutionEnvironment {
 
     public void createAllCommandQueues() {
         long properties = 0;
-        properties |= CL_QUEUE_PROFILING_ENABLE;
-        if (ENABLE_OOO_EXECUTION) {
-            properties |= CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+        properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
+        if (Tornado.ENABLE_OOO_EXECUTION) {
+            properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         createAllCommandQueues(properties);
     }
@@ -185,7 +181,7 @@ public class OCLContext implements OCLExecutionEnvironment {
 
     public void cleanup() {
 
-        if (DUMP_EVENTS) {
+        if (TornadoOptions.DUMP_EVENTS) {
             for (OCLDeviceContext deviceContext : deviceContexts) {
                 deviceContext.dumpEvents();
             }
@@ -198,7 +194,7 @@ public class OCLContext implements OCLExecutionEnvironment {
             }
             long t1 = System.nanoTime();
 
-            for (OCLCommandQueue queue : queues) {
+            for (OCLCommandQueue queue : commandQueues) {
                 if (queue != null) {
                     queue.cleanup();
                 }
@@ -229,7 +225,7 @@ public class OCLContext implements OCLExecutionEnvironment {
     public OCLDeviceContext createDeviceContext(int index) {
         TornadoLogger.debug("creating device context for device: %s", devices.get(index).toString());
         createCommandQueue(index);
-        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), queues[index], this);
+        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), commandQueues[index], this);
         deviceContexts.add(deviceContext);
         return deviceContext;
     }
