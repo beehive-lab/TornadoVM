@@ -82,11 +82,6 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     @Override
-    public boolean needsBump() {
-        return false;
-    }
-
-    @Override
     public boolean wasReset() {
         return wasReset;
     }

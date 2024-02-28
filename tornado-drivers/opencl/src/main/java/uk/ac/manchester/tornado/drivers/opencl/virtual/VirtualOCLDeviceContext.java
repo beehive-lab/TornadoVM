@@ -176,11 +176,6 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean needsBump() {
-        return false;
-    }
-
-    @Override
     public boolean wasReset() {
         return wasReset;
     }

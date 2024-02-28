@@ -149,13 +149,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private void setKernelArgs(final OCLKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
 
-        if (deviceContext.needsBump()) {
-            buffer.clear();
-            buffer.putLong(deviceContext.getBumpBuffer());
-            kernel.setArg(index, buffer);
-            index++;
-        }
-
         // kernel context
         buffer.clear();
         buffer.putLong(kernelArgs.toBuffer());

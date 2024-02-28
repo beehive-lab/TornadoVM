@@ -168,7 +168,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
         try {
             SPIRVCompilationResult result;
-            // Compile the code and insert the SPIRV binary into the code cache
+            // Compile the code and insert the SPIR-V binary into the code cache
             SPIRVProviders providers = (SPIRVProviders) getBackend().getProviders();
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             result = SPIRVCompiler.compileSketchForDevice(sketch, task, providers, getBackend(), task.getProfiler());

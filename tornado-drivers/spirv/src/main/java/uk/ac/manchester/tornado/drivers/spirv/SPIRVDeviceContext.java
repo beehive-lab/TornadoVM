@@ -104,11 +104,6 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     @Override
-    public boolean needsBump() {
-        return false;
-    }
-
-    @Override
     public boolean wasReset() {
         return wasReset;
     }

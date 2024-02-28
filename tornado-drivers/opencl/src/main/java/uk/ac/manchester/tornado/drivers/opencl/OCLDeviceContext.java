@@ -50,18 +50,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     // FIXME: <REVISIT> Check the current utility of this buffer
-    private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
-    private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
-
     private final OCLTargetDevice device;
     private final OCLCommandQueue commandQueue;
     private final OCLContext context;
     private final OCLMemoryManager memoryManager;
-    private final long bumpBuffer;
     private final OCLCodeCache codeCache;
     private final OCLEventPool oclEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean needsBump;
     private boolean wasReset;
 
     protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
@@ -73,20 +68,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
         this.oclEventPool = new OCLEventPool(EVENT_WINDOW);
 
-        needsBump = false;
-        for (String bumpDevice : BUMP_DEVICES) {
-            if (device.getDeviceName().equalsIgnoreCase(bumpDevice.trim())) {
-                needsBump = true;
-                break;
-            }
-        }
-
-        if (needsBump) {
-            bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE).getBuffer();
-            TornadoLogger.info("device requires bump buffer: %s", device.getDeviceName());
-        } else {
-            bumpBuffer = -1;
-        }
         bufferProvider = new OCLBufferProvider(this);
 
         this.device.setDeviceContext(this);
@@ -439,11 +420,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean needsBump() {
-        return needsBump;
-    }
-
-    @Override
     public boolean wasReset() {
         return wasReset;
     }
@@ -476,10 +452,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public int getDevicePlatform() {
         return context.getPlatformIndex();
-    }
-
-    public long getBumpBuffer() {
-        return bumpBuffer;
     }
 
     public void retainEvent(int localEventId) {

@@ -311,9 +311,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 asm.emitLine("");
             }
 
-            final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
-
-            asm.emit("%s void %s(%s%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
+            asm.emit("%s void %s(%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");
 
