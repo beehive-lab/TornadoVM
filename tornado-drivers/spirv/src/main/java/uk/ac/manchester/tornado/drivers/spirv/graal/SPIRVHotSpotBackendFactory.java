@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilerConfig
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVGraphBuilderPlugins;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVAddressLowering;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
@@ -77,7 +77,7 @@ public class SPIRVHotSpotBackendFactory {
     private static final SPIRVCompilerConfiguration compilerConfiguration = new SPIRVCompilerConfiguration();
     private static final SPIRVAddressLowering addressLowering = new SPIRVAddressLowering();
 
-    public static SPIRVBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
+    public static SPIRVBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context) {
         JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();

@@ -41,6 +41,9 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class OCLDevice implements OCLTargetDevice {
 
+    private static final int INIT_VALUE = -1;
+    private static final int MAX_BUFFER_SIZE = 8192;
+
     private final long id;
     private final int index;
 
@@ -58,12 +61,10 @@ public class OCLDevice implements OCLTargetDevice {
     private long maxConstantBufferSize;
     private long doubleFPConfig;
     private long singleFPConfig;
-    private int deviceMemoryBaseAligment;
+    private int deviceMemoryBaseAlignment;
     private String version;
     private OCLDeviceType deviceType;
 
-    private static final int INIT_VALUE = -1;
-    private static final int MAX_BUFFER_SIZE = 8192;
     private String deviceVendorName;
     private String driverVersion;
     private String deviceVersion;
@@ -95,7 +96,7 @@ public class OCLDevice implements OCLTargetDevice {
         this.maxConstantBufferSize = INIT_VALUE;
         this.doubleFPConfig = INIT_VALUE;
         this.singleFPConfig = INIT_VALUE;
-        this.deviceMemoryBaseAligment = INIT_VALUE;
+        this.deviceMemoryBaseAlignment = INIT_VALUE;
         this.maxWorkItemSizes = null;
         this.name = null;
         this.version = null;
@@ -167,12 +168,12 @@ public class OCLDevice implements OCLTargetDevice {
     }
 
     public int getDeviceMemoryBaseAlignment() {
-        if (deviceMemoryBaseAligment != INIT_VALUE) {
-            return deviceMemoryBaseAligment;
+        if (deviceMemoryBaseAlignment != INIT_VALUE) {
+            return deviceMemoryBaseAlignment;
         }
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue());
-        deviceMemoryBaseAligment = buffer.getInt();
-        return deviceMemoryBaseAligment;
+        deviceMemoryBaseAlignment = buffer.getInt();
+        return deviceMemoryBaseAlignment;
     }
 
     public boolean isDeviceAvailable() {

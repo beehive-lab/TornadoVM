@@ -81,8 +81,8 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
 
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
-    private final TornadoVMConfig vmConfig;
-    private TornadoAcceleratorDriver[] tornadoVMDrivers;
+    private final TornadoVMConfigAccess vmConfig;
+    private final TornadoAcceleratorDriver[] tornadoVMDrivers;
     private int driverCount;
 
     private TornadoCoreRuntime() {
@@ -95,7 +95,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
         vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
+        vmConfig = new TornadoVMConfigAccess(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
         tornadoVMDrivers = loadDrivers();
     }
 
@@ -122,7 +122,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         return runtime.vmRuntime;
     }
 
-    public static TornadoVMConfig getVMConfig() {
+    public static TornadoVMConfigAccess getVMConfig() {
         return runtime.vmConfig;
     }
 
@@ -152,7 +152,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
             if (Tornado.FULL_DEBUG) {
-                System.out.println("[INFO] Loading DRIVER: " + provider);
+                System.out.println(STR."[INFO] Loading DRIVER: \{provider}");
             }
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
@@ -167,14 +167,6 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         return tornadoAcceleratorDrivers;
     }
 
-    //    public GlobalObjectState resolveObject(Object object) {
-    //        if (!objectMappings.containsKey(object)) {
-    //            final GlobalObjectState state = new GlobalObjectState();
-    //            objectMappings.put(object, state);
-    //        }
-    //        return objectMappings.get(object);
-    //    }
-
     @Override
     public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {
         for (int driverIndex = 0; driverIndex < tornadoVMDrivers.length; driverIndex++) {
@@ -182,7 +174,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
                 return driverIndex;
             }
         }
-        throw shouldNotReachHere("Could not find index for driver: " + driverClass);
+        throw shouldNotReachHere(STR."Could not find index for driver: \{driverClass}");
     }
 
     @Override

@@ -94,20 +94,22 @@ public class OCLContext implements OCLExecutionEnvironment {
         return commandQueues;
     }
 
-    public void createCommandQueue(int index, long properties) {
+    private void createCommandQueue(int index, long properties) {
         OCLTargetDevice device = devices.get(index);
         long commandQueuePtr;
         try {
-            commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
+
             TornadoLogger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
             TornadoLogger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
+            commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
             commandQueues[index] = new OCLCommandQueue(commandQueuePtr, properties, deviceVersion);
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());
+            throw new TornadoRuntimeException("[ERROR] OpenCL Command Queue Initialization not valid");
         }
     }
 
@@ -121,21 +123,6 @@ public class OCLContext implements OCLExecutionEnvironment {
             properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         createCommandQueue(index, properties);
-    }
-
-    public void createAllCommandQueues(long properties) {
-        for (int i = 0; i < devices.size(); i++) {
-            createCommandQueue(i, properties);
-        }
-    }
-
-    public void createAllCommandQueues() {
-        long properties = 0;
-        properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-        if (Tornado.ENABLE_OOO_EXECUTION) {
-            properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-        }
-        createAllCommandQueues(properties);
     }
 
     public OCLProgram createProgramWithSource(byte[] source, long[] lengths, OCLDeviceContext deviceContext) {

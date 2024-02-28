@@ -59,7 +59,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
 
-    protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
+    OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
         this.commandQueue = queue;
         this.context = context;
