@@ -101,11 +101,11 @@ public class LocalObjectState {
         return globalObjectState;
     }
 
-    public Event sync(Object object, TornadoDevice device) {
+    public Event sync(long executionPlanId, Object object, TornadoDevice device) {
         DeviceObjectState objectState = globalObjectState.getDeviceState(device);
         if (objectState.isLockedBuffer()) {
-            int eventId = device.streamOutBlocking(object, 0, objectState, null);
-            return device.resolveEvent(eventId);
+            int eventId = device.streamOutBlocking(executionPlanId, object, 0, objectState, null);
+            return device.resolveEvent(executionPlanId, eventId);
         }
         return null;
     }

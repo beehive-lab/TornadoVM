@@ -43,19 +43,19 @@ public class FieldBuffer {
         this.field = field;
     }
 
-    public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: Offset 0
-        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
+        return (useDeps) ? objectBuffer.enqueueRead(executionPlanId, getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
     }
 
-    public List<Integer> enqueueWrite(final Object ref, final int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
+        return (useDeps) ? objectBuffer.enqueueWrite(executionPlanId, getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
     }
 
     private Object getFieldValue(final Object container) {
@@ -68,24 +68,24 @@ public class FieldBuffer {
         return value;
     }
 
-    public void read(final Object ref) {
-        read(ref, null, false);
+    public void read(long executionPlanId, final Object ref) {
+        read(executionPlanId, ref, null, false);
     }
 
-    public int read(final Object ref, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, final Object ref, int[] events, boolean useDeps) {
         if (DEBUG) {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: reading with offset != 0
-        int event = objectBuffer.read(getFieldValue(ref), 0, 0, events, useDeps);
+        int event = objectBuffer.read(executionPlanId, getFieldValue(ref), 0, 0, events, useDeps);
         return event;
     }
 
-    public void write(final Object ref) {
+    public void write(long executionPlanId, final Object ref) {
         if (DEBUG) {
             trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        objectBuffer.write(getFieldValue(ref));
+        objectBuffer.write(executionPlanId, getFieldValue(ref));
     }
 
     public String getFieldName() {

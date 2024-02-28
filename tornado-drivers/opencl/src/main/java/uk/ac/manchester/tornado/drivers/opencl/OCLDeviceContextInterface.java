@@ -56,25 +56,25 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     void dumpEvents();
 
-    void flush();
+    void flush(long executionPlanId);
 
     OCLMemoryManager getMemoryManager();
 
     TornadoBufferProvider getBufferProvider();
 
-    void sync();
+    void sync(long executionPlanId);
 
-    int enqueueBarrier();
+    int enqueueBarrier(long executionPlanId);
 
-    int enqueueBarrier(int[] events);
+    int enqueueBarrier(long executionPlanId, int[] events);
 
-    int enqueueMarker();
+    int enqueueMarker(long executionPlanId);
 
-    int enqueueMarker(int[] events);
+    int enqueueMarker(long executionPlanId, int[] events);
 
-    Event resolveEvent(int event);
+    Event resolveEvent(long executionPlanId, int event);
 
-    void flushEvents();
+    void flushEvents(long executionPlanId);
 
     OCLExecutionEnvironment getPlatformContext();
 

@@ -67,7 +67,7 @@ public interface TornadoDevice {
      *     object)
      * @return an event ID
      */
-    List<Integer> ensurePresent(Object object, DeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
+    List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
 
     /**
      * It always copies in the input data (object) from the host to the target
@@ -88,7 +88,7 @@ public interface TornadoDevice {
      *     list of previous events
      * @return and event ID
      */
-    List<Integer> streamIn(Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events);
+    List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
@@ -106,7 +106,7 @@ public interface TornadoDevice {
      *     of pending events
      * @return and event ID
      */
-    int streamOut(Object object, long hostOffset, DeviceObjectState objectState, int[] events);
+    int streamOut(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
@@ -124,7 +124,7 @@ public interface TornadoDevice {
      *     of pending events
      * @return and event ID
      */
-    int streamOutBlocking(Object object, long hostOffset, DeviceObjectState objectState, int[] events);
+    int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events);
 
     /**
      * It resolves a pending event.
@@ -133,23 +133,23 @@ public interface TornadoDevice {
      *     ID
      * @return an object of type {@link Event}
      */
-    Event resolveEvent(int event);
+    Event resolveEvent(long executionPlanId, int event);
 
     void ensureLoaded();
 
-    void flushEvents();
+    void flushEvents(long executionPlanId);
 
-    int enqueueBarrier();
+    int enqueueBarrier(long executionPlanId);
 
-    int enqueueBarrier(int[] events);
+    int enqueueBarrier(long executionPlanId, int[] events);
 
-    int enqueueMarker();
+    int enqueueMarker(long executionPlanId);
 
-    int enqueueMarker(int[] events);
+    int enqueueMarker(long executionPlanId, int[] events);
 
-    void sync();
+    void sync(long executionPlanId);
 
-    void flush();
+    void flush(long executionPlanId);
 
     void reset();
 

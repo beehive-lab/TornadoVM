@@ -81,7 +81,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLLongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLXPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -538,7 +538,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
-                result = new OCLObjectWrapper(deviceContext, object);
+                result = new OCLXPUBuffer(deviceContext, object);
             }
         }
 
@@ -598,24 +598,24 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
         if (!state.hasContent() || BENCHMARKING_MODE) {
             state.setContents(true);
-            return state.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return state.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
         }
         return null;
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
         state.setContents(true);
-        return state.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+        return state.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
     }
 
     @Override
-    public int streamOut(Object object, long offset, DeviceObjectState state, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long offset, DeviceObjectState state, int[] events) {
         TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-        int event = state.getObjectBuffer().enqueueRead(object, offset, events, events == null);
+        int event = state.getObjectBuffer().enqueueRead(executionPlanId, object, offset, events, events == null);
         if (events != null) {
             return event;
         }
@@ -623,11 +623,11 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState state, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState state, int[] events) {
         long partialCopySize = state.getPartialCopySize();
         if (state.isAtomicRegionPresent()) {
             // Read for Atomics
-            int eventID = state.getObjectBuffer().enqueueRead(null, 0, null, false);
+            int eventID = state.getObjectBuffer().enqueueRead(executionPlanId, null, 0, null, false);
             if (object instanceof AtomicInteger) {
                 int[] arr = getAtomic().getIntBuffer();
                 int indexFromGlobalRegion = mappingAtomics.get(object);
@@ -637,13 +637,13 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         } else {
             // Read for any other buffer that is not an atomic buffer
             TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-            return state.getObjectBuffer().read(object, hostOffset, partialCopySize, events, events == null);
+            return state.getObjectBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, events == null);
         }
     }
 
     @Override
-    public void flush() {
-        this.getDeviceContext().flush();
+    public void flush(long executionPlanId) {
+        this.getDeviceContext().flush(executionPlanId);
     }
 
     @Override
@@ -663,38 +663,38 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void sync() {
-        getDeviceContext().sync();
+    public void sync(long executionPlanId) {
+        getDeviceContext().sync(executionPlanId);
     }
 
     @Override
-    public int enqueueBarrier() {
-        return getDeviceContext().enqueueBarrier();
+    public int enqueueBarrier(long executionPlanId) {
+        return getDeviceContext().enqueueBarrier(executionPlanId);
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
-        return getDeviceContext().enqueueBarrier(events);
+    public int enqueueBarrier(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueBarrier(executionPlanId, events);
     }
 
     @Override
-    public int enqueueMarker() {
-        return getDeviceContext().enqueueMarker();
+    public int enqueueMarker(long executionPlanId) {
+        return getDeviceContext().enqueueMarker(executionPlanId);
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
-        return getDeviceContext().enqueueMarker(events);
+    public int enqueueMarker(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueMarker(executionPlanId, events);
     }
 
     @Override
-    public Event resolveEvent(int event) {
-        return getDeviceContext().resolveEvent(event);
+    public Event resolveEvent(long executionPlanId, int event) {
+        return getDeviceContext().resolveEvent(executionPlanId, event);
     }
 
     @Override
-    public void flushEvents() {
-        getDeviceContext().flushEvents();
+    public void flushEvents(long executionPlanId) {
+        getDeviceContext().flushEvents(executionPlanId);
     }
 
     @Override

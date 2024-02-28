@@ -121,36 +121,36 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
     }
 
     @Override
-    public int enqueueBarrier() {
+    public int enqueueBarrier(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker() {
+    public int enqueueMarker(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
+    public int enqueueMarker(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public Event resolveEvent(int event) {
+    public Event resolveEvent(long executionPlanId, int event) {
         return new EmptyEvent();
     }
 
     @Override
-    public void flushEvents() {
+    public void flushEvents(long executionPlanId) {
     }
 
     @Override
@@ -172,7 +172,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public void flush() {
+    public void flush(long executionPlanId) {
     }
 
     @Override

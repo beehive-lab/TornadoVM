@@ -44,7 +44,7 @@ public class OCLContext implements OCLExecutionEnvironment {
     private final long contextID;
     private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
-    private final OCLCommandQueue[] commandQueues;
+
     private final List<OCLProgram> programs;
     private final OCLPlatform platform;
 
@@ -53,7 +53,6 @@ public class OCLContext implements OCLExecutionEnvironment {
         this.contextID = id;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
-        this.commandQueues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
     }
 
@@ -90,8 +89,8 @@ public class OCLContext implements OCLExecutionEnvironment {
         return devices;
     }
 
-    public OCLCommandQueue[] queues() {
-        return commandQueues;
+    public long getContextId() {
+        return contextID;
     }
 
     private void createCommandQueue(int index, long properties) {
@@ -106,14 +105,13 @@ public class OCLContext implements OCLExecutionEnvironment {
             TornadoLogger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
             commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
-            commandQueues[index] = new OCLCommandQueue(commandQueuePtr, properties, deviceVersion);
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());
             throw new TornadoRuntimeException("[ERROR] OpenCL Command Queue Initialization not valid");
         }
     }
 
-    public void createCommandQueue(int index) {
+    public long getProperties(int index) {
         long properties = 0;
         if (Tornado.ENABLE_PROFILING) {
             properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
@@ -122,6 +120,11 @@ public class OCLContext implements OCLExecutionEnvironment {
         if (Tornado.ENABLE_OOO_EXECUTION) {
             properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
+        return properties;
+    }
+
+    public void createCommandQueue(int index) {
+        long properties = getProperties(index);
         createCommandQueue(index, properties);
     }
 
@@ -180,26 +183,17 @@ public class OCLContext implements OCLExecutionEnvironment {
                 program.cleanup();
             }
             long t1 = System.nanoTime();
-
-            for (OCLCommandQueue queue : commandQueues) {
-                if (queue != null) {
-                    queue.cleanup();
-                }
-            }
-
-            long t2 = System.nanoTime();
             clReleaseContext(contextID);
-            long t3 = System.nanoTime();
+            long t2 = System.nanoTime();
 
             if (Tornado.FULL_DEBUG) {
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "programs", (t1 - t0) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "queues", (t2 - t1) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t3 - t2) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t3 - t0) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t2 - t0) * 1e-9);
             }
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());
-            e.printStackTrace();
+            throw new TornadoRuntimeException(e.getMessage());
         }
     }
 
@@ -212,7 +206,7 @@ public class OCLContext implements OCLExecutionEnvironment {
     public OCLDeviceContext createDeviceContext(int index) {
         TornadoLogger.debug("creating device context for device: %s", devices.get(index).toString());
         createCommandQueue(index);
-        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), commandQueues[index], this);
+        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), this);
         deviceContexts.add(deviceContext);
         return deviceContext;
     }

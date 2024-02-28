@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-public class OCLObjectWrapper implements XPUBuffer {
+public class OCLXPUBuffer implements XPUBuffer {
 
     private static final long BYTES_OBJECT_REFERENCE = 8;
     private final HotSpotResolvedJavaType resolvedType;
@@ -72,7 +72,7 @@ public class OCLObjectWrapper implements XPUBuffer {
     private ByteBuffer buffer;
     private long setSubRegionSize;
 
-    public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
+    public OCLXPUBuffer(final OCLDeviceContext device, Object object) {
         this.objectType = object.getClass();
         this.deviceContext = device;
 
@@ -143,7 +143,7 @@ public class OCLObjectWrapper implements XPUBuffer {
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new OCLObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object));
+                wrappedField = new OCLXPUBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object));
             }
 
             if (wrappedField != null) {
@@ -288,13 +288,13 @@ public class OCLObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void write(Object object) {
+    public void write(long executionPlanId, Object object) {
         serialise(object);
         // XXX: Offset 0
-        deviceContext.writeBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
+        deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
-                wrappedFields[i].write(object);
+                wrappedFields[i].write(executionPlanId, object);
             }
         }
     }
@@ -327,18 +327,18 @@ public class OCLObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void read(Object object) {
+    public void read(long executionPlanId, Object object) {
         // XXX: offset 0
-        read(object, 0, 0, null, false);
+        read(executionPlanId, object, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         buffer.position(buffer.capacity());
-        int event = deviceContext.readBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        int event = deviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
-                wrappedFields[i].read(object);
+                wrappedFields[i].read(executionPlanId, object);
             }
         }
         deserialise(object);
@@ -377,7 +377,7 @@ public class OCLObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
         int index = 0;
         int[] internalEvents = new int[fields.length];
@@ -385,12 +385,12 @@ public class OCLObjectWrapper implements XPUBuffer {
 
         for (FieldBuffer fb : wrappedFields) {
             if (fb != null) {
-                internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
+                internalEvents[index] = fb.enqueueRead(executionPlanId, reference, (useDeps) ? events : null, useDeps);
                 index++;
             }
         }
 
-        internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        internalEvents[index] = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         index++;
 
         deserialise(reference);
@@ -398,20 +398,20 @@ public class OCLObjectWrapper implements XPUBuffer {
         if (index == 1) {
             returnEvent = internalEvents[0];
         } else {
-            returnEvent = deviceContext.enqueueMarker(internalEvents);
+            returnEvent = deviceContext.enqueueMarker(executionPlanId, internalEvents);
         }
         return useDeps ? returnEvent : -1;
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
 
         serialise(ref);
-        eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
+        eventList.add(deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {
             if (field != null) {
-                eventList.addAll(field.enqueueWrite(ref, (useDeps) ? events : null, useDeps));
+                eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
         return useDeps ? eventList : null;

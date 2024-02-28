@@ -298,10 +298,10 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public List<TornadoEvents> getProfiles() {
+    public List<TornadoEvents> getProfiles(long executionPlanId) {
         final List<TornadoEvents> result = new ArrayList<>(profiles.keySet().size());
         for (TornadoXPUDevice device : profiles.keySet()) {
-            result.add(new EventSet(device, profiles.get(device)));
+            result.add(new EventSet(device, profiles.get(device), executionPlanId));
         }
         return result;
     }

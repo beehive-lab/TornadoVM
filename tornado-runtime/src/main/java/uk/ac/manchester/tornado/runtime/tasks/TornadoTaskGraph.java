@@ -632,6 +632,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     : STR."\{((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName()}.\{task.getTaskName()}";
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
         }
+
     }
 
     private void updateDeviceContext() {
@@ -808,7 +809,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private void dumpDeoptimisationReason(TornadoBailoutRuntimeException e) {
         if (!Tornado.DEBUG) {
             System.err.println(STR."\{RED}[Bailout] Running the sequential implementation. Enable --debug to see the reason.\{RESET}");
-        } else {
+        }else
+
+    {
             System.err.println(e.getMessage());
             for (StackTraceElement s : e.getStackTrace()) {
                 System.err.println(STR."\t\{s}");
@@ -881,7 +884,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (Tornado.VM_USE_DEPS && event != null) {
             event.waitOn();
         } else {
-            executionContext.getDevices().stream().filter(Objects::nonNull).forEach(TornadoDevice::sync);
+            for (TornadoXPUDevice tornadoXPUDevice : executionContext.getDevices()) {
+                if (tornadoXPUDevice != null) {
+                    tornadoXPUDevice.sync(executionPlanId);
+                }
+            }
         }
     }
 
@@ -1056,7 +1063,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final TornadoXPUDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         if (deviceState.isLockedBuffer()) {
-            return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
+            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, 0, deviceState, null));
         }
         return null;
     }
@@ -1068,7 +1075,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setPartialCopySize(partialCopySize);
         if (deviceState.isLockedBuffer()) {
-            return device.resolveEvent(device.streamOutBlocking(object, offset, deviceState, null));
+            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, offset, deviceState, null));
         }
         return null;
     }

@@ -49,31 +49,31 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
-    public int enqueueMarker() {
+    public int enqueueMarker(long executionPlanId) {
         TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
+    public int enqueueMarker(long executionPlanId, int[] events) {
         TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, DeviceObjectState objectState, int[] events, long size, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState objectState, int[] events, long size, long offset) {
         TornadoInternalError.unimplemented();
         return null;
     }
 
     @Override
-    public void flush() {
+    public void flush(long executionPlanId) {
         TornadoInternalError.unimplemented();
     }
 
@@ -99,13 +99,13 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
         TornadoInternalError.unimplemented();
         return null;
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState objectState, int[] list) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] list) {
         TornadoInternalError.unimplemented();
         return -1;
     }
@@ -150,27 +150,27 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int streamOut(Object object, long hostOffset, DeviceObjectState objectState, int[] list) {
+    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] list) {
         return -1;
     }
 
     @Override
-    public int enqueueBarrier() {
+    public int enqueueBarrier(long executionPlanId) {
         return -1;
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
 
     }
 
     @Override
-    public Event resolveEvent(int event) {
+    public Event resolveEvent(long executionPlanId, int event) {
         return new EmptyEvent();
     }
 
     @Override
-    public void flushEvents() {
+    public void flushEvents(long executionPlanId) {
 
     }
 

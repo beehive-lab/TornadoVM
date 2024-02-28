@@ -112,8 +112,8 @@ public class TestOpenCLJITCompiler {
         return new MetaCompilation(taskMeta, openCLCode);
     }
 
-    public void runWithOpenCLAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
-        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
+    public void runWithOpenCLAPI(Long executionPlanId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+        OpenCL.run(executionPlanId, tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
     }
 
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
@@ -129,10 +129,12 @@ public class TestOpenCLJITCompiler {
 
         tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
+        long contextID = 0;
+
         // Copy-IN A
-        tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
+        tornadoDevice.ensurePresent(contextID, a, objectStateA, null, 0, 0);
         // Copy-IN B
-        tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
+        tornadoDevice.ensurePresent(contextID, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
         KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(3);
@@ -145,10 +147,10 @@ public class TestOpenCLJITCompiler {
         callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Run the code
-        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(contextID, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
-        tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
+        tornadoDevice.streamOutBlocking(contextID, c, 0, objectStateC, null);
     }
 
     public void test() {
@@ -169,8 +171,9 @@ public class TestOpenCLJITCompiler {
         // Check with all internal APIs
         run(tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
+        long executionPlanId = 0;
         // Check with OpenCL API
-        runWithOpenCLAPI(tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
+        runWithOpenCLAPI(executionPlanId, tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {

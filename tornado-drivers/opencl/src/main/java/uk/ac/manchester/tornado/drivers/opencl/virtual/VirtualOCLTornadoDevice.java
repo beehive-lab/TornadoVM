@@ -281,31 +281,31 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
         unimplemented();
         return null;
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
         unimplemented();
         return null;
     }
 
     @Override
-    public int streamOut(Object object, long offset, DeviceObjectState state, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long offset, DeviceObjectState state, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState state, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState state, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public void flush() {
+    public void flush(long executionPlanId) {
     }
 
     @Override
@@ -326,39 +326,39 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
     }
 
     @Override
-    public int enqueueBarrier() {
+    public int enqueueBarrier(long executionPlanId) {
         unimplemented();
-        return getDeviceContext().enqueueBarrier();
+        return getDeviceContext().enqueueBarrier(executionPlanId);
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         unimplemented();
-        return getDeviceContext().enqueueBarrier(events);
+        return getDeviceContext().enqueueBarrier(executionPlanId, events);
     }
 
     @Override
-    public int enqueueMarker() {
-        return getDeviceContext().enqueueMarker();
+    public int enqueueMarker(long executionPlanId) {
+        return getDeviceContext().enqueueMarker(executionPlanId);
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
-        return getDeviceContext().enqueueMarker(events);
+    public int enqueueMarker(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueMarker(executionPlanId, events);
     }
 
     @Override
-    public Event resolveEvent(int event) {
-        return getDeviceContext().resolveEvent(event);
+    public Event resolveEvent(long executionPlanId, int event) {
+        return getDeviceContext().resolveEvent(executionPlanId, event);
     }
 
     @Override
-    public void flushEvents() {
-        getDeviceContext().flushEvents();
+    public void flushEvents(long executionPlanId) {
+        getDeviceContext().flushEvents(executionPlanId);
     }
 
     @Override

@@ -405,7 +405,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     @Override
-    public List<TornadoEvents> getProfiles() {
+    public List<TornadoEvents> getProfiles(long executionPlanId) {
         return null;
     }
 

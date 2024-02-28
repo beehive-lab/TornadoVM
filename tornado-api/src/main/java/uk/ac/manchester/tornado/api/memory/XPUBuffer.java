@@ -40,15 +40,15 @@ public interface XPUBuffer {
 
     long getBufferOffset();
 
-    void read(Object reference);
+    void read(long executionPlanId, Object reference);
 
-    int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps);
+    int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps);
 
-    void write(Object reference);
+    void write(long executionPlanId, Object reference);
 
-    int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
+    int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps);
 
-    List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
+    List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 
     void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 

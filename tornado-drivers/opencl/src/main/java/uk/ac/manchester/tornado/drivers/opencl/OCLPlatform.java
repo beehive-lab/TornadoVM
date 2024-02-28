@@ -116,8 +116,8 @@ public class OCLPlatform implements TornadoPlatform {
             deviceIds.put(device.getId());
         }
         try {
-            long contextId = clCreateContext(id, deviceIds.array());
-            contextObject = new OCLContext(this, contextId, devices);
+            long contextPtr = clCreateContext(id, deviceIds.array());
+            contextObject = new OCLContext(this, contextPtr, devices);
             contexts.add(contextObject);
         } catch (OCLException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());

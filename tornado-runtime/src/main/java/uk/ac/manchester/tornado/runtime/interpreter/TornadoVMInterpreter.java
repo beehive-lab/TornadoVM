@@ -198,7 +198,7 @@ public class TornadoVMInterpreter {
 
     public void clearProfiles() {
         for (final SchedulableTask task : tasks) {
-            task.meta().getProfiles().clear();
+            task.meta().getProfiles(executionContext.getExecutionPlanId()).clear();
         }
     }
 
@@ -219,12 +219,12 @@ public class TornadoVMInterpreter {
 
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = (TaskMetaData) task.meta();
-            for (final TornadoEvents eventSet : meta.getProfiles()) {
+            for (final TornadoEvents eventSet : meta.getProfiles(executionContext.getExecutionPlanId())) {
                 final BitSet profiles = eventSet.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
 
                     if (eventSet.getDevice() instanceof TornadoXPUDevice device) {
-                        final Event profile = device.resolveEvent(i);
+                        final Event profile = device.resolveEvent(executionContext.getExecutionPlanId(), i);
                         if (profile.getStatus() == COMPLETE) {
                             System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
                                     profile.getStartTime(), profile.getEndTime());
@@ -363,12 +363,12 @@ public class TornadoVMInterpreter {
         Event barrier = EMPTY_EVENT;
         if (!isWarmup) {
             if (useDependencies) {
-                final int event = deviceForInterpreter.enqueueMarker();
-                barrier = deviceForInterpreter.resolveEvent(event);
+                final int event = deviceForInterpreter.enqueueMarker(executionContext.getExecutionPlanId());
+                barrier = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), event);
             }
 
             if (USE_VM_FLUSH) {
-                deviceForInterpreter.flush();
+                deviceForInterpreter.flush(executionContext.getExecutionPlanId());
             }
         }
 
@@ -440,8 +440,8 @@ public class TornadoVMInterpreter {
 
         // We need to stream-in when using batches, because the whole data is not copied
         List<Integer> allEvents = (sizeBatch > 0)
-                ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
-                : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
+                ? deviceForInterpreter.streamIn(executionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList)
+                : deviceForInterpreter.ensurePresent(executionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
 
         resetEventIndexes(eventList);
 
@@ -451,7 +451,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
-                Event event = deviceForInterpreter.resolveEvent(e);
+                Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), e);
                 event.waitForEvents();
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
@@ -478,13 +478,13 @@ public class TornadoVMInterpreter {
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex);
-        List<Integer> allEvents = deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList);
+        List<Integer> allEvents = deviceForInterpreter.streamIn(executionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
-                Event event = deviceForInterpreter.resolveEvent(e);
+                Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), e);
                 event.waitForEvents();
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
@@ -514,12 +514,12 @@ public class TornadoVMInterpreter {
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex);
-        int lastEvent = deviceForInterpreter.streamOutBlocking(object, offset, objectState, waitList);
+        int lastEvent = deviceForInterpreter.streamOutBlocking(executionContext.getExecutionPlanId(), object, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
 
         if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
-            Event event = deviceForInterpreter.resolveEvent(lastEvent);
+            Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), lastEvent);
             event.waitForEvents();
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
@@ -551,10 +551,10 @@ public class TornadoVMInterpreter {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex);
 
-        final int tornadoEventID = deviceForInterpreter.streamOutBlocking(object, offset, objectState, waitList);
+        final int tornadoEventID = deviceForInterpreter.streamOutBlocking(executionContext.getExecutionPlanId(), object, offset, objectState, waitList);
 
         if (TornadoOptions.isProfilerEnabled() && tornadoEventID != -1) {
-            Event event = deviceForInterpreter.resolveEvent(tornadoEventID);
+            Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), tornadoEventID);
             event.waitForEvents();
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
@@ -706,10 +706,10 @@ public class TornadoVMInterpreter {
 
         if (atomicsArray != null) {
             bufferAtomics = deviceForInterpreter.createOrReuseAtomicsBuffer(atomicsArray);
-            List<Integer> allEvents = bufferAtomics.enqueueWrite(null, 0, 0, null, false);
+            List<Integer> allEvents = bufferAtomics.enqueueWrite(executionContext.getExecutionPlanId(), null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {
-                    Event event = deviceForInterpreter.resolveEvent(e);
+                    Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), e);
                     event.waitForEvents();
                     long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                     value += event.getElapsedTime();
@@ -744,8 +744,8 @@ public class TornadoVMInterpreter {
 
         try {
             int lastEvent = useDependencies
-                    ? installedCode.launchWithDependencies(stackFrame, bufferAtomics, metadata, batchThreads, waitList)
-                    : installedCode.launchWithoutDependencies(stackFrame, bufferAtomics, metadata, batchThreads);
+                    ? installedCode.launchWithDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, metadata, batchThreads, waitList)
+                    : installedCode.launchWithoutDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, metadata, batchThreads);
 
             resetEventIndexes(eventList);
             return lastEvent;
@@ -775,7 +775,7 @@ public class TornadoVMInterpreter {
             tornadoVMBytecodeList.append(String.format("bc: " + InterpreterUtilities.debugHighLightBC("BARRIER") + " event-list %d%n", eventList));
         }
 
-        int lastEvent = deviceForInterpreter.enqueueMarker(waitList);
+        int lastEvent = deviceForInterpreter.enqueueMarker(executionContext.getExecutionPlanId(), waitList);
 
         resetEventIndexes(eventList);
         return lastEvent;

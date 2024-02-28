@@ -160,7 +160,7 @@ public class OpenCL {
      *     List of parameters.
      *
      */
-    public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
+    public static void run(Long executionContextId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
@@ -178,7 +178,7 @@ public class OpenCL {
                 case READ_WRITE:
                 case READ_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
-                    tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
+                    tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
@@ -203,7 +203,7 @@ public class OpenCL {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(executionContextId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {
@@ -213,7 +213,7 @@ public class OpenCL {
                 case WRITE_ONLY:
                     Object object = parameters[i];
                     DeviceObjectState deviceState = states.get(i);
-                    tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                    tornadoDevice.streamOutBlocking(executionContextId, object, 0, deviceState, null);
                     break;
                 default:
                     break;

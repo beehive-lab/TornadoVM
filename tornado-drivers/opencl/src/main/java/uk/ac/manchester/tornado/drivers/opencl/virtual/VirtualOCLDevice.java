@@ -198,6 +198,11 @@ public class VirtualOCLDevice implements OCLTargetDevice {
         this.deviceContex = deviceContext;
     }
 
+    @Override
+    public int deviceVersion() {
+        return 0;
+    }
+
     public int getWordSize() {
         return getDeviceAddressBits() >> 3;
     }

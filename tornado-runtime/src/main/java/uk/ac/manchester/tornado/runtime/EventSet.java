@@ -38,11 +38,14 @@ public class EventSet implements TornadoEvents {
     private int index;
     private Event event;
 
-    public EventSet(TornadoXPUDevice device, BitSet profiles) {
+    private long executionPlanId;
+
+    public EventSet(TornadoXPUDevice device, BitSet profiles, long executionPlanId) {
         this.device = device;
         this.profiles = profiles;
+        this.executionPlanId = executionPlanId;
         index = profiles.nextSetBit(0);
-        event = device.resolveEvent(index);
+        event = device.resolveEvent(executionPlanId, index);
     }
 
     public int cardinality() {
@@ -61,7 +64,7 @@ public class EventSet implements TornadoEvents {
         if (index == -1) {
             return null;
         }
-        event = device.resolveEvent(index);
+        event = device.resolveEvent(executionPlanId, index);
         index = profiles.nextSetBit(index);
         return event;
     }

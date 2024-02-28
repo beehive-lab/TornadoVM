@@ -435,6 +435,11 @@ public class OCLDevice implements OCLTargetDevice {
         this.deviceContext = deviceContext;
     }
 
+    @Override
+    public int deviceVersion() {
+        return Integer.parseInt(getVersion().split(" ")[1].replace(".", "")) * 10;
+    }
+
     public int getWordSize() {
         return getDeviceAddressBits() >> 3;
     }

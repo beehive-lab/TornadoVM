@@ -61,32 +61,32 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
-    public void read(Object reference) {
+    public void read(long executionPlanId, Object reference) {
         throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
-    public int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
-    public void write(Object reference) {
+    public void write(long executionPlanId, Object reference) {
         throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        return deviceContext.readBuffer(deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events);
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        return deviceContext.readBuffer(executionPlanId, deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events);
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         // Non-blocking write
         if (atomicsList.length == 0) {
             return null;
         }
-        return new ArrayList<>(deviceContext.enqueueWriteBuffer(deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events));
+        return new ArrayList<>(deviceContext.enqueueWriteBuffer(executionPlanId, deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events));
     }
 
     @Override
