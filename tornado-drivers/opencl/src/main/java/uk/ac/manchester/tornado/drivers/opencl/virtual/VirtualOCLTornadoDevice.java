@@ -269,13 +269,13 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
+    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int deallocate(DeviceObjectState state) {
+    public synchronized int deallocate(DeviceObjectState state) {
         unimplemented();
         return -1;
     }
