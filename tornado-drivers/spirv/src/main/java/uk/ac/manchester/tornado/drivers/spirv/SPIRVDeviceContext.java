@@ -180,115 +180,115 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         wasReset = true;
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_BYTE, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_INT, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_FLOAT, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_DOUBLE, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_LONG, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_SHORT, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_BYTE, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, offHeapSegmentAddress, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_BYTE, profilerTransfer);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, long panamaOffHeapPointer, long hostOffset, int[] waitEvents) {
+    public void writeBuffer(long executionPlanId, long bufferId, long offset, long bytes, long panamaOffHeapPointer, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, long offHeapSegmentPointer, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, long offHeapSegmentPointer, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueReadBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 
@@ -301,59 +301,59 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return null;
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_BYTE, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_INT, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_FLOAT, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_DOUBLE, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_LONG, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_SHORT, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_BYTE, profilerTransfer);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(long executionPlanId, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
         spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_BYTE, profilerTransfer);
     }
 
-    public void enqueueBarrier(int deviceIndex) {
+    public void enqueueBarrier(long executionPlanId, int deviceIndex) {
         spirvContext.enqueueBarrier(deviceIndex);
     }
 
-    public void flush(int deviceIndex) {
+    public void flush(long executionPlanId, int deviceIndex) {
         spirvContext.flush(deviceIndex);
     }
 
@@ -392,7 +392,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return false;
     }
 
-    public Event resolveEvent(int eventId) {
+    public Event resolveEvent(long executionPlanId, int eventId) {
         if (eventId == -1) {
             return EMPTY_EVENT;
         }

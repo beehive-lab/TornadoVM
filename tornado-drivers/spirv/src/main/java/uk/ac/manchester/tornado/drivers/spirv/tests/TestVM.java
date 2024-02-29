@@ -82,8 +82,10 @@ public class TestVM {
         // Allocate a
         device.allocate(a, 0, objectStateA);
 
+        final long executionPlanId = 0;
+
         // Copy-in buffer A
-        device.ensurePresent(a, objectStateA, null, 0, 0);
+        device.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
 
         // Allocate buffer B
         device.allocate(b, 0, objectStateB);
@@ -92,20 +94,20 @@ public class TestVM {
         device.allocate(c, 0, objectStateC);
 
         // Stream IN buffer C
-        device.streamIn(c, 0, 0, objectStateC, null);
+        device.streamIn(executionPlanId, c, 0, 0, objectStateC, null);
 
         // Copy
         // b <- device-buffer(regionA)
-        device.moveDataFromDeviceBufferToHost(objectStateA, b);
+        device.moveDataFromDeviceBufferToHost(executionPlanId, objectStateA, b);
 
         // // Copy Back Data
-        device.streamOutBlocking(a, 0, objectStateA, null);
+        device.streamOutBlocking(executionPlanId, a, 0, objectStateA, null);
 
         // Add a barrier
-        device.enqueueBarrier();
+        device.enqueueBarrier(executionPlanId);
 
         // Flush and execute all pending in the command queue
-        device.flush();
+        device.flush(executionPlanId);
 
         System.out.println(Arrays.toString(b));
 

@@ -129,10 +129,12 @@ public class TestSPIRVJITCompiler {
 
         spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
+        final long executionPlanId = 0;
+
         // Copy-IN A
-        spirvTornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
+        spirvTornadoDevice.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
         // Copy-IN B
-        spirvTornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
+        spirvTornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
         KernelStackFrame callWrapper = spirvTornadoDevice.createKernelStackFrame(3);
@@ -144,10 +146,10 @@ public class TestSPIRVJITCompiler {
         callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Launch the generated kernel
-        installedCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        installedCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Transfer the result from the device to the host (this is a blocking call)
-        spirvTornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
+        spirvTornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);
     }
 
     public void test() {

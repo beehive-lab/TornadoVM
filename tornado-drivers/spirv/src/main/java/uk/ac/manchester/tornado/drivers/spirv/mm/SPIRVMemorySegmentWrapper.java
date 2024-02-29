@@ -92,8 +92,8 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void read(Object reference) {
-        read(reference, 0, 0, null, false);
+    public void read(long executionPlanId, Object reference) {
+        read(executionPlanId, reference, 0, 0, null, false);
     }
 
     private MemorySegment getSegment(final Object reference) {
@@ -108,42 +108,42 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public int read(Object reference, long hostOffset, long partialReadSize, int[] waitEvents, boolean useDeps) {
+    public int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] waitEvents, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
 
         if (partialReadSize != 0) {
             // Partial Copy Out due to a copy under demand copy by the user
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, waitEvents);
+            returnEvent = spirvDeviceContext.readBuffer(executionPlanId, toBuffer(), TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, waitEvents);
         } else if (batchSize <= 0) {
             // Partial Copy Out due to batch processing
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
+            returnEvent = spirvDeviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
             // Full copy out (default)
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE,
-                    waitEvents);
+            returnEvent = spirvDeviceContext.readBuffer(executionPlanId, toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(),
+                    hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, waitEvents);
         }
         return returnEvent;
     }
 
     @Override
-    public void write(Object reference) {
+    public void write(long executionPlanId, Object reference) {
         MemorySegment segment = getSegment(reference);
         if (batchSize <= 0) {
-            spirvDeviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+            spirvDeviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
         }
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] waitEvents, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] waitEvents, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (batchSize <= 0) {
-            returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
+            returnEvent = spirvDeviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for enqueueReadBuffer operation");
         }
@@ -151,16 +151,16 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
         MemorySegment segment = getSegment(reference);
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), 0, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, segment.address(), 0, (useDeps) ? events : null);
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
                     hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, (useDeps) ? events : null);
 
         }

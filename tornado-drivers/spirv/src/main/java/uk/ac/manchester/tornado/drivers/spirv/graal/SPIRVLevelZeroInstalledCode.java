@@ -65,13 +65,13 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
-    private void setKernelArgs(final SPIRVKernelStackFrame callWrapper, final XPUBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(long executionPlanId, final SPIRVKernelStackFrame callWrapper, final XPUBuffer atomicSpace, TaskMetaData meta) {
         // Enqueue write
-        callWrapper.enqueueWrite(null);
+        callWrapper.enqueueWrite(executionPlanId, null);
 
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
@@ -206,12 +206,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithoutDependencies(KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        setKernelArgs((SPIRVKernelStackFrame) callWrapper, null, meta);
+        setKernelArgs(executionPlanId, (SPIRVKernelStackFrame) callWrapper, null, meta);
 
         if (threadScheduling == null || dispatcher == null || meta.isWorkerGridAvailable()) {
             // if the worker grid is available, the user can update the number of threads to
@@ -234,7 +234,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         launchKernelWithLevelZero(kernel, threadScheduling, dispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
-            kernelTimeStamp.solveEvent(meta);
+            kernelTimeStamp.solveEvent(executionPlanId, meta);
         }
 
         return 0;

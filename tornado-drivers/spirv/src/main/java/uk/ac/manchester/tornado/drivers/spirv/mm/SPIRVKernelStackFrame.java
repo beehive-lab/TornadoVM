@@ -59,18 +59,18 @@ public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStac
     }
 
     @Override
-    public void write() {
-        super.write();
+    public void write(long executionPlanId) {
+        super.write(executionPlanId);
     }
 
     @Override
-    public int enqueueWrite() {
-        return enqueueWrite(null);
+    public int enqueueWrite(long executionPlanId) {
+        return enqueueWrite(executionPlanId, null);
     }
 
     @Override
-    public int enqueueWrite(int[] events) {
-        return super.enqueueWrite(events);
+    public int enqueueWrite(long executionPlanId, int[] events) {
+        return super.enqueueWrite(executionPlanId, events);
     }
 
     @Override

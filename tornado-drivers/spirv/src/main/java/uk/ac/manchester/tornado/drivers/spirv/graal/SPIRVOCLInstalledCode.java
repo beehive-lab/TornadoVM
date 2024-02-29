@@ -36,12 +36,12 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Not implemented yet");
     }
 
     @Override
-    public int launchWithoutDependencies(KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         throw new RuntimeException("Not implemented yet");
     }
 }

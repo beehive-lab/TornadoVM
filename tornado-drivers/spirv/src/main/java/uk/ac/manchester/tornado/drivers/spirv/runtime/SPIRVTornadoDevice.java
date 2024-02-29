@@ -377,24 +377,24 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
      * @return A list of event IDs
      */
     @Override
-    public List<Integer> ensurePresent(Object object, DeviceObjectState objectState, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState objectState, int[] events, long batchSize, long offset) {
         if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
         }
         return null;
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
         objectState.setContents(true);
-        return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
+        return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events == null);
     }
 
     @Override
-    public int streamOut(Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-        int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events == null);
+        int event = objectState.getObjectBuffer().enqueueRead(executionPlanId, object, hostOffset, events, events == null);
         if (events != null) {
             return event;
         }
@@ -402,26 +402,26 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
         long partialSize = objectState.getPartialCopySize();
         if (objectState.isAtomicRegionPresent()) {
-            int eventID = objectState.getObjectBuffer().enqueueRead(null, 0, null, false);
+            int eventID = objectState.getObjectBuffer().enqueueRead(executionPlanId, null, 0, null, false);
             if (object instanceof AtomicInteger) {
                 throw new RuntimeException("Atomics Not supported yet");
             }
             return eventID;
         } else {
             TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-            int event = objectState.getObjectBuffer().read(object, hostOffset, partialSize, events, events == null);
+            int event = objectState.getObjectBuffer().read(executionPlanId, object, hostOffset, partialSize, events, events == null);
             // We force a blocking copy -> we need to close the command list and command queue
-            flush();
+            flush(executionPlanId);
             return event;
         }
     }
 
     @Override
-    public Event resolveEvent(int event) {
-        return getDeviceContext().resolveEvent(event);
+    public Event resolveEvent(long executionPlanId, int event) {
+        return getDeviceContext().resolveEvent(executionPlanId, event);
     }
 
     @Override
@@ -434,39 +434,39 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void flushEvents() {
+    public void flushEvents(long executionPlanId) {
 
     }
 
     @Override
-    public int enqueueBarrier() {
-        device.getDeviceContext().enqueueBarrier(deviceIndex);
+    public int enqueueBarrier(long executionPlanId) {
+        device.getDeviceContext().enqueueBarrier(executionPlanId, deviceIndex);
         return 0;
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker() {
+    public int enqueueMarker(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
+    public int enqueueMarker(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
 
     }
 
     @Override
-    public void flush() {
-        device.getDeviceContext().flush(deviceIndex);
+    public void flush(long executionPlanId) {
+        device.getDeviceContext().flush(executionPlanId, deviceIndex);
     }
 
     private void disableProfilerOptions() {
@@ -583,7 +583,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     /**
      * Move Data from the device region that corresponds to buffer A into buffer B.
      */
-    public void moveDataFromDeviceBufferToHost(uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA, Object b) {
-        objectStateA.getObjectBuffer().read(b, 0, 0, null, false);
+    public void moveDataFromDeviceBufferToHost(long executionPlanId, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA, Object b) {
+        objectStateA.getObjectBuffer().read(executionPlanId, b, 0, 0, null, false);
     }
 }

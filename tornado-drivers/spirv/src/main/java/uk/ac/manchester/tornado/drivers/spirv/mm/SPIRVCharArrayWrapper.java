@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -37,22 +37,22 @@ public class SPIRVCharArrayWrapper extends SPIRVArrayWrapper<char[]> {
     }
 
     @Override
-    protected int readArrayData(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int readArrayData(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.readBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-        deviceContext.writeBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected void writeArrayData(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+        deviceContext.writeBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueReadArrayData(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueReadBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 }
