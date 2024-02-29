@@ -382,10 +382,10 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return an event ID
      */
     @Override
-    public List<Integer> ensurePresent(Object object, DeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
         if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
+            return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
         }
         return null;
     }
@@ -410,9 +410,9 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return and event ID
      */
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
         objectState.setContents(true);
-        return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
+        return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
     }
 
     /**
@@ -432,9 +432,9 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return and event ID
      */
     @Override
-    public int streamOut(Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-        int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events != null);
+        int event = objectState.getObjectBuffer().enqueueRead(executionPlanId, object, hostOffset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -458,9 +458,9 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return and event ID
      */
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-        return objectState.getObjectBuffer().read(object, hostOffset, objectState.getPartialCopySize(), events, events != null);
+        return objectState.getObjectBuffer().read(executionPlanId, object, hostOffset, objectState.getPartialCopySize(), events, events != null);
     }
 
     /**
@@ -471,7 +471,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return an object of type {@link Event}
      */
     @Override
-    public Event resolveEvent(int event) {
+    public Event resolveEvent(long executionPlanId, int event) {
         return getDeviceContext().resolveEvent(event);
     }
 
@@ -481,32 +481,32 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void flushEvents() {
+    public void flushEvents(long executionPlanId) {
         getDeviceContext().flushEvents();
     }
 
     @Override
-    public int enqueueBarrier() {
-        return getDeviceContext().enqueueBarrier();
+    public int enqueueBarrier(long executionPlanId) {
+        return getDeviceContext().enqueueBarrier(executionPlanId);
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
-        return getDeviceContext().enqueueBarrier(events);
+    public int enqueueBarrier(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueBarrier(executionPlanId, events);
     }
 
     @Override
-    public int enqueueMarker() {
-        return getDeviceContext().enqueueMarker();
+    public int enqueueMarker(long executionPlanId) {
+        return getDeviceContext().enqueueMarker(executionPlanId);
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
-        return getDeviceContext().enqueueMarker(events);
+    public int enqueueMarker(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueMarker(executionPlanId, events);
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
         getDeviceContext().sync();
     }
 
@@ -527,7 +527,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void flush() {
+    public void flush(long executionPlanId) {
         getDeviceContext().flush();
     }
 

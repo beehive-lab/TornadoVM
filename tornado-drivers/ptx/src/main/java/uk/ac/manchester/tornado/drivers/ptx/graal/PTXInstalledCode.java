@@ -44,14 +44,14 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
-    public int launchWithDependencies(KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         unimplemented("launch with deps");
         return 0;
     }
 
     @Override
-    public int launchWithoutDependencies(KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        return deviceContext.enqueueKernelLaunch(module, callWrapper, meta, batchThreads);
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+        return deviceContext.enqueueKernelLaunch(executionPlanId, module, callWrapper, meta, batchThreads);
     }
 
     public String getGeneratedSourceCode() {

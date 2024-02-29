@@ -128,10 +128,11 @@ public class TestPTXJITCompiler {
 
         tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
+        final long executionPlanId = 0;
         // Copy-IN A
-        tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
+        tornadoDevice.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
         // Copy-IN B
-        tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
+        tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
         KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(3);
@@ -143,10 +144,10 @@ public class TestPTXJITCompiler {
         callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Run the code
-        ptxCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        ptxCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
-        tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
+        tornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);
     }
 
     public void test() {

@@ -162,24 +162,24 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         sync();
     }
 
-    public int enqueueBarrier() {
-        return stream.enqueueBarrier();
+    public int enqueueBarrier(long executionPlanId) {
+        return stream.enqueueBarrier(executionPlanId);
     }
 
-    public int enqueueBarrier(int[] events) {
-        return stream.enqueueBarrier(events);
+    public int enqueueBarrier(long executionPlanId, int[] events) {
+        return stream.enqueueBarrier(executionPlanId, events);
     }
 
-    public int enqueueMarker() {
+    public int enqueueMarker(long executionPlanId) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
-        return stream.enqueueBarrier();
+        return stream.enqueueBarrier(executionPlanId);
     }
 
-    public int enqueueMarker(int[] events) {
+    public int enqueueMarker(long executionPlanId, int[] events) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
-        return stream.enqueueBarrier(events);
+        return stream.enqueueBarrier(executionPlanId, events);
     }
 
     public void sync() {
@@ -197,7 +197,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(PTXModule module, KernelStackFrame kernelArgs, TaskMetaData taskMeta, long batchThreads) {
+    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs, TaskMetaData taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
         if (taskMeta.isWorkerGridAvailable()) {
@@ -223,19 +223,20 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
 
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelStackFrame) kernelArgs, taskMeta), gridDimension, blockDimension);
-        updateProfiler(kernelLaunchEvent, taskMeta);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta, writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta), gridDimension,
+                blockDimension);
+        updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(PTXKernelStackFrame ptxKernelArgs, TaskMetaData meta) {
+    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskMetaData meta) {
         int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
 
         // Kernel context pointer
-        int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite();
-        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, ptxKernelArgs);
+        int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite(executionPlanId);
+        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, ptxKernelArgs);
         long address = ptxKernelArgs.toAbsoluteAddress();
         args.putLong(address);
 
@@ -255,11 +256,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return args.array();
     }
 
-    private void updateProfilerKernelContextWrite(int kernelContextWriteEventId, TaskMetaData meta, PTXKernelStackFrame callWrapper) {
+    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskMetaData meta, PTXKernelStackFrame callWrapper) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = resolveEvent(kernelContextWriteEventId);
-            event.waitForEvents();
+            event.waitForEvents(executionPlanId);
             long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
             copyInTimer += event.getElapsedTime();
             profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
@@ -271,10 +272,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
     }
 
-    private void updateProfiler(final int taskEvent, final TaskMetaData meta) {
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = resolveEvent(taskEvent);
-            tornadoKernelEvent.waitForEvents();
+            tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
             // Register globalTime
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
@@ -300,143 +301,143 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * SYNC READS
      */
 
-    public int readBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, hostPointer, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
+    public int readBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     /*
      * ASYNC READS
      */
 
-    public int enqueueReadBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, hostPointer, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     /*
      * SYNC WRITES
      */
-    public void writeBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, hostPointer, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, long[] array, int hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, long[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, float[] array, int hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, float[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long address, long length, double[] array, int hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long executionPlanId, long address, long length, double[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     /*
      * ASYNC WRITES
      */
 
-    public int enqueueWriteBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, hostPointer, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public void dumpEvents() {
@@ -453,5 +454,4 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             System.out.printf("event: %s, %s, %s\n", deviceName, e.getName(), e.getStatus());
         });
     }
-
 }

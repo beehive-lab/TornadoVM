@@ -87,6 +87,8 @@ public class PTX {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
 
+        final long executionPlanId = 0;
+
         // Copy-in variables
         ArrayList<DeviceObjectState> states = new ArrayList<>();
         for (int i = 0; i < accesses.length; i++) {
@@ -100,7 +102,7 @@ public class PTX {
                 case READ_WRITE:
                 case READ_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
-                    tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
+                    tornadoDevice.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
@@ -125,7 +127,7 @@ public class PTX {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {
@@ -135,7 +137,7 @@ public class PTX {
                 case WRITE_ONLY:
                     Object object = parameters[i];
                     DeviceObjectState deviceState = states.get(i);
-                    tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                    tornadoDevice.streamOutBlocking(executionPlanId, object, 0, deviceState, null);
                     break;
                 default:
                     break;

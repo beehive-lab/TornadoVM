@@ -94,8 +94,8 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void read(final Object reference) {
-        read(reference, 0, 0, null, false);
+    public void read(long executionPlanId, final Object reference) {
+        read(executionPlanId, reference, 0, 0, null, false);
     }
 
     private MemorySegment getSegment(final Object reference) {
@@ -110,18 +110,18 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public int read(final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (partialReadSize != 0) {
             // Partial Copy Out due to a copy under demand copy by the user
-            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else if (batchSize <= 0) {
-            returnEvent = deviceContext.readBuffer(toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
                     ? events
                     : null);
         }
@@ -129,46 +129,44 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void write(Object reference) {
+    public void write(long executionPlanId, Object reference) {
         MemorySegment segment = getSegment(reference);
 
         if (batchSize <= 0) {
-            deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
+            deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), 0, null);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] Batch processing for the writeBuffer operation");
         }
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         if (batchSize <= 0) {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset, (useDeps)
-                    ? events
-                    : null);
+            returnEvent = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset,
+                    (useDeps) ? events : null);
         }
         return useDeps ? returnEvent : -1;
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
 
         MemorySegment segment = getSegment(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
-                    ? events
-                    : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER,
+                    (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
         return useDeps ? returnEvents : null;
@@ -187,7 +185,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
+            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
         }
 
         if (Tornado.FULL_DEBUG) {
