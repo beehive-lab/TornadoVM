@@ -3,13 +3,12 @@ package uk.ac.manchester.tornado.api.types.tensors;
 import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.tensors.dtype.DType;
 import uk.ac.manchester.tornado.api.types.tensors.dtype.HalfFloat;
 
 public non-sealed class HalfFloatTensor extends Tensor {
 
     private HalfFloatArray tensorData;
-    private DType dType =
+    //    private DType dType =
 
     public HalfFloatTensor(Shape shape) {
         super(shape, new HalfFloat());

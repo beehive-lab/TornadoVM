@@ -2,7 +2,9 @@ package uk.ac.manchester.tornado.unittests.tensors;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.types.arrays.TensorArray;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
+import uk.ac.manchester.tornado.api.types.tensors.dtype.HalfFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestTensorTypes extends TornadoTestBase {
@@ -14,7 +16,11 @@ public class TestTensorTypes extends TornadoTestBase {
 
         //        Tensor tensor1 = new Tensor(shape, new HalfFloat());
 
-        shape.getSize();
+        TensorArray<HalfFloat> tensorArray = new TensorArray<>(shape, uk.ac.manchester.tornado.api.types.HalfFloat.class);
+
+        TensorArray<HalfFloat> tensorArray = new TensorArray<>(shape);
+
+        //        shape.getSize();
 
         // Set values in the data array
         //        for (int i = 0; i < halfDataArray.getSize(); i++) {
@@ -22,8 +28,8 @@ public class TestTensorTypes extends TornadoTestBase {
         //        }
 
         //        // Print the tensor information
-        //        System.out.println("Half-precision tensor:");
-        //        System.out.println("Shape: " + tensor1.getShape());
+        System.out.println("Half-precision tensor:");
+        System.out.println("Shape: " + tensorArray.getShape());
         //        System.out.println("Data type: " + tensor1.getDtype().getLayout());
     }
 
