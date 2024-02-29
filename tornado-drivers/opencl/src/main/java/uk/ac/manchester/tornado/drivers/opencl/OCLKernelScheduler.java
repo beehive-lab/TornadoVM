@@ -57,7 +57,7 @@ public abstract class OCLKernelScheduler {
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
-            tornadoKernelEvent.waitForEvents();
+            tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
             // Register globalTime
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());

@@ -180,14 +180,15 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         return new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
     }
 
-    private void launchKernelWithLevelZero(ZeKernelHandle kernel, DeviceThreadScheduling threadScheduling, ThreadBlockDispatcher dispatcher) {
+    private void launchKernelWithLevelZero(long executionPlanId, ZeKernelHandle kernel, DeviceThreadScheduling threadScheduling, ThreadBlockDispatcher dispatcher) {
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
         dispatch.setGroupCountX(threadScheduling.globalWork[0] / dispatcher.groupSizeX[0]);
         dispatch.setGroupCountY(threadScheduling.globalWork[1] / dispatcher.groupSizeY[0]);
         dispatch.setGroupCountZ(threadScheduling.globalWork[2] / dispatcher.groupSizeZ[0]);
 
-        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
+        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
+        //        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();
 
         if (TornadoOptions.isProfilerEnabled()) {
@@ -231,7 +232,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             meta.printThreadDims();
         }
 
-        launchKernelWithLevelZero(kernel, threadScheduling, dispatcher);
+        launchKernelWithLevelZero(executionPlanId, kernel, threadScheduling, dispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp.solveEvent(executionPlanId, meta);

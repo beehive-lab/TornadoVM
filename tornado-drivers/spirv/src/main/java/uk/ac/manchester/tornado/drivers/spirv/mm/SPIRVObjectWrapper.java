@@ -405,7 +405,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
         if (index == 1) {
             returnEvent = internalEvents[0];
         } else {
-            returnEvent = deviceContext.enqueueMarker();
+            returnEvent = deviceContext.enqueueMarker(executionPlanId);
         }
         return useDeps ? returnEvent : -1;
     }

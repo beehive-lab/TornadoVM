@@ -126,9 +126,9 @@ public class MultiThreaded extends TornadoTestBase {
         });
 
         t0.start();
-        t1.start();
-
         t0.join();
+
+        t1.start();
         t1.join();
 
     }

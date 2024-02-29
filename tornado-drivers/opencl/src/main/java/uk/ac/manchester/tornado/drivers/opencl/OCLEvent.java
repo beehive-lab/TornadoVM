@@ -95,7 +95,7 @@ public class OCLEvent implements Event {
     }
 
     @Override
-    public void waitForEvents() {
+    public void waitForEvents(long executionPlanId) {
         try {
             clWaitForEvents(new long[] { oclEventID });
         } catch (OCLException e) {

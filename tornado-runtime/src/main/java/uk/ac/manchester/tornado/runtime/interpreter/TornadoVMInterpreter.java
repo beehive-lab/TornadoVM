@@ -452,7 +452,7 @@ public class TornadoVMInterpreter {
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
                 Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), e);
-                event.waitForEvents();
+                event.waitForEvents(executionContext.getExecutionPlanId());
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
@@ -485,7 +485,7 @@ public class TornadoVMInterpreter {
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
                 Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), e);
-                event.waitForEvents();
+                event.waitForEvents(executionContext.getExecutionPlanId());
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
@@ -520,7 +520,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
             Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), lastEvent);
-            event.waitForEvents();
+            event.waitForEvents(executionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
@@ -555,7 +555,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.isProfilerEnabled() && tornadoEventID != -1) {
             Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), tornadoEventID);
-            event.waitForEvents();
+            event.waitForEvents(executionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
@@ -710,7 +710,7 @@ public class TornadoVMInterpreter {
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {
                     Event event = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), e);
-                    event.waitForEvents();
+                    event.waitForEvents(executionContext.getExecutionPlanId());
                     long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                     value += event.getElapsedTime();
                     timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);

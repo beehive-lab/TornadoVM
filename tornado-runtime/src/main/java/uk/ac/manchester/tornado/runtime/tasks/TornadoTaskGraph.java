@@ -1126,7 +1126,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     continue;
                 }
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
-                eventParameter.waitForEvents();
+                eventParameter.waitForEvents(executionPlanId);
                 value += eventParameter.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getLocalStateObject(objects[i]);
@@ -1157,7 +1157,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             timeProfiler.clean();
             if (event != null) {
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
-                event.waitForEvents();
+                event.waitForEvents(executionPlanId);
                 value += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getLocalStateObject(object);

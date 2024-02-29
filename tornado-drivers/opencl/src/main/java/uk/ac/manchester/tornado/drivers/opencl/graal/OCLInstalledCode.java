@@ -297,7 +297,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, task);
-            tornadoKernelEvent.waitForEvents();
+            tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
             // Register globalTime
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
@@ -369,7 +369,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = deviceContext.resolveEvent(executionPlanId, kernelContextWriteEventId);
-            event.waitForEvents();
+            event.waitForEvents(executionPlanId);
             long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
             copyInTimer += event.getElapsedTime();
             profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
