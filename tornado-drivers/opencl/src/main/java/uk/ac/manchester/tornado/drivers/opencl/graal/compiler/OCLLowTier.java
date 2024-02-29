@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoop
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP64SupportPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
@@ -60,6 +61,8 @@ public class OCLLowTier extends TornadoLowTier {
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new OCLFP64SupportPhase(tornadoDeviceContext));
+
+        appendPhase(new OCLFP16SupportPhase(tornadoDeviceContext));
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
