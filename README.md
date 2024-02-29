@@ -18,7 +18,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 1.0.1 - 30/01/2024 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
+**Latest Release:** TornadoVM 1.0.2 - 29/02/2024 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
 
