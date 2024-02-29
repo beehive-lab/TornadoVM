@@ -1,67 +1,43 @@
 package uk.ac.manchester.tornado.api.types.tensors;
 
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import java.lang.foreign.MemorySegment;
 
-public class Tensor<T> {
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.tensors.dtype.DType;
+
+public abstract sealed class Tensor extends TornadoNativeArray permits FloatTensor, HalfFloatTensor {
+    //
+    private final Shape shape;
 
     private final DType dtype;
-    private final int[] shape;
-    private final T data;
+    private int numberOfElements;
+    private MemorySegment segment;
+    private int arrayHeaderSize;
+    private int baseIndex;
+    private long segmentByteSize;
 
-    public Tensor(DType dtype, int[] shape) {
-        if (dtype == null) {
-            throw new IllegalArgumentException("DType cannot be null");
-        }
-
-        this.dtype = dtype;
+    public Tensor(Shape shape, DType dtype) {
         this.shape = shape;
-
-        // Initialize data based on DType
-        this.data = createData(dtype, calculateDataSize(shape));
+        this.dtype = dtype;
     }
 
-    private T createData(DType dtype, int size) {
-        return switch (dtype) {
-            case HALF_FLOAT -> (T) new HalfFloatArray(size);
-            case FLOAT -> (T) new FloatArray(size);
-            case DOUBLE -> (T) new DoubleArray(size);
-            case INT8, UINT8, BOOL -> (T) new ByteArray(size);
-            case INT16 -> (T) new ShortArray(size);
-            case INT32 -> (T) new IntArray(size);
-            case INT64 -> (T) new LongArray(size);
-            //            case TORNADO_NATIVE: // Assuming your TornadoNativeArray implementation
-            //                return (T) new TornadoNativeArray(dtype, size); // Create TornadoNativeArray
-            default -> throw new IllegalArgumentException(STR."Unsupported DType: \{dtype}");
-        };
-    }
-
-    private int calculateDataSize(int[] shape) {
-        int size = 1;
-        for (int dim : shape) {
-            size *= dim;
-        }
-        return size * dtype.getByteSize();
-    }
-
-    public DType getDType() {
-        return dtype;
-    }
-
-    public int[] getShape() {
+    public Shape getShape() {
         return shape;
     }
 
-    @SuppressWarnings("unchecked")
-    public <U extends T> U getData() {
-        return (U) this.data;
-    }
+    public abstract int getSize();
 
-    // Additional methods specific to TornadoNativeArray if needed
+    public abstract MemorySegment getSegment();
 
+    public abstract long getNumBytesOfSegment();
+
+    public abstract long getNumBytesWithoutHeader();
+
+    public abstract void clear();
+
+    public abstract int getElementSize();
+
+    public abstract void reshape(Shape newShape);
+
+    //    private DType getType()
 }
