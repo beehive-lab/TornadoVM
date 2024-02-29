@@ -77,8 +77,7 @@ public class FieldBuffer {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: reading with offset != 0
-        int event = objectBuffer.read(executionPlanId, getFieldValue(ref), 0, 0, events, useDeps);
-        return event;
+        return objectBuffer.read(executionPlanId, getFieldValue(ref), 0, 0, events, useDeps);
     }
 
     public void write(long executionPlanId, final Object ref) {
@@ -86,10 +85,6 @@ public class FieldBuffer {
             trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         objectBuffer.write(executionPlanId, getFieldValue(ref));
-    }
-
-    public String getFieldName() {
-        return field.getName();
     }
 
     public long size() {
