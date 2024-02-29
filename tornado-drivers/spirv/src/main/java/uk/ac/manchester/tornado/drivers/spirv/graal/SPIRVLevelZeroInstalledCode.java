@@ -188,7 +188,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         dispatch.setGroupCountZ(threadScheduling.globalWork[2] / dispatcher.groupSizeZ[0]);
 
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
-        //        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();
 
         if (TornadoOptions.isProfilerEnabled()) {

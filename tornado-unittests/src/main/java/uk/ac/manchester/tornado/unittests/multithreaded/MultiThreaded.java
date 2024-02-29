@@ -130,6 +130,5 @@ public class MultiThreaded extends TornadoTestBase {
 
         t0.join();
         t1.join();
-
     }
 }
