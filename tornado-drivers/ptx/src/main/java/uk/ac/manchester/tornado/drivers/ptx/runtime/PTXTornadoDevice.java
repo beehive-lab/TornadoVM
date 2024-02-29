@@ -32,8 +32,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -472,17 +474,17 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      */
     @Override
     public Event resolveEvent(long executionPlanId, int event) {
-        return getDeviceContext().resolveEvent(event);
+        return getDeviceContext().resolveEvent(executionPlanId, event);
     }
 
     @Override
-    public void ensureLoaded() {
-        getDeviceContext().flushEvents();
+    public void ensureLoaded(long executionPlanId) {
+        getDeviceContext().flushEvents(executionPlanId);
     }
 
     @Override
     public void flushEvents(long executionPlanId) {
-        getDeviceContext().flushEvents();
+        getDeviceContext().flushEvents(executionPlanId);
     }
 
     @Override
@@ -507,7 +509,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void sync(long executionPlanId) {
-        getDeviceContext().sync();
+        getDeviceContext().sync(executionPlanId);
     }
 
     @Override
@@ -528,7 +530,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void flush(long executionPlanId) {
-        getDeviceContext().flush();
+        getDeviceContext().flush(executionPlanId);
     }
 
     private void disableProfilerOptions() {
@@ -538,18 +540,20 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void reset() {
-        device.getPTXContext().getDeviceContext().reset();
+        IntStream.range(0, //
+                TornadoExecutionPlan.getTotalPlans()) //
+                .forEach(i -> device.getPTXContext().getDeviceContext().reset(i));
         disableProfilerOptions();
     }
 
     @Override
-    public void dumpEvents() {
-        getDeviceContext().dumpEvents();
+    public void dumpEvents(long executionPlanId) {
+        getDeviceContext().dumpEvents(executionPlanId);
     }
 
     @Override
     public String getDeviceName() {
-        return "cuda-" + device.getDeviceIndex();
+        return STR."cuda-\{device.getDeviceIndex()}";
     }
 
     @Override
@@ -658,7 +662,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public String toString() {
-        return getPlatformName() + " -- " + device.getDeviceName();
+        return STR."\{getPlatformName()} -- \{device.getDeviceName()}";
     }
 
 }

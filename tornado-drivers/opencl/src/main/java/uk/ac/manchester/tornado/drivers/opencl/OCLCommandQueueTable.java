@@ -28,13 +28,14 @@ import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class OCLCommandQueueTable {
 
     private final Map<OCLTargetDevice, ThreadCommandQueueTable> deviceCommandMap;
 
     public OCLCommandQueueTable() {
-        deviceCommandMap = new HashMap<>();
+        deviceCommandMap = new ConcurrentHashMap<>();
     }
 
     public OCLCommandQueue get(OCLTargetDevice device, OCLContext context) {
@@ -50,7 +51,7 @@ public class OCLCommandQueueTable {
         private final Map<Long, OCLCommandQueue> commandQueueMap;
 
         ThreadCommandQueueTable() {
-            commandQueueMap = new HashMap<>();
+            commandQueueMap = new ConcurrentHashMap<>();
         }
 
         public OCLCommandQueue get(long threadId, OCLTargetDevice device, OCLContext context) {

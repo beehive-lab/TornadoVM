@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
@@ -78,8 +79,8 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         //        }
 
         spirvDeviceContext = new ArrayList<>();
-        deviceBufferMap = new HashMap<>();
-        commmandQueueTable = new HashMap<>();
+        deviceBufferMap = new ConcurrentHashMap<>();
+        commmandQueueTable = new ConcurrentHashMap<>();
 
         // Create LevelZeroDeviceContext per level-zero device
         for (SPIRVDevice device : devices) {

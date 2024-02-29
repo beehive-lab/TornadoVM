@@ -181,7 +181,7 @@ public class TornadoVMInterpreter {
             assert deviceIndex == deviceForInterpreter.getDeviceContext().getDeviceIndex();
             TornadoLogger.debug("loading context %s", deviceForInterpreter.toString());
             final long t0 = System.nanoTime();
-            deviceForInterpreter.ensureLoaded();
+            deviceForInterpreter.ensureLoaded(executionContext.getExecutionPlanId());
             final long t1 = System.nanoTime();
             TornadoLogger.debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = bytecodeResult.get();
@@ -208,7 +208,7 @@ public class TornadoVMInterpreter {
             return;
         }
 
-        deviceForInterpreter.dumpEvents();
+        deviceForInterpreter.dumpEvents(executionContext.getExecutionPlanId());
     }
 
     public void dumpProfiles() {

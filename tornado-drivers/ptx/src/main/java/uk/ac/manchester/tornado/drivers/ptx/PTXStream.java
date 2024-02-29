@@ -31,7 +31,6 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -43,6 +42,7 @@ public class PTXStream {
 
     private final byte[] streamPool;
     private final PTXEventPool ptxEventPool;
+    private boolean isDestroy;
 
     public PTXStream() {
         streamPool = cuCreateStream();
@@ -144,8 +144,9 @@ public class PTXStream {
         cuStreamSynchronize(streamPool);
     }
 
-    public void cleanup() {
+    public void cuDestroyStream() {
         cuDestroyStream(streamPool);
+        isDestroy = true;
     }
 
     public Event resolveEvent(int event) {
@@ -359,5 +360,9 @@ public class PTXStream {
 
     public PTXEventPool getEventPool() {
         return this.ptxEventPool;
+    }
+
+    public boolean isDestroy() {
+        return isDestroy;
     }
 }

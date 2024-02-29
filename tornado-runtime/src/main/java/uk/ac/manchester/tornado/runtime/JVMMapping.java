@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JVMMapping implements TornadoXPUDevice {
 
     @Override
-    public void dumpEvents() {
+    public void dumpEvents(long executionPlanId) {
         TornadoInternalError.unimplemented();
     }
 
@@ -116,7 +116,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public void ensureLoaded() {
+    public void ensureLoaded(long executionPlanId) {
     }
 
     @Override

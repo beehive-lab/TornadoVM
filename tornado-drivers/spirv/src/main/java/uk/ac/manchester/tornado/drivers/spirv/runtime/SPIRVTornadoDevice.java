@@ -425,7 +425,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void ensureLoaded() {
+    public void ensureLoaded(long executionPlanId) {
         // create command queue
 
         // TODO: pass execution plan ID to map EP -> command queues
@@ -481,7 +481,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void dumpEvents() {
+    public void dumpEvents(long executionPlanId) {
 
     }
 

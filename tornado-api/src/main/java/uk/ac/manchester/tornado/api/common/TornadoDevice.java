@@ -135,7 +135,7 @@ public interface TornadoDevice {
      */
     Event resolveEvent(long executionPlanId, int event);
 
-    void ensureLoaded();
+    void ensureLoaded(long executionPlanId);
 
     void flushEvents(long executionPlanId);
 
@@ -153,7 +153,7 @@ public interface TornadoDevice {
 
     void reset();
 
-    void dumpEvents();
+    void dumpEvents(long executionPlanId);
 
     String getDeviceName();
 

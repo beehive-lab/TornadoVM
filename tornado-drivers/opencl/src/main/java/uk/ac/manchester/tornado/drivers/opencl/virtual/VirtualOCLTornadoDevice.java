@@ -86,7 +86,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void dumpEvents() {
+    public void dumpEvents(long executionPlanId) {
     }
 
     @Override
@@ -148,7 +148,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void ensureLoaded() {
+    public void ensureLoaded(long executionPlanId) {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {
             backend.init();

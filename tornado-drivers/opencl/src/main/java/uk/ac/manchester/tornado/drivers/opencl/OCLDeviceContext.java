@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -75,7 +76,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         this.codeCache = new OCLCodeCache(this);
         this.oclEventPool = new OCLEventPool(EVENT_WINDOW);
         bufferProvider = new OCLBufferProvider(this);
-        commandQueueTable = new HashMap<>();
+        commandQueueTable = new ConcurrentHashMap<>();
         this.device.setDeviceContext(this);
     }
 

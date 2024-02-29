@@ -83,6 +83,10 @@ public class TornadoExecutionPlan {
         return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
     }
 
+    public static int getTotalPlans() {
+        return globalExecutionPlanCounter.intValue();
+    }
+
     /**
      * Execute an execution plan. It returns a {@link TornadoExecutionPlan} for
      * further build different optimization after the execution as well as obtain

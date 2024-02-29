@@ -23,6 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -38,16 +42,12 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 public class SPIRVCommandQueueTable {
 
     private final Map<SPIRVDevice, ThreadCommandQueueTable> deviceCommandMap;
 
     public SPIRVCommandQueueTable() {
-        deviceCommandMap = new HashMap<>();
+        deviceCommandMap = new ConcurrentHashMap<>();
     }
 
     public SPIRVLevelZeroCommandQueue get(SPIRVDevice device, LevelZeroContext levelZeroContext) {
@@ -64,7 +64,7 @@ public class SPIRVCommandQueueTable {
         private final Map<Long, SPIRVLevelZeroCommandQueue> commandQueueMap;
 
         ThreadCommandQueueTable() {
-            commandQueueMap = new HashMap<>();
+            commandQueueMap = new ConcurrentHashMap<>();
         }
 
         public SPIRVLevelZeroCommandQueue get(long threadId, SPIRVDevice device, LevelZeroContext levelZeroContext) {
