@@ -39,8 +39,9 @@ public class PTXContext {
 
     public PTXContext(PTXDevice device) {
         ptxContext = cuCtxCreate(device.getCuDevice());
-        //        stream = new PTXStream();
+        cuCtxSetCurrent(ptxContext);
         deviceContext = new PTXDeviceContext(device);
+
     }
 
     private native static long cuCtxCreate(long deviceIndex);

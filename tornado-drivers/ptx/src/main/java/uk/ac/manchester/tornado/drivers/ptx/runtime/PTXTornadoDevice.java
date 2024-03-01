@@ -479,7 +479,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void ensureLoaded(long executionPlanId) {
-        getDeviceContext().flushEvents(executionPlanId);
+        // Sync the CUDA Stream only if the Stream Exists
+        getDeviceContext().flushEventsIfNeeded(executionPlanId);
     }
 
     @Override

@@ -167,6 +167,15 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         sync(executionPlanId);
     }
 
+    /**
+     * Sync the CUDA Stream only if the Stream Exists
+     * 
+     * @param executionPlanId
+     */
+    public void flushEventsIfNeeded(long executionPlanId) {
+        syncIfNeeded(executionPlanId);
+    }
+
     public int enqueueBarrier(long executionPlanId) {
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId);
@@ -194,6 +203,18 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public void sync(long executionPlanId) {
         PTXStream stream = getStream(executionPlanId);
         stream.sync();
+    }
+
+    /**
+     * Sync the CUDA Stream only if the Stream Exists
+     * 
+     * @param executionPlanId
+     */
+    public void syncIfNeeded(long executionPlanId) {
+        PTXStream stream = getStreamIfNeeded(executionPlanId);
+        if (stream != null) {
+            stream.sync();
+        }
     }
 
     public void flush(long executionPlanId) {
@@ -506,6 +527,13 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             PTXStreamTable ptxStreamTable = new PTXStreamTable();
             ptxStreamTable.get(device);
             streamTable.put(executionPlanId, ptxStreamTable);
+        }
+        return streamTable.get(executionPlanId).get(device);
+    }
+
+    private PTXStream getStreamIfNeeded(long executionPlanId) {
+        if (!streamTable.containsKey(executionPlanId)) {
+            return null;
         }
         return streamTable.get(executionPlanId).get(device);
     }

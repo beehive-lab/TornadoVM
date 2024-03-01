@@ -1328,9 +1328,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return execute();
         } else {
             if (executionPackage.getDRMode() == DRMode.SERIAL) {
-                return scheduleDynamicReconfigurationParallel(executionPackage.getPolicy());
-            } else if (executionPackage.getDRMode() == DRMode.PARALLEL) {
                 return scheduleDynamicReconfigurationSequential(executionPackage.getPolicy());
+            } else if (executionPackage.getDRMode() == DRMode.PARALLEL) {
+                return scheduleDynamicReconfigurationParallel(executionPackage.getPolicy());
             }
             throw new TornadoRuntimeException("");
         }
@@ -1561,8 +1561,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 for (StreamingObject streamingObject : outputModeObjects) {
                     performStreamOutThreads(streamingObject.mode, task, streamingObject.object);
                 }
-                // performStreamOutThreads(task, streamOutObjects);
-
+                
                 ImmutableTaskGraph immutableTaskGraph = task.snapshot();
                 TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
