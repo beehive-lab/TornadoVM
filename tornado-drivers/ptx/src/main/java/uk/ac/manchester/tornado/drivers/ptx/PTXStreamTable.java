@@ -35,7 +35,7 @@ public class PTXStreamTable {
     }
 
     public PTXStream get(PTXDevice device) {
-        if (Thread.currentThread().getName().equals("PTX-Cleanup-Thread")) {
+        if (Thread.currentThread().threadId() == PTX.SHUTDOW_THREAD_ID_HOOK) {
             return null;
         }
         if (!deviceStream.containsKey(device)) {

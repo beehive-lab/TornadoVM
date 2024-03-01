@@ -42,6 +42,8 @@ public class PTX {
     private static final PTXPlatform platform;
     private static boolean initialised = false;
 
+    public static long SHUTDOW_THREAD_ID_HOOK;
+
     static {
         System.loadLibrary(PTX_JNI_LIBRARY);
 
@@ -53,6 +55,7 @@ public class PTX {
             @Override
             public void run() {
                 setName("PTX-Cleanup-Thread");
+                SHUTDOW_THREAD_ID_HOOK = Thread.currentThread().threadId();
                 PTX.cleanup();
             }
         });
