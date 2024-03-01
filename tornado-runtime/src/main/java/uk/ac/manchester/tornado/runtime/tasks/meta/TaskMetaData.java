@@ -141,7 +141,7 @@ public class TaskMetaData extends AbstractMetaData {
     public void addProfile(int id) {
         final TornadoXPUDevice device = getLogicDevice();
         BitSet events;
-        profiles.computeIfAbsent(device, _ -> new BitSet(EVENT_WINDOW));
+        profiles.computeIfAbsent(device, k -> new BitSet(EVENT_WINDOW));
         events = profiles.get(device);
         events.set(id);
     }

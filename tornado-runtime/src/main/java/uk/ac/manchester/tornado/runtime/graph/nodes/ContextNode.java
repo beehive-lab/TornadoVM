@@ -80,7 +80,7 @@ public class ContextNode extends AbstractNode {
      * It gets the {@link TornadoXPUDevice} associated with this context
      * node.
      *
-     * @return The TornadoAcceleratorDevice.
+     * @return {@link TornadoXPUDevice}
      */
     public TornadoXPUDevice getDevice() {
         return this.device;
