@@ -66,8 +66,6 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
-        //        this.stream = stream;
-
         streamTable = new ConcurrentHashMap<>();
         this.scheduler = new PTXScheduler(device);
         codeCache = new PTXCodeCache(this);

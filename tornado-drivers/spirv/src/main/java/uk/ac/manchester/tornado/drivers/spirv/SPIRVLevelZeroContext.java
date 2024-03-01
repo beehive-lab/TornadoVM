@@ -61,7 +61,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private final LevelZeroContext levelZeroContext;
     private final List<SPIRVDeviceContext> spirvDeviceContext;
-    //    private final List<SPIRVLevelZeroCommandQueue> commandQueues;
+
     // Maps buffer ID -> LevelZeroByteBuffer
     private final Map<Long, LevelZeroByteBuffer> deviceBufferMap;
 
@@ -70,13 +70,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     public SPIRVLevelZeroContext(SPIRVPlatform platform, List<SPIRVDevice> devices, LevelZeroContext levelZeroContext) {
         super(platform, devices);
         this.levelZeroContext = levelZeroContext;
-
-        //        commandQueues = new ArrayList<>();
-        //        for (SPIRVDevice device : devices) {
-        //            LevelZeroCommandQueue commandQueue = createCommandQueue(levelZeroContext, device);
-        //            LevelZeroCommandList commandList = createCommandList(levelZeroContext, device);
-        //            commandQueues.add(new SPIRVLevelZeroCommandQueue(commandQueue, commandList, (LevelZeroDevice) device.getDevice()));
-        //        }
 
         spirvDeviceContext = new ArrayList<>();
         deviceBufferMap = new ConcurrentHashMap<>();
@@ -96,7 +89,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
 
         if (numQueueGroups[0] == 0) {
-            throw new RuntimeException("Number of Queue Groups is 0 for device: " + device.getDeviceProperties().getName());
+            throw new RuntimeException(STR."Number of Queue Groups is 0 for device: \{device.getDeviceProperties().getName()}");
         }
         int ordinal = numQueueGroups[0];
 
@@ -161,9 +154,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             spirvCommandQueueTable.get(device, levelZeroContext);
             commmandQueueTable.put(executionPlanId, spirvCommandQueueTable);
         }
-        //        if (deviceIndex < commandQueues.size()) {
-        //            return commandQueues.get(deviceIndex);
-        //        }
         return commmandQueueTable.get(executionPlanId).get(devices.get(deviceIndex), levelZeroContext);
     }
 
@@ -245,7 +235,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long srcOffset, long bytes, byte[] value, long dstOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        //        SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
         SPIRVLevelZeroCommandQueue spirvCommandQueue = getCommandQueueForDevice(executionPlanId, deviceIndex);
         LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
         LevelZeroByteBuffer deviceBuffer = deviceBufferMap.get(bufferId);
