@@ -177,9 +177,13 @@ public class TaskUtils {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 switch (jm.getName()) {
+                    case "booleanValue":
+                    case "byteValue":
+                    case "charValue":
+                    case "shortValue":
+                    case "intValue":
                     case "floatValue":
                     case "doubleValue":
-                    case "intValue":
                     case "longValue":
                         continue;
                 }

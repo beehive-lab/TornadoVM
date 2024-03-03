@@ -47,8 +47,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -137,6 +139,14 @@ public class OCLObjectWrapper implements ObjectBuffer {
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((LongArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == HalfFloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((HalfFloatArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == CharArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((CharArray) objectFromField).getSegment().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
