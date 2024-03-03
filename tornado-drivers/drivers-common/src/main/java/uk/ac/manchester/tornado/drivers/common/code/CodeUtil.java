@@ -65,7 +65,7 @@ public class CodeUtil {
 
         Variable[] inputParameters = new Variable[argTypes.length];
         for (int i = 0; i < argTypes.length; i++, variableIndex++) {
-            if (argTypes[i].toJavaName().equals(HalfFloat.class.getName())) {
+            if (isHalfFloat(argTypes[i])) {
                 // Treat HalfFloat as short during code generation
                 inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(JavaKind.Short)), variableIndex);
                 continue;
@@ -81,6 +81,10 @@ public class CodeUtil {
         variableIndex++;
 
         return new CallingConvention(0, returnParameter, inputParameters);
+    }
+
+    public static boolean isHalfFloat(JavaType type) {
+        return type.toJavaName().equals(HalfFloat.class.getName());
     }
 
 }

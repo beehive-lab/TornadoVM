@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.isHalfFloat;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCEPTIONS;
@@ -360,10 +361,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             parameterName = "_" + parameterName;
         }
         return parameterName;
-    }
-
-    private boolean isHalfFloat(JavaType type) {
-        return type.toJavaName().equals(HalfFloat.class.getName());
     }
 
     private void emitMethodParameters(OCLAssembler asm, ResolvedJavaMethod method, CallingConvention incomingArguments, boolean isKernel) {

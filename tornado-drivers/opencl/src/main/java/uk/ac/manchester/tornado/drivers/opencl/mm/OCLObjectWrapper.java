@@ -140,14 +140,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((LongArray) objectFromField).getSegment().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
-            } else if (type == HalfFloatArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((HalfFloatArray) objectFromField).getSegment().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
-            } else if (type == CharArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((CharArray) objectFromField).getSegment().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
