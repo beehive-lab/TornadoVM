@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -330,7 +331,7 @@ public class TornadoExecutionPlan {
      * Obtains the ID that was assigned to the execution plan.
      */
     public long getId() {
-        return executionPackage.getId();
+        return executionPackage.getExecutionPlanId();
     }
 
     /**

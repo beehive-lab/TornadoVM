@@ -237,7 +237,7 @@ public class TestAPI extends TornadoTestBase {
 
         // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
         // device buffers for other execution plans.
-        //executionPlan.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));

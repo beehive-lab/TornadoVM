@@ -52,7 +52,15 @@ import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -83,6 +91,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -94,7 +103,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -515,7 +524,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         //Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             final DataObjectState globalState = localState.getGlobalState();
-            final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
+            final XPUDeviceBufferState deviceState = globalState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
@@ -552,7 +561,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             final DataObjectState globalState = localState.getGlobalState();
-            final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
+            final XPUDeviceBufferState deviceState = globalState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
@@ -1010,7 +1019,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void reuseDeviceBufferObject(final LocalObjectState localState, final TornadoDevice device) {
         final DataObjectState globalState = localState.getGlobalState();
-        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
         deviceState.setLockBuffer(true);
     }
 
@@ -1040,7 +1049,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void releaseObjectFromDeviceMemory(final LocalObjectState localState, final TornadoDevice device) {
         final DataObjectState globalState = localState.getGlobalState();
-        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
         deviceState.setLockBuffer(false);
         if (deviceState.hasObjectBuffer()) {
             device.deallocate(deviceState);
@@ -1061,7 +1070,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
         final DataObjectState globalState = localState.getGlobalState();
         final TornadoXPUDevice device = meta().getLogicDevice();
-        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
         if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, 0, deviceState, null));
         }
@@ -1072,7 +1081,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
         final DataObjectState globalState = localState.getGlobalState();
         final TornadoXPUDevice device = meta().getLogicDevice();
-        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
         deviceState.setPartialCopySize(partialCopySize);
         if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, offset, deviceState, null));
@@ -1130,7 +1139,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 value += eventParameter.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getLocalStateObject(objects[i]);
-                DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                XPUDeviceBufferState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
             }
             updateProfiler();
@@ -1161,7 +1170,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 value += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getLocalStateObject(object);
-                DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                XPUDeviceBufferState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
                 updateProfiler();
             }
@@ -1323,14 +1332,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public TornadoTaskGraphInterface execute(ExecutorFrame executionPackage) {
-        executionPlanId = executionPackage.getId();
-        if (executionPackage.getPolicy() == null) {
+        executionPlanId = executionPackage.getExecutionPlanId();
+        if (executionPackage.getDynamicReconfigurationPolicy() == null) {
             return execute();
         } else {
             if (executionPackage.getDRMode() == DRMode.SERIAL) {
-                return scheduleDynamicReconfigurationSequential(executionPackage.getPolicy());
+                return scheduleDynamicReconfigurationSequential(executionPackage.getDynamicReconfigurationPolicy());
             } else if (executionPackage.getDRMode() == DRMode.PARALLEL) {
-                return scheduleDynamicReconfigurationParallel(executionPackage.getPolicy());
+                return scheduleDynamicReconfigurationParallel(executionPackage.getDynamicReconfigurationPolicy());
             }
             throw new TornadoRuntimeException("");
         }

@@ -32,7 +32,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -119,15 +120,15 @@ public class TestSPIRVJITCompiler {
     public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
 
         DataObjectState stateB = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateB = stateB.getDeviceState(spirvTornadoDevice);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceState(spirvTornadoDevice);
 
         DataObjectState stateC = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
 
-        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 
         final long executionPlanId = 0;
 

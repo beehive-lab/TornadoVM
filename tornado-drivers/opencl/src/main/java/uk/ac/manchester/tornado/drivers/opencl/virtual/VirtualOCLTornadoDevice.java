@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -243,7 +243,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState objectState) {
         return null;
     }
 
@@ -263,43 +263,43 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceBufferState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
+    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public synchronized int deallocate(DeviceObjectState state) {
+    public synchronized int deallocate(DeviceBufferState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
         unimplemented();
         return null;
     }
 
     @Override
-    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceBufferState state, int[] events) {
         unimplemented();
         return null;
     }
 
     @Override
-    public int streamOut(long executionPlanId, Object object, long offset, DeviceObjectState state, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState state, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState state, int[] events) {
         unimplemented();
         return -1;
     }

@@ -56,7 +56,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     // FIXME: <REVISIT> Check the current utility of this buffer
     private final OCLTargetDevice device;
-    //    private OCLCommandQueue commandQueue;
 
     /**
      * Table to represent {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan} -> {@link OCLCommandQueueTable}

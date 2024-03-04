@@ -33,6 +33,9 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
+ * Test to check the invocation of multiple execution plans from different Java threads.
+ * The different execution plans are built using the same instance of the Task-Graph.
+ *
  * How to run?
  *
  * <p>

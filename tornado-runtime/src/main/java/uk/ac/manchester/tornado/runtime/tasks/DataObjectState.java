@@ -28,23 +28,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectState;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 public class DataObjectState implements ObjectState {
 
-    private ConcurrentHashMap<TornadoXPUDevice, DeviceObjectState> deviceStates;
+    private ConcurrentHashMap<TornadoXPUDevice, XPUDeviceBufferState> deviceStates;
 
     public DataObjectState() {
         deviceStates = new ConcurrentHashMap<>();
     }
 
-    public DeviceObjectState getDeviceState(TornadoDevice device) {
+    public XPUDeviceBufferState getDeviceState(TornadoDevice device) {
         if (!(device instanceof TornadoXPUDevice)) {
             throw new TornadoRuntimeException("[ERROR] Device not compatible");
         }
         if (!deviceStates.containsKey(device)) {
-            deviceStates.put((TornadoXPUDevice) device, new DeviceObjectState());
+            deviceStates.put((TornadoXPUDevice) device, new XPUDeviceBufferState());
         }
         return deviceStates.get(device);
     }

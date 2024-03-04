@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -168,7 +168,6 @@ public class TornadoVMInterpreter {
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
             TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
-            //globalStates[i] = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object);
             globalStates[i] = executionContext.getLocalStateObject(object).getGlobalState();
         }
     }
@@ -400,7 +399,7 @@ public class TornadoVMInterpreter {
 
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, long sizeBatch) {
         Object[] objects = new Object[args.length];
-        DeviceObjectState[] objectStates = new DeviceObjectState[args.length];
+        XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[args.length];
         for (int i = 0; i < objects.length; i++) {
             objects[i] = this.objects.get(args[i]);
             objectStates[i] = resolveObjectState(args[i]);
@@ -425,7 +424,7 @@ public class TornadoVMInterpreter {
 
         }
 
-        final DeviceObjectState objectState = resolveObjectState(objectIndex);
+        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         return deviceForInterpreter.deallocate(objectState);
     }
 
@@ -436,7 +435,7 @@ public class TornadoVMInterpreter {
             return;
         }
 
-        final DeviceObjectState objectState = resolveObjectState(objectIndex);
+        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
 
         // We need to stream-in when using batches, because the whole data is not copied
         List<Integer> allEvents = (sizeBatch > 0)
@@ -477,7 +476,7 @@ public class TornadoVMInterpreter {
             DebugInterpreter.logTransferToDeviceAlways(object, deviceForInterpreter, sizeBatch, offset, eventList, tornadoVMBytecodeList);
         }
 
-        final DeviceObjectState objectState = resolveObjectState(objectIndex);
+        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         List<Integer> allEvents = deviceForInterpreter.streamIn(executionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
@@ -513,7 +512,7 @@ public class TornadoVMInterpreter {
 
         }
 
-        final DeviceObjectState objectState = resolveObjectState(objectIndex);
+        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         int lastEvent = deviceForInterpreter.streamOutBlocking(executionContext.getExecutionPlanId(), object, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
@@ -549,7 +548,7 @@ public class TornadoVMInterpreter {
 
         }
 
-        final DeviceObjectState objectState = resolveObjectState(objectIndex);
+        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
 
         final int tornadoEventID = deviceForInterpreter.streamOutBlocking(executionContext.getExecutionPlanId(), object, offset, objectState, waitList);
 
@@ -691,7 +690,7 @@ public class TornadoVMInterpreter {
                 }
 
                 final DataObjectState globalState = resolveGlobalObjectState(argIndex);
-                final DeviceObjectState objectState = globalState.getDeviceState(deviceForInterpreter);
+                final XPUDeviceBufferState objectState = globalState.getDeviceState(deviceForInterpreter);
 
                 if (!isObjectInAtomicRegion(objectState, deviceForInterpreter, task)) {
                     // Add a reference (arrays, vector types, panama regions)
@@ -788,7 +787,7 @@ public class TornadoVMInterpreter {
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
     }
 
-    private DeviceObjectState resolveObjectState(int index) {
+    private XPUDeviceBufferState resolveObjectState(int index) {
         return globalStates[index].getDeviceState(deviceForInterpreter);
     }
 
@@ -844,7 +843,7 @@ public class TornadoVMInterpreter {
         return globalStates[index];
     }
 
-    private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoXPUDevice device, SchedulableTask task) {
+    private boolean isObjectInAtomicRegion(XPUDeviceBufferState objectState, TornadoXPUDevice device, SchedulableTask task) {
         return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
     }
 

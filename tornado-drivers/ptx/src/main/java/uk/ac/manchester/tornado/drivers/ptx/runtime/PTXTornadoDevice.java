@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -130,7 +130,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState objectState) {
         return null;
     }
 
@@ -279,7 +279,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
+    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
@@ -291,7 +291,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
@@ -308,7 +308,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int deallocate(DeviceObjectState state) {
+    public synchronized int deallocate(DeviceBufferState state) {
         if (state.isLockedBuffer()) {
             return -1;
         }
@@ -372,7 +372,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      *     to be allocated
      * @param objectState
      *     state of the object in the target device
-     *     {@link DeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     list of pending events (dependencies)
      * @param batchSize
@@ -384,7 +384,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      * @return an event ID
      */
     @Override
-    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
         if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
             return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
@@ -406,13 +406,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link DeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     list of previous events
      * @return and event ID
      */
     @Override
-    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceBufferState objectState, int[] events) {
         objectState.setContents(true);
         return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
     }
@@ -428,13 +428,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link DeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     of pending events
      * @return and event ID
      */
     @Override
-    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
         int event = objectState.getObjectBuffer().enqueueRead(executionPlanId, object, hostOffset, events, events != null);
         if (events != null) {
@@ -454,13 +454,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link DeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     of pending events
      * @return and event ID
      */
     @Override
-    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
         return objectState.getObjectBuffer().read(executionPlanId, object, hostOffset, objectState.getPartialCopySize(), events, events != null);
     }

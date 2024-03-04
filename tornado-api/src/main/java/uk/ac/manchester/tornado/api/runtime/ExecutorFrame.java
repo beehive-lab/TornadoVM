@@ -15,26 +15,33 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.runtime;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.Policy;
+
+/**
+ * Class to store all objects and parameters related to the dispatch of an execution plan.
+ */
 public class ExecutorFrame {
 
-    private final long id;
-    private DRMode drMode;
-    private Policy policy;
+    private final long executionPlanId;
+    private DRMode dynamicReconfigurationMode;
+    private Policy dynamicReconfigurationPolicy;
     private GridScheduler gridScheduler;
 
     public ExecutorFrame(long id) {
-        this.id = id;
+        this.executionPlanId = id;
     }
 
     public ExecutorFrame withPolicy(Policy policy) {
-        this.policy = policy;
+        this.dynamicReconfigurationPolicy = policy;
         return this;
     }
 
     public ExecutorFrame withMode(DRMode drMode) {
-        this.drMode = drMode;
+        this.dynamicReconfigurationMode = drMode;
         return this;
     }
 
@@ -43,19 +50,19 @@ public class ExecutorFrame {
         return this;
     }
 
-    public Policy getPolicy() {
-        return policy;
+    public Policy getDynamicReconfigurationPolicy() {
+        return dynamicReconfigurationPolicy;
     }
 
     public DRMode getDRMode() {
-        return drMode;
+        return dynamicReconfigurationMode;
     }
 
     public GridScheduler getGridScheduler() {
         return gridScheduler;
     }
 
-    public long getId() {
-        return this.id;
+    public long getExecutionPlanId() {
+        return this.executionPlanId;
     }
 }

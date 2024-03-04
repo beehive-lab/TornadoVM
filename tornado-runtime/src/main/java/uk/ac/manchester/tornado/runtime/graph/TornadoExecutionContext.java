@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -532,7 +532,7 @@ public class TornadoExecutionContext {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
                     value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
-                    DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                    XPUDeviceBufferState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                     profiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
                 }
             }

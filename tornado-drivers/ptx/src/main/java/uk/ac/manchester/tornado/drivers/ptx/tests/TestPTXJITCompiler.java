@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -118,15 +119,15 @@ public class TestPTXJITCompiler {
     public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceState(tornadoDevice);
 
         DataObjectState stateB = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateB = stateB.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceState(tornadoDevice);
 
         DataObjectState stateC = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 
         final long executionPlanId = 0;
         // Copy-IN A

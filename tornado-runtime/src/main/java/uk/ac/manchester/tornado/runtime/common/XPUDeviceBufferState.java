@@ -26,8 +26,9 @@ package uk.ac.manchester.tornado.runtime.common;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 
-public class DeviceObjectState implements uk.ac.manchester.tornado.api.memory.DeviceObjectState {
+public class XPUDeviceBufferState implements DeviceBufferState {
 
     private XPUBuffer objectBuffer;
     private boolean atomicRegionPresent;
@@ -36,7 +37,7 @@ public class DeviceObjectState implements uk.ac.manchester.tornado.api.memory.De
     private boolean lockBuffer;
     private long partialSize;
 
-    public DeviceObjectState() {
+    public XPUDeviceBufferState() {
     }
 
     public void setObjectBuffer(XPUBuffer value) {

@@ -32,14 +32,13 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
@@ -166,13 +165,13 @@ public class OpenCL {
         }
 
         // Copy-in variables
-        ArrayList<DeviceObjectState> states = new ArrayList<>();
+        ArrayList<XPUDeviceBufferState> states = new ArrayList<>();
         for (int i = 0; i < accesses.length; i++) {
             Access access = accesses[i];
             Object object = parameters[i];
 
             DataObjectState globalState = new DataObjectState();
-            DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
+            XPUDeviceBufferState deviceState = globalState.getDeviceState(tornadoDevice);
 
             switch (access) {
                 case READ_WRITE:
@@ -212,7 +211,7 @@ public class OpenCL {
                 case READ_WRITE:
                 case WRITE_ONLY:
                     Object object = parameters[i];
-                    DeviceObjectState deviceState = states.get(i);
+                    XPUDeviceBufferState deviceState = states.get(i);
                     tornadoDevice.streamOutBlocking(executionContextId, object, 0, deviceState, null);
                     break;
                 default:

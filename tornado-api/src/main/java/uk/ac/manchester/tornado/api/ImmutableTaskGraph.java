@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
 /**
  * A {@link TaskGraph} is encapsulated in this class and all actions over a task

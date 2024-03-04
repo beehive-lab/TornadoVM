@@ -35,7 +35,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -119,15 +120,15 @@ public class TestOpenCLJITCompiler {
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceState(tornadoDevice);
 
         DataObjectState stateB = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateB = stateB.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceState(tornadoDevice);
 
         DataObjectState stateC = new DataObjectState();
-        uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 
         long contextID = 0;
 

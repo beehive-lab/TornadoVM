@@ -65,8 +65,6 @@ public class TestFails extends TornadoTestBase {
         // =============================================================================
         FloatArray x = new FloatArray(100);
         FloatArray y = new FloatArray(100);
-        //        float[] x = new float[100];
-        //        float[] y = new float[100];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //

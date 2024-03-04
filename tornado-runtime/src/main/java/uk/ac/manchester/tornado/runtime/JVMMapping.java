@@ -31,12 +31,9 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.memory.DeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,7 +64,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceObjectState objectState, int[] events, long size, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long size, long offset) {
         TornadoInternalError.unimplemented();
         return null;
     }
@@ -99,13 +96,13 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceBufferState objectState, int[] events) {
         TornadoInternalError.unimplemented();
         return null;
     }
 
     @Override
-    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] list) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] list) {
         TornadoInternalError.unimplemented();
         return -1;
     }
@@ -135,22 +132,22 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceBufferState state) {
         return -1;
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceObjectState[] states) {
+    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         return -1;
     }
 
     @Override
-    public synchronized int deallocate(DeviceObjectState state) {
+    public synchronized int deallocate(DeviceBufferState state) {
         return 0;
     }
 
     @Override
-    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceObjectState objectState, int[] list) {
+    public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] list) {
         return -1;
     }
 
@@ -220,7 +217,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, uk.ac.manchester.tornado.runtime.common.DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState objectState) {
         return null;
     }
 

@@ -32,16 +32,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.types.collections.*;
+import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
 import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
@@ -170,8 +162,6 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
         int internalEvent;
         if (batchSize <= 0) {
-            // Prototype: we add one more parameter to pass the correct command queue reference 
-            //deviceContext.enqueueWriteBuffer(deviceContext.getCommandQueue(executionPlanID, threadId), toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);

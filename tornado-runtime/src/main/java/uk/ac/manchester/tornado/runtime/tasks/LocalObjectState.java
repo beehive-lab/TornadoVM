@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.runtime.tasks;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 
 /**
  * Data structure to keep the state for each parameter used by the TornadoVM runtime.
@@ -62,7 +62,6 @@ public class LocalObjectState {
     private Object object;
 
     public LocalObjectState(Object object) {
-        //globalObjectState = getTornadoRuntime().resolveObject(object);
         this.object = object;
         globalObjectState = new DataObjectState();
         streamIn = false;
@@ -102,7 +101,7 @@ public class LocalObjectState {
     }
 
     public Event sync(long executionPlanId, Object object, TornadoDevice device) {
-        DeviceObjectState objectState = globalObjectState.getDeviceState(device);
+        XPUDeviceBufferState objectState = globalObjectState.getDeviceState(device);
         if (objectState.isLockedBuffer()) {
             int eventId = device.streamOutBlocking(executionPlanId, object, 0, objectState, null);
             return device.resolveEvent(executionPlanId, eventId);

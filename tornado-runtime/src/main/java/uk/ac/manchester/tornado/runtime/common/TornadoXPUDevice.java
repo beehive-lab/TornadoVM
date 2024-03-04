@@ -127,12 +127,12 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * @param value
      *     The value to update the atomic region and object state.
      * @param objectState
-     *     The {@link DeviceObjectState} to update the atomic region and
+     *     The {@link XPUDeviceBufferState} to update the atomic region and
      *     object state.
      * @return The integer array representing the updated atomic region and object
      *     state.
      */
-    int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState);
+    int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState objectState);
 
     /**
      * It gets the global index of atomic operations for the specified schedulable

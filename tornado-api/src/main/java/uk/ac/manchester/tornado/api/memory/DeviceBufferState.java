@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.memory;
 
-public interface DeviceObjectState {
+public interface DeviceBufferState {
 
     void setObjectBuffer(XPUBuffer value);
 

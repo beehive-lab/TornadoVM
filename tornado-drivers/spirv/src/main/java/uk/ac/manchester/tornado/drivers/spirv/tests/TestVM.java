@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 
 /**
@@ -69,15 +69,15 @@ public class TestVM {
 
         // We allocate buffer A
         DataObjectState stateA = new DataObjectState();
-        DeviceObjectState objectStateA = stateA.getDeviceState(device);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceState(device);
 
         // We allocate buffer B
         DataObjectState stateB = new DataObjectState();
-        DeviceObjectState objectStateB = stateB.getDeviceState(device);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceState(device);
 
         // We allocate buffer C
         DataObjectState stateC = new DataObjectState();
-        DeviceObjectState objectStateC = stateC.getDeviceState(device);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceState(device);
 
         // Allocate a
         device.allocate(a, 0, objectStateA);

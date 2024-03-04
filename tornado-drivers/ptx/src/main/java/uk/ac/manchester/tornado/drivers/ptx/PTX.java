@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
@@ -93,13 +93,13 @@ public class PTX {
         final long executionPlanId = 0;
 
         // Copy-in variables
-        ArrayList<DeviceObjectState> states = new ArrayList<>();
+        ArrayList<XPUDeviceBufferState> states = new ArrayList<>();
         for (int i = 0; i < accesses.length; i++) {
             Access access = accesses[i];
             Object object = parameters[i];
 
             DataObjectState globalState = new DataObjectState();
-            DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
+            XPUDeviceBufferState deviceState = globalState.getDeviceState(tornadoDevice);
 
             switch (access) {
                 case READ_WRITE:
@@ -139,7 +139,7 @@ public class PTX {
                 case READ_WRITE:
                 case WRITE_ONLY:
                     Object object = parameters[i];
-                    DeviceObjectState deviceState = states.get(i);
+                    XPUDeviceBufferState deviceState = states.get(i);
                     tornadoDevice.streamOutBlocking(executionPlanId, object, 0, deviceState, null);
                     break;
                 default:

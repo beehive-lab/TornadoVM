@@ -34,7 +34,6 @@ public class PTXContext {
 
     private final long ptxContext;
 
-    //    private final PTXStream stream;
     private final PTXDeviceContext deviceContext;
 
     public PTXContext(PTXDevice device) {
