@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -54,7 +54,7 @@ public abstract class SPIRVCodeCache {
     }
 
     public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
-        return cache.get(id + "-" + entryPoint);
+        return cache.get(STR."\{id}-\{entryPoint}");
     }
 
     public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile);

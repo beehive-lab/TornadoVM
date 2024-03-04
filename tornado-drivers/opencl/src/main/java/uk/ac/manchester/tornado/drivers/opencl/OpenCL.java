@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -38,10 +38,10 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OpenCL {
@@ -65,23 +65,20 @@ public class OpenCL {
                 // Loading JNI OpenCL library
                 System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
             } catch (final UnsatisfiedLinkError e) {
-                throw new TornadoRuntimeException("OpenCL JNI Library not found");
+                throw new TornadoRuntimeException("[ERROR] OpenCL JNI Library not found");
             }
 
             try {
                 initialise();
             } catch (final TornadoRuntimeException e) {
-                e.printStackTrace();
+                throw new TornadoRuntimeException("[ERROR] Initialization of the OpenCL platform is not correct");
             }
 
             // add a shutdown hook to free-up all OpenCL resources on VM exit
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    setName("OpenCL-Cleanup-Thread");
-                    OpenCL.cleanup();
-                }
-            });
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                Thread.currentThread().setName("OpenCL-Cleanup-Thread");
+                OpenCL.cleanup();
+            }));
         }
     }
 
@@ -151,36 +148,36 @@ public class OpenCL {
      * Execute an OpenCL code compiled by Tornado on the target device
      *
      * @param tornadoDevice
-     *            OpenCL device to run the application.
+     *     OpenCL device to run the application.
      * @param openCLCode
-     *            OpenCL code to run.
+     *     OpenCL code to run.
      * @param taskMeta
-     *            TaskMetadata.
+     *     TaskMetadata.
      * @param accesses
-     *            Access of each parameter
+     *     Access of each parameter
      * @param parameters
-     *            List of parameters.
+     *     List of parameters.
      *
      */
-    public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
+    public static void run(Long executionContextId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
 
         // Copy-in variables
-        ArrayList<DeviceObjectState> states = new ArrayList<>();
+        ArrayList<XPUDeviceBufferState> states = new ArrayList<>();
         for (int i = 0; i < accesses.length; i++) {
             Access access = accesses[i];
             Object object = parameters[i];
 
-            GlobalObjectState globalState = new GlobalObjectState();
-            DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
+            DataObjectState globalState = new DataObjectState();
+            XPUDeviceBufferState deviceState = globalState.getDeviceState(tornadoDevice);
 
             switch (access) {
                 case READ_WRITE:
                 case READ_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
-                    tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
+                    tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
@@ -193,7 +190,7 @@ public class OpenCL {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelArgs callWrapper = tornadoDevice.createCallWrapper(numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(numArgs);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values
@@ -205,7 +202,7 @@ public class OpenCL {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(executionContextId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {
@@ -214,8 +211,8 @@ public class OpenCL {
                 case READ_WRITE:
                 case WRITE_ONLY:
                     Object object = parameters[i];
-                    DeviceObjectState deviceState = states.get(i);
-                    tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                    XPUDeviceBufferState deviceState = states.get(i);
+                    tornadoDevice.streamOutBlocking(executionContextId, object, 0, deviceState, null);
                     break;
                 default:
                     break;

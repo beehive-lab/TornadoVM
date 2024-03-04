@@ -92,7 +92,7 @@ public class TestPTXTornadoCompiler {
 
         String generatedSourceCode = code.getGeneratedSourceCode();
         if (meta.isPrintKernelEnabled()) {
-            System.out.println("Compiled code: " + generatedSourceCode);
+            System.out.println(STR."Compiled code: \{generatedSourceCode}");
         }
     }
 }

@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
+public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     private final OCLTargetDevice device;
     private final VirtualOCLContext context;
@@ -121,36 +121,36 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
     }
 
     @Override
-    public int enqueueBarrier() {
+    public int enqueueBarrier(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker() {
+    public int enqueueMarker(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
+    public int enqueueMarker(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public Event resolveEvent(int event) {
+    public Event resolveEvent(long executionPlanId, int event) {
         return new EmptyEvent();
     }
 
     @Override
-    public void flushEvents() {
+    public void flushEvents(long executionPlanId) {
     }
 
     @Override
@@ -172,12 +172,7 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
     }
 
     @Override
-    public void flush() {
-    }
-
-    @Override
-    public boolean needsBump() {
-        return false;
+    public void flush(long executionPlanId) {
     }
 
     @Override

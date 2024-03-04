@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -109,7 +109,7 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public TornadoAcceleratorDevice getDevice() {
+    public TornadoXPUDevice getDevice() {
         return meta.getLogicDevice();
     }
 

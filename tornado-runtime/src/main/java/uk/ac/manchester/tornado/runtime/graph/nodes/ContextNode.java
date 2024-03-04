@@ -22,7 +22,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 /**
  * It represents a context node used in a
@@ -31,19 +31,19 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 public class ContextNode extends AbstractNode {
 
     private int deviceIndex;
-    private TornadoAcceleratorDevice device;
+    private TornadoXPUDevice device;
 
     /**
      * It constructs a ContextNode with the given device index and
-     * {@link TornadoAcceleratorDevice}.
+     * {@link TornadoXPUDevice}.
      *
      * @param index
      *     The index of the device.
      * @param device
-     *     The {@link TornadoAcceleratorDevice} associated with this context
+     *     The {@link TornadoXPUDevice} associated with this context
      *     node.
      */
-    public ContextNode(int index, TornadoAcceleratorDevice device) {
+    public ContextNode(int index, TornadoXPUDevice device) {
         this.deviceIndex = index;
         this.device = device;
     }
@@ -77,23 +77,23 @@ public class ContextNode extends AbstractNode {
     }
 
     /**
-     * It gets the {@link TornadoAcceleratorDevice} associated with this context
+     * It gets the {@link TornadoXPUDevice} associated with this context
      * node.
      *
-     * @return The TornadoAcceleratorDevice.
+     * @return {@link TornadoXPUDevice}
      */
-    public TornadoAcceleratorDevice getDevice() {
+    public TornadoXPUDevice getDevice() {
         return this.device;
     }
 
     /**
-     * It sets the {@link TornadoAcceleratorDevice} associated with this context
+     * It sets the {@link TornadoXPUDevice} associated with this context
      * node.
      *
      * @param device
-     *     The {@link TornadoAcceleratorDevice} to set.
+     *     The {@link TornadoXPUDevice} to set.
      */
-    public void setDevice(TornadoAcceleratorDevice device) {
+    public void setDevice(TornadoXPUDevice device) {
         this.device = device;
     }
 

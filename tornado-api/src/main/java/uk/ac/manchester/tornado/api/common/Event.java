@@ -22,7 +22,7 @@ public interface Event extends ProfiledAction {
     /**
      * Wait for the instanced event to be resolved.
      */
-    void waitForEvents();
+    void waitForEvents(long executionPlanId);
 
     /**
      * Call to native wait depending on internal state.

@@ -93,7 +93,7 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public void waitForEvents() {
+    public void waitForEvents(long executionPlanId) {
 
     }
 }

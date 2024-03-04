@@ -45,10 +45,10 @@ public class SPIRVLevelZeroEvent extends SPIRVEvent {
     }
 
     @Override
-    public void waitForEvents() {
+    public void waitForEvents(long executionPlanId) {
         start.readTimeStamp();
         stop.readTimeStamp();
-        start.flush();
+        start.flush(executionPlanId);
         startTime = start.getTimeStamp();
         endTime = stop.getTimeStamp();
     }

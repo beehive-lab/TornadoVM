@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api.types.collections;
 
 import static uk.ac.manchester.tornado.api.types.vectors.Double3.add;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -216,6 +217,11 @@ public final class VectorDouble3 implements TornadoCollectionInterface<DoubleBuf
     @Override
     public long getNumBytes() {
         return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
     }
 
 }

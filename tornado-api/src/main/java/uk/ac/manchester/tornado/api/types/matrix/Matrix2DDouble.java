@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api.types.matrix;
 
 import static uk.ac.manchester.tornado.api.types.utils.StorageFormats.toRowMajor;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -200,4 +201,10 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
     }
+
+    @Override
+    public MemorySegment getSegment() {
+        return storage.getSegment();
+    }
+
 }

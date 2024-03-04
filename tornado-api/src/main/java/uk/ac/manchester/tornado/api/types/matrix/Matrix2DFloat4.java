@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.matrix;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -230,5 +231,10 @@ public final class Matrix2DFloat4 extends Matrix2DType implements TornadoMatrixI
     @Override
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return storage.getSegment();
     }
 }

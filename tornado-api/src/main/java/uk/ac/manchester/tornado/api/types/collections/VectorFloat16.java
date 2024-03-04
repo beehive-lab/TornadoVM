@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.collections;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -163,5 +164,10 @@ public final class VectorFloat16 implements TornadoCollectionInterface<FloatBuff
     @Override
     public long getNumBytes() {
         return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
     }
 }

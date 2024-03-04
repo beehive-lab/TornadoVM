@@ -37,47 +37,54 @@ public abstract class SPIRVContext {
 
     public abstract SPIRVDeviceContext getDeviceContext(int deviceIndex);
 
-    public abstract SPIRVCommandQueue createCommandQueue(int deviceIndex);
-
-    public abstract SPIRVCommandQueue getCommandQueueForDevice(int deviceIndex);
+    public abstract SPIRVCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex);
 
     public abstract long allocateMemory(int deviceIndex, long numBytes);
 
     public abstract void freeMemory(long buffer, int deviceIndex);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 
-    public abstract void enqueueBarrier(int deviceIndex);
+    public abstract void enqueueBarrier(long executionPlanId, int deviceIndex);
 
-    public abstract void flush(int deviceIndex);
+    public abstract void flush(long executionPlanId, int deviceIndex);
 
-    public abstract void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract void readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer);
 }

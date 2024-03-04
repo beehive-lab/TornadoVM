@@ -47,7 +47,7 @@ public class SPIRVOCLContext extends SPIRVContext {
         for (SPIRVDevice device : devices) {
             // We do not need command queue from this class, it was already created in the
             // constructor
-            SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(device, null, context);
+            SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(device, context);
             device.setDeviceContext(deviceContext);
             spirvoclDeviceContext.add(deviceContext);
         }
@@ -59,12 +59,7 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public SPIRVCommandQueue createCommandQueue(int deviceIndex) {
-        throw new RuntimeException("Unimplemented");
-    }
-
-    @Override
-    public SPIRVCommandQueue getCommandQueueForDevice(int deviceIndex) {
+    public SPIRVCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex) {
         throw new RuntimeException("Unimplemented");
     }
 
@@ -79,92 +74,93 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransferp) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransferp) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvent, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvent, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public void enqueueBarrier(int deviceIndex) {
+    public void enqueueBarrier(long executionPlanId, int deviceIndex) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public void flush(int deviceIndex) {
+    public void flush(long executionPlanId, int deviceIndex) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public void readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents,
+            ProfilerTransfer profilerTransfer) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 }

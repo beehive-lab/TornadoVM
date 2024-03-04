@@ -23,14 +23,14 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 
-    int launchWithDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
+    int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
 
-    int launchWithoutDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
+    int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads);
 
     boolean isValid();
 

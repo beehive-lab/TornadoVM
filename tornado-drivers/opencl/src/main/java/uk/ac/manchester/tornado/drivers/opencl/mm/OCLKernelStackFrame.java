@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,20 +24,20 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
+public class OCLKernelStackFrame extends OCLByteBuffer implements KernelStackFrame {
 
     public static final int RETURN_VALUE_INDEX = 0;
     public static final int RESERVED_SLOTS = 3;
 
     private final ArrayList<CallArgument> callArguments;
 
-    OCLKernelArgs(long bufferId, int numArgs, OCLDeviceContext device) {
+    OCLKernelStackFrame(long bufferId, int numArgs, OCLDeviceContext device) {
         super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
         buffer.clear();

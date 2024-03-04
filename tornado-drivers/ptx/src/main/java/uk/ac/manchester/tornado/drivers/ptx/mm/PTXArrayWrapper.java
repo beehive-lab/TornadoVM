@@ -38,11 +38,11 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
-public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
+public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
     private static final int INIT_VALUE = -1;
     protected PTXDeviceContext deviceContext;
@@ -79,7 +79,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         TornadoInternalError.shouldNotReachHere();
     }
 
@@ -89,32 +89,32 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void read(Object reference) {
-        read(reference, 0, 0, null, false);
+    public void read(long executionPlanId, Object reference) {
+        read(executionPlanId, reference, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         T array = cast(reference);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
         if (VALIDATE_ARRAY_HEADERS) {
-            if (validateArrayHeader(array)) {
-                return readArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            if (validateArrayHeader(executionPlanId, array)) {
+                return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
             final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
-            return readArrayData(toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
     }
 
-    private boolean validateArrayHeader(T array) {
+    private boolean validateArrayHeader(long executionPlanId, T array) {
         final PTXByteBuffer header = prepareArrayHeader();
-        header.read();
+        header.read(executionPlanId);
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
@@ -138,14 +138,14 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void write(Object reference) {
+    public void write(long executionPlanId, Object reference) {
         final T array = cast(reference);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] data is NULL");
         }
-        buildArrayHeader(Array.getLength(array)).write();
+        buildArrayHeader(Array.getLength(array)).write(executionPlanId);
         // TODO: Writing with offset != 0
-        writeArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, 0, null);
+        writeArrayData(executionPlanId, toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, 0, null);
     }
 
     private PTXByteBuffer buildArrayHeader(int arraySize) {
@@ -161,16 +161,16 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(final Object value, long hostOffset, final int[] events, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, final Object value, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-        return enqueueReadArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        return enqueueReadArrayData(executionPlanId, toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(reference);
         ArrayList<Integer> listEvents = new ArrayList<>();
 
@@ -182,11 +182,11 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
         // buffer
         final int headerEvent;
         if (batchSize <= 0) {
-            headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
+            headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite(executionPlanId, (useDeps) ? events : null);
         } else {
-            headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
+            headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite(executionPlanId, (useDeps) ? events : null);
         }
-        returnEvent = enqueueWriteArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
@@ -218,7 +218,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.buffer = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
+        this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
             info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
@@ -262,9 +262,9 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
      *     List of events to wait for.
      * @return Event information
      */
-    protected abstract int enqueueReadArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueReadArrayData(long executionPlanId, long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    protected abstract int readArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int readArrayData(long executionPlanId, long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
     /**
      * Copy data that resides in the host to the target device.
@@ -279,9 +279,9 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
      *     List of events to wait for.
      * @return Event information
      */
-    protected abstract int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueWriteArrayData(long executionPlanId, long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
+    protected abstract void writeArrayData(long executionPlanId, long address, long bytes, T value, int hostOffset, int[] waitEvents);
 
     @Override
     public long getSizeSubRegionSize() {
