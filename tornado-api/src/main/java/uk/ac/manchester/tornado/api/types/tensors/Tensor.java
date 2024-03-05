@@ -53,7 +53,7 @@ public final class Tensor<T extends DType> extends TornadoNativeArray {
 
     @Override
     public MemorySegment getSegment() {
-        return null;
+        return segment;
     }
 
     @Override

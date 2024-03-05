@@ -59,6 +59,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -544,6 +545,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object instanceof CharArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof HalfFloatArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof Tensor<?>) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);

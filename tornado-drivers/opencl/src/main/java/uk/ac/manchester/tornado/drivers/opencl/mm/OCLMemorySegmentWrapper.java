@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
@@ -132,6 +133,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegment();
             case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegment();
             case VectorInt8 vectorInt8 -> vectorInt8.getArray().getSegment();
+            case Tensor tensor -> tensor.getSegment();
             default -> (MemorySegment) reference;
         };
     }

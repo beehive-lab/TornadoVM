@@ -52,6 +52,80 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
 
+    private static void replaceAddHalfFloatNodes(StructuredGraph graph) {
+        for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
+            AddNode addNode = new AddNode(addHalfFloatNode.getX(), addHalfFloatNode.getY());
+            graph.addWithoutUnique(addNode);
+            addHalfFloatNode.replaceAtUsages(addNode);
+            addHalfFloatNode.safeDelete();
+        }
+    }
+
+    private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
+        for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
+            SubNode subNode = new SubNode(subHalfFloatNode.getX(), subHalfFloatNode.getY());
+            graph.addWithoutUnique(subNode);
+            subHalfFloatNode.replaceAtUsages(subNode);
+            subHalfFloatNode.safeDelete();
+        }
+    }
+
+    private static void replaceMultHalfFloatNodes(StructuredGraph graph) {
+        for (MultHalfFloatNode multHalfFloatNode : graph.getNodes().filter(MultHalfFloatNode.class)) {
+            MulNode mulNode = new MulNode(multHalfFloatNode.getX(), multHalfFloatNode.getY());
+            graph.addWithoutUnique(mulNode);
+            multHalfFloatNode.replaceAtUsages(mulNode);
+            multHalfFloatNode.safeDelete();
+        }
+    }
+
+    private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
+        for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
+            FloatDivNode divNode = new FloatDivNode(divHalfFloatNode.getX(), divHalfFloatNode.getY());
+            graph.addWithoutUnique(divNode);
+            divHalfFloatNode.replaceAtUsages(divNode);
+            divHalfFloatNode.safeDelete();
+        }
+    }
+
+    private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
+        return javaWrite.value() instanceof HalfFloatPlaceholder;
+    }
+
+    private static void replaceFixed(Node n, Node other) {
+        Node pred = n.predecessor();
+        Node suc = n.successors().first();
+
+        n.replaceFirstSuccessor(suc, null);
+        n.replaceAtPredecessor(other);
+        pred.replaceFirstSuccessor(n, other);
+        other.replaceFirstSuccessor(null, suc);
+
+        for (Node us : n.usages()) {
+            n.removeUsage(us);
+        }
+        n.clearInputs();
+        n.safeDelete();
+
+    }
+
+    private static void deleteFixed(Node node) {
+        if (!node.isDeleted()) {
+            Node predecessor = node.predecessor();
+            Node successor = node.successors().first();
+
+            node.replaceFirstSuccessor(successor, null);
+            node.replaceAtPredecessor(successor);
+            predecessor.replaceFirstSuccessor(node, successor);
+
+            for (Node us : node.usages()) {
+                node.removeUsage(us);
+            }
+            node.clearInputs();
+            node.safeDelete();
+        }
+    }
+
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
@@ -115,83 +189,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         replaceMultHalfFloatNodes(graph);
         replaceDivHalfFloatNodes(graph);
 
-    }
-
-    private static void replaceAddHalfFloatNodes(StructuredGraph graph) {
-        for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
-            AddNode addNode = new AddNode(addHalfFloatNode.getX(), addHalfFloatNode.getY());
-            graph.addWithoutUnique(addNode);
-            addHalfFloatNode.replaceAtUsages(addNode);
-            addHalfFloatNode.safeDelete();
-        }
-    }
-
-    private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
-        for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
-            SubNode subNode = new SubNode(subHalfFloatNode.getX(), subHalfFloatNode.getY());
-            graph.addWithoutUnique(subNode);
-            subHalfFloatNode.replaceAtUsages(subNode);
-            subHalfFloatNode.safeDelete();
-        }
-    }
-
-    private static void replaceMultHalfFloatNodes(StructuredGraph graph) {
-        for (MultHalfFloatNode multHalfFloatNode : graph.getNodes().filter(MultHalfFloatNode.class)) {
-            MulNode mulNode = new MulNode(multHalfFloatNode.getX(), multHalfFloatNode.getY());
-            graph.addWithoutUnique(mulNode);
-            multHalfFloatNode.replaceAtUsages(mulNode);
-            multHalfFloatNode.safeDelete();
-        }
-    }
-
-    private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
-        for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
-            FloatDivNode divNode = new FloatDivNode(divHalfFloatNode.getX(), divHalfFloatNode.getY());
-            graph.addWithoutUnique(divNode);
-            divHalfFloatNode.replaceAtUsages(divNode);
-            divHalfFloatNode.safeDelete();
-        }
-    }
-
-    private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
-        if (javaWrite.value() instanceof HalfFloatPlaceholder) {
-            return true;
-        }
-        return false;
-    }
-
-    private static void replaceFixed(Node n, Node other) {
-        Node pred = n.predecessor();
-        Node suc = n.successors().first();
-
-        n.replaceFirstSuccessor(suc, null);
-        n.replaceAtPredecessor(other);
-        pred.replaceFirstSuccessor(n, other);
-        other.replaceFirstSuccessor(null, suc);
-
-        for (Node us : n.usages()) {
-            n.removeUsage(us);
-        }
-        n.clearInputs();
-        n.safeDelete();
-
-    }
-
-    private static void deleteFixed(Node node) {
-        if (!node.isDeleted()) {
-            Node predecessor = node.predecessor();
-            Node successor = node.successors().first();
-
-            node.replaceFirstSuccessor(successor, null);
-            node.replaceAtPredecessor(successor);
-            predecessor.replaceFirstSuccessor(node, successor);
-
-            for (Node us : node.usages()) {
-                node.removeUsage(us);
-            }
-            node.clearInputs();
-            node.safeDelete();
-        }
     }
 
 }
