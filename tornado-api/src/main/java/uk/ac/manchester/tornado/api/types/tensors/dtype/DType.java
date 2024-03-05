@@ -2,7 +2,7 @@ package uk.ac.manchester.tornado.api.types.tensors.dtype;
 
 import java.lang.foreign.ValueLayout;
 
-public sealed abstract class DType permits Bool, Double, Float, HalfFloat, Int16, Int32, Int64, Int8, QInt32, QInt8, QUInt8 {
+public sealed abstract class DType permits Bool, Double, Float, HF, Int16, Int32, Int64, Int8, QInt32, QInt8, QUInt8 {
     private final int size;
     private final ValueLayout layout;
 
