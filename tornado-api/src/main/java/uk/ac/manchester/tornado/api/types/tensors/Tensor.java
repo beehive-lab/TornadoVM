@@ -6,10 +6,12 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.tensors.dtype.DType;
 
+@SegmentElementSize(size = 2)
 public final class Tensor<T extends DType> extends TornadoNativeArray {
 
     private int numberOfElements;
