@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.types.tensors.Tensor;
  * The constant {@code ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
-public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, IntArray, LongArray, ShortArray, TensorArray, Tensor {
+public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, IntArray, LongArray, ShortArray, Tensor {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through
