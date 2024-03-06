@@ -80,18 +80,14 @@ public class OCLHotSpotBackendFactory {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmciBackend.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmciBackend.getConstantReflection();
 
-        OCLKind wordKind = OCLKind.ILLEGAL;
-        switch (device.getWordSize()) {
-            case 4:
-                wordKind = OCLKind.UINT;
-                break;
-            case 8:
-                wordKind = OCLKind.ULONG;
-                break;
-            default:
+        OCLKind wordKind = switch (device.getWordSize()) {
+            case 4 -> OCLKind.UINT;
+            case 8 -> OCLKind.ULONG;
+            default -> {
                 shouldNotReachHere("unknown word size for device: word size is %d on %s", device.getWordSize(), device.getDeviceName());
-                break;
-        }
+                yield OCLKind.ILLEGAL;
+            }
+        };
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
