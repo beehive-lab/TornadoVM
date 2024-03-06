@@ -22,6 +22,12 @@ public class TestTensorTypes extends TornadoTestBase {
         }
     }
 
+    public static void tensorAdditionFloat(Tensor tensorA, Tensor tensorB, Tensor tensorC) {
+        for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
+            tensorC.set(i, tensorA.getFloatValue(i) + tensorB.getFloatValue(i));
+        }
+    }
+
     @Test
     public void testHelloTensorAPI() {
         Shape shape = new Shape(64, 64, 64);
@@ -39,7 +45,6 @@ public class TestTensorTypes extends TornadoTestBase {
         System.out.println(STR."Data type: \{tensorA.getDTypeAsString()}");
         System.out.println(STR."Shape as TF: \{tensorA.getShape().toTensorFlowShapeString()}");
         System.out.println(STR."Shape as ONNX: \{tensorA.getShape().toONNXShapeString()}");
-        System.out.println("Tensor " + tensorA.toString());
     }
 
     @Test
@@ -70,10 +75,36 @@ public class TestTensorTypes extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        // Verify the result of addition
-        //        for (int i = 0; i < tensorC.getSize(); i++) {
-        //            assertEquals(2.0f, tensorC.getElement(i).toFloat(), 0.01f);
-        //        }
+    }
+
+    @Test
+    public void testTensorAdditionFloat() {
+        // Define the shape for the tensors
+        Shape shape = new Shape(64, 64, 64);
+
+        // Create two tensors and initialize their values
+        Tensor tensorA = new Tensor(shape, DType.FLOAT);
+
+        tensorA.init(1f);
+
+        Tensor tensorB = new Tensor(shape, DType.FLOAT);
+        tensorB.init(1f);
+
+        // Create a tensor to store the result of addition
+        Tensor tensorC = new Tensor(shape, DType.HALF_FLOAT);
+        // Define the task graph
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
+                .task("t0", TestTensorTypes::tensorAdditionFloat, tensorA, tensorB, tensorC) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tensorC); //
+
+        // Take a snapshot of the task graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        // Create an execution plan and execute it
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
     }
 
 }
