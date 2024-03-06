@@ -8,15 +8,15 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.tensors.DType;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
-import uk.ac.manchester.tornado.api.types.tensors.dtype.HF;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestTensorTypes extends TornadoTestBase {
 
     // Method to perform tensor addition
-    public static void tensorAdditionHalfFloat(Tensor<HF> tensorA, Tensor<HF> tensorB, Tensor<HF> tensorC) {
+    public static void tensorAdditionHalfFloat(Tensor tensorA, Tensor tensorB, Tensor tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
             tensorC.set(i, HalfFloat.add(tensorA.get(i), tensorB.get(i)));
         }
@@ -24,39 +24,39 @@ public class TestTensorTypes extends TornadoTestBase {
 
     @Test
     public void testHelloTensorAPI() {
-        // Define a sample
-        Shape shape = new Shape(64, 64);
+        Shape shape = new Shape(64, 64, 64);
 
-        HF halfFloat = new HF();
-
-        Tensor<HF> tensorA = new Tensor<>(shape, halfFloat);
+        Tensor tensorA = new Tensor(shape, DType.HALF_FLOAT);
 
         tensorA.init(new HalfFloat(1f));
 
-        Tensor<HF> tensorB = new Tensor<>(shape, halfFloat);
+        Tensor tensorB = new Tensor(shape, DType.HALF_FLOAT);
 
         tensorB.init(new HalfFloat(1f));
 
         System.out.println("Half-precision tensor:");
-        System.out.println("Shape: " + tensorA.getShape());
-        System.out.println("Data type: " + tensorA.getDTypeAsString());
+        System.out.println(STR."Shape: \{tensorA.getShape()}");
+        System.out.println(STR."Data type: \{tensorA.getDTypeAsString()}");
+        System.out.println(STR."Shape as TF: \{tensorA.getShape().toTensorFlowShapeString()}");
+        System.out.println(STR."Shape as ONNX: \{tensorA.getShape().toONNXShapeString()}");
+        System.out.println("Tensor " + tensorA.toString());
     }
 
     @Test
     public void testTensorAdditionHalfFloat() {
         // Define the shape for the tensors
-        Shape shape = new Shape(4096);
+        Shape shape = new Shape(64, 64, 64);
 
         // Create two tensors and initialize their values
-        Tensor<HF> tensorA = new Tensor<>(shape, new HF());
+        Tensor tensorA = new Tensor(shape, DType.HALF_FLOAT);
+
         tensorA.init(new HalfFloat(1f));
 
-        Tensor<HF> tensorB = new Tensor<>(shape, new HF());
+        Tensor tensorB = new Tensor(shape, DType.HALF_FLOAT);
         tensorB.init(new HalfFloat(1f));
 
         // Create a tensor to store the result of addition
-        Tensor<HF> tensorC = new Tensor<>(shape, new HF());
-
+        Tensor tensorC = new Tensor(shape, DType.HALF_FLOAT);
         // Define the task graph
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //

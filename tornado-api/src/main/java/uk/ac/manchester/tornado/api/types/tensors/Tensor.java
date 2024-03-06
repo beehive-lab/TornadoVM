@@ -9,46 +9,41 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.types.tensors.dtype.DType;
 
-@SegmentElementSize(size = 2)
-public final class Tensor<T extends DType> extends TornadoNativeArray {
+@SegmentElementSize(size = 2) //This needs to be fixed
+public final class Tensor extends TornadoNativeArray {
 
+    private final DType dType;
     private int numberOfElements;
     private MemorySegment segment;
-    private int arrayHeaderSize;
     private int baseIndex;
     private long segmentByteSize;
     private Shape shape;
-    private T dtype;
 
-    public Tensor(int size, MemorySegment memorySegment, T dtype) {
+    public Tensor(int size, MemorySegment memorySegment, DType dtype) {
         assert size >= 0;
         this.numberOfElements = size;
         this.segment = memorySegment;
-        this.dtype = dtype;
+        this.dType = dtype;
     }
 
-    public Tensor(Shape shape, T dtype) {
+    public Tensor(Shape shape, DType dtype) {
         this.shape = shape;
         this.numberOfElements = shape.getSize();
-        this.dtype = dtype;
-
-        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
-        baseIndex = arrayHeaderSize / dtype.getByteSize();
-        segmentByteSize = (long) numberOfElements * dtype.getByteSize() + arrayHeaderSize;
-
+        this.dType = dtype;
+        this.baseIndex = (int) TornadoNativeArray.ARRAY_HEADER / dtype.getByteSize();
+        this.segmentByteSize = (long) numberOfElements * dtype.getByteSize() + TornadoNativeArray.ARRAY_HEADER;
         this.segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     @Override
     public int getSize() {
-        return 0;
+        return numberOfElements;
     }
 
     public String getDTypeAsString() {
-        return dtype.getDType();
+        return dType.toString();
     }
 
     @Override
@@ -68,7 +63,6 @@ public final class Tensor<T extends DType> extends TornadoNativeArray {
 
     @Override
     protected void clear() {
-
     }
 
     public void set(int index, HalfFloat value) {
@@ -81,17 +75,52 @@ public final class Tensor<T extends DType> extends TornadoNativeArray {
     }
 
     public void init(HalfFloat value) {
+        assert dType.equals(DType.HALF_FLOAT);
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_SHORT, baseIndex + i, value.getHalfFloatValue());
         }
     }
 
+    //    public void set(int index, T value) {
+    //        if (index < 0 || index >= getSize()) {
+    //            throw new IndexOutOfBoundsException("Index out of bounds: " + index);
+    //        }
+    //
+    //        long offset = baseIndex * dtype.getByteSize() + index * dtype.getByteSize();
+    //
+    //        if (dtype.getClass() == HF.class) {
+    //            segment.setAtIndex((AddressLayout) dtype.getLayout(), offset, (short) value);
+    //        }
+    //
+    //    }
+
     @Override
     public int getElementSize() {
-        return 0;
+        return numberOfElements;
     }
 
     public Shape getShape() {
         return shape;
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        // Basic information
+        sb.append("Tensor(").append(dType.toString()).append(", ").append(shape.toString()).append(")\n");
+
+        int elementsPerLine = 10; // Adjust based on tensor size and preferences
+        for (int i = 0; i < getSize(); i++) {
+            HalfFloat value = get(i);
+
+            sb.append(value.getFloat32());
+            if ((i + 1) % elementsPerLine == 0) {
+                sb.append("\n");
+            } else {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
+    }
+
 }

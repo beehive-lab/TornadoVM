@@ -546,7 +546,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof Tensor<?>) {
+            } else if (object instanceof Tensor) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);

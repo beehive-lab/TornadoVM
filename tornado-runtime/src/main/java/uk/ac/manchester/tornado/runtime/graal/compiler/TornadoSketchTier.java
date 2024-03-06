@@ -36,12 +36,13 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatFixedGuardElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoAutoParalleliser;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDeTensorisationPhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoFullInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatFixedGuardElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoKernelContextReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoNativeTypeElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoNumericPromotionPhase;
@@ -75,6 +76,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         }
 
         appendPhase(new TornadoStampResolver());
+        appendPhase(new TornadoDeTensorisationPhase());
         appendPhase(new TornadoHalfFloatFixedGuardElimination());
         appendPhase(new TornadoNativeTypeElimination());
         appendPhase(new TornadoReduceReplacement());
