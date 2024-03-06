@@ -87,7 +87,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
         for (int index = 0; index < fields.length; index++) {
             HotSpotResolvedJavaField field = fields[index];
-            System.out.println("fIELD " + field.getName() + "  " + objectType.getName());
             final Field reflectedField = getField(objectType, field.getName());
             final Class<?> type = reflectedField.getType();
 
@@ -183,7 +182,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
         Field result = null;
         try {
             result = type.getDeclaredField(name);
-            System.out.println("Type " + result.getName());
             result.setAccessible(true);
         } catch (NoSuchFieldException | SecurityException e) {
             if (type.getSuperclass() != null) {

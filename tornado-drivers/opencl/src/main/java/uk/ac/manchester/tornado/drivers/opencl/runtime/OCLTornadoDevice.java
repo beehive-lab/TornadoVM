@@ -297,7 +297,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             driver.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
             driver.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
-                throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
+                throw new TornadoBailoutRuntimeException(STR."[Error during the Task Compilation]: \{e.getMessage()}");
             } else {
                 throw e;
             }
@@ -337,7 +337,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask(task);
         }
-        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
+        TornadoInternalError.shouldNotReachHere(STR."task of unknown type: \{task.getClass().getSimpleName()}");
         return null;
     }
 
@@ -363,7 +363,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TaskMetaDataInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
             TaskMetaData metaData = (TaskMetaData) task.meta();
-            return task.getId() + ".device=" + metaData.getDriverIndex() + ":" + metaData.getDeviceIndex();
+            return STR."\{task.getId()}.device=\{metaData.getDriverIndex()}:\{metaData.getDeviceIndex()}";
         } else {
             throw new RuntimeException("[ERROR] TaskMetadata expected");
         }
@@ -399,12 +399,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
-        if (value instanceof AtomicInteger) {
-            AtomicInteger ai = (AtomicInteger) value;
+        if (value instanceof AtomicInteger atomicInteger) {
             if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
                 HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledResolvedJavaMethod());
                 int index = values.get(paramIndex);
-                array[index] = ai.get();
+                array[index] = atomicInteger.get();
             }
         }
         return array;
@@ -638,10 +637,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         long partialCopySize = state.getPartialCopySize();
         if (state.isAtomicRegionPresent()) {
             int eventID = state.getObjectBuffer().enqueueRead(null, 0, null, false);
-            if (object instanceof AtomicInteger) {
+            if (object instanceof AtomicInteger atomicInteger) {
                 int[] arr = getAtomic().getIntBuffer();
                 int indexFromGlobalRegion = mappingAtomics.get(object);
-                ((AtomicInteger) object).set(arr[indexFromGlobalRegion]);
+                atomicInteger.set(arr[indexFromGlobalRegion]);
             }
             return eventID;
         } else {
@@ -657,9 +656,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof OCLTornadoDevice) {
-            final OCLTornadoDevice other = (OCLTornadoDevice) obj;
-            return (other.deviceIndex == deviceIndex && other.platformIndex == platformIndex);
+        if (obj instanceof OCLTornadoDevice oclTornadoDevice) {
+            return (oclTornadoDevice.deviceIndex == deviceIndex && oclTornadoDevice.platformIndex == platformIndex);
         }
         return false;
     }
@@ -715,22 +713,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public TornadoDeviceType getDeviceType() {
         OCLDeviceType deviceType = device.getDeviceType();
-        switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
-                return TornadoDeviceType.CPU;
-            case CL_DEVICE_TYPE_GPU:
-                return TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR:
-                return TornadoDeviceType.ACCELERATOR;
-            case CL_DEVICE_TYPE_CUSTOM:
-                return TornadoDeviceType.CUSTOM;
-            case CL_DEVICE_TYPE_ALL:
-                return TornadoDeviceType.ALL;
-            case CL_DEVICE_TYPE_DEFAULT:
-                return TornadoDeviceType.DEFAULT;
-            default:
-                throw new RuntimeException("Device not supported");
-        }
+        return switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.ACCELERATOR;
+            case CL_DEVICE_TYPE_CUSTOM -> TornadoDeviceType.CUSTOM;
+            case CL_DEVICE_TYPE_ALL -> TornadoDeviceType.ALL;
+            case CL_DEVICE_TYPE_DEFAULT -> TornadoDeviceType.DEFAULT;
+            default -> throw new RuntimeException("Device not supported");
+        };
     }
 
     @Override
@@ -813,10 +804,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         if (major > 2) {
             return true;
         }
-        if (major == 2 && minor >= 1) {
-            return true;
-        }
-        return false;
+        return major == 2 && minor >= 1;
     }
 
 }
