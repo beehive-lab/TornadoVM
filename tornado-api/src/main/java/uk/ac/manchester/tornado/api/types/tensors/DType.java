@@ -34,11 +34,4 @@ public enum DType {
         return layout;
     }
 
-    private int calculateSize(int[] shape) {
-        int size = 1;
-        for (int dim : shape) {
-            size *= dim;
-        }
-        return size;
-    }
 }
