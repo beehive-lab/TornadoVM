@@ -36,29 +36,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 
 public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSketchTierContext> {
 
-    @Override
-    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
-        return ALWAYS_APPLICABLE;
-    }
-
-    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
-        for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
-            if (placeholderNode.getInput() instanceof PiNode) {
-                PiNode placeholderInput = (PiNode) placeholderNode.getInput();
-                ValueNode halfFloatValue = placeholderInput.object();
-                FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderInput.getGuard();
-                deleteFixed(placeholderGuard);
-                placeholderNode.setInput(halfFloatValue);
-                nodesToBeDeleted.add(placeholderInput);
-            }
-        }
-
-        for (ValueNode node : nodesToBeDeleted) {
-            node.safeDelete();
-        }
-    }
-
     private static void deleteFixed(Node node) {
         if (!node.isDeleted()) {
             Node predecessor = node.predecessor();
@@ -72,6 +49,28 @@ public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSket
                 node.removeUsage(us);
             }
             node.clearInputs();
+            node.safeDelete();
+        }
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
+        for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+            if (placeholderNode.getInput() instanceof PiNode placeholderInput) {
+                ValueNode halfFloatValue = placeholderInput.object();
+                FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderInput.getGuard();
+                deleteFixed(placeholderGuard);
+                placeholderNode.setInput(halfFloatValue);
+                nodesToBeDeleted.add(placeholderInput);
+            }
+        }
+
+        for (ValueNode node : nodesToBeDeleted) {
             node.safeDelete();
         }
     }
