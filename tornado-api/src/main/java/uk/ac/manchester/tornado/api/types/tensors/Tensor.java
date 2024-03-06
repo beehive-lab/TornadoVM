@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.api.types.tensors;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
@@ -69,9 +70,17 @@ public final class Tensor extends TornadoNativeArray {
         segment.setAtIndex(JAVA_SHORT, baseIndex + index, value.getHalfFloatValue());
     }
 
+    public void set(int index, float value) {
+        segment.setAtIndex(JAVA_FLOAT, baseIndex + index, value);
+    }
+
     public HalfFloat get(int index) {
         short halfFloatValue = segment.getAtIndex(JAVA_SHORT, baseIndex + index);
         return new HalfFloat(halfFloatValue);
+    }
+
+    public float getFloatValue(int index) {
+        return segment.getAtIndex(JAVA_FLOAT, baseIndex + index);
     }
 
     public void init(HalfFloat value) {
@@ -81,18 +90,12 @@ public final class Tensor extends TornadoNativeArray {
         }
     }
 
-    //    public void set(int index, T value) {
-    //        if (index < 0 || index >= getSize()) {
-    //            throw new IndexOutOfBoundsException("Index out of bounds: " + index);
-    //        }
-    //
-    //        long offset = baseIndex * dtype.getByteSize() + index * dtype.getByteSize();
-    //
-    //        if (dtype.getClass() == HF.class) {
-    //            segment.setAtIndex((AddressLayout) dtype.getLayout(), offset, (short) value);
-    //        }
-    //
-    //    }
+    public void init(float value) {
+        assert dType.equals(DType.FLOAT);
+        for (int i = 0; i < getSize(); i++) {
+            segment.setAtIndex(JAVA_FLOAT, baseIndex + i, value);
+        }
+    }
 
     @Override
     public int getElementSize() {
