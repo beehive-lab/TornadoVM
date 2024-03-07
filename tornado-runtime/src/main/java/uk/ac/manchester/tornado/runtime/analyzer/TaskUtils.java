@@ -195,7 +195,7 @@ public class TaskUtils {
         return null;
     }
 
-    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
+    public static CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
         return createTask(meta, id, method, code, true);
     }
 

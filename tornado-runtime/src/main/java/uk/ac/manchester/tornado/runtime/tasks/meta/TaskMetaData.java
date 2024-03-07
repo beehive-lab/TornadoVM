@@ -133,6 +133,10 @@ public class TaskMetaData extends AbstractMetaData {
         localWork = null;
     }
 
+    public void setLocalWorkToNotDefined() {
+        localWorkDefined = false;
+    }
+
     public long[] initLocalWork() {
         localWork = new long[] { 1, 1, 1 };
         return localWork;
