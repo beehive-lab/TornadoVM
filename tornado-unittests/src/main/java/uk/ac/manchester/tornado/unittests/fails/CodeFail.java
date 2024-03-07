@@ -17,22 +17,24 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -58,6 +60,30 @@ public class CodeFail extends TornadoTestBase {
         }
     }
 
+    /**
+     * Object allocation is not supported. This test provokes to bailout to the Java
+     * sequential implementation.
+     */
+    public static void bar(FloatArray a) {
+        Matrix2DFloat f = new Matrix2DFloat(256, 256); // Allocation here
+        for (@Parallel int i = 0; i < 256; i++) {
+            for (@Parallel int j = 0; j < 256; j++) {
+                f.set(i, j, 10);
+            }
+        }
+    }
+
+    /**
+     * Fusion of multiple reductions is not currently supported. This test provokes
+     * to bailout to the Java sequential implementation.
+     */
+    public static void zoo(IntArray input, @Reduce IntArray output1, @Reduce IntArray output2) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output1.set(0, output1.get(0) + input.get(i));
+            output2.set(0, output2.get(0) + input.get(i));
+        }
+    }
+
     @Test
     public void codeFail01() {
 
@@ -77,19 +103,6 @@ public class CodeFail extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
-    }
-
-    /**
-     * Object allocation is not supported. This test provokes to bailout to the Java
-     * sequential implementation.
-     */
-    public static void bar(FloatArray a) {
-        Matrix2DFloat f = new Matrix2DFloat(256, 256); // Allocation here
-        for (@Parallel int i = 0; i < 256; i++) {
-            for (@Parallel int j = 0; j < 256; j++) {
-                f.set(i, j, 10);
-            }
-        }
     }
 
     @Test
@@ -117,37 +130,28 @@ public class CodeFail extends TornadoTestBase {
         }
     }
 
-    /**
-     * Fusion of multiple reductions is not currently supported. This test provokes
-     * to bailout to the Java sequential implementation.
-     */
-    public static void zoo(IntArray input, @Reduce IntArray output1, @Reduce IntArray output2) {
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            output1.set(0, output1.get(0) + input.get(i));
-            output2.set(0, output2.get(0) + input.get(i));
-        }
-    }
-
-    @Test(expected = TornadoBailoutRuntimeException.class)
+    @Test
     public void codeFail03() {
-        final int size = 128;
-        IntArray input = new IntArray(size);
-        IntArray result1 = new IntArray(1);
-        result1.init(0);
-        IntArray result2 = new IntArray(1);
-        result2.init(0);
+        assertThrows(TornadoBailoutRuntimeException.class, () -> {
+            final int size = 128;
+            IntArray input = new IntArray(size);
+            IntArray result1 = new IntArray(1);
+            result1.init(0);
+            IntArray result2 = new IntArray(1);
+            result2.init(0);
 
-        IntStream.range(0, size).parallel().forEach(i -> {
-            input.set(i, i);
+            IntStream.range(0, size).parallel().forEach(i -> {
+                input.set(i, i);
+            });
+
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                    .task("t0", CodeFail::zoo, input, result1, result2) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, result1, result2); //
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
         });
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
-                .task("t0", CodeFail::zoo, input, result1, result2) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, result1, result2); //
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
     }
 }

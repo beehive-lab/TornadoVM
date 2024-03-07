@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -83,57 +85,59 @@ public class Grids extends TornadoTestBase {
 
     }
 
-    @Test(expected = TornadoRuntimeException.class)
+    @Test
     public void testWithIncorrectGraphName() {
-        FloatArray timesArray = new FloatArray(size);
-        FloatArray obsArray = new FloatArray(size);
+        assertThrows(TornadoRuntimeException.class, () -> {
+            FloatArray timesArray = new FloatArray(size);
+            FloatArray obsArray = new FloatArray(size);
 
-        FloatArray resArray = new FloatArray(100000);
-        resArray.init(0.0f);
+            FloatArray resArray = new FloatArray(100000);
+            resArray.init(0.0f);
 
-        WorkerGrid worker = new WorkerGrid1D(gridSize);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
-        KernelContext context = new KernelContext();
-        worker.setLocalWork(gridSize, 1, 1);
+            WorkerGrid worker = new WorkerGrid1D(gridSize);
+            GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+            KernelContext context = new KernelContext();
+            worker.setLocalWork(gridSize, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("foo");
+            TaskGraph taskGraph = new TaskGraph("foo");
 
-        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
-                .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, resArray);
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
+                    .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, resArray);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
-
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        });
     }
 
-    @Test(expected = TornadoRuntimeException.class)
+    @Test
     public void testWithIncorrectGraphAndTaskName() {
-        FloatArray timesArray = new FloatArray(size);
-        FloatArray obsArray = new FloatArray(size);
+        assertThrows(TornadoRuntimeException.class, () -> {
+            FloatArray timesArray = new FloatArray(size);
+            FloatArray obsArray = new FloatArray(size);
 
-        FloatArray resArray = new FloatArray(100000);
-        resArray.init(0.0f);
+            FloatArray resArray = new FloatArray(100000);
+            resArray.init(0.0f);
 
-        WorkerGrid worker = new WorkerGrid1D(gridSize);
-        GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
-        KernelContext context = new KernelContext();
-        worker.setLocalWork(gridSize, 1, 1);
+            WorkerGrid worker = new WorkerGrid1D(gridSize);
+            GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
+            KernelContext context = new KernelContext();
+            worker.setLocalWork(gridSize, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("t0");
+            TaskGraph taskGraph = new TaskGraph("t0");
 
-        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
-                .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, resArray);
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, timesArray, obsArray) //
+                    .task("t0", Grids::psKernel, context, timesArray, obsArray, resArray) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, resArray);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
-
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        });
     }
 }

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -40,10 +40,10 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.matrices.TestMatrices
+ * tornado-test -V uk.ac.manchester.tornado.unittests.matrices.TestMatrices
  * </code>
  */
-@Ignore
+@Disabled
 public class TestMatrices extends TornadoTestBase {
     // CHECKSTYLE:OFF
 
@@ -172,7 +172,7 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testFillMatrix() {
         final int numElements = 16;
@@ -718,7 +718,7 @@ public class TestMatrices extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < matrix.length; i++) {
-            Assert.assertArrayEquals(matrixSeq[i], matrix[i]);
+            assertArrayEquals(matrixSeq[i], matrix[i]);
         }
     }
 
@@ -760,7 +760,7 @@ public class TestMatrices extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < firstMatrix.length; i++) {
-            Assert.assertArrayEquals(firstMatrixSeq[i], firstMatrix[i], 0.01f);
+            assertArrayEquals(firstMatrixSeq[i], firstMatrix[i], 0.01f);
         }
     }
     // CHECKSTYLE:ON

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,26 +18,27 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.util.stream.IntStream;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
-
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * <p>
@@ -77,7 +78,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     /**
      * Check if enough devices are available
      */
-    @Before
+    @BeforeEach
     public void enoughDevices() {
         super.before();
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
@@ -188,7 +189,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testVirtualLayer01() {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
@@ -229,7 +230,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      * This test is not legal in Tornado. This test executes everything on the same device, even if the user forces to change. A task schedule is always executed on the same device. Device can change
      * once the task is executed.
      */
-    @Ignore
+    @Disabled
     public void testVirtualLayer02() {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
@@ -359,7 +360,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         dataB.init(100);
 
         if (tornadoDriver.getDeviceCount() < 2) {
-            assertFalse("The current driver has less than 2 devices", true);
+            assertFalse(true, "The current driver has less than 2 devices");
         }
 
         TornadoRuntime.setProperty("s0.t0.device", "0:0");

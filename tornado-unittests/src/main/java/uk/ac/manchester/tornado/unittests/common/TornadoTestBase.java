@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.common;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
@@ -37,7 +37,7 @@ public abstract class TornadoTestBase {
         return TornadoRuntime.getTornadoRuntime();
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);

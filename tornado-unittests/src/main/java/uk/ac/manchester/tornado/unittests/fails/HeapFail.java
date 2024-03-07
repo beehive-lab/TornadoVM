@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,9 +18,11 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -34,7 +36,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
  * How to run.
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.HeapFail
+ * tornado-test -V uk.ac.manchester.tornado.unittests.fails.HeapFail
  * </code>
  */
 public class HeapFail {
@@ -54,25 +56,27 @@ public class HeapFail {
      * </code>
      *
      */
-    @Test(expected = TornadoOutOfMemoryException.class)
+    @Test
     public void test03() throws TornadoOutOfMemoryException {
-        // This test simulates small amount of memory on the target device and we
-        // allocate more than available. We should get a concrete error message back
-        // with the steps to take to increase the device's heap size
+        assertThrows(TornadoOutOfMemoryException.class, () -> {
+            // This test simulates small amount of memory on the target device and we
+            // allocate more than available. We should get a concrete error message back
+            // with the steps to take to increase the device's heap size
 
-        // We allocate 64MB of data on the device
-        float[] x = new float[16777216];
-        float[] y = new float[16777216];
+            // We allocate 64MB of data on the device
+            float[] x = new float[16777216];
+            float[] y = new float[16777216];
 
-        Arrays.fill(x, 2.0f);
+            Arrays.fill(x, 2.0f);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .task("s0", HeapFail::validKernel, x, y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, y); //
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                    .task("s0", HeapFail::validKernel, x, y) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
+        });
     }
 }

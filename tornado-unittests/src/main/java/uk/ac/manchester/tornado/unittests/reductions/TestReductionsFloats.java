@@ -17,22 +17,22 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -54,6 +54,124 @@ public class TestReductionsFloats extends TornadoTestBase {
         result.set(0, 0.0f);
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             result.set(0, result.get(0) + input.get(i));
+        }
+    }
+
+    private static void reductionAddFloatsConstant(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < SIZE; i++) {
+            result.set(0, result.get(0) + input.get(i));
+        }
+    }
+
+    private static void reductionAddFloatsLarge(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
+        }
+    }
+
+    private static void reductionAddFloats2(FloatArray input, @Reduce FloatArray result) {
+        float error = 2f;
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            float v = (error * input.get(i));
+            result.set(0, result.get(0) + v);
+        }
+    }
+
+    private static void reductionAddFloats3(FloatArray input, @Reduce FloatArray result) {
+        float error = 2f;
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            float v = (error * input.get(i));
+            result.set(0, result.get(0) + v);
+        }
+    }
+
+    private static void reductionAddFloats4(FloatArray inputA, FloatArray inputB, @Reduce FloatArray result) {
+        float error = 2f;
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < inputA.getSize(); i++) {
+            result.set(0, result.get(0) + (error * (inputA.get(i) + inputB.get(i))));
+        }
+    }
+
+    private static void multiplyFloats(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 1.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) * input.get(i));
+        }
+    }
+
+    private static void computeSum(final FloatArray values, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            result.set(0, result.get(0) + values.get(i));
+        }
+    }
+
+    private static void computeAvg(final int length, FloatArray result) {
+        result.set(0, result.get(0) / length);
+    }
+
+    private static void reductionAddFloatsConditionally(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            float v = 0.0f;
+            if (input.get(0) == -1) {
+                v = 1.0f;
+            }
+            result.set(0, result.get(0) + v);
+        }
+    }
+
+    private static void computePi(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 1; i < input.getSize(); i++) {
+            float value = input.get(i) + (float) (TornadoMath.pow(-1, i + 1) / (2 * i - 1));
+            result.set(0, result.get(0) + value);
+        }
+    }
+
+    private static void maxReductionAnnotation(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.max(result.get(0), input.get(i)));
+        }
+    }
+
+    private static void maxReductionAnnotation2(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.max(result.get(0), input.get(i) * 100));
+        }
+    }
+
+    private static void minReductionAnnotation(FloatArray input, @Reduce FloatArray result, float neutral) {
+        result.set(0, neutral);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.min(result.get(0), input.get(i)));
+        }
+    }
+
+    private static void minReductionAnnotation2(FloatArray input, @Reduce FloatArray result, float neutral) {
+        result.set(0, neutral);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.min(result.get(0), input.get(i) * 50));
+        }
+    }
+
+    public static float f(float x) {
+        return (1 / ((x + 1) * TornadoMath.sqrt(x * TornadoMath.exp(x))));
+    }
+
+    public static void integrationTornado(FloatArray input, @Reduce FloatArray sum, final float a, final float b) {
+        final int size = input.getSize();
+        sum.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            float value = f(a + (((i + 1) - (1 / 2)) * ((b - a) / size)));
+            sum.set(0, sum.get(0) + (input.get(i) + value));
         }
     }
 
@@ -85,13 +203,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
-    private static void reductionAddFloatsConstant(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < SIZE; i++) {
-            result.set(0, result.get(0) + input.get(i));
-        }
-    }
-
     @Test
     public void testSumFloatsConstant() {
         FloatArray input = new FloatArray(SIZE);
@@ -120,13 +231,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
-    private static void reductionAddFloatsLarge(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            result.set(0, result.get(0) + input.get(i));
-        }
-    }
-
     @Test
     public void testSumFloatsLarge() {
         FloatArray input = new FloatArray(LARGE_SIZE);
@@ -153,32 +257,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential.get(0), result.get(0), 1.f);
-    }
-
-    private static void reductionAddFloats2(FloatArray input, @Reduce FloatArray result) {
-        float error = 2f;
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            float v = (error * input.get(i));
-            result.set(0, result.get(0) + v);
-        }
-    }
-
-    private static void reductionAddFloats3(FloatArray input, @Reduce FloatArray result) {
-        float error = 2f;
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            float v = (error * input.get(i));
-            result.set(0, result.get(0) + v);
-        }
-    }
-
-    private static void reductionAddFloats4(FloatArray inputA, FloatArray inputB, @Reduce FloatArray result) {
-        float error = 2f;
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < inputA.getSize(); i++) {
-            result.set(0, result.get(0) + (error * (inputA.get(i) + inputB.get(i))));
-        }
     }
 
     @Test
@@ -233,24 +311,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential.get(0), result.get(0), 0.1f);
-    }
-
-    private static void multiplyFloats(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 1.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            result.set(0, result.get(0) * input.get(i));
-        }
-    }
-
-    private static void computeSum(final FloatArray values, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < values.getSize(); i++) {
-            result.set(0, result.get(0) + values.get(i));
-        }
-    }
-
-    private static void computeAvg(final int length, FloatArray result) {
-        result.set(0, result.get(0) / length);
     }
 
     @Test
@@ -312,19 +372,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
-    private static void reductionAddFloatsConditionally(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            float v = 0.0f;
-            if (input.get(0) == -1) {
-                v = 1.0f;
-            }
-            result.set(0, result.get(0) + v);
-        }
-    }
-
     // This is currently not supported
-    @Ignore
+    @Disabled
     public void testSumFloatsCondition() {
         FloatArray input = new FloatArray(SIZE2);
         FloatArray result = new FloatArray(1);
@@ -350,14 +399,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
-    private static void computePi(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 1; i < input.getSize(); i++) {
-            float value = input.get(i) + (float) (TornadoMath.pow(-1, i + 1) / (2 * i - 1));
-            result.set(0, result.get(0) + value);
-        }
-    }
-
     @Test
     public void testComputePi() {
         FloatArray input = new FloatArray(PI_SIZE);
@@ -381,13 +422,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         final float piValue = result.get(0) * 4;
 
         assertEquals(3.14, piValue, 0.01f);
-    }
-
-    private static void maxReductionAnnotation(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            result.set(0, TornadoMath.max(result.get(0), input.get(i)));
-        }
     }
 
     @Test
@@ -417,13 +451,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
-    private static void maxReductionAnnotation2(FloatArray input, @Reduce FloatArray result) {
-        result.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            result.set(0, TornadoMath.max(result.get(0), input.get(i) * 100));
-        }
-    }
-
     @Test
     public void testMaxReduction2() {
         FloatArray input = new FloatArray(SIZE);
@@ -448,13 +475,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         maxReductionAnnotation2(input, sequential);
 
         assertEquals(sequential.get(0), result.get(0), 0.01f);
-    }
-
-    private static void minReductionAnnotation(FloatArray input, @Reduce FloatArray result, float neutral) {
-        result.set(0, neutral);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            result.set(0, TornadoMath.min(result.get(0), input.get(i)));
-        }
     }
 
     @Test
@@ -482,13 +502,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
-    private static void minReductionAnnotation2(FloatArray input, @Reduce FloatArray result, float neutral) {
-        result.set(0, neutral);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            result.set(0, TornadoMath.min(result.get(0), input.get(i) * 50));
-        }
-    }
-
     @Test
     public void testMinReduction2() {
         FloatArray input = new FloatArray(SIZE);
@@ -512,19 +525,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         minReductionAnnotation2(input, sequential, Float.MAX_VALUE);
 
         assertEquals(sequential.get(0), result.get(0), 0.01f);
-    }
-
-    public static float f(float x) {
-        return (1 / ((x + 1) * TornadoMath.sqrt(x * TornadoMath.exp(x))));
-    }
-
-    public static void integrationTornado(FloatArray input, @Reduce FloatArray sum, final float a, final float b) {
-        final int size = input.getSize();
-        sum.set(0, 0.0f);
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            float value = f(a + (((i + 1) - (1 / 2)) * ((b - a) / size)));
-            sum.set(0, sum.get(0) + (input.get(i) + value));
-        }
     }
 
     @Test

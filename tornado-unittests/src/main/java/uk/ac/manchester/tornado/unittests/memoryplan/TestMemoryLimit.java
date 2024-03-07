@@ -17,8 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.memoryplan;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -27,8 +31,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * How to test?
@@ -49,7 +51,9 @@ public class TestMemoryLimit extends TornadoTestBase {
     private static IntArray b = new IntArray(NUM_ELEMENTS);
     private static IntArray c = new IntArray(NUM_ELEMENTS);
 
-    @BeforeClass
+    private static int value = 10000000;
+
+    @BeforeAll
     public static void setUpBeforeClass() {
         a = new IntArray(NUM_ELEMENTS);
         b = new IntArray(NUM_ELEMENTS);
@@ -78,20 +82,22 @@ public class TestMemoryLimit extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-    @Test(expected = TornadoMemoryException.class)
+    @Test
     public void testWithMemoryLimitUnder() {
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHello::add, a, b, c) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        Assertions.assertThrows(TornadoMemoryException.class, () -> {
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                    .task("t0", TestHello::add, a, b, c) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        // Limit the amount of memory to be used on the target accelerator.
-        // Since the memory required is ~900MB, the TornadoVM runtime will throw an
-        // exception because we set the limit to 512MB.
-        executionPlan.withMemoryLimit("512MB").execute();
+            // Limit the amount of memory to be used on the target accelerator.
+            // Since the memory required is ~900MB, the TornadoVM runtime will throw an
+            // exception because we set the limit to 512MB.
+            executionPlan.withMemoryLimit("512MB").execute();
+        });
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
