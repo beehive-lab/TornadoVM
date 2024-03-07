@@ -530,6 +530,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 reuseDeviceBufferObject(localState, device);
             }
         }
+
+        // Set Thread-Schedulers to Default Value
+        for (int i = 0; i < executionContext.getTaskCount(); i++) {
+            SchedulableTask task = executionContext.getTask(i);
+            task.meta().resetThreadBlocks();
+        }
+
     }
 
     private void reuseDeviceBuffersForSameDevice(TornadoDevice device) {
@@ -566,6 +573,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
             }
+        }
+
+        // Set Thread-Schedulers to Default Value
+        for (int i = 0; i < executionContext.getTaskCount(); i++) {
+            SchedulableTask task = executionContext.getTask(i);
+            task.meta().resetThreadBlocks();
         }
 
     }

@@ -55,4 +55,6 @@ public interface TaskMetaDataInterface {
     boolean isPrintKernelEnabled();
 
     void setPrintKernelFlag(boolean printKernelEnabled);
+
+    void resetThreadBlocks();
 }

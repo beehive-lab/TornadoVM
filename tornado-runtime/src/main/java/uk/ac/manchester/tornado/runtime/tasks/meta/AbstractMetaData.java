@@ -114,6 +114,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      */
     private boolean openclUseDriverScheduling;
     private boolean printKernel;
+    private boolean resetThreads;
 
     AbstractMetaData(String id, AbstractMetaData parent) {
         this.id = id;
@@ -531,5 +532,17 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public void setThreadInfo(boolean threadInfoEnabled) {
         this.threadInfo = threadInfoEnabled;
+    }
+
+    public void resetThreadBlocks() {
+        this.resetThreads = true;
+    }
+
+    public boolean shouldResetThreadsBlock() {
+        return this.resetThreads;
+    }
+
+    public void disableResetThreadBlock() {
+        this.resetThreads = false;
     }
 }
