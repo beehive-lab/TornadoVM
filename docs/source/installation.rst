@@ -802,7 +802,7 @@ Download TornadoVM to any directory, cd into it, and run the installer. Without 
 .. code:: bash
 
    cd %USERPROFILE%
-   git clone https://github.com/otabuzzman/TornadoVM.git
+   git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
 
    .\bin\tornadovm-installer.cmd
