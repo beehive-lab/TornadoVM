@@ -6,7 +6,7 @@ TornadoVM can be used with the GraalVM Truffle Polyglot API to invoke Task-Graph
 ----------------------------------------------
 
 A) Configuration of the JAVA_HOME Variable
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To enable polyglot support, the ``JAVA_HOME`` variable must be set to the GraalVM path.
 Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`installation_graalvm`.
 
@@ -15,16 +15,16 @@ Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`i
    $ export JAVA_HOME=<path to GraalVM jdk 21>
 
 B) GraalVM Polyglot Dependencies
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The implementations of the programming languages (e.g., Python, JavaScript, Ruby) that are supported by the GraalVM polyglot API are now shipped as standalone distributions. And they can either be used as any other Java library from :ref:`Maven Central <graalvm-mvn-dependencies>`, or as :ref:`standalone toolkits <build-standalone-toolkits>`.
 
 .. _graalvm-mvn-dependencies:
 
 2. Using the GraalVM Polyglot Dependencies from Maven Central
-----------------------------------------------
+-----------------------------------------------------------------
 
 A) Build TornadoVM with the GraalVM Polyglot Dependencies from Maven Central
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To build TornadoVM and utilize the `maven dependencies for GraalPy, GraalVM JavaScript and TruffleRuby <https://central.sonatype.com/namespace/org.graalvm.polyglot/>`_, you can build TornadoVM and use the ``graalvm-polyglot`` profile.
 
 .. code-block:: bash
@@ -44,12 +44,12 @@ Now, that TornadoVM is built with the polyglot dependencies, you can run the ava
 .. _build-standalone-toolkits:
 
 3. Using the GraalVM Polyglot Dependencies as Standalone Toolkits
-----------------------------------------------
+------------------------------------------------------------------------
 However, to interoperate from programs written in those programming languages and invoke a Java method, users would use the standalone distributions.
 However, an aftermath of the last change is that the dedicated builds of GraalVM implemented languages, such as GraalPy, GraalVM JavaScript and TruffleRuby, do not work out-of-the-box with TornadoVM. Instead, users must build those frameworks from source.
 
 A) Build GraalVM Polyglot Dependencies from Source
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GraalVM implementations of the programming languages that can interoperate with Java are provided as standalone distributions, e.g., `GraalPy <https://github.com/oracle/graalpython.git/>`_, `GraalVM JavaScript <https://github.com/oracle/graaljs.git/>`_, `TruffleRuby <https://github.com/oracle/truffleruby.git/>`_.
 As detailed in the `GraalVM Reference Manuals <https://www.graalvm.org/latest/reference-manual/>`_, the following dependencies must be downloaded for each of the programming languages supported:
 
@@ -122,7 +122,7 @@ To enable TornadoVM to employ the standalone built distribution of the GraalVM i
    $ export TRUFFLERUBY_HOME=<path-to-truffleruby>/../graal/sdk/mxbuild/linux-amd64/GRAALVM_AEA5C30A3B_JAVA21/graalvm-aea5c30a3b-java21-23.1.0-dev
 
 B) Interoperate between a Polyglot Programming Language and TornadoVM through Graal's Polyglot API
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In the following example, we will iterate over the necessary steps to invoke a TornadoVM computation from `Python, JavaScript and Ruby programs <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-assembly/src/examples/polyglotTruffle>`_, using the ``MyCompute`` class from the `TornadoVM examples module <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot/MyCompute.java/>`_. However, users can create their own Java classes with the code to be accelerated following the TornadoVM API guidelines :ref:`programming`.
 
 **Step 1: Create a variable that is of the Java class type.**

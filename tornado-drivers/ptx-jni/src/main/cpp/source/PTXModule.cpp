@@ -50,13 +50,20 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     CUresult result;
 
     size_t ptx_length = env->GetArrayLength(source);
+#ifdef _WIN32
+    char *ptx = new char[ptx_length + 1];
+#else
     char ptx[ptx_length + 1];
+#endif
     env->GetByteArrayRegion(source, 0, ptx_length, reinterpret_cast<jbyte *>(ptx));
     ptx[ptx_length] = 0; // Make sure string terminates with a 0
 
     CUmodule module;
     result = cuModuleLoadData(&module, ptx);
     LOG_PTX_AND_VALIDATE("cuModuleLoadData", result);
+#ifdef _WIN32
+    delete[] ptx;
+#endif
 
     /// FIXME
     if (result != CUDA_SUCCESS) {
@@ -73,7 +80,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Method:    cuModuleUnload
  * Signature: ([B)J
  */
-JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleUnload
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleUnload
   (JNIEnv *env, jclass clazz, jbyteArray module_wrapper) {
     CUresult result;
     CUmodule module;

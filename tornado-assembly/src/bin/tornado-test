@@ -115,6 +115,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
+    TestEntry("uk.ac.manchester.tornado.unittests.multithreaded.MultiThreaded"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -222,10 +223,14 @@ __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.p
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 # ################################################################################################################
 
-TORNADO_CMD = "tornado "
+if (os.name == 'nt'):
+    TORNADO_CMD = "python " + os.path.expandvars(r"%TORNADO_SDK%/bin/tornado").replace("\\", "/") + " "
+else:
+    TORNADO_CMD = "tornado "
+
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.16_20122022"
+__VERSION__ = "0.16_10032024"
 
 JDK_8_VERSION = "1.8"
 try:

@@ -21,7 +21,7 @@
         <graalvm.version>23.1.0</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
-        <download.cmake>false</download.cmake>
+        <cmake.download>false</cmake.download>
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
         <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
@@ -44,7 +44,7 @@
                 <platform>windows-i386</platform>
                 <build.type>release</build.type>
                 <cmake.classifier>windows-i386</cmake.classifier>
-                <cmake.generator>Unix Makefiles</cmake.generator>
+                <cmake.generator>Visual Studio 17 2022</cmake.generator>
                 <cmake.config>${build.type}</cmake.config>
                 <!--
                         CMake interprets the lack of a generator architecture ("-A<platform>") as x86. There doesn't
@@ -68,7 +68,7 @@
                 <platform>windows-amd64</platform>
                 <build.type>release</build.type>
                 <cmake.classifier>windows-amd64</cmake.classifier>
-                <cmake.generator>Unix Makefiles</cmake.generator>
+                <cmake.generator>Visual Studio 17 2022</cmake.generator>
                 <cmake.config>${build.type}</cmake.config>
             </properties>
         </profile>
@@ -89,7 +89,7 @@
                 <build.type>release</build.type>
                 <cmake.classifier>linux-i386</cmake.classifier>
                 <cmake.generator>Unix Makefiles</cmake.generator>
-                <download.cmake>false</download.cmake>
+                <cmake.download>false</cmake.download>
             </properties>
         </profile>
         <profile>
