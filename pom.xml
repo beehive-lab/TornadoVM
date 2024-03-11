@@ -240,6 +240,7 @@
                                 <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
+                                <arg>--add-modules=jdk.incubator.vector</arg>
                                 <arg>--upgrade-module-path</arg>
                                 <arg>${user.dir}/graalJars</arg>
                                 <!-- Common exports-->
