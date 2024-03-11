@@ -28,6 +28,16 @@ public class TestTensorTypes extends TornadoTestBase {
         }
     }
 
+    static void matrixVectorSimple(float[] xout, float[] x, Tensor w, int n, int d) {
+        for (@Parallel int i = 0; i < d; i++) {
+            float val = 0f;
+            for (int j = 0; j < n; j++) {
+                val += w.getFloatValue(i * n + j) * x[j];
+            }
+            xout[i] = val;
+        }
+    }
+
     @Test
     public void testHelloTensorAPI() {
         Shape shape = new Shape(64, 64, 64);
@@ -85,13 +95,13 @@ public class TestTensorTypes extends TornadoTestBase {
         // Create two tensors and initialize their values
         Tensor tensorA = new Tensor(shape, DType.FLOAT);
 
-        tensorA.init(1f);
+        tensorA.init(2f);
 
         Tensor tensorB = new Tensor(shape, DType.FLOAT);
-        tensorB.init(1f);
+        tensorB.init(3.5f);
 
         // Create a tensor to store the result of addition
-        Tensor tensorC = new Tensor(shape, DType.HALF_FLOAT);
+        Tensor tensorC = new Tensor(shape, DType.FLOAT);
         // Define the task graph
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
@@ -105,6 +115,41 @@ public class TestTensorTypes extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
+        for (int i = 0; i < tensorC.getSize(); i++) {
+            System.out.println("S " + tensorC.getFloatValue(i));
+        }
+        //        for (float x : tensorC) {
+        //
+        //        }
+
+    }
+
+    @Test
+    public void testMixedTypes() {
+        Shape shape = new Shape(64, 64, 64);
+
+        // Create two tensors and initialize their values
+        Tensor tensorA = new Tensor(shape, DType.FLOAT);
+
+        tensorA.init(2f);
+
+        Tensor tensorB = new Tensor(shape, DType.FLOAT);
+        tensorB.init(3.5f);
+
+        // Create a tensor to store the result of addition
+        Tensor tensorC = new Tensor(shape, DType.FLOAT);
+        // Define the task graph
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
+                .task("t0", TestTensorTypes::tensorAdditionFloat, tensorA, tensorB, tensorC) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tensorC); //
+
+        // Take a snapshot of the task graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        // Create an execution plan and execute it
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
     }
 
 }

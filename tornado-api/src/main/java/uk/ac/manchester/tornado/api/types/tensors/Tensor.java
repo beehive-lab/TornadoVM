@@ -38,6 +38,23 @@ public final class Tensor extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
+    public static Tensor fromArray(float[] values) {
+        return createSegment(values);
+    }
+
+    private static Tensor createSegment(float[] values) {
+        Shape shape = new Shape(values.length);
+        Tensor array = new Tensor(shape, DType.FLOAT);
+        for (int i = 0; i < values.length; i++) {
+            array.set(i, values[i]);
+        }
+        return array;
+    }
+
+    public MemorySegment getMemorySegmentNoHead() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
     @Override
     public int getSize() {
         return numberOfElements;
