@@ -190,6 +190,16 @@ public final class ByteArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@code ByteArray} instance, including the header offset.
+     *
+     * @return The {@link MemorySegment} associated with the {@code ByteArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 
