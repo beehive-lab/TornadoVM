@@ -92,7 +92,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
@@ -108,7 +107,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -129,12 +128,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private static final boolean USE_ATOMICS = false;
     private static boolean gpuSnippet = false;
     private final ConstantReflectionProvider constantReflection;
-    private final TornadoVMConfig vmConfig;
+    private final TornadoVMConfigAccess vmConfig;
     private ReduceGPUSnippets.Templates gpuReduceSnippets;
     private ReduceCPUSnippets.Templates cpuReduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
-            ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
+            ConstantReflectionProvider constantReflection, TornadoVMConfigAccess vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
@@ -508,14 +507,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected Stamp loadCompressedStamp(ObjectStamp stamp) {
-        Debug.printf("OCLLoweringProvider::loadCompressedStamp");
         unimplemented();
         return null;
     }
 
     @Override
     protected ValueNode newCompressionNode(CompressionNode.CompressionOp op, ValueNode value) {
-        Debug.printf("OCLLoweringProvider::newCompressionNode");
         unimplemented();
         return null;
     }

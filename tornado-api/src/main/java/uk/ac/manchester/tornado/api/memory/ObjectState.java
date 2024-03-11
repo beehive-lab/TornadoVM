@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,9 @@ package uk.ac.manchester.tornado.api.memory;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
-public interface TornadoGlobalObjectState {
+public interface ObjectState {
 
-    TornadoDeviceObjectState getDeviceState(TornadoDevice device);
+    DeviceBufferState getDeviceState(TornadoDevice device);
 
     void clear();
 

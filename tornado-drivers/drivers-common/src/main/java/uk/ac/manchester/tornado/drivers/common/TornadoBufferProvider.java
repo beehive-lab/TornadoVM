@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -57,8 +57,6 @@ public abstract class TornadoBufferProvider {
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
-
-
     protected abstract long allocateBuffer(long size);
 
     protected abstract void releaseBuffer(long buffer);
@@ -97,9 +95,9 @@ public abstract class TornadoBufferProvider {
      * usually low, so searching sequentially should not take a lot of time.
      *
      * @param sizeInBytes
-     *            Size in bytes for the requested buffer.
+     *     Size in bytes for the requested buffer.
      * @return returns the index position of a free buffer within the free buffer
-     *         list. It returns -1 if a free buffer slot is not found.
+     *     list. It returns -1 if a free buffer slot is not found.
      */
     private int bufferIndexOfAFreeSpace(long sizeInBytes) {
         int minBufferIndex = -1;
@@ -117,7 +115,7 @@ public abstract class TornadoBufferProvider {
      * to allocate.
      *
      * @param sizeInBytes
-     *            Size in bytes for the requested buffer.
+     *     Size in bytes for the requested buffer.
      * @return It returns a buffer native pointer.
      */
     private long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes) {
@@ -135,18 +133,18 @@ public abstract class TornadoBufferProvider {
      * target device. Otherwise, it throws an exception.
      *
      * @param sizeInBytes
-     *            Size in bytes for the requested buffer.
+     *     Size in bytes for the requested buffer.
      * @return Returns a pointer to the native buffer (JNI).
      *
      * @throws {@link
-     *             TornadoOutOfMemoryException}
+     *     TornadoOutOfMemoryException}
      */
-    public long getBufferWithSize(long sizeInBytes) {
-        TornadoTargetDevice targetDevice = deviceContext.getDevice();
-        if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < targetDevice.getDeviceMaxAllocationSize()) {
+    public synchronized long getOrAllocateBufferWithSize(long sizeInBytes) {
+        TornadoTargetDevice device = deviceContext.getDevice();
+        if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
             // Allocate if there is enough device memory.
             return allocate(sizeInBytes);
-        } else if (sizeInBytes < targetDevice.getDeviceMaxAllocationSize()) {
+        } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
             int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes);
             // If a buffer was found, mark it as used and return it.
             if (minBufferIndex != -1) {

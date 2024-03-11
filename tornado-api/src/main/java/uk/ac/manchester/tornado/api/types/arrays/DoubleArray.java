@@ -191,6 +191,16 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@code DoubleArray} instance, including the header offset.
+     *
+     * @return The {@link MemorySegment} associated with the {@code DoubleArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 

@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.common.TornadoEvents;
 
 public interface TaskMetaDataInterface {
 
-    List<TornadoEvents> getProfiles();
+    List<TornadoEvents> getProfiles(long executionPlanId);
 
     String getCompilerFlags();
 
@@ -55,4 +55,6 @@ public interface TaskMetaDataInterface {
     boolean isPrintKernelEnabled();
 
     void setPrintKernelFlag(boolean printKernelEnabled);
+
+    void resetThreadBlocks();
 }

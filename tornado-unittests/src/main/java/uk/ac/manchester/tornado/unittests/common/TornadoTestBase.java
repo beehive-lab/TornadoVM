@@ -30,8 +30,6 @@ import uk.ac.manchester.tornado.unittests.tools.TornadoHelper;
 public abstract class TornadoTestBase {
 
     public static final float DELTA = 0.001f;
-    public static final float DELTA_001 = 0.01f;
-    public static final float DELTA_01 = 0.1f;
     public static final float DELTA_05 = 0.5f;
     protected static boolean wasDeviceInspected = false;
 

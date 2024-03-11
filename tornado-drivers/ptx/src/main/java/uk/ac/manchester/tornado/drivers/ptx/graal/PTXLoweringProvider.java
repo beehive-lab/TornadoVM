@@ -100,7 +100,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -121,11 +121,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private static final boolean USE_ATOMICS = false;
     private static boolean gpuSnippet = false;
     private final ConstantReflectionProvider constantReflection;
-    private TornadoVMConfig vmConfig;
+    private TornadoVMConfigAccess vmConfig;
     private PTXGPUReduceSnippets.Templates gpuReduceSnippets;
 
     public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
-            ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
+            ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfigAccess vmConfig) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;

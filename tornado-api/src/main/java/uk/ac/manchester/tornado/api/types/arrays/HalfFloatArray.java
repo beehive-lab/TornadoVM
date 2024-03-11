@@ -194,6 +194,16 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@code HalfFloatArray} instance, including the header offset.
+     *
+     * @return The {@link MemorySegment} associated with the {@code HalfFloatArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 

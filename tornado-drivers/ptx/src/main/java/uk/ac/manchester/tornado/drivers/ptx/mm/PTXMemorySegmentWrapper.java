@@ -27,37 +27,21 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
+import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
+import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
+import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
-public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuffer {
+public class PTXMemorySegmentWrapper implements XPUBuffer {
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
@@ -89,7 +73,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     }
 
     @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
@@ -102,49 +86,36 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     }
 
     @Override
-    public void read(final Object reference) {
-        read(reference, 0, 0, null, false);
+    public void read(long executionPlanId, final Object reference) {
+        read(executionPlanId, reference, 0, 0, null, false);
     }
 
-    private MemorySegment getSegment(final Object reference) {
+    private MemorySegment getSegmentWithHeader(final Object reference) {
         return switch (reference) {
-            case IntArray intArray -> intArray.getSegment();
-            case FloatArray floatArray -> floatArray.getSegment();
-            case DoubleArray doubleArray -> doubleArray.getSegment();
-            case LongArray longArray -> longArray.getSegment();
-            case ShortArray shortArray -> shortArray.getSegment();
-            case ByteArray byteArray -> byteArray.getSegment();
-            case CharArray charArray -> charArray.getSegment();
-            case HalfFloatArray halfFloatArray -> halfFloatArray.getSegment();
-            case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
-            case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
-            case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();
-            case VectorFloat8 vectorFloat8 -> vectorFloat8.getArray().getSegment();
-            case VectorDouble2 vectorDouble2 -> vectorDouble2.getArray().getSegment();
-            case VectorDouble3 vectorDouble3 -> vectorDouble3.getArray().getSegment();
-            case VectorDouble4 vectorDouble4 -> vectorDouble4.getArray().getSegment();
-            case VectorDouble8 vectorDouble8 -> vectorDouble8.getArray().getSegment();
-            case VectorInt2 vectorInt2 -> vectorInt2.getArray().getSegment();
-            case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegment();
-            case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegment();
-            case VectorInt8 vectorInt8 -> vectorInt8.getArray().getSegment();
-            default -> (MemorySegment) reference;
+
+            case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegmentWithHeader();
+            case TornadoCollectionInterface<?> tornadoCollectionInterface -> tornadoCollectionInterface.getSegmentWithHeader();
+            case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
+            case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegmentWithHeader();
+            case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegmentWithHeader();
+            default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
         };
     }
 
     @Override
-    public int read(final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
-        MemorySegment segment = getSegment(reference);
+
+    public int read(long executionPlanId, final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (partialReadSize != 0) {
             // Partial Copy Out due to a copy under demand copy by the user
-            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else if (batchSize <= 0) {
-            returnEvent = deviceContext.readBuffer(toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
                     ? events
                     : null);
         }
@@ -152,46 +123,45 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     }
 
     @Override
-    public void write(Object reference) {
-        MemorySegment segment = getSegment(reference);
+
+    public void write(long executionPlanId, Object reference) {
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0) {
-            deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
+            deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), 0, null);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] Batch processing for the writeBuffer operation");
         }
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment = getSegment(reference);
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         final int returnEvent;
         if (batchSize <= 0) {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset, (useDeps)
-                    ? events
-                    : null);
+            returnEvent = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset,
+                    (useDeps) ? events : null);
         }
         return useDeps ? returnEvent : -1;
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
 
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
-                    ? events
-                    : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER,
+                    (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
         return useDeps ? returnEvents : null;
@@ -199,22 +169,22 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0 && segment != null) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
+            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
         }
 
         if (Tornado.FULL_DEBUG) {
-            info("allocated: %s", toString());
+            TornadoLogger.info("allocated: %s", toString());
         }
     }
 
@@ -226,7 +196,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            info("deallocated: %s", toString());
+            TornadoLogger.info("deallocated: %s", toString());
         }
     }
 
@@ -247,12 +217,12 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public int[] getIntBuffer() {
-        return ObjectBuffer.super.getIntBuffer();
+        return XPUBuffer.super.getIntBuffer();
     }
 
     @Override
     public void setIntBuffer(int[] arr) {
-        ObjectBuffer.super.setIntBuffer(arr);
+        XPUBuffer.super.setIntBuffer(arr);
     }
 
 }

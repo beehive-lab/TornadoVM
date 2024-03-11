@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLKernelInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLKernel extends TornadoLogger {
+public class OCLKernel {
 
     private final long oclKernelID;
     private final OCLDeviceContext deviceContext;
@@ -63,7 +63,7 @@ public class OCLKernel extends TornadoLogger {
         try {
             clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 
@@ -72,7 +72,7 @@ public class OCLKernel extends TornadoLogger {
         try {
             clSetKernelArgRef(oclKernelID, index, devicePtr);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 
@@ -80,7 +80,7 @@ public class OCLKernel extends TornadoLogger {
         try {
             clSetKernelArg(oclKernelID, index, 8, null);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 
@@ -96,7 +96,7 @@ public class OCLKernel extends TornadoLogger {
         try {
             clSetKernelArg(oclKernelID, index, size, null);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 

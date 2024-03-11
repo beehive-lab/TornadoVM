@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.images;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -271,5 +272,15 @@ public final class ImageFloat8 implements TornadoImagesInterface<FloatBuffer> {
     @Override
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return getArray().getSegmentWithHeader();
     }
 }

@@ -66,6 +66,11 @@ public final class Tensor extends TornadoNativeArray {
 
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 

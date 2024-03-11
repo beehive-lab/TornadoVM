@@ -73,7 +73,7 @@ import uk.ac.manchester.tornado.unittests.slam.utils.Renderer;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.GraphicsTests
+ * tornado-test -V uk.ac.manchester.tornado.unittests.slam.GraphicsTests
  * </code>
  */
 public class GraphicsTests extends TornadoTestBase {

@@ -190,6 +190,16 @@ public final class ShortArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@code ShortArray} instance, including the header offset.
+     *
+     * @return The {@link MemorySegment} associated with the {@code ShortArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 

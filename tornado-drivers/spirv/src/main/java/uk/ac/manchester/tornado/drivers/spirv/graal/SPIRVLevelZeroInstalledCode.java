@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,13 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
-
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
@@ -42,9 +40,10 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -56,8 +55,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     private boolean valid;
     private boolean ADJUST_IRREGULAR = false;
     private LevelZeroKernelTimeStamp kernelTimeStamp;
-    private ThreadBlockDispatcher dispatcher;
-    private DeviceThreadScheduling threadScheduling;
+    private ThreadBlockDispatcher threadBlockDispatcher;
+    private DeviceThreadScheduling deviceThreadScheduling;
 
     public SPIRVLevelZeroInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name, spirvModule, deviceContext);
@@ -65,13 +64,13 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
-    private void setKernelArgs(final SPIRVKernelArgs callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(long executionPlanId, final SPIRVKernelStackFrame callWrapper) {
         // Enqueue write
-        callWrapper.enqueueWrite(null);
+        callWrapper.enqueueWrite(executionPlanId, null);
 
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
@@ -83,21 +82,21 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
             int kernelParamIndex = argIndex + 1;
-            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
-            if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+            KernelStackFrame.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+            if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
                 result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
                 continue;
             }
 
-            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+            if (RuntimeUtilities.isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 if (!arg.isReferenceType()) {
                     continue;
                 }
                 result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
             } else {
-                shouldNotReachHere();
+                TornadoInternalError.shouldNotReachHere();
             }
         }
     }
@@ -135,8 +134,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     private int setThreadSuggestionFromLevelZero(LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {
-        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) threadScheduling.globalWork[0], (int) threadScheduling.globalWork[1],
-                (int) threadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
+        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) deviceThreadScheduling.globalWork[0], (int) deviceThreadScheduling.globalWork[1],
+                (int) deviceThreadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
@@ -180,14 +179,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         return new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
     }
 
-    private void launchKernelWithLevelZero(ZeKernelHandle kernel, DeviceThreadScheduling threadScheduling, ThreadBlockDispatcher dispatcher) {
+    private void launchKernelWithLevelZero(long executionPlanId, ZeKernelHandle kernel, DeviceThreadScheduling threadScheduling, ThreadBlockDispatcher dispatcher) {
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
         dispatch.setGroupCountX(threadScheduling.globalWork[0] / dispatcher.groupSizeX[0]);
         dispatch.setGroupCountY(threadScheduling.globalWork[1] / dispatcher.groupSizeY[0]);
         dispatch.setGroupCountZ(threadScheduling.globalWork[2] / dispatcher.groupSizeZ[0]);
 
-        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
+        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();
 
         if (TornadoOptions.isProfilerEnabled()) {
@@ -205,25 +204,38 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
     }
 
+    private boolean computeThreadBlock(TaskMetaData meta) {
+        return meta.shouldResetThreadsBlock() || deviceThreadScheduling == null || threadBlockDispatcher == null || meta.isWorkerGridAvailable();
+    }
+
     @Override
-    public int launchWithoutDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        setKernelArgs((SPIRVKernelArgs) callWrapper, null, meta);
+        setKernelArgs(executionPlanId, (SPIRVKernelStackFrame) callWrapper);
 
-        if (threadScheduling == null || dispatcher == null || meta.isWorkerGridAvailable()) {
+        if (computeThreadBlock(meta)) {
             // if the worker grid is available, the user can update the number of threads to
             // run at any point during runtime.
-            threadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
+            deviceThreadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
             if (TornadoOptions.USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS) {
-                dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+                threadBlockDispatcher = suggestThreadSchedulingToLevelZeroDriver(deviceThreadScheduling, levelZeroKernel, kernel, meta);
             } else {
-                int[] groupSizeX = new int[] { (int) threadScheduling.localWork[0] };
-                int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
-                int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
-                dispatcher = new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
+                int[] groupSizeX = new int[] { (int) deviceThreadScheduling.localWork[0] };
+                int[] groupSizeY = new int[] { (int) deviceThreadScheduling.localWork[1] };
+                int[] groupSizeZ = new int[] { (int) deviceThreadScheduling.localWork[2] };
+                threadBlockDispatcher = new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
+            }
+
+            if (meta.shouldResetThreadsBlock()) {
+                // If the device was updated for the same ExecutionPlan and same TornadoVM instance,
+                // then, we disable the reset of the threads for the next execution.
+                // This will enable the thread-blocks not to be re-computed over and over again, but
+                // only when the device is changed. 
+                meta.disableResetThreadBlock();
+                meta.setLocalWorkToNotDefined();
             }
         }
 
@@ -231,10 +243,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             meta.printThreadDims();
         }
 
-        launchKernelWithLevelZero(kernel, threadScheduling, dispatcher);
+        launchKernelWithLevelZero(executionPlanId, kernel, deviceThreadScheduling, threadBlockDispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
-            kernelTimeStamp.solveEvent(meta);
+            kernelTimeStamp.solveEvent(executionPlanId, meta);
         }
 
         return 0;
@@ -345,7 +357,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             this.globalWork = globalWork;
             this.localWork = localWork;
         }
-
     }
 
     private static class ThreadBlockDispatcher {

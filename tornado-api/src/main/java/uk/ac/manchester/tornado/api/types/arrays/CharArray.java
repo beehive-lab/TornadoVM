@@ -59,19 +59,6 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets all the values of the {@code CharArray} instance to \u0000, the default char value.
-     */
-    @Override
-    public void clear() {
-        init('\u0000');
-    }
-
-    @Override
-    public int getElementSize() {
-        return CHAR_BYTES;
-    }
-
-    /**
      * Internal method used to create a new instance of the {@code CharArray} from on-heap data.
      *
      * @param values
@@ -121,6 +108,19 @@ public final class CharArray extends TornadoNativeArray {
         CharArray charArray = new CharArray(numElements);
         MemorySegment.copy(segment, 0, charArray.segment, charArray.baseIndex * CHAR_BYTES, byteSize);
         return charArray;
+    }
+
+    /**
+     * Sets all the values of the {@code CharArray} instance to \u0000, the default char value.
+     */
+    @Override
+    public void clear() {
+        init('\u0000');
+    }
+
+    @Override
+    public int getElementSize() {
+        return CHAR_BYTES;
     }
 
     /**
@@ -189,6 +189,16 @@ public final class CharArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@code CharArray} instance, including the header offset.
+     *
+     * @return The {@link MemorySegment} associated with the {@code CharArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 

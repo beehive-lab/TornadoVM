@@ -24,12 +24,12 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 
 /**
  * A Tornado accelerator device extending the {@link TornadoDevice} interface.
  */
-public interface TornadoAcceleratorDevice extends TornadoDevice {
+public interface TornadoXPUDevice extends TornadoDevice {
 
     /**
      * It returns the preferred scheduling strategy for the Tornado accelerator device.
@@ -44,18 +44,18 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      *
      * @param numArgs
      *     The number of arguments for the kernel call wrapper.
-     * @return The created {@link KernelArgs} object.
+     * @return The created {@link KernelStackFrame} object.
      */
-    KernelArgs createCallWrapper(int numArgs);
+    KernelStackFrame createKernelStackFrame(int numArgs);
 
     /**
      * It creates or reuses an atomic buffer for the specified integer array.
      *
      * @param arr
      *     The integer array for which to create or reuse an atomic buffer.
-     * @return The created or reused {@link ObjectBuffer}.
+     * @return The created or reused {@link XPUBuffer}.
      */
-    ObjectBuffer createOrReuseAtomicsBuffer(int[] arr);
+    XPUBuffer createOrReuseAtomicsBuffer(int[] arr);
 
     /**
      * It installs the Tornado code for the specified schedulable task.
@@ -127,12 +127,12 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * @param value
      *     The value to update the atomic region and object state.
      * @param objectState
-     *     The {@link DeviceObjectState} to update the atomic region and
+     *     The {@link XPUDeviceBufferState} to update the atomic region and
      *     object state.
      * @return The integer array representing the updated atomic region and object
      *     state.
      */
-    int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState);
+    int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState objectState);
 
     /**
      * It gets the global index of atomic operations for the specified schedulable
@@ -164,11 +164,11 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     /**
      * It sets the atomic region for the Tornado accelerator device using the
-     * specified {@link ObjectBuffer}.
+     * specified {@link XPUBuffer}.
      *
      * @param bufferAtomics
-     *     The {@link ObjectBuffer} representing the atomic region.
+     *     The {@link XPUBuffer} representing the atomic region.
      */
-    void setAtomicRegion(ObjectBuffer bufferAtomics);
+    void setAtomicRegion(XPUBuffer bufferAtomics);
 
 }

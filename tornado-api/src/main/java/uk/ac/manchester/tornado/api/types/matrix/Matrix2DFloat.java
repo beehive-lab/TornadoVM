@@ -21,6 +21,7 @@ import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.types.utils.FloatOps.FMT;
 import static uk.ac.manchester.tornado.api.types.utils.StorageFormats.toRowMajor;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -67,11 +68,6 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
         this(rows, columns, new FloatArray(rows * columns));
     }
 
-    @Override
-    public void clear() {
-        storage.clear();
-    }
-
     public Matrix2DFloat(float[][] matrix) {
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }
@@ -99,6 +95,11 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
         for (int i = 0; i < matrix.storage.getSize(); i++) {
             matrix.storage.set(i, matrix.storage.get(i) * value);
         }
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
     public float get(int i, int j) {
@@ -205,5 +206,15 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
     @Override
     public long getNumBytes() {
         return storage.getNumBytesWithoutHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return storage.getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return storage.getSegmentWithHeader();
     }
 }
