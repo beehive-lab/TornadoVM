@@ -1,7 +1,7 @@
 .. _examples:
 
 Running Examples and Benchmarks
-#############################
+##################################
 
 
 Running TornadoVM Programs

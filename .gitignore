@@ -39,8 +39,11 @@ tornado-runtime/target/
 tornado-drivers/opencl-jni/src/main/cpp/headers/
 beehive-spirv-toolkit/
 levelzero-jni/
+setvars.cmd
 setvars.sh
 tornado-drivers/ptx-jni/target/
 dist/
 level-zero/
 target/
+.venv/
+docs/build/

@@ -1,7 +1,7 @@
 .. _fpga-programming:
 
 FPGA Programming in TornadoVM
-======================
+==============================
 
 TornadoVM supports execution and prototyping with OpenCL compatible
 Intel and Xilinx FPGAs. For debugging you can use common IDEs from Java
@@ -60,7 +60,7 @@ your configuration file, by using the ``-Dtornado.fpga.conf.file=FILE``
 flag.
 
 Example of a configuration file for Intel FPGAs (Emulation mode) with the `Intel oneAPI Base Tool Kit <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html>`__:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Edit/create the configuration file:
 
@@ -68,7 +68,7 @@ Edit/create the configuration file:
 
    $ vim $TORNADO_SDK/etc/intel-oneapi-fpga.conf
 
-.. code:: conf
+.. code:: bash
 
    # Configure the fields for FPGA compilation & execution
    # [device]
@@ -79,7 +79,7 @@ Edit/create the configuration file:
    DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 
 Example of a configuration file for an Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Edit/create the configuration file fo the FPGA:
 
@@ -87,7 +87,7 @@ Edit/create the configuration file fo the FPGA:
 
    $ vim $TORNADO_SDK/etc/intel-fpga.conf
 
-.. code:: conf
+.. code:: bash
 
    # Configure the fields for FPGA compilation & execution
    # [device]
@@ -99,13 +99,13 @@ Edit/create the configuration file fo the FPGA:
    DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 
 Example of a configuration file for a Xilinx KCU1500 FPGA:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
    $ vim $TORNADO_SDK/etc/xilinx-fpga.conf
 
-.. code:: conf
+.. code:: bash
 
    # Configure the fields for FPGA compilation & execution
    # [device]
@@ -124,13 +124,13 @@ env variables of the SDAccel toolchain as follows:
    source /opt/Xilinx/SDx/2018.2/settings64.sh
 
 Example of a configuration file for a Xilinx Alveo U50 FPGA:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
    $ vim etc/xilinx-fpga.conf
 
-.. code:: conf
+.. code:: bash
 
    # Configure the fields for FPGA compilation & execution
    # [device]
@@ -150,13 +150,13 @@ env variables of the Vitis toolchain as follows:
    source /opt/xilinx/xrt/setup.sh
 
 Example of a configuration file for an AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0 FPGA:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
    $ vim $TORNADO_SDK/etc/xilinx-fpga.conf
 
-.. code:: conf
+.. code:: bash
 
    # Configure the fields for FPGA compilation & execution
    # [device]

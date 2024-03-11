@@ -4,40 +4,78 @@ project (Tornado)
 find_package(JNI REQUIRED)
 
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fpermissive -export-dynamic -fPIC ")
 set(CMAKE_VERBOSE_MAKEFILE on)
+
+if(MSVC)
+	string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+	string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+	# enable multi-process compilation, not supported by clang-cl
+	if(NOT CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	endif()
+
+	# enable exceptions handling
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+
+	# enable creation of PDB files for Release Builds
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
+
+	# enable CET shadow stack
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /CETCOMPAT")
+
+	#Use of sccache with MSVC requires workaround of replacing /Zi with /Z7
+	#https://github.com/mozilla/sccache
+	if(USE_Z7) #sccache
+		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+		string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+	endif()
+else()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -export-dynamic")
+	add_definitions(${CMAKE_CXX_FLAGS})
+endif()
 
 include_directories(
 	source/
 	${JNI_INCLUDE_DIRS}
-	${C_INCLUDE_PATH}
 	${CPLUS_INCLUDE_PATH}
+	$ENV{CPLUS_INCLUDE_PATH}
+	$ENV{C_INCLUDE_PATH}
 )
 
 file(GLOB_RECURSE SOURCE_FILES "*.cpp")
 add_library(tornado-ptx SHARED
-		source/PTXPlatform.cpp
-		source/PTXContext.cpp
-		source/PTXModule.cpp
-		source/PTXStream.cpp
-		source/PTXDevice.cpp
-		source/PTXEvent.cpp
-		source/PTX.cpp
-		source/ptx_utils.cpp
-		source/ptx_log.h)
+	source/PTXPlatform.cpp
+	source/PTXContext.cpp
+	source/PTXModule.cpp
+	source/PTXStream.cpp
+	source/PTXDevice.cpp
+	source/PTXEvent.cpp
+	source/PTX.cpp
+	source/ptx_utils.cpp
+	source/ptx_log.h
+	)
 
 #Support for CUDA Integration
-FIND_PACKAGE(CUDA)
-if(CUDA_FOUND)
-    include_directories(${CUDA_INCLUDE_DIRS})
-    link_directories(tornado-ptx ${CUDA_TOOLKIT_ROOT_DIR})
-    if(CMAKE_HOST_WIN32)
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} $ENV{PTX_LDFLAGS}")
-    endif()
-    target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda")
+find_package(CUDAToolkit REQUIRED)
+if(CUDAToolkit_FOUND)
+    include_directories(${CUDAToolkit_INCLUDE_DIRS})
+    link_directories(tornado-ptx ${CUDAToolkit_LIBRARY_ROOT})
     if(CMAKE_HOST_WIN32)
         set_target_properties(tornado-ptx PROPERTIES PREFIX "")
-    endif() 
-else(CUDA_FOUND)
+        find_library(CUDA_LIB cuda PATHS ${CUDAToolkit_LIBRARY_DIR})
+        target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} ${CUDA_LIB})
+    else()
+        target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda")
+    endif()
+else(CUDAToolkit_FOUND)
     message("CUDA is not installed on this system.")
 endif()

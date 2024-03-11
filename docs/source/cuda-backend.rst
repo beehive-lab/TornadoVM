@@ -68,7 +68,8 @@ TornadoVM Installation
 
 | **Step 3:**
 | Install TornadoVM as described here: :ref:`installation`.
-| Build TornadoVM with the ``PTX`` backend selected and run ``tornado --devices``. 
+| Build TornadoVM with the ``PTX`` backend selected and run ``tornado --devices``.
+
 The output of the TornadoVM build containing both backends (PTX and OpenCL) should look like this:
 
 .. code:: bash
