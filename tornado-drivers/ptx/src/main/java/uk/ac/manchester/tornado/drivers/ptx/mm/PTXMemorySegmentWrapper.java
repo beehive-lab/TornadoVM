@@ -27,6 +27,19 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
@@ -39,19 +52,6 @@ import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -106,35 +106,35 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
         read(reference, 0, 0, null, false);
     }
 
-    private MemorySegment getSegment(final Object reference) {
+    private MemorySegment getSegmentWithHeader(final Object reference) {
         return switch (reference) {
-            case IntArray intArray -> intArray.getSegment();
-            case FloatArray floatArray -> floatArray.getSegment();
-            case DoubleArray doubleArray -> doubleArray.getSegment();
-            case LongArray longArray -> longArray.getSegment();
-            case ShortArray shortArray -> shortArray.getSegment();
-            case ByteArray byteArray -> byteArray.getSegment();
-            case CharArray charArray -> charArray.getSegment();
-            case HalfFloatArray halfFloatArray -> halfFloatArray.getSegment();
-            case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
-            case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
-            case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();
-            case VectorFloat8 vectorFloat8 -> vectorFloat8.getArray().getSegment();
-            case VectorDouble2 vectorDouble2 -> vectorDouble2.getArray().getSegment();
-            case VectorDouble3 vectorDouble3 -> vectorDouble3.getArray().getSegment();
-            case VectorDouble4 vectorDouble4 -> vectorDouble4.getArray().getSegment();
-            case VectorDouble8 vectorDouble8 -> vectorDouble8.getArray().getSegment();
-            case VectorInt2 vectorInt2 -> vectorInt2.getArray().getSegment();
-            case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegment();
-            case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegment();
-            case VectorInt8 vectorInt8 -> vectorInt8.getArray().getSegment();
+            case IntArray intArray -> intArray.getSegmentWithHeader();
+            case FloatArray floatArray -> floatArray.getSegmentWithHeader();
+            case DoubleArray doubleArray -> doubleArray.getSegmentWithHeader();
+            case LongArray longArray -> longArray.getSegmentWithHeader();
+            case ShortArray shortArray -> shortArray.getSegmentWithHeader();
+            case ByteArray byteArray -> byteArray.getSegmentWithHeader();
+            case CharArray charArray -> charArray.getSegmentWithHeader();
+            case HalfFloatArray halfFloatArray -> halfFloatArray.getSegmentWithHeader();
+            case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegmentWithHeader();
+            case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegmentWithHeader();
+            case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegmentWithHeader();
+            case VectorFloat8 vectorFloat8 -> vectorFloat8.getArray().getSegmentWithHeader();
+            case VectorDouble2 vectorDouble2 -> vectorDouble2.getArray().getSegmentWithHeader();
+            case VectorDouble3 vectorDouble3 -> vectorDouble3.getArray().getSegmentWithHeader();
+            case VectorDouble4 vectorDouble4 -> vectorDouble4.getArray().getSegmentWithHeader();
+            case VectorDouble8 vectorDouble8 -> vectorDouble8.getArray().getSegmentWithHeader();
+            case VectorInt2 vectorInt2 -> vectorInt2.getArray().getSegmentWithHeader();
+            case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegmentWithHeader();
+            case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegmentWithHeader();
+            case VectorInt8 vectorInt8 -> vectorInt8.getArray().getSegmentWithHeader();
             default -> (MemorySegment) reference;
         };
     }
 
     @Override
     public int read(final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
@@ -153,7 +153,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public void write(Object reference) {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0) {
             deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
@@ -164,7 +164,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         final int returnEvent;
         if (batchSize <= 0) {
@@ -181,7 +181,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
 
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
@@ -199,7 +199,7 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0 && segment != null) {
             bufferSize = segment.byteSize();

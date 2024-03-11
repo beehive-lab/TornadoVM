@@ -59,21 +59,17 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 // FIXME <REFACTOR> This class can be common for the three backends.
 public class SPIRVObjectWrapper implements ObjectBuffer {
 
-    private long bufferId;
-    private long bufferOffset;
-    private ByteBuffer buffer;
+    private static final int BYTES_OBJECT_REFERENCE = 8;
     private final HotSpotResolvedJavaType resolvedType;
     private final HotSpotResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
-
     private final Class<?> objectType;
-
     private final int hubOffset;
     private final int fieldsOffset;
-
     private final SPIRVDeviceContext deviceContext;
-
-    private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long bufferId;
+    private long bufferOffset;
+    private ByteBuffer buffer;
     private long subRegionSize;
 
     public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object) {
@@ -120,31 +116,31 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((FloatArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((IntArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((ByteArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((DoubleArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((ShortArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (type == CharArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((CharArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((CharArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long sizeInBytes = ((LongArray) objectFromField).getSegment().byteSize();
+                long sizeInBytes = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new SPIRVVectorWrapper(deviceContext, object, 0);
