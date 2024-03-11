@@ -28,17 +28,16 @@ import org.graalvm.compiler.lir.asm.FrameContext;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLFrameContext extends TornadoLogger implements FrameContext {
+public class OCLFrameContext implements FrameContext {
 
     @Override
     public void enter(CompilationResultBuilder crb) {
-        trace("FrameContext.enter()");
+        TornadoLogger.trace("FrameContext.enter()");
     }
 
     @Override
     public void leave(CompilationResultBuilder crb) {
-        trace("FrameContext.leave()");
-
+        TornadoLogger.trace("FrameContext.leave()");
     }
 
     @Override

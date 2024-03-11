@@ -43,7 +43,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends.
-public class SPIRVObjectWrapper implements ObjectBuffer {
+public class SPIRVObjectWrapper implements XPUBuffer {
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
     private final HotSpotResolvedJavaType resolvedType;
@@ -94,7 +94,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
                 trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
-            ObjectBuffer wrappedField = null;
+            XPUBuffer wrappedField = null;
             if (type.isArray()) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 if (type == int[].class) {
@@ -167,9 +167,9 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
         this.bufferOffset = 0;
-        setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
+        setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
         if (DEBUG) {
             debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
@@ -292,13 +292,13 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void write(Object object) {
+    public void write(long executionPlanId, Object object) {
         serialise(object);
         // XXX: Offset 0
-        deviceContext.writeBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
+        deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
-                wrappedFields[i].write(object);
+                wrappedFields[i].write(executionPlanId, object);
             }
         }
     }
@@ -309,7 +309,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
@@ -331,18 +331,18 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void read(Object object) {
+    public void read(long executionPlanId, Object object) {
         // XXX: offset 0
-        read(object, 0, 0, null, false);
+        read(executionPlanId, object, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         buffer.position(buffer.capacity());
-        int event = deviceContext.readBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        int event = deviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
-                wrappedFields[i].read(object);
+                wrappedFields[i].read(executionPlanId, object);
             }
         }
         deserialise(object);
@@ -381,7 +381,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
         int index = 0;
         int[] internalEvents = new int[fields.length];
@@ -389,32 +389,32 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
 
         for (FieldBuffer fb : wrappedFields) {
             if (fb != null) {
-                internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
+                internalEvents[index] = fb.enqueueRead(executionPlanId, reference, (useDeps) ? events : null, useDeps);
                 index++;
             }
         }
 
-        internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        internalEvents[index] = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         index++;
 
         deserialise(reference);
         if (index == 1) {
             returnEvent = internalEvents[0];
         } else {
-            returnEvent = deviceContext.enqueueMarker();
+            returnEvent = deviceContext.enqueueMarker(executionPlanId);
         }
         return useDeps ? returnEvent : -1;
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
 
         serialise(ref);
-        eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
+        eventList.add(deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {
             if (field != null) {
-                eventList.addAll(field.enqueueWrite(ref, (useDeps) ? events : null, useDeps));
+                eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
         return useDeps ? eventList : null;

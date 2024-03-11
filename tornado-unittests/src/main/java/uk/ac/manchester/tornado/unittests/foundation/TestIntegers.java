@@ -129,9 +129,6 @@ public class TestIntegers extends TornadoTestBase {
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
 
-        a.init(0);
-        b.init(0);
-
         IntArray expectedResultA = new IntArray(numElements);
         IntArray expectedResultB = new IntArray(numElements);
         expectedResultA.init(100);
@@ -158,9 +155,6 @@ public class TestIntegers extends TornadoTestBase {
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
 
-        a.init(0);
-        b.init(0);
-
         IntArray expectedResultA = new IntArray(numElements);
         IntArray expectedResultB = new IntArray(numElements);
         expectedResultA.init(100);
@@ -185,9 +179,6 @@ public class TestIntegers extends TornadoTestBase {
         final int numElements = 8192 * 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
-
-        a.init(0);
-        b.init(0);
 
         IntArray expectedResultA = new IntArray(numElements);
         IntArray expectedResultB = new IntArray(numElements);

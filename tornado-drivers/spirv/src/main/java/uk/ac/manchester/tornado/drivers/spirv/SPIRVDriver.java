@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,13 +34,13 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public final class SPIRVDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+public final class SPIRVDriver implements TornadoAcceleratorDriver {
 
     /**
      * Matrix of backend instances. Each row has a driver implementation (e.g.,
@@ -59,7 +59,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
      */
     private int deviceCount;
 
-    public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon) {
+    public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
         TornadoLogger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
 
@@ -78,7 +78,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
         }
     }
 
-    private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon, int numPlatforms) {
+    private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
             SPIRVPlatform platform = SPIRVProxy.getPlatform(platformIndex);
             SPIRVContext context = platform.createContext();
@@ -92,7 +92,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
         deviceCount = getNumDevices();
     }
 
-    private SPIRVBackend createSPIRVJITCompiler(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
+    private SPIRVBackend createSPIRVJITCompiler(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context) {
         return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context);
     }
 
@@ -151,7 +151,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
     }
 
     @Override
-    public TornadoAcceleratorDevice getDevice(int index) {
+    public TornadoXPUDevice getDevice(int index) {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {

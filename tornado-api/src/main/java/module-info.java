@@ -46,4 +46,5 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.types.vectors;
     opens uk.ac.manchester.tornado.api.types.vectors;
     exports uk.ac.manchester.tornado.api.types;
+    opens uk.ac.manchester.tornado.api.runtime;
 }

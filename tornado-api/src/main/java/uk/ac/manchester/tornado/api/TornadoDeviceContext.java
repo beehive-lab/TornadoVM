@@ -26,8 +26,6 @@ public interface TornadoDeviceContext {
 
     TornadoMemoryProvider getMemoryManager();
 
-    boolean needsBump();
-
     boolean wasReset();
 
     void setResetToFalse();

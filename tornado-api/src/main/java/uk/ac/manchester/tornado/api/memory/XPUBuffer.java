@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, 2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,13 +22,13 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
-public interface ObjectBuffer {
+public interface XPUBuffer {
 
-    class ObjectBufferWrapper {
+    class XPUBufferWrapper {
         public final long buffer;
         public long bufferOffset;
 
-        public ObjectBufferWrapper(long buffer, long bufferOffset) {
+        public XPUBufferWrapper(long buffer, long bufferOffset) {
             this.buffer = buffer;
             this.bufferOffset = bufferOffset;
         }
@@ -36,19 +36,19 @@ public interface ObjectBuffer {
 
     long toBuffer();
 
-    void setBuffer(ObjectBufferWrapper bufferWrapper);
+    void setBuffer(XPUBufferWrapper bufferWrapper);
 
     long getBufferOffset();
 
-    void read(Object reference);
+    void read(long executionPlanId, Object reference);
 
-    int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps);
+    int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps);
 
-    void write(Object reference);
+    void write(long executionPlanId, Object reference);
 
-    int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
+    int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps);
 
-    List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
+    List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 
     void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 

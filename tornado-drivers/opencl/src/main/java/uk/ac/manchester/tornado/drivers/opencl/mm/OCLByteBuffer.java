@@ -55,42 +55,42 @@ public class OCLByteBuffer {
         return buffer;
     }
 
-    public void read() {
-        read(null);
+    public void read(long executionPlanId) {
+        read(executionPlanId, null);
     }
 
-    public void read(final int[] events) {
-        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+    public void read(long executionPlanId, final int[] events) {
+        deviceContext.readBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
-    public int read(long fromBuffer, final int[] toArray) {
-        return deviceContext.readBuffer(fromBuffer, 0, toArray.length * 4, toArray, 0, null);
+    public int read(long executionPlanId, long fromBuffer, final int[] toArray) {
+        return deviceContext.readBuffer(executionPlanId, fromBuffer, 0, toArray.length * 4, toArray, 0, null);
     }
 
-    public int enqueueRead() {
-        return enqueueRead(null);
+    public int enqueueRead(long executionPlanId) {
+        return enqueueRead(executionPlanId, null);
     }
 
-    public int enqueueRead(final int[] events) {
-        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+    public int enqueueRead(long executionPlanId, final int[] events) {
+        return deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
-    public void write() {
-        write(null);
+    public void write(long executionPlanId) {
+        write(executionPlanId, null);
     }
 
-    public void write(final int[] events) {
+    public void write(long executionPlanId, final int[] events) {
         // XXX: offset 0
-        deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+        deviceContext.writeBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
-    public int enqueueWrite() {
-        return enqueueWrite(null);
+    public int enqueueWrite(long executionPlanId) {
+        return enqueueWrite(executionPlanId, null);
     }
 
-    public int enqueueWrite(final int[] events) {
+    public int enqueueWrite(long executionPlanId, final int[] events) {
         // XXX: offset 0
-        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+        return deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     /**
@@ -104,12 +104,12 @@ public class OCLByteBuffer {
      *     list of events
      * @return event status
      */
-    public int enqueueWrite(long fromBuffer, final int[] array, final int offset, final int[] events) {
-        return deviceContext.enqueueWriteBuffer(fromBuffer, offset, BYTES_PER_INTEGER * array.length, array, 0, events);
+    public int enqueueWrite(long executionPlanId, long fromBuffer, final int[] array, final int offset, final int[] events) {
+        return deviceContext.enqueueWriteBuffer(executionPlanId, fromBuffer, offset, BYTES_PER_INTEGER * array.length, array, 0, events);
     }
 
-    public int enqueueRead(long fromBuffer, final int[] array, final int offset, final int[] events) {
-        return deviceContext.enqueueReadBuffer(fromBuffer, offset, BYTES_PER_INTEGER * array.length, array, 0, events);
+    public int enqueueRead(long executionPlanId, long fromBuffer, final int[] array, final int offset, final int[] events) {
+        return deviceContext.enqueueReadBuffer(executionPlanId, fromBuffer, offset, BYTES_PER_INTEGER * array.length, array, 0, events);
     }
 
     public void dump() {

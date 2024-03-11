@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,17 +28,14 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 
 public class SPIRVOCLDeviceContext extends SPIRVDeviceContext {
 
-    private OCLExecutionEnvironment context;
-
-    public SPIRVOCLDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, OCLExecutionEnvironment context) {
-        super(device, queue, null);
-        this.context = context;
+    public SPIRVOCLDeviceContext(SPIRVDevice device, OCLExecutionEnvironment context) {
+        super(device, null);
     }
 
     // TODO: Override all methods to work with the OCLExecutionContext for OpenCL
 
     @Override
-    public Event resolveEvent(int event) {
+    public Event resolveEvent(long executionPlanId, int event) {
         return null;
     }
 

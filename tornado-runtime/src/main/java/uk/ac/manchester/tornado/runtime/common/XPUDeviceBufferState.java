@@ -25,31 +25,26 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 
-public class DeviceObjectState implements TornadoDeviceObjectState {
+public class XPUDeviceBufferState implements DeviceBufferState {
 
-    private ObjectBuffer objectBuffer;
+    private XPUBuffer objectBuffer;
     private boolean atomicRegionPresent;
 
     private boolean contents;
     private boolean lockBuffer;
     private long partialSize;
 
-    public DeviceObjectState() {
-        objectBuffer = null;
-        atomicRegionPresent = false;
-        contents = false;
-        lockBuffer = false;
-        partialSize = 0;
+    public XPUDeviceBufferState() {
     }
 
-    public void setObjectBuffer(ObjectBuffer value) {
+    public void setObjectBuffer(XPUBuffer value) {
         objectBuffer = value;
     }
 
-    public void setAtomicRegion(ObjectBuffer buffer) {
+    public void setAtomicRegion(XPUBuffer buffer) {
         this.objectBuffer = buffer;
         atomicRegionPresent = true;
     }
@@ -58,7 +53,7 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
         return objectBuffer != null;
     }
 
-    public ObjectBuffer getObjectBuffer() {
+    public XPUBuffer getObjectBuffer() {
         return objectBuffer;
     }
 
@@ -70,7 +65,7 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
         this.lockBuffer = lockBuffer;
     }
 
-    public boolean hasContents() {
+    public boolean hasContent() {
         return contents;
     }
 
