@@ -217,7 +217,7 @@ public final class VectorDouble8 implements TornadoCollectionInterface<DoubleBuf
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesOfSegment();
+        return storage.getNumBytesOfSegmentWithHeader();
     }
 
     @Override

@@ -183,7 +183,7 @@ public final class ImageByte3 implements TornadoImagesInterface<ByteBuffer> {
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
     }
 
     @Override

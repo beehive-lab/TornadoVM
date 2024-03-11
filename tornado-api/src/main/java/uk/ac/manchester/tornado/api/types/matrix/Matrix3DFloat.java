@@ -142,7 +142,7 @@ public final class Matrix3DFloat extends Matrix3DType implements TornadoMatrixIn
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
     }
 
     @Override

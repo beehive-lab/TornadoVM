@@ -167,7 +167,7 @@ public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> 
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
     }
 
     @Override

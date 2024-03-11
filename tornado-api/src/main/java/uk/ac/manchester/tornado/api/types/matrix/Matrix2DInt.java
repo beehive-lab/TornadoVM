@@ -208,7 +208,7 @@ public final class Matrix2DInt extends Matrix2DType implements TornadoMatrixInte
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
     }
 
     @Override

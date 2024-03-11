@@ -265,7 +265,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     private long sizeOf(final Object array) {
         long size;
         if (array instanceof TornadoNativeArray nativeArray) {
-            size = nativeArray.getNumBytesOfSegment();
+            size = nativeArray.getNumBytesOfSegmentWithHeader();
         } else {
             size = (Array.getLength(array) * (long) kind.getByteCount());
         }

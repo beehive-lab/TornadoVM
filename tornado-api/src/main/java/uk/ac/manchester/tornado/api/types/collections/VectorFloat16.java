@@ -163,7 +163,7 @@ public final class VectorFloat16 implements TornadoCollectionInterface<FloatBuff
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesOfSegment();
+        return storage.getNumBytesOfSegmentWithHeader();
     }
 
     @Override

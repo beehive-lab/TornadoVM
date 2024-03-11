@@ -257,7 +257,7 @@ public class OCLVectorWrapper implements XPUBuffer {
     private long sizeOf(final Object array) {
         long size;
         if (array instanceof TornadoNativeArray nativeArray) {
-            size = nativeArray.getNumBytesOfSegment();
+            size = nativeArray.getNumBytesOfSegmentWithHeader();
         } else {
             size = (long) Array.getLength(array) * kind.getByteCount();
         }

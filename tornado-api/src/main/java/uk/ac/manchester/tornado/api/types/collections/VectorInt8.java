@@ -215,7 +215,7 @@ public final class VectorInt8 implements TornadoCollectionInterface<IntBuffer> {
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesOfSegment();
+        return storage.getNumBytesOfSegmentWithHeader();
     }
 
     @Override

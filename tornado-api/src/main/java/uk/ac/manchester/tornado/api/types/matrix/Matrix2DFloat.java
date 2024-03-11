@@ -205,7 +205,7 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
     }
 
     @Override

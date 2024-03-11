@@ -67,14 +67,14 @@ public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, Do
      *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
-    public abstract long getNumBytesOfSegment();
+    public abstract long getNumBytesOfSegmentWithHeader();
 
     /**
      * Returns the number of bytes of the {@link MemorySegment}, excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
-    public abstract long getNumBytesWithoutHeader();
+    public abstract long getNumBytesOfSegment();
 
     /**
      * Clears the contents of the native array.

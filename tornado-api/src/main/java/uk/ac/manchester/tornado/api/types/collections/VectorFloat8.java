@@ -219,7 +219,7 @@ public final class VectorFloat8 implements TornadoCollectionInterface<FloatBuffe
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesOfSegment();
+        return storage.getNumBytesOfSegmentWithHeader();
     }
 
     @Override
