@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V Uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI
  * </code>
  */
 public class TestVectorAPI extends TornadoTestBase {
@@ -49,13 +49,9 @@ public class TestVectorAPI extends TornadoTestBase {
         VectorSpecies<Float> species = FloatVector.SPECIES_128;
 
         int width = length / species.length();
-        System.out.println(STR."Species \{species.length()}");
         IntStream.range(0, width).parallel().forEach(i -> {
-//            System.out.println("IDX " + i + " chunk " + (i * species.length()) + " width: "+ width);
             FloatVector vec1 = FloatVector.fromMemorySegment(species, vector1.getSegment(), (long) i * species.length(), ByteOrder.nativeOrder());
-            System.out.println("VFLOAT_A " + vec1.toString() + " idx " + i);
             FloatVector vec2 = FloatVector.fromMemorySegment(species, vector2.getSegment(), (long) i * species.length(), ByteOrder.nativeOrder());
-            System.out.println("VFLOAT_B " + vec2.toString() + " idx " + i);
             FloatVector resultVec = vec1.add(vec2);
             resultVec.intoArray(result, i * species.length());
         });
@@ -90,10 +86,5 @@ public class TestVectorAPI extends TornadoTestBase {
         res = vectorAddition(arrayA, arrayB, SIZE);
 
         arrayC = vectorAdditionTornado(arrayA, arrayB);
-
-        for (int i = 0; i < arrayA.getSize(); i++) {
-            //            assertEquals(fArrayB[i], dataB.get(i));
-            System.out.println("Vector API: " + res[i] + " Normal vadd " + arrayC.get(i));
-        }
     }
 }
