@@ -767,7 +767,15 @@ Setup example:
 3. Download, compile and install TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run ``.\bin\tornadovm-installer.cmd --help`` for information on options (same as for Linux installer).
+Download TornadoVM to any directory, cd into it, and run the installer with ``--help`` option for usage information (same as for Linux installer).
+
+.. code:: bash
+
+   cd %USERPROFILE%
+   git clone https://github.com/beehive-lab/TornadoVM.git
+   
+   cd TornadoVM
+   .\bin\tornadovm-installer.cmd --help
 
 .. code:: bash
 
@@ -797,13 +805,9 @@ Run ``.\bin\tornadovm-installer.cmd --help`` for information on options (same as
      --listJDKs       List supported JDK versions.
      --javaHome PATH  Use a particular JDK version.
 
-Download TornadoVM to any directory, cd into it, and run the installer. Without options and CUDA Toolkit installed, backends for OpenCL, PTX, and SPIR-V are compiled. The batch file downloads the required repositories for OpenCL header files from The Khronos Group and Intel's Level Zero API into sibling directories of CWD. Additional repositories for Beehive's SPIR-V toolkit and Level Zero JNI are stored in CWD.
+Execute the installer. Without options and CUDA Toolkit installed, backends for OpenCL, PTX, and SPIR-V are compiled. The batch file downloads the required repositories for OpenCL header files from The Khronos Group and Intel's Level Zero API into sibling directories of CWD. Additional repositories for Beehive's SPIR-V toolkit and Level Zero JNI are stored in CWD.
 
 .. code:: bash
-
-   cd %USERPROFILE%
-   git clone https://github.com/beehive-lab/TornadoVM.git
-   cd TornadoVM
 
    .\bin\tornadovm-installer.cmd
 
@@ -820,7 +824,7 @@ List suppported backends. Should be opencl, spirv and ptx if CUDA Toolkit is ava
    cd %USERPROFILE%\TornadoVM
    setvars.cmd
    
-   python %TORNADO_SK%\bin\tornado --devices
+   python %TORNADO_SDK%\bin\tornado --devices
 
 
 Run some examples. Try it on all available devices.
