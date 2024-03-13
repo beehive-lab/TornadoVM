@@ -198,7 +198,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code HalfFloatArray} instance, including the header offset.
+     * Returns the underlying {@link MemorySegment} of the {@code HalfFloatArray} instance, including the header.
      *
      * @return The {@link MemorySegment} associated with the {@code HalfFloatArray} instance.
      */
