@@ -78,9 +78,6 @@ set PATH=%TORNADO_SDK%\bin;%JAVA_HOME%\bin;%PATH%
 
 rem needed by SPIR-V backend on execution
 set PATH=%TORNADO_DIR%\..\level-zero\build\bin\Release;%PATH%
-rem needed by OpenCL backend on linking
-set INTEL_OPENCL_RT_CPU_LIB=%CommonProgramFiles(x86)%\Intel\Shared Libraries\lib\OpenCL.lib
-if not exist "%INTEL_OPENCL_RT_CPU_LIB%" set INTEL_OPENCL_RT_CPU_LIB=
 
 rem clean all
 call mvn -Popencl-backend,ptx-backend,spirv-backend clean

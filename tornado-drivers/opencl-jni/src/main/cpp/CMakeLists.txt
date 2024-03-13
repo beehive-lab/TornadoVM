@@ -1,7 +1,11 @@
 cmake_minimum_required (VERSION 3.6)
 project (Tornado)
 
-if(APPLE OR MSVC)
+if(MSVC)
+	set(CMAKE_PREFIX_PATH "$ENV{CommonProgramFiles\(x86\)}/Intel/Shared Libraries")
+	find_package(OpenCL REQUIRED)
+endif()
+if(APPLE)
     find_package(OpenCL REQUIRED)
 endif()
 find_package(JNI REQUIRED)
@@ -75,14 +79,8 @@ add_library(tornado-opencl SHARED
 	source/opencl_time_utils.cpp
 	)
 
-if(APPLE)
+if(MSVC OR APPLE)
     target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
-elseif(MSVC)
-	if(EXISTS $ENV{INTEL_OPENCL_RT_CPU_LIB})
-		target_link_libraries(tornado-opencl $ENV{INTEL_OPENCL_RT_CPU_LIB} ${JNI_LIB_DIRS})
-	else()
-		target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
-	endif()
 else()
     target_link_libraries(tornado-opencl -lOpenCL ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 endif()
