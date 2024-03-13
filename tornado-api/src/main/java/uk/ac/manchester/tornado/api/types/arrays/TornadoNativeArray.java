@@ -49,7 +49,7 @@ public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, Do
     public abstract int getSize();
 
     /**
-     * Returns the underlying {@link MemorySegment} of the native array, without including the header offset.
+     * Returns the underlying {@link MemorySegment} of the native array, without including the header.
      *
      * @return The {@link MemorySegment} associated with the native array instance.
      */
