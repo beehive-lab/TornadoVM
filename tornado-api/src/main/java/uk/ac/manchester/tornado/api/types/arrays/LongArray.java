@@ -193,7 +193,7 @@ public final class LongArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code LongArray} instance, including the header offset.
+     * Returns the underlying {@link MemorySegment} of the {@code LongArray} instance, including the header.
      *
      * @return The {@link MemorySegment} associated with the {@code LongArray} instance.
      */
