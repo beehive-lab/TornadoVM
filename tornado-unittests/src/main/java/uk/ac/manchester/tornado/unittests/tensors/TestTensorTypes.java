@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.unittests.tensors;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -8,6 +10,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.tensors.DType;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
@@ -24,7 +27,7 @@ public class TestTensorTypes extends TornadoTestBase {
 
     public static void tensorAdditionFloat(Tensor tensorA, Tensor tensorB, Tensor tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
-            tensorC.set(i, tensorA.getFloatValue(i) + tensorB.getFloatValue(i));
+            tensorC.set(i, tensorA.get(i, Float.class) + tensorB.get(i, Float.class));
         }
     }
 
@@ -87,18 +90,33 @@ public class TestTensorTypes extends TornadoTestBase {
 
     }
 
+    private Tensor initRandTensor(int size) {
+        Random random = new Random();
+        Shape shape = new Shape(size);
+        Tensor tensor = new Tensor(shape, DType.FLOAT);
+        for (int i = 0; i < size; i++) {
+            tensor.set(i, random.nextFloat(1f));
+        }
+        return tensor;
+    }
+
+    private FloatArray toFloatArray(Tensor tensor) {
+        FloatArray floatArray = new FloatArray(tensor.getSize());
+        assert tensor.getDType() == DType.FLOAT;
+        for (int i = 0; i < tensor.getSize(); i++) {
+            floatArray.set(i, tensor.getFloatValue(i));
+        }
+        return floatArray;
+    }
+
     @Test
     public void testTensorAdditionFloat() {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
         // Create two tensors and initialize their values
-        Tensor tensorA = new Tensor(shape, DType.FLOAT);
-
-        tensorA.init(2f);
-
-        Tensor tensorB = new Tensor(shape, DType.FLOAT);
-        tensorB.init(3.5f);
+        Tensor tensorA = initRandTensor(shape.getSize());
+        Tensor tensorB = initRandTensor(shape.getSize());
 
         // Create a tensor to store the result of addition
         Tensor tensorC = new Tensor(shape, DType.FLOAT);
@@ -115,12 +133,12 @@ public class TestTensorTypes extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
+        FloatArray fa = toFloatArray(tensorA);
+        FloatArray fb = toFloatArray(tensorB);
+
         for (int i = 0; i < tensorC.getSize(); i++) {
-            System.out.println("S " + tensorC.getFloatValue(i));
+            System.out.println(STR." Tensor value: \{tensorC.getFloatValue(i)} Float Array value: \{fa.get(i) + fb.get(i)}");
         }
-        //        for (float x : tensorC) {
-        //
-        //        }
 
     }
 
