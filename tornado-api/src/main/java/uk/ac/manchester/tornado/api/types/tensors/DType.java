@@ -70,23 +70,46 @@ public enum DType {
      * Represents a quantized 8-bit unsigned integer used in specialized applications like machine learning, using 1 byte.
      */
     QUINT8(1, ValueLayout.JAVA_BYTE);
-    /**
-     * Represents a quantized 32-bit signed integer used in specialized applications like machine learning, using 4 bytes.
-     */
     // @formatter:on
 
+    /**
+     * The size of the data type in bytes.
+     */
     private final int size;
+
+    /**
+     * The layout of the data type in memory.
+     */
     private final ValueLayout layout;
 
+    /**
+     * Constructs an instance of the enum constant with the specified size and memory layout.
+     *
+     * @param size
+     *     The size of the data type in bytes.
+     * @param layout
+     *     The {@link ValueLayout} specifying how the data is laid out in memory.
+     */
     DType(int size, ValueLayout layout) {
         this.size = size;
         this.layout = layout;
     }
 
+    /**
+     * Returns the size of the data type in bytes.
+     *
+     * @return The size of the data type.
+     */
     public int getByteSize() {
         return size;
     }
 
+    /**
+     * Returns the {@link ValueLayout} of the data type, which describes how the data is
+     * laid out in memory.
+     *
+     * @return The memory layout of the data type.
+     */
     public ValueLayout getLayout() {
         return layout;
     }

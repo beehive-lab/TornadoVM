@@ -41,6 +41,19 @@ public record Shape(int... dimensions) {
         return size;
     }
 
+    public Shape reshape(int... newDimensions) {
+        int newSize = 1;
+        for (int dim : newDimensions) {
+            if (dim < 0)
+                throw new IllegalArgumentException("Dimensions must be non-negative");
+            newSize *= dim;
+        }
+        if (newSize != getSize()) {
+            throw new IllegalArgumentException("Total size must remain constant");
+        }
+        return new Shape(newDimensions);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -59,11 +72,6 @@ public record Shape(int... dimensions) {
     @Override
     public String toString() {
         return STR."Shape{dimensions=\{Arrays.toString(dimensions)}}";
-    }
-
-    public Shape squeeze() {
-        int[] newDimensions = Arrays.stream(dimensions).filter(dim -> dim != 1).toArray();
-        return new Shape(newDimensions);
     }
 
     public String toTensorFlowShapeString() {
