@@ -56,7 +56,7 @@ public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, Do
     public abstract MemorySegment getSegment();
 
     /**
-     * Returns the underlying {@link MemorySegment} of the native array, including the header offset.
+     * Returns the underlying {@link MemorySegment} of the native array, including the header.
      *
      * @return The {@link MemorySegment} associated with the native array instance.
      */
