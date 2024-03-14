@@ -141,8 +141,12 @@ class TornadoVMRunnerTool():
                 setattr(self, attr, None)
 
     def getJavaVersion(self):
-        versionCommand = subprocess.Popen(shlex.split('"' + self.commands["java"] + '"' + " -version"), stdout=subprocess.PIPE,
+        if os.name == 'nt':
+            versionCommand = subprocess.Popen(shlex.split('"' + self.commands["java"] + '"' + " -version"), stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE, shell=True)
+        else:
+            versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE)
         stdout, stderr = versionCommand.communicate()
         matchJVMVersion = re.search(r"version \"\d+", str(stderr))
         matchGraal = re.search(r"GraalVM", str(stderr))
@@ -360,7 +364,10 @@ class TornadoVMRunnerTool():
         else:
             executionFlags = javaFlags
 
-        return '"' + self.cmd + '"' + executionFlags
+        if os.name == 'nt':
+            return '"' + self.cmd + '"' + executionFlags
+        else:
+            return self.cmd + executionFlags
 
     def truffleCompatibleExports(self, exportFile):
         data = Path(exportFile).read_text()
