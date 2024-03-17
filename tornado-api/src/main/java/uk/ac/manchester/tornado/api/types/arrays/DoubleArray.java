@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -195,7 +195,7 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code DoubleArray} instance, including the header offset.
+     * Returns the underlying {@link MemorySegment} of the {@code DoubleArray} instance, including the header.
      *
      * @return The {@link MemorySegment} associated with the {@code DoubleArray} instance.
      */

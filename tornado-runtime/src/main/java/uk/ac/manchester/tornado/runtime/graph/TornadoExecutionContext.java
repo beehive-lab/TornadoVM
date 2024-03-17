@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -172,13 +172,13 @@ public class TornadoExecutionContext {
             } else if (parameter instanceof TornadoVectorsInterface<?> tornadoVector) {
                 totalSize += tornadoVector.getNumBytes();
             } else if (parameter instanceof TornadoCollectionInterface<?> collection) {
-                totalSize += collection.getNumBytes();
+                totalSize += collection.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoVolumesInterface<?> tornadoVolume) {
-                totalSize += tornadoVolume.getNumBytes();
+                totalSize += tornadoVolume.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoMatrixInterface<?> tornadoMatrix) {
-                totalSize += tornadoMatrix.getNumBytes();
+                totalSize += tornadoMatrix.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoImagesInterface<?> tornadoImage) {
-                totalSize += tornadoImage.getNumBytes();
+                totalSize += tornadoImage.getNumBytesWithHeader();
             } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
                 // ignore
             } else {
