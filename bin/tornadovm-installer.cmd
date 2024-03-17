@@ -84,6 +84,7 @@ call mvn -Popencl-backend,ptx-backend,spirv-backend clean
 
 rem prepare for OpenCL backend
 if %opencl% equ 1 (
+	if exist %TORNADO_DIR%\..\OpenCL-Headers goto :repoOpenCLBuilt
 	rem OpenCL headers
 	cd %TORNADO_DIR%\..
 	git clone https://github.com/KhronosGroup/OpenCL-Headers.git
@@ -92,6 +93,8 @@ if %opencl% equ 1 (
 	if errorlevel 1 exit /b %errorlevel%
 	cmake --build build --target install
 	if errorlevel 1 exit /b %errorlevel%
+	:repoOpenCLBuilt
+	echo:
 )
 
 rem prepare for PTX backend
@@ -102,6 +105,7 @@ if %ptx% equ 1 (
 
 rem prepare for SPIR-V backend
 if %spirv% equ 1 (
+	if exist %TORNADO_DIR%\..\level-zero goto :repoL0ApiBuilt
 	rem Intel oneAPI Level Zero
 	cd %TORNADO_DIR%\..
 	git clone https://github.com/oneapi-src/level-zero
@@ -114,15 +118,23 @@ if %spirv% equ 1 (
 	if errorlevel 1 exit /b %errorlevel%
 	bin\Release\zello_world
 	if not %errorlevel% equ 0 exit /b %errorlevel%
+	:repoL0ApiBuilt
+	echo:
 
 	rem Beehive Level Zero JNI
 	set ZE_SHARED_LOADER=%TORNADO_DIR%\..\level-zero\build\lib\Release\ze_loader.lib
 	set CPLUS_INCLUDE_PATH=%TORNADO_DIR%\..\level-zero\include;%CPLUS_INCLUDE_PATH%
 	set C_INCLUDE_PATH=%TORNADO_DIR%\..\level-zero\include;%C_INCLUDE_PATH%
+	if exist %TORNADO_DIR%\levelzero-jni (
+		cd %TORNADO_DIR%\levelzero-jni
+		rd /s /q levelZeroLib\build
+		goto :repoL0JniCloned
+	)
 	cd %TORNADO_DIR%
 	git clone https://github.com/otabuzzman/levelzero-jni
 	cd levelzero-jni
 	git checkout winstall
+	:repoL0JniCloned
 	call mvn clean install
 	if errorlevel 1 exit /b %errorlevel%
 	cd levelZeroLib
@@ -134,10 +146,15 @@ if %spirv% equ 1 (
 	if errorlevel 1 exit /b %errorlevel%
 	
 	rem install Beehive SPIR-V toolkit
+	if exist %TORNADO_DIR%\beehive-spirv-toolkit (
+		cd %TORNADO_DIR%\beehive-spirv-toolkit
+		goto :repoSpirvTkCloned
+	)
 	cd %TORNADO_DIR%
 	git clone https://github.com/otabuzzman/beehive-spirv-toolkit.git
 	cd beehive-spirv-toolkit
 	git checkout winstall
+	:repoSpirvTkCloned
 	call mvn clean install
 	if errorlevel 1 exit /b %errorlevel%
 )
