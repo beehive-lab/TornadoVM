@@ -22,6 +22,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import jdk.incubator.vector.FloatVector;
@@ -39,39 +40,54 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestVectorAPI extends TornadoTestBase {
 
-    private final int SIZE = 128;
+    private static final int SIZE = 2048;
+    private static final Random rand = new Random();
+    private static FloatArray arrayA;
+    private static FloatArray arrayB;
+    private static FloatArray referenceResult;
 
-    /**
-     * Generates a random floating-point number within the specified range.
-     *
-     * @param min
-     *     The minimum value (inclusive).
-     * @param max
-     *     The maximum value (exclusive).
-     * @param rand
-     *     An instance of {@code Random} used to generate the random number.
-     * @return A random float value between {@code min} and {@code max}.
-     */
     public static float randFloat(float min, float max, Random rand) {
         return rand.nextFloat() * (max - min) + min;
     }
 
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        arrayA = new FloatArray(SIZE);
+        arrayB = new FloatArray(SIZE);
+        referenceResult = new FloatArray(SIZE);
+        referenceResult.init(0f);
+
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            arrayA.set(i, randFloat(0, 2f, rand));
+            arrayB.set(i, randFloat(0, 3f, rand));
+        }
+
+        referenceResult = vectorAdditionFloatArray(arrayA, arrayB);
+    }
+
+    private static FloatArray vectorAdditionFloatArray(FloatArray a, FloatArray b) {
+        FloatArray res = new FloatArray(SIZE);
+        for (int i = 0; i < a.getSize(); i++) {
+            res.set(i, a.get(i) + b.get(i));
+        }
+        return res;
+    }
+
     /**
-     * Performs vector addition using Java's Vector API with TornadoNativeTypes.
+     * Executes parallel vector addition using the Vector API and a specified VectorSpecies.
      *
      * @param vector1
-     *     The first {@ FloatArray} operand.
+     *     The first float array.
      * @param vector2
-     *     The second {@ FloatArray} operand.
-     * @param length
-     *     The number of elements in the vectors to be added.
-     * @return A new float array containing the result of the vector addition.
+     *     The second float array.
+     * @param species
+     *     The VectorSpecies defining the SIMD instructions width.
+     * @return An array containing the result of the parallel addition.
      */
-    private float[] vectorAddition(FloatArray vector1, FloatArray vector2, int length) {
+    private float[] parallelVectorAdd(FloatArray vector1, FloatArray vector2, VectorSpecies<Float> species) {
         float[] result = new float[SIZE];
-        VectorSpecies<Float> species = FloatVector.SPECIES_128;
-
-        int width = length / species.length();
+        System.out.println("Species " + species.toString());
+        int width = vector1.getSize() / species.length();
         IntStream.range(0, width).parallel().forEach(i -> {
             FloatVector vec1 = FloatVector.fromMemorySegment(species, vector1.getSegment(), (long) i * species.length() * Float.BYTES, ByteOrder.nativeOrder());
             FloatVector vec2 = FloatVector.fromMemorySegment(species, vector2.getSegment(), (long) i * species.length() * Float.BYTES, ByteOrder.nativeOrder());
@@ -82,48 +98,49 @@ public class TestVectorAPI extends TornadoTestBase {
         return result;
     }
 
-    /**
-     * Performs vector addition using TornadoVM's FloatArray types.
-     *
-     * @param a
-     *     The first vector operand.
-     * @param b
-     *     The second vector operand.
-     * @return A {@code FloatArray} containing the result of the vector addition.
-     */
-    private FloatArray vectorAdditionTornado(FloatArray a, FloatArray b) {
-        FloatArray res = new FloatArray(SIZE);
-        for (int i = 0; i < a.getSize(); i++) {
-            res.set(i, a.get(i) + b.get(i));
+    public void verifyOutput(float[] res) {
+        for (int i = 0; i < res.length; i++) {
+            Assert.assertEquals(res[i], referenceResult.get(i), 0.01f);
         }
-        return res;
     }
 
     /**
-     * Tests the vector addition operation using both Java's SIMD API and TornadoVM native types.
-     * It verifies the correctness of the vector addition operations by asserting the equivalence of results
-     * from both methods within a specified tolerance.
+     * Test method for vector addition with 64-bit vector species.
      */
     @Test
-    public void testVectorAPIwithTornadoNativeTypes() {
-        Random rand = new Random();
-        FloatArray arrayA = new FloatArray(SIZE);
-        FloatArray arrayB = new FloatArray(SIZE);
-        FloatArray arrayC = new FloatArray(SIZE);
+    public void test64BitVectors() {
+        VectorSpecies<Float> species = FloatVector.SPECIES_64;
+        float[] res = parallelVectorAdd(arrayA, arrayB, species);
+        verifyOutput(res);
+    }
 
-        for (int i = 0; i < arrayA.getSize(); i++) {
-            arrayA.set(i, randFloat(0, 2f, rand));
-            arrayB.set(i, randFloat(0, 3f, rand));
-        }
+    /**
+     * Test method for vector addition with 128-bit vector species.
+     */
+    @Test
+    public void test128BitVectors() {
+        VectorSpecies<Float> species = FloatVector.SPECIES_128;
+        float[] res = parallelVectorAdd(arrayA, arrayB, species);
+        verifyOutput(res);
+    }
 
-        arrayC.init(0f);
+    /**
+     * Test method for vector addition with 256-bit vector species.
+     */
+    @Test
+    public void test256BitVectors() {
+        VectorSpecies<Float> species = FloatVector.SPECIES_256;
+        float[] res = parallelVectorAdd(arrayA, arrayB, species);
+        verifyOutput(res);
+    }
 
-        float[] res = vectorAddition(arrayA, arrayB, SIZE);
-
-        arrayC = vectorAdditionTornado(arrayA, arrayB);
-
-        for (int i = 0; i < res.length; i++) {
-            Assert.assertEquals(res[i], arrayC.get(i), 0.1f);
-        }
+    /**
+     * Test method for vector addition with 512-bit vector species.
+     */
+    @Test
+    public void test512BitVectors() {
+        VectorSpecies<Float> species = FloatVector.SPECIES_512;
+        float[] res = parallelVectorAdd(arrayA, arrayB, species);
+        verifyOutput(res);
     }
 }
