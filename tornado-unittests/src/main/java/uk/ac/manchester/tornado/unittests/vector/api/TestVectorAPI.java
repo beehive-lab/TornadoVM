@@ -86,7 +86,7 @@ public class TestVectorAPI extends TornadoTestBase {
      */
     private float[] parallelVectorAdd(FloatArray vector1, FloatArray vector2, VectorSpecies<Float> species) {
         float[] result = new float[SIZE];
-        System.out.println("Species " + species.toString());
+        System.out.println(species.toString());
         int width = vector1.getSize() / species.length();
         IntStream.range(0, width).parallel().forEach(i -> {
             FloatVector vec1 = FloatVector.fromMemorySegment(species, vector1.getSegment(), (long) i * species.length() * Float.BYTES, ByteOrder.nativeOrder());
