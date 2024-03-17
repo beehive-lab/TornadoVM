@@ -89,8 +89,9 @@ public class TestVectorAPI extends TornadoTestBase {
         System.out.println(species.toString());
         int width = vector1.getSize() / species.length();
         IntStream.range(0, width).parallel().forEach(i -> {
-            FloatVector vec1 = FloatVector.fromMemorySegment(species, vector1.getSegment(), (long) i * species.length() * Float.BYTES, ByteOrder.nativeOrder());
-            FloatVector vec2 = FloatVector.fromMemorySegment(species, vector2.getSegment(), (long) i * species.length() * Float.BYTES, ByteOrder.nativeOrder());
+            long offsetIndex = (long) i * species.length() * Float.BYTES;
+            FloatVector vec1 = FloatVector.fromMemorySegment(species, vector1.getSegment(), offsetIndex, ByteOrder.nativeOrder());
+            FloatVector vec2 = FloatVector.fromMemorySegment(species, vector2.getSegment(), offsetIndex, ByteOrder.nativeOrder());
             FloatVector resultVec = vec1.add(vec2);
             resultVec.intoArray(result, i * species.length());
         });
@@ -98,9 +99,9 @@ public class TestVectorAPI extends TornadoTestBase {
         return result;
     }
 
-    public void verifyOutput(float[] res) {
-        for (int i = 0; i < res.length; i++) {
-            Assert.assertEquals(res[i], referenceResult.get(i), 0.01f);
+    public void verifyOutput(float[] result) {
+        for (int i = 0; i < result.length; i++) {
+            Assert.assertEquals(result[i], referenceResult.get(i), 0.01f);
         }
     }
 
