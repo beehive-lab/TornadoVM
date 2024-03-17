@@ -105,8 +105,7 @@ public enum DType {
     }
 
     /**
-     * Returns the {@link ValueLayout} of the data type, which describes how the data is
-     * laid out in memory.
+     * Returns the {@link ValueLayout} of the data type, which describes how the data is laid out in memory.
      *
      * @return The memory layout of the data type.
      */

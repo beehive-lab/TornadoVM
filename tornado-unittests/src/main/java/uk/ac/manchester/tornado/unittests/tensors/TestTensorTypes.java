@@ -27,7 +27,8 @@ public class TestTensorTypes extends TornadoTestBase {
 
     public static void tensorAdditionFloat(Tensor tensorA, Tensor tensorB, Tensor tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
-            tensorC.set(i, tensorA.get(i, Float.class) + tensorB.get(i, Float.class));
+            //            tensorC.set(i, tensorA.get(i, Float.class) + tensorB.get(i, Float.class));
+            tensorC.set(i, tensorA.getFloatValue(i) + tensorB.getFloatValue(i));
         }
     }
 

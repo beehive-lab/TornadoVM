@@ -23,6 +23,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
@@ -79,6 +80,12 @@ public final class Tensor extends TornadoNativeArray {
         this.dType = dtype;
     }
 
+    public Tensor(Shape shape, MemorySegment memorySegment, DType dtype) {
+        this.segment = memorySegment;
+        this.dType = dtype;
+        this.shape = shape;
+    }
+
     /**
      * Constructs a tensor with a specified shape and data type. The memory for the tensor is automatically allocated.
      *
@@ -106,6 +113,15 @@ public final class Tensor extends TornadoNativeArray {
      */
     public static Tensor fromArray(float[] values) {
         return createSegment(values);
+    }
+
+    public static Tensor fromFloatBuffer(FloatBuffer floatBuffer) {
+        Shape shape = new Shape(floatBuffer.capacity());
+        Tensor tensor = new Tensor(shape, DType.FLOAT);
+        for (int i = 0; i < floatBuffer.capacity(); i++) {
+            tensor.set(i, floatBuffer.get(i));
+        }
+        return tensor;
     }
 
     // Private helper method to support fromArray
