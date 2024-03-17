@@ -194,7 +194,7 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code ShortArray} instance, including the header offset.
+     * Returns the underlying {@link MemorySegment} of the {@code ShortArray} instance, including the header.
      *
      * @return The {@link MemorySegment} associated with the {@code ShortArray} instance.
      */

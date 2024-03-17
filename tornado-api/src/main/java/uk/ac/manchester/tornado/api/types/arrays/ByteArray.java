@@ -194,7 +194,7 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code ByteArray} instance, including the header offset.
+     * Returns the underlying {@link MemorySegment} of the {@code ByteArray} instance, including the header.
      *
      * @return The {@link MemorySegment} associated with the {@code ByteArray} instance.
      */
