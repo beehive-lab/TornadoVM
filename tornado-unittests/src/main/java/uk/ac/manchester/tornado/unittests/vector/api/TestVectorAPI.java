@@ -99,20 +99,14 @@ public class TestVectorAPI extends TornadoTestBase {
         return result;
     }
 
-    public void verifyOutput(float[] result) {
-        for (int i = 0; i < result.length; i++) {
-            Assert.assertEquals(result[i], referenceResult.get(i), 0.01f);
-        }
-    }
-
     /**
      * Test method for vector addition with 64-bit vector species.
      */
     @Test
     public void test64BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_64;
-        float[] res = parallelVectorAdd(arrayA, arrayB, species);
-        verifyOutput(res);
+        float[] result = parallelVectorAdd(arrayA, arrayB, species);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
     }
 
     /**
@@ -121,8 +115,8 @@ public class TestVectorAPI extends TornadoTestBase {
     @Test
     public void test128BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_128;
-        float[] res = parallelVectorAdd(arrayA, arrayB, species);
-        verifyOutput(res);
+        float[] result = parallelVectorAdd(arrayA, arrayB, species);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
     }
 
     /**
@@ -131,8 +125,8 @@ public class TestVectorAPI extends TornadoTestBase {
     @Test
     public void test256BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_256;
-        float[] res = parallelVectorAdd(arrayA, arrayB, species);
-        verifyOutput(res);
+        float[] result = parallelVectorAdd(arrayA, arrayB, species);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
     }
 
     /**
@@ -141,7 +135,7 @@ public class TestVectorAPI extends TornadoTestBase {
     @Test
     public void test512BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_512;
-        float[] res = parallelVectorAdd(arrayA, arrayB, species);
-        verifyOutput(res);
+        float[] result = parallelVectorAdd(arrayA, arrayB, species);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
     }
 }
