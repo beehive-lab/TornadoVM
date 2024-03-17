@@ -27,6 +27,8 @@ public sealed interface TornadoVolumesInterface<T extends Buffer> //
 
     long getNumBytes();
 
+    long getNumBytesWithHeader();
+
     MemorySegment getSegment();
 
     MemorySegment getSegmentWithHeader();

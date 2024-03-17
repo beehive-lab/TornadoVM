@@ -203,6 +203,11 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
     }
 
     @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegmentWithHeader();
+    }
+
+    @Override
     public MemorySegment getSegment() {
         return storage.getSegment();
     }

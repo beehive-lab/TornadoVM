@@ -171,6 +171,11 @@ public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> 
     }
 
     @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegmentWithHeader();
+    }
+
+    @Override
     public MemorySegment getSegment() {
         return getArray().getSegment();
     }

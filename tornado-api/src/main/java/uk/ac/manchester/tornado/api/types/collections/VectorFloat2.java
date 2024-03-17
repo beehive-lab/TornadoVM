@@ -211,6 +211,11 @@ public final class VectorFloat2 implements TornadoCollectionInterface<FloatBuffe
 
     @Override
     public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public long getNumBytesWithHeader() {
         return storage.getNumBytesOfSegmentWithHeader();
     }
 

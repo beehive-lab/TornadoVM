@@ -30,6 +30,8 @@ public sealed interface TornadoCollectionInterface<T extends Buffer> //
 
     long getNumBytes();
 
+    long getNumBytesWithHeader();
+
     MemorySegment getSegment();
 
     MemorySegment getSegmentWithHeader();

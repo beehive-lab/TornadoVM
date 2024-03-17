@@ -216,6 +216,11 @@ public final class VectorDouble16 implements TornadoCollectionInterface<DoubleBu
 
     @Override
     public long getNumBytes() {
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public long getNumBytesWithHeader() {
         return storage.getNumBytesOfSegmentWithHeader();
     }
 

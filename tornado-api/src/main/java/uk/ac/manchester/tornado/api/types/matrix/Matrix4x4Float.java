@@ -237,6 +237,11 @@ public final class Matrix4x4Float implements TornadoMatrixInterface<FloatBuffer>
     }
 
     @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
     public MemorySegment getSegment() {
         return storage.getSegment();
     }
