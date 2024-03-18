@@ -30,7 +30,7 @@ import java.lang.foreign.MemorySegment;
  * </p>
  *
  * <p>
- * The constant {@code ARRAY_HEADER} represents the size of the header in bytes.
+ * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
 public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, IntArray, LongArray, ShortArray, HalfFloatArray {
@@ -49,7 +49,7 @@ public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, Do
     public abstract int getSize();
 
     /**
-     * Returns the underlying {@link MemorySegment} of the native array, without including the header.
+     * Returns the underlying {@link MemorySegment} of the native array, without the Tornado Array header.
      *
      * @return The {@link MemorySegment} associated with the native array instance.
      */

@@ -37,8 +37,8 @@ Additionally, developers can create an instance of a TornadoVM native array by i
 The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. 
 
 .. code:: java
-   public MemorySegment getSegment() // returns the Memory Segment that data is stored as a slice by skipping the internal offset
-   public MemorySegment getSegmentWithHeader() //  returns the Memory Segment that data is stored including the internal offset
+   public MemorySegment getSegment() // returns the memory segment without the Tornado Array Header as slice
+   public MemorySegment getSegmentWithHeader() //  returns the Memory Segment with the Tornado Array Header
    public void set(int index, float value) // sets a value at a specific index
       E.g.:
           FloatArray floatArray = new FloatArray(16);
