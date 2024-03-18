@@ -30,7 +30,7 @@ import java.lang.foreign.MemorySegment;
  * </p>
  *
  * <p>
- * The constant {@code ARRAY_HEADER} represents the size of the header in bytes.
+ * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
 public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, IntArray, LongArray, ShortArray, HalfFloatArray {
