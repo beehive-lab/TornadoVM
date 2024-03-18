@@ -53,9 +53,10 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDriverNotFound;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
@@ -192,6 +193,9 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
 
     @Override
     public TornadoAcceleratorDriver getDriver(int index) {
+        if (index > tornadoVMDrivers.length) {
+            throw new TornadoDriverNotFound("Tornado Driver Not Found");
+        }
         return tornadoVMDrivers[index];
     }
 

@@ -32,13 +32,13 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public final class PTXDriver implements TornadoAcceleratorDriver {
@@ -119,7 +119,7 @@ public final class PTXDriver implements TornadoAcceleratorDriver {
         if (index < backends.length) {
             return backends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoRuntimeException("[ERROR]-[PTX-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
+            throw new TornadoDeviceNotFound("[ERROR]-[PTX-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
         }
     }
 
