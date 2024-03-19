@@ -79,6 +79,12 @@ public class TornadoExecutionPlan {
      *     Integer value that identifies the device within the backend to be
      *     used.
      * @return {@link TornadoDevice}
+     *
+     * @throws {@link
+     *     uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound} if a device index is not found.
+     *
+     * @throws {@link
+     *     uk.ac.manchester.tornado.api.exceptions.TornadoDriverNotFound} if a driver index is not found.
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
         return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);

@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.types.collections.*;
+import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
 import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
@@ -96,20 +96,20 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
         read(executionPlanId, reference, 0, 0, null, false);
     }
 
-    private MemorySegment getSegment(final Object reference) {
+    private MemorySegment getSegmentWithHeader(final Object reference) {
         return switch (reference) {
-            case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegment();
-            case TornadoCollectionInterface<?> tornadoCollectionInterface -> tornadoCollectionInterface.getSegment();
-            case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegment();
-            case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegment();
-            case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegment();
+            case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegmentWithHeader();
+            case TornadoCollectionInterface<?> tornadoCollectionInterface -> tornadoCollectionInterface.getSegmentWithHeader();
+            case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
+            case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegmentWithHeader();
+            case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegmentWithHeader();
             default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
         };
     }
 
     @Override
     public int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] waitEvents, boolean useDeps) {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
 
@@ -129,7 +129,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void write(long executionPlanId, Object reference) {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
         if (batchSize <= 0) {
             spirvDeviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
         } else {
@@ -139,7 +139,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] waitEvents, boolean useDeps) {
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (batchSize <= 0) {
@@ -153,7 +153,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
-        MemorySegment segment = getSegment(reference);
+        MemorySegment segment = getSegmentWithHeader(reference);
         int internalEvent;
         if (batchSize <= 0) {
             internalEvent = spirvDeviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
@@ -170,7 +170,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        MemorySegment memorySegment = getSegment(reference);
+        MemorySegment memorySegment = getSegmentWithHeader(reference);
         if (batchSize <= 0 && memorySegment != null) {
             bufferSize = memorySegment.byteSize();
             bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
