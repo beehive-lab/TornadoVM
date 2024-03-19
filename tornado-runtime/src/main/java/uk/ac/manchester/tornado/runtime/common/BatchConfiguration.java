@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,11 +24,10 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -36,7 +35,6 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
@@ -97,7 +95,7 @@ public class BatchConfiguration {
                 elementSizes.add(dataTypeSize.getSize());
                 inputSizes.add(totalSize);
             } else if (o instanceof TornadoNativeArray tornadoNativeArray) {
-                totalSize = tornadoNativeArray.getNumBytesWithoutHeader();
+                totalSize = tornadoNativeArray.getNumBytesOfSegment();
                 inputSizes.add(totalSize);
                 byte elementSize = switch (tornadoNativeArray) {
                     case IntArray _ -> DataTypeSize.INT.getSize();

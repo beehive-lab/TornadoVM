@@ -37,7 +37,8 @@ Additionally, developers can create an instance of a TornadoVM native array by i
 The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. 
 
 .. code:: java
-
+   public MemorySegment getSegment() // returns the memory segment without the Tornado Array Header as slice
+   public MemorySegment getSegmentWithHeader() //  returns the Memory Segment with the Tornado Array Header
    public void set(int index, float value) // sets a value at a specific index
       E.g.:
           FloatArray floatArray = new FloatArray(16);
@@ -59,8 +60,8 @@ The main methods that the off-heap types expose to manage the Memory Segment of 
           FloatArray floatArray = new FloatArray(16);
           int size = floatArray.getSize(); // returns 16
    public float[] toHeapArray(); // Converts the data from off-heap to on-heap
-   public long getNumBytesOfSegment(); // Returns the total number of bytes the underlying Memory Segment occupies, including the header bytes
-   public long getNumBytesWithoutHeader(); // Returns the total number of bytes the underlying Memory Segment occupies, excluding the header bytes
+   public long getNumBytesOfSegmentWithHeader(); // Returns the total number of bytes the underlying Memory Segment occupies, including the header bytes
+   public long getNumBytesOfSegment(); // Returns the total number of bytes the underlying Memory Segment occupies, excluding the header bytes
    
 **NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
 

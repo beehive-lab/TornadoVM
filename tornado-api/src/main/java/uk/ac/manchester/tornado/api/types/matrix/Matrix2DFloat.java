@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,11 +68,6 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
         this(rows, columns, new FloatArray(rows * columns));
     }
 
-    @Override
-    public void clear() {
-        storage.clear();
-    }
-
     public Matrix2DFloat(float[][] matrix) {
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }
@@ -100,6 +95,11 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
         for (int i = 0; i < matrix.storage.getSize(); i++) {
             matrix.storage.set(i, matrix.storage.get(i) * value);
         }
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
     public float get(int i, int j) {
@@ -205,11 +205,21 @@ public final class Matrix2DFloat extends Matrix2DType implements TornadoMatrixIn
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegment();
     }
 
     @Override
     public MemorySegment getSegment() {
         return storage.getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return storage.getSegmentWithHeader();
     }
 }
