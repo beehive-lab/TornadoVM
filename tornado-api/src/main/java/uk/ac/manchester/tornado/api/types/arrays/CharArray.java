@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,7 +43,7 @@ public final class CharArray extends TornadoNativeArray {
     private long segmentByteSize;
 
     /**
-     * Constructs a new instance of the {@code CharArray} that will store a user-specified number of elements.
+     * Constructs a new instance of the {@link CharArray} that will store a user-specified number of elements.
      *
      * @param numberOfElements
      *     The number of elements in the array.
@@ -59,7 +59,59 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets all the values of the {@code CharArray} instance to \u0000, the default char value.
+     * Internal method used to create a new instance of the {@link CharArray} from on-heap data.
+     *
+     * @param values
+     *     The on-heap char array to create the instance from.
+     * @return A new {@link CharArray} instance, initialized with values of the on-heap char array.
+     */
+    private static CharArray createSegment(char[] values) {
+        CharArray array = new CharArray(values.length);
+        for (int i = 0; i < values.length; i++) {
+            array.set(i, values[i]);
+        }
+        return array;
+    }
+
+    /**
+     * Creates a new instance of the {@link CharArray} class from an on-heap char array.
+     *
+     * @param values
+     *     The on-heap char array to create the instance from.
+     * @return A new {@link CharArray} instance, initialized with values of the on-heap char array.
+     */
+    public static CharArray fromArray(char[] values) {
+        return createSegment(values);
+    }
+
+    /**
+     * Creates a new instance of the {@link CharArray} class from a set of char values.
+     *
+     * @param values
+     *     The char values to initialize the array with.
+     * @return A new {@link CharArray} instance, initialized with the given values.
+     */
+    public static CharArray fromElements(char... values) {
+        return createSegment(values);
+    }
+
+    /**
+     * Creates a new instance of the {@link CharArray} class from a {@link MemorySegment}.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing the off-heap char data.
+     * @return A new {@link CharArray} instance, initialized with the segment data.
+     */
+    public static CharArray fromSegment(MemorySegment segment) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / CHAR_BYTES);
+        CharArray charArray = new CharArray(numElements);
+        MemorySegment.copy(segment, 0, charArray.segment, charArray.baseIndex * CHAR_BYTES, byteSize);
+        return charArray;
+    }
+
+    /**
+     * Sets all the values of the {@link CharArray} instance to \u0000, the default char value.
      */
     @Override
     public void clear() {
@@ -72,62 +124,10 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Internal method used to create a new instance of the {@code CharArray} from on-heap data.
-     *
-     * @param values
-     *     The on-heap char array to create the instance from.
-     * @return A new {@code CharArray} instance, initialized with values of the on-heap char array.
-     */
-    private static CharArray createSegment(char[] values) {
-        CharArray array = new CharArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
-        return array;
-    }
-
-    /**
-     * Creates a new instance of the {@code CharArray} class from an on-heap char array.
-     *
-     * @param values
-     *     The on-heap char array to create the instance from.
-     * @return A new {@code CharArray} instance, initialized with values of the on-heap char array.
-     */
-    public static CharArray fromArray(char[] values) {
-        return createSegment(values);
-    }
-
-    /**
-     * Creates a new instance of the {@code CharArray} class from a set of char values.
-     *
-     * @param values
-     *     The char values to initialize the array with.
-     * @return A new {@code CharArray} instance, initialized with the given values.
-     */
-    public static CharArray fromElements(char... values) {
-        return createSegment(values);
-    }
-
-    /**
-     * Creates a new instance of the {@code CharArray} class from a {@link MemorySegment}.
-     *
-     * @param segment
-     *     The {@link MemorySegment} containing the off-heap char data.
-     * @return A new {@code CharArray} instance, initialized with the segment data.
-     */
-    public static CharArray fromSegment(MemorySegment segment) {
-        long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / CHAR_BYTES);
-        CharArray charArray = new CharArray(numElements);
-        MemorySegment.copy(segment, 0, charArray.segment, charArray.baseIndex * CHAR_BYTES, byteSize);
-        return charArray;
-    }
-
-    /**
-     * Converts the char data from off-heap to on-heap, by copying the values of a {@code CharArray}
+     * Converts the char data from off-heap to on-heap, by copying the values of a {@link CharArray}
      * instance into a new on-heap array.
      *
-     * @return A new on-heap char array, initialized with the values stored in the {@code CharArray} instance.
+     * @return A new on-heap char array, initialized with the values stored in the {@link CharArray} instance.
      */
     public char[] toHeapArray() {
         char[] outputArray = new char[getSize()];
@@ -138,7 +138,7 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets the char value at a specified index of the {@code CharArray} instance.
+     * Sets the char value at a specified index of the {@link CharArray} instance.
      *
      * @param index
      *     The index at which to set the char value.
@@ -150,7 +150,7 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Gets the char value stored at the specified index of the {@code CharArray} instance.
+     * Gets the char value stored at the specified index of the {@link CharArray} instance.
      *
      * @param index
      *     The index of which to retrieve the char value.
@@ -161,10 +161,10 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Initializes all the elements of the {@code CharArray} instance with a specified value.
+     * Initializes all the elements of the {@link CharArray} instance with a specified value.
      *
      * @param value
-     *     The char value to initialize the {@code ByteArray} instance with.
+     *     The char value to initialize the {@link ByteArray} instance with.
      */
     public void init(char value) {
         for (int i = 0; i < getSize(); i++) {
@@ -173,7 +173,7 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the number of char elements stored in the {@code CharArray} instance.
+     * Returns the number of char elements stored in the {@link CharArray} instance.
      *
      * @return
      */
@@ -183,33 +183,43 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code CharArray} instance.
+     * Returns the underlying {@link MemorySegment} of the {@link CharArray} instance.
      *
-     * @return The {@link MemorySegment} associated with the {@code CharArray} instance.
+     * @return The {@link MemorySegment} associated with the {@link CharArray} instance.
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link CharArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link CharArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 
     /**
-     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code CharArray} instance, occupies.
+     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link CharArray} instance, occupies.
      *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesOfSegment() {
+    public long getNumBytesOfSegmentWithHeader() {
         return segmentByteSize;
     }
 
     /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code CharArray} instance,
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link CharArray} instance,
      * excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesWithoutHeader() {
+    public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 }

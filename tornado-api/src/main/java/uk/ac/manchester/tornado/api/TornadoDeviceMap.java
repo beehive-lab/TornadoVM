@@ -29,18 +29,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  */
 public class TornadoDeviceMap {
 
-    private final TornadoRuntimeInterface runtime = TornadoRuntime.getTornadoRuntime();
+    private final TornadoRuntimeInterface coreRuntime = TornadoRuntime.getTornadoRuntime();
 
     private final int numBackends;
 
     private final List<TornadoDriver> backends;
 
     public TornadoDeviceMap() {
-        numBackends = runtime.getNumDrivers();
+        numBackends = coreRuntime.getNumDrivers();
         // build the list of backends
         backends = new ArrayList<>();
         for (int i = 0; i < numBackends; i++) {
-            backends.add(runtime.getDriver(i));
+            backends.add(coreRuntime.getDriver(i));
         }
     }
 
@@ -62,11 +62,25 @@ public class TornadoDeviceMap {
         return backends;
     }
 
+    /**
+     * Return a list of backends that corresponds to a filter given by a predicate.
+     * 
+     * @param predicate
+     *     {@link Predicate<? super TornadoDriver> predicate}
+     * @return {@link List<TornadoDriver>}
+     */
     public List<TornadoDriver> getBackendWithPredicate(Predicate<? super TornadoDriver> predicate) {
         return getAllBackends().stream().filter(predicate).toList();
     }
 
+    /**
+     * Return a list of backends that corresponds to a filter based on devices within each backend.
+     * 
+     * @param predicate
+     *     {@link Predicate<? super TornadoDevice> predicate}
+     * @return {@link List<TornadoDriver>}
+     */
     public List<TornadoDriver> getBackendWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllBackends().stream().filter(backends -> backends.getAllDevices().stream().allMatch(predicate)).toList();
+        return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().allMatch(predicate)).toList();
     }
 }
