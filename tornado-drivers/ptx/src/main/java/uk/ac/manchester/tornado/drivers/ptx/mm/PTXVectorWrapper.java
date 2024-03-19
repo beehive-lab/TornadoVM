@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022,2024 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,7 +90,7 @@ public class PTXVectorWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
+            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
         }
 
         this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
@@ -158,8 +158,8 @@ public class PTXVectorWrapper implements XPUBuffer {
             case JavaKind.Long -> deviceContext.enqueueReadBuffer(executionPlanId, address, bytes, (long[]) value, hostOffset, waitEvents);
             case JavaKind.Short -> deviceContext.enqueueReadBuffer(executionPlanId, address, bytes, (short[]) value, hostOffset, waitEvents);
             case JavaKind.Byte -> deviceContext.enqueueReadBuffer(executionPlanId, address, bytes, (byte[]) value, hostOffset, waitEvents);
-            case JavaKind.Object -> deviceContext.enqueueReadBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
-            default -> throw new TornadoRuntimeException("Type not supported: " + value.getClass());
+            case JavaKind.Object -> deviceContext.enqueueReadBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegmentWithHeader().address(), hostOffset, waitEvents);
+            default -> throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
         };
     }
 
@@ -185,8 +185,8 @@ public class PTXVectorWrapper implements XPUBuffer {
             case JavaKind.Long -> deviceContext.enqueueWriteBuffer(executionPlanId, address, bytes, (long[]) value, hostOffset, waitEvents);
             case JavaKind.Short -> deviceContext.enqueueWriteBuffer(executionPlanId, address, bytes, (short[]) value, hostOffset, waitEvents);
             case JavaKind.Byte -> deviceContext.enqueueWriteBuffer(executionPlanId, address, bytes, (byte[]) value, hostOffset, waitEvents);
-            case JavaKind.Object -> deviceContext.enqueueWriteBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
-            default -> throw new TornadoRuntimeException("Type not supported: " + value.getClass());
+            case JavaKind.Object -> deviceContext.enqueueWriteBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegmentWithHeader().address(), hostOffset, waitEvents);
+            default -> throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
         };
     }
 
@@ -215,8 +215,8 @@ public class PTXVectorWrapper implements XPUBuffer {
             case JavaKind.Long -> deviceContext.readBuffer(executionPlanId, address, bytes, (long[]) value, hostOffset, waitEvents);
             case JavaKind.Short -> deviceContext.readBuffer(executionPlanId, address, bytes, (short[]) value, hostOffset, waitEvents);
             case JavaKind.Byte -> deviceContext.readBuffer(executionPlanId, address, bytes, (byte[]) value, hostOffset, waitEvents);
-            case JavaKind.Object -> deviceContext.readBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
-            default -> throw new TornadoRuntimeException("Type not supported: " + value.getClass());
+            case JavaKind.Object -> deviceContext.readBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegmentWithHeader().address(), hostOffset, waitEvents);
+            default -> throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
         };
     }
 
@@ -263,7 +263,7 @@ public class PTXVectorWrapper implements XPUBuffer {
             case JavaKind.Long -> deviceContext.writeBuffer(executionPlanId, address, bytes, (long[]) value, (int) hostOffset, waitEvents);
             case JavaKind.Short -> deviceContext.writeBuffer(executionPlanId, address, bytes, (short[]) value, hostOffset, waitEvents);
             case JavaKind.Byte -> deviceContext.writeBuffer(executionPlanId, address, bytes, (byte[]) value, hostOffset, waitEvents);
-            case JavaKind.Object -> deviceContext.writeBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
+            case JavaKind.Object -> deviceContext.writeBuffer(executionPlanId, address, bytes, ((TornadoNativeArray) value).getSegmentWithHeader().address(), hostOffset, waitEvents);
             default -> throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
         }
     }
