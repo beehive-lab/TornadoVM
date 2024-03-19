@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,11 +55,11 @@ import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
@@ -67,6 +67,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TornadoExecutionContext {
 
+    public static int INIT_VALUE = -1;
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
@@ -80,19 +81,13 @@ public class TornadoExecutionContext {
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
     private int nextTask;
-
     private long batchSize;
     private long executionPlanMemoryLimit;
     private Set<TornadoXPUDevice> lastDevices;
-
     private boolean redeployOnDevice;
     private boolean defaultScheduler;
-
     private boolean isDataDependencyDetected;
-
     private TornadoProfiler profiler;
-
-    public static int INIT_VALUE = -1;
     private boolean isPrintKernel;
 
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
@@ -148,12 +143,12 @@ public class TornadoExecutionContext {
         this.batchSize = size;
     }
 
-    public void setExecutionPlanMemoryLimit(long memoryLimitSize) {
-        this.executionPlanMemoryLimit = memoryLimitSize;
-    }
-
     public long getExecutionPlanMemoryLimit() {
         return executionPlanMemoryLimit;
+    }
+
+    public void setExecutionPlanMemoryLimit(long memoryLimitSize) {
+        this.executionPlanMemoryLimit = memoryLimitSize;
     }
 
     public boolean isMemoryLimited() {
@@ -173,17 +168,17 @@ public class TornadoExecutionContext {
                 long size = Array.getLength(parameter);
                 totalSize += (size * dataTypeSize.getSize());
             } else if (parameter instanceof TornadoNativeArray tornadoNativeArray) {
-                totalSize += tornadoNativeArray.getNumBytesWithoutHeader();
+                totalSize += tornadoNativeArray.getNumBytesOfSegment();
             } else if (parameter instanceof TornadoVectorsInterface<?> tornadoVector) {
                 totalSize += tornadoVector.getNumBytes();
             } else if (parameter instanceof TornadoCollectionInterface<?> collection) {
-                totalSize += collection.getNumBytes();
+                totalSize += collection.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoVolumesInterface<?> tornadoVolume) {
-                totalSize += tornadoVolume.getNumBytes();
+                totalSize += tornadoVolume.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoMatrixInterface<?> tornadoMatrix) {
-                totalSize += tornadoMatrix.getNumBytes();
+                totalSize += tornadoMatrix.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoImagesInterface<?> tornadoImage) {
-                totalSize += tornadoImage.getNumBytes();
+                totalSize += tornadoImage.getNumBytesWithHeader();
             } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
                 // ignore
             } else {
@@ -664,11 +659,11 @@ public class TornadoExecutionContext {
         return newExecutionContext;
     }
 
-    public void setExecutionPlanId(long executionPlanId) {
-        this.executionPlanId = executionPlanId;
-    }
-
     public long getExecutionPlanId() {
         return this.executionPlanId;
+    }
+
+    public void setExecutionPlanId(long executionPlanId) {
+        this.executionPlanId = executionPlanId;
     }
 }

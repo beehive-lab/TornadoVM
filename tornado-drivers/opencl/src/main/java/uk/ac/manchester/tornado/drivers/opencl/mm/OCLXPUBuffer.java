@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020,2024 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -116,27 +116,27 @@ public class OCLXPUBuffer implements XPUBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((FloatArray) objectFromField).getSegment().byteSize();
+                long size = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((ByteArray) objectFromField).getSegment().byteSize();
+                long size = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((DoubleArray) objectFromField).getSegment().byteSize();
+                long size = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((IntArray) objectFromField).getSegment().byteSize();
+                long size = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((ShortArray) objectFromField).getSegment().byteSize();
+                long size = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((LongArray) objectFromField).getSegment().byteSize();
+                long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);

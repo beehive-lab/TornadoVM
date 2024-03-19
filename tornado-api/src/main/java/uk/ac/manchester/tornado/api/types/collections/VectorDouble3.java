@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -220,8 +220,18 @@ public final class VectorDouble3 implements TornadoCollectionInterface<DoubleBuf
     }
 
     @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegmentWithHeader();
+    }
+
+    @Override
     public MemorySegment getSegment() {
         return getArray().getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return getArray().getSegmentWithHeader();
     }
 
 }
