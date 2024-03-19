@@ -17,8 +17,16 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceMap;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
@@ -52,6 +60,44 @@ public class TestDevices extends TornadoTestBase {
     @Test(expected = TornadoDeviceNotFound.class)
     public void test02() {
         TornadoDevice device = TornadoExecutionPlan.getDevice(0, 100);
+    }
+
+    /**
+     * Test the {@link TornadoDeviceMap} API to obtain the devices without
+     * requiring the developer to access through the runtime instance.
+     *
+     * <p>
+     * The goal with this API is to allow developers to apply filters
+     * and query the backend and device properties of the desired ones.
+     * </p>
+     */
+    @Test
+    public void test03() {
+
+        // Obtains an instance of a class that contains a map with all Drivers and Devices
+        // that the develop can query. 
+        TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
+
+        // Query the number of backends
+        int numBackends = tornadoDeviceMap.getNumBackends();
+
+        assertTrue(numBackends >= 1);
+
+        // Query all backends
+        List<TornadoDriver> backends = tornadoDeviceMap.getAllBackends();
+
+        assertFalse(backends.isEmpty());
+
+        // Query the number of devices that are accessible per backend
+        int numDevicesBackendZero = backends.getFirst().getDeviceCount();
+
+        assertTrue(numDevicesBackendZero >= 1);
+
+        // Obtain a reference to a device within the selected backend
+        TornadoDevice device = backends.getFirst().getDevice(0);
+
+        assertNotNull(device);
+
     }
 
 }

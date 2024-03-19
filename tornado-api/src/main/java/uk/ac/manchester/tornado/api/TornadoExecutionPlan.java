@@ -95,6 +95,15 @@ public class TornadoExecutionPlan {
     }
 
     /**
+     * Return a data structure that contains all drivers and devices that the TornadoVM Runtime can access.
+     * 
+     * @return {@link TornadoDeviceMap}
+     */
+    public static TornadoDeviceMap getTornadoDeviceMap() {
+        return new TornadoDeviceMap();
+    }
+
+    /**
      * Execute an execution plan. It returns a {@link TornadoExecutionPlan} for
      * further build different optimization after the execution as well as obtain
      * the profiler results.
