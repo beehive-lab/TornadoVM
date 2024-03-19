@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,7 +43,7 @@ public final class ShortArray extends TornadoNativeArray {
     private long segmentByteSize;
 
     /**
-     * Constructs a new instance of the {@code ShortArray} that will store a user-specified number of elements.
+     * Constructs a new instance of the {@link ShortArray} that will store a user-specified number of elements.
      *
      * @param numberOfElements
      *     The number of elements in the array.
@@ -60,11 +60,11 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Internal method used to create a new instance of the {@code ShortArray} from on-heap data.
+     * Internal method used to create a new instance of the {@link ShortArray} from on-heap data.
      *
      * @param values
      *     The on-heap short array to create the instance from.
-     * @return A new {@code ShortArray} instance, initialized with values of the on-heap short array.
+     * @return A new {@link ShortArray} instance, initialized with values of the on-heap short array.
      */
     private static ShortArray createSegment(short[] values) {
         ShortArray array = new ShortArray(values.length);
@@ -75,33 +75,33 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Creates a new instance of the {@code ShortArray} class from an on-heap short array.
+     * Creates a new instance of the {@link ShortArray} class from an on-heap short array.
      *
      * @param values
      *     The on-heap short array to create the instance from.
-     * @return A new {@code ShortArray} instance, initialized with values of the on-heap short array.
+     * @return A new {@link ShortArray} instance, initialized with values of the on-heap short array.
      */
     public static ShortArray fromArray(short[] values) {
         return createSegment(values);
     }
 
     /**
-     * Creates a new instance of the {@code ShortArray} class from a set of short values.
+     * Creates a new instance of the {@link ShortArray} class from a set of short values.
      *
      * @param values
      *     The short values to initialize the array with.
-     * @return A new {@code ShortArray} instance, initialized with the given values.
+     * @return A new {@link ShortArray} instance, initialized with the given values.
      */
     public static ShortArray fromElements(short... values) {
         return createSegment(values);
     }
 
     /**
-     * Creates a new instance of the {@code ShortArray} class from a {@link MemorySegment}.
+     * Creates a new instance of the {@link ShortArray} class from a {@link MemorySegment}.
      *
      * @param segment
      *     The {@link MemorySegment} containing the off-heap short data.
-     * @return A new {@code ShortArray} instance, initialized with the segment data.
+     * @return A new {@link ShortArray} instance, initialized with the segment data.
      */
     public static ShortArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
@@ -112,10 +112,10 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Converts the short data from off-heap to on-heap, by copying the values of a {@code ShortArray}
+     * Converts the short data from off-heap to on-heap, by copying the values of a {@link ShortArray}
      * instance into a new on-heap array.
      *
-     * @return A new on-heap short array, initialized with the values stored in the {@code ShortArray} instance.
+     * @return A new on-heap short array, initialized with the values stored in the {@link ShortArray} instance.
      */
     public short[] toHeapArray() {
         short[] outputArray = new short[getSize()];
@@ -126,7 +126,7 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets the short value at a specified index of the {@code ShortArray} instance.
+     * Sets the short value at a specified index of the {@link ShortArray} instance.
      *
      * @param index
      *     The index at which to set the short value.
@@ -138,7 +138,7 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Gets the short value stored at the specified index of the {@code ShortArray} instance.
+     * Gets the short value stored at the specified index of the {@link ShortArray} instance.
      *
      * @param index
      *     The index of which to retrieve the short value.
@@ -149,7 +149,7 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets all the values of the {@code ShortArray} instance to zero.
+     * Sets all the values of the {@link ShortArray} instance to zero.
      */
     @Override
     public void clear() {
@@ -162,10 +162,10 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Initializes all the elements of the {@code ShortArray} instance with a specified value.
+     * Initializes all the elements of the {@link ShortArray} instance with a specified value.
      *
      * @param value
-     *     The short value to initialize the {@code ShortArray} instance with.
+     *     The short value to initialize the {@link ShortArray} instance with.
      */
     public void init(short value) {
         for (int i = 0; i < getSize(); i++) {
@@ -174,7 +174,7 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the number of short elements stored in the {@code ShortArray} instance.
+     * Returns the number of short elements stored in the {@link ShortArray} instance.
      *
      * @return
      */
@@ -184,33 +184,43 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code ShortArray} instance.
+     * Returns the underlying {@link MemorySegment} of the {@link ShortArray} instance.
      *
-     * @return The {@link MemorySegment} associated with the {@code ShortArray} instance.
+     * @return The {@link MemorySegment} associated with the {@link ShortArray} instance.
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link ShortArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link ShortArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 
     /**
-     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code ShortArray} instance, occupies.
+     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link ShortArray} instance, occupies.
      *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesOfSegment() {
+    public long getNumBytesOfSegmentWithHeader() {
         return segmentByteSize;
     }
 
     /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code ShortArray} instance,
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link ShortArray} instance,
      * excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesWithoutHeader() {
+    public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 }
