@@ -19,7 +19,9 @@ package uk.ac.manchester.tornado.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -31,8 +33,15 @@ public class TornadoDeviceMap {
 
     private final int numBackends;
 
+    private final List<TornadoDriver> backends;
+
     public TornadoDeviceMap() {
         numBackends = runtime.getNumDrivers();
+        // build the list of backends
+        backends = new ArrayList<>();
+        for (int i = 0; i < numBackends; i++) {
+            backends.add(runtime.getDriver(i));
+        }
     }
 
     /**
@@ -50,10 +59,14 @@ public class TornadoDeviceMap {
      * @return {@link List<TornadoDriver>}
      */
     public List<TornadoDriver> getAllBackends() {
-        List<TornadoDriver> drivers = new ArrayList<>();
-        for (int i = 0; i < numBackends; i++) {
-            drivers.add(runtime.getDriver(i));
-        }
-        return drivers;
+        return backends;
+    }
+
+    public List<TornadoDriver> getBackendWithPredicate(Predicate<? super TornadoDriver> predicate) {
+        return getAllBackends().stream().filter(predicate).toList();
+    }
+
+    public List<TornadoDriver> getBackendWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
+        return getAllBackends().stream().filter(backends -> backends.getAllDevices().stream().allMatch(predicate)).toList();
     }
 }

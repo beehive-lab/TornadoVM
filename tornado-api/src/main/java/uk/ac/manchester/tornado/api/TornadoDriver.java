@@ -17,6 +17,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.List;
+import java.util.function.Predicate;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -30,6 +33,10 @@ public interface TornadoDriver {
     int getDeviceCount();
 
     TornadoDevice getDevice(int index);
+
+    List<TornadoDevice> getAllDevices();
+
+    List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate);
 
     TornadoDeviceType getTypeDefaultDevice();
 

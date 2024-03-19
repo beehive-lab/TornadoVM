@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -38,6 +39,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -156,6 +158,20 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
         } else {
             throw new TornadoDeviceNotFound(STR."[ERROR] device required not found: \{index} - Max: \{flatBackends.length}");
         }
+    }
+
+    @Override
+    public List<TornadoDevice> getAllDevices() {
+        List<TornadoDevice> devices = new ArrayList<>();
+        for (int deviceIndex = 0; deviceIndex < getDeviceCount(); deviceIndex++) {
+            devices.add(getDevice(deviceIndex));
+        }
+        return devices;
+    }
+
+    @Override
+    public List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate) {
+        return getAllDevices().stream().filter(predicate).toList();
     }
 
     @Override

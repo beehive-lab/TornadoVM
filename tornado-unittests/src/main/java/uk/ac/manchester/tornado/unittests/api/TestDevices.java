@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceMap;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDriverNotFound;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -100,4 +101,32 @@ public class TestDevices extends TornadoTestBase {
 
     }
 
+    /**
+     * Test to check different examples of how can we apply filters to obtain the desired backends and devices
+     * depending on input filters.
+     */
+    @Test
+    public void test04() {
+
+        TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
+
+        // Query the number of backends
+        int numBackends = tornadoDeviceMap.getNumBackends();
+
+        assertTrue(numBackends >= 1);
+
+        List<TornadoDriver> openCLBackend = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getBackendType() == TornadoVMBackendType.OPENCL);
+
+        assertNotNull(openCLBackend);
+
+        // Obtain all drivers with at least two devices associated to it
+        List<TornadoDriver> multiDeviceBackends = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDeviceCount() > 1);
+
+        // Obtain the backend that can support SPIR-V as default device
+        List<TornadoDriver> spirvSupported = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
+
+        // Return all backends that can access an NVIDIA GPU
+        tornadoDeviceMap.getBackendWithDevicePredicate(device -> device.getDeviceName().contains("NVIDIA"));
+
+    }
 }
