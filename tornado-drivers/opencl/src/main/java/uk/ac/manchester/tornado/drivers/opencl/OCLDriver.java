@@ -154,7 +154,7 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
+            throw new TornadoDeviceNotFound(STR."[ERROR] device required not found: \{index} - Max: \{flatBackends.length}");
         }
     }
 

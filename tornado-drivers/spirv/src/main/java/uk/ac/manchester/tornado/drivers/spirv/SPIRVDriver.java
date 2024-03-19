@@ -155,7 +155,7 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound("[ERROR]-[SPIRV-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
+            throw new TornadoDeviceNotFound(STR."[ERROR]-[SPIRV-DRIVER] Device required not found: \{index} - Max: \{backends.length}");
         }
     }
 

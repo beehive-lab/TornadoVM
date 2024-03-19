@@ -119,7 +119,7 @@ public final class PTXDriver implements TornadoAcceleratorDriver {
         if (index < backends.length) {
             return backends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound("[ERROR]-[PTX-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
+            throw new TornadoDeviceNotFound(STR."[ERROR]-[PTX-DRIVER] Device required not found: \{index} - Max: \{backends.length}");
         }
     }
 
