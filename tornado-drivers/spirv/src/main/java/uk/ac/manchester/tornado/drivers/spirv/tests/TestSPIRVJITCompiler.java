@@ -66,9 +66,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  */
 public class TestSPIRVJITCompiler {
 
-    public static void methodToCompile(int[] a, int[] b, double[] c) {
+    public static void methodToCompile(int[] a, int[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = 0.12 * a[i] * b[i];
+            c[i] = 0.12f * a[i] * b[i];
         }
     }
 
@@ -117,7 +117,7 @@ public class TestSPIRVJITCompiler {
         return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
 
-    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
@@ -159,7 +159,7 @@ public class TestSPIRVJITCompiler {
         final int N = 128;
         int[] a = new int[N];
         int[] b = new int[N];
-        double[] c = new double[N];
+        float[] c = new float[N];
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
@@ -173,7 +173,7 @@ public class TestSPIRVJITCompiler {
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {
-            double seq = 0.12 * a[i] * b[i];
+            float seq = 0.12f * a[i] * b[i];
             if (Math.abs(c[i] - seq) > 0.01) {
                 System.err.println(i + " Fault result = " + seq + " " + c[i]);
                 correct = false;
