@@ -204,7 +204,7 @@ public class TestHalfFloats extends TornadoTestBase {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
             Half2 half2 = new Half2();
             half2.setX(HalfFloat.add(value.get(i).getX(), value.get(i).getY()));
-            half2.setY(HalfFloat.mult(value.get(i).getX(), new HalfFloat(2)));
+            half2.setY(HalfFloat.mult(value.get(i).getX(), new HalfFloat(2.0f)));
             output.set(i, half2);
         }
     }
@@ -213,7 +213,7 @@ public class TestHalfFloats extends TornadoTestBase {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
             Half3 half3 = new Half3();
             half3.setX(HalfFloat.add(value.get(i).getX(), value.get(i).getY()));
-            half3.setY(HalfFloat.mult(value.get(i).getZ(), new HalfFloat(2)));
+            half3.setY(HalfFloat.mult(value.get(i).getZ(), new HalfFloat(2.0f)));
             output.set(i, half3);
         }
     }

@@ -204,6 +204,9 @@ public class PTXCodeUtil {
     public static String getFPURoundingMode(PTXKind lhs, PTXKind rhs) {
         String roundingMode = ROUND_NEAREST_EVEN;
 
+        if (lhs.isB16() && rhs.isF32()) {
+            return roundingMode;
+        }
         if (!lhs.isFloating() && rhs.isFloating()) {
             roundingMode = ROUND_TOWARD_ZERO_INTEGER;
         }
