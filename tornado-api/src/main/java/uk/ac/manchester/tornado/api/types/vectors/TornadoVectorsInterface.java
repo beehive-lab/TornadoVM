@@ -31,4 +31,5 @@ permits Byte3, Byte4, //
         Int2, Int3, Int4, Int8, Int16, //
         Short2, Short3, Half2, Half3, Half4, Half8, Half16 {
     long getNumBytes();
+
 }

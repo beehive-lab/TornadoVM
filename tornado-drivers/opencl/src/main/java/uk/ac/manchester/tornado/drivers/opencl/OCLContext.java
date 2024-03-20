@@ -28,27 +28,23 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_EVENTS;
 
 public class OCLContext implements OCLExecutionEnvironment {
 
     private final long contextID;
     private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
-    private final OCLCommandQueue[] queues;
+
     private final List<OCLProgram> programs;
     private final OCLPlatform platform;
 
@@ -57,7 +53,6 @@ public class OCLContext implements OCLExecutionEnvironment {
         this.contextID = id;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
-        this.queues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
     }
 
@@ -94,52 +89,43 @@ public class OCLContext implements OCLExecutionEnvironment {
         return devices;
     }
 
-    public OCLCommandQueue[] queues() {
-        return queues;
+    public long getContextId() {
+        return contextID;
     }
 
-    public void createCommandQueue(int index, long properties) {
+    private void createCommandQueue(int index, long properties) {
         OCLTargetDevice device = devices.get(index);
-        long queueId;
+        long commandQueuePtr;
         try {
-            queueId = clCreateCommandQueue(contextID, device.getId(), properties);
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
+
             TornadoLogger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
             TornadoLogger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
-            queues[index] = new OCLCommandQueue(queueId, properties, deviceVersion);
+            commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());
+            throw new TornadoRuntimeException("[ERROR] OpenCL Command Queue Initialization not valid");
         }
+    }
+
+    public long getProperties(int index) {
+        long properties = 0;
+        if (Tornado.ENABLE_PROFILING) {
+            properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
+        }
+
+        if (Tornado.ENABLE_OOO_EXECUTION) {
+            properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+        }
+        return properties;
     }
 
     public void createCommandQueue(int index) {
-        long properties = 0;
-        if (ENABLE_PROFILING) {
-            properties |= CL_QUEUE_PROFILING_ENABLE;
-        }
-
-        if (ENABLE_OOO_EXECUTION) {
-            properties |= CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-        }
+        long properties = getProperties(index);
         createCommandQueue(index, properties);
-    }
-
-    public void createAllCommandQueues(long properties) {
-        for (int i = 0; i < devices.size(); i++) {
-            createCommandQueue(i, properties);
-        }
-    }
-
-    public void createAllCommandQueues() {
-        long properties = 0;
-        properties |= CL_QUEUE_PROFILING_ENABLE;
-        if (ENABLE_OOO_EXECUTION) {
-            properties |= CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-        }
-        createAllCommandQueues(properties);
     }
 
     public OCLProgram createProgramWithSource(byte[] source, long[] lengths, OCLDeviceContext deviceContext) {
@@ -185,7 +171,7 @@ public class OCLContext implements OCLExecutionEnvironment {
 
     public void cleanup() {
 
-        if (DUMP_EVENTS) {
+        if (TornadoOptions.DUMP_EVENTS) {
             for (OCLDeviceContext deviceContext : deviceContexts) {
                 deviceContext.dumpEvents();
             }
@@ -197,26 +183,17 @@ public class OCLContext implements OCLExecutionEnvironment {
                 program.cleanup();
             }
             long t1 = System.nanoTime();
-
-            for (OCLCommandQueue queue : queues) {
-                if (queue != null) {
-                    queue.cleanup();
-                }
-            }
-
-            long t2 = System.nanoTime();
             clReleaseContext(contextID);
-            long t3 = System.nanoTime();
+            long t2 = System.nanoTime();
 
             if (Tornado.FULL_DEBUG) {
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "programs", (t1 - t0) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "queues", (t2 - t1) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t3 - t2) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t3 - t0) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t2 - t0) * 1e-9);
             }
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());
-            e.printStackTrace();
+            throw new TornadoRuntimeException(e.getMessage());
         }
     }
 
@@ -229,7 +206,7 @@ public class OCLContext implements OCLExecutionEnvironment {
     public OCLDeviceContext createDeviceContext(int index) {
         TornadoLogger.debug("creating device context for device: %s", devices.get(index).toString());
         createCommandQueue(index);
-        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), queues[index], this);
+        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), this);
         deviceContexts.add(deviceContext);
         return deviceContext;
     }
@@ -250,12 +227,6 @@ public class OCLContext implements OCLExecutionEnvironment {
             throw new TornadoInternalError("Unable to allocate off-heap memory");
         }
         return address;
-    }
-
-    public ByteBuffer toByteBuffer(long address, long bytes) {
-        final ByteBuffer buffer = asByteBuffer(address, bytes);
-        buffer.order(OpenCL.BYTE_ORDER);
-        return buffer;
     }
 
     public OCLBufferResult createBuffer(long flags, long bytes) {
@@ -296,6 +267,9 @@ public class OCLContext implements OCLExecutionEnvironment {
         private final long address;
         private final int result;
 
+        /**
+         * Objects of this type are created in Native Code from the JNI-OpenCL layer of TornadoVM.
+         */
         public OCLBufferResult(long oclBuffer, long address, int result) {
             this.oclBuffer = oclBuffer;
             this.address = address;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.volumes;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.Buffer;
 
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
@@ -25,4 +26,11 @@ public sealed interface TornadoVolumesInterface<T extends Buffer> //
         extends PrimitiveStorage<T> permits VolumeShort2 {
 
     long getNumBytes();
+
+    long getNumBytesWithHeader();
+
+    MemorySegment getSegment();
+
+    MemorySegment getSegmentWithHeader();
+
 }

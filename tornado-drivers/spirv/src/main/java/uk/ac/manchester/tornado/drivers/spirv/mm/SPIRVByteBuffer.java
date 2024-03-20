@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -51,12 +51,12 @@ public class SPIRVByteBuffer {
         return this.bytes;
     }
 
-    public void read() {
-        read(null);
+    public void read(long executionPlanId) {
+        read(executionPlanId, null);
     }
 
-    private void read(int[] events) {
-        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+    private void read(long executionPlanId, int[] events) {
+        deviceContext.readBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int getInt(int offset) {
@@ -71,12 +71,12 @@ public class SPIRVByteBuffer {
         return offset;
     }
 
-    public void write() {
-        write(null);
+    public void write(long executionPlanId) {
+        write(executionPlanId, null);
     }
 
-    public void write(int[] events) {
-        deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+    public void write(long executionPlanId, int[] events) {
+        deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     // FIXME <PENDING> enqueueWrite
@@ -88,8 +88,8 @@ public class SPIRVByteBuffer {
     // FIXME <REFACTOR> This method is common with the 3 backends
     public void dump(int width) {
         buffer.position(buffer.capacity());
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true),
-                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true), RuntimeUtilities.humanReadableByteCount(buffer.position(),
+                true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {
@@ -105,20 +105,20 @@ public class SPIRVByteBuffer {
         }
     }
 
-    public int enqueueRead() {
-        return enqueueRead(null);
+    public int enqueueRead(long executionPlanId) {
+        return enqueueRead(executionPlanId, null);
     }
 
-    public int enqueueRead(final int[] events) {
-        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+    public int enqueueRead(long executionPlanId, final int[] events) {
+        return deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
-    public int enqueueWrite() {
-        return enqueueWrite(null);
+    public int enqueueWrite(long executionPlanId) {
+        return enqueueWrite(executionPlanId, null);
     }
 
-    public int enqueueWrite(int[] events) {
+    public int enqueueWrite(long executionPlanId, int[] events) {
         // XXX: offset 0
-        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
+        return deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 }

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -112,7 +112,7 @@ public class SPIRVCompiler {
 
     private static final SPIRVIRGenerationPhase LIR_GENERATION_PHASE = new SPIRVIRGenerationPhase();
 
-    private static SPIRVCompilationResult compile(SPIRVCompilationRequest r) {
+    private synchronized static SPIRVCompilationResult compile(SPIRVCompilationRequest r) {
         assert !r.graph.isFrozen();
         try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
             emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,

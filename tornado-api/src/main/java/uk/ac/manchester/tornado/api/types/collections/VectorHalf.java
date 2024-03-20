@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ShortBuffer;
 
 public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer> {
@@ -236,6 +237,21 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
     @Override
     public long getNumBytes() {
         return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegmentWithHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return getArray().getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return getArray().getSegmentWithHeader();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api.types.matrix;
 
 import static uk.ac.manchester.tornado.api.types.utils.StorageFormats.toRowMajor;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -66,11 +67,6 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
         this(rows, columns, new DoubleArray(rows * columns));
     }
 
-    @Override
-    public void clear() {
-        storage.clear();
-    }
-
     public Matrix2DDouble(double[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
@@ -92,6 +88,11 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
                 }
             }
         }
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
     public double get(int i, int j) {
@@ -198,6 +199,22 @@ public final class Matrix2DDouble extends Matrix2DType implements TornadoMatrixI
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
     }
+
+    @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegmentWithHeader();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return storage.getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return storage.getSegmentWithHeader();
+    }
+
 }

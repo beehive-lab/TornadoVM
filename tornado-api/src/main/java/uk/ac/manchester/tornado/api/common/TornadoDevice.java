@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 
 public interface TornadoDevice {
@@ -40,14 +40,14 @@ public interface TornadoDevice {
      *     allocates the sizeof(object).
      * @param state
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceBufferState}
      * @return an event ID
      */
-    int allocate(Object object, long batchSize, TornadoDeviceObjectState state);
+    int allocate(Object object, long batchSize, DeviceBufferState state);
 
-    int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states);
+    int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states);
 
-    int deallocate(TornadoDeviceObjectState state);
+    int deallocate(DeviceBufferState state);
 
     /**
      * It allocates and copy in the content of the object to the target device.
@@ -56,7 +56,7 @@ public interface TornadoDevice {
      *     to be allocated
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     list of pending events (dependencies)
      * @param batchSize
@@ -67,7 +67,7 @@ public interface TornadoDevice {
      *     object)
      * @return an event ID
      */
-    List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
+    List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset);
 
     /**
      * It always copies in the input data (object) from the host to the target
@@ -83,12 +83,12 @@ public interface TornadoDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     list of previous events
      * @return and event ID
      */
-    List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceBufferState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
@@ -101,12 +101,12 @@ public interface TornadoDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     of pending events
      * @return and event ID
      */
-    int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    int streamOut(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
@@ -119,12 +119,12 @@ public interface TornadoDevice {
      *     object)
      * @param objectState
      *     state of the object in the target device
-     *     {@link TornadoDeviceObjectState}
+     *     {@link DeviceBufferState}
      * @param events
      *     of pending events
      * @return and event ID
      */
-    int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] events);
 
     /**
      * It resolves a pending event.
@@ -133,27 +133,27 @@ public interface TornadoDevice {
      *     ID
      * @return an object of type {@link Event}
      */
-    Event resolveEvent(int event);
+    Event resolveEvent(long executionPlanId, int event);
 
-    void ensureLoaded();
+    void ensureLoaded(long executionPlanId);
 
-    void flushEvents();
+    void flushEvents(long executionPlanId);
 
-    int enqueueBarrier();
+    int enqueueBarrier(long executionPlanId);
 
-    int enqueueBarrier(int[] events);
+    int enqueueBarrier(long executionPlanId, int[] events);
 
-    int enqueueMarker();
+    int enqueueMarker(long executionPlanId);
 
-    int enqueueMarker(int[] events);
+    int enqueueMarker(long executionPlanId, int[] events);
 
-    void sync();
+    void sync(long executionPlanId);
 
-    void flush();
+    void flush(long executionPlanId);
 
     void reset();
 
-    void dumpEvents();
+    void dumpEvents(long executionPlanId);
 
     String getDeviceName();
 

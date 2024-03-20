@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,14 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
-public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
+public class PTXKernelStackFrame extends PTXByteBuffer implements KernelStackFrame {
 
     public static final int RESERVED_SLOTS = 3;
     private final ArrayList<CallArgument> callArguments;
 
-    public PTXKernelArgs(long address, int numArgs, PTXDeviceContext deviceContext) {
+    public PTXKernelStackFrame(long address, int numArgs, PTXDeviceContext deviceContext) {
         super(address, RESERVED_SLOTS << 3, 0, deviceContext);
         this.callArguments = new ArrayList<>(numArgs);
 
@@ -58,18 +58,18 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
     }
 
     @Override
-    public void write() {
-        super.write();
+    public void write(long executionPlanId) {
+        super.write(executionPlanId);
     }
 
     @Override
-    public int enqueueWrite() {
-        return enqueueWrite(null);
+    public int enqueueWrite(long executionPlanId) {
+        return enqueueWrite(executionPlanId, null);
     }
 
     @Override
-    public int enqueueWrite(int[] events) {
-        return super.enqueueWrite(events);
+    public int enqueueWrite(long executionPlanId, int[] events) {
+        return super.enqueueWrite(executionPlanId, events);
     }
 
     @Override

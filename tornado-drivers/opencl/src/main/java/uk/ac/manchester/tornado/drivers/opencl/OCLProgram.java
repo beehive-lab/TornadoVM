@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,12 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_UNKNOWN;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_LOG;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_STATUS;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_BINARY_SIZES;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_DEVICES;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_NUM_DEVICES;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,11 +37,12 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLProgram extends TornadoLogger {
+public class OCLProgram {
 
     private final long id;
     private final OCLDeviceContext deviceContext;
@@ -74,13 +72,14 @@ public class OCLProgram extends TornadoLogger {
     static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException;
 
     public OCLBuildStatus getStatus(long deviceId) {
-        OCLBuildStatus result = CL_BUILD_UNKNOWN;
+        OCLBuildStatus result;
         buffer.clear();
         try {
             clGetProgramBuildInfo(id, deviceId, CL_PROGRAM_BUILD_STATUS.getValue(), buffer.array());
             result = OCLBuildStatus.toEnum(buffer.getInt());
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
     }
@@ -93,33 +92,29 @@ public class OCLProgram extends TornadoLogger {
 
             result = new String(buffer.array(), "ASCII");
         } catch (OCLException | UnsupportedEncodingException e) {
-            error(e.getMessage());
-            e.printStackTrace();
+            TornadoLogger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         result = result.substring(0, result.indexOf('\0'));
         return result;
     }
 
     public void build(String options) {
-
         buffer.clear();
-
         try {
             clBuildProgram(id, devices, options);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
     }
 
     public void cleanup() {
         try {
-            for (OCLKernel kernel : kernels) {
-                kernel.cleanup();
-            }
-
+            kernels.forEach(OCLKernel::cleanup);
             clReleaseProgram(id);
         } catch (OCLException e) {
-            e.printStackTrace();
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
     }
 
@@ -130,8 +125,8 @@ public class OCLProgram extends TornadoLogger {
             clGetProgramInfo(id, CL_PROGRAM_NUM_DEVICES.getValue(), buffer.array());
             result = buffer.getInt();
         } catch (OCLException e) {
-            error(e.getMessage());
-            e.printStackTrace();
+            TornadoLogger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
     }
@@ -146,8 +141,8 @@ public class OCLProgram extends TornadoLogger {
                 result[i] = buffer.getLong();
             }
         } catch (OCLException e) {
-            error(e.getMessage());
-            e.printStackTrace();
+            TornadoLogger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
     }
@@ -162,8 +157,8 @@ public class OCLProgram extends TornadoLogger {
                 result[i] = buffer.getLong();
             }
         } catch (OCLException e) {
-            error(e.getMessage());
-            e.printStackTrace();
+            TornadoLogger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
     }
@@ -192,17 +187,18 @@ public class OCLProgram extends TornadoLogger {
         try {
             getBinaries(id, numDevices, binary);
 
-            info("dumping binary %s", filenamePrefix);
+            TornadoLogger.info("dumping binary %s", filenamePrefix);
             try (FileOutputStream fis = new FileOutputStream(filenamePrefix); FileChannel vChannel = fis.getChannel();) {
                 binary.position(offset);
                 binary.limit(offset + (int) sizes[index]);
                 vChannel.write(binary);
             } catch (IOException e) {
-                error("unable to dump binary: %s", e.getMessage());
+                TornadoLogger.error("unable to dump binary: %s", e.getMessage());
             }
 
         } catch (OCLException e) {
-            error("unable to retrieve binary from OpenCL driver: %s", e.getMessage());
+            TornadoLogger.error("unable to retrieve binary from OpenCL driver: %s", e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
 
     }
@@ -224,7 +220,7 @@ public class OCLProgram extends TornadoLogger {
         try {
             kernel = new OCLKernel(clCreateKernel(id, entryPoint), deviceContext);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
 
         return kernel;
@@ -232,7 +228,7 @@ public class OCLProgram extends TornadoLogger {
 
     public void dump() {
         final int numDevices = getNumDevices();
-        debug("Num devices: %d", numDevices);
+        TornadoLogger.debug("Num devices: %d", numDevices);
     }
 
 }

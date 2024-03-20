@@ -32,7 +32,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
@@ -44,13 +44,13 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationRes
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -119,24 +119,26 @@ public class TestSPIRVJITCompiler {
 
     public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
-        GlobalObjectState stateA = new GlobalObjectState();
-        DeviceObjectState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
+        DataObjectState stateA = new DataObjectState();
+        XPUDeviceBufferState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
 
-        GlobalObjectState stateB = new GlobalObjectState();
-        DeviceObjectState objectStateB = stateB.getDeviceState(spirvTornadoDevice);
+        DataObjectState stateB = new DataObjectState();
+        XPUDeviceBufferState objectStateB = stateB.getDeviceState(spirvTornadoDevice);
 
-        GlobalObjectState stateC = new GlobalObjectState();
-        DeviceObjectState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
+        DataObjectState stateC = new DataObjectState();
+        XPUDeviceBufferState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
 
-        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
+
+        final long executionPlanId = 0;
 
         // Copy-IN A
-        spirvTornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
+        spirvTornadoDevice.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
         // Copy-IN B
-        spirvTornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
+        spirvTornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
-        KernelArgs callWrapper = spirvTornadoDevice.createCallWrapper(3);
+        KernelStackFrame callWrapper = spirvTornadoDevice.createKernelStackFrame(3);
         callWrapper.setKernelContext(new HashMap<>());
 
         // Add kernel arguments to the SPIR-V Call Stack
@@ -145,10 +147,10 @@ public class TestSPIRVJITCompiler {
         callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Launch the generated kernel
-        installedCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+        installedCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Transfer the result from the device to the host (this is a blocking call)
-        spirvTornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
+        spirvTornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);
     }
 
     public void test() {

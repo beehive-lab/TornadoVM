@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,26 +27,36 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.api.memory.ObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
-public class GlobalObjectState implements TornadoGlobalObjectState {
+public class DataObjectState implements ObjectState {
 
-    private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
+    private ConcurrentHashMap<TornadoXPUDevice, XPUDeviceBufferState> deviceStates;
 
-    public GlobalObjectState() {
+    public DataObjectState() {
         deviceStates = new ConcurrentHashMap<>();
     }
 
-    public DeviceObjectState getDeviceState(TornadoDevice device) {
-        if (!(device instanceof TornadoAcceleratorDevice)) {
-            throw new TornadoRuntimeException("Device not compatible");
+    public XPUDeviceBufferState getDeviceState(TornadoDevice device) {
+        if (!(device instanceof TornadoXPUDevice)) {
+            throw new TornadoRuntimeException("[ERROR] Device not compatible");
         }
-        deviceStates.computeIfAbsent((TornadoAcceleratorDevice) device, k -> new DeviceObjectState());
+        if (!deviceStates.containsKey(device)) {
+            deviceStates.put((TornadoXPUDevice) device, new XPUDeviceBufferState());
+        }
         return deviceStates.get(device);
     }
 
+    @Override
+    public DataObjectState clone() {
+        DataObjectState dataObjectState = new DataObjectState();
+        dataObjectState.deviceStates = new ConcurrentHashMap<>(deviceStates);
+        return dataObjectState;
+    }
+
+    @Override
     public void clear() {
         deviceStates.clear();
     }
@@ -55,7 +65,7 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
+        for (TornadoXPUDevice device : deviceStates.keySet()) {
             sb.append(device.toString()).append(" ");
         }
         sb.append("]");
