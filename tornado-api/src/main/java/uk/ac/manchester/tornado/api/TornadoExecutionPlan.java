@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -84,7 +85,7 @@ public class TornadoExecutionPlan {
      *     uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound} if a device index is not found.
      *
      * @throws {@link
-     *     uk.ac.manchester.tornado.api.exceptions.TornadoDriverNotFound} if a driver index is not found.
+     *     TornadoBackendNotFound} if a driver index is not found.
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
         return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
