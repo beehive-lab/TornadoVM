@@ -25,8 +25,8 @@ import java.util.List;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoDeviceMap;
-import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -85,7 +85,7 @@ public class TestDevices extends TornadoTestBase {
         assertTrue(numBackends >= 1);
 
         // Query all backends
-        List<TornadoDriver> backends = tornadoDeviceMap.getAllBackends();
+        List<TornadoBackend> backends = tornadoDeviceMap.getAllBackends();
 
         assertFalse(backends.isEmpty());
 
@@ -115,21 +115,21 @@ public class TestDevices extends TornadoTestBase {
 
         assertTrue(numBackends >= 1);
 
-        List<TornadoDriver> openCLBackend = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getBackendType() == TornadoVMBackendType.OPENCL);
+        List<TornadoBackend> openCLBackend = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getBackendType() == TornadoVMBackendType.OPENCL);
 
         assertNotNull(openCLBackend);
 
         // Obtain all drivers with at least two devices associated to it
-        List<TornadoDriver> multiDeviceBackends = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDeviceCount() > 1);
+        List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDeviceCount() > 1);
 
         // Obtain the backend that can support SPIR-V as default device
-        List<TornadoDriver> spirvSupported = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
+        List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
 
         // Return all backends that can access an NVIDIA GPU
-        List<TornadoDriver> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendWithDevicePredicate(device -> device.getDeviceName().toLowerCase().contains("nvidia"));
+        List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendWithDevicePredicate(device -> device.getDeviceName().toLowerCase().contains("nvidia"));
 
         // Another way to perform the previous query
-        List<TornadoDriver> backendsWithNVIDIAAccess2 = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getAllDevices().stream().allMatch(device -> device.getDeviceName().toLowerCase()
+        List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getAllDevices().stream().allMatch(device -> device.getDeviceName().toLowerCase()
                 .contains("nvidia")));
 
     }

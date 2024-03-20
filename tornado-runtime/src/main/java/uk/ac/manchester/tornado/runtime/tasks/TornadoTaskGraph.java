@@ -58,7 +58,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -103,12 +103,12 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -1615,7 +1615,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private void runScheduleWithParallelProfiler(Policy policy) {
 
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
-        TornadoDriver tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+        TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
         long masterThreadID = Thread.currentThread().getId();
 
@@ -1734,7 +1734,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @SuppressWarnings("unused")
     private void cloneInputOutputObjects() {
         final long startSearchProfiler = (TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
-        TornadoDriver tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+        TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
         // Clone objects (only outputs) for each device
         for (int deviceNumber = 0; deviceNumber < numDevices; deviceNumber++) {

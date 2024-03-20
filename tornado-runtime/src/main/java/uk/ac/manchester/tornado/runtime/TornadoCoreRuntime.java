@@ -50,7 +50,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDriverNotFound;
@@ -169,7 +169,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
     }
 
     @Override
-    public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {
+    public <D extends TornadoBackend> int getDriverIndex(Class<D> driverClass) {
         for (int driverIndex = 0; driverIndex < tornadoVMDrivers.length; driverIndex++) {
             if (tornadoVMDrivers[driverIndex] != null && tornadoVMDrivers[driverIndex].getClass() == driverClass) {
                 return driverIndex;
@@ -208,7 +208,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <D extends TornadoDriver> D getDriver(Class<D> type) {
+    public <D extends TornadoBackend> D getDriver(Class<D> type) {
         for (TornadoAcceleratorDriver driver : tornadoVMDrivers) {
             if (driver.getClass() == type) {
                 return (D) driver;

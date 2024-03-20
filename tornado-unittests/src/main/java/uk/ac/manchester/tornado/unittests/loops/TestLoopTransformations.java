@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,21 +18,22 @@
 
 package uk.ac.manchester.tornado.unittests.loops;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoBackend;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
@@ -132,7 +133,7 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount(); i++) {
             if (TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i).getPlatformName().toLowerCase().contains("nvidia")) {
-                TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+                TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
                 driver.setDefaultDevice(i);
                 TornadoRuntime.setProperty("tornado.unroll.factor", "32");
                 System.setProperty("tornado.unroll.factor", "32");

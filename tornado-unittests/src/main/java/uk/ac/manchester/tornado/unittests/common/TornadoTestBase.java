@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.unittests.common;
 
 import org.junit.Before;
 
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -40,7 +40,7 @@ public abstract class TornadoTestBase {
     @Before
     public void before() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
             for (int j = 0; j < driver.getDeviceCount(); j++) {
                 driver.getDevice(j).reset();
             }
@@ -61,7 +61,7 @@ public abstract class TornadoTestBase {
             int deviceIndex = pairDriverDevice.f1();
             if (deviceIndex != 0) {
                 // We swap the default device for the selected one
-                TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+                TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
                 driver.setDefaultDevice(deviceIndex);
             }
             wasDeviceInspected = true;
@@ -123,7 +123,7 @@ public abstract class TornadoTestBase {
 
         // Check if a specific device has been selected for testing
         if (driverAndDeviceIndex.f0() != 0) {
-            TornadoDriver driver = getTornadoRuntime().getDriver(0);
+            TornadoBackend driver = getTornadoRuntime().getDriver(0);
             TornadoDevice device = driver.getDevice(0);
             assertIfNeeded(device, 0);
             return device;
@@ -133,7 +133,7 @@ public abstract class TornadoTestBase {
         // OpenCL device if SPIRV is supported.
         int numDrivers = getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            TornadoBackend driver = getTornadoRuntime().getDriver(driverIndex);
             if (driver.getBackendType() != TornadoVMBackendType.PTX) {
                 int maxDevices = driver.getDeviceCount();
                 for (int i = 0; i < maxDevices; i++) {
