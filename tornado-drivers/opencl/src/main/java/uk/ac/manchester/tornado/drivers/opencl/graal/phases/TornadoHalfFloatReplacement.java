@@ -72,7 +72,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        boolean isHalfFloatVectors = false;
 
         for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
             ArrayList<PiNode> deletePi = new ArrayList<PiNode>();
@@ -94,7 +93,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             if (javaRead.successors().first() instanceof NewInstanceNode) {
                 NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
                 if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
-                    isHalfFloatVectors = true;
                     if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                         NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
                         deleteFixed(newHalfFloatInstance);
@@ -111,7 +109,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
             if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
-                isHalfFloatVectors = true;
                 if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                     NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
                     ValueNode valueInput = newHalfFloatInstance.getValue();
@@ -125,7 +122,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         // replace writes with halfFloat writes
         for (JavaWriteNode javaWrite : graph.getNodes().filter(JavaWriteNode.class)) {
             if (isWriteHalfFloat(javaWrite)) {
-                isHalfFloatVectors = true;
                 // This casting is safe to do as it is already checked by the isWriteHalfFloat function
                 HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
                 ValueNode writingValue;
@@ -161,8 +157,9 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         replaceDivHalfFloatNodes(graph);
 
         // add after the loadindexedvector nodes the marker node to fix the offset of its read
-        if (isHalfFloatVectors) {
-            for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
+
+        for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
+            if (loadIndexedVectorNode.getOCLKind().isHalf()) {
                 VectorHalfRead vectorHalfRead;
                 if (loadIndexedVectorNode.index() instanceof ConstantNode) {
                     ConstantNode offset = (ConstantNode) loadIndexedVectorNode.index();
@@ -184,6 +181,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                         graph.addWithoutUnique(vectorLoadShort);
                         vectorLoad.replaceAtUsages(vectorLoadShort);
                         vectorLoad.safeDelete();
+                    } else if (vectorElement instanceof ConstantNode constantNode && constantNode.getValue().toValueString().contains("null")) {
+                        Constant zeroValue = new RawConstant(0);
+                        ConstantNode zero = new ConstantNode(zeroValue, StampFactory.forKind(JavaKind.Short));
+                        graph.addWithoutUnique(zero);
+                        constantNode.replaceAtUsages(zero);
+                        constantNode.safeDelete();
                     }
                 }
             }
