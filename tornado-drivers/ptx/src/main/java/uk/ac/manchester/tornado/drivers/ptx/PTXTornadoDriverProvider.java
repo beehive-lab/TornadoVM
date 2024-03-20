@@ -24,9 +24,10 @@
 
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
@@ -44,8 +45,8 @@ public class PTXTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config) {
-        return new PTXDriver(options, hostRuntime, config);
+    public TornadoAcceleratorBackend createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config) {
+        return new PTXBackendImpl(options, hostRuntime, config);
     }
 
     @Override

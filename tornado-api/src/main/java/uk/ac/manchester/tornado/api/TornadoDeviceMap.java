@@ -33,7 +33,7 @@ public class TornadoDeviceMap {
 
     private final int numBackends;
 
-    private final List<TornadoDriver> backends;
+    private final List<TornadoBackend> backends;
 
     public TornadoDeviceMap() {
         numBackends = coreRuntime.getNumDrivers();
@@ -56,9 +56,9 @@ public class TornadoDeviceMap {
     /**
      * Returns a list with all backends that are accessible from the TornadoVM Runtime.
      * 
-     * @return {@link List<TornadoDriver>}
+     * @return {@link List< TornadoBackend >}
      */
-    public List<TornadoDriver> getAllBackends() {
+    public List<TornadoBackend> getAllBackends() {
         return backends;
     }
 
@@ -66,10 +66,10 @@ public class TornadoDeviceMap {
      * Return a list of backends that corresponds to a filter given by a predicate.
      * 
      * @param predicate
-     *     {@link Predicate<? super TornadoDriver> predicate}
-     * @return {@link List<TornadoDriver>}
+     *     {@link Predicate<? super TornadoBackend > predicate}
+     * @return {@link List< TornadoBackend >}
      */
-    public List<TornadoDriver> getBackendWithPredicate(Predicate<? super TornadoDriver> predicate) {
+    public List<TornadoBackend> getBackendWithPredicate(Predicate<? super TornadoBackend> predicate) {
         return getAllBackends().stream().filter(predicate).toList();
     }
 
@@ -78,9 +78,9 @@ public class TornadoDeviceMap {
      * 
      * @param predicate
      *     {@link Predicate<? super TornadoDevice> predicate}
-     * @return {@link List<TornadoDriver>}
+     * @return {@link List< TornadoBackend >}
      */
-    public List<TornadoDriver> getBackendWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
+    public List<TornadoBackend> getBackendWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
         return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().allMatch(predicate)).toList();
     }
 }

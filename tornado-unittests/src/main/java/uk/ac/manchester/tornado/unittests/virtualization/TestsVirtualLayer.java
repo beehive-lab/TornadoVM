@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,26 +18,27 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
-
-import java.util.stream.IntStream;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+
+import java.util.stream.IntStream;
+
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoBackend;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 
 /**
  * <p>
@@ -80,7 +81,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Before
     public void enoughDevices() {
         super.before();
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("Not enough devices to run tests");
         }
@@ -91,7 +92,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      */
     @Test
     public void testDevices() {
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getDriver(0);
         assertNotNull(driver.getDevice(0));
         assertNotNull(driver.getDevice(1));
     }
@@ -100,7 +101,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void testDriverAndDevices() {
         int numDrivers = getTornadoRuntime().getNumDrivers();
         for (int i = 0; i < numDrivers; i++) {
-            TornadoDriver driver = getTornadoRuntime().getDriver(i);
+            TornadoBackend driver = getTornadoRuntime().getDriver(i);
             assertNotNull(driver);
             int numDevices = driver.getDeviceCount();
             for (int j = 0; j < numDevices; j++) {
@@ -128,7 +129,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         }
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getDriver(0);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -156,7 +157,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Test
     public void testTaskMigration() {
 
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getDriver(0);
 
         final int numElements = 512;
         final float alpha = 2f;
@@ -191,7 +192,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Ignore
     public void testVirtualLayer01() {
 
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getDriver(0);
         /*
          * The following expression is not correct for Tornado to execute on different
          * devices.
@@ -232,7 +233,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Ignore
     public void testVirtualLayer02() {
 
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getDriver(0);
 
         final int N = 128;
         IntArray data = new IntArray(N);
@@ -316,7 +317,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
             String taskScheduleName = "s" + driverIndex;
 
             TaskGraph taskGraph = new TaskGraph(taskScheduleName);
-            TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            TornadoBackend driver = getTornadoRuntime().getDriver(driverIndex);
 
             final int numDevices = driver.getDeviceCount();
             totalNumDevices += numDevices;
@@ -349,7 +350,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      */
     @Test
     public void testSchedulerDevices() {
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
+        TornadoBackend tornadoDriver = getTornadoRuntime().getDriver(0);
 
         final int N = 128;
         IntArray dataA = new IntArray(N);

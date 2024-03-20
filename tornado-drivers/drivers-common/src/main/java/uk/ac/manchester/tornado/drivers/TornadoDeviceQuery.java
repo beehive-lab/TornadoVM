@@ -28,7 +28,7 @@ import java.util.HashMap;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.drivers.common.utils.ColoursTerminal;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -75,7 +75,7 @@ public class TornadoDeviceQuery {
         deviceInfoBuffer.append("Number of Tornado drivers: " + numDrivers + "\n");
 
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            final TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
             TornadoVMBackendType backendType = TornadoCoreRuntime.getTornadoRuntime().getBackendType(driverIndex);
             String colour = colourMapping.get(backendType);
             final int numDevices = driver.getDeviceCount();

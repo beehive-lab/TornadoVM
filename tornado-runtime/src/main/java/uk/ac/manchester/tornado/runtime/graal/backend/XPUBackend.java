@@ -39,9 +39,9 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public abstract class TornadoBackend<P extends Providers> extends Backend {
+public abstract class XPUBackend<P extends Providers> extends Backend {
 
-    protected TornadoBackend(Providers providers) {
+    protected XPUBackend(Providers providers) {
         super(providers);
     }
 

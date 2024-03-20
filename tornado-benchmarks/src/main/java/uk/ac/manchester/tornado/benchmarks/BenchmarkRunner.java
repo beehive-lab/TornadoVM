@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -102,7 +102,7 @@ public abstract class BenchmarkRunner {
         final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
 
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
@@ -159,7 +159,7 @@ public abstract class BenchmarkRunner {
             final int deviceIndex = Integer.parseInt(stringIndex[1]);
 
             final BenchmarkDriver deviceTest = getTornadoDriver();
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
             deviceTest.benchmark(tornadoDevice, TORNADO_PROFILER);
 

@@ -21,7 +21,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -63,7 +63,7 @@ public class MatrixAddition2D {
 
     private static void reset() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
             driver.getDefaultDevice().reset();
         }
     }

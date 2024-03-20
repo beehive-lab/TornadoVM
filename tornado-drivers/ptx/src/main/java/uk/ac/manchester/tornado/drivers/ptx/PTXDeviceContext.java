@@ -144,7 +144,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(PTXBackendImpl.class);
     }
 
     @Override

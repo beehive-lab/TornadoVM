@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
@@ -87,10 +87,10 @@ public class TestOpenCLJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
+        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLBackendImpl.class).getDefaultBackend();
 
         // Get the default OpenCL device
-        TornadoDevice device = tornadoRuntime.getDriver(OCLDriver.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getDriver(OCLBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");

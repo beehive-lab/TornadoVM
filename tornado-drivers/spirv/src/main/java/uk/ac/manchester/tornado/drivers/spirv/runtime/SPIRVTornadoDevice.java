@@ -40,18 +40,18 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
-import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
@@ -68,7 +68,14 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -81,7 +88,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
-    private static SPIRVDriver driver = null;
+    private static SPIRVBackendImpl driver = null;
     private final SPIRVDevice device;
     private final int deviceIndex;
     private final int platformIndex;
@@ -98,9 +105,9 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         device = lowLevelDevice;
     }
 
-    public static SPIRVDriver findDriver() {
+    public static SPIRVBackendImpl findDriver() {
         if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class);
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVBackendImpl.class);
             TornadoInternalError.guarantee(driver != null, "unable to find the SPIR-V driver");
         }
         return driver;
@@ -547,7 +554,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int getDriverIndex() {
-        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(SPIRVDriver.class);
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(SPIRVBackendImpl.class);
     }
 
     @Override
