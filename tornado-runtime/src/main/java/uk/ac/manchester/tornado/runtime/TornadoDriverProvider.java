@@ -23,8 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 
 /**
@@ -42,7 +43,7 @@ public interface TornadoDriverProvider extends Comparable<TornadoDriverProvider>
 
     String getName();
 
-    TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
+    TornadoAcceleratorBackend createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
 
     TornadoDrivers getDevicePriority();
 }

@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public interface TornadoAcceleratorDriver extends TornadoBackend {
+public interface TornadoAcceleratorBackend extends TornadoBackend {
 
     XPUBackend getDefaultBackend();
 

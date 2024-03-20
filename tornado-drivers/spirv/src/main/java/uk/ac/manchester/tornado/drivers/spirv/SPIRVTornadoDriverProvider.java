@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
@@ -43,8 +43,8 @@ public class SPIRVTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config) {
-        return new SPIRVDriver(options, hostRuntime, config);
+    public TornadoAcceleratorBackend createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config) {
+        return new SPIRVBackendImpl(options, hostRuntime, config);
     }
 
     @Override

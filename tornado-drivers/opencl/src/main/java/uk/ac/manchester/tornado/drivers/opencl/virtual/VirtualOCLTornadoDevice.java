@@ -40,13 +40,13 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
@@ -54,7 +54,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -63,7 +70,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
-    private static OCLDriver driver = null;
+    private static OCLBackendImpl driver = null;
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
@@ -77,9 +84,9 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
         device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
     }
 
-    private static OCLDriver findDriver() {
+    private static OCLBackendImpl findDriver() {
         if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLBackendImpl.class);
             TornadoInternalError.guarantee(driver != null, "unable to find OpenCL driver");
         }
         return driver;
@@ -419,7 +426,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int getDriverIndex() {
-        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLBackendImpl.class);
     }
 
     @Override

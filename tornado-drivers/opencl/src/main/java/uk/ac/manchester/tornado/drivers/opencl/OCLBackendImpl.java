@@ -48,12 +48,12 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
-public final class OCLDriver implements TornadoAcceleratorDriver {
+public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     private static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
             OCLDeviceType.CL_DEVICE_TYPE_GPU, //
             OCLDeviceType.CL_DEVICE_TYPE_CPU, //
@@ -65,7 +65,7 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
 
     private List<TornadoDevice> devices;
 
-    public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    public OCLBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
 
         if (numPlatforms < 1) {
@@ -109,7 +109,7 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
         }
 
         // Add backends to backendList in the order specified by deviceTypeOrdering
-        for (OCLDeviceType deviceType : OCLDriver.DEVICE_TYPE_LIST) {
+        for (OCLDeviceType deviceType : OCLBackendImpl.DEVICE_TYPE_LIST) {
             List<OCLBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
             if (backendListForDeviceType != null) {
                 backendList.addAll(backendListForDeviceType);
@@ -130,7 +130,7 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
 
         // Iterate through 'OCLDriver.DEVICE_TYPE_LIST' and add backends in the
         // specified order
-        for (OCLDeviceType deviceType : OCLDriver.DEVICE_TYPE_LIST) {
+        for (OCLDeviceType deviceType : OCLBackendImpl.DEVICE_TYPE_LIST) {
             List<OCLBackend> backendsOfType = groupedByDeviceType.get(deviceType);
             if (backendsOfType != null) {
                 sortedBackends.addAll(backendsOfType);

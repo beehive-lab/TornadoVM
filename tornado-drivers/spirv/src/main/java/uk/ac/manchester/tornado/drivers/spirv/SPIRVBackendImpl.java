@@ -37,14 +37,14 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public final class SPIRVDriver implements TornadoAcceleratorDriver {
+public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     /**
      * Matrix of backend instances. Each row has a driver implementation (e.g.,
@@ -64,7 +64,7 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
     private int deviceCount;
     private List<TornadoDevice> devices;
 
-    public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
+    public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
         TornadoLogger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
 

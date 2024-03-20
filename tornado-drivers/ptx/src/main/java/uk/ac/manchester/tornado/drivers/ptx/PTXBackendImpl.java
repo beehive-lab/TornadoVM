@@ -39,18 +39,18 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public final class PTXDriver implements TornadoAcceleratorDriver {
+public final class PTXBackendImpl implements TornadoAcceleratorBackend {
 
     private final PTXBackend[] backends;
     private List<TornadoDevice> devices;
 
-    public PTXDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    public PTXBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
 
         int deviceCount = PTX.getPlatform().getDeviceCount();
         backends = new PTXBackend[deviceCount];

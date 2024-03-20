@@ -83,7 +83,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfigAccess vmConfig;
-    private final TornadoAcceleratorDriver[] tornadoVMDrivers;
+    private final TornadoAcceleratorBackend[] tornadoVMDrivers;
     private int driverCount;
 
     private TornadoCoreRuntime() {
@@ -146,10 +146,10 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         options = new OptionValues(opts);
     }
 
-    private TornadoAcceleratorDriver[] loadDrivers() {
+    private TornadoAcceleratorBackend[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
         List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
-        TornadoAcceleratorDriver[] tornadoAcceleratorDrivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
+        TornadoAcceleratorBackend[] tornadoAcceleratorDrivers = new TornadoAcceleratorBackend[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
             if (Tornado.FULL_DEBUG) {
@@ -157,7 +157,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
             }
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
-                TornadoAcceleratorDriver driver = provider.createDriver(options, vmRuntime, vmConfig);
+                TornadoAcceleratorBackend driver = provider.createDriver(options, vmRuntime, vmConfig);
                 if (driver != null) {
                     tornadoAcceleratorDrivers[index] = driver;
                     index++;
@@ -192,7 +192,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
     }
 
     @Override
-    public TornadoAcceleratorDriver getDriver(int index) {
+    public TornadoAcceleratorBackend getDriver(int index) {
         if (index > tornadoVMDrivers.length) {
             throw new TornadoDriverNotFound("Tornado Driver Not Found");
         }
@@ -201,7 +201,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
 
     @Override
     public void setDefaultDriver(int index) {
-        TornadoAcceleratorDriver tmp = tornadoVMDrivers[0];
+        TornadoAcceleratorBackend tmp = tornadoVMDrivers[0];
         tornadoVMDrivers[0] = tornadoVMDrivers[index];
         tornadoVMDrivers[index] = tmp;
     }
@@ -209,7 +209,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
     @SuppressWarnings("unchecked")
     @Override
     public <D extends TornadoBackend> D getDriver(Class<D> type) {
-        for (TornadoAcceleratorDriver driver : tornadoVMDrivers) {
+        for (TornadoAcceleratorBackend driver : tornadoVMDrivers) {
             if (driver.getClass() == type) {
                 return (D) driver;
             }
