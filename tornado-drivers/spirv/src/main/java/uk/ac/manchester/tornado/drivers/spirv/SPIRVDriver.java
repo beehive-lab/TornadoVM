@@ -23,6 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
@@ -58,6 +62,7 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
      * devices).
      */
     private int deviceCount;
+    private List<TornadoDevice> devices;
 
     public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
@@ -76,6 +81,7 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
                 flatBackends[index] = backends[i][j];
             }
         }
+
     }
 
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
@@ -157,6 +163,22 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
         } else {
             throw new TornadoDeviceNotFound(STR."[ERROR]-[SPIRV-DRIVER] Device required not found: \{index} - Max: \{backends.length}");
         }
+    }
+
+    @Override
+    public List<TornadoDevice> getAllDevices() {
+        if (devices == null) {
+            devices = new ArrayList<>();
+            for (int i = 0; i < getDeviceCount(); i++) {
+                devices.add(flatBackends[i].getDeviceContext().asMapping());
+            }
+        }
+        return devices;
+    }
+
+    @Override
+    public List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate) {
+        return getAllDevices().stream().filter(predicate).toList();
     }
 
     @Override

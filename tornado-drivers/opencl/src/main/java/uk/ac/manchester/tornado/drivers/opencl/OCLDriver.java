@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 public final class OCLDriver implements TornadoAcceleratorDriver {
-    protected static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
+    private static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
             OCLDeviceType.CL_DEVICE_TYPE_GPU, //
             OCLDeviceType.CL_DEVICE_TYPE_CPU, //
             OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
@@ -62,6 +62,8 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
     private final OCLBackend[][] backends;
     private final List<OCLExecutionEnvironment> contexts;
     private OCLBackend[] flatBackends;
+
+    private List<TornadoDevice> devices;
 
     public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
@@ -162,9 +164,11 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
 
     @Override
     public List<TornadoDevice> getAllDevices() {
-        List<TornadoDevice> devices = new ArrayList<>();
-        for (int deviceIndex = 0; deviceIndex < getDeviceCount(); deviceIndex++) {
-            devices.add(getDevice(deviceIndex));
+        if (devices == null) {
+            devices = new ArrayList<>();
+            for (int deviceIndex = 0; deviceIndex < getDeviceCount(); deviceIndex++) {
+                devices.add(getDevice(deviceIndex));
+            }
         }
         return devices;
     }
