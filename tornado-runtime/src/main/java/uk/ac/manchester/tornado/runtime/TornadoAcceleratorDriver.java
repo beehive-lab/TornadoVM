@@ -26,12 +26,12 @@ package uk.ac.manchester.tornado.runtime;
 import org.graalvm.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public interface TornadoAcceleratorDriver extends TornadoDriver {
 
-    TornadoBackend getDefaultBackend();
+    XPUBackend getDefaultBackend();
 
     Providers getProviders();
 

@@ -101,10 +101,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
+public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final OptionValues options;
 

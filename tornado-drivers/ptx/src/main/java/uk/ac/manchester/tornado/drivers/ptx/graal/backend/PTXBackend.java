@@ -87,11 +87,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
+public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final PTXDeviceContext deviceContext;
     final PTXTargetDescription target;
