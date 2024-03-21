@@ -63,7 +63,7 @@ public class TornadoDeviceMap {
     }
 
     /**
-     * Return a list of backends that corresponds to a filter given by a predicate.
+     * Returns a list of backends that correspond to a filter given by a predicate.
      * 
      * @param predicate
      *     {@link Predicate<? super TornadoBackend > predicate}
