@@ -57,7 +57,7 @@ public class PrebuiltTest extends TornadoTestBase {
     @BeforeAll
     public static void init() {
         backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
         String tornadoSDK = System.getenv(TORNADO_SDK);
         FILE_PATH = tornadoSDK + "/examples/generated/";
     }

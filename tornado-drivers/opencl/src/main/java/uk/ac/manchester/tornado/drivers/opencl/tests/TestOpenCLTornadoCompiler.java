@@ -24,17 +24,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.tests;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLPlatform;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -62,7 +61,7 @@ public class TestOpenCLTornadoCompiler {
         OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-        OCLBackend backend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
+        OCLBackend backend = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultBackend();
         ScheduleMetaData scheduleMeta = new ScheduleMetaData("oclbackend");
         TaskMetaData meta = new TaskMetaData(scheduleMeta, "saxpy");
         new OCLCompilationResult("internal", "saxpy", meta, backend);

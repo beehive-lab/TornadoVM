@@ -57,7 +57,7 @@ public class TestProfiler extends TornadoTestBase {
     }
 
     private boolean isBackendPTXOrSPIRV(int driverIndex) {
-        TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
+        TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex).getBackendType();
         return switch (type) {
             case PTX, SPIRV -> true;
             default -> false;
