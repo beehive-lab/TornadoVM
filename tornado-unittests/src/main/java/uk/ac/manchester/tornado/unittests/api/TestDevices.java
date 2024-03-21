@@ -115,21 +115,21 @@ public class TestDevices extends TornadoTestBase {
 
         assertTrue(numBackends >= 1);
 
-        List<TornadoBackend> openCLBackend = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getBackendType() == TornadoVMBackendType.OPENCL);
+        List<TornadoBackend> openCLBackend = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getBackendType() == TornadoVMBackendType.OPENCL);
 
         assertNotNull(openCLBackend);
 
         // Obtain all backends with at least two devices associated to it
-        List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDeviceCount() > 1);
+        List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDeviceCount() > 1);
 
         // Obtain the backend that can support SPIR-V as default device
-        List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
+        List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
 
         // Return all backends that can access an NVIDIA GPU
-        List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendWithDevicePredicate(device -> device.getDeviceName().toLowerCase().contains("nvidia"));
+        List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device.getDeviceName().toLowerCase().contains("nvidia"));
 
         // Another way to perform the previous query
-        List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap.getBackendWithPredicate(backend -> backend.getAllDevices().stream().allMatch(device -> device.getDeviceName().toLowerCase()
+        List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getAllDevices().stream().allMatch(device -> device.getDeviceName().toLowerCase()
                 .contains("nvidia")));
 
     }

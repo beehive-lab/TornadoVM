@@ -69,18 +69,24 @@ public class TornadoDeviceMap {
      *     {@link Predicate<? super TornadoBackend > predicate}
      * @return {@link List< TornadoBackend >}
      */
-    public List<TornadoBackend> getBackendWithPredicate(Predicate<? super TornadoBackend> predicate) {
+    public List<TornadoBackend> getBackendsWithPredicate(Predicate<? super TornadoBackend> predicate) {
         return getAllBackends().stream().filter(predicate).toList();
     }
 
     /**
-     * Return a list of backends that corresponds to a filter based on devices within each backend.
+     * Return a list of backends that corresponds to a filter applied to a predicate that queries and filters devices within each backend.
+     *
+     * <p>
+     * Examples of queries:
+     * - Return all backends which devices have more than 4GB.
+     * - Return all backends that can access to an NVIDIA or Intel device.
+     * </p>
      * 
      * @param predicate
      *     {@link Predicate<? super TornadoDevice> predicate}
      * @return {@link List< TornadoBackend >}
      */
-    public List<TornadoBackend> getBackendWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
+    public List<TornadoBackend> getBackendsWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
         return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().allMatch(predicate)).toList();
     }
 }
