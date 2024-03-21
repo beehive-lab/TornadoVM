@@ -126,11 +126,19 @@ public class TestDevices extends TornadoTestBase {
         List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
 
         // Return all backends that can access an NVIDIA GPU
-        List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device.getDeviceName().toLowerCase().contains("nvidia"));
+        List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device //
+                .getDeviceName() //
+                .toLowerCase()//
+                .contains("nvidia"));//
 
         // Another way to perform the previous query
-        List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getAllDevices().stream().allMatch(device -> device.getDeviceName().toLowerCase()
-                .contains("nvidia")));
-
+        List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap //
+                .getBackendsWithPredicate(backend -> backend //
+                        .getAllDevices()//
+                        .stream()//
+                        .allMatch(device -> device//
+                                .getDeviceName()//
+                                .toLowerCase()//
+                                .contains("nvidia")));
     }
 }
