@@ -89,10 +89,10 @@ public class TestSPIRVJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getDriver(SPIRVBackendImpl.class).getDefaultBackend();
+        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
 
         // Obtain the SPIR-V device
-        TornadoDevice device = tornadoRuntime.getDriver(SPIRVBackendImpl.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
@@ -167,7 +167,7 @@ public class TestSPIRVJITCompiler {
         // Obtain the SPIR-V binary from the Java method
         MetaCompilation compileMethod = compileMethod(TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
 
-        TornadoDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVBackendImpl.class).getDefaultDevice();
+        TornadoDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         run((SPIRVTornadoDevice) device, (SPIRVInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 

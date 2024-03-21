@@ -128,8 +128,8 @@ class ReduceTaskGraph {
      * @return Output array size
      */
     private static int obtainSizeArrayResult(int driverIndex, int device, int inputSize) {
-        TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(device).getDeviceType();
-        TornadoDevice deviceToRun = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(device);
+        TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getDevice(device).getDeviceType();
+        TornadoDevice deviceToRun = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getDevice(device);
         return switch (deviceType) {
             case CPU -> deviceToRun.getAvailableProcessors() + 1;
             case GPU, ACCELERATOR -> inputSize > calculateAcceleratorGroupSize(deviceToRun, inputSize) ? (inputSize / calculateAcceleratorGroupSize(deviceToRun, inputSize)) + 1 : 2;
@@ -293,7 +293,7 @@ class ReduceTaskGraph {
      */
     private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver) {
         if (elementsReductionLeftOver > 0) {
-            TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
+            TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getBackend(0).getDevice(targetDeviceToRun).getDeviceType();
             return (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA || deviceType == TornadoDeviceType.ACCELERATOR);
         }
         return false;
@@ -362,7 +362,7 @@ class ReduceTaskGraph {
     }
 
     private boolean isDeviceAnAccelerator(final int deviceToRun) {
-        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(deviceToRun).getDeviceType();
         return (deviceType == TornadoDeviceType.ACCELERATOR);
     }
 

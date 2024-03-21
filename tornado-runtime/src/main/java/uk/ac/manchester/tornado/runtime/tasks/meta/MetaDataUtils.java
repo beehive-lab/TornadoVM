@@ -38,7 +38,7 @@ public final class MetaDataUtils {
 
     public static TornadoXPUDevice resolveDevice(String device) {
         final String[] ids = device.split(":");
-        final TornadoAcceleratorBackend driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
+        final TornadoAcceleratorBackend driver = getTornadoRuntime().getBackend(Integer.parseInt(ids[0]));
         return (TornadoXPUDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
 

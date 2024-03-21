@@ -39,8 +39,8 @@ public abstract class TornadoTestBase {
 
     @Before
     public void before() {
-        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
+        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumBackends(); i++) {
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(i);
             for (int j = 0; j < driver.getDeviceCount(); j++) {
                 driver.getDevice(j).reset();
             }
@@ -56,12 +56,12 @@ public abstract class TornadoTestBase {
             int driverIndex = pairDriverDevice.f0();
             if (driverIndex != 0) {
                 // We swap the default driver for the selected one
-                TornadoRuntime.getTornadoRuntime().setDefaultDriver(driverIndex);
+                TornadoRuntime.getTornadoRuntime().setDefaultBackend(driverIndex);
             }
             int deviceIndex = pairDriverDevice.f1();
             if (deviceIndex != 0) {
                 // We swap the default device for the selected one
-                TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+                TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
                 driver.setDefaultDevice(deviceIndex);
             }
             wasDeviceInspected = true;
@@ -107,7 +107,7 @@ public abstract class TornadoTestBase {
     }
 
     private void assertIfNeeded(TornadoDevice device, int driverIndex) {
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex).getBackendType();
         if (backendType != TornadoVMBackendType.OPENCL || !device.isSPIRVSupported()) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
         }
@@ -123,7 +123,7 @@ public abstract class TornadoTestBase {
 
         // Check if a specific device has been selected for testing
         if (driverAndDeviceIndex.f0() != 0) {
-            TornadoBackend driver = getTornadoRuntime().getDriver(0);
+            TornadoBackend driver = getTornadoRuntime().getBackend(0);
             TornadoDevice device = driver.getDevice(0);
             assertIfNeeded(device, 0);
             return device;
@@ -131,9 +131,9 @@ public abstract class TornadoTestBase {
 
         // Search for a device with SPIRV support. This method will return even an
         // OpenCL device if SPIRV is supported.
-        int numDrivers = getTornadoRuntime().getNumDrivers();
+        int numDrivers = getTornadoRuntime().getNumBackends();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            TornadoBackend driver = getTornadoRuntime().getDriver(driverIndex);
+            TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
             if (driver.getBackendType() != TornadoVMBackendType.PTX) {
                 int maxDevices = driver.getDeviceCount();
                 for (int i = 0; i < maxDevices; i++) {

@@ -92,7 +92,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b.set(i, (float) Math.random());
         });
 
-        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
         final int deviceNumber = 0;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -122,7 +122,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b.set(i, (float) Math.random());
         });
 
-        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
 
         // select device 1 it is available
         int deviceNumber = 0;

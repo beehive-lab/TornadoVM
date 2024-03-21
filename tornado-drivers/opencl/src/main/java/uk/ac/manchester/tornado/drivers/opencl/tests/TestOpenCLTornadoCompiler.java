@@ -61,7 +61,7 @@ public class TestOpenCLTornadoCompiler {
         OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-        OCLBackend backend = tornadoRuntime.getDriver(OCLBackendImpl.class).getDefaultBackend();
+        OCLBackend backend = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultBackend();
         ScheduleMetaData scheduleMeta = new ScheduleMetaData("oclbackend");
         TaskMetaData meta = new TaskMetaData(scheduleMeta, "saxpy");
         new OCLCompilationResult("internal", "saxpy", meta, backend);

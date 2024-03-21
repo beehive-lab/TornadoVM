@@ -99,10 +99,10 @@ public abstract class BenchmarkRunner {
         // Specify in <backendIndex:deviceIndex>
         findBlacklisted(blacklistedDevices, "tornado.blacklist.devices");
 
-        final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
+        final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumBackends();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
 
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex);
             final int numDevices = driver.getDeviceCount();
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
@@ -159,7 +159,7 @@ public abstract class BenchmarkRunner {
             final int deviceIndex = Integer.parseInt(stringIndex[1]);
 
             final BenchmarkDriver deviceTest = getTornadoDriver();
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
             deviceTest.benchmark(tornadoDevice, TORNADO_PROFILER);
 

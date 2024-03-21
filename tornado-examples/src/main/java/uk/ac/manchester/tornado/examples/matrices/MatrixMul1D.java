@@ -79,7 +79,7 @@ public class MatrixMul1D {
                 .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDA);
 
-        TornadoBackend cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoBackend cudaDriver = TornadoRuntime.getTornadoRuntime().getBackend(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
 
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
@@ -115,7 +115,7 @@ public class MatrixMul1D {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCL);
 
         // Get the same device but running the OCL backend
-        TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
+        TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getBackend(1);
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);

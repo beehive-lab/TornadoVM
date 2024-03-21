@@ -36,11 +36,11 @@ public class TornadoDeviceMap {
     private final List<TornadoBackend> backends;
 
     public TornadoDeviceMap() {
-        numBackends = coreRuntime.getNumDrivers();
+        numBackends = coreRuntime.getNumBackends();
         // build the list of backends
         backends = new ArrayList<>();
         for (int i = 0; i < numBackends; i++) {
-            backends.add(coreRuntime.getDriver(i));
+            backends.add(coreRuntime.getBackend(i));
         }
     }
 

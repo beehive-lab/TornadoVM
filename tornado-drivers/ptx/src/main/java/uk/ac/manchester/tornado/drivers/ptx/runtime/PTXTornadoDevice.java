@@ -104,7 +104,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     public PTXTornadoDevice(final int deviceIndex) {
         this.deviceIndex = deviceIndex;
-        driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(PTXBackendImpl.class);
+        driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(PTXBackendImpl.class);
         if (driver == null) {
             throw new RuntimeException("TornadoVM PTX Driver not found");
         }
@@ -631,7 +631,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int getDriverIndex() {
-        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(PTXBackendImpl.class);
+        return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
     }
 
     @Override

@@ -165,7 +165,7 @@ public class MatrixMul2DLocalMemory {
         ImmutableTaskGraph immutableTaskGraph = scheduleCUDA.snapshot();
         TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
 
-        TornadoBackend cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoBackend cudaDriver = TornadoRuntime.getTornadoRuntime().getBackend(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
         workerCUDAOld.setGlobalWork(N, N, 1);
         workerCUDAOld.setLocalWork(local_x, local_y, 1);
@@ -208,7 +208,7 @@ public class MatrixMul2DLocalMemory {
         executorOCL.withGridScheduler(gridSchedulerOpenCLOld);
 
         // Get the same device but running the OCL backend
-        TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
+        TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getBackend(1);
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);

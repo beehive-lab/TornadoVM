@@ -71,11 +71,11 @@ public class TornadoDeviceQuery {
         }
 
         StringBuilder deviceInfoBuffer = new StringBuilder().append("\n");
-        final int numDrivers = TornadoCoreRuntime.getTornadoRuntime().getNumDrivers();
+        final int numDrivers = TornadoCoreRuntime.getTornadoRuntime().getNumBackends();
         deviceInfoBuffer.append("Number of Tornado drivers: " + numDrivers + "\n");
 
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            final TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
             TornadoVMBackendType backendType = TornadoCoreRuntime.getTornadoRuntime().getBackendType(driverIndex);
             String colour = colourMapping.get(backendType);
             final int numDevices = driver.getDeviceCount();
