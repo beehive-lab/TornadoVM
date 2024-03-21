@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
- * Data structure to query and filter the TornadoVM Drivers and TornadoVM Devices that the TornadoVM can access.
+ * Data structure to query and filter the TornadoVM Drivers and TornadoVM Devices that the TornadoVM Runtime can access.
  */
 public class TornadoDeviceMap {
 
