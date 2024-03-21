@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,13 +25,13 @@ package uk.ac.manchester.tornado.runtime;
 
 import org.graalvm.compiler.phases.util.Providers;
 
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.api.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public interface TornadoAcceleratorDriver extends TornadoDriver {
+public interface TornadoAcceleratorBackend extends TornadoBackend {
 
-    TornadoBackend getDefaultBackend();
+    XPUBackend getDefaultBackend();
 
     Providers getProviders();
 
