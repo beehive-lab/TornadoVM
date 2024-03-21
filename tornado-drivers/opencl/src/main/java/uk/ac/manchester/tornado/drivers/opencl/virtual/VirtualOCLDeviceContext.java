@@ -77,7 +77,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLBackendImpl.class);
+        return TornadoRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
     }
 
     @Override

@@ -166,7 +166,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getDriverIndex(SPIRVBackendImpl.class);
+        return TornadoRuntime.getTornadoRuntime().getBackendIndex(SPIRVBackendImpl.class);
     }
 
     public SPIRVTornadoDevice asMapping() {

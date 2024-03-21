@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.ptx;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
@@ -137,11 +136,6 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
             }
         }
         return devices;
-    }
-
-    @Override
-    public List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllDevices().stream().filter(predicate).toList();
     }
 
     @Override

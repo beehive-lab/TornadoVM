@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020,2023 APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -193,7 +193,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
-        TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
+        TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
         int devs = driver.getDeviceCount();
         int index = 0;
         for (int i = 0; i < devs; i++) {

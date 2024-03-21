@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,7 +38,7 @@ public final class MetaDataUtils {
 
     public static TornadoXPUDevice resolveDevice(String device) {
         final String[] ids = device.split(":");
-        final TornadoAcceleratorBackend driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
+        final TornadoAcceleratorBackend driver = getTornadoRuntime().getBackend(Integer.parseInt(ids[0]));
         return (TornadoXPUDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
 

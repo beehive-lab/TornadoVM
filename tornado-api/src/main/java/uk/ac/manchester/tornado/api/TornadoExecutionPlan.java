@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,7 +88,7 @@ public class TornadoExecutionPlan {
      *     TornadoBackendNotFound} if a driver index is not found.
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+        return TornadoRuntime.getTornadoRuntime().getBackend(driverIndex).getDevice(deviceIndex);
     }
 
     public static int getTotalPlans() {

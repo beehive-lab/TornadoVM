@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,7 +81,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Before
     public void enoughDevices() {
         super.before();
-        TornadoBackend driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getBackend(0);
         if (driver.getDeviceCount() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("Not enough devices to run tests");
         }
@@ -92,16 +92,16 @@ public class TestsVirtualLayer extends TornadoTestBase {
      */
     @Test
     public void testDevices() {
-        TornadoBackend driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getBackend(0);
         assertNotNull(driver.getDevice(0));
         assertNotNull(driver.getDevice(1));
     }
 
     @Test
     public void testDriverAndDevices() {
-        int numDrivers = getTornadoRuntime().getNumDrivers();
+        int numDrivers = getTornadoRuntime().getNumBackends();
         for (int i = 0; i < numDrivers; i++) {
-            TornadoBackend driver = getTornadoRuntime().getDriver(i);
+            TornadoBackend driver = getTornadoRuntime().getBackend(i);
             assertNotNull(driver);
             int numDevices = driver.getDeviceCount();
             for (int j = 0; j < numDevices; j++) {
@@ -129,7 +129,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         }
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
-        TornadoBackend driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getBackend(0);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -157,7 +157,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Test
     public void testTaskMigration() {
 
-        TornadoBackend driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getBackend(0);
 
         final int numElements = 512;
         final float alpha = 2f;
@@ -192,7 +192,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Ignore
     public void testVirtualLayer01() {
 
-        TornadoBackend driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getBackend(0);
         /*
          * The following expression is not correct for Tornado to execute on different
          * devices.
@@ -233,7 +233,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Ignore
     public void testVirtualLayer02() {
 
-        TornadoBackend driver = getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = getTornadoRuntime().getBackend(0);
 
         final int N = 128;
         IntArray data = new IntArray(N);
@@ -311,13 +311,13 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         int totalNumDevices = 0;
 
-        final int numDrivers = getTornadoRuntime().getNumDrivers();
+        final int numDrivers = getTornadoRuntime().getNumBackends();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
 
             String taskScheduleName = "s" + driverIndex;
 
             TaskGraph taskGraph = new TaskGraph(taskScheduleName);
-            TornadoBackend driver = getTornadoRuntime().getDriver(driverIndex);
+            TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
 
             final int numDevices = driver.getDeviceCount();
             totalNumDevices += numDevices;
@@ -350,7 +350,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      */
     @Test
     public void testSchedulerDevices() {
-        TornadoBackend tornadoDriver = getTornadoRuntime().getDriver(0);
+        TornadoBackend tornadoDriver = getTornadoRuntime().getBackend(0);
 
         final int N = 128;
         IntArray dataA = new IntArray(N);

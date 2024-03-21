@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -171,11 +170,6 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
             }
         }
         return devices;
-    }
-
-    @Override
-    public List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllDevices().stream().filter(predicate).toList();
     }
 
     @Override

@@ -107,7 +107,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     public static SPIRVBackendImpl findDriver() {
         if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVBackendImpl.class);
+            driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class);
             TornadoInternalError.guarantee(driver != null, "unable to find the SPIR-V driver");
         }
         return driver;
@@ -554,7 +554,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int getDriverIndex() {
-        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(SPIRVBackendImpl.class);
+        return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(SPIRVBackendImpl.class);
     }
 
     @Override

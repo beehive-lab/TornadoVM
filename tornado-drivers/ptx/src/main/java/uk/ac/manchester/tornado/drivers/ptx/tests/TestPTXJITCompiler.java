@@ -86,9 +86,9 @@ public class TestPTXJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        PTXBackend ptxBackend = tornadoRuntime.getDriver(PTXBackendImpl.class).getDefaultBackend();
+        PTXBackend ptxBackend = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultBackend();
 
-        TornadoDevice device = tornadoRuntime.getDriver(PTXBackendImpl.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");

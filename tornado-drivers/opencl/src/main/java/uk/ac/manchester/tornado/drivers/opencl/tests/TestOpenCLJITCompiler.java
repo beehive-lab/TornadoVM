@@ -87,10 +87,10 @@ public class TestOpenCLJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLBackendImpl.class).getDefaultBackend();
+        OCLBackend openCLBackend = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultBackend();
 
         // Get the default OpenCL device
-        TornadoDevice device = tornadoRuntime.getDriver(OCLBackendImpl.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");

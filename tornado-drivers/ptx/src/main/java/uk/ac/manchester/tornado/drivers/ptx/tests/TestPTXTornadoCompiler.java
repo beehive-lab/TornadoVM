@@ -81,7 +81,7 @@ public class TestPTXTornadoCompiler {
         PTXCodeCache codeCache = platform.getDevice(0).getPTXContext().getDeviceContext().getCodeCache();
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-        PTXBackend backend = tornadoRuntime.getDriver(PTXBackendImpl.class).getDefaultBackend();
+        PTXBackend backend = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultBackend();
         TaskMetaData meta = new TaskMetaData(new ScheduleMetaData("s0"), "add", 0);
         new PTXCompilationResult("add", meta);
 

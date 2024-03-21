@@ -123,7 +123,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
-        driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLBackendImpl.class);
+        driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class);
 
         if (driver == null) {
             throw new RuntimeException("TornadoVM OpenCL Driver not found");
@@ -756,7 +756,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int getDriverIndex() {
-        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLBackendImpl.class);
+        return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
     }
 
     @Override

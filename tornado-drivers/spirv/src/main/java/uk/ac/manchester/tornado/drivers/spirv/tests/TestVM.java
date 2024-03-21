@@ -50,10 +50,10 @@ public class TestVM {
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getDriver(SPIRVBackendImpl.class).getDefaultBackend();
+        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
 
         // Get a Device
-        TornadoDevice device = tornadoRuntime.getDriver(SPIRVBackendImpl.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         System.out.println(STR."Selecting Device: \{device.getPhysicalDevice().getDeviceName()}");
 
