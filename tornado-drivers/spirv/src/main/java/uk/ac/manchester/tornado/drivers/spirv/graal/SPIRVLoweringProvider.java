@@ -106,7 +106,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -126,11 +126,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static boolean gpuSnippet = false;
     private ConstantReflectionProvider constantReflectionProvider;
-    private TornadoVMConfig vmConfig;
+    private TornadoVMConfigAccess vmConfig;
     private ReduceGPUSnippets.Templates gpuReduceSnippets;
 
     public SPIRVLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig,
-            MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflectionProvider, TornadoVMConfig vmConfig, SPIRVTargetDescription target,
+            MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflectionProvider, TornadoVMConfigAccess vmConfig, SPIRVTargetDescription target,
             boolean useCompressedOops) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, useCompressedOops);
         this.constantReflectionProvider = constantReflectionProvider;

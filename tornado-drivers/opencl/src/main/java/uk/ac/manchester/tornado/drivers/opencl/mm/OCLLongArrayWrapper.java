@@ -38,23 +38,23 @@ public class OCLLongArrayWrapper extends OCLArrayWrapper<long[]> {
     }
 
     @Override
-    protected int readArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int readArrayData(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.readBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        deviceContext.writeBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected void writeArrayData(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        deviceContext.writeBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueReadArrayData(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueReadBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
 }

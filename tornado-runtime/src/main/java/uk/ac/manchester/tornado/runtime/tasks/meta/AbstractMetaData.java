@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
@@ -65,7 +65,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /*
      * Forces the executing kernel to output its arguments before execution
      */
-    private final boolean threadInfo;
+    private boolean threadInfo;
     private final boolean debug;
     private final boolean dumpEvents;
     private final boolean dumpProfiles;
@@ -95,7 +95,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
     private String id;
-    private TornadoAcceleratorDevice device;
+    private TornadoXPUDevice device;
     private int driverIndex;
     private int deviceIndex;
     private boolean deviceManuallySet;
@@ -113,6 +113,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Allows the OpenCL driver to select the size of local work groups
      */
     private boolean openclUseDriverScheduling;
+    private boolean printKernel;
+    private boolean resetThreads;
 
     AbstractMetaData(String id, AbstractMetaData parent) {
         this.id = id;
@@ -152,7 +154,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         enableVectors = parseBoolean(getDefault("vectors.enable", id, TRUE));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, FALSE));
-        threadInfo = parseBoolean(getDefault("threadInfo", id, FALSE));
+        threadInfo = TornadoOptions.THREAD_INFO;
+        printKernel = TornadoOptions.PRINT_KERNEL_SOURCE;
         debug = parseBoolean(getDefault("debug", id, FALSE));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, FALSE));
         dumpEvents = parseBoolean(getDefault("events.dump", id, TRUE));
@@ -185,7 +188,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
     }
 
-    public TornadoAcceleratorDevice getLogicDevice() {
+    public TornadoXPUDevice getLogicDevice() {
         return device != null ? device : (device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex)));
     }
 
@@ -215,7 +218,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
         this.deviceIndex = getDeviceIndex(driverIndex, device);
-        if (device instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+        if (device instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             this.device = tornadoAcceleratorDevice;
         }
         deviceManuallySet = true;
@@ -227,9 +230,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * @param driverIndex
      *     Driver Index
      * @param device
-     *     {@link TornadoAcceleratorDevice}
+     *     {@link TornadoXPUDevice}
      */
-    public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
+    public void setDriverDevice(int driverIndex, TornadoXPUDevice device) {
         this.driverIndex = driverIndex;
         this.deviceIndex = getDeviceIndex(driverIndex, device);
         this.device = device;
@@ -403,7 +406,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     @Override
-    public List<TornadoEvents> getProfiles() {
+    public List<TornadoEvents> getProfiles(long executionPlanId) {
         return null;
     }
 
@@ -499,5 +502,47 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public boolean isGridSchedulerEnabled() {
         return this.useGridScheduler;
+    }
+
+    public void enableThreadInfo() {
+        this.threadInfo = true;
+    }
+
+    public void disableThreadInfo() {
+        this.threadInfo = false;
+    }
+
+    @Override
+    public boolean isPrintKernelEnabled() {
+        return printKernel;
+    }
+
+    @Override
+    public void setPrintKernelFlag(boolean printKernelEnabled) {
+        this.printKernel = printKernelEnabled;
+    }
+
+    public void enablePrintKernel() {
+        this.printKernel = true;
+    }
+
+    public void disablePrintKernel() {
+        this.printKernel = false;
+    }
+
+    public void setThreadInfo(boolean threadInfoEnabled) {
+        this.threadInfo = threadInfoEnabled;
+    }
+
+    public void resetThreadBlocks() {
+        this.resetThreads = true;
+    }
+
+    public boolean shouldResetThreadsBlock() {
+        return this.resetThreads;
+    }
+
+    public void disableResetThreadBlock() {
+        this.resetThreads = false;
     }
 }

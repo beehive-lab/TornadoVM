@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,26 +23,24 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_EVENTS;
+
+import java.util.stream.IntStream;
+
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 
 public class PTXContext {
 
     private final long ptxContext;
-    private final PTXDevice device;
-    private final PTXStream stream;
+
     private final PTXDeviceContext deviceContext;
 
     public PTXContext(PTXDevice device) {
-        this.device = device;
-
         ptxContext = cuCtxCreate(device.getCuDevice());
+        cuCtxSetCurrent(ptxContext);
+        deviceContext = new PTXDeviceContext(device);
 
-        stream = new PTXStream();
-        deviceContext = new PTXDeviceContext(device, stream);
     }
 
     private native static long cuCtxCreate(long deviceIndex);
@@ -60,11 +58,12 @@ public class PTXContext {
     }
 
     public void cleanup() {
+        int numPlans = TornadoExecutionPlan.getTotalPlans();
         if (DUMP_EVENTS) {
-            deviceContext.dumpEvents();
+            IntStream.range(1, numPlans).forEach(deviceContext::dumpEvents);
         }
 
-        deviceContext.cleanup();
+        IntStream.range(1, (numPlans)).forEach(deviceContext::destroyStream);
         cuCtxDestroy(ptxContext);
     }
 

@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
  * How to run?
  * </p>
  * <code>
- * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
+ * tornado --jvm="-Drun::parallel=True" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
  * </code>
  */
 public class BlackAndWhiteTransform {
@@ -95,7 +95,6 @@ public class BlackAndWhiteTransform {
 
                     int grayLevel = (red + green + blue) / 3;
                     int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
-
                     image.set(i * s + j, gray);
                 }
             }
@@ -105,7 +104,7 @@ public class BlackAndWhiteTransform {
             try {
                 ImageIO.write(image, "jpg", new File("/tmp/" + fileName));
             } catch (IOException e) {
-                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
+                throw new RuntimeException(STR."Input file not found: \{IMAGE_FILE}");
             }
         }
 
@@ -115,44 +114,38 @@ public class BlackAndWhiteTransform {
 
             IntArray imageRGB = new IntArray(w * s);
 
-            long start = 0, end = 0;
-            long taskStart = 0, taskEnd = 0;
+            // Data preparation - TornadoVM can't process BufferedImage types
+            for (int i = 0; i < w; i++) {
+                for (int j = 0; j < s; j++) {
+                    int rgb = image.getRGB(i, j);
+                    imageRGB.set(i * s + j, rgb);
+                }
+            }
+
+            if (executor == null) {
+                taskGraph = new TaskGraph("s0");
+                taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
+                        .task("t0", LoadImage::compute, imageRGB, w, s) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, imageRGB);
+
+                ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+                executor = new TornadoExecutionPlan(immutableTaskGraph);
+            }
+
+            long start, end;
             for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
                 start = System.nanoTime();
-                for (int i = 0; i < w; i++) {
-                    for (int j = 0; j < s; j++) {
-                        int rgb = image.getRGB(i, j);
-                        imageRGB.set(i * s + j, rgb);
-                    }
-                }
-
-                if (executor == null) {
-                    taskGraph = new TaskGraph("s0");
-                    taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
-                            .task("t0", LoadImage::compute, imageRGB, w, s) //
-                            .transferToHost(DataTransferMode.EVERY_EXECUTION, imageRGB);
-
-                    ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-                    executor = new TornadoExecutionPlan(immutableTaskGraph);
-                    executor.execute();
-
-                }
-
-                taskStart = System.nanoTime();
                 executor.execute();
-                taskEnd = System.nanoTime();
-
-                // unmarshall
-                for (int i = 0; i < w; i++) {
-                    for (int j = 0; j < s; j++) {
-                        image.setRGB(i, j, imageRGB.get(i * s + j));
-                    }
-                }
-
                 end = System.nanoTime();
+                System.out.println(STR."Total TornadoVM time: \{end - start} (ns)");
             }
-            System.out.println("Total TornadoVM time: " + (end - start) + " (ns)");
-            System.out.println("Task TornadoVM time: " + (taskEnd - taskStart) + " (ns)");
+
+            // unmarshall data from IntArray to BufferedImage to draw on the screen
+            for (int i = 0; i < w; i++) {
+                for (int j = 0; j < s; j++) {
+                    image.setRGB(i, j, imageRGB.get(i * s + j));
+                }
+            }
 
             // draw the image
             g.drawImage(this.image, 0, 0, null);
@@ -171,9 +164,7 @@ public class BlackAndWhiteTransform {
                 start = System.nanoTime();
                 for (int i = 0; i < w; i++) {
                     for (int j = 0; j < s; j++) {
-
                         int rgb = image.getRGB(i, j);
-
                         int alpha = (rgb >> 24) & 0xff;
                         int red = (rgb >> 16) & 0xFF;
                         int green = (rgb >> 8) & 0xFF;
@@ -181,17 +172,15 @@ public class BlackAndWhiteTransform {
 
                         int grayLevel = (red + green + blue) / 3;
                         int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
-
                         image.setRGB(i, j, gray);
                     }
                 }
                 end = System.nanoTime();
+                System.out.println(STR."Total sequential time: \{end - start} (ns)");
             }
-            System.out.println("Total sequential time: " + (end - start) + " (ns)");
 
             // draw the image
             g.drawImage(this.image, 0, 0, null);
-
             writeImage("sequential.jpg");
         }
 

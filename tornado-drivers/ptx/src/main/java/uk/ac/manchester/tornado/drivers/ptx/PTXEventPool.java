@@ -64,7 +64,7 @@ public class PTXEventPool {
         }
 
         if (events[currentEvent] != null && !retain.get(currentEvent)) {
-            events[currentEvent].waitForEvents();
+            events[currentEvent].waitForEvents(0);
             events[currentEvent].destroy();
             events[currentEvent] = null;
         }

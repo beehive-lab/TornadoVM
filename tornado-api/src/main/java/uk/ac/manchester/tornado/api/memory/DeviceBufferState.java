@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.api.memory;
 
-public interface TornadoDeviceObjectState {
+public interface DeviceBufferState {
 
-    void setObjectBuffer(ObjectBuffer value);
+    void setObjectBuffer(XPUBuffer value);
 
     boolean hasObjectBuffer();
 
-    ObjectBuffer getObjectBuffer();
+    XPUBuffer getObjectBuffer();
 
     boolean isAtomicRegionPresent();
 
@@ -31,7 +31,7 @@ public interface TornadoDeviceObjectState {
 
     boolean isLockedBuffer();
 
-    boolean hasContents();
+    boolean hasContent();
 
     void setContents(boolean value);
 

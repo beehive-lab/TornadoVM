@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020,2024 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-public class PTXObjectWrapper implements ObjectBuffer {
+public class PTXObjectWrapper implements XPUBuffer {
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
     private final Class<?> type;
@@ -91,7 +91,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
                 trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
-            ObjectBuffer wrappedField = null;
+            XPUBuffer wrappedField = null;
             if (type.isArray()) {
                 if (type == int[].class) {
                     wrappedField = new PTXIntArrayWrapper(deviceContext);
@@ -110,22 +110,22 @@ public class PTXObjectWrapper implements ObjectBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegment().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegment().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegment().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegment().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegment().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegment().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new PTXVectorWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), 0);
             } else if (field.getJavaKind().isObject()) {
@@ -151,7 +151,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.address = deviceContext.getBufferProvider().getBufferWithSize(getObjectSize());
+        this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize());
 
         if (DEBUG) {
             debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
@@ -291,7 +291,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
         TornadoInternalError.shouldNotReachHere();
     }
 
@@ -301,31 +301,31 @@ public class PTXObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void write(Object object) {
+    public void write(long executionPlanId, Object object) {
         serialise(object);
         // XXX: Offset 0
-        deviceContext.writeBuffer(toBuffer(), getObjectSize(), buffer.array(), 0, null);
+        deviceContext.writeBuffer(executionPlanId, toBuffer(), getObjectSize(), buffer.array(), 0, null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
-                wrappedFields[i].write(object);
+                wrappedFields[i].write(executionPlanId, object);
             }
         }
     }
 
     @Override
-    public void read(Object object) {
+    public void read(long executionPlanId, Object object) {
         // XXX: offset and partial size set to 0
-        read(object, 0, 0, null, false);
+        read(executionPlanId, object, 0, 0, null, false);
     }
 
     @Override
-    public int read(Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+    public int read(long executionPlanId, Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         int event = -1;
         buffer.position(buffer.capacity());
-        event = deviceContext.readBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        event = deviceContext.readBuffer(executionPlanId, toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
-                wrappedFields[i].read(object);
+                wrappedFields[i].read(executionPlanId, object);
             }
         }
         deserialise(object);
@@ -364,7 +364,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
         int index = 0;
         int[] internalEvents = new int[fields.length];
@@ -372,32 +372,32 @@ public class PTXObjectWrapper implements ObjectBuffer {
 
         for (FieldBuffer fb : wrappedFields) {
             if (fb != null) {
-                internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
+                internalEvents[index] = fb.enqueueRead(executionPlanId, reference, (useDeps) ? events : null, useDeps);
                 index++;
             }
         }
 
-        internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        internalEvents[index] = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         index++;
 
         deserialise(reference);
         if (index == 1) {
             returnEvent = internalEvents[0];
         } else {
-            returnEvent = deviceContext.enqueueMarker(internalEvents);
+            returnEvent = deviceContext.enqueueMarker(executionPlanId, internalEvents);
         }
         return returnEvent;
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(long executionPlanId, Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
 
         serialise(ref);
-        eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
+        eventList.add(deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {
             if (field != null) {
-                eventList.addAll(field.enqueueWrite(ref, (useDeps) ? events : null, useDeps));
+                eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
         return eventList;
@@ -434,12 +434,12 @@ public class PTXObjectWrapper implements ObjectBuffer {
 
     @Override
     public int[] getIntBuffer() {
-        return ObjectBuffer.super.getIntBuffer();
+        return XPUBuffer.super.getIntBuffer();
     }
 
     @Override
     public void setIntBuffer(int[] arr) {
-        ObjectBuffer.super.setIntBuffer(arr);
+        XPUBuffer.super.setIntBuffer(arr);
     }
 
 }

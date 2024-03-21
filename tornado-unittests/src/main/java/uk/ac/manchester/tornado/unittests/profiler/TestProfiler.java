@@ -58,15 +58,10 @@ public class TestProfiler extends TornadoTestBase {
 
     private boolean isBackendPTXOrSPIRV(int driverIndex) {
         TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
-        switch (type) {
-            case PTX:
-            case SPIRV:
-                return true;
-            case OPENCL:
-                return false;
-            default:
-                return false;
-        }
+        return switch (type) {
+            case PTX, SPIRV -> true;
+            default -> false;
+        };
     }
 
     @Test
@@ -335,5 +330,51 @@ public class TestProfiler extends TornadoTestBase {
 
         kernelTime = executionResult.getProfilerResult().getDeviceKernelTime();
         assertTrue(kernelTime > 0);
+    }
+
+    @Test
+    public void testKernelOnAndOff() {
+
+        final int size = 1024;
+        float[] inputArray = new float[size];
+        float[] outputArray = new float[1];
+
+        Random r = new Random(71);
+        IntStream.range(0, size).forEach(i -> inputArray[i] = r.nextFloat());
+
+        TaskGraph taskGraph = new TaskGraph("compute");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
+                .task("reduce", TestProfiler::reduction, inputArray, outputArray) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputArray);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        // Enable print kernel
+        executionPlan.withPrintKernel().execute();
+
+        // disable print kernel
+        executionPlan.withoutPrintKernel().execute();
+    }
+
+    @Test
+    public void testThreadInfoOnAndOff() {
+
+        final int size = 1024;
+        float[] inputArray = new float[size];
+        float[] outputArray = new float[1];
+
+        Random r = new Random(71);
+        IntStream.range(0, size).forEach(i -> inputArray[i] = r.nextFloat());
+
+        TaskGraph taskGraph = new TaskGraph("compute");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
+                .task("reduce", TestProfiler::reduction, inputArray, outputArray) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputArray);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        // Enable print kernel
+        executionPlan.withThreadInfo().execute();
+
+        // disable print kernel
+        executionPlan.withoutThreadInfo().execute();
     }
 }

@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RETURN_VALUE_INDEX;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame.RETURN_VALUE_INDEX;
 
 @Opcode("RETURN VALUE")
 public class OCLReturnSlot extends AllocatableValue {

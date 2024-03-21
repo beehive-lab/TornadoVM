@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,11 +55,11 @@ import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
@@ -67,32 +67,30 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TornadoExecutionContext {
 
+    public static int INIT_VALUE = -1;
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
-    private final ScheduleMetaData meta;
-    private final KernelArgs[] callWrappers;
+    private ScheduleMetaData meta;
+    private KernelStackFrame[] kernelStackFrame;
     private List<SchedulableTask> tasks;
     private List<Object> constants;
     private Map<Integer, Integer> objectMap;
     private List<Object> objects;
     private List<LocalObjectState> objectState;
-    private List<TornadoAcceleratorDevice> devices;
-    private TornadoAcceleratorDevice[] taskToDeviceMapTable;
+    private List<TornadoXPUDevice> devices;
+    private TornadoXPUDevice[] taskToDeviceMapTable;
     private int nextTask;
-
     private long batchSize;
     private long executionPlanMemoryLimit;
-    private Set<TornadoAcceleratorDevice> lastDevices;
-
+    private Set<TornadoXPUDevice> lastDevices;
     private boolean redeployOnDevice;
     private boolean defaultScheduler;
-
     private boolean isDataDependencyDetected;
-
     private TornadoProfiler profiler;
+    private boolean isPrintKernel;
 
-    public static int INIT_VALUE = -1;
+    private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -103,8 +101,8 @@ public class TornadoExecutionContext {
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
-        callWrappers = new KernelArgs[MAX_TASKS];
-        taskToDeviceMapTable = new TornadoAcceleratorDevice[MAX_TASKS];
+        kernelStackFrame = new KernelStackFrame[MAX_TASKS];
+        taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
         Arrays.fill(taskToDeviceMapTable, null);
         nextTask = 0;
         batchSize = INIT_VALUE;
@@ -114,25 +112,25 @@ public class TornadoExecutionContext {
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
     }
 
-    public KernelArgs[] getCallWrappers() {
-        return callWrappers;
+    public KernelStackFrame[] getKernelStackFrame() {
+        return kernelStackFrame;
     }
 
-    public int insertVariable(Object var) {
-        int index = -1;
-        if (var.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(var.getClass())) {
-            index = constants.indexOf(var);
+    public int insertVariable(Object parameter) {
+        int index;
+        if (parameter.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(parameter.getClass())) {
+            index = constants.indexOf(parameter);
             if (index == -1) {
                 index = constants.size();
-                constants.add(var);
+                constants.add(parameter);
             }
-        } else if (objectMap.containsKey(var.hashCode())) {
-            index = objectMap.get(var.hashCode());
+        } else if (objectMap.containsKey(parameter.hashCode())) {
+            index = objectMap.get(parameter.hashCode());
         } else {
             index = objects.size();
-            objects.add(var);
-            objectMap.put(var.hashCode(), index);
-            objectState.add(index, new LocalObjectState(var));
+            objects.add(parameter);
+            objectMap.put(parameter.hashCode(), index);
+            objectState.add(index, new LocalObjectState(parameter));
         }
         return index;
     }
@@ -145,12 +143,12 @@ public class TornadoExecutionContext {
         this.batchSize = size;
     }
 
-    public void setExecutionPlanMemoryLimit(long memoryLimitSize) {
-        this.executionPlanMemoryLimit = memoryLimitSize;
-    }
-
     public long getExecutionPlanMemoryLimit() {
         return executionPlanMemoryLimit;
+    }
+
+    public void setExecutionPlanMemoryLimit(long memoryLimitSize) {
+        this.executionPlanMemoryLimit = memoryLimitSize;
     }
 
     public boolean isMemoryLimited() {
@@ -159,8 +157,9 @@ public class TornadoExecutionContext {
 
     public boolean doesExceedExecutionPlanLimit() {
         long totalSize = 0;
-        
+
         for (Object parameter : getObjects()) {
+
             if (parameter.getClass().isArray()) {
                 Class<?> componentType = parameter.getClass().getComponentType();
                 DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);
@@ -168,23 +167,33 @@ public class TornadoExecutionContext {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
                 long size = Array.getLength(parameter);
-                totalSize += size * dataTypeSize.getSize();
+                totalSize += (size * dataTypeSize.getSize());
             } else if (parameter instanceof TornadoNativeArray tornadoNativeArray) {
-                totalSize += tornadoNativeArray.getNumBytesWithoutHeader();
+                totalSize += tornadoNativeArray.getNumBytesOfSegment();
             } else if (parameter instanceof TornadoVectorsInterface<?> tornadoVector) {
                 totalSize += tornadoVector.getNumBytes();
             } else if (parameter instanceof TornadoCollectionInterface<?> collection) {
-                totalSize += collection.getNumBytes();
+                totalSize += collection.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoVolumesInterface<?> tornadoVolume) {
-                totalSize += tornadoVolume.getNumBytes();
+                totalSize += tornadoVolume.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoMatrixInterface<?> tornadoMatrix) {
-                totalSize += tornadoMatrix.getNumBytes();
+                totalSize += tornadoMatrix.getNumBytesWithHeader();
             } else if (parameter instanceof TornadoImagesInterface<?> tornadoImage) {
-                totalSize += tornadoImage.getNumBytes();
+                totalSize += tornadoImage.getNumBytesWithHeader();
             } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
                 // ignore
             } else {
                 throw new TornadoRuntimeException(STR."Unsupported type: \{parameter.getClass()}");
+            }
+        }
+
+        if (!constants.isEmpty()) {
+            for (Object field : constants) {
+                DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(field.getClass());
+                if (dataTypeSize == null) {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
+                }
+                totalSize += dataTypeSize.getSize();
             }
         }
         return totalSize > getExecutionPlanMemoryLimit();
@@ -251,11 +260,11 @@ public class TornadoExecutionContext {
         return objects;
     }
 
-    public TornadoAcceleratorDevice getDeviceForTask(int index) {
+    public TornadoXPUDevice getDeviceForTask(int index) {
         return taskToDeviceMapTable[index];
     }
 
-    public TornadoAcceleratorDevice getDevice(int index) {
+    public TornadoXPUDevice getDevice(int index) {
         return devices.get(index);
     }
 
@@ -278,7 +287,7 @@ public class TornadoExecutionContext {
      *     if the current device is not supported.
      */
     public void mapAllTasksToSingleDevice(TornadoDevice tornadoDevice) {
-        if (tornadoDevice instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+        if (tornadoDevice instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             devices.clear();
             devices.addFirst(tornadoAcceleratorDevice);
             apply(task -> task.mapTo(tornadoDevice));
@@ -288,7 +297,7 @@ public class TornadoExecutionContext {
         }
     }
 
-    public void setDevice(TornadoAcceleratorDevice device) {
+    public void setDevice(TornadoXPUDevice device) {
         // If the device is not in the list of devices, add it
         if (!devices.contains(device)) {
             devices.add(device);
@@ -296,22 +305,20 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * It assigns a task to a {@link TornadoAcceleratorDevice} based on the current
+     * It assigns a task to a {@link TornadoXPUDevice} based on the current
      * task scheduling strategy.
      *
      * @param index
      *     The index of the task.
      * @param task
      *     The {@link SchedulableTask} to be assigned.
-     * @throws {@link
-     *     TornadoRuntimeException} if the target device is not supported.
      */
     private void assignTaskToDevice(int index, SchedulableTask task) {
         String id = task.getId();
         TornadoDevice target = task.getDevice();
-        TornadoAcceleratorDevice accelerator;
+        TornadoXPUDevice accelerator;
 
-        if (target instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+        if (target instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             accelerator = tornadoAcceleratorDevice;
         } else {
             throw new TornadoRuntimeException(STR."Device \{target.getClass()} not supported yet");
@@ -361,10 +368,11 @@ public class TornadoExecutionContext {
         return tasks.get(0).getDevice();
     }
 
-    public LocalObjectState getObjectState(Object object) {
+    public LocalObjectState getLocalStateObject(Object object) {
         return objectState.get(insertVariable(object));
     }
 
+    @Deprecated
     public LocalObjectState replaceObjectState(Object oldObj, Object newObj) {
         return objectState.get(replaceVariable(oldObj, newObj));
     }
@@ -431,7 +439,7 @@ public class TornadoExecutionContext {
         return tasks;
     }
 
-    public List<TornadoAcceleratorDevice> getDevices() {
+    public List<TornadoXPUDevice> getDevices() {
         return devices;
     }
 
@@ -445,7 +453,7 @@ public class TornadoExecutionContext {
         Deque<Integer> nonNullIndexes = new ArrayDeque<>();
 
         for (int i = devices.size() - 1; i >= 0; i--) {
-            TornadoAcceleratorDevice device = devices.get(i);
+            TornadoXPUDevice device = devices.get(i);
             if (device != null) {
                 nonNullIndexes.push(i);
             }
@@ -479,10 +487,10 @@ public class TornadoExecutionContext {
     /**
      * Default device inspects the driver 0 and device 0 of the internal list.
      *
-     * @return {@link TornadoAcceleratorDevice}
+     * @return {@link TornadoXPUDevice}
      */
     @Deprecated
-    public TornadoAcceleratorDevice getDefaultDevice() {
+    public TornadoXPUDevice getDefaultDevice() {
         return meta.getLogicDevice();
     }
 
@@ -500,11 +508,11 @@ public class TornadoExecutionContext {
         return id.startsWith(getId()) ? id : STR."\{getId()}.\{id}";
     }
 
-    public TornadoAcceleratorDevice getDeviceForTask(String id) {
+    public TornadoXPUDevice getDeviceForTask(String id) {
         TornadoDevice device = getTask(id).getDevice();
-        TornadoAcceleratorDevice tornadoDevice = null;
-        if (device instanceof TornadoAcceleratorDevice) {
-            tornadoDevice = (TornadoAcceleratorDevice) device;
+        TornadoXPUDevice tornadoDevice = null;
+        if (device instanceof TornadoXPUDevice) {
+            tornadoDevice = (TornadoXPUDevice) device;
         } else {
             throw new RuntimeException(STR."Device \{device.getClass()} not supported yet");
         }
@@ -524,24 +532,24 @@ public class TornadoExecutionContext {
             Object object = objects.get(i);
             if (object != null) {
                 final LocalObjectState localState = objectState.get(i);
-                Event event = localState.sync(object, meta().getLogicDevice());
+                Event event = localState.sync(executionPlanId, object, meta().getLogicDevice());
 
                 if (TornadoOptions.isProfilerEnabled() && event != null) {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
                     value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
-                    DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                    XPUDeviceBufferState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                     profiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
                 }
             }
         }
     }
 
-    public void addLastDevice(TornadoAcceleratorDevice device) {
+    public void addLastDevice(TornadoXPUDevice device) {
         lastDevices.add(device);
     }
 
-    public Set<TornadoAcceleratorDevice> getLastDevices() {
+    public Set<TornadoXPUDevice> getLastDevices() {
         return lastDevices;
     }
 
@@ -578,13 +586,16 @@ public class TornadoExecutionContext {
         List<LocalObjectState> objectStateCopy = new ArrayList<>(objectState);
         executionContext.objectState = objectStateCopy;
 
-        List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
+        List<TornadoXPUDevice> devicesCopy = new ArrayList<>(devices);
         executionContext.devices = devicesCopy;
 
         executionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
 
-        Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
+        Set<TornadoXPUDevice> lastDeviceCopy = new HashSet<>(lastDevices);
         executionContext.lastDevices = lastDeviceCopy;
+
+        executionContext.meta = meta;
+        executionContext.isPrintKernel = this.isPrintKernel;
 
         executionContext.profiler = this.profiler;
         executionContext.nextTask = this.nextTask;
@@ -623,5 +634,47 @@ public class TornadoExecutionContext {
 
     public void withProfiler(TornadoProfiler timeProfiler) {
         this.profiler = timeProfiler;
+    }
+
+    @Override
+    public TornadoExecutionContext clone() {
+        TornadoExecutionContext newExecutionContext = new TornadoExecutionContext(this.getId());
+
+        newExecutionContext.tasks = new ArrayList<>(this.tasks);
+
+        newExecutionContext.kernelStackFrame = this.kernelStackFrame.clone();
+
+        newExecutionContext.constants = new ArrayList<>(this.constants);
+
+        newExecutionContext.objectMap = new HashMap<>(objectMap);
+
+        newExecutionContext.objects = new ArrayList<>(objects);
+
+        List<LocalObjectState> objectStateCopy = new ArrayList<>();
+        for (LocalObjectState localObjectState : objectState) {
+            objectStateCopy.add(localObjectState.clone());
+        }
+        newExecutionContext.objectState = objectStateCopy;
+
+        newExecutionContext.devices = new ArrayList<>(devices);
+
+        newExecutionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
+
+        newExecutionContext.lastDevices = new HashSet<>(lastDevices);
+
+        newExecutionContext.isPrintKernel = this.isPrintKernel;
+
+        newExecutionContext.profiler = this.profiler;
+        newExecutionContext.nextTask = this.nextTask;
+        newExecutionContext.executionPlanMemoryLimit = this.executionPlanMemoryLimit;
+        return newExecutionContext;
+    }
+
+    public long getExecutionPlanId() {
+        return this.executionPlanId;
+    }
+
+    public void setExecutionPlanId(long executionPlanId) {
+        this.executionPlanId = executionPlanId;
     }
 }

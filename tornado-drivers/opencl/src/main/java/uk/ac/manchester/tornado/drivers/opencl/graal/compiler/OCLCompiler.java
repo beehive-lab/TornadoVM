@@ -359,7 +359,7 @@ public class OCLCompiler {
         return kernelCompResult;
     }
 
-    public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend, TornadoProfiler profiler) {
+    public synchronized static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend, TornadoProfiler profiler) {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 

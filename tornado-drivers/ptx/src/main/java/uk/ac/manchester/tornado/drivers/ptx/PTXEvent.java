@@ -77,7 +77,7 @@ public class PTXEvent implements Event {
     }
 
     @Override
-    public void waitForEvents() {
+    public void waitForEvents(long executionPlanId) {
         waitForEventArray(new PTXEvent[] { this });
     }
 
@@ -155,7 +155,7 @@ public class PTXEvent implements Event {
 
     @Override
     public void waitOn() {
-        waitForEvents();
+        waitForEvents(0);
     }
 
     public void destroy() {

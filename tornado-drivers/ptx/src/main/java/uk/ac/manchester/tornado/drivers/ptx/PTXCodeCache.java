@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXCodeCache {
 
@@ -40,24 +39,25 @@ public class PTXCodeCache {
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName) {
-        String cacheKey = name;
+    public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
-        if (!cache.containsKey(cacheKey)) {
-            RuntimeUtilities.maybePrintSource(targetCode);
+        if (!cache.containsKey(name)) {
+            if (debugKernel) {
+                RuntimeUtilities.dumpKernel(targetCode);
+            }
 
             PTXModule module = new PTXModule(resolvedMethodName, targetCode, name);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
-                cache.put(cacheKey, code);
+                cache.put(name, code);
                 return code;
             } else {
                 throw new TornadoBailoutRuntimeException("PTX JIT compilation failed!");
             }
         }
 
-        return cache.get(cacheKey);
+        return cache.get(name);
     }
 
     public PTXInstalledCode getCachedCode(String name) {

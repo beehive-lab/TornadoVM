@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
+public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     private final OCLTargetDevice device;
     private final VirtualOCLContext context;
@@ -121,42 +121,44 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
     }
 
     @Override
-    public int enqueueBarrier() {
+    public int enqueueBarrier(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker() {
+    public int enqueueMarker(long executionPlanId) {
         return 0;
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
+    public int enqueueMarker(long executionPlanId, int[] events) {
         return 0;
     }
 
     @Override
-    public Event resolveEvent(int event) {
+    public Event resolveEvent(long executionPlanId, int event) {
         return new EmptyEvent();
     }
 
     @Override
-    public void flushEvents() {
+    public void flushEvents(long executionPlanId) {
     }
 
+    @Override
     public void reset() {
         wasReset = true;
     }
 
+    @Override
     public VirtualOCLTornadoDevice asMapping() {
         return new VirtualOCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
     }
@@ -165,16 +167,12 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
         return String.format("opencl-%d-%d", context.getPlatformIndex(), device.getIndex());
     }
 
+    @Override
     public void dumpEvents() {
     }
 
     @Override
-    public void flush() {
-    }
-
-    @Override
-    public boolean needsBump() {
-        return false;
+    public void flush(long executionPlanId) {
     }
 
     @Override
@@ -212,30 +210,37 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
         return context.getPlatformIndex();
     }
 
+    @Override
     public boolean isKernelAvailable() {
         return true;
     }
 
+    @Override
     public OCLInstalledCode installCode(OCLCompilationResult result) {
         return null;
     }
 
+    @Override
     public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
         return null;
     }
 
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile) {
+    @Override
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel) {
         return null;
     }
 
+    @Override
     public boolean isCached(String id, String entryPoint) {
         return false;
     }
 
+    @Override
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
         return null;
     }
 
+    @Override
     public OCLCodeCache getCodeCache() {
         return codeCache;
     }

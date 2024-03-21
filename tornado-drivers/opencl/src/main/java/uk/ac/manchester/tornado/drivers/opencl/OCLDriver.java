@@ -41,17 +41,17 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
-public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+public final class OCLDriver implements TornadoAcceleratorDriver {
     protected static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
             OCLDeviceType.CL_DEVICE_TYPE_GPU, //
             OCLDeviceType.CL_DEVICE_TYPE_CPU, //
@@ -61,7 +61,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     private final List<OCLExecutionEnvironment> contexts;
     private OCLBackend[] flatBackends;
 
-    public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+    public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
 
         if (numPlatforms < 1) {
@@ -140,7 +140,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     @Override
-    public TornadoAcceleratorDevice getDefaultDevice() {
+    public TornadoXPUDevice getDefaultDevice() {
         return flatBackends[0].getDeviceContext().asMapping();
     }
 
@@ -150,11 +150,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     @Override
-    public TornadoAcceleratorDevice getDevice(int index) {
+    public TornadoXPUDevice getDevice(int index) {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
+            throw new TornadoDeviceNotFound(STR."[ERROR] device required not found: \{index} - Max: \{flatBackends.length}");
         }
     }
 
@@ -183,29 +183,29 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         }
     }
 
-    private OCLBackend createOCLJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLExecutionEnvironment context,
+    private OCLBackend createOCLJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, final OCLExecutionEnvironment context,
             final int deviceIndex) {
         final OCLTargetDevice device = context.devices().get(deviceIndex);
-        info("Creating backend for %s", device.getDeviceName());
+        TornadoLogger.info("Creating backend for %s", device.getDeviceName());
         return OCLHotSpotBackendFactory.createJITCompiler(options, jvmciRuntime, vmConfig, context, device);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatform platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        info("OpenCL[%d]: Platform %s", platformIndex, platform.getName());
+    private void installDevices(int platformIndex, TornadoPlatform platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+        TornadoLogger.info("OpenCL[%d]: Platform %s", platformIndex, platform.getName());
         final OCLExecutionEnvironment context = platform.createContext();
         assert context != null : "OpenCL context is null";
         contexts.add(context);
         final int numDevices = context.getNumDevices();
-        info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
+        TornadoLogger.info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
         backends[platformIndex] = new OCLBackend[numDevices];
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             final OCLTargetDevice device = context.devices().get(deviceIndex);
-            info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
+            TornadoLogger.info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
             backends[platformIndex][deviceIndex] = createOCLJITCompiler(options, vmRuntime, vmConfig, context, deviceIndex);
         }
     }
 
-    private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+    private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         IntStream.range(0, OpenCL.getNumPlatforms()).forEach(i -> {
             final TornadoPlatform platform = OpenCL.getPlatform(i);
             installDevices(i, platform, options, vmRuntime, vmConfig);

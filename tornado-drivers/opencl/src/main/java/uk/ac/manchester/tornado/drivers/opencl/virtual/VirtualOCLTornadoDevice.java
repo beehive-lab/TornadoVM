@@ -40,8 +40,8 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -54,20 +54,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
+public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     private static OCLDriver driver = null;
     private final OCLTargetDevice device;
@@ -92,7 +86,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void dumpEvents() {
+    public void dumpEvents(long executionPlanId) {
     }
 
     @Override
@@ -154,7 +148,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void ensureLoaded() {
+    public void ensureLoaded(long executionPlanId) {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {
             backend.init();
@@ -162,12 +156,12 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelArgs createCallWrapper(int numArgs) {
+    public KernelStackFrame createKernelStackFrame(int numArgs) {
         return null;
     }
 
     @Override
-    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -190,28 +184,30 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
-            RuntimeUtilities.maybePrintSource(result.getTargetCode());
+            if (taskMeta.isPrintKernelEnabled()) {
+                RuntimeUtilities.dumpKernel(result.getTargetCode());
+            }
 
             return null;
         } catch (Exception e) {
-            driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            driver.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
-            driver.fatal("exception: %s", e.toString());
+            TornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+            TornadoLogger.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
+            TornadoLogger.fatal("exception: %s", e.toString());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }
 
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
         final PrebuiltTask executable = (PrebuiltTask) task;
-
         final Path path = Paths.get(executable.getFilename());
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-
-            RuntimeUtilities.maybePrintSource(source);
+            if (task.meta().isPrintKernelEnabled()) {
+                RuntimeUtilities.dumpKernel(source);
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return null;
     }
@@ -247,7 +243,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState objectState) {
         return null;
     }
 
@@ -267,49 +263,49 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, DeviceBufferState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int deallocate(TornadoDeviceObjectState state) {
+    public synchronized int deallocate(DeviceBufferState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
         unimplemented();
         return null;
     }
 
     @Override
-    public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceBufferState state, int[] events) {
         unimplemented();
         return null;
     }
 
     @Override
-    public int streamOut(Object object, long offset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState state, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public void flush() {
+    public void flush(long executionPlanId) {
     }
 
     @Override
@@ -330,39 +326,39 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void sync() {
+    public void sync(long executionPlanId) {
     }
 
     @Override
-    public int enqueueBarrier() {
+    public int enqueueBarrier(long executionPlanId) {
         unimplemented();
-        return getDeviceContext().enqueueBarrier();
+        return getDeviceContext().enqueueBarrier(executionPlanId);
     }
 
     @Override
-    public int enqueueBarrier(int[] events) {
+    public int enqueueBarrier(long executionPlanId, int[] events) {
         unimplemented();
-        return getDeviceContext().enqueueBarrier(events);
+        return getDeviceContext().enqueueBarrier(executionPlanId, events);
     }
 
     @Override
-    public int enqueueMarker() {
-        return getDeviceContext().enqueueMarker();
+    public int enqueueMarker(long executionPlanId) {
+        return getDeviceContext().enqueueMarker(executionPlanId);
     }
 
     @Override
-    public int enqueueMarker(int[] events) {
-        return getDeviceContext().enqueueMarker(events);
+    public int enqueueMarker(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueMarker(executionPlanId, events);
     }
 
     @Override
-    public Event resolveEvent(int event) {
-        return getDeviceContext().resolveEvent(event);
+    public Event resolveEvent(long executionPlanId, int event) {
+        return getDeviceContext().resolveEvent(executionPlanId, event);
     }
 
     @Override
-    public void flushEvents() {
-        getDeviceContext().flushEvents();
+    public void flushEvents(long executionPlanId) {
+        getDeviceContext().flushEvents(executionPlanId);
     }
 
     @Override
@@ -432,7 +428,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+    public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
     }
 

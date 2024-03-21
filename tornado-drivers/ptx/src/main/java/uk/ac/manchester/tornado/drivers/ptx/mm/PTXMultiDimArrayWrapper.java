@@ -132,21 +132,21 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
         }
     }
 
-    private int writeElements(T values) {
+    private int writeElements(long executionPlanId, T values) {
         final E[] elements = innerCast(values);
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].enqueueWrite(elements[i], 0, 0, null, false);
+            wrappers[i].enqueueWrite(executionPlanId, elements[i], 0, 0, null, false);
         }
-        return deviceContext.enqueueBarrier();
+        return deviceContext.enqueueBarrier(executionPlanId);
     }
 
-    private int readElements(T values) {
+    private int readElements(long executionPlanId, T values) {
         final E[] elements = innerCast(values);
         // XXX: Offset is 0
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].enqueueRead(elements[i], 0, null, false);
+            wrappers[i].enqueueRead(executionPlanId, elements[i], 0, null, false);
         }
-        return deviceContext.enqueueBarrier();
+        return deviceContext.enqueueBarrier(executionPlanId);
     }
 
     @SuppressWarnings("unchecked")
@@ -155,31 +155,31 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     }
 
     @Override
-    protected int enqueueReadArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents) {
-        return readElements(value);
+    protected int enqueueReadArrayData(long executionPlanId, long address, long bytes, T value, long hostOffset, int[] waitEvents) {
+        return readElements(executionPlanId, value);
     }
 
     @Override
-    protected int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents) {
+    protected int enqueueWriteArrayData(long executionPlanId, long address, long bytes, T value, long hostOffset, int[] waitEvents) {
         if (hostOffset > 0) {
             System.out.println("[WARNING] writing in offset 0");
         }
-        tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
-        return writeElements(value);
+        tableWrapper.enqueueWrite(executionPlanId, addresses, 0, 0, null, false);
+        return writeElements(executionPlanId, value);
     }
 
     @Override
-    protected int readArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents) {
-        return readElements(value);
+    protected int readArrayData(long executionPlanId, long address, long bytes, T value, long hostOffset, int[] waitEvents) {
+        return readElements(executionPlanId, value);
     }
 
     @Override
-    protected void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents) {
+    protected void writeArrayData(long executionPlanId, long address, long bytes, T value, int hostOffset, int[] waitEvents) {
         if (hostOffset > 0) {
             System.out.println("[WARNING] writing in offset 0");
         }
-        tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
-        writeElements(value);
+        tableWrapper.enqueueWrite(executionPlanId, addresses, 0, 0, null, false);
+        writeElements(executionPlanId, value);
     }
 
 }

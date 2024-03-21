@@ -42,7 +42,7 @@ public interface TornadoDriverProvider extends Comparable<TornadoDriverProvider>
 
     String getName();
 
-    TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
+    TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
 
     TornadoDrivers getDevicePriority();
 }

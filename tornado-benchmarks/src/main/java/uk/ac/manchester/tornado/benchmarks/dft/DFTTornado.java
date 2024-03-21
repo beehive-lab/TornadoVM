@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -38,10 +38,10 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 public class DFTTornado extends BenchmarkDriver {
 
     private int size;
-    private DoubleArray inReal;
-    private DoubleArray inImag;
-    private DoubleArray outReal;
-    private DoubleArray outImag;
+    private FloatArray inReal;
+    private FloatArray inImag;
+    private FloatArray outReal;
+    private FloatArray outImag;
 
     public DFTTornado(int iterations, int size) {
         super(iterations);
@@ -49,13 +49,13 @@ public class DFTTornado extends BenchmarkDriver {
     }
 
     private void initData() {
-        inReal = new DoubleArray(size);
-        inImag = new DoubleArray(size);
-        outReal = new DoubleArray(size);
-        outImag = new DoubleArray(size);
+        inReal = new FloatArray(size);
+        inImag = new FloatArray(size);
+        outReal = new FloatArray(size);
+        outImag = new FloatArray(size);
         for (int i = 0; i < size; i++) {
-            inReal.set(i, (1 / (double) (i + 2)));
-            inImag.set(i, (1 / (double) (i + 2)));
+            inReal.set(i, (1 /  (i + 2)));
+            inImag.set(i, (1 /  (i + 2)));
         }
     }
 
@@ -75,8 +75,8 @@ public class DFTTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
         boolean validation = true;
-        DoubleArray outRealTor = new DoubleArray(size);
-        DoubleArray outImagTor = new DoubleArray(size);
+        FloatArray outRealTor = new FloatArray(size);
+        FloatArray outImagTor = new FloatArray(size);
 
         executionPlan.withDevice(device) //
                 .withWarmUp() //

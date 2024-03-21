@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.runtime.common;
 import java.util.HashMap;
 import java.util.List;
 
-public interface KernelArgs {
+public interface KernelStackFrame {
 
     // Marks an argument of type KernelContext being passed explicitly as a parameter.
     class KernelContextArgument {
