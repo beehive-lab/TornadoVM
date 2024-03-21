@@ -9,11 +9,7 @@ TornadoVM 1.0.2
 ----------------
 29/02/2024
 
-<<<<<<< HEAD
-Improvements 
-=======
 Improvements
->>>>>>> winstall
 ~~~~~~~~~~~~~~~~~~
 
 - `#323 <https://github.com/beehive-lab/TornadoVM/pull/323>`_: Set Accelerator Memory Limit per Execution Plan at the API level
@@ -29,15 +25,6 @@ Compatibility
 Bug Fixes
 ~~~~~~~~~~~~~~~~~~
 
-<<<<<<< HEAD
-- `#322 <https://github.com/beehive-lab/TornadoVM/pull/322>`_: Fix duplicate thread-info debug message when the debug option is also enabled. 
-- `#325 <https://github.com/beehive-lab/TornadoVM/pull/325>`_: Set/Get accesses for the ``MatrixVectorFloat4`` type fixed
-- `#326 <https://github.com/beehive-lab/TornadoVM/pull/326>`_: Fix installation script for running with Python >= 3.12
-- `#327 <https://github.com/beehive-lab/TornadoVM/pull/327>`_: Fix Memory Limits for all supported Panama off-heap types.
-- `#329 <https://github.com/beehive-lab/TornadoVM/pull/329>`_: Fix timers for the dynamic reconfiguration policies 
-- `#330 <https://github.com/beehive-lab/TornadoVM/pull/330>`_: Fix the profiler logs when silent mode is enabled
-- `#332 <https://github.com/beehive-lab/TornadoVM/pull/332>`_: Fix Batch processing when having multiple task-graphs in a single execution plan. 
-=======
 - `#322 <https://github.com/beehive-lab/TornadoVM/pull/322>`_: Fix duplicate thread-info debug message when the debug option is also enabled.
 - `#325 <https://github.com/beehive-lab/TornadoVM/pull/325>`_: Set/Get accesses for the ``MatrixVectorFloat4`` type fixed
 - `#326 <https://github.com/beehive-lab/TornadoVM/pull/326>`_: Fix installation script for running with Python >= 3.12
@@ -45,7 +32,6 @@ Bug Fixes
 - `#329 <https://github.com/beehive-lab/TornadoVM/pull/329>`_: Fix timers for the dynamic reconfiguration policies
 - `#330 <https://github.com/beehive-lab/TornadoVM/pull/330>`_: Fix the profiler logs when silent mode is enabled
 - `#332 <https://github.com/beehive-lab/TornadoVM/pull/332>`_: Fix Batch processing when having multiple task-graphs in a single execution plan.
->>>>>>> winstall
 
 
 TornadoVM 1.0.1
