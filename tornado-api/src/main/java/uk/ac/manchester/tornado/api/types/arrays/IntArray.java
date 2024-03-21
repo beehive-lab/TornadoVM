@@ -24,7 +24,6 @@ import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
-import uk.ac.manchester.tornado.api.types.HalfFloat;
 
 /**
  * This class represents an array of ints stored in native memory.

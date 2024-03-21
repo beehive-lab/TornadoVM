@@ -35,6 +35,8 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -81,6 +83,8 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
     private static final JVMMapping JVM = new JVMMapping();
     private static final int DEFAULT_DRIVER = 0;
+
+    private static Lock lock = new ReentrantLock();
     private static DebugContext debugContext = null;
     private static OptionValues options;
     private final Map<Object, GlobalObjectState> objectMappings;
@@ -110,9 +114,11 @@ public final class TornadoCoreRuntime extends TornadoLogger implements TornadoRu
     }
 
     public static DebugContext getDebugContext() {
+        lock.lock();
         if (debugContext == null) {
             debugContext = new DebugContext.Builder(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider())).build();
         }
+        lock.unlock();
         return debugContext;
     }
 
