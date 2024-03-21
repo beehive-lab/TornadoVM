@@ -17,18 +17,20 @@
  */
 package uk.ac.manchester.tornado.unittests.memoryplan;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * How to test?
@@ -49,6 +51,8 @@ public class TestMemoryLimit extends TornadoTestBase {
     private static IntArray b = new IntArray(NUM_ELEMENTS);
     private static IntArray c = new IntArray(NUM_ELEMENTS);
 
+    private static int value = 10000000;
+
     @BeforeClass
     public static void setUpBeforeClass() {
         a = new IntArray(NUM_ELEMENTS);
@@ -58,12 +62,18 @@ public class TestMemoryLimit extends TornadoTestBase {
         b.init(2);
     }
 
+    public static void add(IntArray a, IntArray b, IntArray c, int value) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i) + value);
+        }
+    }
+
     @Test
     public void testWithMemoryLimitOver() {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestHello::add, a, b, c) //
+                .task("t0", TestMemoryLimit::add, a, b, c, value) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -73,7 +83,7 @@ public class TestMemoryLimit extends TornadoTestBase {
         executionPlan.withMemoryLimit("1GB").execute();
 
         for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
+            assertEquals(a.get(i) + b.get(i) + value, c.get(i), 0.001);
         }
         executionPlan.freeDeviceMemory();
     }

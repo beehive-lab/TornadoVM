@@ -157,8 +157,9 @@ public class TornadoExecutionContext {
 
     public boolean doesExceedExecutionPlanLimit() {
         long totalSize = 0;
-        
+
         for (Object parameter : getObjects()) {
+
             if (parameter.getClass().isArray()) {
                 Class<?> componentType = parameter.getClass().getComponentType();
                 DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);
@@ -183,6 +184,16 @@ public class TornadoExecutionContext {
                 // ignore
             } else {
                 throw new TornadoRuntimeException(STR."Unsupported type: \{parameter.getClass()}");
+            }
+        }
+
+        if (!constants.isEmpty()) {
+            for (Object field : constants) {
+                DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(field.getClass());
+                if (dataTypeSize == null) {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
+                }
+                totalSize += dataTypeSize.getSize();
             }
         }
         return totalSize > getExecutionPlanMemoryLimit();
