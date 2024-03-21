@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -171,11 +170,6 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
             }
         }
         return devices;
-    }
-
-    @Override
-    public List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllDevices().stream().filter(predicate).toList();
     }
 
     @Override

@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
@@ -174,11 +173,6 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
             }
         }
         return devices;
-    }
-
-    @Override
-    public List<TornadoDevice> getDevicesWithPredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllDevices().stream().filter(predicate).toList();
     }
 
     @Override
