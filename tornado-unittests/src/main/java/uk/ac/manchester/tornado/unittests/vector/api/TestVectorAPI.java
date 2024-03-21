@@ -41,6 +41,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestVectorAPI extends TornadoTestBase {
 
     private static final int SIZE = 2048;
+
+    private static final float DELTA = 0.001f;
     private static final Random rand = new Random();
     private static FloatArray arrayA;
     private static FloatArray arrayB;
@@ -106,7 +108,7 @@ public class TestVectorAPI extends TornadoTestBase {
     public void test64BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_64;
         float[] result = parallelVectorAdd(arrayA, arrayB, species);
-        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), DELTA);
     }
 
     /**
@@ -116,7 +118,7 @@ public class TestVectorAPI extends TornadoTestBase {
     public void test128BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_128;
         float[] result = parallelVectorAdd(arrayA, arrayB, species);
-        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), DELTA);
     }
 
     /**
@@ -126,7 +128,7 @@ public class TestVectorAPI extends TornadoTestBase {
     public void test256BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_256;
         float[] result = parallelVectorAdd(arrayA, arrayB, species);
-        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), DELTA);
     }
 
     /**
@@ -136,6 +138,6 @@ public class TestVectorAPI extends TornadoTestBase {
     public void test512BitVectors() {
         VectorSpecies<Float> species = FloatVector.SPECIES_512;
         float[] result = parallelVectorAdd(arrayA, arrayB, species);
-        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), 0.001f);
+        Assert.assertArrayEquals(result, referenceResult.toHeapArray(), DELTA);
     }
 }
