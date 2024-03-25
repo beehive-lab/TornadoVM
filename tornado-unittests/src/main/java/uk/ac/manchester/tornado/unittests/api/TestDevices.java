@@ -17,13 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoDeviceMap;
@@ -49,18 +50,22 @@ public class TestDevices extends TornadoTestBase {
      * We ask, on purpose, for a backend index that does not exist to
      * check that the exception {@link TornadoBackendNotFound} in thrown.
      */
-    @Test(expected = TornadoBackendNotFound.class)
+    @Test
     public void test01() {
-        TornadoDevice device = TornadoExecutionPlan.getDevice(100, 0);
+        assertThrows(TornadoBackendNotFound.class, () -> {
+            TornadoDevice device = TornadoExecutionPlan.getDevice(100, 0);
+        });
     }
 
     /**
      * We ask, on purpose, for a device index that does not exist to
      * check that the exception {@link TornadoDeviceNotFound} in thrown.
      */
-    @Test(expected = TornadoDeviceNotFound.class)
+    @Test
     public void test02() {
-        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 100);
+        assertThrows(TornadoDeviceNotFound.class, () -> {
+            TornadoDevice device = TornadoExecutionPlan.getDevice(0, 100);
+        });
     }
 
     /**

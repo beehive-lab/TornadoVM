@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -54,7 +54,7 @@ public class PrebuiltTest extends TornadoTestBase {
     private static String FILE_PATH;
     private static TornadoVMBackendType backendType;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
         defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
