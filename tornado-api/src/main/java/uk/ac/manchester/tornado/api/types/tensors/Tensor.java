@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 @SegmentElementSize(size = 4) //This needs to be fixed
-public final class Tensor extends TornadoNativeArray {
+public final class Tensor extends TornadoNativeArray implements AbstractTensor {
 
     /**
      * The data type of the elements contained within the tensor.
