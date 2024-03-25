@@ -18,7 +18,7 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
     private final DType dType;
     private final Shape shape;
 
-    private FloatArray tensorStorage;
+    private final FloatArray tensorStorage;
 
     /**
      * The total number of elements in the tensor.
@@ -34,6 +34,12 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
         this.numberOfElements = shape.getSize();
         this.dType = DType.FLOAT;
         this.tensorStorage = new FloatArray(numberOfElements);
+    }
+
+    public void init(float value) {
+        for (int i = 0; i < getSize(); i++) {
+            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_FLOAT, getBaseIndex() + i, value);
+        }
     }
 
     public void set(int index, float value) {

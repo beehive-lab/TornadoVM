@@ -14,6 +14,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.tensors.DType;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
+import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestTensorTypes extends TornadoTestBase {
@@ -29,6 +30,12 @@ public class TestTensorTypes extends TornadoTestBase {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
             //            tensorC.set(i, tensorA.get(i, Float.class) + tensorB.get(i, Float.class));
             tensorC.set(i, tensorA.getFloatValue(i) + tensorB.getFloatValue(i));
+        }
+    }
+
+    public static void tensorAdditionFloat32(TensorFloat32 tensorA, TensorFloat32 tensorB, TensorFloat32 tensorC) {
+        for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
+            tensorC.set(i, tensorA.get(i) + tensorB.get(i));
         }
     }
 
@@ -101,6 +108,16 @@ public class TestTensorTypes extends TornadoTestBase {
         return tensor;
     }
 
+    //    private TensorFloat32 initRandTensor(int size) {
+    //        Random random = new Random();
+    //        Shape shape = new Shape(size);
+    //        Tensor tensor = new Tensor(shape, DType.FLOAT);
+    //        for (int i = 0; i < size; i++) {
+    //            tensor.set(i, random.nextFloat(1f));
+    //        }
+    //        return tensor;
+    //    }
+
     private FloatArray toFloatArray(Tensor tensor) {
         FloatArray floatArray = new FloatArray(tensor.getSize());
         assert tensor.getDType() == DType.FLOAT;
@@ -137,6 +154,37 @@ public class TestTensorTypes extends TornadoTestBase {
 
         FloatArray fa = toFloatArray(tensorA);
         FloatArray fb = toFloatArray(tensorB);
+
+        //        for (int i = 0; i < tensorC.getSize(); i++) {
+        //            System.out.println(STR." Tensor value: \{tensorC.getFloatValue(i)} Float Array value: \{fa.get(i) + fb.get(i)}");
+        //        }
+
+    }
+
+    @Test
+    public void testTensorFloat32Add() {
+        // Define the shape for the tensors
+        Shape shape = new Shape(64, 64, 64);
+
+        // Create two tensors and initialize their values
+        TensorFloat32 tensorA = new TensorFloat32(shape);
+        TensorFloat32 tensorB = new TensorFloat32(shape);
+
+        // Create a tensor to store the result of addition
+        TensorFloat32 tensorC = new TensorFloat32(shape);
+
+        // Define the task graph
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
+                .task("t0", TestTensorTypes::tensorAdditionFloat32, tensorA, tensorB, tensorC) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tensorC); //
+
+        // Take a snapshot of the task graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        // Create an execution plan and execute it
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         //        for (int i = 0; i < tensorC.getSize(); i++) {
         //            System.out.println(STR." Tensor value: \{tensorC.getFloatValue(i)} Float Array value: \{fa.get(i) + fb.get(i)}");
