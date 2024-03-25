@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -165,7 +165,12 @@ public final class Matrix3DFloat4 extends Matrix3DType implements TornadoMatrixI
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegment();
     }
 
     @Override

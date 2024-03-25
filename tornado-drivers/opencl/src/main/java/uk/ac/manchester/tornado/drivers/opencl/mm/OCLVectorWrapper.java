@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022,2024 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -257,7 +257,7 @@ public class OCLVectorWrapper implements XPUBuffer {
     private long sizeOf(final Object array) {
         long size;
         if (array instanceof TornadoNativeArray nativeArray) {
-            size = nativeArray.getNumBytesOfSegment();
+            size = nativeArray.getNumBytesOfSegmentWithHeader();
         } else {
             size = (long) Array.getLength(array) * kind.getByteCount();
         }

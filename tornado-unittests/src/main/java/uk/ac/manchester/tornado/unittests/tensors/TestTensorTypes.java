@@ -44,7 +44,7 @@ public class TestTensorTypes extends TornadoTestBase {
 
     @Test
     public void testHelloTensorAPI() {
-        Shape shape = new Shape(64, 64, 64);
+        uk.ac.manchester.tornado.api.types.tensors.Shape shape = new Shape(64, 64, 64);
 
         Tensor tensorA = new Tensor(shape, DType.HALF_FLOAT);
 
@@ -120,7 +120,8 @@ public class TestTensorTypes extends TornadoTestBase {
         Tensor tensorB = initRandTensor(shape.getSize());
 
         // Create a tensor to store the result of addition
-        Tensor tensorC = new Tensor(shape, DType.FLOAT);
+        Tensor tensorC = new Tensor(shape, DType.QINT8);
+
         // Define the task graph
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
@@ -137,9 +138,9 @@ public class TestTensorTypes extends TornadoTestBase {
         FloatArray fa = toFloatArray(tensorA);
         FloatArray fb = toFloatArray(tensorB);
 
-        for (int i = 0; i < tensorC.getSize(); i++) {
-            System.out.println(STR." Tensor value: \{tensorC.getFloatValue(i)} Float Array value: \{fa.get(i) + fb.get(i)}");
-        }
+        //        for (int i = 0; i < tensorC.getSize(); i++) {
+        //            System.out.println(STR." Tensor value: \{tensorC.getFloatValue(i)} Float Array value: \{fa.get(i) + fb.get(i)}");
+        //        }
 
     }
 

@@ -40,6 +40,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
@@ -158,7 +159,9 @@ public class PTXCodeUtil {
         for (Object arg : task.getArguments()) {
             sb.append('_');
             Class<?> argClass = arg.getClass();
-            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+            if (argClass == HalfFloat.class) {
+                emitSignatureForGenericParameter(sb, arg);
+            } else if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
                 emitSignatureForPrimitiveParameter(sb, arg);
             } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
                 emitSignatureForArrayParameter(sb, arg, task);

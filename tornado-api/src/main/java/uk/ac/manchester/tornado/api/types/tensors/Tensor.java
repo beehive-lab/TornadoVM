@@ -104,6 +104,8 @@ public final class Tensor extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
+    //    TensorFP16=NEW\\\
+
     /**
      * Creates a tensor from a float array.
      *
@@ -162,11 +164,15 @@ public final class Tensor extends TornadoNativeArray {
     }
 
     @Override
-    public long getNumBytesOfSegment() {
+    public long getNumBytesOfSegmentWithHeader() {
         return 0;
     }
 
     @Override
+    public long getNumBytesOfSegment() {
+        return 0;
+    }
+
     public long getNumBytesWithoutHeader() {
         return 0;
     }

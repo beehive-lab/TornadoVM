@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -38,21 +38,22 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
-public final class OCLDriver implements TornadoAcceleratorDriver {
-    protected static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
+public final class OCLBackendImpl implements TornadoAcceleratorBackend {
+    private static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
             OCLDeviceType.CL_DEVICE_TYPE_GPU, //
             OCLDeviceType.CL_DEVICE_TYPE_CPU, //
             OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
@@ -61,7 +62,9 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
     private final List<OCLExecutionEnvironment> contexts;
     private OCLBackend[] flatBackends;
 
-    public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
+    private List<TornadoDevice> devices;
+
+    public OCLBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
 
         if (numPlatforms < 1) {
@@ -105,7 +108,7 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
         }
 
         // Add backends to backendList in the order specified by deviceTypeOrdering
-        for (OCLDeviceType deviceType : OCLDriver.DEVICE_TYPE_LIST) {
+        for (OCLDeviceType deviceType : OCLBackendImpl.DEVICE_TYPE_LIST) {
             List<OCLBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
             if (backendListForDeviceType != null) {
                 backendList.addAll(backendListForDeviceType);
@@ -126,7 +129,7 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
 
         // Iterate through 'OCLDriver.DEVICE_TYPE_LIST' and add backends in the
         // specified order
-        for (OCLDeviceType deviceType : OCLDriver.DEVICE_TYPE_LIST) {
+        for (OCLDeviceType deviceType : OCLBackendImpl.DEVICE_TYPE_LIST) {
             List<OCLBackend> backendsOfType = groupedByDeviceType.get(deviceType);
             if (backendsOfType != null) {
                 sortedBackends.addAll(backendsOfType);
@@ -154,8 +157,19 @@ public final class OCLDriver implements TornadoAcceleratorDriver {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
+            throw new TornadoDeviceNotFound(STR."[ERROR] device required not found: \{index} - Max: \{flatBackends.length}");
         }
+    }
+
+    @Override
+    public List<TornadoDevice> getAllDevices() {
+        if (devices == null) {
+            devices = new ArrayList<>();
+            for (int deviceIndex = 0; deviceIndex < getDeviceCount(); deviceIndex++) {
+                devices.add(getDevice(deviceIndex));
+            }
+        }
+        return devices;
     }
 
     @Override

@@ -29,23 +29,18 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 public class DataRange {
 
     private final TornadoNativeArray tornadoNativeArray;
+    private final long totalSizeInBytes;
+    private final int elementSize;
     private long offset;
-
     private long offsetMaterialized;
     private long partialSize;
-
     private long partialSizeMaterialized;
-
     private boolean isMaterialized;
-
-    private final long totalSizeInBytes;
-
-    private final int elementSize;
 
     public DataRange(TornadoNativeArray tornadoNativeArray) {
         this.tornadoNativeArray = tornadoNativeArray;
         elementSize = tornadoNativeArray.getElementSize();
-        totalSizeInBytes = tornadoNativeArray.getNumBytesWithoutHeader();
+        totalSizeInBytes = tornadoNativeArray.getNumBytesOfSegment();
     }
 
     public DataRange withOffset(long offset) {

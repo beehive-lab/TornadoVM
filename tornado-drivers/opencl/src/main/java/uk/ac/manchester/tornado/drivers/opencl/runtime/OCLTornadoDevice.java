@@ -59,12 +59,11 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -103,9 +102,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoXPUDevice {
 
-    private static final Pattern NAME_PATTERN = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
-    private static OCLDriver driver = null;
+    private static OCLBackendImpl driver = null;
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
+    private static final Pattern NAME_PATTERN = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
@@ -124,7 +123,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
-        driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
+        driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class);
 
         if (driver == null) {
             throw new RuntimeException("TornadoVM OpenCL Driver not found");
@@ -297,7 +296,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
             TornadoLogger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
-                throw new TornadoBailoutRuntimeException(STR."[Error during the Task Compilation]: \{e.getMessage()}");
+                throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
             } else {
                 throw e;
             }
@@ -337,7 +336,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask(task);
         }
-        TornadoInternalError.shouldNotReachHere(STR."task of unknown type: \{task.getClass().getSimpleName()}");
+        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
     }
 
@@ -363,7 +362,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         TaskMetaDataInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
             TaskMetaData metaData = (TaskMetaData) task.meta();
-            return STR."\{task.getId()}.device=\{metaData.getDriverIndex()}:\{metaData.getDeviceIndex()}";
+            return task.getId() + ".device=" + metaData.getDriverIndex() + ":" + metaData.getDeviceIndex();
         } else {
             throw new RuntimeException("[ERROR] TaskMetadata expected");
         }
@@ -399,11 +398,12 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
-        if (value instanceof AtomicInteger atomicInteger) {
+        if (value instanceof AtomicInteger) {
+            AtomicInteger ai = (AtomicInteger) value;
             if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
                 HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledResolvedJavaMethod());
                 int index = values.get(paramIndex);
-                array[index] = atomicInteger.get();
+                array[index] = ai.get();
             }
         }
         return array;
@@ -545,8 +545,6 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof Tensor) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLXPUBuffer(deviceContext, object);
             }
@@ -636,13 +634,12 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState state, int[] events) {
         long partialCopySize = state.getPartialCopySize();
         if (state.isAtomicRegionPresent()) {
-
             // Read for Atomics
             int eventID = state.getObjectBuffer().enqueueRead(executionPlanId, null, 0, null, false);
-            if (object instanceof AtomicInteger atomicInteger) {
+            if (object instanceof AtomicInteger) {
                 int[] arr = getAtomic().getIntBuffer();
                 int indexFromGlobalRegion = mappingAtomics.get(object);
-                atomicInteger.set(arr[indexFromGlobalRegion]);
+                ((AtomicInteger) object).set(arr[indexFromGlobalRegion]);
             }
             return eventID;
         } else {
@@ -759,7 +756,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int getDriverIndex() {
-        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+        return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
     }
 
     @Override
@@ -807,7 +804,10 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         if (major > 2) {
             return true;
         }
-        return major == 2 && minor >= 1;
+        if (major == 2 && minor >= 1) {
+            return true;
+        }
+        return false;
     }
 
 }
