@@ -3,6 +3,7 @@ open module tornado.unittests {
     requires transitive tornado.api;
     requires lucene.core;
     requires java.desktop;
+    requires jdk.incubator.vector;
 
     exports uk.ac.manchester.tornado.unittests;
     exports uk.ac.manchester.tornado.unittests.api;

@@ -61,7 +61,7 @@ public class Init {
         System.out.println("Input size: " + bytesToAllocate + " (MB)");
         FloatArray array = new FloatArray(size);
 
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
         long maxDeviceMemory = device.getMaxAllocMemory();
         double mb = maxDeviceMemory * 1E-6;
         System.out.println("Maximum alloc device memory: " + mb + " (MB)");

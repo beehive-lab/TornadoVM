@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,16 +34,16 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.SPIRV_BACKE
  * (default driver).
  */
 
-public enum TornadoDrivers {
+public enum TornadoBackends {
 
     PTX(PTX_BACKEND_PRIORITY, "implemented"), //
     OpenCL(OPENCL_BACKEND_PRIORITY, "implemented"), //
-    SPIRV(SPIRV_BACKEND_PRIORITY, "under-development"); //
+    SPIRV(SPIRV_BACKEND_PRIORITY, "implemented"); //
 
     private final int priority;
     private final String status;
 
-    TornadoDrivers(int priority, String status) {
+    TornadoBackends(int priority, String status) {
         this.priority = priority;
         this.status = status;
     }
