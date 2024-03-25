@@ -58,6 +58,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoValueTypeReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLKernelContextAccessNode;
@@ -253,13 +254,17 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
     }
 
-    private ConstantNode createConstantFromObject(Object obj) {
+    private ConstantNode createConstantFromObject(Object obj, StructuredGraph graph) {
         ConstantNode result = null;
         switch (obj) {
-            case Float objFloat -> result = ConstantNode.forFloat(objFloat);
-            case Integer objInteger -> result = ConstantNode.forInt(objInteger);
-            case Double objDouble -> result = ConstantNode.forDouble(objDouble);
-            case Long objLong -> result = ConstantNode.forLong(objLong);
+            case Byte objByte -> result = ConstantNode.forByte(objByte, graph);
+            case Character objChar -> result = ConstantNode.forChar(objChar, graph);
+            case Short objShort -> result = ConstantNode.forShort(objShort, graph);
+            case HalfFloat objHalfFloat -> result = ConstantNode.forFloat(objHalfFloat.getFloat32(), graph);
+            case Integer objInteger -> result = ConstantNode.forInt(objInteger, graph);
+            case Float objFloat -> result = ConstantNode.forFloat(objFloat, graph);
+            case Double objDouble -> result = ConstantNode.forDouble(objDouble, graph);
+            case Long objLong -> result = ConstantNode.forLong(objLong, graph);
             case null, default -> unimplemented("createConstantFromObject: %s", obj);
         }
         return result;
@@ -292,8 +297,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 parameterNode.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
-                ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
-                graph.addWithoutUnique(constant);
+                ConstantNode constant = createConstantFromObject(args[parameterNode.index()], graph);
                 parameterNode.replaceAtUsages(constant);
             }
         } else {

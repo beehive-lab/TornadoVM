@@ -33,6 +33,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.StreamSupport;
 
 import org.graalvm.collections.EconomicMap;
@@ -76,6 +78,9 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(TornadoOptions.TORNADO_SKETCHER_THREADS, executorThreadFactory);
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
     private static final JVMMapping JVM = new JVMMapping();
+    private static final int DEFAULT_DRIVER = 0;
+
+    private static Lock lock = new ReentrantLock();
     private static final int DEFAULT_BACKEND = 0;
     private static DebugContext debugContext = null;
     private static OptionValues options;
@@ -105,9 +110,11 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
     }
 
     public static DebugContext getDebugContext() {
+        lock.lock();
         if (debugContext == null) {
             debugContext = new DebugContext.Builder(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider())).build();
         }
+        lock.unlock();
         return debugContext;
     }
 
