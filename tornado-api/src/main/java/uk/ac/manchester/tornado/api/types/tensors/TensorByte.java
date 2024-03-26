@@ -17,23 +17,25 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
 
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-public final class TensorFloat64 extends TornadoNativeArray implements AbstractTensor {
+public final class TensorByte extends TornadoNativeArray implements AbstractTensor {
 
-    private static final int DOUBLE_BYTES = 8;
+    private static final int BYTE = 1;
     /**
      * The data type of the elements contained within the tensor.
      */
     private final DType dType;
     private final Shape shape;
 
-    private final DoubleArray tensorStorage;
+    private final ByteArray tensorStorage;
 
     /**
      * The total number of elements in the tensor.
@@ -44,36 +46,36 @@ public final class TensorFloat64 extends TornadoNativeArray implements AbstractT
      * The memory segment representing the tensor data in native memory.
      */
 
-    public TensorFloat64(Shape shape) {
+    public TensorByte(Shape shape) {
         this.shape = shape;
         this.numberOfElements = shape.getSize();
-        this.dType = DType.DOUBLE;
-        this.tensorStorage = new DoubleArray(numberOfElements);
+        this.dType = DType.BOOL;
+        this.tensorStorage = new ByteArray(numberOfElements);
     }
 
-    public void init(double value) {
+    public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
-            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_DOUBLE, getBaseIndex() + i, value);
+            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_BYTE, getBaseIndex() + i, value);
         }
     }
 
-    public void set(int index, double value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_DOUBLE, getBaseIndex() + index, value);
+    public void set(int index, byte value) {
+        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_BYTE, getBaseIndex() + index, value);
     }
 
     private long getBaseIndex() {
-        return (int) TornadoNativeArray.ARRAY_HEADER / DOUBLE_BYTES;
+        return (int) TornadoNativeArray.ARRAY_HEADER / BYTE;
     }
 
     /**
-     * Gets the double value stored at the specified index of the {@link DoubleArray} instance.
+     * Gets the float value stored at the specified index of the {@link ByteArray} instance.
      *
      * @param index
-     *     The index of which to retrieve the double value.
+     *     The index of which to retrieve the float value.
      * @return
      */
-    public double get(int index) {
-        return tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_DOUBLE, getBaseIndex() + index);
+    public byte get(int index) {
+        return tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_BYTE, getBaseIndex() + index);
     }
 
     @Override
@@ -103,12 +105,12 @@ public final class TensorFloat64 extends TornadoNativeArray implements AbstractT
 
     @Override
     protected void clear() {
-
+        init((byte) 0);
     }
 
     @Override
     public int getElementSize() {
-        return 0;
+        return numberOfElements;
     }
 
     @Override

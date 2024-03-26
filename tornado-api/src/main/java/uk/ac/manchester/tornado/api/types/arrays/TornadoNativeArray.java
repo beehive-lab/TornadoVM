@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api.types.arrays;
 import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
+import uk.ac.manchester.tornado.api.types.tensors.TensorByte;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat16;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat64;
@@ -41,8 +42,8 @@ import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
  * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
-public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, IntArray, LongArray, ShortArray, Tensor, TensorFloat16, TensorFloat32,
-        TensorFloat64, TensorInt16, TensorInt32, TensorInt64 {
+public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, IntArray, LongArray, ShortArray, Tensor, TensorByte, TensorFloat16,
+        TensorFloat32, TensorFloat64, TensorInt16, TensorInt32, TensorInt64 {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through
