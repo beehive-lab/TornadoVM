@@ -43,7 +43,7 @@ List of TornadoVM Flags:
 -  | ``-Ds0.t0.global.workgroup.size=XXX,XXX,XXX``:
    | Allows to define global worksizes (problem sizes).
 
--  | ``-Ds0.t0.local.workgroup.size=XXX,XXX,`:
+-  | ``-Ds0.t0.local.workgroup.size=XXX,XXX,``:
    | Allows to define custom local workgroup configuration and overwrite
      the default values provided by the TornadoScheduler.
 
@@ -92,11 +92,11 @@ List of TornadoVM Flags:
      ``CLBuildProgram``
      `specification <https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html>`__
      to TornadoVM at runtime. By default it doesn’t enable any.
- -  | ``-Dtornado.concurrent.devices=true``:
-    | Allows to run a TaskGraph in multiple devices concurrently. The user
-      needs explicitly to define the device for each task, otherwise all
-      tasks will run on the default device. For instance,
-        ``-Ds0.t0.device=0:0 -Ds0.t1.device=0:1``
+-  | ``-Dtornado.concurrent.devices=true``:
+   | Allows to run a TaskGraph in multiple devices concurrently. The user
+     needs explicitly to define the device for each task, otherwise all
+     tasks will run on the default device. For instance,
+     ``-Ds0.t0.device=0:0 -Ds0.t1.device=0:1``.
 
 
 Optimizations

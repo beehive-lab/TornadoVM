@@ -24,7 +24,7 @@ For a quick introduction please read the following [FAQ](https://tornadovm.readt
 
 ## 1. Installation
 
-In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
+In Linux and macOS, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
 
 ```bash
 $ ./bin/tornadovm-installer
@@ -54,7 +54,7 @@ Example of installation:
 $ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ ./bin/tornadovm-installer -- jdk jdk21 --backend opencl,spirv,ptx
+$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl,spirv,ptx
 ```
 
 Alternatively, TornadoVM can be installed either manually [from source](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation) or by [using Docker](https://tornadovm.readthedocs.io/en/latest/docker.html).
@@ -62,6 +62,7 @@ Alternatively, TornadoVM can be installed either manually [from source](https://
 If you are planning to use Docker with TornadoVM on GPUs, you can also follow [these](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) guidelines.
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](https://tornadovm.readthedocs.io/en/latest/cloud.html).
+
 
 ## 2. Usage Instructions
 
@@ -175,6 +176,7 @@ public class Compute {
 
 Additionally, the two modes of expressing parallelism (kernel and loop parallelization) can be combined in the same task graph object.
 
+
 ## 4. Dynamic Reconfiguration
 
 Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that
@@ -200,6 +202,7 @@ executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL)
 Further details and instructions on how to enable this feature can be found here.
 
 * Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
+
 
 ## 5. How to Use TornadoVM in your Projects?
 
@@ -234,9 +237,11 @@ You can import the TornadoVM API by setting this the following dependency in the
 
 To run TornadoVM, you need to either install the TornadoVM extension for GraalVM/OpenJDK, or run with our Docker [images](https://github.com/beehive-lab/docker-tornado).
 
+
 ## 6. Additional Resources
 
 [Here](https://tornadovm.readthedocs.io/en/latest/resources.html) you can find videos, presentations, tech-articles and artefacts describing TornadoVM, and how to use it.
+
 
 ## 7. Academic Publications
 
@@ -276,10 +281,10 @@ If you are using **Tornado 0.1** (Initial release), please use the following cit
  address = {New York, NY, USA},
  keywords = {Java, graal, heterogeneous hardware, openCL, virtual machine},
 }
-
 ```
 
 Selected publications can be found [here](https://tornadovm.readthedocs.io/en/latest/publications.html).
+
 
 ## 8. Acknowledgments
 
@@ -304,8 +309,7 @@ We welcome collaborations! Please see how to contribute to the project in the [C
 
 ### Write your questions and proposals:
 
-Additionally, you can open new proposals on the GitHub discussions page:[https://github.com/beehive-lab/TornadoVM/discussions](https://github.com/beehive-lab/TornadoVM/discussions).
-
+Additionally, you can open new proposals on the GitHub discussions [page](https://github.com/beehive-lab/TornadoVM/discussions).
 
 Alternatively, you can share a Google document with us.
 
@@ -313,9 +317,11 @@ Alternatively, you can share a Google document with us.
 
 For Academic & Industry collaborations, please contact [here](https://www.tornadovm.org/contact-us).
 
+
 ## 10. TornadoVM Team
 
 Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornadovm.org/about-us).
+
 
 ## 11. Licenses
 
@@ -325,15 +331,15 @@ Each Java TornadoVM module is licensed as follows:
 
 |  Module | License  |
 |---|---|
-| Tornado-API       |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
+| Tornado-API       |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 | Tornado-Runtime   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception   |
 | Tornado-Assembly  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 | Tornado-Drivers   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception   |
 | Tornado-Drivers-OpenCL-Headers |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE) |
-| Tornado-scripts   |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
-| Tornado-Annotation|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
+| Tornado-scripts   |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Annotation|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 | Tornado-Unittests |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 | Tornado-Benchmarks|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| Tornado-Examples  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
+| Tornado-Examples  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 | Tornado-Matrices  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 ||

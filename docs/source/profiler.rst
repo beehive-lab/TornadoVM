@@ -113,9 +113,6 @@ Then, for each task within a task-graph, there are usually three timers, one dev
 -  *TASK_CODE_GENERATION_TIME*: time that takes the code generation from
    the LIR to the target backend code (e.g., SPIR-V).
 
-Note
-^^^^
-
 When the task-graph is executed multiple times (through an execution plan), timers related to compilation will not appear in the Json time-report. 
 This is because the generated binary is cached and there is no compilation after the second iteration.
 
