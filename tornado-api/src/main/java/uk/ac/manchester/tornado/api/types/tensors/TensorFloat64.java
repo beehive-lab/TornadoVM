@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
@@ -24,6 +25,7 @@ import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 
+@SegmentElementSize(size = 8)
 public final class TensorFloat64 extends TornadoNativeArray implements AbstractTensor {
 
     private static final int DOUBLE_BYTES = 8;
