@@ -132,7 +132,7 @@ public final class TensorFloat16 extends TornadoNativeArray implements AbstractT
         return dType;
     }
 
-    public static void initialize(TensorFloat32 tensor, HalfFloat value) {
+    public static void initialize(TensorFloat16 tensor, HalfFloat value) {
         for (@Parallel int i = 0; i < tensor.getSize(); i++) {
             tensor.set(i, value);
         }

@@ -162,7 +162,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         for (ResolvedJavaField field : baseIndexNode.field().getDeclaringClass().getInstanceFields(false)) {
             field.getConstantValue();
             if (field != null) {
-                System.out.println("F " + field.getConstantValue());
             }
             //            try {
             //                // Get the field object by its name
@@ -202,7 +201,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
-            System.out.println("xxx " + loadFieldSegment.toString());
             if (loadFieldSegment.toString().contains("segment")) {
 
                 // Remove the loadField#baseIndex and replace it with a Constant value

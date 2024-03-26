@@ -61,8 +61,8 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
         }
     }
 
-    public void set(int index, HalfFloat value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_SHORT, getBaseIndex() + index, value.getHalfFloatValue());
+    public void set(int index, float value) {
+        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_FLOAT, getBaseIndex() + index, value);
     }
 
     private long getBaseIndex() {
@@ -112,7 +112,7 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
 
     @Override
     public int getElementSize() {
-        return 0;
+        return numberOfElements;
     }
 
     @Override
