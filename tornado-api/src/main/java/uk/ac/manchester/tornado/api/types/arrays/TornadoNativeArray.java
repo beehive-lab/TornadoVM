@@ -42,7 +42,9 @@ import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
  * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
-public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, IntArray, LongArray, ShortArray, Tensor, TensorByte, TensorFloat16,
+public abstract sealed class TornadoNativeArray //
+        permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, //
+        IntArray, LongArray, ShortArray, Tensor, TensorByte, TensorFloat16, //
         TensorFloat32, TensorFloat64, TensorInt16, TensorInt32, TensorInt64 {
 
     /**
