@@ -12,8 +12,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.tensors.DType;
-import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
+import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -51,7 +51,7 @@ public class TestTensorTypes extends TornadoTestBase {
 
     @Test
     public void testHelloTensorAPI() {
-        uk.ac.manchester.tornado.api.types.tensors.Shape shape = new Shape(64, 64, 64);
+          Shape shape = new Shape(64, 64, 64);
 
         Tensor tensorA = new Tensor(shape, DType.HALF_FLOAT);
 

@@ -91,7 +91,7 @@ public record Shape(int... dimensions) {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         for (int i = 0; i < dimensions.length; i++) {
-            sb.append("dim_" + i + ": " + dimensions[i]);
+            sb.append("dim_").append(i).append(": ").append(dimensions[i]);
             if (i < dimensions.length - 1) {
                 sb.append(", ");
             }

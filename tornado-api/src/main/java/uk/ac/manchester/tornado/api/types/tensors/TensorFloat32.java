@@ -1,12 +1,14 @@
 package uk.ac.manchester.tornado.api.types.tensors;
 
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 @SegmentElementSize(size = 4)
 public final class TensorFloat32 extends TornadoNativeArray implements AbstractTensor {
@@ -42,8 +44,8 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
         }
     }
 
-    public void set(int index, float value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_FLOAT, getBaseIndex() + index, value);
+    public void set(int index, HalfFloat value) {
+        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_SHORT, getBaseIndex() + index, value.getHalfFloatValue());
     }
 
     private long getBaseIndex() {
@@ -88,7 +90,7 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
 
     @Override
     protected void clear() {
-
+        init(0.0f);
     }
 
     @Override
