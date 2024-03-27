@@ -28,6 +28,10 @@ public sealed interface TornadoMatrixInterface<T extends Buffer> extends Primiti
 
     long getNumBytes();
 
+    long getNumBytesWithHeader();
+
     MemorySegment getSegment();
+
+    MemorySegment getSegmentWithHeader();
 
 }

@@ -6,7 +6,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>1.0.3-dev</version>
+        <version>1.0.4-dev</version>
     </parent>
     <artifactId>tornado-drivers-opencl-jni</artifactId>
     <name>tornado-drivers-opencl-jni</name>
@@ -30,12 +30,11 @@
                             <sourcePath>${project.build.directory}/sources</sourcePath>
                             <targetPath>${project.build.directory}/cmake</targetPath>
                             <generator>${cmake.generator}</generator>
-                            <classifier>${cmake.classifier}</classifier>
                             <options>${cmake.options}</options>
                             <environmentVariables>
                                 <CMAKE_CLASSIFIER>${cmake.classifier}</CMAKE_CLASSIFIER>
                             </environmentVariables>
-                            <downloadBinaries>${download.cmake}</downloadBinaries>
+                            <downloadBinaries>${cmake.download}</downloadBinaries>
                         </configuration>
                     </execution>
                     <execution>
@@ -46,8 +45,8 @@
                         </goals>
                         <configuration>
                             <projectDirectory>${project.build.directory}/cmake</projectDirectory>
-                            <classifier>${cmake.classifier}</classifier>
                             <config>${cmake.config}</config>
+                            <downloadBinaries>${cmake.download}</downloadBinaries>
                         </configuration>
                     </execution>
                 </executions>
@@ -83,13 +82,18 @@
                                 <resource>
                                     <directory>${project.build.directory}/cmake/build</directory>
                                     <includes>
-                                        <!-- windows -->
-                                        <include>*.dll</include>
-                                        <include>*.pdb</include>
                                         <!-- linux -->
                                         <include>*.so</include>
                                         <!-- mac -->
                                         <include>*.dylib</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${project.build.directory}/cmake/Release</directory>
+                                    <includes>
+                                        <!-- windows -->
+                                        <include>*.dll</include>
+                                        <include>*.pdb</include>
                                     </includes>
                                 </resource>
                             </resources>

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,20 +22,20 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul2D
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul2D
  * </code>
  *
  */
@@ -110,7 +110,7 @@ public class MatrixMul2D {
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
         TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
 
-        TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoBackend cudaDriver = TornadoRuntime.getTornadoRuntime().getBackend(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
         executorCUDA.withDevice(cudaDevice);
 
@@ -120,7 +120,7 @@ public class MatrixMul2D {
         }
 
         // Time CUDA
-        long start,stop;
+        long start, stop;
         long[] execTimesCUDA = new long[TIMING_ITERATIONS];
 
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
@@ -138,7 +138,7 @@ public class MatrixMul2D {
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutionPlan executorOCL = new TornadoExecutionPlan(immutableTaskGraph1);
 
-        TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
+        TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getBackend(1);
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);

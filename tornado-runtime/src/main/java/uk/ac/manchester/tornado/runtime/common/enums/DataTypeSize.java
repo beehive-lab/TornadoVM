@@ -26,13 +26,22 @@ package uk.ac.manchester.tornado.runtime.common.enums;
 import java.util.Arrays;
 
 public enum DataTypeSize {
+    // @formatter:off
     BYTE(byte.class, (byte) 1), //
     CHAR(char.class, (byte) 2), //
     SHORT(short.class, (byte) 2), //
     INT(int.class, (byte) 4), //
     FLOAT(float.class, (byte) 4), //
     LONG(long.class, (byte) 8), //
-    DOUBLE(double.class, (byte) 8);
+    DOUBLE(double.class, (byte) 8), //
+    BYTE_WRAPPER(Byte.class, (byte) 1),
+    CHAR_WRAPPER(Character.class, (byte) 2),
+    SHORT_WRAPPER(Short.class, (byte) 2),
+    INT_WRAPPER(Integer.class, (byte) 4),
+    FLOAT_WRAPPER(Float.class, (byte) 4),
+    LONG_WRAPPER(Long.class, (byte) 8),
+    DOUBLE_WRAPPER(Double.class, (byte) 8);
+    // @formatter:on
 
     private final Class<?> dataType;
     private final byte size;
@@ -42,15 +51,15 @@ public enum DataTypeSize {
         this.size = size;
     }
 
+    public static DataTypeSize findDataTypeSize(Class<?> dataType) {
+        return Arrays.stream(DataTypeSize.values()).filter(size -> size.getDataType().equals(dataType)).findFirst().orElse(null);
+    }
+
     public Class<?> getDataType() {
         return dataType;
     }
 
     public byte getSize() {
         return size;
-    }
-
-    public static DataTypeSize findDataTypeSize(Class<?> dataType) {
-        return Arrays.stream(DataTypeSize.values()).filter(size -> size.getDataType().equals(dataType)).findFirst().orElse(null);
     }
 }

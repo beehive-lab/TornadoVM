@@ -23,12 +23,13 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
-import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 
 /**
- * Each class which implements {@link TornadoDriverProvider} must set a {@link TornadoDrivers} and use the same compareTo function.
+ * Each class which implements {@link TornadoBackendProvider} must set a {@link TornadoBackends} and use the same compareTo function.
  *
  * {@code
  *  public int compareTo(TornadoDriverProvider o) {
@@ -38,11 +39,11 @@ import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
  *
  * The drivers are sorted and used based on their priority. The driver with the highest priority becomes driver 0.
  */
-public interface TornadoDriverProvider extends Comparable<TornadoDriverProvider> {
+public interface TornadoBackendProvider extends Comparable<TornadoBackendProvider> {
 
     String getName();
 
-    TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
+    TornadoAcceleratorBackend createBackend(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
 
-    TornadoDrivers getDevicePriority();
+    TornadoBackends getDevicePriority();
 }

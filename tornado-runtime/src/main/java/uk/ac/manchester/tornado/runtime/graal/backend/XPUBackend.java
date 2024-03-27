@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2018-2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -39,9 +39,9 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public abstract class TornadoBackend<P extends Providers> extends Backend {
+public abstract class XPUBackend<P extends Providers> extends Backend {
 
-    protected TornadoBackend(Providers providers) {
+    protected XPUBackend(Providers providers) {
         super(providers);
     }
 

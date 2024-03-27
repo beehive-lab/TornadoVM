@@ -1,3 +1,5 @@
+import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
+
 module tornado.drivers.opencl {
     requires transitive jdk.internal.vm.ci;
     requires transitive jdk.internal.vm.compiler;
@@ -27,6 +29,6 @@ module tornado.drivers.opencl {
     exports uk.ac.manchester.tornado.drivers.opencl.runtime;
     exports uk.ac.manchester.tornado.drivers.opencl.tests;
 
-    provides uk.ac.manchester.tornado.runtime.TornadoDriverProvider with
+    provides TornadoBackendProvider with
             uk.ac.manchester.tornado.drivers.opencl.OCLTornadoDriverProvider;
 }

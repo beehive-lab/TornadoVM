@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,13 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
-public interface TornadoDriver {
+public interface TornadoBackend {
 
     TornadoDevice getDefaultDevice();
 
@@ -30,6 +32,8 @@ public interface TornadoDriver {
     int getDeviceCount();
 
     TornadoDevice getDevice(int index);
+
+    List<TornadoDevice> getAllDevices();
 
     TornadoDeviceType getTypeDefaultDevice();
 

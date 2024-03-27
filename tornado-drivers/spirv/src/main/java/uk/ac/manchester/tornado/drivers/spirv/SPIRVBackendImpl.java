@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
@@ -31,16 +34,16 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public final class SPIRVDriver implements TornadoAcceleratorDriver {
+public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     /**
      * Matrix of backend instances. Each row has a driver implementation (e.g.,
@@ -58,8 +61,9 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
      * devices).
      */
     private int deviceCount;
+    private List<TornadoDevice> devices;
 
-    public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
+    public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
         TornadoLogger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
 
@@ -76,6 +80,7 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
                 flatBackends[index] = backends[i][j];
             }
         }
+
     }
 
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
@@ -155,8 +160,19 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoRuntimeException("[ERROR]-[SPIRV-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
+            throw new TornadoDeviceNotFound(STR."[ERROR]-[SPIRV-DRIVER] Device required not found: \{index} - Max: \{backends.length}");
         }
+    }
+
+    @Override
+    public List<TornadoDevice> getAllDevices() {
+        if (devices == null) {
+            devices = new ArrayList<>();
+            for (int i = 0; i < getDeviceCount(); i++) {
+                devices.add(flatBackends[i].getDeviceContext().asMapping());
+            }
+        }
+        return devices;
     }
 
     @Override
