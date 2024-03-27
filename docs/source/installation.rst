@@ -953,14 +953,16 @@ Using IntelliJ
 
 
 Install plugins:
+
 - Eclipse Code Formatter
 - Save Actions
 
 Then :
-1. Open File > Settings > Eclipse Code Formatter
-2. Check the ``Use the Eclipse code`` formatter radio button
+
+1. Open File > Settings > Eclipse Code Formatter.
+2. Check the ``Use the Eclipse code`` formatter radio button.
 3. Set the Eclipse Java Formatter config file to the XML file stored in ``/scripts/templates/eclise-settings/Tornado.xml``.
-4. Set the Java formatter profile in Tornado
+4. Set the Java formatter profile in Tornado.
 
 
 TornadoVM Maven Projects
@@ -983,13 +985,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.0.2</version>
+         <version>1.0.3</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.0.2</version>
+         <version>1.0.3</version>
       </dependency>
    </dependencies>
 
@@ -1000,6 +1002,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ========================
 
+* 1.0.3
 * 1.0.2
 * 1.0.1
 * 1.0
