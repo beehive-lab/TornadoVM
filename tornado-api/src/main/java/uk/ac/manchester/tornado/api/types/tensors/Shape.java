@@ -19,13 +19,13 @@ package uk.ac.manchester.tornado.api.types.tensors;
 
 import java.util.Arrays;
 
-public record Shape(int... dimensions) {
+public record Shape(long... dimensions) {
 
-    public Shape(int... dimensions) {
+    public Shape(long... dimensions) {
         this.dimensions = dimensions.clone();
     }
 
-    public int[] dimensions() {
+    public long[] dimensions() {
         return dimensions.clone();
     }
 
@@ -33,17 +33,21 @@ public record Shape(int... dimensions) {
         return dimensions.length;
     }
 
+    public long[] getDimensions() {
+        return dimensions;
+    }
+
     public int getSize() {
         int size = 1;
-        for (int dim : dimensions) {
+        for (long dim : dimensions) {
             size *= dim;
         }
         return size;
     }
 
-    public Shape reshape(int... newDimensions) {
+    public Shape reshape(long... newDimensions) {
         int newSize = 1;
-        for (int dim : newDimensions) {
+        for (long dim : newDimensions) {
             if (dim < 0)
                 throw new IllegalArgumentException("Dimensions must be non-negative");
             newSize *= dim;
