@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.FloatBuffer;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
@@ -128,5 +129,17 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    public float[] toHeapArray() {
+        float[] outputArray = new float[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
+    }
+
+    public FloatBuffer getFloatBuffer() {
+        return getSegment().asByteBuffer().asFloatBuffer();
     }
 }
