@@ -129,7 +129,7 @@ public class TestDevices extends TornadoTestBase {
         List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device //
                 .getDeviceName() //
                 .toLowerCase()//
-                .contains("nvidia"));//
+                .contains("nvidia"));
 
         // Another way to perform the previous query
         List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap //
