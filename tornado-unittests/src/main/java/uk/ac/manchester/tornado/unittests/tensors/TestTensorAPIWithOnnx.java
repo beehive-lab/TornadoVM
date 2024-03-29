@@ -37,7 +37,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
     private final String INPUT_TENSOR_NAME = "data";
     private final String OUTPUT_TENSOR_NAME = "mobilenetv20_output_flatten0_reshape0";
-    private final String MODEL_PATH = "mobilenetv2-7.onnx";
+    private final String MODEL_PATH = "etc/ml-models/mobilenetv2-7.onnx";
 
     /**
      * Tests the compatibility and functionality of an ONNX model using the ONNX Runtime (ORT) in Java.
