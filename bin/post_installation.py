@@ -65,7 +65,10 @@ def copy_graal_jars():
             source_file = os.path.join(graal_jars_dir, filename)
             destination_file = os.path.join(destination_dir, filename)
             if os.path.isfile(source_file):
-                subprocess.run(["cp", source_file, destination_file])
+                if os.name == 'nt':
+                    subprocess.run(["copy", "/b", "/y", source_file, destination_file], shell=True)
+                else:
+                    subprocess.run(["cp", source_file, destination_file])
 
 
 def main():

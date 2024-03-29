@@ -133,7 +133,6 @@ if %spirv% equ 1 (
 	cd %TORNADO_DIR%
 	git clone https://github.com/otabuzzman/levelzero-jni
 	cd levelzero-jni
-	git checkout winstall
 	:repoL0JniCloned
 	call mvn clean install
 	if errorlevel 1 exit /b %errorlevel%
@@ -153,7 +152,6 @@ if %spirv% equ 1 (
 	cd %TORNADO_DIR%
 	git clone https://github.com/otabuzzman/beehive-spirv-toolkit.git
 	cd beehive-spirv-toolkit
-	git checkout winstall
 	:repoSpirvTkCloned
 	call mvn clean install
 	if errorlevel 1 exit /b %errorlevel%

@@ -67,9 +67,13 @@ def should_handle_graal_jars(jdk):
 
 def maven_cleanup():
     print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
+    if os.name == 'nt':
+        trueOrFalse = True
+    else:
+        trueOrFalse = False
     subprocess.run(
         ["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
-        stdout=subprocess.PIPE,
+        stdout=subprocess.PIPE, shell=trueOrFalse
     )
 
 
@@ -154,20 +158,21 @@ def build_levelzero_jni_lib(rebuild=False):
 
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", "master"])
-        subprocess.run(["mvn", "clean", "install"])
+        if os.name == 'nt':
+            trueOrFalse = True
+        else:
+            trueOrFalse = False
+        subprocess.run(["mvn", "clean", "install"], shell=trueOrFalse)
 
         ## Build native library
         os.chdir("levelZeroLib")
         levelzero_build_directory_cpp = "build"
         if not os.path.exists(levelzero_build_directory_cpp):
             os.mkdir(levelzero_build_directory_cpp)
-            os.chdir(levelzero_build_directory_cpp)
-        else:
-            os.chdir(levelzero_build_directory_cpp)
-            subprocess.run(["make", "clean", ],)
+        os.chdir(levelzero_build_directory_cpp)
 
         subprocess.run(["cmake", "..", ],)
-        subprocess.run(["make", "-j", "8"],)
+        subprocess.run(["cmake", "--build", ".", "--config", "Release"],)
 
         os.chdir(current)
 
@@ -192,8 +197,12 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     if (rebuild or build):
         os.chdir(spirv_tool_kit)
         subprocess.run(["git", "pull", "origin", "master"])
-        subprocess.run(["mvn", "clean", "package"])
-        subprocess.run(["mvn", "install"])
+        if os.name == 'nt':
+            trueOrFalse = True
+        else:
+            trueOrFalse = False
+        subprocess.run(["mvn", "clean", "package"], shell=trueOrFalse)
+        subprocess.run(["mvn", "install"], shell=trueOrFalse)
         os.chdir(current)
 
         level_zero_lib = "level-zero"
@@ -246,11 +255,16 @@ def build_tornadovm(args, backend_profiles):
 
     print(f"mvn {options} install")
     try:
+        if os.name == 'nt':
+            trueOrFalse = True
+        else:
+            trueOrFalse = False
         result = subprocess.run(
             ["mvn"] + options.split() + ["install"],
             check=True,
             stderr=subprocess.PIPE,
             universal_newlines=True,
+            shell=trueOrFalse
         )
 
         if result.returncode == 0:
@@ -264,21 +278,19 @@ def build_tornadovm(args, backend_profiles):
     return result
 
 
-def copy_jars(graal_jars_dir):
+def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
     """
     Copies GraalVM jars to the TornadoVM distribution directory.
 
     Args:
-        graal_jars_dir (str): Path to the directory containing GraalVM jars.
+        graal_jars_src_dir (str): Path to the directory containing GraalVM jars.
+        graal_jars_dst_dir (str): Path to the directory to copy the GraalVM jars to.
     """
-    source_directory = graal_jars_dir
-    destination_directory = f"{os.environ['TORNADO_SDK']}/share/java/graalJars/"
-
-    files_to_copy = os.listdir(source_directory)
+    files_to_copy = os.listdir(graal_jars_src_dir)
 
     for file_name in files_to_copy:
-        source_file = os.path.join(source_directory, file_name)
-        destination_file = os.path.join(destination_directory, file_name)
+        source_file = os.path.join(graal_jars_src_dir, file_name)
+        destination_file = os.path.join(graal_jars_dst_dir, file_name)
         if os.path.isfile(source_file):
             shutil.copy(source_file, destination_file)
 
@@ -299,18 +311,16 @@ def post_installation_actions(
         updp.update_tornado_paths()
 
         # Update the compiled backends file
-        with open(
-                f"{os.environ['TORNADO_SDK']}/etc/tornado.backend", "w"
-        ) as backend_file:
+        backend_file_path = os.path.join(f"{os.environ['TORNADO_SDK']}", "etc", "tornado.backend")
+        with open(backend_file_path, "w") as backend_file:
             backend_file.write(f"tornado.backends={backend_profiles}")
 
         # Place the Graal jars in the TornadoVM distribution only if the JDK 21 rule is used
         if graal_jars_status:
-            graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
-            os.makedirs(
-                f"{os.environ['TORNADO_SDK']}/share/java/graalJars", exist_ok=True
-            )
-            copy_jars(graal_jars_dir)
+            graal_jars_src_dir = os.path.join(os.getcwd(), "graalJars")
+            graal_jars_dst_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "share", "java", "graalJars")
+            os.makedirs(graal_jars_dst_dir, exist_ok=True)
+            copy_jars(graal_jars_src_dir, graal_jars_dst_dir)
     else:
         print("\nCompilation failed\n")
 
@@ -321,7 +331,7 @@ def parse_args():
     parser.add_argument(
         "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
     )
-    parser.add_argument("--backends", help="e.g., opencl,ptx,spirv")
+    parser.add_argument("--backend", help="e.g., opencl,ptx,spirv")
     parser.add_argument(
         "--polyglot",
         action="store_true",
@@ -350,12 +360,12 @@ def main():
 
     pull_graal_jars_if_needed(graal_jars_status)
 
-    backend_profiles = process_backends_as_mvn_profiles(args.backends)
+    backend_profiles = process_backends_as_mvn_profiles(args.backend)
 
-    if "opencl" in args.backends:
+    if "opencl" in args.backend:
         clone_opencl_headers()
 
-    if "spirv" in args.backends:
+    if "spirv" in args.backend:
         # 1) Build the SPIR-V Toolkit
         build_spirv_toolkit_and_level_zero(args.rebuild)
 

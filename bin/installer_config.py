@@ -20,12 +20,11 @@
 import platform
 
 __X86_64__ = "x86_64"
-if platform.system().lower().startswith("darwin"):
-    __ARM__ = "arm64"
-else:
-    __ARM__ = "aarch64"
+__ARM__ = "arm64"
+
 __LINUX__ = "linux"
 __APPLE__ = "darwin"
+__WINDOWS__ = "windows"
 
 __JDK21__ = "jdk21"
 __GRAALVM21__ = "graalvm-jdk-21"
@@ -45,6 +44,10 @@ CMAKE = {
         __X86_64__: "https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-macos-universal.tar.gz",
         __ARM__: "https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-macos-universal.tar.gz",
     },
+    __WINDOWS__: {
+        __X86_64__: None,
+        __ARM__: None,
+    },
 }
 
 ## Maven
@@ -54,6 +57,10 @@ MAVEN = {
         __ARM__: "https://archive.apache.org/dist/maven/maven-3/3.9.3/binaries/apache-maven-3.9.3-bin.tar.gz",
     },
     __APPLE__: {
+        __X86_64__: None,
+        __ARM__: None,
+    },
+    __WINDOWS__: {
         __X86_64__: None,
         __ARM__: None,
     },
@@ -70,6 +77,10 @@ JDK = {
             __X86_64__: "https://download.oracle.com/java/21/latest/jdk-21_macos-x64_bin.tar.gz",
             __ARM__: "https://download.oracle.com/java/21/latest/jdk-21_macos-aarch64_bin.tar.gz",
         },
+        __WINDOWS__: {
+            __X86_64__: None,
+            __ARM__: None,
+        },
     },
     __GRAALVM21__: {
         __LINUX__: {
@@ -79,6 +90,10 @@ JDK = {
         __APPLE__: {
             __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-x64_bin.tar.gz",
             __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-aarch64_bin.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_windows-x64_bin.zip",
+            __ARM__: None,
         },
     },
     __CORRETTO21__: {
@@ -90,6 +105,10 @@ JDK = {
             __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-macos-jdk.tar.gz",
             __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-macos-jdk.tar.gz",
         },
+        __WINDOWS__: {
+            __X86_64__: None,
+            __ARM__: None,
+        },
     },
     __MANDREL21__: {
         __LINUX__: {
@@ -97,6 +116,11 @@ JDK = {
             __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.0.0-Final/mandrel-java21-linux-aarch64-23.1.0.0-Final.tar.gz",
         },
         __APPLE__: {
+            __X86_64__: None,
+            __ARM__: None,
+        },
+        __WINDOWS__: {
+            __X86_64__: None,
             __ARM__: None,
         },
     },
@@ -106,6 +130,10 @@ JDK = {
             __ARM__: None,
         },
         __APPLE__: {
+            __X86_64__: None,
+            __ARM__: None,
+        },
+        __WINDOWS__: {
             __X86_64__: None,
             __ARM__: None,
         },
@@ -119,6 +147,10 @@ JDK = {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_x64.tar.gz",
             __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_aarch64.tar.gz",
         },
+        __WINDOWS__: {
+            __X86_64__: None,
+            __ARM__: None,
+        },
     },
     __TEMURIN21__: {
         __LINUX__: {
@@ -128,6 +160,10 @@ JDK = {
         __APPLE__: {
             __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_mac_hotspot_21.0.1_12.tar.gz",
             __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.1_12.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: None,
+            __ARM__: None,
         },
     },
 }

@@ -30,7 +30,7 @@ def update_tornado_paths():
 
     :raises FileNotFoundError: If no files are found in 'dist/tornado-sdk/' directory.
     """
-    tornado_sdk_dir = "dist/tornado-sdk/"
+    tornado_sdk_dir = "dist" + os.sep + "tornado-sdk"
     files_in_sdk_dir = os.listdir(tornado_sdk_dir)
     if files_in_sdk_dir:
         file = files_in_sdk_dir[0]
@@ -45,8 +45,8 @@ def update_tornado_paths():
     log_messages.append("\x1b[32mTornado build success\x1b[39m")
     log_messages.append(f"Updating PATH and TORNADO_SDK to {file}")
 
-    # Change to the 'bin/' directory
-    os.chdir("bin/")
+    # Change to the 'bin' directory
+    os.chdir("bin")
 
     try:
         # Get the commit hash
@@ -73,8 +73,12 @@ def update_tornado_paths():
     os.chdir("..")
 
     # Create symbolic links 'bin' and 'sdk'
-    os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin/"), "bin/bin")
-    os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")
+    if os.name == 'nt':
+        os.system("mklink /j " + "bin" + os.sep + "bin " + os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin"))
+        os.system("mklink /j " + "bin" + os.sep + "sdk " + os.path.join(os.getcwd(), tornado_sdk_dir, file))
+    else:
+        os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin"), "bin/bin")
+        os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")
 
     log_messages.append(
         "###########################################################################"
