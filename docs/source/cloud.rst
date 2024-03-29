@@ -149,7 +149,7 @@ used, while the AFI image is not ready yet. E.g.:
    [TornadoVM-OCL-JNI] ERROR : clCreateProgramWithBinary -> Returned: -44
 
 5. You can monitor the status of your Amazon FPGA Image.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Instructions are given in ``outputFPGA.log``. Ensure that you use the
 correct ``FPGAImageId`` (e.g. ``afi-0c1bb6821ccc766fe``) .

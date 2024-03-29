@@ -57,6 +57,7 @@ By running the following command you can obtain the list of the available device
             Max WorkGroup Configuration: [67108864, 67108864, 67108864]
             Device OpenCL C version: OpenCL C 1.2
 
+.. _sequential_execution:
 
 Sequential Execution on Multiple Devices
 ----------------------------------------------
@@ -109,6 +110,7 @@ The expected output after execution is:
             Local  work size  : null
             Number of workgroups  : [0, 0]
 
+.. _concurrent_execution:
 
 Concurrent Execution on Multiple Devices
 ----------------------------------------------
@@ -165,7 +167,7 @@ How to debug
 Previously, we enabled debug information solely to display the thread and device configuration for each task.
 TornadoVM can dump additional information to help developers to trace where the code is executed.
 
-To access this information, you need to include the ``--printBytecodes`` flag in the above example from Section (:ref:`Concurrent Execution on Multiple Devices`). By adding this flag, the following output will be displayed in conjunction with the thread information:
+To access this information, you need to include the ``--printBytecodes`` flag in the above example from Section (:ref:`concurrent_execution`). By adding this flag, the following output will be displayed in conjunction with the thread information:
 
 .. code:: bash
 
@@ -217,7 +219,7 @@ The expected output after execution is:
 Let's take a closer look at the first line: Interpreter instance running bytecodes for: [NVIDIA CUDA] -- NVIDIA GeForce RTX 3070 Running in thread: pool-1-thread-1.
 
 This line reveals details about the TornadoVM interpreter's operation. We observe that we have two separate instances of the TornadoVM interpreter, each running independently within distinct Java threads. One instance operates within pool-1-thread-1, while the other operates in pool-1-thread-2.
-In the sequential execution scenario showcased earlier in this tutorial (:ref:`Sequential Execution on Multiple Devices`), we would expect all instances of the TornadoVM interpreter to run from the main Java thread.
+In the sequential execution scenario showcased earlier in this tutorial (:ref:`sequential_execution`), we would expect all instances of the TornadoVM interpreter to run from the main Java thread.
 
 This distinction is essential as it helps us understand how TornadoVM's bytecodes are executed in parallel, while also efficiently utilizing available hardware resources, such as the NVIDIA GeForce RTX 3070 GPU and the 13th Gen Intel(R) Core(TM) i7-13700 CPU (based on the earlier debug output).
 
