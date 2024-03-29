@@ -42,8 +42,6 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -155,34 +153,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
 
     private int getElementKindSize(LoadFieldNode baseIndexNode) {
         int kindElement = 0;
-        ConstantReflectionProvider constantReflectionProvider = null;
-        Class<?> baseIndexNodeClass = baseIndexNode.getClass();
-
-        // Iterate through the instance fields
-        for (ResolvedJavaField field : baseIndexNode.field().getDeclaringClass().getInstanceFields(false)) {
-            field.getConstantValue();
-            if (field != null) {
-            }
-            //            try {
-            //                // Get the field object by its name
-            //                //                Field declaredField = field.getDeclaringClass().getInstanceFields(false)[0].
-            //
-            //                // Ensure that the field is accessible (even if it's private)
-            //                //                        declaredField.setAccessible(true);
-            //
-            //                // Get the value of the field from the instance
-            //                //                Object value = declaredField.get(baseIndexNode);
-            //
-            //                // Print the field name and value
-            //                //                System.out.println("Field Name: " + field.getName() + ", Value: " + value);
-            //            } catch (NoSuchFieldException e) {
-            //                // Handle the exception
-            //                System.err.println("Field not found: " + e.getMessage());
-            //            } catch (IllegalAccessException e) {
-            //                // Handle the exception
-            //                System.err.println("Access denied: " + e.getMessage());
-            //            }
-        }
         Annotation[] declaredAnnotations = baseIndexNode.field().getDeclaringClass().getDeclaredAnnotations();
         if (declaredAnnotations.length == 0) {
             throw new TornadoRuntimeException("Annotation is missing");
@@ -190,8 +160,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             for (Annotation annotation : declaredAnnotations) {
                 if (annotation instanceof SegmentElementSize panamaElementSize) {
                     kindElement = panamaElementSize.size();
-                } else if (baseIndexNode.getLocationIdentity().toString().contains("Tensor")) {
-                    //                    baseIndexNode.getValue().
                 }
             }
         }
