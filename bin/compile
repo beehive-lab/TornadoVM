@@ -102,7 +102,6 @@ def clone_opencl_headers():
     tmpDirectory = "tempOpenCLHeaderDirectory"
     if not os.path.exists(directoryName):
         ## clone the repo with the OpenCL Headers
-        import shutil
         os.mkdir(tmpDirectory)
         os.chdir(tmpDirectory)
         subprocess.run(
@@ -120,7 +119,7 @@ def clone_opencl_headers():
                 ".",
                 "-B",
                 "build",
-                "-DCMAKE_INSTALL_PREFIX=" + current + "/" + directoryName,
+                "-DCMAKE_INSTALL_PREFIX=" + os.join.path(current, directoryName),
             ],
         )
         subprocess.run(
@@ -133,7 +132,7 @@ def clone_opencl_headers():
             ],
         )
         os.chdir(current)
-        shutil.rmtree(tmpDirectory)
+        shutil.rmtree(tmpDirectory, ignore_errors=True)
 
 def build_levelzero_jni_lib(rebuild=False):
     """
@@ -216,24 +215,36 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             subprocess.run(["cmake", "--build", ".", "--config", "Release"])
             os.chdir(current)
 
+    if os.name == 'nt':
+        zeSharedLoader = os.path.join("level-zero", "build", "lib", "Release", "ze_loader.lib")
+    else:
+        zeSharedLoader = os.path.join("level-zero", "build", "lib", "libze_loader.so")
+
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
-        current, "level-zero/build/lib/libze_loader.so"
+        current, zeSharedLoader
     )
     os.environ["CPLUS_INCLUDE_PATH"] = (
-            os.path.join(current, "level-zero/include")
-            + ":"
-            + os.environ.get("CPLUS_INCLUDE_PATH", "")
+        os.path.join(current, "level-zero", "include")
+        + os.pathsep
+        + os.environ.get("CPLUS_INCLUDE_PATH", "")
     )
     os.environ["C_INCLUDE_PATH"] = (
-            os.path.join(current, "level-zero/include")
-            + ":"
-            + os.environ.get("C_INCLUDE_PATH", "")
+        os.path.join(current, "level-zero", "include")
+        + os.pathsep
+        + os.environ.get("C_INCLUDE_PATH", "")
     )
-    os.environ["LD_LIBRARY_PATH"] = (
-            os.path.join(current, "level-zero/build/lib")
-            + ":"
+    if os.name == 'nt':
+        os.environ["PATH"] = (
+            os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
+            + os.pathsep
+            + os.environ.get("PATH", "")
+        )
+    else:
+        os.environ["LD_LIBRARY_PATH"] = (
+            os.path.join(current, "level-zero", "build", "lib")
+            + os.pathsep
             + os.environ.get("LD_LIBRARY_PATH", "")
-    )
+        )
     return current
 
 
