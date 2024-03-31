@@ -68,12 +68,12 @@ def should_handle_graal_jars(jdk):
 def maven_cleanup():
     print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
     if os.name == 'nt':
-        trueOrFalse = True
+        isWinCmdOrBat = True
     else:
-        trueOrFalse = False
+        isWinCmdOrBat = False
     subprocess.run(
         ["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
-        stdout=subprocess.PIPE, shell=trueOrFalse
+        stdout=subprocess.PIPE, shell=isWinCmdOrBat
     )
 
 
@@ -158,10 +158,10 @@ def build_levelzero_jni_lib(rebuild=False):
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", "master"])
         if os.name == 'nt':
-            trueOrFalse = True
+            isWinCmdOrBat = True
         else:
-            trueOrFalse = False
-        subprocess.run(["mvn", "clean", "install"], shell=trueOrFalse)
+            isWinCmdOrBat = False
+        subprocess.run(["mvn", "clean", "install"], shell=isWinCmdOrBat)
 
         ## Build native library
         os.chdir("levelZeroLib")
@@ -197,11 +197,11 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
         os.chdir(spirv_tool_kit)
         subprocess.run(["git", "pull", "origin", "master"])
         if os.name == 'nt':
-            trueOrFalse = True
+            isWinCmdOrBat = True
         else:
-            trueOrFalse = False
-        subprocess.run(["mvn", "clean", "package"], shell=trueOrFalse)
-        subprocess.run(["mvn", "install"], shell=trueOrFalse)
+            isWinCmdOrBat = False
+        subprocess.run(["mvn", "clean", "package"], shell=isWinCmdOrBat)
+        subprocess.run(["mvn", "install"], shell=isWinCmdOrBat)
         os.chdir(current)
 
         level_zero_lib = "level-zero"
@@ -214,6 +214,11 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             subprocess.run(["cmake", ".."])
             subprocess.run(["cmake", "--build", ".", "--config", "Release"])
             os.chdir(current)
+
+    if os.name == 'nt':
+        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "Release", "zello_world")])
+    else:
+        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "zello_world")])
 
     if os.name == 'nt':
         zeSharedLoader = os.path.join("level-zero", "build", "lib", "Release", "ze_loader.lib")
@@ -235,7 +240,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     )
     if os.name == 'nt':
         os.environ["PATH"] = (
-            os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
+            os.path.join(current, "level-zero", "build", "bin", "Release")
             + os.pathsep
             + os.environ.get("PATH", "")
         )
@@ -260,22 +265,22 @@ def build_tornadovm(args, backend_profiles):
         CompletedProcess: Result of the Maven build process.
     """
     if args.polyglot:
-        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles},graalvm-polyglot "
+        options = f"-T1.5C -Dcmake.root.dir={os.environ["CMAKE_ROOT"]} -P{args.jdk},{backend_profiles},graalvm-polyglot"
     else:
-        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles} "
+        options = f"-T1.5C -Dcmake.root.dir={os.environ["CMAKE_ROOT"]} -P{args.jdk},{backend_profiles}"
 
     print(f"mvn {options} install")
     try:
         if os.name == 'nt':
-            trueOrFalse = True
+            isWinCmdOrBat = True
         else:
-            trueOrFalse = False
+            isWinCmdOrBat = False
         result = subprocess.run(
             ["mvn"] + options.split() + ["install"],
             check=True,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-            shell=trueOrFalse
+            shell=isWinCmdOrBat
         )
 
         if result.returncode == 0:
