@@ -4,22 +4,23 @@ all: build
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
-build: graal-jdk-21
+build jdk21:
+	python bin\compile --jdk jdk21 --backend $(BACKEND)
 
 rebuild-deps:
-	bin\compile --jdk graal-jdk-21 --rebuild --backend $(BACKEND)
+	python bin\compile --jdk graal-jdk-21 --rebuild --backend $(BACKEND)
 
 graal-jdk-21:
 	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND)
 
 polyglot:
-	bin\compile --jdk graal-jdk-21 --backend $(BACKEND) --polyglot
+	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND) --polyglot
 
 ptx:
-	bin\compile --jdk graal-jdk-21 --backend ptx,opencl
+	python bin\compile --jdk graal-jdk-21 --backend ptx,opencl
 
 spirv:
-	bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
+	python bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
@@ -54,4 +55,4 @@ test-slam:
 
 docs:
 	cd docs
-	nmake html
+	make html

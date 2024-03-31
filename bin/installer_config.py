@@ -78,7 +78,7 @@ JDK = {
             __ARM__: "https://download.oracle.com/java/21/latest/jdk-21_macos-aarch64_bin.tar.gz",
         },
         __WINDOWS__: {
-            __X86_64__: None,
+            __X86_64__: "https://download.oracle.com/java/21/archive/jdk-21.0.1_windows-x64_bin.zip",
             __ARM__: None,
         },
     },

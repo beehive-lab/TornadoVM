@@ -264,19 +264,22 @@ def build_tornadovm(args, backend_profiles):
     Returns:
         CompletedProcess: Result of the Maven build process.
     """
-    if args.polyglot:
-        options = f"-T1.5C -Dcmake.root.dir={os.environ["CMAKE_ROOT"]} -P{args.jdk},{backend_profiles},graalvm-polyglot"
-    else:
-        options = f"-T1.5C -Dcmake.root.dir={os.environ["CMAKE_ROOT"]} -P{args.jdk},{backend_profiles}"
-
-    print(f"mvn {options} install")
     try:
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
             isWinCmdOrBat = False
+
+        process = ["mvn", "-T1.5C", f"-Dcmake.root.dir={os.environ["CMAKE_ROOT"]}"]
+        if args.polyglot:
+            process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
+        else:
+            process.append(f"-P{args.jdk},{backend_profiles}")
+        process.append("install")
+        print(' '.join(process))
+
         result = subprocess.run(
-            ["mvn"] + options.split() + ["install"],
+            process,
             check=True,
             stderr=subprocess.PIPE,
             universal_newlines=True,
