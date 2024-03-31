@@ -30,7 +30,7 @@ def update_tornado_paths():
 
     :raises FileNotFoundError: If no files are found in 'dist/tornado-sdk/' directory.
     """
-    tornado_sdk_dir = "dist" + os.sep + "tornado-sdk"
+    tornado_sdk_dir = os.path.join("dist", "tornado-sdk")
     files_in_sdk_dir = os.listdir(tornado_sdk_dir)
     if files_in_sdk_dir:
         file = files_in_sdk_dir[0]
@@ -74,8 +74,8 @@ def update_tornado_paths():
 
     # Create symbolic links 'bin' and 'sdk'
     if os.name == 'nt':
-        os.system("mklink /j " + "bin" + os.sep + "bin " + os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin"))
-        os.system("mklink /j " + "bin" + os.sep + "sdk " + os.path.join(os.getcwd(), tornado_sdk_dir, file))
+        subprocess.run(["mklink", "/j", os.path.join("bin", "bin"), os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin")], shell=True)
+        subprocess.run(["mklink", "/j", os.path.join("bin", "sdk"), os.path.join(os.getcwd(), tornado_sdk_dir, file)], shell=True)
     else:
         os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin"), "bin/bin")
         os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")

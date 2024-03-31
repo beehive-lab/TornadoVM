@@ -119,7 +119,7 @@ def clone_opencl_headers():
                 ".",
                 "-B",
                 "build",
-                "-DCMAKE_INSTALL_PREFIX=" + os.join.path(current, directoryName),
+                "-DCMAKE_INSTALL_PREFIX=" + os.path.join(current, directoryName),
             ],
         )
         subprocess.run(

@@ -198,6 +198,7 @@ class TornadoInstaller:
         except:
             print(f"Downloading or unpacking failed for JDK {url}")
             sys.exit(0)
+
         extractedDirectory = self.getJDKDirectoryName(ar)
         ar.close()
 
