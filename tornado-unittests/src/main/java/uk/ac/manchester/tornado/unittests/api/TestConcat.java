@@ -141,6 +141,31 @@ public class TestConcat extends TornadoTestBase {
     }
 
     @Test
+    public void testIntArrayConcat() {
+
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray e = new IntArray(numElements);
+
+        a.init(100);
+        b.init(5);
+        e.init(12);
+
+        IntArray c = IntArray.concat(a, b, e);
+
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals("Mismatch in first part of c", 100.0f, c.get(i), 0.0f);
+        }
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals("Mismatch in second part of c", 5.0f, c.get(a.getSize() + i), 0.0f);
+        }
+
+        for (int i = 0; i < e.getSize(); i++) {
+            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+        }
+    }
+
+    @Test
     public void testShortArrayConcat() {
 
         ShortArray a = new ShortArray(numElements);
