@@ -249,13 +249,11 @@ public final class IntArray extends TornadoNativeArray {
     public static IntArray concat(IntArray... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(IntArray::getSize).sum();
         IntArray concatArray = new IntArray(newSize);
-
         long currentPositionBytes = 0;
         for (IntArray array : arrays) {
             MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
-
         return concatArray;
     }
 

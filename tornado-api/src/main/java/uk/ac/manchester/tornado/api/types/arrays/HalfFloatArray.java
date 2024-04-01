@@ -255,13 +255,11 @@ public final class HalfFloatArray extends TornadoNativeArray {
     public static HalfFloatArray concat(HalfFloatArray... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(HalfFloatArray::getSize).sum();
         HalfFloatArray concatArray = new HalfFloatArray(newSize);
-
         long currentPositionBytes = 0;
         for (HalfFloatArray array : arrays) {
             MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
-
         return concatArray;
     }
 

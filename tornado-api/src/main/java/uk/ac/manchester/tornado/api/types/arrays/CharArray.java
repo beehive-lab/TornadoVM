@@ -250,13 +250,11 @@ public final class CharArray extends TornadoNativeArray {
     public static CharArray concat(CharArray... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(CharArray::getSize).sum();
         CharArray concatArray = new CharArray(newSize);
-
         long currentPositionBytes = 0;
         for (CharArray array : arrays) {
             MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
-
         return concatArray;
     }
 }

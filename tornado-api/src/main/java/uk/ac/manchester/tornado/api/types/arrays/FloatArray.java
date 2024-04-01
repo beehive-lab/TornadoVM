@@ -252,13 +252,11 @@ public final class FloatArray extends TornadoNativeArray {
     public static FloatArray concat(FloatArray... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(FloatArray::getSize).sum();
         FloatArray concatArray = new FloatArray(newSize);
-
         long currentPositionBytes = 0;
         for (FloatArray array : arrays) {
             MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
-
         return concatArray;
     }
 }
