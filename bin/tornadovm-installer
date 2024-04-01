@@ -72,7 +72,8 @@ class TornadoInstaller:
         return os.path.basename(url)
 
     def setWorkDir(self, jdk):
-        self.workDirName = os.path.join(__DIRECTORY_DEPENDENCIES__ , "TornadoVM-", jdk)
+        tornadoDir = "TornadoVM-" + jdk
+        self.workDirName = os.path.join(__DIRECTORY_DEPENDENCIES__, tornadoDir)
         if not os.path.exists(self.workDirName):
             os.makedirs(self.workDirName)
 
@@ -82,80 +83,80 @@ class TornadoInstaller:
     def downloadCMake(self):
         url = config.CMAKE[self.osPlatform][self.hardware]
         if url == None:
-            return
+            print("CMake not configured for this OS/ machine configuration: {self.osPlatform}/ {self.hardware}")
+            sys.exit(0)
 
         fileName = self.processFileName(url)
-        print("Checking dependency: " + fileName)
-        fullPath = self.workDirName + "/" + fileName
+        print("\nChecking dependency: " + fileName)
+        fullPath = os.path.join(self.workDirName, fileName)
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
 
         ## Uncompress file
-        tar = tarfile.open(fullPath, "r:gz")
-        tar.extractall(self.workDirName)
-        extractedDirectory = self.getJDKDirectoryName(tar)
-        tar.close()
+        try:
+            if os.name == 'nt':
+                ar = zipfile.ZipFile(fullPath, 'r')
+                ar.extractall(self.workDirName)
+            else:
+                ar = tarfile.open(fullPath, "r:gz")
+                ar.extractall(self.workDirName, numeric_owner=True)
+        except:
+            print(f"Downloading or unpacking failed for CMake {url}")
+            sys.exit(0)
+
+        extractedDirectory = self.getJDKDirectoryName(ar)
+        ar.close()
 
         currentDirectory = self.getCurrentDirectory()
 
         extraPath = ""
         if self.osPlatform == config.__APPLE__:
-            extraPath = "/CMake.app/Contents"
+            extraPath = os.path.join("CMake.app", "Contents")
 
         ## Update env-variables
-        self.env["CMAKE_ROOT"] = (
-                currentDirectory
-                + "/"
-                + self.workDirName
-                + "/"
-                + extractedDirectory
-                + extraPath
-        )
-        self.env["PATH"].append(
-            currentDirectory
-            + "/"
-            + self.workDirName
-            + "/"
-            + extractedDirectory
-            + extraPath
-            + "/bin"
-        )
+        self.env["CMAKE_ROOT"] = os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath)
+
+        extraPath = os.path.join(extraPath, "bin")
+        self.env["PATH"].append(os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath))
 
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
         if url == None:
-            return
+            print("Maven not configured for this OS/ machine configuration: {self.osPlatform}/ {self.hardware}")
+            sys.exit(0)
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
-        fullPath = __DIRECTORY_DEPENDENCIES__ + "/" + fileName
+        fullPath = os.path.join(self.workDirName, fileName)
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
 
         ## Uncompress file
-        tar = tarfile.open(fullPath, "r:gz")
-        tar.extractall(__DIRECTORY_DEPENDENCIES__)
-        extractedDirectory = self.getJDKDirectoryName(tar)
-        tar.close()
+        try:
+            if os.name == 'nt':
+                ar = zipfile.ZipFile(fullPath, 'r')
+                ar.extractall(self.workDirName)
+            else:
+                ar = tarfile.open(fullPath, "r:gz")
+                ar.extractall(self.workDirName, numeric_owner=True)
+        except:
+            print(f"Downloading or unpacking failed for Maven {url}")
+            sys.exit(0)
+
+        extractedDirectory = self.getJDKDirectoryName(ar)
+        ar.close()
 
         currentDirectory = self.getCurrentDirectory()
 
         extraPath = ""
         if self.osPlatform == config.__APPLE__:
-            extraPath = "/Maven.app/Contents"
+            extraPath = os.path.join("Maven.app", "Contents")
 
         ## Update env-variables
-        self.env["PATH"].append(
-            currentDirectory
-            + "/"
-            + __DIRECTORY_DEPENDENCIES__
-            + "/"
-            + extractedDirectory
-            + extraPath
-            + "/bin"
-        )
+        extraPath = os.path.join(extraPath, "bin")
+        self.env["PATH"].append(os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath))
 
     def getJDKDirectoryName(self, ar):
         if os.name == 'nt':
@@ -171,7 +172,8 @@ class TornadoInstaller:
     def downloadJDK(self, jdk):
         url = config.JDK[jdk][self.osPlatform][self.hardware]
         if url == None:
-            return
+            print("JDK {jdk} not configured for this OS/ machine configuration: {self.osPlatform}/ {self.hardware}")
+            sys.exit(0)
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
@@ -206,16 +208,10 @@ class TornadoInstaller:
 
         extraPath = ""
         if self.osPlatform == config.__APPLE__ and "zulu" not in jdk:
-            extraPath = "/Contents/Home"
+            extraPath = os.path.join("Contents", "Home")
 
         ## Update env-variables
-        self.env["JAVA_HOME"] = (
-                os.path.join(
-                    currentDirectory,
-                    self.workDirName,
-                    extractedDirectory,
-                    extraPath)
-        )
+        self.env["JAVA_HOME"] = os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath)
 
     def setEnvironmentVariables(self):
         ## 1. Path
@@ -227,8 +223,7 @@ class TornadoInstaller:
         os.environ["PATH"] = allPaths
 
         ## 2. CMAKE_ROOT
-        if os.name != 'nt':
-            os.environ["CMAKE_ROOT"] = self.env["CMAKE_ROOT"]
+        os.environ["CMAKE_ROOT"] = self.env["CMAKE_ROOT"]
 
         ## 3. JAVA_HOME
         os.environ["JAVA_HOME"] = self.env["JAVA_HOME"]

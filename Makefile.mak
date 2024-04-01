@@ -52,7 +52,3 @@ tests-opt:
 
 test-slam:
 	python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
-
-docs:
-	cd docs
-	make html

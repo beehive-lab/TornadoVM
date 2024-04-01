@@ -46,6 +46,7 @@ def check_java_version():
     java_version_output = subprocess.check_output(
         [java_cmd, "-version"], stderr=subprocess.STDOUT, universal_newlines=True
     )
+
     return java_version_output
 
 
@@ -91,19 +92,18 @@ def process_backends_as_mvn_profiles(selected_backends):
     for i, backend in enumerate(selected_backends_list):
         selected_backends_list[i] = f"{backend}-backend"
     backend_profiles = ",".join(selected_backends_list)
+
     return backend_profiles
+
 
 def clone_opencl_headers():
     """
     Clone the Khronos OpenCL headers into the OpenCL JNI lib
     """
     current = os.getcwd()
-    directoryName = "tornado-drivers/opencl-jni/src/main/cpp/headers"
-    tmpDirectory = "tempOpenCLHeaderDirectory"
+    directoryName = os.path.join("tornado-drivers", "opencl-jni", "src", "main", "cpp", "headers")
     if not os.path.exists(directoryName):
         ## clone the repo with the OpenCL Headers
-        os.mkdir(tmpDirectory)
-        os.chdir(tmpDirectory)
         subprocess.run(
             [
                 "git",
@@ -132,16 +132,16 @@ def clone_opencl_headers():
             ],
         )
         os.chdir(current)
-        shutil.rmtree(tmpDirectory, ignore_errors=True)
+
 
 def build_levelzero_jni_lib(rebuild=False):
     """
     Pulls and Builds the Level Zero JNI library
     """
     current = os.getcwd()
-    levelzeroLib = "levelzero-jni"
+    levelzero_jni = "levelzero-jni"
     build=False
-    if not os.path.exists(levelzeroLib):
+    if not os.path.exists(levelzero_jni):
         ## clone only if directory does not exist
         subprocess.run(
             [
@@ -153,7 +153,7 @@ def build_levelzero_jni_lib(rebuild=False):
         build=True
 
     if (rebuild or build):
-        os.chdir(levelzeroLib)
+        os.chdir(levelzero_jni)
 
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", "master"])
@@ -250,6 +250,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             + os.pathsep
             + os.environ.get("LD_LIBRARY_PATH", "")
         )
+
     return current
 
 
@@ -342,10 +343,13 @@ def post_installation_actions(
             copy_jars(graal_jars_src_dir, graal_jars_dst_dir)
     else:
         print("\nCompilation failed\n")
+        sys.exit(-1)
 
 
 def parse_args():
-    """Parse command line arguments"""
+    """
+    Parse command line arguments
+    """
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
         "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
