@@ -35,7 +35,7 @@ def update_tornado_paths():
     if files_in_sdk_dir:
         file = files_in_sdk_dir[0]
     else:
-        raise FileNotFoundError("No files found in 'dist/tornado-sdk/' directory")
+        raise FileNotFoundError(f"No files found in '{tornado_sdk_dir}' directory")
 
     log_messages = []  # Create an empty list to store log messages
 

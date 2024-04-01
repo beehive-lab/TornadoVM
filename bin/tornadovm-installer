@@ -197,6 +197,9 @@ class TornadoInstaller:
             else:
                 ar = tarfile.open(fullPath, "r:gz")
                 ar.extractall(self.workDirName, numeric_owner=True)
+        except PermissionError as e:
+            print(f"Known errors {e} ignored unpacking JDK {url}")
+            pass
         except:
             print(f"Downloading or unpacking failed for JDK {url}")
             sys.exit(0)
