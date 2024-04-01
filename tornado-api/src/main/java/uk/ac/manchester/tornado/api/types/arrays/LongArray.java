@@ -249,7 +249,6 @@ public final class LongArray extends TornadoNativeArray {
      */
     public static LongArray concat(LongArray... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(LongArray::getSize).sum();
-
         LongArray concatArray = new LongArray(newSize);
 
         long currentPositionBytes = 0;

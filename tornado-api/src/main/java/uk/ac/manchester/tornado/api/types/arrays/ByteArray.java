@@ -250,7 +250,6 @@ public final class ByteArray extends TornadoNativeArray {
      */
     public static ByteArray concat(ByteArray... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(ByteArray::getSize).sum();
-
         ByteArray concatArray = new ByteArray(newSize);
 
         long currentPositionBytes = 0;

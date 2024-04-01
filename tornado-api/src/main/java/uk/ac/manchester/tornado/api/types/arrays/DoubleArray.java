@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
@@ -249,19 +250,15 @@ public final class DoubleArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static DoubleArray concat(DoubleArray... arrays) {
-        long totalSizeBytes = 0;
-        for (DoubleArray array : arrays) {
-            totalSizeBytes += array.getNumBytesOfSegment();
-        }
-
-        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+        int newSize = Arrays.stream(arrays).mapToInt(DoubleArray::getSize).sum();
+        DoubleArray concatArray = new DoubleArray(newSize);
 
         long currentPositionBytes = 0;
         for (DoubleArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
 
-        return fromSegment(newSegment);
+        return concatArray;
     }
 }
