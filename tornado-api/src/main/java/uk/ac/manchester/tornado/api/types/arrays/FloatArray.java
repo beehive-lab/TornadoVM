@@ -239,4 +239,29 @@ public final class FloatArray extends TornadoNativeArray {
             array.set(i, value);
         }
     }
+
+    /**
+     * Concatenates multiple {@link FloatArray} instances into a single {@link FloatArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link FloatArray} objects to be concatenated.
+     * @return A new {@link FloatArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static FloatArray concat(FloatArray... arrays) {
+        long totalSizeBytes = 0;
+        for (FloatArray array : arrays) {
+            totalSizeBytes += array.getNumBytesOfSegment();
+        }
+
+        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+
+        long currentPositionBytes = 0;
+        for (FloatArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+
+        return fromSegment(newSegment);
+    }
 }

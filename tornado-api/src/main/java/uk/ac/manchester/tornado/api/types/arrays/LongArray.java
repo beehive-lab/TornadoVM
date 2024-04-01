@@ -237,4 +237,29 @@ public final class LongArray extends TornadoNativeArray {
             array.set(i, value);
         }
     }
+
+    /**
+     * Concatenates multiple {@link LongArray} instances into a single {@link LongArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link LongArray} objects to be concatenated.
+     * @return A new {@link LongArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static LongArray concat(LongArray... arrays) {
+        long totalSizeBytes = 0;
+        for (LongArray array : arrays) {
+            totalSizeBytes += array.getNumBytesOfSegment();
+        }
+
+        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+
+        long currentPositionBytes = 0;
+        for (LongArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+
+        return fromSegment(newSegment);
+    }
 }

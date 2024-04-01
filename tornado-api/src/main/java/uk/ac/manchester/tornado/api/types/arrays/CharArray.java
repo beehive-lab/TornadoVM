@@ -238,4 +238,28 @@ public final class CharArray extends TornadoNativeArray {
         }
     }
 
+    /**
+     * Concatenates multiple {@link CharArray} instances into a single {@link CharArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link CharArray} objects to be concatenated.
+     * @return A new {@link CharArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static CharArray concat(CharArray... arrays) {
+        long totalSizeBytes = 0;
+        for (CharArray array : arrays) {
+            totalSizeBytes += array.getNumBytesOfSegment();
+        }
+
+        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+
+        long currentPositionBytes = 0;
+        for (CharArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+
+        return fromSegment(newSegment);
+    }
 }

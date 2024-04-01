@@ -240,4 +240,28 @@ public final class DoubleArray extends TornadoNativeArray {
         }
     }
 
+    /**
+     * Concatenates multiple {@link DoubleArray} instances into a single {@link DoubleArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link DoubleArray} objects to be concatenated.
+     * @return A new {@link DoubleArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static DoubleArray concat(DoubleArray... arrays) {
+        long totalSizeBytes = 0;
+        for (DoubleArray array : arrays) {
+            totalSizeBytes += array.getNumBytesOfSegment();
+        }
+
+        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+
+        long currentPositionBytes = 0;
+        for (DoubleArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+
+        return fromSegment(newSegment);
+    }
 }

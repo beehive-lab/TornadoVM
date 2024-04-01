@@ -237,4 +237,29 @@ public final class IntArray extends TornadoNativeArray {
         }
     }
 
+    /**
+     * Concatenates multiple {@link IntArray} instances into a single {@link IntArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link IntArray} objects to be concatenated.
+     * @return A new {@link IntArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static IntArray concat(IntArray... arrays) {
+        long totalSizeBytes = 0;
+        for (IntArray array : arrays) {
+            totalSizeBytes += array.getNumBytesOfSegment();
+        }
+
+        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+
+        long currentPositionBytes = 0;
+        for (IntArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+
+        return fromSegment(newSegment);
+    }
+
 }
