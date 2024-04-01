@@ -61,6 +61,8 @@ def update_tornado_paths():
     for symlink in ["bin", "sdk"]:
         if os.path.islink(symlink):
             os.unlink(symlink)
+        elif os.path.isjunction(symlink):
+           os.unlink(symlink)
         elif os.path.isdir(symlink):
             try:
                 os.rmdir(symlink)
