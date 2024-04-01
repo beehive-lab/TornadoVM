@@ -61,7 +61,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
         }
     }
 
@@ -86,7 +86,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
         }
     }
 
@@ -111,7 +111,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12, c.get(a.getSize() + b.getSize() + i), 0.0f);
+            assertEquals("Mismatch in third part of c", 12, c.get(a.getSize() + b.getSize() + i), 0.0f);
         }
     }
 
@@ -136,7 +136,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
         }
     }
 
@@ -161,7 +161,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
         }
     }
 
@@ -186,7 +186,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
         }
     }
 
@@ -211,7 +211,7 @@ public class TestConcat extends TornadoTestBase {
         }
 
         for (int i = 0; i < e.getSize(); i++) {
-            assertEquals("Mismatch in third part of d", 12f, c.get(a.getSize() + b.getSize() + i).getFloat32(), 0.0f);
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i).getFloat32(), 0.0f);
         }
     }
 
