@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
@@ -247,10 +248,7 @@ public final class LongArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static LongArray concat(LongArray... arrays) {
-        int newSize = 0;
-        for (LongArray array : arrays) {
-            newSize += array.getSize();
-        }
+        int newSize = Arrays.stream(arrays).mapToInt(LongArray::getSize).sum();
 
         LongArray concatArray = new LongArray(newSize);
 

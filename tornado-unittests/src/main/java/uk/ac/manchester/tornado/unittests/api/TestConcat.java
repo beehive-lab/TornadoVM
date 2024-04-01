@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.api;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -177,6 +178,31 @@ public class TestConcat extends TornadoTestBase {
         e.init((short) 12);
 
         ShortArray c = ShortArray.concat(a, b, e);
+
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals("Mismatch in first part of c", 100.0f, c.get(i), 0.0f);
+        }
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals("Mismatch in second part of c", 5.0f, c.get(a.getSize() + i), 0.0f);
+        }
+
+        for (int i = 0; i < e.getSize(); i++) {
+            assertEquals("Mismatch in third part of c", 12f, c.get(a.getSize() + b.getSize() + i), 0.0f);
+        }
+    }
+
+    @Test
+    public void testCharArrayConcat() {
+
+        CharArray a = new CharArray(numElements);
+        CharArray b = new CharArray(numElements);
+        CharArray e = new CharArray(numElements);
+
+        a.init((char) 100);
+        b.init((char) 5);
+        e.init((char) 12);
+
+        CharArray c = CharArray.concat(a, b, e);
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals("Mismatch in first part of c", 100.0f, c.get(i), 0.0f);

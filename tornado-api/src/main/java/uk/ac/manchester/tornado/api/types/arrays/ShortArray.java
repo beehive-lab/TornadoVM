@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
@@ -248,11 +249,7 @@ public final class ShortArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static ShortArray concat(ShortArray... arrays) {
-        int newSize = 0;
-        for (ShortArray array : arrays) {
-            newSize += array.getSize();
-        }
-
+        int newSize = Arrays.stream(arrays).mapToInt(ShortArray::getSize).sum();
         ShortArray concatArray = new ShortArray(newSize);
 
         long currentPositionBytes = 0;
