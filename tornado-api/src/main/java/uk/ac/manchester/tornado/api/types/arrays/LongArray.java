@@ -247,19 +247,19 @@ public final class LongArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static LongArray concat(LongArray... arrays) {
-        long totalSizeBytes = 0;
+        int newSize = 0;
         for (LongArray array : arrays) {
-            totalSizeBytes += array.getNumBytesOfSegment();
+            newSize += array.getSize();
         }
 
-        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+        LongArray concatArray = new LongArray(newSize);
 
         long currentPositionBytes = 0;
         for (LongArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
 
-        return fromSegment(newSegment);
+        return concatArray;
     }
 }

@@ -249,19 +249,19 @@ public final class FloatArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static FloatArray concat(FloatArray... arrays) {
-        long totalSizeBytes = 0;
+        int newSize = 0;
         for (FloatArray array : arrays) {
-            totalSizeBytes += array.getNumBytesOfSegment();
+            newSize += array.getSize();
         }
 
-        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+        FloatArray concatArray = new FloatArray(newSize);
 
         long currentPositionBytes = 0;
         for (FloatArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
 
-        return fromSegment(newSegment);
+        return concatArray;
     }
 }

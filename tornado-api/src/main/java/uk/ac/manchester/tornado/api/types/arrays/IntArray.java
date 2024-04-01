@@ -246,20 +246,20 @@ public final class IntArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static IntArray concat(IntArray... arrays) {
-        long totalSizeBytes = 0;
+        int newSize = 0;
         for (IntArray array : arrays) {
-            totalSizeBytes += array.getNumBytesOfSegment();
+            newSize += array.getSize();
         }
 
-        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+        IntArray concatArray = new IntArray(newSize);
 
         long currentPositionBytes = 0;
         for (IntArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
 
-        return fromSegment(newSegment);
+        return concatArray;
     }
 
 }

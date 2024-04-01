@@ -248,19 +248,19 @@ public final class ShortArray extends TornadoNativeArray {
      *     concatenated in the order they were provided.
      */
     public static ShortArray concat(ShortArray... arrays) {
-        long totalSizeBytes = 0;
+        int newSize = 0;
         for (ShortArray array : arrays) {
-            totalSizeBytes += array.getNumBytesOfSegment();
+            newSize += array.getSize();
         }
 
-        MemorySegment newSegment = Arena.ofAuto().allocate(totalSizeBytes, 1);
+        ShortArray concatArray = new ShortArray(newSize);
 
         long currentPositionBytes = 0;
         for (ShortArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, newSegment, currentPositionBytes, array.getNumBytesOfSegment());
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
             currentPositionBytes += array.getNumBytesOfSegment();
         }
 
-        return fromSegment(newSegment);
+        return concatArray;
     }
 }
