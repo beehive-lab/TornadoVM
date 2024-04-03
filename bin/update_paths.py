@@ -59,7 +59,8 @@ def update_tornado_paths():
 
     # Remove existing 'bin' and 'sdk' links
     for symlink in ["bin", "sdk"]:
-        os.unlink(symlink)
+        if os.path.exists(symlink):
+            os.unlink(symlink)
 
     # Change back to the parent directory
     os.chdir("..")
