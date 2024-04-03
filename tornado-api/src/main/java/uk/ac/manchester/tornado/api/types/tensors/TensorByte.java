@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
-import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
+@SegmentElementSize(size = 1)
 public final class TensorByte extends TornadoNativeArray implements AbstractTensor {
 
     private static final int BYTE = 1;
@@ -110,7 +110,7 @@ public final class TensorByte extends TornadoNativeArray implements AbstractTens
 
     @Override
     public int getElementSize() {
-        return numberOfElements;
+        return BYTE;
     }
 
     @Override

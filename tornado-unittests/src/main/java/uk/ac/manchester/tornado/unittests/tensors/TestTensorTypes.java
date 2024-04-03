@@ -30,7 +30,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.tensors.DType;
-import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat16;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
@@ -78,16 +77,6 @@ public class TestTensorTypes extends TornadoTestBase {
         }
     }
 
-    static void matrixVectorSimple(float[] xout, float[] x, Tensor w, int n, int d) {
-        for (@Parallel int i = 0; i < d; i++) {
-            float val = 0f;
-            for (int j = 0; j < n; j++) {
-                val += w.getFloatValue(i * n + j) * x[j];
-            }
-            xout[i] = val;
-        }
-    }
-
     @Test
     public void testHelloTensorAPI() {
           Shape shape = new Shape(64, 64, 64);
@@ -101,25 +90,6 @@ public class TestTensorTypes extends TornadoTestBase {
         System.out.println(STR."Data type: \{tensorA.getDTypeAsString()}");
         System.out.println(STR."Shape as TF: \{tensorA.getShape().toTensorFlowShapeString()}");
         System.out.println(STR."Shape as ONNX: \{tensorA.getShape().toONNXShapeString()}");
-    }
-
-    private Tensor initRandTensor(int size) {
-        Random random = new Random();
-        Shape shape = new Shape(size);
-        Tensor tensor = new Tensor(shape, DType.FLOAT);
-        for (int i = 0; i < size; i++) {
-            tensor.set(i, random.nextFloat(1f));
-        }
-        return tensor;
-    }
-
-    private FloatArray toFloatArray(Tensor tensor) {
-        FloatArray floatArray = new FloatArray(tensor.getSize());
-        assert tensor.getDType() == DType.FLOAT;
-        for (int i = 0; i < tensor.getSize(); i++) {
-            floatArray.set(i, tensor.getFloatValue(i));
-        }
-        return floatArray;
     }
 
     @Test

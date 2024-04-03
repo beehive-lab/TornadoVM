@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
@@ -113,7 +114,7 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
 
     @Override
     public int getElementSize() {
-        return numberOfElements;
+        return DType.FLOAT.getByteSize();
     }
 
     @Override
@@ -141,5 +142,16 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
 
     public FloatBuffer getFloatBuffer() {
         return getSegment().asByteBuffer().asFloatBuffer();
+    }
+
+    public static FloatArray concat(TensorFloat32... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorFloat32::getSize).sum();
+        FloatArray concatArray = new FloatArray(newSize);
+        long currentPositionBytes = 0;
+        for (TensorFloat32 array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }

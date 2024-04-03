@@ -114,7 +114,7 @@ public final class TensorFloat16 extends TornadoNativeArray implements AbstractT
 
     @Override
     public int getElementSize() {
-        return 0;
+        return HALF_FLOAT_BYTES;
     }
 
     @Override

@@ -112,7 +112,7 @@ public final class TensorInt16 extends TornadoNativeArray implements AbstractTen
 
     @Override
     public int getElementSize() {
-        return 0;
+        return SHORT_BYTES;
     }
 
     @Override

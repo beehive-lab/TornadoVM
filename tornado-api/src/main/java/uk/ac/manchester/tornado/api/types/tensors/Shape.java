@@ -21,12 +21,8 @@ import java.util.Arrays;
 
 public record Shape(long... dimensions) {
 
-    public Shape(long... dimensions) {
-        this.dimensions = dimensions.clone();
-    }
-
     public long[] dimensions() {
-        return dimensions.clone();
+        return dimensions;
     }
 
     public int getRank() {
@@ -38,11 +34,7 @@ public record Shape(long... dimensions) {
     }
 
     public int getSize() {
-        int size = 1;
-        for (long dim : dimensions) {
-            size *= dim;
-        }
-        return size;
+        return (int) Arrays.stream(dimensions).reduce(1, (a, b) -> a * b);
     }
 
     public Shape reshape(long... newDimensions) {

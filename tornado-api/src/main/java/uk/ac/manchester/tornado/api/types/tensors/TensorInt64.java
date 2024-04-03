@@ -109,12 +109,12 @@ public final class TensorInt64 extends TornadoNativeArray implements AbstractTen
 
     @Override
     protected void clear() {
-        init((short) 0);
+        init((long) 0);
     }
 
     @Override
     public int getElementSize() {
-        return 0;
+        return LONG_BYTES;
     }
 
     @Override

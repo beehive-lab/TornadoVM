@@ -105,12 +105,12 @@ public final class TensorFloat64 extends TornadoNativeArray implements AbstractT
 
     @Override
     protected void clear() {
-
+        init(0d);
     }
 
     @Override
     public int getElementSize() {
-        return 0;
+        return DOUBLE_BYTES;
     }
 
     @Override
