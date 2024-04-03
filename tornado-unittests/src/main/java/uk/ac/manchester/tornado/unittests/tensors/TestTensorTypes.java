@@ -79,17 +79,16 @@ public class TestTensorTypes extends TornadoTestBase {
 
     @Test
     public void testHelloTensorAPI() {
-          Shape shape = new Shape(64, 64, 64);
+        Shape shape = new Shape(64, 64, 64);
 
         TensorFloat16 tensorA = new TensorFloat16(shape);
 
         tensorA.init(new HalfFloat(1f));
-        
-        System.out.println("Half-precision tensor:");
-        System.out.println(STR."Shape: \{tensorA.getShape()}");
-        System.out.println(STR."Data type: \{tensorA.getDTypeAsString()}");
-        System.out.println(STR."Shape as TF: \{tensorA.getShape().toTensorFlowShapeString()}");
-        System.out.println(STR."Shape as ONNX: \{tensorA.getShape().toONNXShapeString()}");
+
+        Assert.assertEquals("Expected shape does not match", "Shape{dimensions=[64, 64, 64]}", tensorA.getShape().toString());
+        Assert.assertEquals("Expected data type does not match", "HALF_FLOAT", tensorA.getDTypeAsString());
+        Assert.assertEquals("Expected TensorFlow shape string does not match", "[64,64,64]", tensorA.getShape().toTensorFlowShapeString());
+        Assert.assertEquals("Expected ONNX shape string does not match", "{dim_0: 64, dim_1: 64, dim_2: 64}", tensorA.getShape().toONNXShapeString());
     }
 
     @Test
