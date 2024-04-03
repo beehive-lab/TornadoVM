@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.tensors.DType;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
+import uk.ac.manchester.tornado.api.types.tensors.TensorByte;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat16;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFloat64;
@@ -74,6 +75,12 @@ public class TestTensorTypes extends TornadoTestBase {
     public static void tensorAdditionInt64(TensorInt64 tensorA, TensorInt64 tensorB, TensorInt64 tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
             tensorC.set(i, tensorA.get(i) + tensorB.get(i));
+        }
+    }
+
+    public static void tensorAdditionByte(TensorByte tensorA, TensorByte tensorB, TensorByte tensorC) {
+        for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
+            tensorC.set(i, (byte) (tensorA.get(i) + tensorB.get(i)));
         }
     }
 
@@ -121,7 +128,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            //            Assert.assertEquals(tensorC.get(i), (float) HalfFloat.add(tensorA.get(i), tensorB.get(i)), 0.00f);
+            Assert.assertEquals(tensorC.get(i).getFloat32(), HalfFloat.add(tensorA.get(i), tensorB.get(i)).getFloat32(), 0.00f);
         }
 
     }
@@ -285,6 +292,40 @@ public class TestTensorTypes extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
                 .task("t0", TestTensorTypes::tensorAdditionInt64, tensorA, tensorB, tensorC) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tensorC); //
+
+        // Take a snapshot of the task graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        // Create an execution plan and execute it
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < tensorC.getSize(); i++) {
+            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+        }
+    }
+
+    @Test
+    public void testTensorByte() {
+        // Define the shape for the tensors
+        Shape shape = new Shape(64, 64, 64);
+
+        // Create two tensors and initialize their values
+        TensorByte tensorA = new TensorByte(shape);
+        TensorByte tensorB = new TensorByte(shape);
+
+        // Create a tensor to store the result of addition
+        TensorByte tensorC = new TensorByte(shape);
+
+        tensorA.init((byte) 20);
+        tensorB.init((byte) 300);
+        tensorA.init((byte) 0);
+
+        // Define the task graph
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tensorA, tensorB) //
+                .task("t0", TestTensorTypes::tensorAdditionByte, tensorA, tensorB, tensorC) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tensorC); //
 
         // Take a snapshot of the task graph
