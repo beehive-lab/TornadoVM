@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.unittests.tensors;
 
-import java.util.Random;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,13 +26,11 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.tensors.DType;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.TensorByte;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat16;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat64;
+import uk.ac.manchester.tornado.api.types.tensors.TensorFP16;
+import uk.ac.manchester.tornado.api.types.tensors.TensorFP32;
+import uk.ac.manchester.tornado.api.types.tensors.TensorFP64;
 import uk.ac.manchester.tornado.api.types.tensors.TensorInt16;
 import uk.ac.manchester.tornado.api.types.tensors.TensorInt32;
 import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
@@ -42,19 +38,19 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestTensorTypes extends TornadoTestBase {
 
-    public static void tensorAdditionFloat16(TensorFloat16 tensorA, TensorFloat16 tensorB, TensorFloat16 tensorC) {
+    public static void tensorAdditionFloat16(TensorFP16 tensorA, TensorFP16 tensorB, TensorFP16 tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
             tensorC.set(i, HalfFloat.add(tensorA.get(i), tensorB.get(i)));
         }
     }
 
-    public static void tensorAdditionFloat32(TensorFloat32 tensorA, TensorFloat32 tensorB, TensorFloat32 tensorC) {
+    public static void tensorAdditionFloat32(TensorFP32 tensorA, TensorFP32 tensorB, TensorFP32 tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
             tensorC.set(i, tensorA.get(i) + tensorB.get(i));
         }
     }
 
-    public static void tensorAdditionFloat64(TensorFloat64 tensorA, TensorFloat64 tensorB, TensorFloat64 tensorC) {
+    public static void tensorAdditionFloat64(TensorFP64 tensorA, TensorFP64 tensorB, TensorFP64 tensorC) {
         for (@Parallel int i = 0; i < tensorC.getSize(); i++) {
             tensorC.set(i, tensorA.get(i) + tensorB.get(i));
         }
@@ -88,7 +84,7 @@ public class TestTensorTypes extends TornadoTestBase {
     public void testHelloTensorAPI() {
         Shape shape = new Shape(64, 64, 64);
 
-        TensorFloat16 tensorA = new TensorFloat16(shape);
+        TensorFP16 tensorA = new TensorFP16(shape);
 
         tensorA.init(new HalfFloat(1f));
 
@@ -104,11 +100,11 @@ public class TestTensorTypes extends TornadoTestBase {
         Shape shape = new Shape(64, 64, 64);
 
         // Create two tensors and initialize their values
-        TensorFloat16 tensorA = new TensorFloat16(shape);
-        TensorFloat16 tensorB = new TensorFloat16(shape);
+        TensorFP16 tensorA = new TensorFP16(shape);
+        TensorFP16 tensorB = new TensorFP16(shape);
 
         // Create a tensor to store the result of addition
-        TensorFloat16 tensorC = new TensorFloat16(shape);
+        TensorFP16 tensorC = new TensorFP16(shape);
 
         tensorA.init(new HalfFloat(2));
         tensorB.init(new HalfFloat(5));
@@ -139,11 +135,11 @@ public class TestTensorTypes extends TornadoTestBase {
         Shape shape = new Shape(64, 64, 64);
 
         // Create two tensors and initialize their values
-        TensorFloat32 tensorA = new TensorFloat32(shape);
-        TensorFloat32 tensorB = new TensorFloat32(shape);
+        TensorFP32 tensorA = new TensorFP32(shape);
+        TensorFP32 tensorB = new TensorFP32(shape);
 
         // Create a tensor to store the result of addition
-        TensorFloat32 tensorC = new TensorFloat32(shape);
+        TensorFP32 tensorC = new TensorFP32(shape);
 
         tensorA.init(20f);
         tensorB.init(3000f);
@@ -174,11 +170,11 @@ public class TestTensorTypes extends TornadoTestBase {
         Shape shape = new Shape(64, 64, 64);
 
         // Create two tensors and initialize their values
-        TensorFloat64 tensorA = new TensorFloat64(shape);
-        TensorFloat64 tensorB = new TensorFloat64(shape);
+        TensorFP64 tensorA = new TensorFP64(shape);
+        TensorFP64 tensorB = new TensorFP64(shape);
 
         // Create a tensor to store the result of addition
-        TensorFloat64 tensorC = new TensorFloat64(shape);
+        TensorFP64 tensorC = new TensorFP64(shape);
 
         tensorA.init(20d);
         tensorB.init(3000d);

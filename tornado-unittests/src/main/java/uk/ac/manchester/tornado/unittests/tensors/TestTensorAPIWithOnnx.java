@@ -26,7 +26,7 @@ import ai.onnxruntime.OrtSession;
 import org.junit.Assert;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
+import uk.ac.manchester.tornado.api.types.tensors.TensorFP32;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.HashMap;
@@ -47,7 +47,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
      * <p>The test follows these steps:
      * <ol>
      * <li>Creates a {@link Shape} object to define the dimensions of the input tensor.</li>
-     * <li>Initializes a {@link TensorFloat32} with the shape and sets all elements to a specific value.</li>
+     * <li>Initializes a {@link TensorFP32} with the shape and sets all elements to a specific value.</li>
      * <li>Obtains an {@link OrtEnvironment} instance for working with ONNX Runtime.</li>
      * <li>Creates a session with the model specified by {@code MODEL_PATH} and session options.</li>
      * <li>Prepares the input tensor and maps it to the expected input name of the model.</li>
@@ -62,7 +62,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
     @Test
     public void testOnnxCompatibility() throws OrtException {
         Shape shape = new Shape(1, 3, 224, 224);
-        TensorFloat32 tornadoTensor = new TensorFloat32(shape);
+        TensorFP32 tornadoTensor = new TensorFP32(shape);
 
         tornadoTensor.init(2f);
 
