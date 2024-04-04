@@ -3,6 +3,8 @@ import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 module tornado.drivers.ptx {
     requires transitive jdk.internal.vm.ci;
     requires transitive jdk.internal.vm.compiler;
+    requires transitive org.graalvm.collections;
+    requires transitive org.graalvm.word;
     requires transitive tornado.api;
     requires transitive tornado.runtime;
     requires tornado.drivers.common;

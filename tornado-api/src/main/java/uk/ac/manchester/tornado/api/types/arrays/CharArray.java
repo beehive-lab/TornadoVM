@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
@@ -238,4 +239,22 @@ public final class CharArray extends TornadoNativeArray {
         }
     }
 
+    /**
+     * Concatenates multiple {@link CharArray} instances into a single {@link CharArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link CharArray} objects to be concatenated.
+     * @return A new {@link CharArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static CharArray concat(CharArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(CharArray::getSize).sum();
+        CharArray concatArray = new CharArray(newSize);
+        long currentPositionBytes = 0;
+        for (CharArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
 }

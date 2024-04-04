@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
@@ -238,5 +239,24 @@ public final class FloatArray extends TornadoNativeArray {
         for (@Parallel int i = 0; i < array.getSize(); i++) {
             array.set(i, value);
         }
+    }
+
+    /**
+     * Concatenates multiple {@link FloatArray} instances into a single {@link FloatArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link FloatArray} objects to be concatenated.
+     * @return A new {@link FloatArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static FloatArray concat(FloatArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(FloatArray::getSize).sum();
+        FloatArray concatArray = new FloatArray(newSize);
+        long currentPositionBytes = 0;
+        for (FloatArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }
