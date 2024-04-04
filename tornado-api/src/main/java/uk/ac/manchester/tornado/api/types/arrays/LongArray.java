@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
@@ -236,5 +237,24 @@ public final class LongArray extends TornadoNativeArray {
         for (@Parallel int i = 0; i < array.getSize(); i++) {
             array.set(i, value);
         }
+    }
+
+    /**
+     * Concatenates multiple {@link LongArray} instances into a single {@link LongArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link LongArray} objects to be concatenated.
+     * @return A new {@link LongArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static LongArray concat(LongArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(LongArray::getSize).sum();
+        LongArray concatArray = new LongArray(newSize);
+        long currentPositionBytes = 0;
+        for (LongArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }
