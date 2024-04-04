@@ -17,29 +17,27 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.FloatBuffer;
-import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-@SegmentElementSize(size = 4)
-public final class TensorFloat32 extends TornadoNativeArray implements AbstractTensor {
-
-    private static final int FLOAT_BYTES = 4;
+// rename
+@SegmentElementSize(size = 2)
+public final class TensorFP16 extends Tensor {
+    private static final int HALF_FLOAT_BYTES = 2;
     /**
      * The data type of the elements contained within the tensor.
      */
     private final DType dType;
     private final Shape shape;
 
-    private final FloatArray tensorStorage;
+    private final HalfFloatArray tensorStorage;
 
     /**
      * The total number of elements in the tensor.
@@ -50,36 +48,37 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
      * The memory segment representing the tensor data in native memory.
      */
 
-    public TensorFloat32(Shape shape) {
+    public TensorFP16(Shape shape) {
         this.shape = shape;
         this.numberOfElements = shape.getSize();
-        this.dType = DType.FLOAT;
-        this.tensorStorage = new FloatArray(numberOfElements);
+        this.dType = DType.HALF_FLOAT;
+        this.tensorStorage = new HalfFloatArray(numberOfElements);
     }
 
-    public void init(float value) {
+    public void init(HalfFloat value) {
         for (int i = 0; i < getSize(); i++) {
-            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_FLOAT, getBaseIndex() + i, value);
+            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_SHORT, getBaseIndex() + i, value.getHalfFloatValue());
         }
     }
 
-    public void set(int index, float value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_FLOAT, getBaseIndex() + index, value);
+    public void set(int index, HalfFloat value) {
+        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_SHORT, getBaseIndex() + index, value.getHalfFloatValue());
     }
 
     private long getBaseIndex() {
-        return (int) TornadoNativeArray.ARRAY_HEADER / FLOAT_BYTES;
+        return (int) TornadoNativeArray.ARRAY_HEADER / HALF_FLOAT_BYTES;
     }
 
     /**
-     * Gets the float value stored at the specified index of the {@link FloatArray} instance.
+     * Gets the half_float value stored at the specified index of the {@link HalfFloatArray} instance.
      *
      * @param index
      *     The index of which to retrieve the float value.
      * @return
      */
-    public float get(int index) {
-        return tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_FLOAT, getBaseIndex() + index);
+    public HalfFloat get(int index) {
+        short halfFloatValue = tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_SHORT, getBaseIndex() + index);
+        return new HalfFloat(halfFloatValue);
     }
 
     @Override
@@ -109,12 +108,12 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
 
     @Override
     protected void clear() {
-        init(0.0f);
+        init(new HalfFloat(0));
     }
 
     @Override
     public int getElementSize() {
-        return DType.FLOAT.getByteSize();
+        return HALF_FLOAT_BYTES;
     }
 
     @Override
@@ -132,26 +131,9 @@ public final class TensorFloat32 extends TornadoNativeArray implements AbstractT
         return dType;
     }
 
-    public float[] toHeapArray() {
-        float[] outputArray = new float[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
+    public static void initialize(TensorFP16 tensor, HalfFloat value) {
+        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
+            tensor.set(i, value);
         }
-        return outputArray;
-    }
-
-    public FloatBuffer getFloatBuffer() {
-        return getSegment().asByteBuffer().asFloatBuffer();
-    }
-
-    public static FloatArray concat(TensorFloat32... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(TensorFloat32::getSize).sum();
-        FloatArray concatArray = new FloatArray(newSize);
-        long currentPositionBytes = 0;
-        for (TensorFloat32 array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
     }
 }

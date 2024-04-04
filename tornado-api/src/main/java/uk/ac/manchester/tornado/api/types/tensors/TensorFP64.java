@@ -26,7 +26,7 @@ import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 
 @SegmentElementSize(size = 8)
-public final class TensorFloat64 extends TornadoNativeArray implements AbstractTensor {
+public final class TensorFP64 extends Tensor {
 
     private static final int DOUBLE_BYTES = 8;
     /**
@@ -46,7 +46,7 @@ public final class TensorFloat64 extends TornadoNativeArray implements AbstractT
      * The memory segment representing the tensor data in native memory.
      */
 
-    public TensorFloat64(Shape shape) {
+    public TensorFP64(Shape shape) {
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.DOUBLE;
