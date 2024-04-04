@@ -22,9 +22,17 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import java.lang.foreign.MemorySegment;
 
 public non-sealed class Tensor extends TornadoNativeArray {
+    private DType dtype;
+    private Shape shape;
+
+    public Tensor(DType dtype, Shape shape) {
+        this.dtype = dtype;
+        this.shape = shape;
+    }
+
     @Override
     public int getSize() {
-        return 0;
+        return shape.getSize();
     }
 
     @Override
@@ -49,24 +57,23 @@ public non-sealed class Tensor extends TornadoNativeArray {
 
     @Override
     protected void clear() {
-
     }
 
     @Override
     public int getElementSize() {
-        return 0;
+        return dtype.getByteSize();
     }
 
     public Shape getShape() {
-        return null;
+        return shape;
     }
 
     public String getDTypeAsString() {
-        return null;
+        return dtype.toString();
     }
 
     public DType getDType() {
-        return null;
+        return dtype;
     }
 
 }

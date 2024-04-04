@@ -98,7 +98,6 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
             }
         } finally {
             Assert.assertNotNull(outputTensor);
-            //            cleanupDownloadedModel(modelPath);
         }
     }
 
@@ -119,9 +118,4 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
         return path;
     }
 
-    private void cleanupDownloadedModel(String path) throws IOException {
-        Path modelPath = Paths.get(path);
-        Files.deleteIfExists(modelPath);
-        Files.deleteIfExists(modelPath.getParent());
-    }
 }
