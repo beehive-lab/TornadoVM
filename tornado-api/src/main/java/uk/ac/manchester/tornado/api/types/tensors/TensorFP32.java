@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
@@ -140,6 +141,12 @@ public final class TensorFP32 extends Tensor {
 
     public FloatBuffer getFloatBuffer() {
         return getSegment().asByteBuffer().asFloatBuffer();
+    }
+
+    public static void initialize(TensorFP32 tensor, short value) {
+        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
+            tensor.set(i, value);
+        }
     }
 
     /**

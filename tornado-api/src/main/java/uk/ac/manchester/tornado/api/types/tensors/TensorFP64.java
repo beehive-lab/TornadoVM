@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
@@ -127,6 +128,12 @@ public final class TensorFP64 extends Tensor {
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    public static void initialize(TensorFP64 tensor, short value) {
+        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
+            tensor.set(i, value);
+        }
     }
 
     /**
