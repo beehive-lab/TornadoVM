@@ -4,14 +4,16 @@ Installation & Configuration
 Pre-requisites
 ***************
 
-* Maven Version >= 3.6.3
-* CMake >= 3.6
+These need to be installed before executing either automatic or manual TornadoVM installation:
+
+* GCC >= 9.0 or LLVM/clang (Linux)
+* Xcode >= 15 (macOS)
+* Visual Studio Community 2022 (Windows)
+* Python >= 3.0 (all OSes)
 * At least one of following drivers:
       * OpenCL drivers: GPUs and CPUs >= 2.1, FPGAs >= 1.0
       * NVIDIA drivers and CUDA Toolkit 10.0+
       * Intel drivers and Level-Zero >= 1.2
-* GCC >= 9.0 or LLVM/clang
-* Python >= 3.0
 
 For macOS users: the OpenCL support for your Apple model can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
@@ -39,12 +41,14 @@ The following table includes the platforms that TornadoVM can be executed.
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | macOS Big Sur 11.5.1      | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
+| macOS Sonoma 14.3         | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
++---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Apple M1                  | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Windows 10/11             | OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested         | CUDA 12.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 
-Note: The SPIR-V backend of TornadoVM is only supported for Linux OS.
+**Note:** The SPIR-V backend of TornadoVM is only supported for Linux OS.
 Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs), and Intel ARC GPUs.
 
 .. _installation:
@@ -58,8 +62,8 @@ There are two ways to install TornadoVM:
 A) Automatic Installation
 ===========================
 
-The ``tornadoVMInstaller.sh`` script provided in this repository will compile/download OpenJDK, ``cmake`` and it will build TornadoVM.
-This installation script has been tested on Linux and macOS.
+The ``tornadoVMInstaller`` script provided in this repository will compile/download OpenJDK, CMake, Maven and it will build TornadoVM.
+This installation script has been tested on Linux, macOS and Windows.
 Additionally, this installation type will automatically trigger all dependencies, therefore it is recommended if users only need to invoke TornadoVM as a library.
 
 .. code-block:: bash
@@ -78,7 +82,7 @@ Additionally, this installation type will automatically trigger all dependencies
        --javaHome JAVAHOME  Use a JDK from a user directory
 
 
-**NOTE** Select the desired backend with the ``--backend`` option:
+**Note:** Select the desired backend with the ``--backend`` option:
   * ``opencl``: Enables the OpenCL backend (it requires OpenCL drivers)
   * ``ptx``: Enables the PTX backend (it requires NVIDIA CUDA drivers)
   * ``spirv``: Enables the SPIRV backend (it requires Intel Level Zero drivers)
@@ -99,12 +103,43 @@ Another example: to build TornadoVM with OpenJDK 21 for the OpenCL and PTX backe
   ./bin/tornadovm-installer --jdk jdk21 --backend opencl,ptx
 
 
-After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM.
-After the script finished the installation, set the ``env`` variables needed by using:
+Windows example: to build TornadoVM with GraalVM and all supported backends (mind backslash and quotes):
 
 .. code-block:: bash
 
-  $ source source.sh
+  python bin\tornadovm-installer --jdk graalvm-jdk-21 --backend "opencl,ptx,spirv"
+
+
+**Notes on Windows:**
+
+- If the installer fails to import the ``wget`` Python module, simply re-running the script will suffice. The behavior was never observed in a Python virtual environment. Therefore, creating and activating a `venv` before running the installer is another (probably better) approach on Windows:
+
+  .. code-block:: bash
+
+    python -m venv .venv
+    .venv\Scripts\activate.bat
+
+- Running the TornadoVM test suite on Windows requires using ``nmake`` (part of Visual Studio):
+
+  .. code-block:: bash
+
+    nmake /f Makefile.mak tests
+
+
+After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM.
+After the script finished the installation, set the environment variables needed.
+
+On Linux and macOS by using:
+
+.. code-block:: bash
+
+  $ source setvars.sh
+
+On Windows by using:
+
+.. code-block:: bash
+
+  C:> setvars.cmd
 
 
 B) Manual Installation
@@ -491,7 +526,7 @@ TornadoVM for Windows 10/11 using GraalVM
 
 **[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows 10/11 it is still experimental.**
 
-The MSys2 toolchain :ref:`toolchain_msys2` provides a kind of Linux-like environment that uses the Linux installation script. The native toolchain :ref:`toolchain_native` provides a Windows batch file that expects the required tools to be installed in advance through their respective Windows installation methods.
+The :ref:`toolchain_msys2` provides a kind of Linux-like environment that uses the Linux installation script. The native toolchain :ref:`toolchain_native` provides a Windows batch file that expects the required tools to be installed in advance through their respective Windows installation methods.
 
 .. _toolchain_msys2:
 
@@ -692,7 +727,7 @@ directory, and build TornadoVM as follows:
 
    cd D:/MyProjects/TornadoVM
    source etc/sources.env
-   make graal-jdk-21 BACKEND=ptx,opencl
+   make graalvm-jdk-21 BACKEND=ptx,opencl
 
 The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.

@@ -37,7 +37,7 @@ def update_backend_file(selected_backends_str):
     This function updates the 'tornado.backend' file in the Tornado SDK with the selected backend configurations.
 
     Args:
-    selected_backends_str (str): Comma-separated string of selected backends.
+        selected_backends_str (str): Comma-separated string of selected backends.
     """
     tornado_sdk_path = os.environ.get("TORNADO_SDK")
     backend_file_path = os.path.join(tornado_sdk_path, "etc", "tornado.backend")

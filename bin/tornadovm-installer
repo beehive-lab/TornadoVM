@@ -46,6 +46,7 @@ __SUPPORTED_JDKS__ = [
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
 
+
 class TornadoInstaller:
     def __init__(self):
         self.workDirName = ""
@@ -97,18 +98,19 @@ class TornadoInstaller:
         try:
             if os.name == 'nt':
                 ar = zipfile.ZipFile(fullPath, 'r')
-                ar.extractall(self.workDirName)
+                cmakeTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                if not os.path.exists(cmakeTLD):
+                    ar.extractall(self.workDirName)
             else:
                 ar = tarfile.open(fullPath, "r:gz")
-                ar.extractall(self.workDirName, numeric_owner=True)
+                cmakeTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                if not os.path.exists(cmakeTLD):
+                    ar.extractall(self.workDirName, numeric_owner=True)
         except:
-            print(f"Downloading or unpacking failed for CMake {url}")
+            print(f"Unpacking failed for CMake {url}")
             sys.exit(0)
 
-        extractedDirectory = self.getJDKDirectoryName(ar)
         ar.close()
-
-        currentDirectory = self.getCurrentDirectory()
 
         extraPath = ""
         if self.osPlatform == config.__APPLE__:
@@ -116,7 +118,7 @@ class TornadoInstaller:
 
         ## Update env-variables
         extraPath = os.path.join(extraPath, "bin")
-        self.env["PATH"].append(os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath))
+        self.env["PATH"].append(os.path.join(cmakeTLD, extraPath))
 
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
@@ -135,23 +137,24 @@ class TornadoInstaller:
         try:
             if os.name == 'nt':
                 ar = zipfile.ZipFile(fullPath, 'r')
-                ar.extractall(self.workDirName)
+                mavenTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                if not os.path.exists(mavenTLD):
+                    ar.extractall(self.workDirName)
             else:
                 ar = tarfile.open(fullPath, "r:gz")
-                ar.extractall(self.workDirName, numeric_owner=True)
+                mavenTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                if not os.path.exists(mavenTLD):
+                    ar.extractall(self.workDirName, numeric_owner=True)
         except:
-            print(f"Downloading or unpacking failed for Maven {url}")
+            print(f"Unpacking failed for Maven {url}")
             sys.exit(0)
 
-        extractedDirectory = self.getJDKDirectoryName(ar)
         ar.close()
 
-        currentDirectory = self.getCurrentDirectory()
-
         ## Update env-variables
-        self.env["PATH"].append(os.path.join(currentDirectory, self.workDirName, extractedDirectory, "bin"))
+        self.env["PATH"].append(os.path.join(mavenTLD, "bin"))
 
-    def getJDKDirectoryName(self, ar):
+    def getTLDName(self, ar):
         if os.name == 'nt':
             extractedNames = ar.namelist()[1].split("/")
         else:
@@ -186,28 +189,26 @@ class TornadoInstaller:
         try:
             if os.name == 'nt':
                 ar = zipfile.ZipFile(fullPath, 'r')
-                ar.extractall(self.workDirName)
+                jdkTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                if not os.path.exists(jdkTLD):
+                    ar.extractall(self.workDirName)
             else:
                 ar = tarfile.open(fullPath, "r:gz")
-                ar.extractall(self.workDirName, numeric_owner=True)
-        except PermissionError as e:
-            print(f"Known errors {e} ignored unpacking JDK {url}")
-            pass
+                jdkTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                if not os.path.exists(jdkTLD):
+                    ar.extractall(self.workDirName, numeric_owner=True)
         except:
-            print(f"Downloading or unpacking failed for JDK {url}")
+            print(f"Unpacking failed for JDK {url}")
             sys.exit(0)
 
-        extractedDirectory = self.getJDKDirectoryName(ar)
         ar.close()
-
-        currentDirectory = self.getCurrentDirectory()
 
         extraPath = ""
         if self.osPlatform == config.__APPLE__ and "zulu" not in jdk:
             extraPath = os.path.join("Contents", "Home")
 
         ## Update env-variables
-        self.env["JAVA_HOME"] = os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath)
+        self.env["JAVA_HOME"] = os.path.join(jdkTLD, extraPath)
 
     def setEnvironmentVariables(self):
         ## 1. PATH
@@ -302,7 +303,6 @@ class TornadoInstaller:
         return polyglotOption
 
     def install(self, args):
-
         if args.javaHome == None:
             self.checkJDKOption(args)
 
@@ -341,7 +341,7 @@ class TornadoInstaller:
 
 def listSupportedJDKs():
     print(
-        """
+    """
     TornadoVM Installer - Select a JDK implementation to install with TornadoVM:
 
     jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
@@ -361,7 +361,9 @@ def listSupportedJDKs():
 
 
 def parseArguments():
-    """Parse command line arguments"""
+    """
+    Parse command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description="""TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers"""
     )

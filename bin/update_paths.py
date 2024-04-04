@@ -28,7 +28,8 @@ def update_tornado_paths():
     This function determines the latest Tornado SDK in the 'dist/tornado-sdk/' directory
     and updates the symbolic links 'bin' and 'sdk' to point to the latest SDK version.
 
-    :raises FileNotFoundError: If no files are found in 'dist/tornado-sdk/' directory.
+    Raises:
+        FileNotFoundError: If no files are found in 'dist/tornado-sdk/' directory.
     """
     tornado_sdk_dir = os.path.join("dist", "tornado-sdk")
     files_in_sdk_dir = os.listdir(tornado_sdk_dir)
@@ -59,8 +60,10 @@ def update_tornado_paths():
 
     # Remove existing 'bin' and 'sdk' links
     for symlink in ["bin", "sdk"]:
-        if os.path.exists(symlink):
+        try: ## hack to avoid Windows junction handling
             os.unlink(symlink)
+        except FileNotFoundError:
+            pass
 
     # Change back to the parent directory
     os.chdir("..")
