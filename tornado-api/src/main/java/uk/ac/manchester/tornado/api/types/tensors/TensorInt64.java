@@ -20,16 +20,14 @@ package uk.ac.manchester.tornado.api.types.tensors;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.LongBuffer;
 import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 @SegmentElementSize(size = 8)
 public final class TensorInt64 extends Tensor {
@@ -131,6 +129,10 @@ public final class TensorInt64 extends Tensor {
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    public LongBuffer getLongBuffer() {
+        return getSegment().asByteBuffer().asLongBuffer();
     }
 
     public static void initialize(TensorInt64 tensor, long value) {

@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
@@ -129,6 +130,10 @@ public final class TensorInt32 extends Tensor {
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    public IntBuffer getIntBuffer() {
+        return getSegment().asByteBuffer().asIntBuffer();
     }
 
     public static void initialize(TensorInt32 tensor, int value) {

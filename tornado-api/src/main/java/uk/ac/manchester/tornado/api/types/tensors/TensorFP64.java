@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
@@ -128,6 +129,10 @@ public final class TensorFP64 extends Tensor {
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    public DoubleBuffer getDoubleBuffer() {
+        return getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     public static void initialize(TensorFP64 tensor, short value) {

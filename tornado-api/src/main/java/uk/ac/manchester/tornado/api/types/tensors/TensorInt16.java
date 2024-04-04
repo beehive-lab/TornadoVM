@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ShortBuffer;
 import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
@@ -129,6 +130,10 @@ public final class TensorInt16 extends Tensor {
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    public ShortBuffer getShortBuffer() {
+        return getSegment().asByteBuffer().asShortBuffer();
     }
 
     public static void initialize(TensorInt16 tensor, short value) {
