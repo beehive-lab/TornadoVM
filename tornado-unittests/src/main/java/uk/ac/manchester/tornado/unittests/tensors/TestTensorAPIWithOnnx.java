@@ -29,6 +29,13 @@ import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFP32;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.io.BufferedInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +44,8 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
     private final String INPUT_TENSOR_NAME = "data";
     private final String OUTPUT_TENSOR_NAME = "mobilenetv20_output_flatten0_reshape0";
-    private final String MODEL_PATH = "etc/ml-models/mobilenetv2-7.onnx";
+
+    private final String MODEL_URL = "https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-7.onnx";
 
     /**
      * Tests the compatibility and functionality of an ONNX model using the ONNX Runtime (ORT) in Java.
@@ -60,7 +68,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
      *     If an error occurs in the ONNX Runtime environment, such as issues with creating the session or running the model.
      */
     @Test
-    public void testOnnxCompatibility() throws OrtException {
+    public void testOnnxCompatibility() throws OrtException, IOException {
         Shape shape = new Shape(1, 3, 224, 224);
         TensorFP32 tornadoTensor = new TensorFP32(shape);
 
@@ -68,9 +76,11 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
         OnnxTensor outputTensor = null;
 
+        String modelPath = downloadAndSetModelPath(MODEL_URL);
+
         try (OrtEnvironment env = OrtEnvironment.getEnvironment()) {
             // Load the MobileNet V2 ONNX model
-            OrtSession session = env.createSession(MODEL_PATH, new OrtSession.SessionOptions());
+            OrtSession session = env.createSession(modelPath, new OrtSession.SessionOptions());
 
             OnnxTensor inputTensor = OnnxTensor.createTensor(env, tornadoTensor.getFloatBuffer(), shape.dimensions());
 
@@ -88,7 +98,30 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
             }
         } finally {
             Assert.assertNotNull(outputTensor);
+            cleanupDownloadedModel(modelPath);
         }
+    }
 
+    private String downloadAndSetModelPath(String urlString) throws IOException {
+        String path;
+        URL url = new URL(urlString);
+        Path tempDir = Files.createTempDirectory("onnx_models");
+        Path modelPath = Paths.get(tempDir.toString(), "mobilenetv2-7.onnx");
+        path = modelPath.toString();
+
+        try (BufferedInputStream in = new BufferedInputStream(url.openStream()); FileOutputStream fileOutputStream = new FileOutputStream(modelPath.toFile())) {
+            byte dataBuffer[] = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+                fileOutputStream.write(dataBuffer, 0, bytesRead);
+            }
+        }
+        return path;
+    }
+
+    private void cleanupDownloadedModel(String path) throws IOException {
+        Path modelPath = Paths.get(path);
+        Files.deleteIfExists(modelPath);
+        Files.deleteIfExists(modelPath.getParent());
     }
 }
