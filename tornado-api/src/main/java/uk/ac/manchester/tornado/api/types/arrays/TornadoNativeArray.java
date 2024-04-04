@@ -19,13 +19,7 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.types.tensors.TensorByte;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat16;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat32;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFloat64;
-import uk.ac.manchester.tornado.api.types.tensors.TensorInt16;
-import uk.ac.manchester.tornado.api.types.tensors.TensorInt32;
-import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 
 /**
  * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays,
@@ -42,9 +36,9 @@ import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
  * </p>
  */
 public abstract sealed class TornadoNativeArray //
-        permits ByteArray, CharArray, DoubleArray, FloatArray, HalfFloatArray, //
-        IntArray, LongArray, ShortArray, TensorByte, TensorFloat16, //
-        TensorFloat32, TensorFloat64, TensorInt16, TensorInt32, TensorInt64 {
+        permits ByteArray, CharArray, DoubleArray, //
+        FloatArray, HalfFloatArray, IntArray, //
+        LongArray, ShortArray, Tensor {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through
