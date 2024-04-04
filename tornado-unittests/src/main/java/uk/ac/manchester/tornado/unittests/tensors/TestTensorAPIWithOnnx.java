@@ -98,7 +98,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
             }
         } finally {
             Assert.assertNotNull(outputTensor);
-            cleanupDownloadedModel(modelPath);
+            //            cleanupDownloadedModel(modelPath);
         }
     }
 
