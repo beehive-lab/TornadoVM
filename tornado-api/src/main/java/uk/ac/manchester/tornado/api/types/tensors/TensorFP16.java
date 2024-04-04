@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
@@ -135,5 +136,24 @@ public final class TensorFP16 extends Tensor {
         for (@Parallel int i = 0; i < tensor.getSize(); i++) {
             tensor.set(i, value);
         }
+    }
+
+    /**
+     * Concatenates multiple {@link TensorFP16} instances into a single {@link TensorFP16}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorFP16} objects to be concatenated.
+     * @return A new {@link TensorFP16} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorFP16 concat(TensorFP16... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorFP16::getSize).sum();
+        TensorFP16 concatArray = new TensorFP16(new Shape(newSize));
+        long currentPositionBytes = 0;
+        for (TensorFP16 array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }

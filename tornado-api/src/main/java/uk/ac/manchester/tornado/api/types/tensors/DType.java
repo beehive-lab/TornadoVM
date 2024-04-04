@@ -20,9 +20,7 @@ package uk.ac.manchester.tornado.api.types.tensors;
 import java.lang.foreign.ValueLayout;
 
 /**
- * The {@code DType} enum represents the various data types supported by a data management or processing system.
- * Each enum constant specifies a data type, its size in bytes, and its corresponding {@link ValueLayout} for memory layout.
- * This allows for easy management and interpretation of different types of data in a uniform way.
+ * The {@code DType} enum represents the various data types can be found in models.
  */
 public enum DType {
     // @formatter:off

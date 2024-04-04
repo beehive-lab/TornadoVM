@@ -142,9 +142,17 @@ public final class TensorFP32 extends Tensor {
         return getSegment().asByteBuffer().asFloatBuffer();
     }
 
-    public static FloatArray concat(TensorFP32... arrays) {
+    /**
+     * Concatenates multiple {@link TensorFP32} instances into a single {@link TensorFP32}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorFP32} objects to be concatenated.
+     * @return A new {@link TensorFP32} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorFP32 concat(TensorFP32... arrays) {
         int newSize = Arrays.stream(arrays).mapToInt(TensorFP32::getSize).sum();
-        FloatArray concatArray = new FloatArray(newSize);
+        TensorFP32 concatArray = new TensorFP32(new Shape(newSize));
         long currentPositionBytes = 0;
         for (TensorFP32 array : arrays) {
             MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());

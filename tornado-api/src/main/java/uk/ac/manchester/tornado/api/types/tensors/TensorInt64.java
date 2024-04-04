@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
@@ -136,5 +137,24 @@ public final class TensorInt64 extends Tensor {
         for (@Parallel int i = 0; i < tensor.getSize(); i++) {
             tensor.set(i, value);
         }
+    }
+
+    /**
+     * Concatenates multiple {@link TensorInt64} instances into a single {@link TensorInt64}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorInt64} objects to be concatenated.
+     * @return A new {@link TensorInt64} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorInt64 concat(TensorInt64... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorInt64::getSize).sum();
+        TensorInt64 concatArray = new TensorInt64(new Shape(newSize));
+        long currentPositionBytes = 0;
+        for (TensorInt64 array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }

@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 
@@ -126,5 +127,24 @@ public final class TensorFP64 extends Tensor {
     @Override
     public DType getDType() {
         return dType;
+    }
+
+    /**
+     * Concatenates multiple {@link TensorFP64} instances into a single {@link TensorFP64}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorFP64} objects to be concatenated.
+     * @return A new {@link TensorFP64} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorFP64 concat(TensorFP64... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorFP64::getSize).sum();
+        TensorFP64 concatArray = new TensorFP64(new Shape(newSize));
+        long currentPositionBytes = 0;
+        for (TensorFP64 array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }
