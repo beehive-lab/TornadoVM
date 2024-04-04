@@ -28,7 +28,7 @@ import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 @SegmentElementSize(size = 2)
-public final class TensorInt16 extends TornadoNativeArray implements AbstractTensor {
+public final class TensorInt16 extends Tensor {
 
     private static final int SHORT_BYTES = 2;
     /**

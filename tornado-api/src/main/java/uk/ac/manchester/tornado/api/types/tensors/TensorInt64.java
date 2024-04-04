@@ -31,7 +31,7 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 @SegmentElementSize(size = 8)
-public final class TensorInt64 extends TornadoNativeArray implements AbstractTensor {
+public final class TensorInt64 extends Tensor {
     private static final int LONG_BYTES = 8;
     /**
      * The data type of the elements contained within the tensor.

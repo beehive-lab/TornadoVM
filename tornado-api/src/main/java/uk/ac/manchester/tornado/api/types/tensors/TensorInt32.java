@@ -29,7 +29,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 @SegmentElementSize(size = 4)
 
-public final class TensorInt32 extends TornadoNativeArray implements AbstractTensor {
+public final class TensorInt32 extends Tensor {
     private static final int INT_BYTES = 4;
     /**
      * The data type of the elements contained within the tensor.
@@ -130,7 +130,7 @@ public final class TensorInt32 extends TornadoNativeArray implements AbstractTen
         return dType;
     }
 
-    public static void initialize(TensorFloat32 tensor, int value) {
+    public static void initialize(TensorFP32 tensor, int value) {
         for (@Parallel int i = 0; i < tensor.getSize(); i++) {
             tensor.set(i, value);
         }

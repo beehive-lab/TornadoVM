@@ -26,7 +26,7 @@ import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 @SegmentElementSize(size = 1)
-public final class TensorByte extends TornadoNativeArray implements AbstractTensor {
+public final class TensorByte extends Tensor {
 
     private static final int BYTE = 1;
     /**
