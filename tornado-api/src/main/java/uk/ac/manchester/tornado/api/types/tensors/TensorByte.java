@@ -48,6 +48,7 @@ public final class TensorByte extends Tensor {
      */
 
     public TensorByte(Shape shape) {
+        super(DType.BOOL, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.BOOL;

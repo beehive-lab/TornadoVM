@@ -50,6 +50,7 @@ public final class TensorFP64 extends Tensor {
      */
 
     public TensorFP64(Shape shape) {
+        super(DType.DOUBLE, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.DOUBLE;

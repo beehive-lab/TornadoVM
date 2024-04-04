@@ -50,6 +50,7 @@ public final class TensorFP32 extends Tensor {
      */
 
     public TensorFP32(Shape shape) {
+        super(DType.FLOAT, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.FLOAT;

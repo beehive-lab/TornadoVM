@@ -50,6 +50,7 @@ public final class TensorInt64 extends Tensor {
      */
 
     public TensorInt64(Shape shape) {
+        super(DType.INT64, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.INT64;

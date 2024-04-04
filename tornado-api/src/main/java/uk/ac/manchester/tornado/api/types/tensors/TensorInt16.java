@@ -51,6 +51,7 @@ public final class TensorInt16 extends Tensor {
      */
 
     public TensorInt16(Shape shape) {
+        super(DType.HALF_FLOAT, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.HALF_FLOAT;

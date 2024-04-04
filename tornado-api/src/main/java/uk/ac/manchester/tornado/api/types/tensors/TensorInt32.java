@@ -51,6 +51,7 @@ public final class TensorInt32 extends Tensor {
      */
 
     public TensorInt32(Shape shape) {
+        super(DType.INT32, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.INT32;

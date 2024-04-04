@@ -28,7 +28,6 @@ import java.util.Arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-// rename
 @SegmentElementSize(size = 2)
 public final class TensorFP16 extends Tensor {
     private static final int HALF_FLOAT_BYTES = 2;
@@ -50,6 +49,7 @@ public final class TensorFP16 extends Tensor {
      */
 
     public TensorFP16(Shape shape) {
+        super(DType.HALF_FLOAT, shape);
         this.shape = shape;
         this.numberOfElements = shape.getSize();
         this.dType = DType.HALF_FLOAT;
