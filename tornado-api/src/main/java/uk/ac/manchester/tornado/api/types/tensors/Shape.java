@@ -21,33 +21,31 @@ import java.util.Arrays;
 
 public record Shape(long... dimensions) {
 
-    public long[] dimensions() {
-        return dimensions;
-    }
-
+    /**
+     * Returns the rank of the shape, which is the number of dimensions.
+     *
+     * @return the number of dimensions of the shape
+     */
     public int getRank() {
         return dimensions.length;
     }
 
+    /**
+     * Returns of the dimensions of the shape.
+     *
+     * @return an array of long values representing the dimensions of the shape
+     */
     public long[] getDimensions() {
         return dimensions;
     }
 
+    /**
+     * Calculates and returns the size of the shape, which is the product of all its dimensions.
+     *
+     * @return the total size of the shape as an int
+     */
     public int getSize() {
         return (int) Arrays.stream(dimensions).reduce(1, (a, b) -> a * b);
-    }
-
-    public Shape reshape(long... newDimensions) {
-        int newSize = 1;
-        for (long dim : newDimensions) {
-            if (dim < 0)
-                throw new IllegalArgumentException("Dimensions must be non-negative");
-            newSize *= dim;
-        }
-        if (newSize != getSize()) {
-            throw new IllegalArgumentException("Total size must remain constant");
-        }
-        return new Shape(newDimensions);
     }
 
     @Override
@@ -70,6 +68,12 @@ public record Shape(long... dimensions) {
         return STR."Shape{dimensions=\{Arrays.toString(dimensions)}}";
     }
 
+    /**
+     * Generates a string representation of the shape compatible with TensorFlow's shape format.
+     *
+     * @return a string representing the shape in TensorFlow's format
+     */
+
     public String toTensorFlowShapeString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
@@ -83,6 +87,11 @@ public record Shape(long... dimensions) {
         return sb.toString();
     }
 
+    /**
+     * Generates a string representation of the shape compatible with ONNX's shape format.
+     *
+     * @return a string representing the shape in ONNX's format
+     */
     public String toONNXShapeString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
