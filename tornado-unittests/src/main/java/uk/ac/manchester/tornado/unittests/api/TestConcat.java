@@ -125,7 +125,7 @@ public class TestConcat extends TornadoTestBase {
 
         a.init(100L);
         b.init(5L);
-        e.init(12l);
+        e.init(12L);
 
         LongArray c = LongArray.concat(a, b, e);
 
