@@ -62,7 +62,7 @@ There are two ways to install TornadoVM:
 A) Automatic Installation
 ===========================
 
-The ``tornadoVMInstaller`` script provided in this repository will compile/download OpenJDK, CMake, Maven and it will build TornadoVM.
+The ``tornadovm-installer`` script provided in this repository will compile/download OpenJDK, CMake, Maven and it will build TornadoVM.
 This installation script has been tested on Linux, macOS and Windows.
 Additionally, this installation type will automatically trigger all dependencies, therefore it is recommended if users only need to invoke TornadoVM as a library.
 
@@ -107,19 +107,19 @@ Windows example: to build TornadoVM with GraalVM and all supported backends (min
 
 .. code-block:: bash
 
+  rem create and activate a virtual environment
+
+  python -m venv .venv
+  .venv\Scripts\activate.bat
+
   python bin\tornadovm-installer --jdk graalvm-jdk-21 --backend "opencl,ptx,spirv"
 
 
 **Notes on Windows:**
 
-- If the installer fails to import the ``wget`` Python module, simply re-running the script will suffice. The behavior was never observed in a Python virtual environment. Therefore, creating and activating a `venv` before running the installer is another (probably better) approach on Windows:
+- The installer must run in a virtual Python environment (`venv`) to automatically install and import a missing ``wget`` Python module. Otherwise, the installer fails to install and import ``wget`` and reports an error. Although the installer works fine on the second try, using a `venv` from the start is a smarter approach.
 
-  .. code-block:: bash
-
-    python -m venv .venv
-    .venv\Scripts\activate.bat
-
-- Running the TornadoVM test suite on Windows requires using ``nmake`` (part of Visual Studio):
+- Running the TornadoVM test suite on Windows requires using ``nmake`` which is part of Visual Studio:
 
   .. code-block:: bash
 
