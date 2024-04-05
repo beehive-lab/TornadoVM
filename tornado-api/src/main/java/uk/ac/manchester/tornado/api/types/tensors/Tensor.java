@@ -21,11 +21,11 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
 
-public non-sealed class Tensor extends TornadoNativeArray {
+public abstract non-sealed class Tensor extends TornadoNativeArray {
     private DType dtype;
     private Shape shape;
 
-    public Tensor(DType dtype, Shape shape) {
+    protected Tensor(DType dtype, Shape shape) {
         this.dtype = dtype;
         this.shape = shape;
     }
@@ -64,16 +64,10 @@ public non-sealed class Tensor extends TornadoNativeArray {
         return dtype.getByteSize();
     }
 
-    public Shape getShape() {
-        return shape;
-    }
+    public abstract Shape getShape();
 
-    public String getDTypeAsString() {
-        return dtype.toString();
-    }
+    public abstract String getDTypeAsString();
 
-    public DType getDType() {
-        return dtype;
-    }
+    public abstract DType getDType();
 
 }
