@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -84,14 +85,23 @@ public class TornadoExecutionPlan {
      *     uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound} if a device index is not found.
      *
      * @throws {@link
-     *     uk.ac.manchester.tornado.api.exceptions.TornadoDriverNotFound} if a driver index is not found.
+     *     TornadoBackendNotFound} if a driver index is not found.
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+        return TornadoRuntime.getTornadoRuntime().getBackend(driverIndex).getDevice(deviceIndex);
     }
 
     public static int getTotalPlans() {
         return globalExecutionPlanCounter.intValue();
+    }
+
+    /**
+     * Return a data structure that contains all drivers and devices that the TornadoVM Runtime can access.
+     * 
+     * @return {@link TornadoDeviceMap}
+     */
+    public static TornadoDeviceMap getTornadoDeviceMap() {
+        return new TornadoDeviceMap();
     }
 
     /**

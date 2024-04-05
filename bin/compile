@@ -184,7 +184,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             [
                 "git",
                 "clone",
-                "https://github.com/beehive-lab/beehive-spirv-toolkit.git",
+                "https://github.com/beehive-lab/beehive-spirv-toolkit",
             ],
         )
         build = True

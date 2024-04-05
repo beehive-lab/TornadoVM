@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -50,10 +50,10 @@ public class TestVM {
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultBackend();
+        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
 
         // Get a Device
-        TornadoDevice device = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         System.out.println(STR."Selecting Device: \{device.getPhysicalDevice().getDeviceName()}");
 

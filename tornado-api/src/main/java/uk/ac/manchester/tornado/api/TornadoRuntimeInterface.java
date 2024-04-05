@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,19 +22,19 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
 public interface TornadoRuntimeInterface {
 
-    TornadoDriver getDriver(int index);
+    TornadoBackend getBackend(int index);
 
-    void setDefaultDriver(int index);
+    void setDefaultBackend(int index);
 
     TornadoVMBackendType getBackendType(int index);
 
-    <D extends TornadoDriver> D getDriver(Class<D> type);
+    <D extends TornadoBackend> D getBackend(Class<D> type);
 
-    int getNumDrivers();
+    int getNumBackends();
 
     TornadoDevice getDefaultDevice();
 
-    <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass);
+    <D extends TornadoBackend> int getBackendIndex(Class<D> driverClass);
 
     boolean isProfilerEnabled();
 }

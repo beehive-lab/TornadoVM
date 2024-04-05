@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.spirv.tests;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
 public class TestBackend {
@@ -36,9 +36,9 @@ public class TestBackend {
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultBackend();
+        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
 
-        TornadoDevice device = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         System.out.println("Selecting Device: " + device.getPhysicalDevice().getDeviceName());
 

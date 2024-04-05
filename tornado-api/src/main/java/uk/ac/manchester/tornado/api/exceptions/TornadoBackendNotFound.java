@@ -17,8 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
-public class TornadoDriverNotFound extends TornadoRuntimeException {
-    public TornadoDriverNotFound(String msg) {
+public class TornadoBackendNotFound extends TornadoRuntimeException {
+    public TornadoBackendNotFound(String msg) {
         super(msg);
     }
 }

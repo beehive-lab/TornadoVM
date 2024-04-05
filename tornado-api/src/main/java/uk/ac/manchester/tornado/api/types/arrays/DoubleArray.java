@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -225,4 +227,36 @@ public final class DoubleArray extends TornadoNativeArray {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
+    /**
+     * Factory method to initialize a {@link DoubleArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code DoubleArray} instance with.
+     */
+    public static void initialize(DoubleArray array, double value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link DoubleArray} instances into a single {@link DoubleArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link DoubleArray} objects to be concatenated.
+     * @return A new {@link DoubleArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static DoubleArray concat(DoubleArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(DoubleArray::getSize).sum();
+        DoubleArray concatArray = new DoubleArray(newSize);
+        long currentPositionBytes = 0;
+        for (DoubleArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
 }

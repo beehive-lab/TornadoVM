@@ -1,22 +1,22 @@
 Installation & Configuration
-=============================
+##################################
 
 Pre-requisites
-###############
+***************
 
 * Maven Version >= 3.6.3
 * CMake >= 3.6
 * At least one of following drivers:
       * OpenCL drivers: GPUs and CPUs >= 2.1, FPGAs >= 1.0
-      * NVIDIA drivers and CUDA SDK 10.0+
+      * NVIDIA drivers and CUDA Toolkit 10.0+
       * Intel drivers and Level-Zero >= 1.2
-* GCC or clang/LLVM (GCC >= 9.0)
-* Python (>= 3.0)
+* GCC >= 9.0 or LLVM/clang
+* Python >= 3.0
 
-For Mac OS X users: the OpenCL support for your Apple model can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
+For macOS users: the OpenCL support for your Apple model can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
 Supported Platforms
-#####################
+***********************
 
 The following table includes the platforms that TornadoVM can be executed.
 
@@ -33,15 +33,15 @@ The following table includes the platforms that TornadoVM can be executed.
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | OpenSuse Leap 15.4        | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
-| Mac OS X Mojave 10.14.6   | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
+| macOS Mojave 10.14.6      | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
-| Mac OS X Catalina 10.15.3 | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
+| macOS Catalina 10.15.3    | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
-| Mac OS X Big Sur 11.5.1   | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
+| macOS Big Sur 11.5.1      | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Apple M1                  | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
-| Windows 10/11             | OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested         | CUDA 10.0+      | Not supported/tested |
+| Windows 10/11             | OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested         | CUDA 12.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 
 Note: The SPIR-V backend of TornadoVM is only supported for Linux OS.
@@ -50,16 +50,16 @@ Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrate
 .. _installation:
 
 Installation
-###############
+*****************
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code.
 There are two ways to install TornadoVM:
 
 A) Automatic Installation
---------------------------
+===========================
 
 The ``tornadoVMInstaller.sh`` script provided in this repository will compile/download OpenJDK, ``cmake`` and it will build TornadoVM.
-This installation script has been tested on Linux and OSx.
+This installation script has been tested on Linux and macOS.
 Additionally, this installation type will automatically trigger all dependencies, therefore it is recommended if users only need to invoke TornadoVM as a library.
 
 .. code-block:: bash
@@ -108,7 +108,7 @@ After the script finished the installation, set the ``env`` variables needed by 
 
 
 B) Manual Installation
---------------------------
+========================
 
 TornadoVM can be executed with the following configurations:
 
@@ -117,13 +117,13 @@ TornadoVM can be executed with the following configurations:
 Linux
 ~~~~~~~~
 
-- TornadoVM with GraalVM for Linux and OSx (JDK 21): see the installation guide here: :ref:`installation_graalvm`.
+- TornadoVM with GraalVM for Linux and macOS (JDK 21): see the installation guide here: :ref:`installation_graalvm`.
 - TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~
 
-To run TornadoVM on **Windows 10/11 OS**, install TornadoVM with GraalVM. More information here: :ref:`installation_windows`.
+To run TornadoVM on **Windows 10/11**, install TornadoVM with GraalVM. More information here: :ref:`installation_windows`.
 
 
 ARM Mali GPUs and Linux
@@ -145,8 +145,8 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM for JDK 21.0.1 on Linux and OSx
------------------------------------------------------------------------------------
+Installation for GraalVM for JDK 21.0.1 on Linux and macOS
+================================================================
 
 1. Download GraalVM JDK 21.0.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,11 +173,11 @@ with SDKMAN:
   $ sdk use java 21-graalce
 
 
-The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.1.0`` directory. This directory is used as the JAVA_HOME (See step 2).
+The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.1.0` directory. This directory is used as the JAVA_HOME (See step 2).
 
 **Note** if installed with SDKMAN there is no need to manually set your JAVA_HOME.
 
-For OSX:
+For macOS:
 
 -  Example for GraalVM for JDK 21 Community 21.0.1:
 
@@ -185,7 +185,7 @@ For OSX:
 
    $ wget https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-x64_bin.tar.gz
 
-then ``untar`` it to the OSX standard JDK location
+then ``untar`` it to the macOS standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
 
 1. Download TornadoVM
@@ -222,7 +222,7 @@ setup of the required paths:
 
    $ source ./etc/sources.env
 
-For OSX: the exports above may be added to ``~/.profile``
+For macOS: the exports above may be added to ``~/.profile``
 
 3. Install CMAKE (if cmake < 3.6)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -259,8 +259,8 @@ add it to the ``./etc/sources.env`` file.
 
    $ export CMAKE_ROOT=/opt/cmake-3.10.1
 
-For OSX:
-^^^^^^^^
+For macOS:
+^^^^^^^^^^^^
 
 Install cmake:
 
@@ -295,8 +295,8 @@ and done!!
 
 .. _installation_jdk17plus:
 
-TornadoVM for JDK 21 on Linux and OSx
---------------------------------------
+TornadoVM for JDK 21 on Linux and macOS
+==============================================
 
 
 **DISCLAIMER:**
@@ -388,7 +388,7 @@ setup of the required paths:
 
    $ source ./etc/sources.env
 
-For OSX: the exports above may be added to ``~/.profile``
+For macOS: the exports above may be added to ``~/.profile``
 
 3. Install CMAKE (if cmake < 3.6)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -427,8 +427,8 @@ add it to the ``./etc/sources.env`` file.
 
    $ export CMAKE_ROOT=/opt/cmake-3.10.1
 
-For OSX:
-^^^^^^^^
+For macOS:
+^^^^^^^^^^^^^
 
 Install cmake:
 
@@ -487,9 +487,18 @@ To run individual tests:
 .. _installation_windows:
 
 TornadoVM for Windows 10/11 using GraalVM
----------------------------------------------------------------
+================================================
 
-**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10 via MSys2, it is still experimental.**
+**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows 10/11 it is still experimental.**
+
+The MSys2 toolchain :ref:`toolchain_msys2` provides a kind of Linux-like environment that uses the Linux installation script. The native toolchain :ref:`toolchain_native` provides a Windows batch file that expects the required tools to be installed in advance through their respective Windows installation methods.
+
+.. _toolchain_msys2:
+
+A) Windows installation with MSys2 toolchain
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This toolchain pretends a Linux-like environment that best suits TornadoVM's installation method for Linux and allows the tools developed there to be used without the need for major changes.
 
 1. Install prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -613,8 +622,8 @@ and download the following build:
 
 Extract the downloaded file to any directory.
 
-4. Install the NVIDIA drivers and CUDA SDK
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. Install the NVIDIA drivers and CUDA Toolkit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 A) CUDA Driver
@@ -625,7 +634,6 @@ Most Windows systems come with the NVIDIA drivers pre-installed. You can check y
 Alternatively, all NVIDIA drivers can be found here: `NVIDIA Driver Downloads <https://www.nvidia.com/Download/index.aspx>`__.
 
 B) OpenCL and NVIDIA PTX
-^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you plan to only use the OpenCL backend from TornadoVM, then you only
 need the NVIDIA driver from the previous step.
@@ -638,8 +646,8 @@ NVIDIA CUDA Toolkit.
 
 It is important to make sure that the GPU drivers are included with the CUDA Toolkit, so you may avoid downloading drivers separately.
 The only thing to note is that the GPU driver you are currently using should be of the same or higher version than the one shipped with CUDA Toolkit.
-Thus, if you have the driver already installed, make sure that the version required by the CUDA SDK is same or higher, otherwise update the GPU driver during toolkit installation.
-Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA SDK - so you may skip installing them.
+Thus, if you have the driver already installed, make sure that the version required by the CUDA Toolkit is same or higher, otherwise update the GPU driver during toolkit installation.
+Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA Toolkit - so you may skip installing them.
 
 5. Configure the TornadoVM build: setting ENV variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -674,7 +682,7 @@ There are only 2 places you should adjust:
 2. ``CUDA_PATH`` pointing to your NVIDIA GPU Computing Toolkit (CUDA) -
    this one is necessary only for builds with PTX backend.
 
-3. Compile TornadoVM
+6. Compile TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Start ``<MSYS2>/mingw64.exe`` terminal, navigate to the ``<TornadoVM>``
@@ -719,13 +727,139 @@ To run all unit-tests:
    make tests
 
 
+.. _toolchain_native:
+
+B) Windows installation with native toolchain
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This toolchain uses native Windows tools to compile and install TornadoVM. It defines it's own installation method, thus replacing Makefiles and bash scripts defined by the original Linux installation method.
+
+1. Install prerequisites
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Install `Microsoft Visual Studio 2022 Community Edition <https://visualstudio.microsoft.com/de/vs/community/>`__
+   include C++, Git and Spectre mitigations
+-  Install `CMake <https://cmake.org/download/>`__ >= 3.26.3
+-  Install `Maven <https://maven.apache.org/download.cgi>`__ >= 3.9.1
+-  Install `GraalVM for JDK <https://www.graalvm.org/downloads/>`__ 21.0.1
+-  Install `Python <https://www.python.org/downloads/>`__ >= 3.12
+-  Install `CUDA Toolkit <https://developer.nvidia.com/cuda-downloads>`__ >= 12.1
+-  Install (optional) `Intel CPU Runtime for OpenCL <https://www.intel.com/content/www/us/en/developer/articles/technical/intel-cpu-runtime-for-opencl-applications-with-sycl-support.html>`__ 2024.0
+
+
+2. Setup environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Open `x64 Native Tools Command Prompt for VS 2022`.
+
+-  Set variable JAVA_HOME to point at GraalVM for JDK installation.
+-  Set variable CMAKE_ROOT to point at CMake installation.
+-  Set variable CUDA_PATH to point at CUDA Toolkit installation (typically set by CUDA Toolkit installer).
+
+Setup example:
+
+.. code:: bash
+
+   set JAVA_HOME=%ProgramFiles%\Java\graalvm-jdk-21.0.1+12.1
+   set CMAKE_ROOT=%ProgramFiles%\CMake\share\cmake-3.26
+   set CUDA_PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.1
+
+3. Download, compile and install TornadoVM
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Download TornadoVM to any directory, cd into it, and run the installer with ``--help`` option for usage information (same as for Linux installer).
+
+.. code:: bash
+
+   cd %USERPROFILE%
+   git clone https://github.com/beehive-lab/TornadoVM.git
+   
+   cd TornadoVM
+   .\bin\tornadovm-installer.cmd --help
+
+.. code:: bash
+
+   TornadoVM Installer Tool for Windows. CD to top-level directory of TornadoVM
+   repository. Run in "x64 Native Tools Command Prompt for VS 2022".
+   
+   Working native Windows toolchain required:
+     - VS 22 (incl. C++, Git, Spectre mitigated libraries)
+     - CMake, Maven, GraalVM for JDK, Python
+     - CUDA SDK (if PTX backend wanted)
+     - Intel CPU RT for OpenCL (optional)
+   
+   Expected environment variables:
+     JAVA_HOME, if not supplied via --javaHome option
+     CMAKE_ROOT, CMake install directory
+     CUDA_PATH, if PTX backend wanted
+   
+     tornadovm-installer.cmd [-h] [--help] [--version] [--jdk JDK]
+       [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
+   
+     -h, --help       Show this help message and exit.
+     --version        Print version of TornadoVM.
+     --jdk JDK        Select one of the supported JDKs. Silently ignored
+                      as there is only GraalVM for JDK supported on Windows.
+     --backend LIST   Select at least one backend (opencl, ptx, spirv)
+                      to install or omit for all.
+     --listJDKs       List supported JDK versions.
+     --javaHome PATH  Use a particular JDK version.
+
+Execute the installer. Without options and CUDA Toolkit installed, backends for OpenCL, PTX, and SPIR-V are compiled. The batch file downloads the required repositories for OpenCL header files from The Khronos Group and Intel's Level Zero API into sibling directories of CWD. Additional repositories for Beehive's SPIR-V toolkit and Level Zero JNI are stored in CWD.
+
+.. code:: bash
+
+   .\bin\tornadovm-installer.cmd
+
+
+4. Check the installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Open another `x64 Native Tools Command Prompt for VS 2022`.
+
+List suppported backends. Should be opencl, spirv and ptx if CUDA Toolkit is available.
+
+.. code:: bash
+
+   cd %USERPROFILE%\TornadoVM
+   setvars.cmd
+   
+   python %TORNADO_SDK%\bin\tornado --devices
+
+
+Run some examples. Try it on all available devices.
+
+.. code:: bash
+
+   python %TORNADO_SDK%\bin\tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+   python %TORNADO_SDK%\bin\tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
+
+Run some tests. Use different devices as some tests fail due to lack of device capabilities.
+
+.. code:: bash
+
+   cd %USERPROFILE%\TornadoVM
+   setvars.cmd
+   
+   if exist tornado_unittests.log del /f tornado_unittests.log
+   
+   python %TORNADO_SDK%\bin\tornado-test --ea --verbose
+   python %TORNADO_SDK%\bin\tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+   
+   %TORNADO_SDK%\bin\test-native.cmd
+   
+   python %TORNADO_SDK%\bin\tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
+   
+   python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+
+
 .. _installation_mali:
 
 TornadoVM on ARM Mali GPUs
----------------------------------------
+====================================
 
-Installation
-~~~~~~~~~~~~~
+1. Installation
+~~~~~~~~~~~~~~~~~
 
 The installation of TornadoVM to run on ARM Mali GPUs requires JDK21 with GraalVM.
 See the :ref:`installation_graalvm` for details about the installation.
@@ -735,8 +869,8 @@ The OpenCL driver for Mali GPUs on Linux that has been tested is:
 -  OpenCL C 2.0 ``v1.r9p0-01rel0.37c12a13c46b4c2d9d736e0d5ace2e5e``:
    `link <https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel>`__
 
-Testing on ARM MALI GPUs
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Testing on ARM MALI GPUs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We have tested TornadoVM on the following ARM Mali GPUs:
 
@@ -756,10 +890,9 @@ The rest of the unittests should pass.
 
 
 Known issues on Linux
----------------------------
+===============================
 
 For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In Ubuntu >= 16.04 CMake can cause the following error:
 
@@ -774,7 +907,7 @@ Then the following package should be installed:
 
 
 Known issues on Windows
----------------------------
+==================================
 
 1. If you already have MSys2 installed and heavily customized you may
    experience issues with build or tests. We are suggesting to start
@@ -800,7 +933,7 @@ Known issues on Windows
 
 
 IDE Code Formatter
-------------------------------------
+====================
 
 Using Eclipse and Netbeans
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -820,18 +953,20 @@ Using IntelliJ
 
 
 Install plugins:
+
 - Eclipse Code Formatter
 - Save Actions
 
 Then :
-1. Open File > Settings > Eclipse Code Formatter
-2. Check the ``Use the Eclipse code`` formatter radio button
+
+1. Open File > Settings > Eclipse Code Formatter.
+2. Check the ``Use the Eclipse code`` formatter radio button.
 3. Set the Eclipse Java Formatter config file to the XML file stored in ``/scripts/templates/eclise-settings/Tornado.xml``.
-4. Set the Java formatter profile in Tornado
+4. Set the Java formatter profile in Tornado.
 
 
 TornadoVM Maven Projects
-------------------------------------
+================================
 
 
 To use the TornadoVM API in your projects, you can checkout our maven repository as follows:
@@ -850,13 +985,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.0.2</version>
+         <version>1.0.3</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.0.2</version>
+         <version>1.0.3</version>
       </dependency>
    </dependencies>
 
@@ -865,8 +1000,9 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
 Notice that, for running with TornadoVM, you will need either the docker images or the full JVM with TornadoVM enabled.
 
 Versions available
-------------------------------------
+========================
 
+* 1.0.3
 * 1.0.2
 * 1.0.1
 * 1.0

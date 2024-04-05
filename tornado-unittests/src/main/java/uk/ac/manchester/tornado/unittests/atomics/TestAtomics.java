@@ -265,7 +265,7 @@ public class TestAtomics extends TornadoTestBase {
         String deviceToRun = System.getProperties().getProperty("device", "0");
         int deviceNumber = Integer.parseInt(deviceToRun);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceNumber);
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
         TaskGraph taskGraph = new TaskGraph("s0") //

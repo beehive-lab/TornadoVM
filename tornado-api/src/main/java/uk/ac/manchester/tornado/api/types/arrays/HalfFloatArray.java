@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 
@@ -226,6 +228,39 @@ public final class HalfFloatArray extends TornadoNativeArray {
     @Override
     public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
+     * Factory method to initialize a {@link HalfFloatArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code HalfFloatArray} instance with.
+     */
+    public static void initialize(HalfFloatArray array, HalfFloat value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link HalfFloatArray} instances into a single {@link HalfFloatArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link HalfFloatArray} objects to be concatenated.
+     * @return A new {@link HalfFloatArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static HalfFloatArray concat(HalfFloatArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(HalfFloatArray::getSize).sum();
+        HalfFloatArray concatArray = new HalfFloatArray(newSize);
+        long currentPositionBytes = 0;
+        for (HalfFloatArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 
 }

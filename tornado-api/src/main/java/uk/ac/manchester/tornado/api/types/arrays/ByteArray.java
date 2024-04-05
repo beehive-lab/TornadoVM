@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -222,5 +224,38 @@ public final class ByteArray extends TornadoNativeArray {
     @Override
     public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
+     * Factory method to initialize a {@link ByteArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code ByteArray} instance with.
+     */
+    public static void initialize(ByteArray array, byte value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link ByteArray} instances into a single {@link ByteArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link ByteArray} objects to be concatenated.
+     * @return A new {@link ByteArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static ByteArray concat(ByteArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(ByteArray::getSize).sum();
+        ByteArray concatArray = new ByteArray(newSize);
+        long currentPositionBytes = 0;
+        for (ByteArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }

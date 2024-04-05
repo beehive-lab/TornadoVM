@@ -183,7 +183,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     private void assertAvailableDrivers(int limit) {
-        if (TornadoRuntime.getTornadoRuntime().getNumDrivers() < limit) {
+        if (TornadoRuntime.getTornadoRuntime().getNumBackends() < limit) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + limit + "backends with at least 1 device enabled");
         }
     }

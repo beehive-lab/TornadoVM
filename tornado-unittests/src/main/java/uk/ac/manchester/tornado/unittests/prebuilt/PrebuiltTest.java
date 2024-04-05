@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,11 +33,11 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -57,7 +57,7 @@ public class PrebuiltTest extends TornadoTestBase {
     @BeforeClass
     public static void init() {
         backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
         String tornadoSDK = System.getenv(TORNADO_SDK);
         FILE_PATH = tornadoSDK + "/examples/generated/";
     }
