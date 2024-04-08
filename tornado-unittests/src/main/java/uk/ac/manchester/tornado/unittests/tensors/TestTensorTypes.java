@@ -281,7 +281,7 @@ public class TestTensorTypes extends TornadoTestBase {
         TensorInt64 tensorC = new TensorInt64(shape);
 
         tensorA.init(20L);
-        tensorB.init(3000l);
+        tensorB.init(3000L);
         tensorA.init(0l);
 
         // Define the task graph
