@@ -250,53 +250,6 @@ public class OCLLIRStmt {
 
     }
 
-    @Opcode("VDIV_HALF")
-    public static class VectorDivHalfStmt extends AbstractInstruction {
-
-        public static final LIRInstructionClass<VectorDivHalfStmt> TYPE = LIRInstructionClass.create(VectorDivHalfStmt.class);
-
-        @Def
-        protected Value result;
-        @Use
-        protected Value x;
-        @Use
-        protected Value y;
-
-        public VectorDivHalfStmt(Value result, Value x, Value y) {
-            super(TYPE);
-            this.result = result;
-            this.x = x;
-            this.y = y;
-        }
-
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.indent();
-            asm.emitValue(crb, result);
-            asm.space();
-            asm.assign();
-            asm.space();
-            if (x instanceof OCLVectorElementSelect) {
-                OCLVectorElementSelect selectX = (OCLVectorElementSelect) x;
-                selectX.emit(crb, asm);
-            } else {
-                asm.emitValue(crb, x);
-            }
-            asm.space();
-            asm.emitSymbol("/");
-            asm.space();
-            if (y instanceof OCLVectorElementSelect) {
-                OCLVectorElementSelect selectY = (OCLVectorElementSelect) y;
-                selectY.emit(crb, asm);
-            } else {
-                asm.emitValue(crb, y);
-            }
-            asm.delimiter();
-            asm.eol();
-        }
-
-    }
-
     @Opcode("MOVE")
     public static class MoveStmt extends AbstractInstruction {
 

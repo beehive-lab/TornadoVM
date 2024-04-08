@@ -50,7 +50,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorAddHalfNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorDivHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorMultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubHalfNode;
@@ -265,17 +264,11 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
         for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
-            ValueNode divNode;
             ValueNode divX = getHalfOperand(divHalfFloatNode.getX(), graph);
             ValueNode divY = getHalfOperand(divHalfFloatNode.getY(), graph);
 
-            if (divX instanceof VectorLoadElementNode || divY instanceof VectorLoadElementNode) {
-                divNode = new VectorDivHalfNode(divX, divY);
-                graph.addWithoutUnique(divNode);
-            } else {
-                divNode = new FloatDivNode(divX, divY);
-                graph.addWithoutUnique(divNode);
-            }
+            FloatDivNode divNode = new FloatDivNode(divX, divY);
+            graph.addWithoutUnique(divNode);
 
             divHalfFloatNode.replaceAtUsages(divNode);
             divHalfFloatNode.safeDelete();
