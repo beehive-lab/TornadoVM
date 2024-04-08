@@ -70,7 +70,7 @@ public class VectorMultHalfNode extends ValueNode implements LIRLowerable {
 
         final Value input1 = generator.operand(x);
         final Value input2 = generator.operand(y);
-        SPIRVKind kind = (SPIRVKind) lirKind.getPlatformKind();
+
         SPIRVAssembler.SPIRVBinaryOp binaryOp = SPIRVAssembler.SPIRVBinaryOp.MULT_FLOAT;
 
         generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, binaryOp, lirKind, input1, input2)));

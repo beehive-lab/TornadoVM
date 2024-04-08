@@ -64,25 +64,13 @@ public class VectorAddHalfNode extends ValueNode implements LIRLowerable {
     }
 
     public void generate(NodeLIRBuilderTool generator) {
-        //TODO
-        //        LIRGeneratorTool tool = generator.getLIRGeneratorTool();
-        //        Variable result = tool.newVariable(LIRKind.value(PTXKind.B16));
-        //        Value inputX = generator.operand(x);
-        //        Value inputY = generator.operand(y);
-        //        tool.append(new SPIRVLIRStmt.VectorAddHalfStmt(result, inputX, inputY));
-        //        generator.setResult(this, result);
         LIRKind lirKind = generator.getLIRGeneratorTool().getLIRKind(stamp);
         final Variable result = generator.getLIRGeneratorTool().newVariable(lirKind);
 
         final Value input1 = generator.operand(x);
         final Value input2 = generator.operand(y);
 
-        SPIRVKind kind = (SPIRVKind) lirKind.getPlatformKind();
         SPIRVAssembler.SPIRVBinaryOp binaryOp = SPIRVAssembler.SPIRVBinaryOp.ADD_FLOAT;
-
-        //        if (kind.getElementKind().isFloatingPoint()) {
-        //            binaryOp = SPIRVAssembler.SPIRVBinaryOp.ADD_FLOAT;
-        //        }
 
         generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, binaryOp, lirKind, input1, input2)));
         generator.setResult(this, result);

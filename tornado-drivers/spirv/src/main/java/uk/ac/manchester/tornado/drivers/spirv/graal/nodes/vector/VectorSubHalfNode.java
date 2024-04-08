@@ -25,12 +25,19 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 
 @NodeInfo
 public class VectorSubHalfNode extends ValueNode implements LIRLowerable {
@@ -48,12 +55,20 @@ public class VectorSubHalfNode extends ValueNode implements LIRLowerable {
         this.y = y;
     }
 
+    private SPIRVLIROp genBinaryExpr(Variable result, SPIRVAssembler.SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new SPIRVBinary.Expr(result, op, lirKind, x, y);
+    }
+
     public void generate(NodeLIRBuilderTool generator) {
-        //        LIRGeneratorTool tool = generator.getLIRGeneratorTool();
-        //        Variable result = tool.newVariable(LIRKind.value(PTXKind.B16));
-        //        Value inputX = generator.operand(x);
-        //        Value inputY = generator.operand(y);
-        //        tool.append(new PTXLIRStmt.VectorSubHalfStmt(result, inputX, inputY));
-        //        generator.setResult(this, result);
+        LIRKind lirKind = generator.getLIRGeneratorTool().getLIRKind(stamp);
+        final Variable result = generator.getLIRGeneratorTool().newVariable(lirKind);
+
+        final Value input1 = generator.operand(x);
+        final Value input2 = generator.operand(y);
+
+        SPIRVAssembler.SPIRVBinaryOp binaryOp = SPIRVAssembler.SPIRVBinaryOp.SUB_FLOAT;
+
+        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, binaryOp, lirKind, input1, input2)));
+        generator.setResult(this, result);
     }
 }
