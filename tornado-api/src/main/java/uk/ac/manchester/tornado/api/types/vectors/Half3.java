@@ -78,18 +78,6 @@ public final class Half3 implements TornadoVectorsInterface<ShortBuffer> {
         return new Half3(HalfFloat.mult(a.getX(), b.getX()), HalfFloat.mult(a.getY(), b.getY()), HalfFloat.mult(a.getZ(), b.getZ()));
     }
 
-    //    public static Float3 min(Float3 a, Float3 b) {
-    //        return new Float3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
-    //    }
-    //
-    //    public static Float3 max(Float3 a, Float3 b) {
-    //        return new Float3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
-    //    }
-    //
-    //    public static Float3 cross(Float3 a, Float3 b) {
-    //        return new Float3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
-    //    }
-
     /*
      * vector = op (vector, scalar)
      */
@@ -109,85 +97,10 @@ public final class Half3 implements TornadoVectorsInterface<ShortBuffer> {
         return new Half3(HalfFloat.div(a.getX(), b), HalfFloat.div(a.getY(), b), HalfFloat.div(a.getZ(), b));
     }
 
-    //    public static Float3 inc(Float3 a, float value) {
-    //        return new Float3(a.getX() + value, a.getY() + value, a.getZ() + value);
-    //    }
-    //
-    //    public static Float3 dec(Float3 a, float value) {
-    //        return new Float3(a.getX() - value, a.getY() - value, a.getZ() - value);
-    //    }
-    //
-    //    public static Float3 scaleByInverse(Float3 a, float value) {
-    //        return mult(a, 1f / value);
-    //    }
-    //
-    //    public static Float3 scale(Float3 a, float value) {
-    //        return mult(a, value);
-    //    }
-    //
-    //    /*
-    //     * vector = op(vector)
-    //     */
-    //    public static Float3 sqrt(Float3 a) {
-    //        return new Float3(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()));
-    //    }
-    //
-    //    public static Float3 floor(Float3 a) {
-    //        return new Float3(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()));
-    //    }
-    //
-    //    public static Float3 fract(Float3 a) {
-    //        return new Float3(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()));
-    //    }
-    //
-    //    /*
-    //     * misc inplace vector ops
-    //     */
-    //    public static Float3 clamp(Float3 x, float min, float max) {
-    //        return new Float3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
-    //    }
-    //
-    //    public static Float3 normalise(Float3 value) {
-    //        final float len = 1f / length(value);
-    //        return mult(value, len);
-    //    }
-    //
-    //    /*
-    //     * vector wide operations
-    //     */
-    //    public static float min(Float3 value) {
-    //        return Math.min(value.getX(), Math.min(value.getY(), value.getZ()));
-    //    }
-    //
-    //    public static float max(Float3 value) {
-    //        return Math.max(value.getX(), Math.max(value.getY(), value.getZ()));
-    //    }
-
     public static HalfFloat dot(Half3 a, Half3 b) {
         final Half3 m = mult(a, b);
         return HalfFloat.add(HalfFloat.add(m.getX(), m.getY()), m.getZ());
     }
-
-    /**
-     * Returns the vector length e.g. the sqrt of all elements squared.
-     *
-     * @return float
-     */
-    //    public static float length(Float3 value) {
-    //        return TornadoMath.sqrt(dot(value, value));
-    //    }
-    //
-    //    public static boolean isEqual(Float3 a, Float3 b) {
-    //        return TornadoMath.isEqual(a.toArray(), b.toArray());
-    //    }
-    //
-    //    public static boolean isEqualULP(Float3 a, Float3 b, float numULP) {
-    //        return TornadoMath.isEqualULP(a.asBuffer().array(), b.asBuffer().array(), numULP);
-    //    }
-    //
-    //    public static float findULPDistance(Float3 a, Float3 b) {
-    //        return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
-    //    }
 
     public HalfFloat get(int index) {
         return new HalfFloat(storage[index]);
@@ -254,7 +167,7 @@ public final class Half3 implements TornadoVectorsInterface<ShortBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link Float3}
+     * @return {@code Half3}
      */
     public Half3 duplicate() {
         final Half3 vector = new Half3();
@@ -287,9 +200,7 @@ public final class Half3 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        //return ShortBuffer.wrap(storage);
+        return ShortBuffer.wrap(storage);
     }
 
     @Override

@@ -128,27 +128,11 @@ public final class Half8 implements TornadoVectorsInterface<ShortBuffer> {
         return result;
     }
 
-    //    public static Half8 sqrt(Half8 a) {
-    //        final Half8 result = new Float8();
-    //        for (int i = 0; i < NUM_ELEMENTS; i++) {
-    //            a.set(i, TornadoMath.sqrt(a.get(i)));
-    //        }
-    //        return result;
-    //    }
-
     public static HalfFloat dot(Half8 a, Half8 b) {
         final Half8 m = mult(a, b);
         return HalfFloat.add(HalfFloat.add(HalfFloat.add(m.getS0(), m.getS1()), HalfFloat.add(m.getS2(), m.getS3())), HalfFloat.add(HalfFloat.add(m.getS4(), m.getS5()), HalfFloat.add(m.getS6(), m
                 .getS7())));
     }
-
-    //    public static boolean isEqual(Float8 a, Float8 b) {
-    //        return TornadoMath.isEqual(a.toArray(), b.toArray());
-    //    }
-
-    //    public static float findULPDistance(Float8 value, Float8 expected) {
-    //        return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
-    //    }
 
     public short[] getArray() {
         return storage;
@@ -262,14 +246,11 @@ public final class Half8 implements TornadoVectorsInterface<ShortBuffer> {
 
     @Override
     public void loadFromBuffer(ShortBuffer buffer) {
-        //TODO
         asBuffer().put(buffer);
     }
 
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        //return ShortBuffer.wrap(storage);
+        return ShortBuffer.wrap(storage);
     }
 
     @Override

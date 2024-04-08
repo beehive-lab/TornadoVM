@@ -64,7 +64,7 @@ public final class VectorHalf8 implements TornadoCollectionInterface<ShortBuffer
     }
 
     /**
-     * Returns the float at the given index of this vector.
+     * Returns the {@link Half8} at the given index of this vector.
      *
      * @param index
      * @return value
@@ -87,7 +87,7 @@ public final class VectorHalf8 implements TornadoCollectionInterface<ShortBuffer
     }
 
     /**
-     * Sets the float at the given index of this vector.
+     * Sets the {@link Half8} at the given index of this vector.
      *
      * @param index
      * @param value

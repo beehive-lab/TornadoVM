@@ -64,7 +64,7 @@ public final class VectorHalf16 implements TornadoCollectionInterface<ShortBuffe
     }
 
     /**
-     * Returns the float at the given index of this vector.
+     * Returns the {@link Half16} at the given index of this vector.
      *
      * @param index
      * @return value
@@ -82,7 +82,7 @@ public final class VectorHalf16 implements TornadoCollectionInterface<ShortBuffe
     }
 
     /**
-     * Sets the float at the given index of this vector.
+     * Sets the {@code Half16} at the given index of this vector.
      *
      * @param index
      * @param value

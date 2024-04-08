@@ -64,7 +64,7 @@ public final class VectorHalf3 implements TornadoCollectionInterface<ShortBuffer
     }
 
     /**
-     * Returns the float at the given index of this vector.
+     * Returns the {@link Half3} at the given index of this vector.
      *
      * @param index
      * @return value
@@ -82,7 +82,7 @@ public final class VectorHalf3 implements TornadoCollectionInterface<ShortBuffer
     }
 
     /**
-     * Sets the float at the given index of this vector.
+     * Sets the {@link Half3} at the given index of this vector.
      *
      * @param index
      * @param value
@@ -156,22 +156,6 @@ public final class VectorHalf3 implements TornadoCollectionInterface<ShortBuffer
         return result;
     }
 
-    //    public Float2 min() {
-    //        Float2 result = new Float2();
-    //        for (int i = 0; i < numElements; i++) {
-    //            result = Float2.min(result, get(i));
-    //        }
-    //        return result;
-    //    }
-    //
-    //    public Float2 max() {
-    //        Float2 result = new Float2();
-    //        for (int i = 0; i < numElements; i++) {
-    //            result = Float2.max(result, get(i));
-    //        }
-    //        return result;
-    //    }
-
     @Override
     public void loadFromBuffer(ShortBuffer buffer) {
         asBuffer().put(buffer);
@@ -179,9 +163,7 @@ public final class VectorHalf3 implements TornadoCollectionInterface<ShortBuffer
 
     @Override
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        // return ShortBuffer.wrap(storage.toHeapArray());
+        return ShortBuffer.wrap(storage.toShortArray());
     }
 
     @Override

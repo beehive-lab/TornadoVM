@@ -71,7 +71,7 @@ public final class Half16 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     /**
-     * * Operations on Half16 vectors.
+     * * Operations on {@code Half16} vectors.
      */
     public static Half16 add(Half16 a, Half16 b) {
         final Half16 result = new Half16();
@@ -136,39 +136,6 @@ public final class Half16 implements TornadoVectorsInterface<ShortBuffer> {
         }
         return result;
     }
-
-    //TODO
-    //    public static Float16 min(Float16 a, Float16 b) {
-    //        final Float16 result = new Float16();
-    //        for (int i = 0; i < NUM_ELEMENTS; i++) {
-    //            result.set(i, Math.min(a.get(i), b.get(i)));
-    //        }
-    //        return result;
-    //    }
-    //
-    //    public static float min(Float16 value) {
-    //        float result = Float.MAX_VALUE;
-    //        for (int i = 0; i < NUM_ELEMENTS; i++) {
-    //            result = Math.min(result, value.get(i));
-    //        }
-    //        return result;
-    //    }
-    //
-    //    public static Float16 max(Float16 a, Float16 b) {
-    //        final Float16 result = new Float16();
-    //        for (int i = 0; i < NUM_ELEMENTS; i++) {
-    //            result.set(i, Math.max(a.get(i), b.get(i)));
-    //        }
-    //        return result;
-    //    }
-    //
-    //    public static float max(Float16 value) {
-    //        float result = Float.MIN_VALUE;
-    //        for (int i = 0; i < NUM_ELEMENTS; i++) {
-    //            result = Math.max(result, value.get(i));
-    //        }
-    //        return result;
-    //    }
 
     public static HalfFloat dot(Half16 a, Half16 b) {
         final Half16 m = mult(a, b);
@@ -330,14 +297,11 @@ public final class Half16 implements TornadoVectorsInterface<ShortBuffer> {
 
     @Override
     public void loadFromBuffer(ShortBuffer buffer) {
-        //TODO
         asBuffer().put(buffer);
     }
 
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        //return ShortBuffer.wrap(storage);
+        return ShortBuffer.wrap(storage);
     }
 
     @Override

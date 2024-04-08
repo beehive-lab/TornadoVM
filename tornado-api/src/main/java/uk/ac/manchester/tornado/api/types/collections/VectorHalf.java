@@ -61,12 +61,12 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
      *
      * @return dot-product value
      */
-    public static float dot(VectorHalf a, VectorHalf b) {
+    public static HalfFloat dot(VectorHalf a, VectorHalf b) {
         float sum = 0;
         for (int i = 0; i < a.size(); i++) {
             sum += HalfFloat.mult(a.get(i), b.get(i)).getHalfFloatValue();
         }
-        return sum;
+        return new HalfFloat(sum);
     }
 
     public HalfFloatArray getArray() {
@@ -74,7 +74,7 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
     }
 
     /**
-     * Returns the float at the given index of this vector.
+     * Returns the half float at the given index of this vector.
      *
      * @param index
      *     Position
@@ -85,12 +85,12 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
     }
 
     /**
-     * Sets the float at the given index of this vector.
+     * Sets the half float at the given index of this vector.
      *
      * @param index
      *     Position
      * @param value
-     *     Float value to be stored
+     *     Half float value to be stored
      */
     public void set(int index, HalfFloat value) {
         storage.set(index, value);
@@ -100,7 +100,7 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
      * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
-     *     VectorFloat4
+     *     {@code VectorHalf}
      */
     public void set(VectorHalf values) {
         for (int i = 0; i < values.storage.getSize(); i++) {
@@ -185,7 +185,7 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
     }
 
     public String toString() {
-        String str = String.format("VectorFloat <%d>", numElements);
+        String str = String.format("VectorHalf <%d>", numElements);
         if (numElements < 32) {
             str += toString(FloatOps.FMT);
         }

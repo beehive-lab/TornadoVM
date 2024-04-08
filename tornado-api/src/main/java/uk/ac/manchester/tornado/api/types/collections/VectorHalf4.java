@@ -64,7 +64,7 @@ public final class VectorHalf4 implements TornadoCollectionInterface<ShortBuffer
     }
 
     /**
-     * Returns the float at the given index of this vector.
+     * Returns the {@link Half4} at the given index of this vector.
      *
      * @param index
      * @return value
@@ -83,7 +83,7 @@ public final class VectorHalf4 implements TornadoCollectionInterface<ShortBuffer
     }
 
     /**
-     * Sets the float at the given index of this vector.
+     * Sets the {@link Half4} at the given index of this vector.
      *
      * @param index
      * @param value
@@ -141,7 +141,7 @@ public final class VectorHalf4 implements TornadoCollectionInterface<ShortBuffer
 
     public String toString() {
         if (this.numElements > ELEMENT_SIZE) {
-            return String.format("VectorHalf2 <%d>", this.numElements);
+            return String.format("VectorHalf4 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {

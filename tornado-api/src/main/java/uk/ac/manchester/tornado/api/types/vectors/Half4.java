@@ -196,14 +196,11 @@ public final class Half4 implements TornadoVectorsInterface<ShortBuffer> {
 
     @Override
     public void loadFromBuffer(ShortBuffer buffer) {
-        //TODO
         asBuffer().put(buffer);
     }
 
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        //return ShortBuffer.wrap(storage);
+        return ShortBuffer.wrap(storage);
     }
 
     @Override
