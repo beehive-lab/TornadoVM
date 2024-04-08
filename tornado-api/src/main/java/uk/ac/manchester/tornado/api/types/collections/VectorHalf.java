@@ -56,22 +56,6 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
         this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
-    //    public static float min(VectorFloat v) {
-    //        float result = Float.MAX_VALUE;
-    //        for (int i = 0; i < v.storage.getSize(); i++) {
-    //            result = Math.min(v.storage.get(i), result);
-    //        }
-    //        return result;
-    //    }
-    //
-    //    public static float max(VectorFloat v) {
-    //        float result = Float.MIN_VALUE;
-    //        for (int i = 0; i < v.storage.getSize(); i++) {
-    //            result = Math.max(v.storage.get(i), result);
-    //        }
-    //        return result;
-    //    }
-
     /**
      * Performs Dot-product.
      *
@@ -130,7 +114,6 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
      * @param values
      *     Set input array as internal stored
      */
-    //TODO: implement properly/check
     public void set(HalfFloat[] values) {
         System.arraycopy(values, 0, storage, 0, values.length);
     }
@@ -216,9 +199,7 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
 
     @Override
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        // return ShortBuffer.wrap(storage.toHeapArray());
+        return ShortBuffer.wrap(storage.toShortArray());
     }
 
     @Override

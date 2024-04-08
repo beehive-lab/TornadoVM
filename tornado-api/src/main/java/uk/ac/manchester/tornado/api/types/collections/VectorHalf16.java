@@ -156,22 +156,6 @@ public final class VectorHalf16 implements TornadoCollectionInterface<ShortBuffe
         return result;
     }
 
-    //    public Float2 min() {
-    //        Float2 result = new Float2();
-    //        for (int i = 0; i < numElements; i++) {
-    //            result = Float2.min(result, get(i));
-    //        }
-    //        return result;
-    //    }
-    //
-    //    public Float2 max() {
-    //        Float2 result = new Float2();
-    //        for (int i = 0; i < numElements; i++) {
-    //            result = Float2.max(result, get(i));
-    //        }
-    //        return result;
-    //    }
-
     @Override
     public void loadFromBuffer(ShortBuffer buffer) {
         asBuffer().put(buffer);
@@ -179,9 +163,7 @@ public final class VectorHalf16 implements TornadoCollectionInterface<ShortBuffe
 
     @Override
     public ShortBuffer asBuffer() {
-        //TODO
-        return null;
-        // return ShortBuffer.wrap(storage.toHeapArray());
+        return ShortBuffer.wrap(storage.toShortArray());
     }
 
     @Override

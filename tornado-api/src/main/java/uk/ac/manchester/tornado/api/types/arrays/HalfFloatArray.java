@@ -131,6 +131,21 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Converts the {@link HalfFloat} data from off-heap to an on-heap short representation,
+     * by getting the values of a {@link HalfFloatArray} instance as short and coping them
+     * into a new on-heap short array.
+     *
+     * @return A new on-heap short array, initialized with the values stored in the {@link HalfFloatArray} instance.
+     */
+    public short[] toShortArray() {
+        short[] outputArray = new short[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i).getHalfFloatValue();
+        }
+        return outputArray;
+    }
+
+    /**
      * Sets the {@link HalfFloat} value at a specified index of the {@link HalfFloatArray} instance.
      *
      * @param index
