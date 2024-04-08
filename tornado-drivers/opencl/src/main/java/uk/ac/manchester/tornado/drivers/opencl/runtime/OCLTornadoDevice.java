@@ -546,8 +546,6 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof TensorFP16) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLXPUBuffer(deviceContext, object);
             }
