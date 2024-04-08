@@ -282,7 +282,7 @@ public class TestTensorTypes extends TornadoTestBase {
 
         tensorA.init(20L);
         tensorB.init(3000L);
-        tensorA.init(0l);
+        tensorA.init(0L);
 
         // Define the task graph
         TaskGraph taskGraph = new TaskGraph("s0") //
