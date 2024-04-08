@@ -280,7 +280,7 @@ public class TestTensorTypes extends TornadoTestBase {
         // Create a tensor to store the result of addition
         TensorInt64 tensorC = new TensorInt64(shape);
 
-        tensorA.init(20l);
+        tensorA.init(20L);
         tensorB.init(3000l);
         tensorA.init(0l);
 
