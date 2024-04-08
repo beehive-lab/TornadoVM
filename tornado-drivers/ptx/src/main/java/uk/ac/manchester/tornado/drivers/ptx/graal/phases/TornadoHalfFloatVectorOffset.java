@@ -42,6 +42,9 @@ import java.util.Optional;
 
 public class TornadoHalfFloatVectorOffset extends Phase {
 
+    private static int HALF_SIZE = 2;
+    private static int HEADER_SIZE = 24;
+
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
@@ -70,7 +73,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
             int vectorReadIndex = vectorHalfRead.getIndex();
             // if the index value has been initialized
             if (vectorReadIndex != -1) {
-                Constant shortOffset = new RawConstant(vectorReadIndex * 2 + 24);
+                Constant shortOffset = new RawConstant(vectorReadIndex * HALF_SIZE + HEADER_SIZE);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);
                 ptxAddressNode.replaceFirstInput(index, shortOffsetNode);
@@ -81,6 +84,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
         } else if (index.inputs().filter(LeftShiftNode.class).isNotEmpty()) {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
+            // if the shifting is by 3 (for float values)
             if (currentOffset.getValue().toValueString().equals("3")) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
@@ -99,6 +103,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
         if (index.inputs().filter(LeftShiftNode.class).isNotEmpty()) {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
+            // if the shifting is by 3 (for float values)
             if (currentOffset.getValue().toValueString().equals("3")) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
