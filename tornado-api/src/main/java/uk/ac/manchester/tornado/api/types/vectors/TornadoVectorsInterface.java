@@ -21,11 +21,9 @@ import java.nio.Buffer;
 
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public sealed
-
-interface TornadoVectorsInterface<T extends Buffer> //
+public sealed interface TornadoVectorsInterface<T extends Buffer> //
         extends PrimitiveStorage<T> //
-permits Byte3, Byte4, //
+        permits Byte3, Byte4, //
         Double2, Double3, Double4, Double8, Double16, //
         Float2, Float3, Float4, Float8, Float16, //
         Int2, Int3, Int4, Int8, Int16, //

@@ -62,11 +62,11 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
      * @return dot-product value
      */
     public static HalfFloat dot(VectorHalf a, VectorHalf b) {
-        float sum = 0;
+        HalfFloat sum = new HalfFloat(0);
         for (int i = 0; i < a.size(); i++) {
-            sum += HalfFloat.mult(a.get(i), b.get(i)).getHalfFloatValue();
+            sum = HalfFloat.add(sum, HalfFloat.mult(a.get(i), b.get(i)));
         }
-        return new HalfFloat(sum);
+        return sum;
     }
 
     public HalfFloatArray getArray() {

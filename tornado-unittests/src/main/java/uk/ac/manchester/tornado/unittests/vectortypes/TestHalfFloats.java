@@ -54,6 +54,11 @@ public class TestHalfFloats extends TornadoTestBase {
 
     public static final double DELTA = 0.001;
 
+    public static void testVectorDot(VectorHalf a, VectorHalf b, VectorHalf c) {
+        HalfFloat h = VectorHalf.dot(a, b);
+        c.set(0, h);
+    }
+
     private static void dotMethodHalf2(Half2 a, Half2 b, VectorHalf result) {
         HalfFloat dot = Half2.dot(a, b);
         result.set(0, dot);
@@ -239,6 +244,25 @@ public class TestHalfFloats extends TornadoTestBase {
             half2.setY(value.get(i).getS1());
             output.set(i, half2);
         }
+    }
+
+    @Test
+    public void testSimpleDotProductVectorHalf() {
+        VectorHalf vectorHalfA = new VectorHalf(2);
+        vectorHalfA.fill(new HalfFloat(2.0F));
+        VectorHalf vectorHalfB = new VectorHalf(2);
+        vectorHalfB.fill(new HalfFloat(4.0F));
+        VectorHalf vectorHalfC = new VectorHalf(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectorHalfA, vectorHalfB).task("t0", TestHalfFloats::testVectorDot, vectorHalfA, vectorHalfB, vectorHalfC).transferToHost(
+                        DataTransferMode.EVERY_EXECUTION, vectorHalfC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        assertEquals(16.0, vectorHalfC.get(0).getFloat32(), DELTA);
     }
 
     @Test
