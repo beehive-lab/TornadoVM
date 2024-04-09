@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -44,7 +46,7 @@ public final class DoubleArray extends TornadoNativeArray {
     private long segmentByteSize;
 
     /**
-     * Constructs a new instance of the {@code DoubleArray} that will store a user-specified number of elements.
+     * Constructs a new instance of the {@link DoubleArray} that will store a user-specified number of elements.
      *
      * @param numberOfElements
      *     The number of elements in the array.
@@ -61,11 +63,11 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Internal method used to create a new instance of the {@code DoubleArray} from on-heap data.
+     * Internal method used to create a new instance of the {@link DoubleArray} from on-heap data.
      *
      * @param values
      *     The on-heap double array to create the instance from.
-     * @return A new {@code DoubleArray} instance, initialized with values of the on-heap double array.
+     * @return A new {@link DoubleArray} instance, initialized with values of the on-heap double array.
      */
     private static DoubleArray createSegment(double[] values) {
         DoubleArray array = new DoubleArray(values.length);
@@ -76,33 +78,33 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Creates a new instance of the {@code DoubleArray} class from an on-heap double array.
+     * Creates a new instance of the {@link DoubleArray} class from an on-heap double array.
      *
      * @param values
      *     The on-heap double array to create the instance from.
-     * @return A new {@code DoubleArray} instance, initialized with values of the on-heap double array.
+     * @return A new {@link DoubleArray} instance, initialized with values of the on-heap double array.
      */
     public static DoubleArray fromArray(double[] values) {
         return createSegment(values);
     }
 
     /**
-     * Creates a new instance of the {@code DoubleArray} class from a set of double values.
+     * Creates a new instance of the {@link DoubleArray} class from a set of double values.
      *
      * @param values
      *     The double values to initialize the array with.
-     * @return A new {@code DoubleArray} instance, initialized with the given values.
+     * @return A new {@link DoubleArray} instance, initialized with the given values.
      */
     public static DoubleArray fromElements(double... values) {
         return createSegment(values);
     }
 
     /**
-     * Creates a new instance of the {@code DoubleArray} class from a {@link MemorySegment}.
+     * Creates a new instance of the {@link DoubleArray} class from a {@link MemorySegment}.
      *
      * @param segment
      *     The {@link MemorySegment} containing the off-heap double data.
-     * @return A new {@code DoubleArray} instance, initialized with the segment data.
+     * @return A new {@link DoubleArray} instance, initialized with the segment data.
      */
     public static DoubleArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
@@ -113,10 +115,10 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Converts the double data from off-heap to on-heap, by copying the values of a {@code DoubleArray}
+     * Converts the double data from off-heap to on-heap, by copying the values of a {@link DoubleArray}
      * instance into a new on-heap array.
      *
-     * @return A new on-heap double array, initialized with the values stored in the {@code DoubleArray} instance.
+     * @return A new on-heap double array, initialized with the values stored in the {@link DoubleArray} instance.
      */
     public double[] toHeapArray() {
         double[] outputArray = new double[getSize()];
@@ -127,7 +129,7 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets the double value at a specified index of the {@code DoubleArray} instance.
+     * Sets the double value at a specified index of the {@link DoubleArray} instance.
      *
      * @param index
      *     The index at which to set the double value.
@@ -139,7 +141,7 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Gets the double value stored at the specified index of the {@code DoubleArray} instance.
+     * Gets the double value stored at the specified index of the {@link DoubleArray} instance.
      *
      * @param index
      *     The index of which to retrieve the double value.
@@ -150,7 +152,7 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets all the values of the {@code DoubleArray} instance to zero.
+     * Sets all the values of the {@link DoubleArray} instance to zero.
      */
     @Override
     public void clear() {
@@ -163,10 +165,10 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Initializes all the elements of the {@code DoubleArray} instance with a specified value.
+     * Initializes all the elements of the {@link DoubleArray} instance with a specified value.
      *
      * @param value
-     *     The double value to initialize the {@code DoubleArray} instance with.
+     *     The double value to initialize the {@link DoubleArray} instance with.
      */
     public void init(double value) {
         for (int i = 0; i < getSize(); i++) {
@@ -175,7 +177,7 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the number of double elements stored in the {@code DoubleArray} instance.
+     * Returns the number of double elements stored in the {@link DoubleArray} instance.
      *
      * @return
      */
@@ -185,34 +187,76 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code DoubleArray} instance.
+     * Returns the underlying {@link MemorySegment} of the {@link DoubleArray} instance.
      *
-     * @return The {@link MemorySegment} associated with the {@code DoubleArray} instance.
+     * @return The {@link MemorySegment} associated with the {@link DoubleArray} instance.
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link DoubleArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link DoubleArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 
     /**
-     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code DoubleArray} instance, occupies.
+     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link DoubleArray} instance, occupies.
      *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesOfSegment() {
+    public long getNumBytesOfSegmentWithHeader() {
         return segmentByteSize;
     }
 
     /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code DoubleArray} instance,
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link DoubleArray} instance,
      * excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesWithoutHeader() {
+    public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
+    /**
+     * Factory method to initialize a {@link DoubleArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code DoubleArray} instance with.
+     */
+    public static void initialize(DoubleArray array, double value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link DoubleArray} instances into a single {@link DoubleArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link DoubleArray} objects to be concatenated.
+     * @return A new {@link DoubleArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static DoubleArray concat(DoubleArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(DoubleArray::getSize).sum();
+        DoubleArray concatArray = new DoubleArray(newSize);
+        long currentPositionBytes = 0;
+        for (DoubleArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
 }

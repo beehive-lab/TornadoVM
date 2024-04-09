@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.collections;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.Buffer;
 
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
@@ -26,5 +27,12 @@ public sealed interface TornadoCollectionInterface<T extends Buffer> //
         permits VectorDouble, VectorDouble2, VectorDouble3, VectorDouble4, VectorDouble8, VectorDouble16, //
         VectorFloat, VectorFloat2, VectorFloat3, VectorFloat4, VectorFloat8, VectorFloat16, //
         VectorInt, VectorInt2, VectorInt3, VectorInt4, VectorInt8, VectorInt16 {
+
     long getNumBytes();
+
+    long getNumBytesWithHeader();
+
+    MemorySegment getSegment();
+
+    MemorySegment getSegmentWithHeader();
 }

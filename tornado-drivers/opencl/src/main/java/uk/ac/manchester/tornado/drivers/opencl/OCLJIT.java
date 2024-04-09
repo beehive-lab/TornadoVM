@@ -66,7 +66,7 @@ public class OCLJIT {
 
             System.out.printf("method: name=%s, signature=%s\n", resolvedMethod.getName(), resolvedMethod.getSignature());
 
-            final OCLBackend backend = getTornadoRuntime().getDriver(OCLDriver.class).getDefaultBackend();
+            final OCLBackend backend = getTornadoRuntime().getBackend(OCLBackendImpl.class).getDefaultBackend();
 
             TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method);
 

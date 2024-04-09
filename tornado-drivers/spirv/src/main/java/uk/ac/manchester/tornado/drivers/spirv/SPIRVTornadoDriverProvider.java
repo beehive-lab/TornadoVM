@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -26,14 +26,14 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
-import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
+import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 
-public class SPIRVTornadoDriverProvider implements TornadoDriverProvider {
+public class SPIRVTornadoDriverProvider implements TornadoBackendProvider {
 
-    private final TornadoDrivers priority = TornadoDrivers.SPIRV;
+    private final TornadoBackends priority = TornadoBackends.SPIRV;
 
     private static final String DRIVER_NAME = "SPIRV Driver";
 
@@ -43,17 +43,17 @@ public class SPIRVTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config) {
-        return new SPIRVDriver(options, hostRuntime, config);
+    public TornadoAcceleratorBackend createBackend(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config) {
+        return new SPIRVBackendImpl(options, hostRuntime, config);
     }
 
     @Override
-    public TornadoDrivers getDevicePriority() {
+    public TornadoBackends getDevicePriority() {
         return priority;
     }
 
     @Override
-    public int compareTo(TornadoDriverProvider o) {
+    public int compareTo(TornadoBackendProvider o) {
         return o.getDevicePriority().value() - priority.value();
     }
 }

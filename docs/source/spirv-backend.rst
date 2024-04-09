@@ -27,7 +27,7 @@ To build the SPIR-V Backend, enable the backend as follows:
    $ . source.sh
 
 Running examples with the SPIR-V backend
-------------------------------------
+------------------------------------------
 
 Running DFT from the unit-test suite
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -66,7 +66,7 @@ Note: Usually, ``spirv-dis`` can be installed from the common OS repositories (e
 Disassemble the SPIR-V binary:
 ''''''''''''''''''''''''''''''
 
-.. code:: llvm
+.. code:: none
 
    $ spirv-dis /tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv
    ; SPIR-V

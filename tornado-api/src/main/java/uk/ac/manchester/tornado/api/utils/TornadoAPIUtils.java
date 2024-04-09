@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.utils;
 
+import uk.ac.manchester.tornado.api.types.HalfFloat;
+
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
@@ -129,6 +131,8 @@ public final class TornadoAPIUtils {
             isBox = true;
         } else if (obj instanceof Short) {
             isBox = true;
+        } else if (obj instanceof HalfFloat) {
+            isBox = true;
         } else if (obj instanceof Integer) {
             isBox = true;
         } else if (obj instanceof Long) {
@@ -159,6 +163,8 @@ public final class TornadoAPIUtils {
         } else if (clazz == Character.class) {
             isBox = true;
         } else if (clazz == Short.class) {
+            isBox = true;
+        } else if (clazz == HalfFloat.class) {
             isBox = true;
         } else if (clazz == Integer.class) {
             isBox = true;

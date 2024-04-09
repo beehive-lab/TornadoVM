@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.isHalfFloat;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCEPTIONS;
@@ -37,6 +38,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -62,20 +69,16 @@ import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.common.utils.BackendDeopt;
+import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -100,11 +103,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.OCLTokens;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
+public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final OptionValues options;
 
@@ -157,16 +160,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * @return int[]
      */
     public int[] getDriverAndDevice() {
-        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDeviceCount();
+        int numDev = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getDeviceCount();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
-            TornadoAcceleratorDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
+            TornadoXPUDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getDevice(i);
             OCLTargetDevice dev = (OCLTargetDevice) device.getPhysicalDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }
         }
-        int driverIndex = TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+        int driverIndex = TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
         return new int[] { driverIndex, deviceIndex };
     }
 
@@ -311,9 +314,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 asm.emitLine("");
             }
 
-            final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
-
-            asm.emit("%s void %s(%s%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
+            asm.emit("%s void %s(%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");
 
@@ -365,7 +366,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
             if (isKernel) {
-                if (locals[i].getType().getJavaKind().isPrimitive()) {
+                if (locals[i].getType().getJavaKind().isPrimitive() || isHalfFloat(locals[i].getType())) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     OCLKind kind = (OCLKind) param.getPlatformKind();
                     asm.emit(", ");

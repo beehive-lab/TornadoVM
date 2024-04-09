@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface OCLDeviceContextInterface extends TornadoDeviceContext {
@@ -42,7 +42,7 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLInstalledCode getInstalledCode(String id, String entryPoint);
 
-    OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile);
+    OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel);
 
     OCLInstalledCode installCode(OCLCompilationResult result);
 
@@ -52,29 +52,29 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     void reset();
 
-    TornadoAcceleratorDevice asMapping();
+    TornadoXPUDevice asMapping();
 
     void dumpEvents();
 
-    void flush();
+    void flush(long executionPlanId);
 
     OCLMemoryManager getMemoryManager();
 
     TornadoBufferProvider getBufferProvider();
 
-    void sync();
+    void sync(long executionPlanId);
 
-    int enqueueBarrier();
+    int enqueueBarrier(long executionPlanId);
 
-    int enqueueBarrier(int[] events);
+    int enqueueBarrier(long executionPlanId, int[] events);
 
-    int enqueueMarker();
+    int enqueueMarker(long executionPlanId);
 
-    int enqueueMarker(int[] events);
+    int enqueueMarker(long executionPlanId, int[] events);
 
-    Event resolveEvent(int event);
+    Event resolveEvent(long executionPlanId, int event);
 
-    void flushEvents();
+    void flushEvents(long executionPlanId);
 
     OCLExecutionEnvironment getPlatformContext();
 

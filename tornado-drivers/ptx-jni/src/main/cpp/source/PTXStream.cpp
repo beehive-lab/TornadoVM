@@ -578,7 +578,11 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     LOG_PTX_AND_VALIDATE("cuModuleGetFunction", result);
 
     size_t arg_buffer_size = env->GetArrayLength(args);
+#ifdef _WIN32
+    char *arg_buffer = new char[arg_buffer_size];
+#else
     char arg_buffer[arg_buffer_size];
+#endif
     env->GetByteArrayRegion(args, 0, arg_buffer_size, reinterpret_cast<jbyte *>(arg_buffer));
 
     void *arg_config[] = {
@@ -600,6 +604,9 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             NULL,
             arg_config);
     LOG_PTX_AND_VALIDATE("cuLaunchKernel", result);
+#ifdef _WIN32
+    delete[] arg_buffer;
+#endif
 
     record_event(&afterEvent, &stream);
     env->ReleaseStringUTFChars(function_name, native_function_name);

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,14 +22,14 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -39,14 +39,14 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.TestFails
+ * tornado-test -V uk.ac.manchester.tornado.unittests.fails.TestFails
  * </code>
  */
 public class TestFails extends TornadoTestBase {
 
     private void reset() {
-        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
+        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumBackends(); i++) {
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(i);
             for (int j = 0; j < driver.getDeviceCount(); j++) {
                 driver.getDevice(j).reset();
             }
@@ -65,8 +65,6 @@ public class TestFails extends TornadoTestBase {
         // =============================================================================
         FloatArray x = new FloatArray(100);
         FloatArray y = new FloatArray(100);
-//        float[] x = new float[100];
-//        float[] y = new float[100];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //

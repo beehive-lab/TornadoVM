@@ -23,22 +23,25 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class OCLMemoryManager implements TornadoMemoryProvider {
 
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;
     private final OCLDeviceContext deviceContext;
-    public OCLKernelArgs oclKernelCallWrapper = null;
+    private Map<Long, OCLKernelStackFrame> oclKernelStackFrame = new ConcurrentHashMap<>();
     private long constantPointer;
     private long atomicsRegion = -1;
 
@@ -51,16 +54,16 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return DEVICE_AVAILABLE_MEMORY;
     }
 
-    public OCLKernelArgs createCallWrapper(final int maxArgs) {
-        if (this.oclKernelCallWrapper == null) {
-            long kernelCallBuffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
-            this.oclKernelCallWrapper = new OCLKernelArgs(kernelCallBuffer, maxArgs, deviceContext);
+    public OCLKernelStackFrame createKernelStackFrame(long threadId, final int numberOfArguments) {
+        if (!oclKernelStackFrame.containsKey(threadId)) {
+            long kernelStackFramePtr = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
+            oclKernelStackFrame.put(threadId, new OCLKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
         }
-        return this.oclKernelCallWrapper;
+        return oclKernelStackFrame.get(threadId);
     }
 
-    public ObjectBuffer createAtomicsBuffer(final int[] arr) {
-        return new AtomicsBuffer(arr, deviceContext);
+    public XPUBuffer createAtomicsBuffer(final int[] array) {
+        return new AtomicsBuffer(array, deviceContext);
     }
 
     /**
@@ -100,5 +103,4 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
             this.atomicsRegion = -1;
         }
     }
-
 }

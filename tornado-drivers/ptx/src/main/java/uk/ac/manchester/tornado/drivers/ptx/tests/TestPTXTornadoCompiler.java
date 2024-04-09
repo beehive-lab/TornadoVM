@@ -23,15 +23,14 @@
 package uk.ac.manchester.tornado.drivers.ptx.tests;
 
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
+import uk.ac.manchester.tornado.drivers.ptx.PTXBackendImpl;
 import uk.ac.manchester.tornado.drivers.ptx.PTXCodeCache;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
 import uk.ac.manchester.tornado.drivers.ptx.PTXPlatform;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -82,17 +81,17 @@ public class TestPTXTornadoCompiler {
         PTXCodeCache codeCache = platform.getDevice(0).getPTXContext().getDeviceContext().getCodeCache();
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-        PTXBackend backend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
+        PTXBackend backend = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultBackend();
         TaskMetaData meta = new TaskMetaData(new ScheduleMetaData("s0"), "add", 0);
         new PTXCompilationResult("add", meta);
 
         byte[] source = PTX_KERNEL.getBytes();
         source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, backend);
-        PTXInstalledCode code = codeCache.installSource("add", source, "add");
+        PTXInstalledCode code = codeCache.installSource("add", source, "add", meta.isPrintKernelEnabled());
 
         String generatedSourceCode = code.getGeneratedSourceCode();
-        if (TornadoOptions.PRINT_SOURCE) {
-            System.out.println("Compiled code: " + generatedSourceCode);
+        if (meta.isPrintKernelEnabled()) {
+            System.out.println(STR."Compiled code: \{generatedSourceCode}");
         }
     }
 }

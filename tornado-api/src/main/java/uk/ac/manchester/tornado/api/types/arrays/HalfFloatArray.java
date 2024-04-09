@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 
@@ -47,7 +49,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     private long segmentByteSize;
 
     /**
-     * Constructs a new instance of the {@code HalfFloatArray} that will store a user-specified number of elements.
+     * Constructs a new instance of the {@link HalfFloatArray} that will store a user-specified number of elements.
      *
      * @param numberOfElements
      *     The number of elements in the array.
@@ -63,11 +65,11 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Internal method used to create a new instance of the {@code HalfFloatArray} from on-heap data.
+     * Internal method used to create a new instance of the {@link HalfFloatArray} from on-heap data.
      *
      * @param values
      *     The on-heap {@link HalfFloat} to create the instance from.
-     * @return A new {@code HalfFloatArray} instance, initialized with values of the on-heap {@link HalfFloat} array.
+     * @return A new {@link HalfFloatArray} instance, initialized with values of the on-heap {@link HalfFloat} array.
      */
     private static HalfFloatArray createSegment(HalfFloat[] values) {
         HalfFloatArray array = new HalfFloatArray(values.length);
@@ -78,47 +80,47 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Creates a new instance of the {@code HalfFloatArray} class from an on-heap {@link HalfFloat}.
+     * Creates a new instance of the {@link HalfFloatArray} class from an on-heap {@link HalfFloat}.
      *
      * @param values
      *     The on-heap {@link HalfFloat} array to create the instance from.
-     * @return A new {@code HalfFloatArray} instance, initialized with values of the on-heap {@link HalfFloat} array.
+     * @return A new {@link HalfFloatArray} instance, initialized with values of the on-heap {@link HalfFloat} array.
      */
     public static HalfFloatArray fromArray(HalfFloat[] values) {
         return createSegment(values);
     }
 
     /**
-     * Creates a new instance of the {@code HalfFloatArray} class from a set of {@link HalfFloat} values.
+     * Creates a new instance of the {@link HalfFloatArray} class from a set of {@link HalfFloat} values.
      *
      * @param values
      *     The {@link HalfFloat} values to initialize the array with.
-     * @return A new {@code FloatArray} instance, initialized with the given values.
+     * @return A new {@link FloatArray} instance, initialized with the given values.
      */
     public static HalfFloatArray fromElements(HalfFloat... values) {
         return createSegment(values);
     }
 
     /**
-     * Creates a new instance of the {@code HalfFloatArray} class from a {@link MemorySegment}.
+     * Creates a new instance of the {@link HalfFloatArray} class from a {@link MemorySegment}.
      *
      * @param segment
      *     The {@link MemorySegment} containing the off-heap half float data.
-     * @return A new {@code HalfFloatArray} instance, initialized with the segment data.
+     * @return A new {@link HalfFloatArray} instance, initialized with the segment data.
      */
     public static HalfFloatArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / HALF_FLOAT_BYTES);
         HalfFloatArray halfFloatArray = new HalfFloatArray(numElements);
-        MemorySegment.copy(segment, 0, halfFloatArray.segment, halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, halfFloatArray.segment, (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
         return halfFloatArray;
     }
 
     /**
-     * Converts the {@link HalfFloat} data from off-heap to on-heap, by copying the values of a {@code HalfFloatArray}
+     * Converts the {@link HalfFloat} data from off-heap to on-heap, by copying the values of a {@link HalfFloatArray}
      * instance into a new on-heap {@link HalfFloat}.
      *
-     * @return A new on-heap {@link HalfFloat} array, initialized with the values stored in the {@code HalfFloatArray} instance.
+     * @return A new on-heap {@link HalfFloat} array, initialized with the values stored in the {@link HalfFloatArray} instance.
      */
     public HalfFloat[] toHeapArray() {
         HalfFloat[] outputArray = new HalfFloat[getSize()];
@@ -129,7 +131,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets the {@link HalfFloat} value at a specified index of the {@code HalfFloatArray} instance.
+     * Sets the {@link HalfFloat} value at a specified index of the {@link HalfFloatArray} instance.
      *
      * @param index
      *     The index at which to set the {@link HalfFloat} value.
@@ -141,7 +143,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Gets the {@link HalfFloat} value stored at the specified index of the {@code HalfFloatArray} instance.
+     * Gets the {@link HalfFloat} value stored at the specified index of the {@link HalfFloatArray} instance.
      *
      * @param index
      *     The index of which to retrieve the {@link HalfFloat} value.
@@ -153,7 +155,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Sets all the values of the {@code HalfFloatArray} instance to zero.
+     * Sets all the values of the {@link HalfFloatArray} instance to zero.
      */
     @Override
     public void clear() {
@@ -166,10 +168,10 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Initializes all the elements of the {@code HalfFloatArray} instance with a specified value.
+     * Initializes all the elements of the {@link HalfFloatArray} instance with a specified value.
      *
      * @param value
-     *     The {@link HalfFloat} value to initialize the {@code HalfFloatArray} instance with.
+     *     The {@link HalfFloat} value to initialize the {@link HalfFloatArray} instance with.
      */
     public void init(HalfFloat value) {
         for (int i = 0; i < getSize(); i++) {
@@ -178,7 +180,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the number of half float elements stored in the {@code HalfFloatArray} instance.
+     * Returns the number of half float elements stored in the {@link HalfFloatArray} instance.
      *
      * @return
      */
@@ -188,34 +190,77 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the underlying {@link MemorySegment} of the {@code HalfFloatArray} instance.
+     * Returns the underlying {@link MemorySegment} of the {@link HalfFloatArray} instance.
      *
-     * @return The {@link MemorySegment} associated with the {@code HalfFloatArray} instance.
+     * @return The {@link MemorySegment} associated with the {@link HalfFloatArray} instance.
      */
     @Override
     public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link HalfFloatArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link HalfFloatArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
         return segment;
     }
 
     /**
-     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code HalfFloatArray} instance, occupies.
+     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link HalfFloatArray} instance, occupies.
      *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesOfSegment() {
+    public long getNumBytesOfSegmentWithHeader() {
         return segmentByteSize;
     }
 
     /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code HalfFloatArray} instance,
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link HalfFloatArray} instance,
      * excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override
-    public long getNumBytesWithoutHeader() {
+    public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
+     * Factory method to initialize a {@link HalfFloatArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code HalfFloatArray} instance with.
+     */
+    public static void initialize(HalfFloatArray array, HalfFloat value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link HalfFloatArray} instances into a single {@link HalfFloatArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link HalfFloatArray} objects to be concatenated.
+     * @return A new {@link HalfFloatArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static HalfFloatArray concat(HalfFloatArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(HalfFloatArray::getSize).sum();
+        HalfFloatArray concatArray = new HalfFloatArray(newSize);
+        long currentPositionBytes = 0;
+        for (HalfFloatArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.types.matrix;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -232,6 +233,21 @@ public final class Matrix4x4Float implements TornadoMatrixInterface<FloatBuffer>
 
     @Override
     public long getNumBytes() {
-        return storage.getNumBytesWithoutHeader();
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public long getNumBytesWithHeader() {
+        return storage.getNumBytesOfSegment();
+    }
+
+    @Override
+    public MemorySegment getSegment() {
+        return storage.getSegment();
+    }
+
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return storage.getSegmentWithHeader();
     }
 }

@@ -19,6 +19,8 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.MemorySegment;
 
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
+
 /**
  * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays,
  * (e.g., {@link ByteArray}, {@link IntArray}, etc.)
@@ -30,10 +32,13 @@ import java.lang.foreign.MemorySegment;
  * </p>
  *
  * <p>
- * The constant {@code ARRAY_HEADER} represents the size of the header in bytes.
+ * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
-public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, IntArray, LongArray, ShortArray, HalfFloatArray {
+public abstract sealed class TornadoNativeArray //
+        permits ByteArray, CharArray, DoubleArray, //
+        FloatArray, HalfFloatArray, IntArray, //
+        LongArray, ShortArray, Tensor {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through
@@ -49,25 +54,32 @@ public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, Do
     public abstract int getSize();
 
     /**
-     * Returns the underlying {@link MemorySegment} of the native array.
+     * Returns the underlying {@link MemorySegment} of the native array, without the Tornado Array header.
      *
      * @return The {@link MemorySegment} associated with the native array instance.
      */
     public abstract MemorySegment getSegment();
 
     /**
+     * Returns the underlying {@link MemorySegment} of the native array, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the native array instance.
+     */
+    public abstract MemorySegment getSegmentWithHeader();
+
+    /**
      * Returns the total number of bytes that the {@link MemorySegment} occupies, including the header bytes.
      *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
-    public abstract long getNumBytesOfSegment();
+    public abstract long getNumBytesOfSegmentWithHeader();
 
     /**
      * Returns the number of bytes of the {@link MemorySegment}, excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
-    public abstract long getNumBytesWithoutHeader();
+    public abstract long getNumBytesOfSegment();
 
     /**
      * Clears the contents of the native array.

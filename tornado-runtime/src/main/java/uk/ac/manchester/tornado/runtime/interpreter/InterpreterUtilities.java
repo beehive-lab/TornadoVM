@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.runtime.interpreter;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.common.ColoursTerminal;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 public class InterpreterUtilities {
 
@@ -44,7 +44,7 @@ public class InterpreterUtilities {
         return ColoursTerminal.BLUE + info + " " + ColoursTerminal.RESET;
     }
 
-    static String debugDeviceBC(TornadoAcceleratorDevice device) {
+    static String debugDeviceBC(TornadoXPUDevice device) {
         TornadoVMBackendType tornadoVMBackend = device.getTornadoVMBackend();
         if (tornadoVMBackend == TornadoVMBackendType.OPENCL) {
             return ColoursTerminal.CYAN + " " + device + " " + ColoursTerminal.RESET;

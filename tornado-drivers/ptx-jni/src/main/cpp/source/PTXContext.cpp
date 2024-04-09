@@ -99,7 +99,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxSetCurrent
   (JNIEnv *env, jclass clazz, jlong cuContext) {
     CUcontext* ctx = (CUcontext*) cuContext;
-    CUresult result = cuCtxSetCurrent(*ctx);
+    CUresult result =
+
+
+    cuCtxSetCurrent(*ctx);
     LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
     return (jlong) result;
 }

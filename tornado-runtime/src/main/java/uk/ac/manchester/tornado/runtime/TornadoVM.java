@@ -32,16 +32,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Event;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -55,8 +54,8 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
  * Each TornadoVM contains the logic to orchestrate the execution on the
  * parallel device (e.g., a GPU).
  */
-public class TornadoVM extends TornadoLogger {
-    private final TornadoExecutionContext executionContext;
+public class TornadoVM {
+    private TornadoExecutionContext executionContext;
 
     private TornadoProfiler timeProfiler;
 
@@ -90,8 +89,10 @@ public class TornadoVM extends TornadoLogger {
     private void bindBytecodesToInterpreters() {
         assert tornadoVMInterpreters.length == executionContext.getValidContextSize();
         final Deque<Integer> activeDevices = executionContext.getActiveDeviceIndexes();
-        IntStream.range(0, executionContext.getValidContextSize()).forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler,
-                executionContext.getDevice(activeDevices.pop())));
+        int bound = executionContext.getValidContextSize();
+        for (int i = 0; i < bound; i++) {
+            tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice(activeDevices.pop()));
+        }
     }
 
     /**
@@ -101,14 +102,14 @@ public class TornadoVM extends TornadoLogger {
      * @return An {@link Event} indicating the completion of execution.
      */
     public Event execute(boolean isParallel, TornadoProfiler profiler) {
+        // Set the profiler for all interpreters
         this.timeProfiler = profiler;
-        // Set the profiler
         Arrays.stream(tornadoVMInterpreters).forEach(tornadoVMInterpreter -> tornadoVMInterpreter.setTimeProfiler(timeProfiler));
 
-        if (calculateNumberOfJavaThreads(isParallel) != 1) {
+        if (shouldInterpreterRunInParallel(isParallel)) {
             return executeInterpreterThreadManager(isParallel);
         } else {
-            return executeSingleThreaded();
+            return executeInterpreterSingleThreaded();
         }
     }
 
@@ -116,9 +117,11 @@ public class TornadoVM extends TornadoLogger {
         return shouldRunConcurrently(isTaskGraphConcurrent) ? executionContext.getValidContextSize() : 1;
     }
 
-    private Event executeSingleThreaded() {
-        // TODO: This is a temporary workaround until refactoring the
-        // DynamicReconfiguration
+    private boolean shouldInterpreterRunInParallel(boolean isParallel) {
+        return calculateNumberOfJavaThreads(isParallel) != 1;
+    }
+
+    private Event executeInterpreterSingleThreaded() {
         Arrays.stream(tornadoVMInterpreters).forEach(TornadoVMInterpreter::execute);
         return new EmptyEvent();
     }
@@ -198,10 +201,6 @@ public class TornadoVM extends TornadoLogger {
 
     public void warmup() {
         executeActionOnInterpreters(TornadoVMInterpreter::warmup);
-    }
-
-    public void fetchGlobalStates() {
-        executeActionOnInterpreters(TornadoVMInterpreter::fetchGlobalStates);
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {

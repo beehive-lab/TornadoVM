@@ -133,13 +133,13 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
+public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     private final OptionValues options;
     private final SPIRVTargetDescription targetDescription;
@@ -843,7 +843,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // Add constant 3 --> Frame Access
-        int reservedSlots = SPIRVKernelArgs.RESERVED_SLOTS;
+        int reservedSlots = SPIRVKernelStackFrame.RESERVED_SLOTS;
         asm.lookUpConstant(Integer.toString(reservedSlots), SPIRVKind.OP_TYPE_INT_32);
 
         // And the reminder of the constants

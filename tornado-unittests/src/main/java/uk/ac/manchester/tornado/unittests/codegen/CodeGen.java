@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,23 +17,24 @@
  */
 package uk.ac.manchester.tornado.unittests.codegen;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.stream.IntStream;
+
 import org.junit.Ignore;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * How to test?
@@ -123,7 +124,7 @@ public class CodeGen extends TornadoTestBase {
     }
 
     private boolean isRunningOnCPU() {
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
         return device.getDeviceType() == TornadoDeviceType.CPU;
     }
 

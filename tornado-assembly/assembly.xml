@@ -10,7 +10,7 @@
     <baseDirectory>tornado-sdk-${project.version}-${buildNumber}/</baseDirectory>
     <fileSets>
         <fileSet>
-            <directory>src</directory>
+            <directory>../</directory>
             <!-- README file in share/tornado -->
             <includes>
                 <include>README.md</include>
@@ -36,6 +36,7 @@
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.sh</include>
+                <include>*.cmd</include>
                 <include>*.py</include>
                 <include>tornado*</include>
                 <include>misc/*.py</include>
@@ -87,6 +88,41 @@
             <outputDirectory>./lib/</outputDirectory>
             <includes>
                 <include>libtornado-levelzero.so</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../levelzero-jni/levelZeroLib/build/Release</directory>
+            <outputDirectory>./lib/</outputDirectory>
+            <includes>
+                <include>*.dll</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../tornado-drivers/opencl-jni/target/windows-i386-release/cmake/Release</directory>
+            <outputDirectory>./lib/</outputDirectory>
+            <includes>
+                <include>*.dll</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../tornado-drivers/opencl-jni/target/windows-amd64-release/cmake/Release</directory>
+            <outputDirectory>./lib/</outputDirectory>
+            <includes>
+                <include>*.dll</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../tornado-drivers/ptx-jni/target/windows-i386-release/cmake/Release</directory>
+            <outputDirectory>./lib/</outputDirectory>
+            <includes>
+                <include>*.dll</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../tornado-drivers/ptx-jni/target/windows-amd64-release/cmake/Release</directory>
+            <outputDirectory>./lib/</outputDirectory>
+            <includes>
+                <include>*.dll</include>
             </includes>
         </fileSet>
         <fileSet>

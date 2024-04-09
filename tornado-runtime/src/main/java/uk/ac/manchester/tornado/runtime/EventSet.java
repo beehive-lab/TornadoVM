@@ -29,20 +29,23 @@ import java.util.BitSet;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 public class EventSet implements TornadoEvents {
 
-    private final TornadoAcceleratorDevice device;
+    private final TornadoXPUDevice device;
     private final BitSet profiles;
     private int index;
     private Event event;
 
-    public EventSet(TornadoAcceleratorDevice device, BitSet profiles) {
+    private long executionPlanId;
+
+    public EventSet(TornadoXPUDevice device, BitSet profiles, long executionPlanId) {
         this.device = device;
         this.profiles = profiles;
+        this.executionPlanId = executionPlanId;
         index = profiles.nextSetBit(0);
-        event = device.resolveEvent(index);
+        event = device.resolveEvent(executionPlanId, index);
     }
 
     public int cardinality() {
@@ -61,12 +64,12 @@ public class EventSet implements TornadoEvents {
         if (index == -1) {
             return null;
         }
-        event = device.resolveEvent(index);
+        event = device.resolveEvent(executionPlanId, index);
         index = profiles.nextSetBit(index);
         return event;
     }
 
-    public TornadoAcceleratorDevice getDevice() {
+    public TornadoXPUDevice getDevice() {
         return device;
     }
 

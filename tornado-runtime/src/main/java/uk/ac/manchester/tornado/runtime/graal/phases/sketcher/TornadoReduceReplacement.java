@@ -99,7 +99,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         findParametersWithReduceAnnotations(graph);
-
         // TODO: Pending, if it is local variable
     }
 

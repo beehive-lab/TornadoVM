@@ -44,7 +44,7 @@ Install the following plugins:
     Checks project for compliance with custom checkstyle rules.
 
 Run and Debug TornadoVM with Intellij
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Normal maven lifecycle goals like *package* and *install* will not
 result a succefull build for TornadoVM.

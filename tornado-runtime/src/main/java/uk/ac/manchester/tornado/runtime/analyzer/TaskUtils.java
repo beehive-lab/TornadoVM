@@ -177,9 +177,13 @@ public class TaskUtils {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 switch (jm.getName()) {
+                    case "booleanValue":
+                    case "byteValue":
+                    case "charValue":
+                    case "shortValue":
+                    case "intValue":
                     case "floatValue":
                     case "doubleValue":
-                    case "intValue":
                     case "longValue":
                         continue;
                 }
@@ -195,7 +199,7 @@ public class TaskUtils {
         return null;
     }
 
-    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
+    public static CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
         return createTask(meta, id, method, code, true);
     }
 

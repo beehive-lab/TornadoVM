@@ -35,7 +35,7 @@
         << std::endl;                                           \
     }                                                           \
     if (result != CUDA_SUCCESS)  {                              \
-        std::cout << "[TornadoVM-PTX-JNI] ERROR : " << name     \
+        std::cout << "\t[TornadoVM-PTX-JNI] ERROR : " << name   \
         << " -> Returned: " << result                           \
         << std::endl;                                           \
     }

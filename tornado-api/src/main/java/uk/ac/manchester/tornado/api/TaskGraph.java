@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 /**
@@ -748,12 +749,12 @@ public class TaskGraph implements TaskGraphInterface {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    TaskGraph setDevice(TornadoDevice device) {
+    TaskGraph withDevice(TornadoDevice device) {
         taskGraphImpl.setDevice(device);
         return this;
     }
 
-    TaskGraph setDevice(String taskName, TornadoDevice device) {
+    TaskGraph withDevice(String taskName, TornadoDevice device) {
         taskGraphImpl.setDevice(taskName, device);
         return this;
     }
@@ -772,20 +773,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withoutMemoryLimit();
     }
 
-    void execute() {
-        taskGraphImpl.schedule().waitOn();
-    }
-
-    void execute(GridScheduler gridScheduler) {
-        taskGraphImpl.schedule(gridScheduler).waitOn();
-    }
-
-    void executeWithProfiler(Policy policy) {
-        taskGraphImpl.scheduleWithProfile(policy).waitOn();
-    }
-
-    void executeWithProfilerSequential(Policy policy) {
-        taskGraphImpl.scheduleWithProfileSequential(policy).waitOn();
+    void execute(ExecutorFrame executionPackage) {
+        taskGraphImpl.execute(executionPackage).waitOn();
     }
 
     void warmup() {
@@ -897,12 +886,31 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.disableProfiler(profilerMode);
     }
 
-    public void withConcurrentDevices() {
+    void withConcurrentDevices() {
         taskGraphImpl.withConcurrentDevices();
     }
 
-    public void withoutConcurrentDevices() {
+    void withoutConcurrentDevices() {
         taskGraphImpl.withoutConcurrentDevices();
     }
 
+    void withThreadInfo() {
+        taskGraphImpl.withThreadInfo();
+    }
+
+    void withoutThreadInfo() {
+        taskGraphImpl.withoutThreadInfo();
+    }
+
+    void withPrintKernel() {
+        taskGraphImpl.withPrintKernel();
+    }
+
+    void withoutPrintKernel() {
+        taskGraphImpl.withoutPrintKernel();
+    }
+
+    void withGridScheduler(GridScheduler gridScheduler) {
+        taskGraphImpl.withGridScheduler(gridScheduler);
+    }
 }

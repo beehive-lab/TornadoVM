@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -27,11 +27,11 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 
 /**
  * Test copies within TornadoVM and Level Zero driver.
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
  * How to run?
  *
  * <code>
- *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestVM
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestVM
  * </code>
  */
 public class TestVM {
@@ -50,14 +50,14 @@ public class TestVM {
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultBackend();
+        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
 
         // Get a Device
-        TornadoDevice device = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
-        System.out.println("Selecting Device: " + device.getPhysicalDevice().getDeviceName());
+        System.out.println(STR."Selecting Device: \{device.getPhysicalDevice().getDeviceName()}");
 
-        System.out.println("BACKEND: " + spirvBackend);
+        System.out.println(STR."BACKEND: \{spirvBackend}");
 
         return device;
 
@@ -68,22 +68,24 @@ public class TestVM {
         System.out.println("Running Runtime For Buffer creation and copy");
 
         // We allocate buffer A
-        GlobalObjectState stateA = new GlobalObjectState();
-        DeviceObjectState objectStateA = stateA.getDeviceState(device);
+        DataObjectState stateA = new DataObjectState();
+        XPUDeviceBufferState objectStateA = stateA.getDeviceState(device);
 
         // We allocate buffer B
-        GlobalObjectState stateB = new GlobalObjectState();
-        DeviceObjectState objectStateB = stateB.getDeviceState(device);
+        DataObjectState stateB = new DataObjectState();
+        XPUDeviceBufferState objectStateB = stateB.getDeviceState(device);
 
         // We allocate buffer C
-        GlobalObjectState stateC = new GlobalObjectState();
-        DeviceObjectState objectStateC = stateC.getDeviceState(device);
+        DataObjectState stateC = new DataObjectState();
+        XPUDeviceBufferState objectStateC = stateC.getDeviceState(device);
 
         // Allocate a
         device.allocate(a, 0, objectStateA);
 
+        final long executionPlanId = 0;
+
         // Copy-in buffer A
-        device.ensurePresent(a, objectStateA, null, 0, 0);
+        device.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
 
         // Allocate buffer B
         device.allocate(b, 0, objectStateB);
@@ -92,20 +94,20 @@ public class TestVM {
         device.allocate(c, 0, objectStateC);
 
         // Stream IN buffer C
-        device.streamIn(c, 0, 0, objectStateC, null);
+        device.streamIn(executionPlanId, c, 0, 0, objectStateC, null);
 
         // Copy
         // b <- device-buffer(regionA)
-        device.moveDataFromDeviceBufferToHost(objectStateA, b);
+        device.moveDataFromDeviceBufferToHost(executionPlanId, objectStateA, b);
 
         // // Copy Back Data
-        device.streamOutBlocking(a, 0, objectStateA, null);
+        device.streamOutBlocking(executionPlanId, a, 0, objectStateA, null);
 
         // Add a barrier
-        device.enqueueBarrier();
+        device.enqueueBarrier(executionPlanId);
 
         // Flush and execute all pending in the command queue
-        device.flush();
+        device.flush(executionPlanId);
 
         System.out.println(Arrays.toString(b));
 

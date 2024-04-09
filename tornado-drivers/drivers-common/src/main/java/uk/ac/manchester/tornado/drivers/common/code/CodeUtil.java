@@ -21,6 +21,11 @@
  */
 package uk.ac.manchester.tornado.drivers.common.code;
 
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Signature;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 
@@ -28,10 +33,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 
 public class CodeUtil {
 
@@ -53,14 +55,21 @@ public class CodeUtil {
         for (int i = 0; i < sigCount; i++) {
             argTypes[argIndex++] = sig.getParameterType(i, null);
         }
-        return getCallingConvention(type, retType, argTypes, codeCache.getTarget());
+
+        final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
+        return getCallingConvention(type, retType, argTypes, codeCache.getTarget(), locals);
     }
 
-    private static CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] argTypes, TargetDescription target) {
+    private static CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] argTypes, TargetDescription target, Local[] locals) {
         int variableIndex = 0;
 
         Variable[] inputParameters = new Variable[argTypes.length];
         for (int i = 0; i < argTypes.length; i++, variableIndex++) {
+            if (isHalfFloat(argTypes[i])) {
+                // Treat HalfFloat as short during code generation
+                inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(JavaKind.Short)), variableIndex);
+                continue;
+            }
             inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(argTypes[i].getJavaKind())), variableIndex);
 
         }
@@ -72,6 +81,10 @@ public class CodeUtil {
         variableIndex++;
 
         return new CallingConvention(0, returnParameter, inputParameters);
+    }
+
+    public static boolean isHalfFloat(JavaType type) {
+        return type.toJavaName().equals(HalfFloat.class.getName());
     }
 
 }

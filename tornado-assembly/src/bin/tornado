@@ -141,7 +141,11 @@ class TornadoVMRunnerTool():
                 setattr(self, attr, None)
 
     def getJavaVersion(self):
-        versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
+        if os.name == 'nt':
+            versionCommand = subprocess.Popen(shlex.split('"' + self.commands["java"] + '"' + " -version"), stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE, shell=True)
+        else:
+            versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE)
         stdout, stderr = versionCommand.communicate()
         matchJVMVersion = re.search(r"version \"\d+", str(stderr))
@@ -236,7 +240,7 @@ class TornadoVMRunnerTool():
         if (self.java_version == 8):
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
-            tornadoFlags = tornadoFlags + " --module-path .:" + self.sdk + "/share/java/tornado"
+            tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
 
         if (args.module_path != None):
             tornadoFlags = tornadoFlags + ":" + args.module_path + " "
@@ -360,7 +364,10 @@ class TornadoVMRunnerTool():
         else:
             executionFlags = javaFlags
 
-        return self.cmd + executionFlags
+        if os.name == 'nt':
+            return '"' + self.cmd + '"' + executionFlags
+        else:
+            return self.cmd + executionFlags
 
     def truffleCompatibleExports(self, exportFile):
         data = Path(exportFile).read_text()

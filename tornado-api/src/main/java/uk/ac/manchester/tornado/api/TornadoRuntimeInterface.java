@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,27 +19,22 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TornadoGlobalObjectState;
 
 public interface TornadoRuntimeInterface {
 
-    void clearObjectState();
+    TornadoBackend getBackend(int index);
 
-    TornadoDriver getDriver(int index);
-
-    void setDefaultDriver(int index);
+    void setDefaultBackend(int index);
 
     TornadoVMBackendType getBackendType(int index);
 
-    <D extends TornadoDriver> D getDriver(Class<D> type);
+    <D extends TornadoBackend> D getBackend(Class<D> type);
 
-    int getNumDrivers();
+    int getNumBackends();
 
     TornadoDevice getDefaultDevice();
 
-    TornadoGlobalObjectState resolveObject(Object object);
-
-    <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass);
+    <D extends TornadoBackend> int getBackendIndex(Class<D> driverClass);
 
     boolean isProfilerEnabled();
 }

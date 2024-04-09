@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
 import java.io.BufferedReader;
@@ -55,6 +54,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
@@ -165,6 +165,8 @@ public final class RuntimeUtilities {
             isBox = true;
         } else if (obj instanceof Short) {
             isBox = true;
+        } else if (obj instanceof HalfFloat) {
+            isBox = true;
         } else if (obj instanceof Integer) {
             isBox = true;
         } else if (obj instanceof Long) {
@@ -195,6 +197,8 @@ public final class RuntimeUtilities {
         } else if (klass == Character.class) {
             isBox = true;
         } else if (klass == Short.class) {
+            isBox = true;
+        } else if (klass == HalfFloat.class) {
             isBox = true;
         } else if (klass == Integer.class) {
             isBox = true;
@@ -382,22 +386,20 @@ public final class RuntimeUtilities {
         }
     }
 
-    public static void maybePrintSource(byte[] source) {
-        if (PRINT_SOURCE) {
-            String sourceCode = new String(source);
-            if (PRINT_SOURCE_DIRECTORY.isEmpty()) {
-                System.out.println(sourceCode);
-            } else {
-                File fileLog = new File(PRINT_SOURCE_DIRECTORY);
-                try {
-                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
-                        file.write(sourceCode);
-                        file.write("\n");
-                        file.flush();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+    public static void dumpKernel(byte[] source) {
+        String sourceCode = new String(source);
+        if (PRINT_SOURCE_DIRECTORY.isEmpty()) {
+            System.out.println(sourceCode);
+        } else {
+            File fileLog = new File(PRINT_SOURCE_DIRECTORY);
+            try {
+                try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
+                    file.write(sourceCode);
+                    file.write("\n");
+                    file.flush();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

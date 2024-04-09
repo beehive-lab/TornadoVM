@@ -59,7 +59,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
-import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
@@ -75,23 +75,19 @@ public class OCLHotSpotBackendFactory {
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
-    public static OCLBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, OCLExecutionEnvironment tornadoContext, OCLTargetDevice device) {
+    public static OCLBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess config, OCLExecutionEnvironment tornadoContext, OCLTargetDevice device) {
         JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmciBackend.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmciBackend.getConstantReflection();
 
-        OCLKind wordKind = OCLKind.ILLEGAL;
-        switch (device.getWordSize()) {
-            case 4:
-                wordKind = OCLKind.UINT;
-                break;
-            case 8:
-                wordKind = OCLKind.ULONG;
-                break;
-            default:
+        OCLKind wordKind = switch (device.getWordSize()) {
+            case 4 -> OCLKind.UINT;
+            case 8 -> OCLKind.ULONG;
+            default -> {
                 shouldNotReachHere("unknown word size for device: word size is %d on %s", device.getWordSize(), device.getDeviceName());
-                break;
-        }
+                yield OCLKind.ILLEGAL;
+            }
+        };
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
