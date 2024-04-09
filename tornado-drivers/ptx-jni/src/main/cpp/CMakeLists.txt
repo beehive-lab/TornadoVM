@@ -23,6 +23,7 @@ add_library(tornado-ptx SHARED
 		source/PTXDevice.cpp
 		source/PTXEvent.cpp
 		source/PTX.cpp
+		source/PTXNvml.cpp
 		source/ptx_utils.cpp
 		source/ptx_log.h)
 
@@ -34,7 +35,7 @@ if(CUDA_FOUND)
     if(CMAKE_HOST_WIN32)
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} $ENV{PTX_LDFLAGS}")
     endif()
-    target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda")
+    target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda -lnvidia-ml")
     if(CMAKE_HOST_WIN32)
         set_target_properties(tornado-ptx PROPERTIES PREFIX "")
     endif() 

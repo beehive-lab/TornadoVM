@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,12 +60,14 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
+    private final PTXNvml nvml;
 
     public PTXDeviceContext(PTXDevice device, PTXStream stream) {
         this.device = device;
         this.stream = stream;
 
         this.scheduler = new PTXScheduler(device);
+        this.nvml = new PTXNvml(this);
         codeCache = new PTXCodeCache(this);
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
@@ -153,6 +155,14 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     @Override
     public int getDevicePlatform() {
         return 0;
+    }
+
+    public long getPowerUsage() {
+        long[] device = new long[1];
+        long[] powerUsage = new long[1];
+        nvml.ptxNvmlDeviceGetHandleByIndex(device);
+        nvml.ptxNvmlDeviceGetPowerUsage(device, powerUsage);
+        return powerUsage[0];
     }
 
     public ByteOrder getByteOrder() {
@@ -289,6 +299,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
             long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), getPowerUsage());
         }
     }
 
