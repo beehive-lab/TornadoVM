@@ -19,8 +19,6 @@ package uk.ac.manchester.tornado.api.types.tensors;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
-import java.lang.foreign.MemorySegment;
-
 public abstract non-sealed class Tensor extends TornadoNativeArray {
     private final DType dtype;
     private final Shape shape;
@@ -29,27 +27,6 @@ public abstract non-sealed class Tensor extends TornadoNativeArray {
         this.dtype = dtype;
         this.shape = shape;
     }
-
-    @Override
-    abstract public int getSize();
-
-    @Override
-    abstract public MemorySegment getSegment();
-
-    @Override
-    abstract public MemorySegment getSegmentWithHeader();
-
-    @Override
-    abstract public long getNumBytesOfSegmentWithHeader();
-
-    @Override
-    abstract public long getNumBytesOfSegment();
-
-    @Override
-    abstract protected void clear();
-
-    @Override
-    abstract public int getElementSize();
 
     public abstract Shape getShape();
 
