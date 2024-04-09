@@ -112,7 +112,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / HALF_FLOAT_BYTES);
         HalfFloatArray halfFloatArray = new HalfFloatArray(numElements);
-        MemorySegment.copy(segment, 0, halfFloatArray.segment, halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, halfFloatArray.segment, (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
         return halfFloatArray;
     }
 

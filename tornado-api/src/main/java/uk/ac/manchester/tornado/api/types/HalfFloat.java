@@ -50,24 +50,6 @@ public class HalfFloat {
     }
 
     /**
-     * Gets the half-float stored in the class.
-     *
-     * @return The half float value stored in the {@code HalfFloat} object.
-     */
-    public short getHalfFloatValue() {
-        return this.halfFloatValue;
-    }
-
-    /**
-     * Gets the half-float stored in the class in a 32-bit representation.
-     *
-     * @return The float-32 equivalent value the half float stored in the {@code HalfFloat} object.
-     */
-    public float getFloat32() {
-        return Float.float16ToFloat(halfFloatValue);
-    }
-
-    /**
      * Takes two half float values, converts them to a 32-bit representation and performs an addition.
      *
      * @param a
@@ -185,6 +167,29 @@ public class HalfFloat {
     public static HalfFloat div(HalfFloat a, HalfFloat b) {
         float result = divHalfFloat(a.getHalfFloatValue(), b.getHalfFloatValue());
         return new HalfFloat(result);
+    }
+
+    /**
+     * Gets the half-float stored in the class.
+     *
+     * @return The half float value stored in the {@code HalfFloat} object.
+     */
+    public short getHalfFloatValue() {
+        return this.halfFloatValue;
+    }
+
+    /**
+     * Gets the half-float stored in the class in a 32-bit representation.
+     *
+     * @return The float-32 equivalent value the half float stored in the {@code HalfFloat} object.
+     */
+    public float getFloat32() {
+        return Float.float16ToFloat(halfFloatValue);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("HalfFloat: %.4f", getFloat32());
     }
 
 }

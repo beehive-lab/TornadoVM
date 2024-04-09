@@ -91,8 +91,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     private boolean checkIgnoreStride(ParallelRangeNode range) {
         ValueNode value = range.stride().value();
-        if (value instanceof ConstantNode) {
-            ConstantNode c = (ConstantNode) value;
+        if (value instanceof ConstantNode c) {
             Constant value2 = c.getValue();
             String v = value2.toValueString();
             int stride = Integer.parseInt(v);
@@ -105,8 +104,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         // Check first if the IF node controls stride, in which case we should
         // only ignore if the stride is 1.
         boolean ignore = false;
-        if (ifNode.condition() instanceof BinaryOpLogicNode) {
-            BinaryOpLogicNode condition = (BinaryOpLogicNode) ifNode.condition();
+        if (ifNode.condition() instanceof BinaryOpLogicNode condition) {
             if (condition.getX() instanceof ParallelRangeNode) {
                 ignore = checkIgnoreStride((ParallelRangeNode) condition.getX());
             } else if (condition.getY() instanceof ParallelRangeNode) {
@@ -208,8 +206,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                     readNode.usages().forEach(nodesToProcess::add);
                 }
                 isRead = true;
-            } else if (currentNode instanceof LoadFieldNode) {
-                LoadFieldNode loadField = (LoadFieldNode) currentNode;
+            } else if (currentNode instanceof LoadFieldNode loadField) {
                 if (isTornadoNativeArray(loadField)) {
                     continue;
                 }
@@ -262,15 +259,10 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
     private boolean isTornadoNativeArray(LoadFieldNode loadFieldNode) {
         String field = loadFieldNode.field().toString();
 
-        if (field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray") || field.contains(
+        return field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray") || field.contains(
                 "uk.ac.manchester.tornado.api.types.arrays.FloatArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.LongArray") || field.contains(
                         "uk.ac.manchester.tornado.api.types.arrays.CharArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.ShortArray") || field.contains(
-                                "uk.ac.manchester.tornado.api.types.arrays.ByteArray")) {
-            return true;
-        } else {
-            return false;
-        }
-
+                                "uk.ac.manchester.tornado.api.types.arrays.ByteArray");
     }
 
     /**
@@ -308,11 +300,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         while (!nodesToProcess.isEmpty()) {
             Node node = nodesToProcess.remove();
             visited.add(node);
-            if (node instanceof ParallelStrideNode) {
-                ParallelStrideNode parallelStrideNode = (ParallelStrideNode) node;
+            if (node instanceof ParallelStrideNode parallelStrideNode) {
                 Node valueNode = parallelStrideNode.value();
-                if (valueNode instanceof ConstantNode) {
-                    ConstantNode constantNode = (ConstantNode) valueNode;
+                if (valueNode instanceof ConstantNode constantNode) {
                     ConstantNode constantNode1 = ConstantNode.forInt(1);
                     return constantNode.getValue().equals(constantNode1.getValue());
                 }
@@ -325,8 +315,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (!visited.contains(b)) {
                     nodesToProcess.add(b);
                 }
-            } else if (node instanceof PhiNode) {
-                PhiNode phiNode = (PhiNode) node;
+            } else if (node instanceof PhiNode phiNode) {
                 for (ValueNode valuePhiNode : phiNode.values()) {
                     if (!visited.contains(valuePhiNode)) {
                         nodesToProcess.add(valuePhiNode);
