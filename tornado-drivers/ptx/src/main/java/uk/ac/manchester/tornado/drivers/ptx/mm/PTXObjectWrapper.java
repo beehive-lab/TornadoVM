@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -126,6 +127,9 @@ public class PTXObjectWrapper implements XPUBuffer {
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+            } else if (type == HalfFloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new PTXVectorWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), 0);
             } else if (field.getJavaKind().isObject()) {

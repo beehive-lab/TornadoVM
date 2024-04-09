@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -141,6 +142,10 @@ public class SPIRVObjectWrapper implements XPUBuffer {
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+            } else if (type == HalfFloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long sizeInBytes = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new SPIRVVectorWrapper(deviceContext, object, 0);
