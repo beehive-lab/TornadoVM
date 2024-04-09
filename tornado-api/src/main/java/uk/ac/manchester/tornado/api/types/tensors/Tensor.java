@@ -22,8 +22,8 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import java.lang.foreign.MemorySegment;
 
 public abstract non-sealed class Tensor extends TornadoNativeArray {
-    private DType dtype;
-    private Shape shape;
+    private final DType dtype;
+    private final Shape shape;
 
     protected Tensor(DType dtype, Shape shape) {
         this.dtype = dtype;
@@ -31,38 +31,25 @@ public abstract non-sealed class Tensor extends TornadoNativeArray {
     }
 
     @Override
-    public int getSize() {
-        return shape.getSize();
-    }
+    abstract public int getSize();
 
     @Override
-    public MemorySegment getSegment() {
-        return null;
-    }
+    abstract public MemorySegment getSegment();
 
     @Override
-    public MemorySegment getSegmentWithHeader() {
-        return null;
-    }
+    abstract public MemorySegment getSegmentWithHeader();
 
     @Override
-    public long getNumBytesOfSegmentWithHeader() {
-        return 0;
-    }
+    abstract public long getNumBytesOfSegmentWithHeader();
 
     @Override
-    public long getNumBytesOfSegment() {
-        return 0;
-    }
+    abstract public long getNumBytesOfSegment();
 
     @Override
-    protected void clear() {
-    }
+    abstract protected void clear();
 
     @Override
-    public int getElementSize() {
-        return dtype.getByteSize();
-    }
+    abstract public int getElementSize();
 
     public abstract Shape getShape();
 
