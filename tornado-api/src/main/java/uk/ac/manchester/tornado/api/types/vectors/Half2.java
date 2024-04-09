@@ -106,11 +106,6 @@ public final class Half2 implements TornadoVectorsInterface<ShortBuffer> {
         c.setY(HalfFloat.mult(a.getY(), b.getY()));
     }
 
-    public static void div(Half2 a, Half2 b, Half2 c) {
-        c.setX(HalfFloat.div(a.getX(), b.getX()));
-        c.setY(HalfFloat.div(a.getY(), b.getY()));
-    }
-
     public static HalfFloat dot(Half2 a, Half2 b) {
         final Half2 m = mult(a, b);
         return HalfFloat.add(m.getX(), m.getY());

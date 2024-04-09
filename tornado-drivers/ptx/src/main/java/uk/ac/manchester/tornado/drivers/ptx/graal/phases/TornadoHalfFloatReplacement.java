@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXHalfFloatDivisionNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
@@ -91,7 +92,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
             if (javaRead.successors().first() instanceof NewInstanceNode) {
                 NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
-                if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
                     if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                         NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
                         deleteFixed(newHalfFloatInstance);
@@ -107,7 +108,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         }
 
         for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
-            if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+            if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
                 if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                     NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
                     ValueNode valueInput = newHalfFloatInstance.getValue();

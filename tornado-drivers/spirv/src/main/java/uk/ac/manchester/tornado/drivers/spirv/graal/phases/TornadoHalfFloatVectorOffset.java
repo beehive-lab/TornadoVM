@@ -38,15 +38,22 @@ import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 
 import java.util.Optional;
 
+/**
+ * This compiler phase ensures that the elements of half-float vectors are being
+ * accessed using the correct offsets. This is essential because the JavaKind of
+ * the half type is declared as Object in order to avoid issues with the Stamp during
+ * the sketching.
+ */
 public class TornadoHalfFloatVectorOffset extends Phase {
 
     private static int HALF_SIZE = 2;
-    private static int HEADER_SIZE = 24;
+    private static long HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {

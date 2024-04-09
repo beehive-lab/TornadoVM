@@ -32,6 +32,10 @@ import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLDevice;
 
 import java.util.Optional;
 
+/**
+ * This compiler phase examines if the execution device supports half precision types
+ * and throws a {@link TornadoDeviceFP16NotSupported} exception if it does not.
+ */
 public class OCLFP16SupportPhase extends Phase {
 
     private TornadoDeviceContext deviceContext;
