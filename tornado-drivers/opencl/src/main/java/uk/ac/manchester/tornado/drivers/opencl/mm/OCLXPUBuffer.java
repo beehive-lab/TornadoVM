@@ -140,6 +140,10 @@ public class OCLXPUBuffer implements XPUBuffer {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
                 wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == HalfFloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
