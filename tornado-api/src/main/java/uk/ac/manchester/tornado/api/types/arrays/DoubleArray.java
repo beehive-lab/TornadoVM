@@ -63,6 +63,16 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link DoubleArray} instance by concatenating the contents of the given array of {@link DoubleArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link DoubleArray} instances to be concatenated into the new instance.
+     */
+    public DoubleArray(DoubleArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link DoubleArray} from on-heap data.
      *
      * @param values

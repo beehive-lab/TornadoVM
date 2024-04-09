@@ -61,6 +61,16 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link CharArray} instance by concatenating the contents of the given array of {@link CharArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link CharArray} instances to be concatenated into the new instance.
+     */
+    public CharArray(CharArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link CharArray} from on-heap data.
      *
      * @param values

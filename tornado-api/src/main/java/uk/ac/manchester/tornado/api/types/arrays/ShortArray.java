@@ -62,6 +62,16 @@ public final class ShortArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link ShortArray} instance by concatenating the contents of the given array of {@link ShortArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link ShortArray} instances to be concatenated into the new instance.
+     */
+    public ShortArray(ShortArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link ShortArray} from on-heap data.
      *
      * @param values
