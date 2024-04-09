@@ -30,34 +30,12 @@ import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 
 public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSketchTierContext> {
-
-    @Override
-    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
-        return ALWAYS_APPLICABLE;
-    }
-
-    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
-        for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
-            if (placeholderNode.getInput() instanceof PiNode) {
-                PiNode placeholderInput = (PiNode) placeholderNode.getInput();
-                ValueNode halfFloatValue = placeholderInput.object();
-                FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderInput.getGuard();
-                deleteFixed(placeholderGuard);
-                placeholderNode.setInput(halfFloatValue);
-                nodesToBeDeleted.add(placeholderInput);
-            }
-        }
-
-        for (ValueNode node : nodesToBeDeleted) {
-            node.safeDelete();
-        }
-    }
 
     private static void deleteFixed(Node node) {
         if (!node.isDeleted()) {
@@ -72,6 +50,32 @@ public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSket
                 node.removeUsage(us);
             }
             node.clearInputs();
+            node.safeDelete();
+        }
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
+        for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+            if (placeholderNode.getInput() instanceof PiNode placeholderInput) {
+                ValueNode halfFloatValue = placeholderInput.object();
+                FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderInput.getGuard();
+                if (placeholderGuard.inputs().filter(IsNullNode.class).isNotEmpty()) {
+                    IsNullNode isNullNode = placeholderGuard.inputs().filter(IsNullNode.class).first();
+                    nodesToBeDeleted.add(isNullNode);
+                }
+                deleteFixed(placeholderGuard);
+                placeholderNode.setInput(halfFloatValue);
+                nodesToBeDeleted.add(placeholderInput);
+            }
+        }
+
+        for (ValueNode node : nodesToBeDeleted) {
             node.safeDelete();
         }
     }
