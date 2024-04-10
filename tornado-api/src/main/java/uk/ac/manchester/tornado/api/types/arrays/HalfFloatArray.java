@@ -95,7 +95,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *
      * @param values
      *     The {@link HalfFloat} values to initialize the array with.
-     * @return A new {@link FloatArray} instance, initialized with the given values.
+     * @return A new {@linkHalfFloatArray} instance, initialized with the given values.
      */
     public static HalfFloatArray fromElements(HalfFloat... values) {
         return createSegment(values);
@@ -261,6 +261,32 @@ public final class HalfFloatArray extends TornadoNativeArray {
             currentPositionBytes += array.getNumBytesOfSegment();
         }
         return concatArray;
+    }
+
+    /**
+     * Extracts a slice of elements from a given {@linkHalfFloatArray}, creating a new {@linkHalfFloatArray} instance.
+     *
+     *
+     * @param array
+     *     The {@linkHalfFloatArray} from which to extract the slice.
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@linkHalfFloatArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public static HalfFloatArray slice(HalfFloatArray array, int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > array.getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * HALF_FLOAT_BYTES;
+        long sliceByteLength = length * HALF_FLOAT_BYTES;
+        MemorySegment sliceSegment = array.segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        HalfFloatArray slice = fromSegment(sliceSegment);
+        return slice;
     }
 
 }
