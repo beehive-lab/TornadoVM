@@ -44,7 +44,7 @@ public class TestSlice extends TornadoTestBase {
     private final int numElements = 256;
 
     @Test
-    public void testFloatArrayConcat() {
+    public void testFloatArraySlice() {
 
         FloatArray a = new FloatArray(numElements);
         FloatArray b = new FloatArray(numElements);
@@ -65,7 +65,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleArrayConcat() {
+    public void testDoubleArraySlice() {
 
         DoubleArray a = new DoubleArray(numElements);
         DoubleArray b = new DoubleArray(numElements);
@@ -85,7 +85,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testByteArrayConcat() {
+    public void testByteArraySlice() {
 
         ByteArray a = new ByteArray(numElements);
         ByteArray b = new ByteArray(numElements);
@@ -105,7 +105,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testLongArrayConcat() {
+    public void testLongArraySlice() {
 
         LongArray a = new LongArray(numElements);
         LongArray b = new LongArray(numElements);
@@ -124,7 +124,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testIntArrayConcat() {
+    public void testIntArraySlice() {
 
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -144,7 +144,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testShortArrayConcat() {
+    public void testShortArraySlice() {
 
         ShortArray a = new ShortArray(numElements);
         ShortArray b = new ShortArray(numElements);
@@ -164,7 +164,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testCharArrayConcat() {
+    public void testCharArraySlice() {
 
         CharArray a = new CharArray(numElements);
         CharArray b = new CharArray(numElements);
@@ -183,7 +183,7 @@ public class TestSlice extends TornadoTestBase {
     }
 
     @Test
-    public void testHalfFloatArrayConcat() {
+    public void testHalfFloatArraySlice() {
 
         HalfFloatArray a = new HalfFloatArray(numElements);
         HalfFloatArray b = new HalfFloatArray(numElements);
