@@ -65,6 +65,16 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link HalfFloatArray} instance by concatenating the contents of the given array of {@link HalfFloatArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link HalfFloatArray} instances to be concatenated into the new instance.
+     */
+    public HalfFloatArray(HalfFloatArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link HalfFloatArray} from on-heap data.
      *
      * @param values
