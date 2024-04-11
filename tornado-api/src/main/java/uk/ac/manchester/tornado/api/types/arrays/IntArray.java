@@ -60,6 +60,16 @@ public final class IntArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link IntArray} instance by concatenating the contents of the given array of {@link IntArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link IntArray} instances to be concatenated into the new instance.
+     */
+    public IntArray(IntArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link IntArray} from on-heap data.
      *
      * @param values

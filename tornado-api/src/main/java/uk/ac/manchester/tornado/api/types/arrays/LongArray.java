@@ -61,6 +61,16 @@ public final class LongArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link LongArray} instance by concatenating the contents of the given array of {@link LongArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link LongArray} instances to be concatenated into the new instance.
+     */
+    public LongArray(LongArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link LongArray} from on-heap data.
      *
      * @param values
