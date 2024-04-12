@@ -264,6 +264,41 @@ public class TestBatches extends TornadoTestBase {
     }
 
     @Test
+    public void test100MBLazy() {
+
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(100, MemoryUnit.MB);
+
+        // Fill 800MB of float array
+        int size = 200000000;
+        // or as much as we can
+        if (size * 4 > maxAllocMemory) {
+            size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
+        }
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
+
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, 0));
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA, arrayB) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, arrayB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult tornadoExecutionResult = executionPlan.withBatch("100MB") // Slots of 100 MB
+                .execute();
+
+        tornadoExecutionResult.transferToHost(arrayB);
+
+        for (int i = 0; i < arrayB.getSize(); i++) {
+            assertEquals(arrayA.get(i) + 100, arrayB.get(i), 0.1f);
+        }
+
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
     public void test300MB() {
 
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(300, MemoryUnit.MB);
@@ -298,6 +333,42 @@ public class TestBatches extends TornadoTestBase {
     }
 
     @Test
+    public void test300MBLazy() {
+
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(300, MemoryUnit.MB);
+
+        // Fill 1.0GB
+        int size = 250_000_000;
+        // Or as much as we can
+        if (size * 4 > maxAllocMemory) {
+            size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
+        }
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
+
+        Random r = new Random();
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, r.nextFloat()));
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA, arrayB) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, arrayB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult tornadoExecutionResult = executionPlan.withBatch("300MB") // Slots of 300 MB
+                .execute();
+
+        tornadoExecutionResult.transferToHost(arrayB);
+
+        for (int i = 0; i < arrayB.getSize(); i++) {
+            assertEquals(arrayA.get(i) + 100, arrayB.get(i), 1.0f);
+        }
+
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
     public void test512MB() {
 
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(512, MemoryUnit.MB);
@@ -321,6 +392,40 @@ public class TestBatches extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.withBatch("512MB") // Slots of 512 MB
                 .execute();
+
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(i, arrayA.get(i), 0.1f);
+        }
+
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void test512MBLazy() {
+
+        long maxAllocMemory = checkMaxHeapAllocationOnDevice(512, MemoryUnit.MB);
+
+        // Fill 800MB
+        int size = 200000000;
+        // or as much as we can
+        if (size * 4 > maxAllocMemory) {
+            size = (int) ((maxAllocMemory / 4) * 0.9);
+        }
+        FloatArray arrayA = new FloatArray(size);
+
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, arrayA);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult tornadoExecutionResult = executionPlan.withBatch("512MB") // Slots of 512 MB
+                .execute();
+
+        tornadoExecutionResult.transferToHost(arrayA);
 
         for (int i = 0; i < arrayA.getSize(); i++) {
             assertEquals(i, arrayA.get(i), 0.1f);
@@ -768,6 +873,34 @@ public class TestBatches extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
         executionPlan.withBatch("10MB") // Batches of 10MB
                 .execute();
+
+        for (int i = 0; i < array.getSize(); i++) {
+            assertEquals(array2.get(i) * 4, array.get(i), 0.01f);
+        }
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void testBatchNotEven2Lazy() {
+        checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
+
+        // Allocate ~ 64MB
+        FloatArray array = new FloatArray(1024 * 1024 * 16);
+        FloatArray array2 = new FloatArray(1024 * 1024 * 16);
+        array.init(1.0f);
+        array2.init(1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
+                .task("t1", TestBatches::compute2, array) //
+                .task("t2", TestBatches::compute2, array) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        TornadoExecutionResult tornadoExecutionResult = executionPlan.withBatch("10MB") // Batches of 10MB
+                .execute();
+
+        tornadoExecutionResult.transferToHost(array);
 
         for (int i = 0; i < array.getSize(); i++) {
             assertEquals(array2.get(i) * 4, array.get(i), 0.01f);
