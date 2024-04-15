@@ -147,7 +147,7 @@ def build_levelzero_jni_lib(rebuild=False):
             [
                 "git",
                 "clone",
-                "https://github.com/otabuzzman/levelzero-jni#winstall",
+                "https://github.com/beehive-lab/levelzero-jni",
             ],
         )
         build=True
@@ -188,7 +188,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             [
                 "git",
                 "clone",
-                "https://github.com/otabuzzman/beehive-spirv-toolkit.git#winstall",
+                "https://github.com/beehive-lab//beehive-spirv-toolkit.git",
             ],
         )
         build = True
