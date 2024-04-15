@@ -108,7 +108,7 @@ public class PTXVectorWrapper implements XPUBuffer {
     public void deallocate() {
         TornadoInternalError.guarantee(buffer != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getBufferProvider().markBufferReleased(buffer, bufferSize);
+        deviceContext.getBufferProvider().markBufferReleased(buffer);
         buffer = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
