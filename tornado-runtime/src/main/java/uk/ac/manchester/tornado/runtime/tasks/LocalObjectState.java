@@ -101,7 +101,7 @@ public class LocalObjectState {
     }
 
     public Event sync(long executionPlanId, Object object, TornadoDevice device) {
-        XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(device);
+        XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
         if (deviceState.isLockedBuffer()) {
             int eventId = device.streamOutBlocking(executionPlanId, object, 0, deviceState, null);
             return device.resolveEvent(executionPlanId, eventId);

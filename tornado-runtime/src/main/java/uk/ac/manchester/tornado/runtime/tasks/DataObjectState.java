@@ -39,7 +39,8 @@ public class DataObjectState implements ObjectState {
         deviceStates = new ConcurrentHashMap<>();
     }
 
-    public XPUDeviceBufferState getDeviceState(TornadoDevice device) {
+    @Override
+    public XPUDeviceBufferState getDeviceBufferState(TornadoDevice device) {
         if (!(device instanceof TornadoXPUDevice)) {
             throw new TornadoRuntimeException("[ERROR] Device not compatible");
         }

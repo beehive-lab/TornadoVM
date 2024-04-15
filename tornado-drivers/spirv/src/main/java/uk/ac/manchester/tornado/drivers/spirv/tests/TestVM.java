@@ -69,15 +69,15 @@ public class TestVM {
 
         // We allocate buffer A
         DataObjectState stateA = new DataObjectState();
-        XPUDeviceBufferState objectStateA = stateA.getDeviceState(device);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(device);
 
         // We allocate buffer B
         DataObjectState stateB = new DataObjectState();
-        XPUDeviceBufferState objectStateB = stateB.getDeviceState(device);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceBufferState(device);
 
         // We allocate buffer C
         DataObjectState stateC = new DataObjectState();
-        XPUDeviceBufferState objectStateC = stateC.getDeviceState(device);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(device);
 
         // Allocate a
         device.allocate(a, 0, objectStateA);

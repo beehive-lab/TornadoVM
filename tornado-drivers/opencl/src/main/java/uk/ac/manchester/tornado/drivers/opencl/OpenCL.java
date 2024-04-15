@@ -170,8 +170,8 @@ public class OpenCL {
             Access access = accesses[i];
             Object object = parameters[i];
 
-            DataObjectState globalState = new DataObjectState();
-            XPUDeviceBufferState deviceState = globalState.getDeviceState(tornadoDevice);
+            DataObjectState dataObjectState = new DataObjectState();
+            XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(tornadoDevice);
 
             switch (access) {
                 case READ_WRITE:

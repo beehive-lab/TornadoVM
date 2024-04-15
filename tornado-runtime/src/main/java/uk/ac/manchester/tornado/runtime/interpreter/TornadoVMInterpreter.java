@@ -690,7 +690,7 @@ public class TornadoVMInterpreter {
                 }
 
                 final DataObjectState globalState = resolveGlobalObjectState(argIndex);
-                final XPUDeviceBufferState objectState = globalState.getDeviceState(deviceForInterpreter);
+                final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(deviceForInterpreter);
 
                 if (!isObjectInAtomicRegion(objectState, deviceForInterpreter, task)) {
                     // Add a reference (arrays, vector types, panama regions)
@@ -788,7 +788,7 @@ public class TornadoVMInterpreter {
     }
 
     private XPUDeviceBufferState resolveObjectState(int index) {
-        return dataObjectStates[index].getDeviceState(deviceForInterpreter);
+        return dataObjectStates[index].getDeviceBufferState(deviceForInterpreter);
     }
 
     private boolean isObjectKernelContext(Object object) {
