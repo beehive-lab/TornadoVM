@@ -47,18 +47,18 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
@@ -82,7 +82,7 @@ public class TornadoVMInterpreter {
 
     private final List<Object> objects;
 
-    private final DataObjectState[] globalStates;
+    private final DataObjectState[] dataObjectStates;
     private final KernelStackFrame[] kernelStackFrame;
     private final int[][] events;
     private final int[] eventsIndexes;
@@ -147,7 +147,7 @@ public class TornadoVMInterpreter {
         TornadoLogger.debug("created %d event lists", events.length);
 
         objects = executionContext.getObjects();
-        globalStates = new DataObjectState[objects.size()];
+        dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 
         rewindBufferToBegin();
@@ -168,7 +168,7 @@ public class TornadoVMInterpreter {
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
             TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
-            globalStates[i] = executionContext.getLocalStateObject(object).getGlobalState();
+            dataObjectStates[i] = executionContext.getLocalStateObject(object).getDataObjectState();
         }
     }
 
@@ -788,7 +788,7 @@ public class TornadoVMInterpreter {
     }
 
     private XPUDeviceBufferState resolveObjectState(int index) {
-        return globalStates[index].getDeviceState(deviceForInterpreter);
+        return dataObjectStates[index].getDeviceState(deviceForInterpreter);
     }
 
     private boolean isObjectKernelContext(Object object) {
@@ -840,7 +840,7 @@ public class TornadoVMInterpreter {
     }
 
     private DataObjectState resolveGlobalObjectState(int index) {
-        return globalStates[index];
+        return dataObjectStates[index];
     }
 
     private boolean isObjectInAtomicRegion(XPUDeviceBufferState objectState, TornadoXPUDevice device, SchedulableTask task) {

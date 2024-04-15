@@ -523,8 +523,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         //Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
-            final DataObjectState globalState = localState.getGlobalState();
-            final XPUDeviceBufferState deviceState = globalState.getDeviceState(oldDevice);
+            final DataObjectState dataObjectState = localState.getDataObjectState();
+            final XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
@@ -567,8 +567,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
-            final DataObjectState globalState = localState.getGlobalState();
-            final XPUDeviceBufferState deviceState = globalState.getDeviceState(oldDevice);
+            final DataObjectState dataObjectState = localState.getDataObjectState();
+            final XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
@@ -1031,8 +1031,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void reuseDeviceBufferObject(final LocalObjectState localState, final TornadoDevice device) {
-        final DataObjectState globalState = localState.getGlobalState();
-        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
+        final DataObjectState dataObjectState = localState.getDataObjectState();
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(device);
         deviceState.setLockBuffer(true);
     }
 
@@ -1047,7 +1047,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         free();
     }
 
-    private void free() {
+    private synchronized void free() {
         if (vm == null) {
             return;
         }
@@ -1061,8 +1061,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void releaseObjectFromDeviceMemory(final LocalObjectState localState, final TornadoDevice device) {
-        final DataObjectState globalState = localState.getGlobalState();
-        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
+        final DataObjectState dataObjectState = localState.getDataObjectState();
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(device);
         deviceState.setLockBuffer(false);
         if (deviceState.hasObjectBuffer()) {
             device.deallocate(deviceState);
@@ -1081,9 +1081,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private Event syncObjectInner(Object object) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
-        final DataObjectState globalState = localState.getGlobalState();
+        final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getLogicDevice();
-        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(device);
         if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, 0, deviceState, null));
         }
@@ -1092,9 +1092,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private Event syncObjectInner(Object object, long offset, long partialCopySize) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
-        final DataObjectState globalState = localState.getGlobalState();
+        final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getLogicDevice();
-        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceState(device);
         deviceState.setPartialCopySize(partialCopySize);
         if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, offset, deviceState, null));
@@ -1152,7 +1152,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 value += eventParameter.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getLocalStateObject(objects[i]);
-                XPUDeviceBufferState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceState(meta().getLogicDevice());
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
             }
             updateProfiler();
@@ -1183,7 +1183,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 value += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getLocalStateObject(object);
-                XPUDeviceBufferState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceState(meta().getLogicDevice());
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
                 updateProfiler();
             }
