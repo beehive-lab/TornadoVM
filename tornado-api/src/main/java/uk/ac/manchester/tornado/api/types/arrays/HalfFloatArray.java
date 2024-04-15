@@ -277,14 +277,14 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @throws IllegalArgumentException
      *     if the specified slice is out of the bounds of the original array.
      */
-    public static HalfFloatArray slice(HalfFloatArray array, int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > array.getSize()) {
+    public HalfFloatArray slice( int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * HALF_FLOAT_BYTES;
         long sliceByteLength = length * HALF_FLOAT_BYTES;
-        MemorySegment sliceSegment = array.segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
         HalfFloatArray slice = fromSegment(sliceSegment);
         return slice;
     }

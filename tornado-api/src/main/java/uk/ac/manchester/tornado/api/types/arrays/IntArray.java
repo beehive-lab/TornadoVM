@@ -261,8 +261,6 @@ public final class IntArray extends TornadoNativeArray {
      * Extracts a slice of elements from a given {@linkIntArray}, creating a new {@linkIntArray} instance.
      *
      *
-     * @param array
-     *     The {@linkIntArray} from which to extract the slice.
      * @param offset
      *     The starting index from which to begin the slice, inclusive.
      * @param length
@@ -271,14 +269,14 @@ public final class IntArray extends TornadoNativeArray {
      * @throws IllegalArgumentException
      *     if the specified slice is out of the bounds of the original array.
      */
-    public static IntArray slice(IntArray array, int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > array.getSize()) {
+    public IntArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * INT_BYTES;
         long sliceByteLength = length * INT_BYTES;
-        MemorySegment sliceSegment = array.segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
         IntArray slice = fromSegment(sliceSegment);
         return slice;
     }

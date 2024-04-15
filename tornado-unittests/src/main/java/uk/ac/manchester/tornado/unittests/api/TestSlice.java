@@ -56,7 +56,7 @@ public class TestSlice extends TornadoTestBase {
 
         FloatArray c = FloatArray.concat(a, b, e);
 
-        FloatArray slice = FloatArray.slice(c, 256, numElements);
+        FloatArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0f, slice.get(i), 0.0f);
@@ -77,7 +77,7 @@ public class TestSlice extends TornadoTestBase {
 
         DoubleArray c = DoubleArray.concat(a, b, e);
 
-        DoubleArray slice = DoubleArray.slice(c, 256, numElements);
+        DoubleArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0d, slice.get(i), 0.0f);
@@ -97,7 +97,7 @@ public class TestSlice extends TornadoTestBase {
 
         ByteArray c = ByteArray.concat(a, b, e);
 
-        ByteArray slice = ByteArray.slice(c, 256, numElements);
+        ByteArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0, slice.get(i), 0.0f);
@@ -116,7 +116,7 @@ public class TestSlice extends TornadoTestBase {
         e.init(12L);
 
         LongArray c = LongArray.concat(a, b, e);
-        LongArray slice = LongArray.slice(c, 256, numElements);
+        LongArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0, slice.get(i), 0.0f);
@@ -136,7 +136,7 @@ public class TestSlice extends TornadoTestBase {
 
         IntArray c = IntArray.concat(a, b, e);
 
-        IntArray slice = IntArray.slice(c, 256, numElements);
+        IntArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0d, slice.get(i), 0.0f);
@@ -156,7 +156,7 @@ public class TestSlice extends TornadoTestBase {
 
         ShortArray c = ShortArray.concat(a, b, e);
 
-        ShortArray slice = ShortArray.slice(c, 256, numElements);
+        ShortArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0, slice.get(i), 0.0f);
@@ -175,7 +175,7 @@ public class TestSlice extends TornadoTestBase {
         e.init((char) 12);
 
         CharArray c = CharArray.concat(a, b, e);
-        CharArray slice = CharArray.slice(c, 256, numElements);
+        CharArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0d, slice.get(i), 0.0f);
@@ -195,7 +195,7 @@ public class TestSlice extends TornadoTestBase {
 
         HalfFloatArray c = HalfFloatArray.concat(a, b, e);
 
-        HalfFloatArray slice = HalfFloatArray.slice(c, 256, numElements);
+        HalfFloatArray slice = c.slice(256, numElements);
 
         for (int i = 0; i < slice.getSize(); i++) {
             assertEquals("Mismatch in second part of slice", 5.0d, slice.get(i).getFloat32(), 0.0f);

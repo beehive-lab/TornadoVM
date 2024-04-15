@@ -262,8 +262,6 @@ public final class CharArray extends TornadoNativeArray {
      * Extracts a slice of elements from a given {@link CharArray}, creating a new {@link CharArray} instance.
      *
      *
-     * @param array
-     *     The {@link CharArray} from which to extract the slice.
      * @param offset
      *     The starting index from which to begin the slice, inclusive.
      * @param length
@@ -272,14 +270,14 @@ public final class CharArray extends TornadoNativeArray {
      * @throws IllegalArgumentException
      *     if the specified slice is out of the bounds of the original array.
      */
-    public static CharArray slice(CharArray array, int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > array.getSize()) {
+    public CharArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * CHAR_BYTES;
         long sliceByteLength = length * CHAR_BYTES;
-        MemorySegment sliceSegment = array.segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
         CharArray slice = fromSegment(sliceSegment);
         return slice;
     }
