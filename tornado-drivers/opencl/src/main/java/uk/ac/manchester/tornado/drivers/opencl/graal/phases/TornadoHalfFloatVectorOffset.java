@@ -50,6 +50,7 @@ import java.util.Optional;
 public class TornadoHalfFloatVectorOffset extends Phase {
 
     private static int HALF_SIZE = 2;
+    private static String OBJECT_OFFSET = "3";
     private static long HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
     @Override
@@ -91,7 +92,8 @@ public class TornadoHalfFloatVectorOffset extends Phase {
         } else if (index.inputs().filter(LeftShiftNode.class).isNotEmpty()) {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
-            if (currentOffset.getValue().toValueString().equals("3")) {
+            // if the shifting is by 3 because the JavaKind of half is Object
+            if (currentOffset.getValue().toValueString().equals(OBJECT_OFFSET)) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);
@@ -109,8 +111,8 @@ public class TornadoHalfFloatVectorOffset extends Phase {
         if (index.inputs().filter(LeftShiftNode.class).isNotEmpty()) {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
-            // if the shifting is by 3 (for float values)
-            if (currentOffset.getValue().toValueString().equals("3")) {
+            // if the shifting is by 3 because the JavaKind of half is Object
+            if (currentOffset.getValue().toValueString().equals(OBJECT_OFFSET)) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);
