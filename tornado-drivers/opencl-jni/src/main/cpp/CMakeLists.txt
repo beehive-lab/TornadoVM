@@ -80,10 +80,19 @@ add_library(tornado-opencl SHARED
 	source/opencl_time_utils.cpp
 	)
 
+find_path(NVML_INCLUDE_DIR NAMES nvml.h)
+find_library(NVML_LIBRARY NAMES nvidia-ml)
+
+if(NVML_INCLUDE_DIR AND NVML_LIBRARY)
+    add_definitions(-DNVML_IS_SUPPORTED)
+    include_directories(${NVML_INCLUDE_DIR})
+    set(EXTRA_LIBS ${EXTRA_LIBS} ${NVML_LIBRARY})
+endif()
+
 if(MSVC OR APPLE)
     target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 else()
-    target_link_libraries(tornado-opencl -lOpenCL -lnvidia-ml ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+    target_link_libraries(tornado-opencl -lOpenCL ${NVML_LIBRARY} ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 endif()
 if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-opencl PROPERTIES PREFIX "")

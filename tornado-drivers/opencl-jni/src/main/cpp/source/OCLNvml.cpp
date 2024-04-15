@@ -23,68 +23,67 @@
  * SOFTWARE.
  */
 #include <jni.h>
-#include <nvml.h>
-
 #include <iostream>
+#ifdef NVML_IS_SUPPORTED
+    #include <nvml.h>
+    #include "OCLNvml.h"
+    #include "ocl_log.h"
 
-#include "OCLNvml.h"
-#include "ocl_log.h"
+    /*
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
+     * Method:    nvmlInit
+     * Signature: ()J
+     */
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlInit
+            (JNIEnv *env, jclass) {
+        nvmlReturn_t result = nvmlInit();
+        LOG_NVML_AND_VALIDATE("nvmlInit", result);
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlInit
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlInit
-        (JNIEnv *env, jclass) {
-    nvmlReturn_t result = nvmlInit();
-    LOG_NVML_AND_VALIDATE("nvmlInit", result);
-
-    return (jlong) result;
-}
-
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlDeviceGetHandleByIndex
- * Signature: (J[J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetHandleByIndex
-        (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
-    jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
-                                                                      : NULL);
-    nvmlReturn_t result = nvmlDeviceGetHandleByIndex(deviceIndex, (nvmlDevice_t*) device);
-    LOG_NVML_AND_VALIDATE("nvmlDeviceGetHandleByIndex", result);
-
-    if (array1 != NULL) {
-        env->ReleasePrimitiveArrayCritical(array1, device, JNI_ABORT);
+        return (jlong) result;
     }
 
-    return (jlong) result;
-}
+    /*
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
+     * Method:    nvmlDeviceGetHandleByIndex
+     * Signature: (J[J)J
+     */
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetHandleByIndex
+            (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
+        jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
+                                                                          : NULL);
+        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(deviceIndex, (nvmlDevice_t*) device);
+        LOG_NVML_AND_VALIDATE("nvmlDeviceGetHandleByIndex", result);
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlDeviceGetPowerUsage
- * Signature: ([J[J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetPowerUsage
-        (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
-    jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
-                                                                      : NULL);
-    jlong *powerUsage = static_cast<jlong *>((array2 != NULL) ? env->GetPrimitiveArrayCritical(array2, NULL)
-                                                                      : NULL);
+        if (array1 != NULL) {
+            env->ReleasePrimitiveArrayCritical(array1, device, JNI_ABORT);
+        }
 
-    nvmlReturn_t result = nvmlDeviceGetPowerUsage((nvmlDevice_t) *device, (unsigned int*) powerUsage);
-    LOG_NVML_AND_VALIDATE("nvmlDeviceGetPowerUsage", result);
-
-    if (array1 != NULL) {
-        env->ReleasePrimitiveArrayCritical(array1, device, JNI_ABORT);
+        return (jlong) result;
     }
 
-    if (array2 != NULL) {
-        env->ReleasePrimitiveArrayCritical(array2, powerUsage, JNI_ABORT);
-    }
+    /*
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
+     * Method:    nvmlDeviceGetPowerUsage
+     * Signature: ([J[J)J
+     */
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetPowerUsage
+            (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
+        jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
+                                                                          : NULL);
+        jlong *powerUsage = static_cast<jlong *>((array2 != NULL) ? env->GetPrimitiveArrayCritical(array2, NULL)
+                                                                          : NULL);
 
-    return (jlong) result;
-}
+        nvmlReturn_t result = nvmlDeviceGetPowerUsage((nvmlDevice_t) *device, (unsigned int*) powerUsage);
+        LOG_NVML_AND_VALIDATE("nvmlDeviceGetPowerUsage", result);
+
+        if (array1 != NULL) {
+            env->ReleasePrimitiveArrayCritical(array1, device, JNI_ABORT);
+        }
+
+        if (array2 != NULL) {
+            env->ReleasePrimitiveArrayCritical(array2, powerUsage, JNI_ABORT);
+        }
+
+        return (jlong) result;
+    }
+#endif
