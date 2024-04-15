@@ -294,6 +294,7 @@ def build_tornadovm(args, backend_profiles):
             print(result.stderr)
     except subprocess.CalledProcessError as e:
         print(f"Error running 'mvn clean': {e}")
+        sys.exit(-1)
 
     return result
 
