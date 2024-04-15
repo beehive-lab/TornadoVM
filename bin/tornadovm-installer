@@ -148,13 +148,8 @@ class TornadoInstaller:
 
         currentDirectory = self.getCurrentDirectory()
 
-        extraPath = ""
-        if self.osPlatform == config.__APPLE__:
-            extraPath = os.path.join("Maven.app", "Contents")
-
         ## Update env-variables
-        extraPath = os.path.join(extraPath, "bin")
-        self.env["PATH"].append(os.path.join(currentDirectory, self.workDirName, extractedDirectory, extraPath))
+        self.env["PATH"].append(os.path.join(currentDirectory, self.workDirName, extractedDirectory, "bin"))
 
     def getJDKDirectoryName(self, ar):
         if os.name == 'nt':

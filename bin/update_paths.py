@@ -57,19 +57,9 @@ def update_tornado_paths():
     except subprocess.CalledProcessError:
         log_messages.append("Warning: Unable to retrieve commit hash.")
 
-    # Remove existing 'bin' and 'sdk' directories
+    # Remove existing 'bin' and 'sdk' links
     for symlink in ["bin", "sdk"]:
-        if os.path.islink(symlink):
-            os.unlink(symlink)
-        elif os.path.isjunction(symlink):
-           os.unlink(symlink)
-        elif os.path.isdir(symlink):
-            try:
-                os.rmdir(symlink)
-            except:
-                import shutil
-
-                shutil.rmtree(symlink)
+        os.unlink(symlink)
 
     # Change back to the parent directory
     os.chdir("..")
