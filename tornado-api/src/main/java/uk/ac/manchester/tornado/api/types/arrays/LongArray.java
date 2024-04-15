@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -56,6 +58,16 @@ public final class LongArray extends TornadoNativeArray {
         segmentByteSize = numberOfElements * LONG_BYTES + arrayHeaderSize;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
+     * Constructs a new {@link LongArray} instance by concatenating the contents of the given array of {@link LongArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link LongArray} instances to be concatenated into the new instance.
+     */
+    public LongArray(LongArray... arrays) {
+        concat(arrays);
     }
 
     /**
@@ -221,5 +233,38 @@ public final class LongArray extends TornadoNativeArray {
     @Override
     public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
+     * Factory method to initialize a {@link LongArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code LongArray} instance with.
+     */
+    public static void initialize(LongArray array, long value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link LongArray} instances into a single {@link LongArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link LongArray} objects to be concatenated.
+     * @return A new {@link LongArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static LongArray concat(LongArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(LongArray::getSize).sum();
+        LongArray concatArray = new LongArray(newSize);
+        long currentPositionBytes = 0;
+        for (LongArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }

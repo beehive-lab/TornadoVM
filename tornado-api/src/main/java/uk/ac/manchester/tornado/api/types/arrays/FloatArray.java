@@ -22,7 +22,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -58,6 +60,16 @@ public final class FloatArray extends TornadoNativeArray {
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
+     * Constructs a new {@link FloatArray} instance by concatenating the contents of the given array of {@link FloatArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link FloatArray} instances to be concatenated into the new instance.
+     */
+    public FloatArray(FloatArray... arrays) {
+        concat(arrays);
     }
 
     /**
@@ -223,5 +235,38 @@ public final class FloatArray extends TornadoNativeArray {
     @Override
     public long getNumBytesOfSegment() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
+     * Factory method to initialize a {@link FloatArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code FloatArray} instance with.
+     */
+    public static void initialize(FloatArray array, float value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link FloatArray} instances into a single {@link FloatArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link FloatArray} objects to be concatenated.
+     * @return A new {@link FloatArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static FloatArray concat(FloatArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(FloatArray::getSize).sum();
+        FloatArray concatArray = new FloatArray(newSize);
+        long currentPositionBytes = 0;
+        for (FloatArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 }

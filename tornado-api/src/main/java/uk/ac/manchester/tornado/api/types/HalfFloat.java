@@ -17,12 +17,15 @@
  */
 package uk.ac.manchester.tornado.api.types;
 
+import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
+
 /**
  * This class represents a float-16 instance (half float). The data is stored in a short field, to be
  * compliant with the representation for float-16 used in the {@link Float} class. The class encapsulates
  * methods for getting the data in float-16 and float-32 format, and for basic arithmetic operations (i.e.
  * addition, subtraction, multiplication and division).
  */
+@HalfType
 public class HalfFloat {
 
     private short halfFloatValue;
@@ -47,24 +50,6 @@ public class HalfFloat {
      */
     public HalfFloat(short halfFloat) {
         this.halfFloatValue = halfFloat;
-    }
-
-    /**
-     * Gets the half-float stored in the class.
-     *
-     * @return The half float value stored in the {@code HalfFloat} object.
-     */
-    public short getHalfFloatValue() {
-        return this.halfFloatValue;
-    }
-
-    /**
-     * Gets the half-float stored in the class in a 32-bit representation.
-     *
-     * @return The float-32 equivalent value the half float stored in the {@code HalfFloat} object.
-     */
-    public float getFloat32() {
-        return Float.float16ToFloat(halfFloatValue);
     }
 
     /**
@@ -185,6 +170,29 @@ public class HalfFloat {
     public static HalfFloat div(HalfFloat a, HalfFloat b) {
         float result = divHalfFloat(a.getHalfFloatValue(), b.getHalfFloatValue());
         return new HalfFloat(result);
+    }
+
+    /**
+     * Gets the half-float stored in the class.
+     *
+     * @return The half float value stored in the {@code HalfFloat} object.
+     */
+    public short getHalfFloatValue() {
+        return this.halfFloatValue;
+    }
+
+    /**
+     * Gets the half-float stored in the class in a 32-bit representation.
+     *
+     * @return The float-32 equivalent value the half float stored in the {@code HalfFloat} object.
+     */
+    public float getFloat32() {
+        return Float.float16ToFloat(halfFloatValue);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("HalfFloat: %.4f", getFloat32());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.backend;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.isHalfFloat;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 import java.util.Map;
@@ -87,11 +88,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
-import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
+public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final PTXDeviceContext deviceContext;
     final PTXTargetDescription target;
@@ -262,7 +263,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
         for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
             if (isKernel) {
-                if (locals[i].getType().getJavaKind().isPrimitive()) {
+                if (locals[i].getType().getJavaKind().isPrimitive() || isHalfFloat(locals[i].getType())) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     asm.emit(", ");
                     asm.emit(".param .align 8 .u64 %s", locals[i].getName());

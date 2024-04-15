@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2023, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -42,11 +42,13 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoop
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP16SupportPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP64SupportPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsScheduling;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoHalfFloatVectorOffset;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 
@@ -59,6 +61,8 @@ public class OCLLowTier extends TornadoLowTier {
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new OCLFP64SupportPhase(tornadoDeviceContext));
+
+        appendPhase(new OCLFP16SupportPhase(tornadoDeviceContext));
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
@@ -80,6 +84,8 @@ public class OCLLowTier extends TornadoLowTier {
             appendPhase(new OCLFPGAPragmaPhase(tornadoDeviceContext));
             appendPhase(new OCLFPGAThreadScheduler());
         }
+
+        appendPhase(new TornadoHalfFloatVectorOffset());
 
         appendPhase(new TornadoLoopCanonicalization());
 

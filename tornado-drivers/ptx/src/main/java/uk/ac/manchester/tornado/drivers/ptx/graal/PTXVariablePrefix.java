@@ -29,7 +29,7 @@ public enum PTXVariablePrefix {
      */
     // @formatter:off
         B8("b8", "rub"),
-        B16("b16", "rufh"),
+        B16("b16", "rbh"),
         B32("b32", "rui"),
         B64("b64", "rbd"),
         S8("s8", "rsb"),

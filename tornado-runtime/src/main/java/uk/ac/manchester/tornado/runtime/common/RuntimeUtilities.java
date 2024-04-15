@@ -27,7 +27,14 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -47,6 +54,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
@@ -157,6 +165,8 @@ public final class RuntimeUtilities {
             isBox = true;
         } else if (obj instanceof Short) {
             isBox = true;
+        } else if (obj instanceof HalfFloat) {
+            isBox = true;
         } else if (obj instanceof Integer) {
             isBox = true;
         } else if (obj instanceof Long) {
@@ -187,6 +197,8 @@ public final class RuntimeUtilities {
         } else if (klass == Character.class) {
             isBox = true;
         } else if (klass == Short.class) {
+            isBox = true;
+        } else if (klass == HalfFloat.class) {
             isBox = true;
         } else if (klass == Integer.class) {
             isBox = true;

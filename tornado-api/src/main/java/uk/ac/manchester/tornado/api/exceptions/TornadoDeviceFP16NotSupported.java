@@ -17,8 +17,17 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
-public class TornadoDriverNotFound extends TornadoRuntimeException {
-    public TornadoDriverNotFound(String msg) {
-        super(msg);
+public class TornadoDeviceFP16NotSupported extends RuntimeException {
+
+    private final String message;
+
+    public TornadoDeviceFP16NotSupported(final String msg) {
+        message = msg;
     }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
 }

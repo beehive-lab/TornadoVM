@@ -131,7 +131,7 @@ if %spirv% equ 1 (
 		goto :repoL0JniCloned
 	)
 	cd %TORNADO_DIR%
-	git clone https://github.com/otabuzzman/levelzero-jni
+	git clone https://github.com/beehive-lab/levelzero-jni
 	cd levelzero-jni
 	:repoL0JniCloned
 	call mvn clean install
@@ -150,7 +150,7 @@ if %spirv% equ 1 (
 		goto :repoSpirvTkCloned
 	)
 	cd %TORNADO_DIR%
-	git clone https://github.com/otabuzzman/beehive-spirv-toolkit.git
+	git clone https://github.com/beehive-lab/beehive-spirv-toolkit
 	cd beehive-spirv-toolkit
 	:repoSpirvTkCloned
 	call mvn clean install

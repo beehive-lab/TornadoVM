@@ -5,15 +5,42 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.3
+----------------
+27th March 2024
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- `#344 <https://github.com/beehive-lab/TornadoVM/pull/344>`_: Support for Multi-threaded Execution Plans.
+- `#347 <https://github.com/beehive-lab/TornadoVM/pull/347>`_: Enhanced examples.
+- `#350 <https://github.com/beehive-lab/TornadoVM/pull/350>`_: Obtain internal memory segment for the Tornado Native Arrays without the object header.
+- `#357 <https://github.com/beehive-lab/TornadoVM/pull/357>`_: API extensions to query and apply filters to backends and devices from the ``TornadoExecutionPlan``.
+- `#359 <https://github.com/beehive-lab/TornadoVM/pull/359>`_: Support Factory Methods for FFI-based array collections to be used/composed in TornadoVM Task-Graphs.
+
+Compatibility
+~~~~~~~~~~~~~~~~~~
+
+- `#351 <https://github.com/beehive-lab/TornadoVM/pull/351>`_: Compatibility of TornadoVM Native Arrays with the Java Vector API.
+- `#352 <https://github.com/beehive-lab/TornadoVM/pull/352>`_: Refactor memory limit to take into account primitive types and wrappers. 
+- `#354 <https://github.com/beehive-lab/TornadoVM/pull/354>`_: Add DFT-sample benchmark in FP32.
+- `#356 <https://github.com/beehive-lab/TornadoVM/pull/356>`_: Initial support for Windows 11 using Visual Studio Development tools. 
+- `#361 <https://github.com/beehive-lab/TornadoVM/pull/361>`_: Compatibility with the SPIR-V toolkit v0.0.4.
+- `#366 <https://github.com/beehive-lab/TornadoVM/pull/363>`_: Level Zero JNI Dependency updated to 0.1.3. 
+
+Bug Fixes
+~~~~~~~~~~~~~~~~~~
+
+- `#346 <https://github.com/beehive-lab/TornadoVM/pull/346>`_: Computation of local-work group sizes for the Level Zero/SPIR-V backend fixed. 
+- `#360 <https://github.com/beehive-lab/TornadoVM/pull/358>`_: Fix native tests to check the JIT compiler for each backend.
+- `#355 <https://github.com/beehive-lab/TornadoVM/pull/355>`_: Fix custom exceptions when a driver/device is not found.
+
+
 TornadoVM 1.0.2
 ----------------
 29/02/2024
 
-<<<<<<< HEAD
-Improvements 
-=======
 Improvements
->>>>>>> winstall
 ~~~~~~~~~~~~~~~~~~
 
 - `#323 <https://github.com/beehive-lab/TornadoVM/pull/323>`_: Set Accelerator Memory Limit per Execution Plan at the API level
@@ -29,15 +56,6 @@ Compatibility
 Bug Fixes
 ~~~~~~~~~~~~~~~~~~
 
-<<<<<<< HEAD
-- `#322 <https://github.com/beehive-lab/TornadoVM/pull/322>`_: Fix duplicate thread-info debug message when the debug option is also enabled. 
-- `#325 <https://github.com/beehive-lab/TornadoVM/pull/325>`_: Set/Get accesses for the ``MatrixVectorFloat4`` type fixed
-- `#326 <https://github.com/beehive-lab/TornadoVM/pull/326>`_: Fix installation script for running with Python >= 3.12
-- `#327 <https://github.com/beehive-lab/TornadoVM/pull/327>`_: Fix Memory Limits for all supported Panama off-heap types.
-- `#329 <https://github.com/beehive-lab/TornadoVM/pull/329>`_: Fix timers for the dynamic reconfiguration policies 
-- `#330 <https://github.com/beehive-lab/TornadoVM/pull/330>`_: Fix the profiler logs when silent mode is enabled
-- `#332 <https://github.com/beehive-lab/TornadoVM/pull/332>`_: Fix Batch processing when having multiple task-graphs in a single execution plan. 
-=======
 - `#322 <https://github.com/beehive-lab/TornadoVM/pull/322>`_: Fix duplicate thread-info debug message when the debug option is also enabled.
 - `#325 <https://github.com/beehive-lab/TornadoVM/pull/325>`_: Set/Get accesses for the ``MatrixVectorFloat4`` type fixed
 - `#326 <https://github.com/beehive-lab/TornadoVM/pull/326>`_: Fix installation script for running with Python >= 3.12
@@ -45,7 +63,6 @@ Bug Fixes
 - `#329 <https://github.com/beehive-lab/TornadoVM/pull/329>`_: Fix timers for the dynamic reconfiguration policies
 - `#330 <https://github.com/beehive-lab/TornadoVM/pull/330>`_: Fix the profiler logs when silent mode is enabled
 - `#332 <https://github.com/beehive-lab/TornadoVM/pull/332>`_: Fix Batch processing when having multiple task-graphs in a single execution plan.
->>>>>>> winstall
 
 
 TornadoVM 1.0.1

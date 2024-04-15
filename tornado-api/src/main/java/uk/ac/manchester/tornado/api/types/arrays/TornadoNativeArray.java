@@ -19,6 +19,8 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.MemorySegment;
 
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
+
 /**
  * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays,
  * (e.g., {@link ByteArray}, {@link IntArray}, etc.)
@@ -33,7 +35,10 @@ import java.lang.foreign.MemorySegment;
  * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
-public abstract sealed class TornadoNativeArray permits ByteArray, CharArray, DoubleArray, FloatArray, IntArray, LongArray, ShortArray, HalfFloatArray {
+public abstract sealed class TornadoNativeArray //
+        permits ByteArray, CharArray, DoubleArray, //
+        FloatArray, HalfFloatArray, IntArray, //
+        LongArray, ShortArray, Tensor {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through

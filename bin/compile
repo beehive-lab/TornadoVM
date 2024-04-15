@@ -147,7 +147,7 @@ def build_levelzero_jni_lib(rebuild=False):
             [
                 "git",
                 "clone",
-                "https://github.com/beehive-lab/levelzero-jni",
+                "https://github.com/beehive-lab/levelzero-jni.git",
             ],
         )
         build=True

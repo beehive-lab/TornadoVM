@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -40,6 +40,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
@@ -158,7 +159,9 @@ public class PTXCodeUtil {
         for (Object arg : task.getArguments()) {
             sb.append('_');
             Class<?> argClass = arg.getClass();
-            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+            if (argClass == HalfFloat.class) {
+                emitSignatureForGenericParameter(sb, arg);
+            } else if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
                 emitSignatureForPrimitiveParameter(sb, arg);
             } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
                 emitSignatureForArrayParameter(sb, arg, task);
@@ -204,6 +207,9 @@ public class PTXCodeUtil {
     public static String getFPURoundingMode(PTXKind lhs, PTXKind rhs) {
         String roundingMode = ROUND_NEAREST_EVEN;
 
+        if (lhs.isB16() && rhs.isF32()) {
+            return roundingMode;
+        }
         if (!lhs.isFloating() && rhs.isFloating()) {
             roundingMode = ROUND_TOWARD_ZERO_INTEGER;
         }

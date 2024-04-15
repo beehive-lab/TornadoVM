@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.common.utils.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
+import uk.ac.manchester.tornado.drivers.ptx.PTXBackendImpl;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
@@ -63,9 +63,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  */
 public class TestPTXJITCompiler {
 
-    public static void methodToCompile(int[] a, int[] b, double[] c) {
+    public static void methodToCompile(int[] a, int[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = 0.12 * a[i] * b[i];
+            c[i] = 0.12f * a[i] * b[i];
         }
     }
 
@@ -86,9 +86,9 @@ public class TestPTXJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        PTXBackend ptxBackend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
+        PTXBackend ptxBackend = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultBackend();
 
-        TornadoDevice device = tornadoRuntime.getDriver(PTXDriver.class).getDefaultDevice();
+        TornadoDevice device = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
@@ -112,11 +112,11 @@ public class TestPTXJITCompiler {
         return new MetaCompilation(taskMeta, (PTXInstalledCode) ptxCode);
     }
 
-    public void runWithPTXAPI(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void runWithPTXAPI(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         PTX.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
     }
 
-    public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceState(tornadoDevice);
@@ -157,7 +157,7 @@ public class TestPTXJITCompiler {
         final int N = 128;
         int[] a = new int[N];
         int[] b = new int[N];
-        double[] c = new double[N];
+        float[] c = new float[N];
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
@@ -174,7 +174,7 @@ public class TestPTXJITCompiler {
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {
-            double seq = 0.12 * a[i] * b[i];
+            float seq = 0.12f * a[i] * b[i];
             if (Math.abs(c[i] - seq) > 0.01) {
                 System.err.println(i + " Fault result = " + seq + " " + c[i]);
                 correct = false;

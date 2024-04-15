@@ -58,7 +58,7 @@ public class JsonHandler {
         if (TornadoOptions.LOG_IP) {
             json.append(indent.toString() + "\"" + IP + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + END_LINE);
         }
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getDriver(device.getDriverIndex()).getBackendType();
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackend(device.getDriverIndex()).getBackendType();
         json.append(indent.toString() + "\"" + ProfilerType.BACKEND + "\" : \"" + backendType + END_LINE);
         json.append(indent.toString() + "\"" + DEVICE_ID + SEPARATOR + device.getDriverIndex() + ":" + device.getDevicePlatform() + END_LINE);
         json.append(indent.toString() + "\"" + DEVICE + SEPARATOR + device.getDeviceName() + END_LINE);
