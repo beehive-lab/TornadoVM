@@ -41,6 +41,11 @@ import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf16;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf2;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf3;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf4;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf8;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
@@ -66,6 +71,11 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half16;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
+import uk.ac.manchester.tornado.api.types.vectors.Half3;
+import uk.ac.manchester.tornado.api.types.vectors.Half4;
+import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -86,7 +96,7 @@ public enum PTXKind implements PlatformKind {
     S16(2, Short.TYPE),
     F16(2, Short.TYPE),
     U16(2, Character.TYPE),
-    B16(2, null),
+    B16(2, Short.TYPE),
 
     S32(4, Integer.TYPE),
     F32(4, Float.TYPE),
@@ -143,6 +153,16 @@ public enum PTXKind implements PlatformKind {
     VECTORDOUBLE4(4, VectorDouble4.TYPE, F64),
     VECTORDOUBLE8(8, VectorDouble8.TYPE, F64),
     VECTORDOUBLE16(16, VectorDouble16.TYPE, F64),
+    HALF2(2, Half2.TYPE, B16),
+    HALF3(3, Half3.TYPE, B16),
+    HALF4(4, Half4.TYPE, B16),
+    HALF8(8, Half8.TYPE, B16),
+    HALF16(16, Half16.TYPE, B16),
+    VECTORHALF2(2, VectorHalf2.TYPE, B16),
+    VECTORHALF3(3, VectorHalf3.TYPE, B16),
+    VECTORHALF4(4, VectorHalf4.TYPE, B16),
+    VECTORHALF8(8, VectorHalf8.TYPE, B16),
+    VECTORHALF16(16, VectorHalf16.TYPE, B16),
     ILLEGAL(0, null);
     // @formatter:on
 
@@ -271,7 +291,7 @@ public enum PTXKind implements PlatformKind {
                     return JavaKind.Byte;
                 case S16:
                 case U16:
-                case B16:
+                case F16:
                     return JavaKind.Short;
                 case S32:
                 case U32:
@@ -285,6 +305,8 @@ public enum PTXKind implements PlatformKind {
                     return JavaKind.Float;
                 case F64:
                     return JavaKind.Double;
+                case B16:
+                    return JavaKind.Object;
                 default:
                     shouldNotReachHere();
             }
@@ -422,6 +444,13 @@ public enum PTXKind implements PlatformKind {
         return vectorInteger || kind == S8 || kind == U8 || kind == S16 || kind == U16 || kind == S32 || kind == U32 || kind == S64 || kind == U64;
     }
 
+    public boolean isHalf() {
+        if (kind == HALF2 || kind == HALF3 || kind == HALF4 || kind == HALF8 || kind == HALF16) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean isFloating() {
         boolean vectorFloating = kind.isVector() && kind.elementKind.isFloating();
         return vectorFloating || kind == F16 || kind == F32 || kind == F64;
@@ -441,6 +470,18 @@ public enum PTXKind implements PlatformKind {
 
     public boolean isF16() {
         return kind == F16;
+    }
+
+    public boolean isB16() {
+        return kind == B16;
+    }
+
+    public boolean isU64() {
+        return kind == U64;
+    }
+
+    public boolean isS32() {
+        return kind == S32;
     }
 
     public boolean is64Bit() {

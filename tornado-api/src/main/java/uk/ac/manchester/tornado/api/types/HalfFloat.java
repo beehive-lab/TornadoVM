@@ -17,12 +17,15 @@
  */
 package uk.ac.manchester.tornado.api.types;
 
+import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
+
 /**
  * This class represents a float-16 instance (half float). The data is stored in a short field, to be
  * compliant with the representation for float-16 used in the {@link Float} class. The class encapsulates
  * methods for getting the data in float-16 and float-32 format, and for basic arithmetic operations (i.e.
  * addition, subtraction, multiplication and division).
  */
+@HalfType
 public class HalfFloat {
 
     private short halfFloatValue;
