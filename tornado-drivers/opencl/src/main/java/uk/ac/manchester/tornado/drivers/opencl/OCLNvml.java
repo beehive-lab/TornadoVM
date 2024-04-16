@@ -81,8 +81,4 @@ public class OCLNvml extends TornadoLogger {
 
         return -1;
     }
-
-    public boolean isNmvlSupportedForDevice() {
-        return this.isNmvlSupportedForDevice;
-    }
 }

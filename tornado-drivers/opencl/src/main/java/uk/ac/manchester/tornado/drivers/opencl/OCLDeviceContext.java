@@ -176,10 +176,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         return powerUsage[0];
     }
 
-    public boolean isNmvlSupportedForDevice() {
-        return nvml.isNmvlSupportedForDevice();
-    }
-
     public ByteOrder getByteOrder() {
         return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
