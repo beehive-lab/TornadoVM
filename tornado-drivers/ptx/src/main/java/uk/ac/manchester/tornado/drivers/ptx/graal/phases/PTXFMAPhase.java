@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -32,6 +32,7 @@ import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFMANode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorElementOpNode;
 
 public class PTXFMAPhase extends Phase {
@@ -50,6 +51,11 @@ public class PTXFMAPhase extends Phase {
                 ValueNode x = mul.getX();
                 ValueNode y = mul.getY();
                 ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(mul)).first();
+
+                // do not apply this optimization for half floats
+                if (x instanceof ReadHalfFloatNode || y instanceof ReadHalfFloatNode || z instanceof ReadHalfFloatNode) {
+                    return;
+                }
 
                 if (x instanceof VectorElementOpNode || y instanceof VectorElementOpNode || z instanceof VectorElementOpNode) {
                     return;

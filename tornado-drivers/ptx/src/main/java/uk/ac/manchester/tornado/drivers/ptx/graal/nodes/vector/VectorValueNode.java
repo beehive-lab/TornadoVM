@@ -149,6 +149,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         } else if (origin instanceof ParameterNode) {
             gen.setResult(this, gen.operand(origin));
         } else if (origin == null) {
+
             final AllocatableValue result = tool.newVariable(LIRKind.value(getPTXKind()));
 
             /*
@@ -166,12 +167,23 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
             } else {
                 gen.setResult(this, result);
             }
+
         }
     }
 
     private Value getParam(NodeLIRBuilderTool gen, LIRGeneratorTool tool, int index) {
         final ValueNode valueNode = values.get(index);
+        if ((valueNode instanceof VectorLoadElementNode || valueNode instanceof VectorAddHalfNode) && kind.isHalf()) {
+            return emitHalfFloatAssign(valueNode, tool, gen);
+        }
         return (valueNode == null) ? new ConstantValue(LIRKind.value(kind), JavaConstant.defaultForKind(kind.getElementKind().asJavaKind())) : tool.emitMove(gen.operand(valueNode));
+    }
+
+    private Variable emitHalfFloatAssign(ValueNode vectorValue, LIRGeneratorTool tool, NodeLIRBuilderTool gen) {
+        Variable result = tool.newVariable(LIRKind.value(PTXKind.B16));
+        Value vectorField = gen.operand(vectorValue);
+        tool.emitMove(result, vectorField);
+        return result;
     }
 
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {

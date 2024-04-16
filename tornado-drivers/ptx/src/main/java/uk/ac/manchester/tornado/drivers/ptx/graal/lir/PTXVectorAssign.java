@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,7 +23,7 @@
  */
 
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -124,11 +124,16 @@ public class PTXVectorAssign {
                     asm.emit(MOVE + "." + destElementKind.toString());
                 } else {
                     asm.emit(CONVERT + ".");
-                    if ((destElementKind.isFloating() || valueKind.isFloating()) && getFPURoundingMode(destElementKind, valueKind) != null) {
+                    if ((destElementKind.isFloating() || valueKind.isFloating() || (destElementKind.isB16() && valueKind.isU64()) || (destElementKind.isB16() && valueKind
+                            .isS32())) && getFPURoundingMode(destElementKind, valueKind) != null) {
                         asm.emit(getFPURoundingMode(destElementKind, valueKind));
                         asm.emitSymbol(DOT);
                     }
-                    asm.emit(destElementKind.toString());
+                    if (destElementKind.isB16()) {
+                        asm.emit("f16");
+                    } else {
+                        asm.emit(destElementKind.toString());
+                    }
                     asm.emitSymbol(DOT);
                     asm.emit(valueKind.toString());
                 }

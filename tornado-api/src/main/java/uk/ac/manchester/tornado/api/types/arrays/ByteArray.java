@@ -63,6 +63,16 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link ByteArray} instance by concatenating the contents of the given array of {@link ByteArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link ByteArray} instances to be concatenated into the new instance.
+     */
+    public ByteArray(ByteArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link ByteArray} from on-heap data.
      *
      * @param values

@@ -65,6 +65,16 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link HalfFloatArray} instance by concatenating the contents of the given array of {@link HalfFloatArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link HalfFloatArray} instances to be concatenated into the new instance.
+     */
+    public HalfFloatArray(HalfFloatArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link HalfFloatArray} from on-heap data.
      *
      * @param values
@@ -126,6 +136,21 @@ public final class HalfFloatArray extends TornadoNativeArray {
         HalfFloat[] outputArray = new HalfFloat[getSize()];
         for (int i = 0; i < getSize(); i++) {
             outputArray[i] = get(i);
+        }
+        return outputArray;
+    }
+
+    /**
+     * Converts the {@link HalfFloat} data from off-heap to an on-heap short representation,
+     * by getting the values of a {@link HalfFloatArray} instance as short and coping them
+     * into a new on-heap short array.
+     *
+     * @return A new on-heap short array, initialized with the values stored in the {@link HalfFloatArray} instance.
+     */
+    public short[] toShortArray() {
+        short[] outputArray = new short[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i).getHalfFloatValue();
         }
         return outputArray;
     }

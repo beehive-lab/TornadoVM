@@ -115,7 +115,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         } else if (batchSize <= 0) {
             returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
                     ? events
                     : null);
         }

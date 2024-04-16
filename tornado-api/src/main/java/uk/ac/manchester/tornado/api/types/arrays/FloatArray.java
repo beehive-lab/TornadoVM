@@ -63,6 +63,16 @@ public final class FloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link FloatArray} instance by concatenating the contents of the given array of {@link FloatArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link FloatArray} instances to be concatenated into the new instance.
+     */
+    public FloatArray(FloatArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link FloatArray} from on-heap data.
      *
      * @param values

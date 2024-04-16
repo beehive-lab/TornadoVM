@@ -42,6 +42,11 @@ import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf16;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf2;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf3;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf4;
+import uk.ac.manchester.tornado.api.types.collections.VectorHalf8;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
@@ -67,6 +72,11 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half16;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
+import uk.ac.manchester.tornado.api.types.vectors.Half3;
+import uk.ac.manchester.tornado.api.types.vectors.Half4;
+import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -108,9 +118,12 @@ public enum OCLKind implements PlatformKind {
     ULONG2(2, null, ULONG),
     FLOAT2(2, Float2.TYPE, FLOAT),
     DOUBLE2(2, Double2.TYPE, DOUBLE),
+    HALF2(2, Half2.TYPE, HALF),
     VECTORDOUBLE2(2, VectorDouble2.TYPE, DOUBLE),
     VECTORINT2(2, VectorInt2.TYPE, INT),
     VECTORFLOAT2(2, VectorFloat2.TYPE, FLOAT),
+    VECTORHALF2(2, VectorHalf2.TYPE, HALF),
+
     CHAR3(3, Byte3.TYPE, CHAR),
     IMAGEBYTE3(3, ImageByte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
@@ -122,9 +135,11 @@ public enum OCLKind implements PlatformKind {
     ULONG3(3, null, ULONG),
     FLOAT3(3, Float3.TYPE, FLOAT),
     DOUBLE3(3, Double3.TYPE, DOUBLE),
+    HALF3(3, Half3.TYPE, HALF),
     VECTORDOUBLE3(3, VectorDouble3.TYPE, DOUBLE),
     VECTORINT3(3, VectorInt3.TYPE, INT),
     VECTORFLOAT3(3, VectorFloat3.TYPE, FLOAT),
+    VECTORHALF3(3, VectorHalf3.TYPE, HALF),
     IMAGEFLOAT3(3, ImageFloat3.TYPE, FLOAT),
     CHAR4(4, Byte4.TYPE, CHAR),
     IMAGEBYTE4(4, ImageByte4.TYPE, CHAR),
@@ -136,6 +151,7 @@ public enum OCLKind implements PlatformKind {
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
     FLOAT4(4, Float4.TYPE, FLOAT),
+    HALF4(4, Half4.TYPE, HALF),
     MATRIX2DFLOAT4(4, Matrix2DFloat4.TYPE, FLOAT),
     MATRIX3DFLOAT4(4, Matrix3DFloat4.TYPE, FLOAT),
     MATRIX4X4FLOAT(4, Matrix4x4Float.TYPE, FLOAT),
@@ -144,6 +160,7 @@ public enum OCLKind implements PlatformKind {
     VECTORDOUBLE4(4, VectorDouble4.TYPE, DOUBLE),
     VECTORINT4(4, VectorInt4.TYPE, INT),
     VECTORFLOAT4(4, VectorFloat4.TYPE, FLOAT),
+    VECTORHALF4(4, VectorHalf4.TYPE, HALF),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
@@ -154,12 +171,15 @@ public enum OCLKind implements PlatformKind {
     ULONG8(8, null, ULONG),
     FLOAT8(8, Float8.TYPE, FLOAT),
     DOUBLE8(8, Double8.TYPE, DOUBLE),
+    HALF8(8, Half8.TYPE, HALF),
     VECTORDOUBLE8(8, VectorDouble8.TYPE, DOUBLE),
     VECTORDOUBLE16(16, VectorDouble16.TYPE, DOUBLE),
     VECTORINT8(8, VectorInt8.TYPE, INT),
     VECTORINT16(16, VectorInt16.TYPE, INT),
     VECTORFLOAT8(8, VectorFloat8.TYPE, FLOAT),
+    VECTORHALF8(8, VectorHalf8.TYPE, HALF),
     VECTORFLOAT16(16, VectorFloat16.TYPE, FLOAT),
+    VECTORHALF16(16, VectorHalf16.TYPE, HALF),
     IMAGEFLOAT8(8, ImageFloat8.TYPE, FLOAT),
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
@@ -171,6 +191,7 @@ public enum OCLKind implements PlatformKind {
     ULONG16(16, null, ULONG),
     DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
+    HALF16(16, Half16.TYPE, HALF),
 
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
@@ -287,6 +308,8 @@ public enum OCLKind implements PlatformKind {
                 return 3;
             case DOUBLE:
                 return 4;
+            case HALF:
+                return 5;
             default:
                 return -1;
         }
@@ -479,6 +502,13 @@ public enum OCLKind implements PlatformKind {
         return false;
     }
 
+    public boolean isHalf() {
+        if (kind == HALF2 || kind == HALF3 || kind == HALF4 || kind == HALF8 || kind == HALF16) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean isVector() {
         return vectorLength > 1;
     }
@@ -518,6 +548,8 @@ public enum OCLKind implements PlatformKind {
                 case SHORT:
                 case USHORT:
                     return JavaKind.Short;
+                case HALF:
+                    return JavaKind.Object;
                 case INT:
                 case UINT:
                     return JavaKind.Int;

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2023, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadSchedul
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFP64SupportPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoHalfFloatVectorOffset;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 
@@ -61,6 +62,8 @@ public class SPIRVLowTier extends TornadoLowTier {
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
+
+        appendPhase(new TornadoHalfFloatVectorOffset());
 
         appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
