@@ -156,7 +156,7 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
 
     @Test
     public void test03() {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 100; i++) {
             int finalI = i;
             Thread t1 = new Thread(() -> compute(finalI));
             Thread t2 = new Thread(() -> compute(finalI));
