@@ -21,27 +21,30 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.ptx;
+package uk.ac.manchester.tornado.drivers.ptx.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 
-public class PTXNvml extends PowerMetric {
+public class PTXNvidiaPowerMetric extends PowerMetric {
+    private final PTXDeviceContext deviceContext;
 
-    public PTXNvml(PTXDeviceContext deviceContext) {
-        super(deviceContext);
-        nvmlInit();
+    public PTXNvidiaPowerMetric(PTXDeviceContext deviceContext) {
+        super();
+        this.deviceContext = deviceContext;
+        initializePowerLibrary();
     }
 
     static native long ptxNvmlInit() throws RuntimeException;
 
     static native long ptxNvmlDeviceGetHandleByIndex(long index, long[] device) throws RuntimeException;
 
-    static native long ptxNnvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws RuntimeException;
+    static native long ptxNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws RuntimeException;
 
     @Override
-    public long nvmlInit() throws RuntimeException{
+    public long initializePowerLibrary() throws RuntimeException {
         try {
             return ptxNvmlInit();
         } catch (RuntimeException e) {
@@ -50,10 +53,11 @@ public class PTXNvml extends PowerMetric {
 
         return -1;
     }
+
     @Override
-    public long nvmlDeviceGetHandleByIndex(long[] device) {
+    public long getHandleByIndex(long[] device) {
         try {
-            return ptxNvmlDeviceGetHandleByIndex(((PTXDeviceContext) deviceContext).getDevice().getDeviceIndex(), device);
+            return ptxNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getDeviceIndex(), device);
         } catch (RuntimeException e) {
             error(e.getMessage());
         }
@@ -62,9 +66,9 @@ public class PTXNvml extends PowerMetric {
     }
 
     @Override
-    public long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
+    public long getPowerUsage(long[] device, long[] powerUsage) {
         try {
-            return ptxNnvmlDeviceGetPowerUsage(device, powerUsage);
+            return ptxNvmlDeviceGetPowerUsage(device, powerUsage);
         } catch (RuntimeException e) {
             error(e.getMessage());
         }

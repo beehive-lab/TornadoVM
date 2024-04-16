@@ -21,16 +21,28 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.common.power;
+package uk.ac.manchester.tornado.drivers.opencl.power;
 
-public abstract class PowerMetric {
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 
-    protected PowerMetric() {
+public class OCLEmptyPowerMetric extends PowerMetric {
+
+    public OCLEmptyPowerMetric() {
+        super();
     }
 
-    public abstract long initializePowerLibrary();
+    @Override
+    public long initializePowerLibrary() {
+        return -1;
+    }
 
-    public abstract long getHandleByIndex(long[] device);
+    @Override
+    public long getHandleByIndex(long[] device) {
+        return -1;
+    }
 
-    public abstract long getPowerUsage(long[] device, long[] powerUsage);
+    @Override
+    public long getPowerUsage(long[] device, long[] powerUsage) {
+        return -1;
+    }
 }

@@ -74,7 +74,7 @@ add_library(tornado-opencl SHARED
 	source/OCLKernel.cpp
 	source/OCLPlatform.cpp
 	source/OCLProgram.cpp
-	source/OCLNvml.cpp
+	source/OCLNvidiaPowerMetric.cpp
 	source/OpenCL.cpp
 	source/utils.cpp
 	source/opencl_time_utils.cpp

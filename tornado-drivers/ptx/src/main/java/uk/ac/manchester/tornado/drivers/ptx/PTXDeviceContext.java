@@ -43,9 +43,11 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
+import uk.ac.manchester.tornado.drivers.ptx.power.PTXNvidiaPowerMetric;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -62,7 +64,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
-    private final PTXNvml nvml;
+    private final PowerMetric powerMetric;
 
     private final Map<Long, PTXStreamTable> streamTable;
 
@@ -70,7 +72,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         this.device = device;
         streamTable = new ConcurrentHashMap<>();
         this.scheduler = new PTXScheduler(device);
-        this.nvml = new PTXNvml(this);
+        this.powerMetric = new PTXNvidiaPowerMetric(this);
         codeCache = new PTXCodeCache(this);
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
@@ -158,8 +160,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public long getPowerUsage() {
         long[] device = new long[1];
         long[] powerUsage = new long[1];
-        nvml.nvmlDeviceGetHandleByIndex(device);
-        nvml.nvmlDeviceGetPowerUsage(device, powerUsage);
+        powerMetric.getHandleByIndex(device);
+        powerMetric.getPowerUsage(device, powerUsage);
         return powerUsage[0];
     }
 

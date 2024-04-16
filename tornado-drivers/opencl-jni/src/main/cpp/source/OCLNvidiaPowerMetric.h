@@ -23,35 +23,35 @@
  * SOFTWARE.
  */
 #include <jni.h>
-/* Header for class uk_ac_manchester_tornado_drivers_ptx_PTXNvml */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric */
 
-#ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXNvml
-#define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXNvml
+#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+#define _Included_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
 #ifdef __cplusplus
 extern "C" {
 #endif
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    ptxNvmlInit
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Method:    clNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlInit
         (JNIEnv *, jclass);
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    ptxNvmlDeviceGetHandleByIndex
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Method:    clNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetHandleByIndex
         (JNIEnv *, jclass, jlong, jlongArray);
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    ptxNvmlDeviceGetPowerUsage
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Method:    clNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetPowerUsage
         (JNIEnv *, jclass, jlongArray, jlongArray);
 
 

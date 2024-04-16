@@ -42,7 +42,7 @@
 
 
 #define LOG_NVML_AND_VALIDATE(name, result)                         \
-    if (LOG_JNI == 1)  {                                            \
+    if (LOG_PTX == 1)  {                                            \
         std::cout << "[TornadoVM-PTX-NVML-JNI] Calling : " << name  \
         << " -> Status: " << result                                 \
         << std::endl;                                               \

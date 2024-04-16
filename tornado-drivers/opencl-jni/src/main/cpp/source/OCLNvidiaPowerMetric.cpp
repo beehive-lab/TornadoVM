@@ -23,19 +23,18 @@
  * SOFTWARE.
  */
 #include <jni.h>
-#include <nvml.h>
-
 #include <iostream>
-
-#include "PTXNvml.h"
-#include "ptx_log.h"
+#ifdef NVML_IS_SUPPORTED
+#include <nvml.h>
+#include "OCLNvidiaPowerMetric.h"
+#include "ocl_log.h"
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    ptxNvmlInit
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Method:    clNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlInit
         (JNIEnv *env, jclass) {
     nvmlReturn_t result = nvmlInit();
     LOG_NVML_AND_VALIDATE("nvmlInit", result);
@@ -43,13 +42,12 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvm
     return (jlong) result;
 }
 
-
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    ptxNvmlDeviceGetHandleByIndex
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Method:    clNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetHandleByIndex
         (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
@@ -64,11 +62,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvm
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    ptxNvmlDeviceGetPowerUsage
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Method:    clNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetPowerUsage
         (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
@@ -88,3 +86,4 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvm
 
     return (jlong) result;
 }
+#endif

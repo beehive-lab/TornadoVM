@@ -21,19 +21,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 
-public class OCLNvml extends PowerMetric {
-    private final boolean isNmvlSupportedForDevice;
+public class OCLNvidiaPowerMetric extends PowerMetric {
+    private final OCLDeviceContext deviceContext;
 
-    public OCLNvml(OCLDeviceContext deviceContext) {
-        super(deviceContext);
-        this.isNmvlSupportedForDevice = isDeviceContextNvidia();
-        nvmlInit();
+    public OCLNvidiaPowerMetric(OCLDeviceContext deviceContext) {
+        super();
+        this.deviceContext = deviceContext;
+        initializePowerLibrary();
     }
 
     static native long clNvmlInit() throws OCLException;
@@ -42,20 +43,10 @@ public class OCLNvml extends PowerMetric {
 
     static native long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException;
 
-    private boolean isDeviceContextNvidia() {
-        if (this.deviceContext instanceof OCLDeviceContext) {
-            OCLDeviceContext deviceContext = (OCLDeviceContext) this.deviceContext;
-            return deviceContext.getPlatformContext().getPlatform().getName().toLowerCase().contains("nvidia");
-        }
-        return false;
-    }
-
     @Override
-    public long nvmlInit() {
+    public long initializePowerLibrary() {
         try {
-            if (this.isNmvlSupportedForDevice) {
-                return clNvmlInit();
-            }
+            return clNvmlInit();
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -64,11 +55,9 @@ public class OCLNvml extends PowerMetric {
     }
 
     @Override
-    public long nvmlDeviceGetHandleByIndex(long[] device) {
+    public long getHandleByIndex(long[] device) {
         try {
-            if (this.isNmvlSupportedForDevice) {
-                return clNvmlDeviceGetHandleByIndex(((OCLDeviceContext) this.deviceContext).getDevice().getIndex(), device);
-            }
+            return clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), device);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -77,11 +66,9 @@ public class OCLNvml extends PowerMetric {
     }
 
     @Override
-    public long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
+    public long getPowerUsage(long[] device, long[] powerUsage) {
         try {
-            if (this.isNmvlSupportedForDevice) {
-                return clNvmlDeviceGetPowerUsage(device, powerUsage);
-            }
+            return clNvmlDeviceGetPowerUsage(device, powerUsage);
         } catch (OCLException e) {
             error(e.getMessage());
         }
