@@ -17,7 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.multithreaded;
 
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -39,11 +42,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * $ tornado-test -V --fast uk.ac.manchester.tornado.unittests.multithreaded.MultiThreaded
+ * $ tornado-test -V --fast uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans
  * </code>
  * </p>
  */
-public class MultiThreaded extends TornadoTestBase {
+public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
 
     private static void computeForThread1(FloatArray input, FloatArray output, KernelContext context) {
         int idx = context.globalIdx;
@@ -72,7 +75,7 @@ public class MultiThreaded extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("check") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
-                .task("compute01", MultiThreaded::computeForThread1, input, output, context) //
+                .task("compute01", TestMultiThreadedExecutionPlans::computeForThread1, input, output, context) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
@@ -112,7 +115,7 @@ public class MultiThreaded extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("check") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
-                .task("compute01", MultiThreaded::computeForThread2, input, output) //
+                .task("compute01", TestMultiThreadedExecutionPlans::computeForThread2, input, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         t0 = new Thread(() -> {
@@ -132,5 +135,47 @@ public class MultiThreaded extends TornadoTestBase {
 
         t0.join();
         t1.join();
+    }
+
+    private void compute(int id) {
+        final int size = 1024 * 1024;
+        FloatArray input = new FloatArray(size);
+        input.init(1.0f);
+        FloatArray output = new FloatArray(size);
+
+        TaskGraph taskGraph = new TaskGraph("loop" + (id + 100)) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("compute01", TestMultiThreadedExecutionPlans::computeForThread2, input, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void test03() {
+        for (int i = 0; i < 100; i++) {
+            int finalI = i;
+            Thread t1 = new Thread(() -> compute(finalI));
+            Thread t2 = new Thread(() -> compute(finalI));
+
+            t1.start();
+            t2.start();
+
+            try {
+                t1.join();
+            } catch (InterruptedException e) {
+                assertTrue("Error", false);
+            }
+
+            try {
+                t2.join();
+            } catch (InterruptedException e) {
+                assertTrue("Error", false);
+            }
+
+        }
     }
 }

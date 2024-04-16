@@ -230,7 +230,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     public void deallocate() throws TornadoMemoryException {
         TornadoInternalError.guarantee(buffer != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getBufferProvider().markBufferReleased(buffer, bufferSize);
+        deviceContext.getBufferProvider().markBufferReleased(buffer);
         buffer = INIT_VALUE;
         bufferSize = INIT_VALUE;
 

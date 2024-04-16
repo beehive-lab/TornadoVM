@@ -43,8 +43,8 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAI
 public abstract class TornadoBufferProvider {
 
     protected final TornadoDeviceContext deviceContext;
-    protected final ArrayList<BufferInfo> freeBuffers;
-    protected final ArrayList<BufferInfo> usedBuffers;
+    protected final ArrayList<BufferContainer> freeBuffers;
+    protected final ArrayList<BufferContainer> usedBuffers;
     protected long currentMemoryAvailable;
 
     protected TornadoBufferProvider(TornadoDeviceContext deviceContext) {
@@ -64,7 +64,7 @@ public abstract class TornadoBufferProvider {
     private long allocate(long size) {
         long buffer = allocateBuffer(size);
         currentMemoryAvailable -= size;
-        BufferInfo bufferInfo = new BufferInfo(buffer, size);
+        BufferContainer bufferInfo = new BufferContainer(buffer, size);
         usedBuffers.add(bufferInfo);
         return bufferInfo.buffer;
     }
@@ -73,7 +73,7 @@ public abstract class TornadoBufferProvider {
         // Attempts to free buffers of given size.
         long remainingSize = size;
         while (!freeBuffers.isEmpty() && remainingSize > 0) {
-            BufferInfo bufferInfo = freeBuffers.remove(0);
+            BufferContainer bufferInfo = freeBuffers.remove(0);
             TornadoInternalError.guarantee(!usedBuffers.contains(bufferInfo), "This buffer should not be used");
             remainingSize -= bufferInfo.size;
             currentMemoryAvailable += bufferInfo.size;
@@ -81,8 +81,8 @@ public abstract class TornadoBufferProvider {
         }
     }
 
-    private BufferInfo markBufferUsed(int freeBufferIndex) {
-        BufferInfo buffer = freeBuffers.get(freeBufferIndex);
+    private BufferContainer markBufferUsed(int freeBufferIndex) {
+        BufferContainer buffer = freeBuffers.get(freeBufferIndex);
         usedBuffers.add(buffer);
         freeBuffers.remove(buffer);
         return buffer;
@@ -102,7 +102,7 @@ public abstract class TornadoBufferProvider {
     private int bufferIndexOfAFreeSpace(long sizeInBytes) {
         int minBufferIndex = -1;
         for (int i = 0; i < freeBuffers.size(); i++) {
-            BufferInfo bufferInfo = freeBuffers.get(i);
+            BufferContainer bufferInfo = freeBuffers.get(i);
             if (bufferInfo.size >= sizeInBytes && (minBufferIndex == -1 || bufferInfo.size < freeBuffers.get(minBufferIndex).size)) {
                 minBufferIndex = i;
             }
@@ -161,17 +161,21 @@ public abstract class TornadoBufferProvider {
      * Removes the buffer from the {@link #usedBuffers} list and add it to
      * the @{@link #freeBuffers} list.
      */
-    public void markBufferReleased(long buffer, long size) {
+    public synchronized void markBufferReleased(long buffer) {
         int foundIndex = -1;
         for (int i = 0; i < usedBuffers.size(); i++) {
-            if (usedBuffers.get(i).buffer == buffer) {
+            // find the buffer slot to mark it as free
+            if (usedBuffers.get(i) != null && usedBuffers.get(i).buffer == buffer) {
                 foundIndex = i;
                 break;
             }
         }
-        TornadoInternalError.guarantee(foundIndex != -1, "Expected the buffer to be allocated and used at this point.");
-        BufferInfo removedBuffer = usedBuffers.remove(foundIndex);
-        freeBuffers.add(removedBuffer);
+
+        if (foundIndex != -1) {
+            // if found, we mark it as free by inserting it into the free list
+            BufferContainer removedBuffer = usedBuffers.remove(foundIndex);
+            freeBuffers.add(removedBuffer);
+        }
     }
 
     public boolean checkBufferAvailability(int numBuffersRequired) {
@@ -182,30 +186,22 @@ public abstract class TornadoBufferProvider {
         freeBuffers(DEVICE_AVAILABLE_MEMORY);
     }
 
-    public static class BufferInfo {
-        public final long buffer;
-        public final long size;
-
-        public BufferInfo(long buffer, long size) {
-            this.buffer = buffer;
-            this.size = size;
-        }
+    private record BufferContainer(long buffer, long size) {
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
+            public boolean equals(Object object) {
+                if (this == object) {
+                    return true;
+                }
+                if (!(object instanceof BufferContainer that)) {
+                    return false;
+                }
+                return buffer == that.buffer && size == that.size;
             }
-            if (!(o instanceof BufferInfo)) {
-                return false;
-            }
-            BufferInfo that = (BufferInfo) o;
-            return buffer == that.buffer && size == that.size;
-        }
 
-        @Override
-        public int hashCode() {
-            return (int) buffer;
+            @Override
+            public int hashCode() {
+                return (int) buffer;
+            }
         }
-    }
 }
