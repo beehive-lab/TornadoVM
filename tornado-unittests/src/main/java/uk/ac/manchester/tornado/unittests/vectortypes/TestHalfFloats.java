@@ -17,7 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -39,8 +40,9 @@ import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>
@@ -905,7 +907,8 @@ public class TestHalfFloats extends TornadoTestBase {
         }
     }
 
-    @Test(timeout = 1000) //timeout of 1sec
+    @Test
+    @Timeout(value = 1000, unit= TimeUnit.MILLISECONDS) //timeout of 1sec
     public void testAllocationIssue() {
         int size = 8192 * 4096;
 

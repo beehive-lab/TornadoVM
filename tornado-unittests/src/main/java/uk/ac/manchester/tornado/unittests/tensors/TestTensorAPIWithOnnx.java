@@ -23,8 +23,7 @@ import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.TensorFP32;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -39,6 +38,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
@@ -97,7 +98,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
             }
         } finally {
-            Assert.assertNotNull(outputTensor);
+            assertNotNull(outputTensor);
         }
     }
 
