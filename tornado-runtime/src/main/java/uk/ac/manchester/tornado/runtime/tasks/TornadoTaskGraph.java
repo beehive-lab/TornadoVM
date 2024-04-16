@@ -1105,12 +1105,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private Event syncObjectInnerLazy(Object object, long hostOffset, long bufferSize) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
-        final DataObjectState globalState = localState.getGlobalState();
+        final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getLogicDevice();
-        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
-        if (deviceState.isLockedBuffer()) {
-            deviceState.getObjectBuffer().setSizeSubRegion(bufferSize);
-            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, hostOffset, deviceState, null));
+        final XPUDeviceBufferState deviceBufferState = dataObjectState.getDeviceBufferState(device);
+        if (deviceBufferState.isLockedBuffer()) {
+            deviceBufferState.getObjectBuffer().setSizeSubRegion(bufferSize);
+            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, hostOffset, deviceBufferState, null));
         }
         return null;
     }
