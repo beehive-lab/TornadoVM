@@ -28,11 +28,11 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLNvml extends TornadoLogger {
     private final OCLDeviceContextInterface deviceContext;
-    private final boolean isDeviceNvidia;
+    private final boolean isNmvlSupportedForDevice;
 
     public OCLNvml(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-        this.isDeviceNvidia = isDeviceContextNvidia();
+        this.isNmvlSupportedForDevice = isDeviceContextNvidia();
         clNvmlInit();
     }
 
@@ -48,7 +48,7 @@ public class OCLNvml extends TornadoLogger {
 
     public long clNvmlInit() {
         try {
-            if (this.isDeviceNvidia) {
+            if (this.isNmvlSupportedForDevice) {
                 return nvmlInit();
             }
         } catch (OCLException e) {
@@ -60,7 +60,7 @@ public class OCLNvml extends TornadoLogger {
 
     public long clNvmlDeviceGetHandleByIndex(long[] device) {
         try {
-            if (this.isDeviceNvidia) {
+            if (this.isNmvlSupportedForDevice) {
                 return nvmlDeviceGetHandleByIndex(deviceContext.getDevice().getIndex(), device);
             }
         } catch (OCLException e) {
@@ -72,7 +72,7 @@ public class OCLNvml extends TornadoLogger {
 
     public long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
         try {
-            if (this.isDeviceNvidia) {
+            if (this.isNmvlSupportedForDevice) {
                 return nvmlDeviceGetPowerUsage(device, powerUsage);
             }
         } catch (OCLException e) {
@@ -82,4 +82,7 @@ public class OCLNvml extends TornadoLogger {
         return -1;
     }
 
+    public boolean isNmvlSupportedForDevice() {
+        return this.isNmvlSupportedForDevice;
+    }
 }

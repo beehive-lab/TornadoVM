@@ -66,10 +66,12 @@ public abstract class OCLKernelScheduler {
             // Register the dispatch time of the kernel
             long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
-            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
-            long powerUsage = meta.getProfiler().getTaskTimer(ProfilerType.POWER_USAGE_mW, meta.getId());
-            meta.getProfiler().setTimer(ProfilerType.POWER_USAGE_mW, powerUsage);
+            if(deviceContext.isNmvlSupportedForDevice()) {
+                meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+                meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+                long powerUsage = meta.getProfiler().getTaskTimer(ProfilerType.POWER_USAGE_mW, meta.getId());
+                meta.getProfiler().setTimer(ProfilerType.POWER_USAGE_mW, powerUsage);
+            }
         }
     }
 
