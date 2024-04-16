@@ -171,8 +171,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     public long getPowerUsage() {
         long[] device = new long[1];
         long[] powerUsage = new long[1];
-        nvml.clNvmlDeviceGetHandleByIndex(device);
-        nvml.clNvmlDeviceGetPowerUsage(device, powerUsage);
+        nvml.nvmlDeviceGetHandleByIndex(device);
+        nvml.nvmlDeviceGetPowerUsage(device, powerUsage);
         return powerUsage[0];
     }
 

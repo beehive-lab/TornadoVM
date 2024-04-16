@@ -32,26 +32,26 @@ extern "C" {
 #endif
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlInit
+ * Method:    clNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_clNvmlInit
         (JNIEnv *, jclass);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlDeviceGetHandleByIndex
+ * Method:    clNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_clNvmlDeviceGetHandleByIndex
         (JNIEnv *, jclass, jlong, jlongArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlDeviceGetPowerUsage
+ * Method:    clNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_clNvmlDeviceGetPowerUsage
         (JNIEnv *, jclass, jlongArray, jlongArray);
 
 

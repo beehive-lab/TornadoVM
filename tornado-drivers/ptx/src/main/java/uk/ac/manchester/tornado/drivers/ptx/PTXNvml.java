@@ -23,25 +23,37 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 
-public class PTXNvml extends TornadoLogger {
-    private final PTXDeviceContext deviceContext;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+
+public class PTXNvml extends PowerMetric {
 
     public PTXNvml(PTXDeviceContext deviceContext) {
-        this.deviceContext = deviceContext;
-        ptxNvmlInit();
+        super(deviceContext);
+        nvmlInit();
     }
 
-    static native long nvmlInit() throws RuntimeException;
+    static native long ptxNvmlInit() throws RuntimeException;
 
-    static native long nvmlDeviceGetHandleByIndex(long index, long[] device) throws RuntimeException;
+    static native long ptxNvmlDeviceGetHandleByIndex(long index, long[] device) throws RuntimeException;
 
-    static native long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws RuntimeException;
+    static native long ptxNnvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws RuntimeException;
 
-    public long ptxNvmlInit() {
+    @Override
+    public long nvmlInit() throws RuntimeException{
         try {
-            return nvmlInit();
+            return ptxNvmlInit();
+        } catch (RuntimeException e) {
+            error(e.getMessage());
+        }
+
+        return -1;
+    }
+    @Override
+    public long nvmlDeviceGetHandleByIndex(long[] device) {
+        try {
+            return ptxNvmlDeviceGetHandleByIndex(((PTXDeviceContext) deviceContext).getDevice().getDeviceIndex(), device);
         } catch (RuntimeException e) {
             error(e.getMessage());
         }
@@ -49,24 +61,14 @@ public class PTXNvml extends TornadoLogger {
         return -1;
     }
 
-    public long ptxNvmlDeviceGetHandleByIndex(long[] device) {
+    @Override
+    public long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
         try {
-            return nvmlDeviceGetHandleByIndex(deviceContext.getDevice().getDeviceIndex(), device);
+            return ptxNnvmlDeviceGetPowerUsage(device, powerUsage);
         } catch (RuntimeException e) {
             error(e.getMessage());
         }
 
         return -1;
     }
-
-    public long ptxNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
-        try {
-            return nvmlDeviceGetPowerUsage(device, powerUsage);
-        } catch (RuntimeException e) {
-            error(e.getMessage());
-        }
-
-        return -1;
-    }
-
 }

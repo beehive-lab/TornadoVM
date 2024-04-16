@@ -23,33 +23,38 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 
-public class OCLNvml extends TornadoLogger {
-    private final OCLDeviceContextInterface deviceContext;
+public class OCLNvml extends PowerMetric {
     private final boolean isNmvlSupportedForDevice;
 
     public OCLNvml(OCLDeviceContext deviceContext) {
-        this.deviceContext = deviceContext;
+        super(deviceContext);
         this.isNmvlSupportedForDevice = isDeviceContextNvidia();
-        clNvmlInit();
+        nvmlInit();
     }
 
-    static native long nvmlInit() throws OCLException;
+    static native long clNvmlInit() throws OCLException;
 
-    static native long nvmlDeviceGetHandleByIndex(long index, long[] device) throws OCLException;
+    static native long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws OCLException;
 
-    static native long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException;
+    static native long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException;
 
     private boolean isDeviceContextNvidia() {
-        return this.deviceContext.getPlatformContext().getPlatform().getName().toLowerCase().contains("nvidia");
+        if (this.deviceContext instanceof OCLDeviceContext) {
+            OCLDeviceContext deviceContext = (OCLDeviceContext) this.deviceContext;
+            return deviceContext.getPlatformContext().getPlatform().getName().toLowerCase().contains("nvidia");
+        }
+        return false;
     }
 
-    public long clNvmlInit() {
+    @Override
+    public long nvmlInit() {
         try {
             if (this.isNmvlSupportedForDevice) {
-                return nvmlInit();
+                return clNvmlInit();
             }
         } catch (OCLException e) {
             error(e.getMessage());
@@ -58,10 +63,11 @@ public class OCLNvml extends TornadoLogger {
         return -1;
     }
 
-    public long clNvmlDeviceGetHandleByIndex(long[] device) {
+    @Override
+    public long nvmlDeviceGetHandleByIndex(long[] device) {
         try {
             if (this.isNmvlSupportedForDevice) {
-                return nvmlDeviceGetHandleByIndex(deviceContext.getDevice().getIndex(), device);
+                return clNvmlDeviceGetHandleByIndex(((OCLDeviceContext) this.deviceContext).getDevice().getIndex(), device);
             }
         } catch (OCLException e) {
             error(e.getMessage());
@@ -70,10 +76,11 @@ public class OCLNvml extends TornadoLogger {
         return -1;
     }
 
-    public long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
+    @Override
+    public long nvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) {
         try {
             if (this.isNmvlSupportedForDevice) {
-                return nvmlDeviceGetPowerUsage(device, powerUsage);
+                return clNvmlDeviceGetPowerUsage(device, powerUsage);
             }
         } catch (OCLException e) {
             error(e.getMessage());

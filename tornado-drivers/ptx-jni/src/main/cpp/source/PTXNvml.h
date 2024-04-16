@@ -32,26 +32,26 @@ extern "C" {
 #endif
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    nvmlInit
+ * Method:    ptxNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlInit
         (JNIEnv *, jclass);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    nvmlDeviceGetHandleByIndex
+ * Method:    ptxNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetHandleByIndex
         (JNIEnv *, jclass, jlong, jlongArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    nvmlDeviceGetPowerUsage
+ * Method:    ptxNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetPowerUsage
         (JNIEnv *, jclass, jlongArray, jlongArray);
 
 

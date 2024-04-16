@@ -31,10 +31,10 @@
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlInit
+ * Method:    clNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_clNvmlInit
         (JNIEnv *env, jclass) {
     nvmlReturn_t result = nvmlInit();
     LOG_NVML_AND_VALIDATE("nvmlInit", result);
@@ -44,10 +44,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvm
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlDeviceGetHandleByIndex
+ * Method:    clNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_clNvmlDeviceGetHandleByIndex
         (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
@@ -63,10 +63,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvm
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLNvml
- * Method:    nvmlDeviceGetPowerUsage
+ * Method:    clNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_nvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLNvml_clNvmlDeviceGetPowerUsage
         (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);

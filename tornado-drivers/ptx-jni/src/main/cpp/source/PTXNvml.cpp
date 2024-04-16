@@ -32,13 +32,13 @@
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    nvmlInit
+ * Method:    ptxNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlInit
         (JNIEnv *env, jclass) {
     nvmlReturn_t result = nvmlInit();
-    LOG_PTX_AND_VALIDATE("nvmlInit", result);
+    LOG_NVML_AND_VALIDATE("nvmlInit", result);
 
     return (jlong) result;
 }
@@ -46,15 +46,15 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlIn
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    nvmlDeviceGetHandleByIndex
+ * Method:    ptxNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetHandleByIndex
         (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
     nvmlReturn_t result = nvmlDeviceGetHandleByIndex(deviceIndex, (nvmlDevice_t*) device);
-    LOG_PTX_AND_VALIDATE("nvmlDeviceGetHandleByIndex", result);
+    LOG_NVML_AND_VALIDATE("nvmlDeviceGetHandleByIndex", result);
 
     if (array1 != NULL) {
         env->ReleasePrimitiveArrayCritical(array1, device, JNI_ABORT);
@@ -65,10 +65,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlDe
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXNvml
- * Method:    nvmlDeviceGetPowerUsage
+ * Method:    ptxNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_ptxNvmlDeviceGetPowerUsage
         (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
@@ -76,7 +76,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXNvml_nvmlDe
                                                                       : NULL);
 
     nvmlReturn_t result = nvmlDeviceGetPowerUsage((nvmlDevice_t) *device, (unsigned int*) powerUsage);
-    LOG_PTX_AND_VALIDATE("nvmlDeviceGetPowerUsage", result);
+    LOG_NVML_AND_VALIDATE("nvmlDeviceGetPowerUsage", result);
 
     if (array1 != NULL) {
         env->ReleasePrimitiveArrayCritical(array1, device, JNI_ABORT);
