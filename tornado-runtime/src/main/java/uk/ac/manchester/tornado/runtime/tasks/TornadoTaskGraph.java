@@ -103,6 +103,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
+import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -161,7 +162,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private TornadoVM vm;  // One TornadoVM instance per TornadoExecutionPlan
 
-    // HashMap to keep an instance of the TornadoVM per Device 
+    // HashMap to keep an instance of the TornadoVM per Device
     private Map<TornadoXPUDevice, TornadoVM> vmTable;
     private Event event;
     private String taskGraphName;
@@ -934,7 +935,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             executionContext.getLocalStateObject(parameter).setStreamIn(isObjectForStreaming);
-            
+
             // List of input objects for the dynamic reconfiguration
             inputModesObjects.add(new StreamingObject(mode, parameter));
 
@@ -979,7 +980,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // List of output objects for the dynamic reconfiguration
             outputModeObjects.add(new StreamingObject(mode, functionParameter));
 
-            if (TornadoOptions.isReusedBuffersEnabled()) {
+            if (TornadoOptions.isReusedBuffersEnabled() || mode == DataTransferMode.UNDER_DEMAND) {
                 if (!argumentsLookUp.contains(functionParameter)) {
                     // We already set function parameter in transferToDevice
                     lockObjectsInMemory(functionParameter);
@@ -1102,8 +1103,35 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return null;
     }
 
+    private Event syncObjectInnerLazy(Object object, long hostOffset, long bufferSize) {
+        final LocalObjectState localState = executionContext.getLocalStateObject(object);
+        final DataObjectState globalState = localState.getGlobalState();
+        final TornadoXPUDevice device = meta().getLogicDevice();
+        final XPUDeviceBufferState deviceState = globalState.getDeviceState(device);
+        if (deviceState.isLockedBuffer()) {
+            deviceState.getObjectBuffer().setSizeSubRegion(bufferSize);
+            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, hostOffset, deviceState, null));
+        }
+        return null;
+    }
+
     private Event syncParameter(Object object) {
-        Event eventParameter = syncObjectInner(object);
+        Event eventParameter = null;
+        if (batchSizeBytes != TornadoExecutionContext.INIT_VALUE) {
+            BatchConfiguration batchConfiguration = BatchConfiguration.computeChunkSizes(executionContext, batchSizeBytes);
+            long hostOffset = 0;
+            for (int i = 0; i < batchConfiguration.getTotalChunks(); i++) {
+                hostOffset = (batchSizeBytes * i);
+                eventParameter = syncObjectInnerLazy(object, hostOffset, batchSizeBytes);
+            }
+            // Last chunk
+            if (batchConfiguration.getRemainingChunkSize() != 0) {
+                hostOffset += batchSizeBytes;
+                eventParameter = syncObjectInnerLazy(object, hostOffset, batchConfiguration.getRemainingChunkSize());
+            }
+        } else {
+            eventParameter = syncObjectInner(object);
+        }
         if (eventParameter != null) {
             eventParameter.waitOn();
         }
@@ -1583,7 +1611,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 for (StreamingObject streamingObject : outputModeObjects) {
                     performStreamOutThreads(streamingObject.mode, task, streamingObject.object);
                 }
-                
+
                 ImmutableTaskGraph immutableTaskGraph = task.snapshot();
                 TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
