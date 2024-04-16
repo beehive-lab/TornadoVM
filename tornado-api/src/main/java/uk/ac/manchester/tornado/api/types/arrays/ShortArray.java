@@ -268,4 +268,27 @@ public final class ShortArray extends TornadoNativeArray {
         }
         return concatArray;
     }
+
+    /**
+     * Extracts a slice of elements from a given {@link ShortArray}, creating a new {@link ShortArray} instance.
+     *
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@link ShortArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public ShortArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * SHORT_BYTES;
+        long sliceByteLength = length * SHORT_BYTES;
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        ShortArray slice = fromSegment(sliceSegment);
+        return slice;
+    }
 }
