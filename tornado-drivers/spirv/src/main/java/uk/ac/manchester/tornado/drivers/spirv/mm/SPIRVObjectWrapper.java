@@ -183,7 +183,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
 
     @Override
     public void deallocate() throws TornadoMemoryException {
-        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, size());
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId);
         bufferId = -1;
     }
 

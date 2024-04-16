@@ -57,13 +57,13 @@ public class LocalObjectState {
      * For each variable, we need to keep track of all devices in which there is a shadow
      * copy. This is achieved by using the {@link DataObjectState} object.
      */
-    private DataObjectState globalObjectState;
+    private DataObjectState dataObjectState;
 
     private Object object;
 
     public LocalObjectState(Object object) {
         this.object = object;
-        globalObjectState = new DataObjectState();
+        dataObjectState = new DataObjectState();
         streamIn = false;
         streamOut = false;
     }
@@ -96,30 +96,31 @@ public class LocalObjectState {
         this.streamOut = streamOut;
     }
 
-    public DataObjectState getGlobalState() {
-        return globalObjectState;
+    public DataObjectState getDataObjectState() {
+        return dataObjectState;
     }
 
     public Event sync(long executionPlanId, Object object, TornadoDevice device) {
-        XPUDeviceBufferState objectState = globalObjectState.getDeviceState(device);
-        if (objectState.isLockedBuffer()) {
-            int eventId = device.streamOutBlocking(executionPlanId, object, 0, objectState, null);
+        XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
+        if (deviceState.isLockedBuffer()) {
+            int eventId = device.streamOutBlocking(executionPlanId, object, 0, deviceState, null);
             return device.resolveEvent(executionPlanId, eventId);
         }
         return null;
     }
 
+    @Override
     public LocalObjectState clone() {
         LocalObjectState newLocalObjectState = new LocalObjectState(this.object);
         newLocalObjectState.streamIn = this.streamIn;
         newLocalObjectState.streamOut = this.streamOut;
         newLocalObjectState.forceStreamIn = this.forceStreamIn;
-        newLocalObjectState.globalObjectState = globalObjectState.clone();
+        newLocalObjectState.dataObjectState = dataObjectState.clone();
         return newLocalObjectState;
     }
 
     @Override
     public String toString() {
-        return STR."\{streamIn ? "SIN" : "--"}\{streamOut ? "SOUT" : "--"} \{globalObjectState} ";
+        return STR."\{streamIn ? "SIN" : "--"}\{streamOut ? "SOUT" : "--"} \{dataObjectState} ";
     }
 }

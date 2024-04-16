@@ -173,7 +173,7 @@ public class PTXObjectWrapper implements XPUBuffer {
 
     @Override
     public void deallocate() throws TornadoMemoryException {
-        deviceContext.getBufferProvider().markBufferReleased(address, getObjectSize());
+        deviceContext.getBufferProvider().markBufferReleased(address);
         address = -1;
         for (FieldBuffer buffer : wrappedFields) {
             if (buffer != null) {
