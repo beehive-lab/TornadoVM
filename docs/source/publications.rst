@@ -1,5 +1,5 @@
 Publications
-=====
+==============
 
 .. _publications:
 

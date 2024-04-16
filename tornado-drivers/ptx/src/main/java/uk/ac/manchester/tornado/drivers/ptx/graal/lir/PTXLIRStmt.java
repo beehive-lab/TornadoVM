@@ -25,7 +25,10 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.ADD;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.DIV_APPROX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.MUL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.SUB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ASSIGN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
@@ -191,6 +194,111 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("VADD_HALF")
+    public static class VectorAddHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorAddHalfStmt> TYPE = LIRInstructionClass.create(VectorAddHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorAddHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(ADD + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("VSUB_HALF")
+    public static class VectorSubHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorSubHalfStmt> TYPE = LIRInstructionClass.create(VectorSubHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorSubHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(SUB + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("VMULT_HALF")
+    public static class VectorMultHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorMultHalfStmt> TYPE = LIRInstructionClass.create(VectorMultHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public VectorMultHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(MUL + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
 
@@ -215,6 +323,9 @@ public class PTXLIRStmt {
         }
 
         public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
+            if (rhsKind.isF16() && lhsKind.isB16() || rhsKind.isB16() && lhsKind.isF16()) {
+                return true;
+            }
             return lhsKind == rhsKind && !lhsKind.is8Bit();
         }
 

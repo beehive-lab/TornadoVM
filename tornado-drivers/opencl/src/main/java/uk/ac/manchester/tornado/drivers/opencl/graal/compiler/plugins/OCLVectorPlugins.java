@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -50,9 +50,11 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
@@ -67,6 +69,11 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half16;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
+import uk.ac.manchester.tornado.api.types.vectors.Half3;
+import uk.ac.manchester.tornado.api.types.vectors.Half4;
+import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -127,6 +134,13 @@ public final class OCLVectorPlugins {
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT16, FloatArray.class, float.class);
 
+            // Adding half floats
+            registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloat.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloat.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.HALF8, HalfFloat.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.HALF16, HalfFloat.class, short.class);
+
             // Adding ints
             registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT3, IntArray.class, int.class);
@@ -165,6 +179,12 @@ public final class OCLVectorPlugins {
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
+
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF16, HalfFloatArray.class, Half16.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
@@ -214,6 +234,8 @@ public final class OCLVectorPlugins {
             return double.class;
         } else if (panamaType.contains("FloatArray")) {
             return float.class;
+        } else if (panamaType.contains("HalfFloatArray")) {
+            return short.class;
         } else {
             throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
         }
@@ -261,7 +283,7 @@ public final class OCLVectorPlugins {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                 if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
-                        "IntArray.<init>(int)"))) {
+                        "IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
                     Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;
@@ -293,6 +315,15 @@ public final class OCLVectorPlugins {
         });
 
         r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                b.add(b.append(store));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
                 final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);

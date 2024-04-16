@@ -21,7 +21,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 /**
@@ -55,6 +57,16 @@ public final class IntArray extends TornadoNativeArray {
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
+     * Constructs a new {@link IntArray} instance by concatenating the contents of the given array of {@link IntArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link IntArray} instances to be concatenated into the new instance.
+     */
+    public IntArray(IntArray... arrays) {
+        concat(arrays);
     }
 
     /**
@@ -220,5 +232,62 @@ public final class IntArray extends TornadoNativeArray {
     @Override
     public MemorySegment getSegmentWithHeader() {
         return segment;
+    }
+
+    /**
+     * Factory method to initialize a {@link IntArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code IntArray} instance with.
+     */
+    public static void initialize(IntArray array, int value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link IntArray} instances into a single {@link IntArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link IntArray} objects to be concatenated.
+     * @return A new {@link IntArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static IntArray concat(IntArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(IntArray::getSize).sum();
+        IntArray concatArray = new IntArray(newSize);
+        long currentPositionBytes = 0;
+        for (IntArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
+
+    /**
+     * Extracts a slice of elements from a given {@linkIntArray}, creating a new {@linkIntArray} instance.
+     *
+     *
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@linkIntArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public IntArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * INT_BYTES;
+        long sliceByteLength = length * INT_BYTES;
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        IntArray slice = fromSegment(sliceSegment);
+        return slice;
     }
 }

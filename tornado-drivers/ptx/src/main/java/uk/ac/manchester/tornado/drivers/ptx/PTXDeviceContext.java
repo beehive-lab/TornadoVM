@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
@@ -278,7 +279,16 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                 args.putLong(address);
                 continue;
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
-                args.putLong(((Number) arg.getValue()).longValue());
+                if (arg.getValue() instanceof HalfFloat) {
+                    short halfFloat = ((HalfFloat) arg.getValue()).getHalfFloatValue();
+                    args.putLong(((Number) halfFloat).longValue());
+                } else if (arg.getValue() instanceof Number) {
+                    args.putLong(((Number) arg.getValue()).longValue());
+                } else if (arg.getValue() instanceof Character) {
+                    args.putLong((char) arg.getValue());
+                } else {
+                    shouldNotReachHere();
+                }
             } else {
                 shouldNotReachHere();
             }

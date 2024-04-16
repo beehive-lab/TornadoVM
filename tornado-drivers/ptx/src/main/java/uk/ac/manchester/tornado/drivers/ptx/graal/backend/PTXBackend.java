@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.backend;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.isHalfFloat;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 import java.util.Map;
@@ -262,7 +263,7 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
 
         for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
             if (isKernel) {
-                if (locals[i].getType().getJavaKind().isPrimitive()) {
+                if (locals[i].getType().getJavaKind().isPrimitive() || isHalfFloat(locals[i].getType())) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     asm.emit(", ");
                     asm.emit(".param .align 8 .u64 %s", locals[i].getName());

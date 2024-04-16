@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,9 +47,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
@@ -64,6 +66,11 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Half16;
+import uk.ac.manchester.tornado.api.types.vectors.Half2;
+import uk.ac.manchester.tornado.api.types.vectors.Half3;
+import uk.ac.manchester.tornado.api.types.vectors.Half4;
+import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
@@ -144,6 +151,13 @@ public class SPIRVVectorPlugins {
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, DoubleArray.class, double.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR16_FLOAT_64, DoubleArray.class, double.class);
 
+            // Half Floats
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_HALF_FLOAT, HalfFloat.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_HALF_FLOAT, HalfFloat.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_HALF_FLOAT, HalfFloat.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_HALF_FLOAT, HalfFloat.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR16_HALF_FLOAT, HalfFloat.class, float.class);
+
             // VectorFloats
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT2_FLOAT_32, FloatArray.class, Float2.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT3_FLOAT_32, FloatArray.class, Float3.class);
@@ -164,6 +178,13 @@ public class SPIRVVectorPlugins {
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE4_FLOAT_64, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE8_FLOAT_64, DoubleArray.class, Double8.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE16_FLOAT_64, DoubleArray.class, Double16.class);
+
+            // VectorHalfFloats
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORHALF2_FLOAT_16, HalfFloatArray.class, Half2.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORHALF3_FLOAT_16, HalfFloatArray.class, Half3.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORHALF4_FLOAT_16, HalfFloatArray.class, Half4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORHALF8_FLOAT_16, HalfFloatArray.class, Half8.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORHALF16_FLOAT_16, HalfFloatArray.class, Half16.class);
 
             // Matrices
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_MATRIX2DFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
@@ -192,6 +213,8 @@ public class SPIRVVectorPlugins {
             return double.class;
         } else if (panamaType.contains("FloatArray")) {
             return float.class;
+        } else if (panamaType.contains("HalfFloatArray")) {
+            return short.class;
         } else {
             throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
         }
@@ -239,7 +262,7 @@ public class SPIRVVectorPlugins {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                 if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
-                        "IntArray.<init>(int)"))) {
+                        "IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
                     Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;
@@ -253,6 +276,15 @@ public class SPIRVVectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
                 final VectorLoadElementNode loadElement = new VectorLoadElementNode(spirvVectorKind.getElementKind(), receiver.get(), laneId);
                 b.push(javaElementKind, b.append(loadElement));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(spirvVectorKind.getElementKind(), receiver.get(), laneId, value);
+                b.add(b.append(store));
                 return true;
             }
         });
@@ -355,7 +387,7 @@ public class SPIRVVectorPlugins {
      */
     public static void registerParameterPlugins(Plugins plugins) {
         plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
-            if (stampPair.getTrustedStamp() instanceof ObjectStamp objectStamp) {
+            if (stampPair.getTrustedStamp()instanceof ObjectStamp objectStamp) {
                 if (objectStamp.type().getAnnotation(Vector.class) != null) {
                     SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(objectStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(SPIRVStampFactory.getStampFor(kind)));

@@ -64,9 +64,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  */
 public class TestOpenCLJITCompiler {
 
-    public static void methodToCompile(int[] a, int[] b, double[] c) {
+    public static void methodToCompile(int[] a, int[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = 0.12 * a[i] * b[i];
+            c[i] = 0.12f * a[i] * b[i];
         }
     }
 
@@ -113,11 +113,11 @@ public class TestOpenCLJITCompiler {
         return new MetaCompilation(taskMeta, openCLCode);
     }
 
-    public void runWithOpenCLAPI(Long executionPlanId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void runWithOpenCLAPI(Long executionPlanId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         OpenCL.run(executionPlanId, tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
     }
 
-    public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceState(tornadoDevice);
@@ -160,7 +160,7 @@ public class TestOpenCLJITCompiler {
         final int N = 128;
         int[] a = new int[N];
         int[] b = new int[N];
-        double[] c = new double[N];
+        float[] c = new float[N];
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
@@ -178,7 +178,7 @@ public class TestOpenCLJITCompiler {
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {
-            double seq = 0.12 * a[i] * b[i];
+            float seq = 0.12f * a[i] * b[i];
             if (Math.abs(c[i] - seq) > 0.01) {
                 correct = false;
                 break;

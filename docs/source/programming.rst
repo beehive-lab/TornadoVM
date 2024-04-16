@@ -49,7 +49,11 @@ Additionally, developers can create an instance of a TornadoVM native array by i
    // from individual items to TornadoVM native array
    public static FloatArray fromElements(float... values);
    // from Memory Segment to TornadoVM native array
-   public static FloatArray fromSegment(MemorySegment segment); 
+   public static FloatArray fromSegment(MemorySegment segment);
+   // from multiple TornadoVM native arrays to single TornadoVM native array
+   public static FloatArray concat(FloatArray... arrays);
+   // from a slice of a TornadoVM native array
+   public FloatArray slice(int offset,int length);
 
 The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. 
 

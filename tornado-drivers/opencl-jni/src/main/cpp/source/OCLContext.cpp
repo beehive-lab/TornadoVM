@@ -94,7 +94,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
     if (rc != 0) {
         printf("OpenCL off-heap memory allocation (posix_memalign) failed. Error value: %d.\n", rc);
     }
-#endif()
+#endif
     memset(ptr, 0, (size_t) size);
     size_t i = 0;
     for (; i < (size_t) size / 4; i++) {
