@@ -77,7 +77,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class TornadoVMInterpreter {
     private static final Event EMPTY_EVENT = new EmptyEvent();
 
-    private static final int MAX_EVENTS = 128;
+    private static final int MAX_EVENTS = TornadoOptions.MAX_EVENTS;
     private final boolean useDependencies;
 
     private final List<Object> objects;
