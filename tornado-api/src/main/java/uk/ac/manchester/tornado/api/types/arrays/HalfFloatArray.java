@@ -105,7 +105,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *
      * @param values
      *     The {@link HalfFloat} values to initialize the array with.
-     * @return A new {@link FloatArray} instance, initialized with the given values.
+     * @return A new {@linkHalfFloatArray} instance, initialized with the given values.
      */
     public static HalfFloatArray fromElements(HalfFloat... values) {
         return createSegment(values);
@@ -136,6 +136,21 @@ public final class HalfFloatArray extends TornadoNativeArray {
         HalfFloat[] outputArray = new HalfFloat[getSize()];
         for (int i = 0; i < getSize(); i++) {
             outputArray[i] = get(i);
+        }
+        return outputArray;
+    }
+
+    /**
+     * Converts the {@link HalfFloat} data from off-heap to an on-heap short representation,
+     * by getting the values of a {@link HalfFloatArray} instance as short and coping them
+     * into a new on-heap short array.
+     *
+     * @return A new on-heap short array, initialized with the values stored in the {@link HalfFloatArray} instance.
+     */
+    public short[] toShortArray() {
+        short[] outputArray = new short[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i).getHalfFloatValue();
         }
         return outputArray;
     }
@@ -271,6 +286,32 @@ public final class HalfFloatArray extends TornadoNativeArray {
             currentPositionBytes += array.getNumBytesOfSegment();
         }
         return concatArray;
+    }
+
+    /**
+     * Extracts a slice of elements from a given {@linkHalfFloatArray}, creating a new {@linkHalfFloatArray} instance.
+     *
+     *
+     * @param array
+     *     The {@linkHalfFloatArray} from which to extract the slice.
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@linkHalfFloatArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public HalfFloatArray slice( int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * HALF_FLOAT_BYTES;
+        long sliceByteLength = length * HALF_FLOAT_BYTES;
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        HalfFloatArray slice = fromSegment(sliceSegment);
+        return slice;
     }
 
 }

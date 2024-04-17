@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,7 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.SPIRVOptNotSupported;
@@ -217,6 +218,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP64NotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP64 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceFP16NotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP16 UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

@@ -269,4 +269,28 @@ public final class DoubleArray extends TornadoNativeArray {
         }
         return concatArray;
     }
+
+    /**
+     * Extracts a slice of elements from a given {@link DoubleArray}, creating a new {@link DoubleArray} instance.
+     *
+     *
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@link DoubleArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public DoubleArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * DOUBLE_BYTES;
+        long sliceByteLength = length * DOUBLE_BYTES;
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        DoubleArray slice = fromSegment(sliceSegment);
+        return slice;
+    }
 }

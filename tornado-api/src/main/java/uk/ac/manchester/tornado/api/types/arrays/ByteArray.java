@@ -268,4 +268,28 @@ public final class ByteArray extends TornadoNativeArray {
         }
         return concatArray;
     }
+
+    /**
+     * Extracts a slice of elements from a given {@link ByteArray}, creating a new {@link ByteArray} instance.
+     *
+     *
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@link ByteArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public ByteArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * BYTE_BYTES;
+        long sliceByteLength = length * BYTE_BYTES;
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        ByteArray slice = fromSegment(sliceSegment);
+        return slice;
+    }
 }

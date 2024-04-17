@@ -191,7 +191,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void deallocate() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        spirvDeviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
+        spirvDeviceContext.getBufferProvider().markBufferReleased(bufferId);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
         if (Tornado.FULL_DEBUG) {
