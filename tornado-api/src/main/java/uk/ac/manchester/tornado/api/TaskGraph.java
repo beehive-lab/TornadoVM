@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * Tornado Task Graph API.
  * <p>
  * Task-based parallel API to express methods to be accelerated on any OpenCL,
- * PTX or SPIRV compatible device.
+ * PTX or SPIR-V compatible device.
  * </p>
  *
  * @since TornadoVM-0.15
