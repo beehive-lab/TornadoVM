@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.memoryplan;
+package uk.ac.manchester.tornado.unittests.memory;
 
 import static org.junit.Assert.assertEquals;
 
