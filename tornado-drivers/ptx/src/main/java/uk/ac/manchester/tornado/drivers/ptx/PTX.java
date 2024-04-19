@@ -99,7 +99,7 @@ public class PTX {
             Object object = parameters[i];
 
             DataObjectState globalState = new DataObjectState();
-            XPUDeviceBufferState deviceState = globalState.getDeviceState(tornadoDevice);
+            XPUDeviceBufferState deviceState = globalState.getDeviceBufferState(tornadoDevice);
 
             switch (access) {
                 case READ_WRITE:

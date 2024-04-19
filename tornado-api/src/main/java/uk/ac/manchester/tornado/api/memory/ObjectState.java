@@ -21,7 +21,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
 public interface ObjectState {
 
-    DeviceBufferState getDeviceState(TornadoDevice device);
+    DeviceBufferState getDeviceBufferState(TornadoDevice device);
 
     void clear();
 

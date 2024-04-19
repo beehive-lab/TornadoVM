@@ -120,13 +120,13 @@ public class TestSPIRVJITCompiler {
     public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
-        XPUDeviceBufferState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(spirvTornadoDevice);
 
         DataObjectState stateB = new DataObjectState();
-        XPUDeviceBufferState objectStateB = stateB.getDeviceState(spirvTornadoDevice);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceBufferState(spirvTornadoDevice);
 
         DataObjectState stateC = new DataObjectState();
-        XPUDeviceBufferState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(spirvTornadoDevice);
 
         spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 

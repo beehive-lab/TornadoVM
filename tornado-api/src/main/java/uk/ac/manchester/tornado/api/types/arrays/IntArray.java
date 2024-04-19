@@ -60,6 +60,16 @@ public final class IntArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new {@link IntArray} instance by concatenating the contents of the given array of {@link IntArray} instances.
+     *
+     * @param arrays
+     *     An array of {@link IntArray} instances to be concatenated into the new instance.
+     */
+    public IntArray(IntArray... arrays) {
+        concat(arrays);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link IntArray} from on-heap data.
      *
      * @param values
@@ -257,4 +267,27 @@ public final class IntArray extends TornadoNativeArray {
         return concatArray;
     }
 
+    /**
+     * Extracts a slice of elements from a given {@linkIntArray}, creating a new {@linkIntArray} instance.
+     *
+     *
+     * @param offset
+     *     The starting index from which to begin the slice, inclusive.
+     * @param length
+     *     The number of elements to include in the slice.
+     * @return A new {@linkIntArray} instance representing the specified slice of the original array.
+     * @throws IllegalArgumentException
+     *     if the specified slice is out of the bounds of the original array.
+     */
+    public IntArray slice(int offset, int length) {
+        if (offset < 0 || length < 0 || offset + length > getSize()) {
+            throw new IllegalArgumentException("Slice out of bounds");
+        }
+
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * INT_BYTES;
+        long sliceByteLength = length * INT_BYTES;
+        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        IntArray slice = fromSegment(sliceSegment);
+        return slice;
+    }
 }

@@ -120,13 +120,13 @@ public class TestOpenCLJITCompiler {
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
-        XPUDeviceBufferState objectStateA = stateA.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(tornadoDevice);
 
         DataObjectState stateB = new DataObjectState();
-        XPUDeviceBufferState objectStateB = stateB.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateB = stateB.getDeviceBufferState(tornadoDevice);
 
         DataObjectState stateC = new DataObjectState();
-        XPUDeviceBufferState objectStateC = stateC.getDeviceState(tornadoDevice);
+        XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(tornadoDevice);
 
         tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 

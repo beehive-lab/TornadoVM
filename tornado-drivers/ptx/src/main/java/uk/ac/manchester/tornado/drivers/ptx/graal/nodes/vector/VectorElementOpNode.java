@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -96,6 +96,10 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     public final int laneId() {
         guarantee(lane instanceof ConstantNode, "Invalid lane: %s", lane);
         return (lane instanceof ConstantNode) ? lane.asJavaConstant().asInt() : -1;
+    }
+
+    public final ValueNode getLaneId() {
+        return this.lane;
     }
 
     public ValueNode getVector() {
