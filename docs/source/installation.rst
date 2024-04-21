@@ -526,14 +526,7 @@ TornadoVM for Windows 10/11 using GraalVM
 
 **[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows 10/11 it is still experimental.**
 
-The :ref:`toolchain_msys2` provides a kind of Linux-like environment that uses the Linux installation script. The native toolchain :ref:`toolchain_native` provides a Windows batch file that expects the required tools to be installed in advance through their respective Windows installation methods.
-
-.. _toolchain_msys2:
-
-A) Windows installation with MSys2 toolchain
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This toolchain pretends a Linux-like environment that best suits TornadoVM's installation method for Linux and allows the tools developed there to be used without the need for major changes.
+TornadoVM for Windows uses the MSys2 toolchain, which simulates a Linux-like environment that best suits the installation method of TornadoVM for Linux and allows the use of the tools developed there without the need for major changes.
 
 1. Install prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -760,132 +753,6 @@ To run all unit-tests:
 .. code:: bash
 
    make tests
-
-
-.. _toolchain_native:
-
-B) Windows installation with native toolchain
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This toolchain uses native Windows tools to compile and install TornadoVM. It defines it's own installation method, thus replacing Makefiles and bash scripts defined by the original Linux installation method.
-
-1. Install prerequisites
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Install `Microsoft Visual Studio 2022 Community Edition <https://visualstudio.microsoft.com/de/vs/community/>`__
-   include C++, Git and Spectre mitigations
--  Install `CMake <https://cmake.org/download/>`__ >= 3.26.3
--  Install `Maven <https://maven.apache.org/download.cgi>`__ >= 3.9.1
--  Install `GraalVM for JDK <https://www.graalvm.org/downloads/>`__ 21.0.1
--  Install `Python <https://www.python.org/downloads/>`__ >= 3.12
--  Install `CUDA Toolkit <https://developer.nvidia.com/cuda-downloads>`__ >= 12.1
--  Install (optional) `Intel CPU Runtime for OpenCL <https://www.intel.com/content/www/us/en/developer/articles/technical/intel-cpu-runtime-for-opencl-applications-with-sycl-support.html>`__ 2024.0
-
-
-2. Setup environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Open `x64 Native Tools Command Prompt for VS 2022`.
-
--  Set variable JAVA_HOME to point at GraalVM for JDK installation.
--  Set variable CMAKE_ROOT to point at CMake installation.
--  Set variable CUDA_PATH to point at CUDA Toolkit installation (typically set by CUDA Toolkit installer).
-
-Setup example:
-
-.. code:: bash
-
-   set JAVA_HOME=%ProgramFiles%\Java\graalvm-jdk-21.0.1+12.1
-   set CMAKE_ROOT=%ProgramFiles%\CMake\share\cmake-3.26
-   set CUDA_PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.1
-
-3. Download, compile and install TornadoVM
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Download TornadoVM to any directory, cd into it, and run the installer with ``--help`` option for usage information (same as for Linux installer).
-
-.. code:: bash
-
-   cd %USERPROFILE%
-   git clone https://github.com/beehive-lab/TornadoVM.git
-   
-   cd TornadoVM
-   .\bin\tornadovm-installer.cmd --help
-
-.. code:: bash
-
-   TornadoVM Installer Tool for Windows. CD to top-level directory of TornadoVM
-   repository. Run in "x64 Native Tools Command Prompt for VS 2022".
-   
-   Working native Windows toolchain required:
-     - VS 22 (incl. C++, Git, Spectre mitigated libraries)
-     - CMake, Maven, GraalVM for JDK, Python
-     - CUDA SDK (if PTX backend wanted)
-     - Intel CPU RT for OpenCL (optional)
-   
-   Expected environment variables:
-     JAVA_HOME, if not supplied via --javaHome option
-     CMAKE_ROOT, CMake install directory
-     CUDA_PATH, if PTX backend wanted
-   
-     tornadovm-installer.cmd [-h] [--help] [--version] [--jdk JDK]
-       [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
-   
-     -h, --help       Show this help message and exit.
-     --version        Print version of TornadoVM.
-     --jdk JDK        Select one of the supported JDKs. Silently ignored
-                      as there is only GraalVM for JDK supported on Windows.
-     --backend LIST   Select at least one backend (opencl, ptx, spirv)
-                      to install or omit for all.
-     --listJDKs       List supported JDK versions.
-     --javaHome PATH  Use a particular JDK version.
-
-Execute the installer. Without options and CUDA Toolkit installed, backends for OpenCL, PTX, and SPIR-V are compiled. The batch file downloads the required repositories for OpenCL header files from The Khronos Group and Intel's Level Zero API into sibling directories of CWD. Additional repositories for Beehive's SPIR-V toolkit and Level Zero JNI are stored in CWD.
-
-.. code:: bash
-
-   .\bin\tornadovm-installer.cmd
-
-
-4. Check the installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Open another `x64 Native Tools Command Prompt for VS 2022`.
-
-List suppported backends. Should be opencl, spirv and ptx if CUDA Toolkit is available.
-
-.. code:: bash
-
-   cd %USERPROFILE%\TornadoVM
-   setvars.cmd
-   
-   python %TORNADO_SDK%\bin\tornado --devices
-
-
-Run some examples. Try it on all available devices.
-
-.. code:: bash
-
-   python %TORNADO_SDK%\bin\tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
-   python %TORNADO_SDK%\bin\tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
-
-Run some tests. Use different devices as some tests fail due to lack of device capabilities.
-
-.. code:: bash
-
-   cd %USERPROFILE%\TornadoVM
-   setvars.cmd
-   
-   if exist tornado_unittests.log del /f tornado_unittests.log
-   
-   python %TORNADO_SDK%\bin\tornado-test --ea --verbose
-   python %TORNADO_SDK%\bin\tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-   
-   %TORNADO_SDK%\bin\test-native.cmd
-   
-   python %TORNADO_SDK%\bin\tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
-   
-   python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 
 
 .. _installation_mali:
