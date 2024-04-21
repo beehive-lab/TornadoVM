@@ -112,7 +112,7 @@ Windows example: to build TornadoVM with GraalVM and all supported backends (min
   python -m venv .venv
   .venv\Scripts\activate.bat
 
-  python bin\tornadovm-installer --jdk graalvm-jdk-21 --backend "opencl,ptx,spirv"
+  python bin\tornadovm-installer --jdk graalvm-jdk-21 --backend opencl,ptx,spirv
 
 
 **Notes on Windows:**
