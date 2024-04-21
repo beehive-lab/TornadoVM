@@ -718,33 +718,6 @@ Then the following package should be installed:
    $ apt-get install ocl-icd-opencl-dev
 
 
-
-Known issues on Windows
-==================================
-
-1. If you already have MSys2 installed and heavily customized you may
-   experience issues with build or tests. We are suggesting to start
-   with fresh MSys2 installation in this case and follow the
-   instructions above. Most notably, make sure that you have no
-   ``mingw-w64-x86_64-python`` installed - it prevents Python scripts
-   that execute tests from running. Also, make sure that you have
-   updated all GCC / Make / CMake packages mentioned.
-2. If you see no output from ``tornado --devices`` this may be either of
-   2 reasons: - OpenCL / CUDA is misconfigured. Download any third-party
-   tool for OpenCL / CUDA capabilities viewing and check that you can
-   see your devices there. Sometimes order of installation of different
-   OpenCL drivers matters - Intel OpenCL SDK may shadow NVIDIA OpenCL
-   and alike. - You build native code of the library using wrong
-   compiler, most probably you ran ``<MSYS2>/msys2.exe`` terminal
-   instead of ``<MSYS2>/mingw64.exe`` . Please re-try with correct
-   terminal (and therefore GCC) version.
-3. If you see JVM crashes or ``UnsatisfiedLinkError`` or some
-   ``Error initializing DLL`` during ``tornado --devices`` execution
-   than it's definitely due to wrong GCC (and hence terminal) version
-   used during build.
-
-
-
 IDE Code Formatter
 ====================
 
