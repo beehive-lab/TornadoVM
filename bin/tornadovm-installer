@@ -345,7 +345,7 @@ def listSupportedJDKs():
     TornadoVM Installer - Select a JDK implementation to install with TornadoVM:
 
     jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
-    graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+    graal-jdk-21     : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
     mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
     corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
     zulu-jdk-21      : Install TornadoVM with Azul Zulu JDK 21

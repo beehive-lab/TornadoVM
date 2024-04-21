@@ -93,7 +93,7 @@ For example, to build TornadoVM with GraalVM and JDK 21:
 .. code-block:: bash
 
   ## Install with Graal for JDK 21 using PTX, OpenCL and SPIRV backends
-  ./bin/tornadovm-installer --jdk graalvm-jdk-21  --backend opencl,ptx,spirv
+  ./bin/tornadovm-installer --jdk graal-jdk-21  --backend opencl,ptx,spirv
 
 
 Another example: to build TornadoVM with OpenJDK 21 for the OpenCL and PTX backends:
@@ -112,7 +112,7 @@ Windows example: to build TornadoVM with GraalVM and all supported backends (min
   python -m venv .venv
   .venv\Scripts\activate.bat
 
-  python bin\tornadovm-installer --jdk graalvm-jdk-21 --backend opencl,ptx,spirv
+  python bin\tornadovm-installer --jdk graal-jdk-21 --backend opencl,ptx,spirv
 
 
 **Notes on Windows:**
@@ -323,7 +323,7 @@ To build with GraalVM and JDK 21:
 
 .. code:: bash
 
-   $ make graalvm-jdk-21 BACKEND={ptx,opencl}
+   $ make graal-jdk-21 BACKEND={ptx,opencl}
 
 and done!!
 
@@ -344,7 +344,7 @@ JDKs. Below are listed the Java 21 JDK distributions against which TornadoVM has
 
   ./bin/tornadovm-installer --listJDKs
   jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
-  graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+  graal-jdk-21     : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
   mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
   zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
@@ -526,8 +526,6 @@ TornadoVM for Windows 10/11 using GraalVM
 
 **[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows 10/11 it is still experimental.**
 
-TornadoVM for Windows uses the MSys2 toolchain, which simulates a Linux-like environment that best suits the installation method of TornadoVM for Linux and allows the use of the tools developed there without the need for major changes.
-
 1. Install prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -536,108 +534,33 @@ Maven
 ^^^^^^
 
 Download Apache Maven (at least 3.9.0) from the `official site <https://maven.apache.org/download.cgi>`__, and extract it to any
-location on your computer. Below it's assumed that Maven's home is ``C:/bin/``, but you can use any other directory.
+location on your computer. Add Maven's ``bin`` folder to ``PATH``.
 
-MSys2
+.. code:: bash
+
+   rem Maven unpacked to %ProgramFiles%\apache-maven-3.9.1
+   set PATH=%ProgramFiles%\apache-maven-3.9.1\set;%PATH%
+
+
+CMake
 ^^^^^^
 
-1. Download the `MSys2 <https://www.msys2.org/>`__ installer from the official website and run it. You may choose any installation
-   directory, below it will be referred as ``<MSYS2>``.
+Download and install CMake from the `official site <https://cmake.org/download/>`__. Although the installer should have updated ``PATH``, check whether the executable "cmake.exe" can be found and correct "PATH" if necessary.
 
-**IMPORTANT:** the only executable you should use as a terminal is ``<MSYS2>/mingw64.exe``.
-
-2. Update MSys2 **system** packages. Start ``<MSYS2>/mingw64.exe`` and run the following command in the terminal:
-
-.. code:: bash
-
-   pacman -Syu
-
-You might need to execute it several times until you see that no updates
-found.
-
-3. Update MSys2 **default** packages. In the terminal window of
-   ``<MSYS2>/mingw64.exe`` run:
-
-.. code:: bash
-
-   pacman -Su
-
-You might need to execute it several times until you see that no updates
-found.
-
-4. Install necessary tools to MSys2. In the terminal window of
-   ``<MSYS2>/mingw64.exe`` run:
-
-.. code:: bash
-
-   pacman -S \
-   mingw-w64-x86_64-make           \
-   mingw-w64-x86_64-cmake          \
-   mingw-w64-x86_64-gcc            \
-   mingw-w64-x86_64-opencl-headers \
-   mingw-w64-x86_64-opencl-icd \
-   python python3-pip make git
-
-
-5. Create default Maven repository for MSys2 user:
-
-.. code:: bash
-
-   cd ~
-   mkdir .m2
-
-6. Create default content for the file ``~/.m2/settings.xml``:
-
-.. code:: bash
-
-   cat > ~/.m2/settings.xml << EOF
-   <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-       <localRepository/>
-       <interactiveMode/>
-       <offline/>
-       <pluginGroups/>
-       <servers/>
-       <mirrors/>
-       <proxies/>
-       <profiles/>
-       <activeProfiles/>
-   </settings>
-   EOF
-
-7. Create file ``mvn`` in ``<MSYS2>/mingw64/bin`` with any text editor
-   (e.g., `Visual Studio
-   Code <https://code.visualstudio.com/download>`__) with the following
-   content:
-
-.. code:: bash
-
-   #!/usr/bin/env bash
-   C:/<path-to-your-maven-install>/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
-
-Example:
-
-.. code:: bash
-
-   #!/usr/bin/env bash
-   C:/bin/apache-maven-3.9.1-bin/apache-maven-3.9.1/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
-
-You only need to change the path to your maven installation in Windows.
 
 2. Download TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-Clone the latest TornadoVM source code from the GitHub `repository <https://github.com/beehive-lab/TornadoVM>`__ using ``<MSYS2>/mingw64.exe``:
+Clone the latest TornadoVM source code from the GitHub `repository <https://github.com/beehive-lab/TornadoVM>`__:
 
 .. code:: bash
 
-   cd D:/MyProjects
+   cd %USERPROFILE%\MyProjects
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
 
-We will refer hereafter the directory with TornadoVM sources as
-``<TornadoVM>``.
+We will refer hereafter the directory with TornadoVM sources as ``<TornadoVM>``.
 
 3. Download GraalVM for JDK 21 Community 21.0.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -648,7 +571,7 @@ and download the following build:
 
 -  `Download for JDK 21 <https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_windows-x64_bin.zip>`__
 
-Extract the downloaded file to any directory.
+Extract the downloaded file to any directory (e.g. ``%ProgramFiles%\Java``).
 
 4. Install the NVIDIA drivers and CUDA Toolkit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -681,58 +604,46 @@ Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for T
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-Using any text editor create file ``<TornadoVM>/etc/sources.env`` with
+Using any text editor create file ``<TornadoVM>/etc/setvars.cmd`` with
 the following content:
 
 .. code:: bash
 
-   #!/bin/bash
+   rem UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL
+   set JAVA_HOME=%ProgramFiles%\Java\graalvm-jdk-21.0.1+12.1
+   
+   rem SUBSTITUTE <TornadoVM> WITH ACTUAL DIRECTORY
+   set PATH=<TornadoVM>\bin\bin;<TornadoVM>\level-zero\build\bin\Release;%PATH%
 
-   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL
-   export JAVA_HOME="C:\Users\jjfum\Documents\bin\jvms\graalvm-jdk-21_windows-x64_bin\graalvm-jdk-21+35.1"
+   rem SUBSTITUTE <TornadoVM> WITH ACTUAL DIRECTORY
+   set TORNADO_SDK=<TornadoVM>\bin\sdk
 
-   ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
-   ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
-   ## OTHERWISE UPDATE 'CUDA_PATH' WITH ACTUAL VALUE (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-   export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.1"
-   export PTX_LDFLAGS=-L\"$CUDA_PATH/lib/x64\"
+   rem NEXT LINE IS NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND (USUALLY SET BY CUDA INSTALLER)
+   set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 
-   # LEAVE THE REST OF FILE 'AS IS'
-   # DON'T ALTER!
-   export PATH=$PWD/bin/bin:$PATH               ## This directory will be automatically generated during Tornado compilation
-   export TORNADO_SDK=$PWD/bin/sdk              ## This directory will be automatically generated during Tornado compilation
-   CMAKE_FILE=$(where cmake | head -n 1)
-   export CMAKE_ROOT=${CMAKE_FILE%\\*\\*}
-
-There are only 2 places you should adjust:
-
-1. ``JAVA_HOME`` path that points to your Graal installation
-2. ``CUDA_PATH`` pointing to your NVIDIA GPU Computing Toolkit (CUDA) -
-   this one is necessary only for builds with PTX backend.
+Check each variable to meet your configuration. Especially substitute ``<TornadoVM>`` in ``PATH`` and ``TORNADO_SDK`` with your TornadoVM directory.
 
 6. Compile TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Start ``<MSYS2>/mingw64.exe`` terminal, navigate to the ``<TornadoVM>``
-directory, and build TornadoVM as follows:
+Start a ``cmd.exe`` terminal, navigate to the ``<TornadoVM>`` directory, and build TornadoVM as follows:
 
 .. code:: bash
 
-   cd D:/MyProjects/TornadoVM
-   source etc/sources.env
-   make graalvm-jdk-21 BACKEND=ptx,opencl
+   cd %USERPROFILE%\MyProjects\TornadoVM
+   etc/setvars.cmd
+   nmake /f Makefile.mak graal-jdk-21 BACKEND=opencl,ptx
 
-The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
-Computing Toolkit (CUDA) is installed.
+The ``BACKEND`` parameter has to be a comma-separated list of ``ptx``, ``spirv`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU Computing Toolkit (CUDA) is installed. The ``spirv`` backend makes use of the `Intel Level Zero API <https://dgpu-docs.intel.com/technologies/level-zero.html>`__.
 
 7. Check the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Don't close ``<MSYS2>/mingw64.exe`` after the build. Run the following command to see that TornadoVM is working:
+Don't close ``cmd.exe`` after the build. Run the following command to see that TornadoVM is working:
 
 .. code:: bash
 
-   tornado --devices
+   python %TORNADO_SDK%\bin\tornado --devices
 
 You should see a list of OpenCL and/or CUDA devices available on your system.
 
@@ -740,19 +651,19 @@ Now try to run a simple test. To run examples with Graal JDK 21, TornadoVM uses 
 
 .. code:: bash
 
-   tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D --params="512"
+   python %TORNADO_SDK%\bin\tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D --params="512"
 
 To run individual tests:
 
 .. code:: bash
 
-   tornado --jvm="-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner --params="uk.ac.manchester.tornado.unittests.arrays.TestArrays"
+   python %TORNADO_SDK%\bin\tornado --jvm="-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner --params="uk.ac.manchester.tornado.unittests.arrays.TestArrays"
 
 To run all unit-tests:
 
 .. code:: bash
 
-   make tests
+   nmake /f Makefile.mak tests
 
 
 .. _installation_mali:
