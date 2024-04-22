@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * tornado-test --jvm="-Dtornado.device.memory=4GB" -V uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory
+ * tornado-test --jvm="-Xmx10g -Dtornado.device.memory=4GB" -V uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory
  * </code>
  * </p>
  */
@@ -50,13 +50,13 @@ public class TestStressDeviceMemory extends TornadoTestBase {
     }
 
     public static void stressDataAllocationTest(int dataSizeFactor) throws TornadoExecutionPlanException {
-        System.out.println("Allocating size: " + (dataSizeFactor * 4) + " (bytes)");
+        System.out.println("SIZE: " + dataSizeFactor + " Allocating size: " + (dataSizeFactor * 4) + " (bytes)");
         FloatArray inputArray = new FloatArray(dataSizeFactor);
         FloatArray outputArray = new FloatArray(dataSizeFactor);
         inputArray.init(0.1f);
-        TaskGraph taskGraph = new TaskGraph("memory" + dataSizeFactor) //
+        TaskGraph taskGraph = new TaskGraph("stress" + dataSizeFactor) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputArray) //
-                .task("stress", TestStressDeviceMemory::moveData, inputArray, outputArray) //
+                .task("moveData", TestStressDeviceMemory::moveData, inputArray, outputArray) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -79,19 +79,27 @@ public class TestStressDeviceMemory extends TornadoTestBase {
     }
 
     /**
-     * Depending on the device, this test is expected to fail when using the
-     * OpenCL backend.
+     * Depending on the device, this test is expected to fail if the
+     * system does not have enough memory.
      */
     @Test
     public void test02() {
-        // Starting in ~1.5GB and move up to ~2GB
-        for (int i = 400; i < 500; i += 10) {
-            int size = 1024 * 1024 * i;
-            try {
-                stressDataAllocationTest(size);
-                assertTrue(true);
-            } catch (TornadoExecutionPlanException e) {
-                fail();
+
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        final long _10GB = (1024L * 1024 * 1024 * 10);
+        if (maxMemory < _10GB) {
+            fail();
+        } else {
+            // Starting in ~1.5GB and move up to ~2GB
+            for (int i = 400; i < 500; i += 10) {
+                int size = 1024 * 1024 * i;
+                try {
+                    stressDataAllocationTest(size);
+                    assertTrue(true);
+                } catch (TornadoExecutionPlanException e) {
+                    e.printStackTrace();
+                    fail();
+                }
             }
         }
     }

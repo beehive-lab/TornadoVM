@@ -80,7 +80,6 @@ public class PTXContext {
     }
 
     public void freeMemory(long address) {
-        System.out.println("FREE MEMORY CUDA");
         cuMemFree(ptxContext, address);
     }
 }
