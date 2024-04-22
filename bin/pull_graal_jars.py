@@ -109,7 +109,7 @@ def download_jar_if_not_exists(jar_url, target_dir):
 def main():
     """
     Main function to download GraalVM JAR files.
-    """  #
+    """
     if not os.path.exists(TARGET_DIR):
         os.mkdir(TARGET_DIR)
 
