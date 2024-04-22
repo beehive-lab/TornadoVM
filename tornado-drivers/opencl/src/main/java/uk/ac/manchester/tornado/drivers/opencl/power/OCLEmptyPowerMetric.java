@@ -25,24 +25,21 @@ package uk.ac.manchester.tornado.drivers.opencl.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 
-public class OCLEmptyPowerMetric extends PowerMetric {
+public class OCLEmptyPowerMetric implements PowerMetric {
 
     public OCLEmptyPowerMetric() {
-        super();
     }
 
     @Override
-    public long initializePowerLibrary() {
-        return -1;
+    public void initializePowerLibrary() {
     }
 
     @Override
-    public long getHandleByIndex(long[] device) {
-        return -1;
+    public void getHandleByIndex(long[] device) {
     }
 
     @Override
-    public long getPowerUsage(long[] device, long[] powerUsage) {
-        return -1;
+    public void getPowerUsage(long[] device, long[] powerUsage) {
+
     }
 }

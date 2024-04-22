@@ -28,11 +28,10 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 
-public class OCLNvidiaPowerMetric extends PowerMetric {
+public class OCLNvidiaPowerMetric implements PowerMetric {
     private final OCLDeviceContext deviceContext;
 
     public OCLNvidiaPowerMetric(OCLDeviceContext deviceContext) {
-        super();
         this.deviceContext = deviceContext;
         initializePowerLibrary();
     }
@@ -44,35 +43,29 @@ public class OCLNvidiaPowerMetric extends PowerMetric {
     static native long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException;
 
     @Override
-    public long initializePowerLibrary() {
+    public void initializePowerLibrary() {
         try {
-            return clNvmlInit();
+            clNvmlInit();
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
-        return -1;
     }
 
     @Override
-    public long getHandleByIndex(long[] device) {
+    public void getHandleByIndex(long[] device) {
         try {
-            return clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), device);
+            clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), device);
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
-        return -1;
     }
 
     @Override
-    public long getPowerUsage(long[] device, long[] powerUsage) {
+    public void getPowerUsage(long[] device, long[] powerUsage) {
         try {
-            return clNvmlDeviceGetPowerUsage(device, powerUsage);
+            clNvmlDeviceGetPowerUsage(device, powerUsage);
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
-        return -1;
     }
 }

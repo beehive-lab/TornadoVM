@@ -23,14 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.common.power;
 
-public abstract class PowerMetric {
+public interface PowerMetric {
 
-    protected PowerMetric() {
-    }
+    void initializePowerLibrary();
 
-    public abstract long initializePowerLibrary();
+    void getHandleByIndex(long[] device);
 
-    public abstract long getHandleByIndex(long[] device);
-
-    public abstract long getPowerUsage(long[] device, long[] powerUsage);
+    void getPowerUsage(long[] device, long[] powerUsage);
 }
