@@ -41,6 +41,7 @@ public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<ProfilerType, Long> profilerTime;
     private HashMap<String, HashMap<ProfilerType, Long>> taskTimers;
+    private HashMap<String, HashMap<ProfilerType, String>> taskPowerMetrics;
     private HashMap<String, HashMap<ProfilerType, Long>> taskThroughputMetrics;
     private HashMap<String, HashMap<ProfilerType, String>> taskDeviceIdentifiers;
     private HashMap<String, HashMap<ProfilerType, String>> taskMethodNames;
@@ -52,6 +53,7 @@ public class TimeProfiler implements TornadoProfiler {
     public TimeProfiler() {
         profilerTime = new HashMap<>();
         taskTimers = new HashMap<>();
+        taskPowerMetrics = new HashMap<>();
         taskDeviceIdentifiers = new HashMap<>();
         taskMethodNames = new HashMap<>();
         taskThroughputMetrics = new HashMap<>();
@@ -231,6 +233,11 @@ public class TimeProfiler implements TornadoProfiler {
                     json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
                 }
             }
+            if (taskPowerMetrics.containsKey(p)) {
+                for (ProfilerType p1 : taskPowerMetrics.get(p).keySet()) {
+                    json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskPowerMetrics.get(p).get(p1) + "\",\n");
+                }
+            }
             for (ProfilerType p2 : taskTimers.get(p).keySet()) {
                 json.append(indent.toString() + "\"" + p2 + "\"" + ": " + "\"" + taskTimers.get(p).get(p2) + "\",\n");
             }
@@ -271,6 +278,18 @@ public class TimeProfiler implements TornadoProfiler {
             taskTimers.put(taskID, new HashMap<>());
         }
         taskTimers.get(taskID).put(type, timer);
+    }
+
+    @Override
+    public synchronized void setTaskPowerUsage(ProfilerType type, String taskID, long power) {
+        if (!taskPowerMetrics.containsKey(taskID)) {
+            taskPowerMetrics.put(taskID, new HashMap<>());
+        }
+        if (power > 0) {
+            taskPowerMetrics.get(taskID).put(type, Long.toString(power));
+        } else {
+            taskPowerMetrics.get(taskID).put(type, "n/a");
+        }
     }
 
     @Override
