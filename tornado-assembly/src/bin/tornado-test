@@ -159,7 +159,7 @@ __TEST_THE_WORLD__ = [
     TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
               testParameters=[
                   "-Dtornado.device.memory=4GB",
-                  "-Xmx12g"])
+                  "-Xmx14g"])
 ]
 
 ## List of tests that can be ignored. The following either fail (we know it is a precision error), or they are not supported
