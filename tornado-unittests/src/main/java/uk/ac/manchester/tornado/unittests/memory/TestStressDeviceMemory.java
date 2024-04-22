@@ -86,8 +86,8 @@ public class TestStressDeviceMemory extends TornadoTestBase {
     public void test02() {
 
         long maxMemory = Runtime.getRuntime().maxMemory();
-        final long _12GB = (1024L * 1024 * 1024 * 12);
-        if (maxMemory < _12GB) {
+        final long twelveGB = (1024L * 1024 * 1024 * 12);
+        if (maxMemory < twelveGB) {
             fail();
         } else {
             // Starting in ~1.5GB and move up to ~2GB
