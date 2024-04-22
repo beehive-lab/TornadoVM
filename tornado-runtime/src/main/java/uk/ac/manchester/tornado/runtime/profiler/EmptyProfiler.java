@@ -104,7 +104,11 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public synchronized void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer) {
+    public synchronized void setTaskTimer(ProfilerType type, String taskId, long timer) {
+    }
+
+    @Override
+    public void setTaskPowerUsage(ProfilerType type, String taskId, long power) {
     }
 
     @Override

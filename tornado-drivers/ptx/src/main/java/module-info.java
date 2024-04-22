@@ -23,6 +23,7 @@ module tornado.drivers.ptx {
     exports uk.ac.manchester.tornado.drivers.ptx.graal.phases;
     exports uk.ac.manchester.tornado.drivers.ptx.mm;
     exports uk.ac.manchester.tornado.drivers.ptx.runtime;
+    exports uk.ac.manchester.tornado.drivers.ptx.power;
 
     provides TornadoBackendProvider with
             uk.ac.manchester.tornado.drivers.ptx.PTXTornadoDriverProvider;
