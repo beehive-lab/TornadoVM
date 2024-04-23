@@ -65,13 +65,9 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final PowerMetric powerMetric;
     private final OCLMemoryManager memoryManager;
     private final OCLCodeCache codeCache;
-    //private final OCLEventPool oclEventPool;
-
     private final Map<Long, OCLEventPool> oclEventPool;
-
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
-
     private Set<Long> executionIDs;
 
     OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
@@ -79,19 +75,16 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
-
+        this.oclEventPool = new ConcurrentHashMap<>();
+        this.bufferProvider = new OCLBufferProvider(this);
+        this.commandQueueTable = new ConcurrentHashMap<>();
+        this.device.setDeviceContext(this);
+        this.executionIDs = Collections.synchronizedSet(new HashSet<>());
         if (isDeviceContextOfNvidia()) {
             this.powerMetric = new OCLNvidiaPowerMetric(this);
         } else {
             this.powerMetric = new OCLEmptyPowerMetric();
         }
-
-        this.oclEventPool = new ConcurrentHashMap<>();
-        //new OCLEventPool(EVENT_WINDOW);
-        bufferProvider = new OCLBufferProvider(this);
-        commandQueueTable = new ConcurrentHashMap<>();
-        this.device.setDeviceContext(this);
-        this.executionIDs = Collections.synchronizedSet(new HashSet<>());
     }
 
     private boolean isDeviceContextOfNvidia() {
