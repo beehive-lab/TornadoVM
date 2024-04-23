@@ -48,7 +48,7 @@ public class TestFails extends TornadoTestBase {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumBackends(); i++) {
             final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(i);
             for (int j = 0; j < driver.getDeviceCount(); j++) {
-                driver.getDefaultDevice().resetAll();
+                driver.getDefaultDevice().clean();
             }
         }
     }

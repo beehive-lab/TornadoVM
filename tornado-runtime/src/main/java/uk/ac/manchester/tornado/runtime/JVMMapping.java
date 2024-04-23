@@ -95,7 +95,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public void resetAll() {
+    public void clean() {
         TornadoInternalError.unimplemented();
     }
 

@@ -129,7 +129,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void resetAll() {
+    public void clean() {
         Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
         if (!ids.isEmpty()) {
             ids.forEach(id -> device.getDeviceContext().reset(id));

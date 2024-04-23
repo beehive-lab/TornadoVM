@@ -184,7 +184,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void resetAll() {
+    public void clean() {
         Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
         ids.forEach(id -> device.getDeviceContext().reset(id));
         ids.clear();
