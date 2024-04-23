@@ -166,7 +166,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         } else {
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, batchSize, segment.address(),
                     hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
