@@ -243,14 +243,29 @@ public class TornadoOptions {
      * default.
      */
     public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", TRUE);
+
     /**
      * Option to run concurrently on multiple device in single or multi-backend
      * configuration. False by default.
      */
     public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
+
+    /**
+     * Panama Object Header in TornadoVM.
+     */
     public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
+
+    /**
+     * Option to define the maximum number of internal events related to OpenCL/PTX/SPIR-V events to keep alive.
+     * This is application specific. In a large application, there are probably many events that need to keep alive
+     * to perform the sync.
+     */
+    public static final int MAX_EVENTS = getIntValue("tornado.max.events", "32768");
+
     public static boolean TORNADO_PROFILER_LOG = false;
+
     public static boolean TORNADO_PROFILER = false;
+
     /**
      * Option to load FPGA pre-compiled binaries.
      */

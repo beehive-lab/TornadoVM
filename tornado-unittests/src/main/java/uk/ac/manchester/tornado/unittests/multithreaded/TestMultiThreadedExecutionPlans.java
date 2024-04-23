@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -137,8 +138,7 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         t1.join();
     }
 
-    private void compute(int id) {
-        final int size = 1024 * 1024;
+    private void compute(int size, int id, boolean profiling) {
         FloatArray input = new FloatArray(size);
         input.init(1.0f);
         FloatArray output = new FloatArray(size);
@@ -150,6 +150,11 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        if (profiling) {
+            executionPlan.withProfiler(ProfilerMode.SILENT);
+        }
+
         executionPlan.execute();
         executionPlan.freeDeviceMemory();
     }
@@ -158,8 +163,33 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
     public void test03() {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
-            Thread t1 = new Thread(() -> compute(finalI));
-            Thread t2 = new Thread(() -> compute(finalI));
+            Thread t1 = new Thread(() -> compute(1014 * 1024, finalI, false));
+            Thread t2 = new Thread(() -> compute(1014 * 1024, finalI, false));
+
+            t1.start();
+            t2.start();
+
+            try {
+                t1.join();
+            } catch (InterruptedException e) {
+                assertTrue("Error", false);
+            }
+
+            try {
+                t2.join();
+            } catch (InterruptedException e) {
+                assertTrue("Error", false);
+            }
+
+        }
+    }
+
+    @Test
+    public void test04() {
+        for (int i = 0; i < 100; i++) {
+            int finalI = i;
+            Thread t1 = new Thread(() -> compute(1014 * 1024 * 64, finalI, true));
+            Thread t2 = new Thread(() -> compute(1014 * 1024 * 64, finalI, true));
 
             t1.start();
             t2.start();
