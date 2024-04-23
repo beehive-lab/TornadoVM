@@ -41,7 +41,6 @@ public final class ByteArray extends TornadoNativeArray {
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
@@ -55,7 +54,6 @@ public final class ByteArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / BYTE_BYTES;
-        arraySizeHeaderPosition = baseIndex - 4;
         segmentByteSize = numberOfElements * BYTE_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);

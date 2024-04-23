@@ -77,7 +77,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestInitDataTypes"),
-    TestEntry("uk.ac.manchester.tornado.unittests.memoryplan.TestMemoryLimit"),
+    TestEntry("uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
@@ -154,7 +154,12 @@ __TEST_THE_WORLD__ = [
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
                   "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
+
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
+              testParameters=[
+                  "-Dtornado.device.memory=4GB",
+                  "-Xmx14g"])
 ]
 
 ## List of tests that can be ignored. The following either fail (we know it is a precision error), or they are not supported

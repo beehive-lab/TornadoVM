@@ -164,7 +164,7 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
             Thread t1 = new Thread(() -> compute(1014 * 1024, finalI, false));
-            Thread t2 = new Thread(() -> compute(1014 * 1024, finalI, false));
+            Thread t2 = new Thread(() -> compute(1014 * 1024, finalI + 100, false));
 
             t1.start();
             t2.start();
@@ -189,7 +189,7 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
             Thread t1 = new Thread(() -> compute(1014 * 1024 * 64, finalI, true));
-            Thread t2 = new Thread(() -> compute(1014 * 1024 * 64, finalI, true));
+            Thread t2 = new Thread(() -> compute(1014 * 1024 * 64, finalI + 100, true));
 
             t1.start();
             t2.start();

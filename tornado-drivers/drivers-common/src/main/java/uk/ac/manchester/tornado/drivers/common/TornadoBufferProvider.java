@@ -22,15 +22,15 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
+
+import java.util.ArrayList;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
-import java.util.ArrayList;
-
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
@@ -189,19 +189,19 @@ public abstract class TornadoBufferProvider {
     private record BufferContainer(long buffer, long size) {
 
         @Override
-            public boolean equals(Object object) {
-                if (this == object) {
-                    return true;
-                }
-                if (!(object instanceof BufferContainer that)) {
-                    return false;
-                }
-                return buffer == that.buffer && size == that.size;
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
             }
-
-            @Override
-            public int hashCode() {
-                return (int) buffer;
+            if (!(object instanceof BufferContainer that)) {
+                return false;
             }
+            return buffer == that.buffer && size == that.size;
         }
+
+        @Override
+        public int hashCode() {
+            return (int) buffer;
+        }
+    }
 }

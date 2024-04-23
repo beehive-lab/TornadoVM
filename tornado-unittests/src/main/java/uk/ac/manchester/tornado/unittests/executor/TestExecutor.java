@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,23 +17,25 @@
  */
 package uk.ac.manchester.tornado.unittests.executor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.util.Arrays;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * How to run?
@@ -65,33 +67,37 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an execution plan
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Select the default device for the execution plan. This is optional: if no
-        // device is specified, TornadoVM will launch kernels on the default device.
-        // However, developers could print device information from the default device.
-        TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
+            // Select the default device for the execution plan. This is optional: if no
+            // device is specified, TornadoVM will launch kernels on the default device.
+            // However, developers could print device information from the default device.
+            TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
 
-        // e.g., Query the device name
-        String deviceName = defaultDevice.getPhysicalDevice().getDeviceName();
-        assertNotNull(deviceName);
+            // e.g., Query the device name
+            String deviceName = defaultDevice.getPhysicalDevice().getDeviceName();
+            assertNotNull(deviceName);
 
-        // 4. Add optimizations to the execution plan
-        executorPlan.withProfiler(ProfilerMode.SILENT) //
-                .withWarmUp() //
-                .withDevice(defaultDevice) //
-                .withDefaultScheduler();
+            // 4. Add optimizations to the execution plan
+            executionPlan.withProfiler(ProfilerMode.SILENT) //
+                    .withWarmUp() //
+                    .withDevice(defaultDevice) //
+                    .withDefaultScheduler();
 
-        // 5. Execute all Immutable Task Graphs associated with an executor plan
-        TornadoExecutionResult executionResult = executorPlan.execute();
+            // 5. Execute all Immutable Task Graphs associated with an executor plan
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        // 6. Obtain profiler result (only if the execution plan enabled the profiler).
-        TornadoProfilerResult profilerResult = executionResult.getProfilerResult();
+            // 6. Obtain profiler result (only if the execution plan enabled the profiler).
+            TornadoProfilerResult profilerResult = executionResult.getProfilerResult();
 
-        assertNotNull(profilerResult);
+            assertNotNull(profilerResult);
 
-        for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(a.get(i) + b.get(i), c.get(i));
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+        } catch (TornadoExecutionPlanException e) {
+            e.printStackTrace();
         }
 
     }
