@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * tornado-test --jvm="-Xmx10g -Dtornado.device.memory=4GB" -V uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory
+ * tornado-test --jvm="-Xmx12g -Dtornado.device.memory=4GB" -V uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory
  * </code>
  * </p>
  */
@@ -86,8 +86,8 @@ public class TestStressDeviceMemory extends TornadoTestBase {
     public void test02() {
 
         long maxMemory = Runtime.getRuntime().maxMemory();
-        final long _10GB = (1024L * 1024 * 1024 * 10);
-        if (maxMemory < _10GB) {
+        final long twelveGB = (1024L * 1024 * 1024 * 12);
+        if (maxMemory < twelveGB) {
             fail();
         } else {
             // Starting in ~1.5GB and move up to ~2GB
