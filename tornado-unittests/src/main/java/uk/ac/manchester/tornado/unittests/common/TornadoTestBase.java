@@ -114,9 +114,9 @@ public abstract class TornadoTestBase {
     }
 
     /**
-     * It returns a TornadoDevice that supports SPIRV.
+     * It returns a TornadoDevice that supports SPIR-V.
      *
-     * @return {@link TornadoDevice} with SPIRV support, or null if not found.
+     * @return {@link TornadoDevice} with SPIR-V support, or null if not found.
      */
     protected TornadoDevice getSPIRVSupportedDevice() {
         Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
