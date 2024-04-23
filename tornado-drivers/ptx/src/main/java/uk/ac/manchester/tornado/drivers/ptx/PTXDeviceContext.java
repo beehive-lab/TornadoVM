@@ -32,6 +32,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -59,7 +60,6 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     private final PTXDevice device;
     private final PTXMemoryManager memoryManager;
-    //    private final PTXStream stream;
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
@@ -150,6 +150,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     @Override
     public int getDriverIndex() {
         return TornadoRuntime.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
+    }
+
+    @Override
+    public Set<Long> getRegisteredPlanIds() {
+        return Set.of();
     }
 
     @Override
