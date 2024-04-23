@@ -548,7 +548,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void reset() {
+    public void resetAll() {
         IntStream.range(0, //
                 TornadoExecutionPlan.getTotalPlans()) //
                 .forEach(i -> device.getPTXContext().getDeviceContext().reset(i));

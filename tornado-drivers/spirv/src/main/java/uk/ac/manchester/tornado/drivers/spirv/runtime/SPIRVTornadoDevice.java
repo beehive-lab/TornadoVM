@@ -477,7 +477,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void reset() {
+    public void resetAll() {
         device.getDeviceContext().reset();
         disableProfilerOptions();
     }
