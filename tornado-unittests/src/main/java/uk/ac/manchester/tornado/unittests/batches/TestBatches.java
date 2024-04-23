@@ -838,32 +838,6 @@ public class TestBatches extends TornadoTestBase {
     }
 
     @Test
-    public void testBatchNotEven() {
-        checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
-
-        // Allocate ~ 64MB
-        FloatArray array = new FloatArray(1024 * 1024 * 16);
-        FloatArray arraySeq = new FloatArray(1024 * 1024 * 16);
-        for (int i = 0; i < arraySeq.getSize(); i++) {
-            arraySeq.set(i, i);
-        }
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", TestBatches::parallelInitialization, array) //
-                .task("t1", TestBatches::compute2, array) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
-
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
-        executionPlan.withBatch("10MB") // Batches of 10MB
-                .execute();
-
-        for (int i = 0; i < array.getSize(); i++) {
-            assertEquals(arraySeq.get(i) * 2, array.get(i), 0.01f);
-        }
-        executionPlan.freeDeviceMemory();
-    }
-
-    @Test
     public void testBatchNotEven2() {
         checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
 
@@ -916,6 +890,34 @@ public class TestBatches extends TornadoTestBase {
         }
         executionPlan.freeDeviceMemory();
     }
+
+
+    @Test
+    public void testBatchNotEven() {
+        checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
+
+        // Allocate ~ 64MB
+        FloatArray array = new FloatArray(1024 * 1024 * 16);
+        FloatArray arraySeq = new FloatArray(1024 * 1024 * 16);
+        for (int i = 0; i < arraySeq.getSize(); i++) {
+            arraySeq.set(i, i);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", TestBatches::parallelInitialization, array) //
+                .task("t1", TestBatches::compute2, array) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        executionPlan.withBatch("10MB") // Batches of 10MB
+                .execute();
+
+        for (int i = 0; i < array.getSize(); i++) {
+            assertEquals(arraySeq.get(i) * 2, array.get(i), 0.01f);
+        }
+        executionPlan.freeDeviceMemory();
+    }
+
 
     private long checkMaxHeapAllocationOnDevice(int size, MemoryUnit memoryUnit) throws UnsupportedConfigurationException {
 

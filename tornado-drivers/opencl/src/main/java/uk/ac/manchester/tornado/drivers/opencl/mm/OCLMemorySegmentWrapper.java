@@ -68,7 +68,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
+            onDevice = false;
     }
 
     @Override
@@ -184,7 +184,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(batchSize + TornadoNativeArray.ARRAY_HEADER);
         }
 
         if (bufferSize <= 0) {
