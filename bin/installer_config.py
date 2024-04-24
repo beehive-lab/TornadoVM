@@ -125,18 +125,18 @@ JDK = {
             __ARM__: None,
         },
     },
-    __MICROSOFT20__: {
+    __MICROSOFT21__: {
         __LINUX__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-aarch64.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz",
         },
         __WINDOWS__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-aarch64.zip",
         },
     },
     __ZULU21__: {
