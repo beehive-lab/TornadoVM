@@ -143,9 +143,9 @@ public class TestOpenCLJITCompiler {
         // Fill header of call callWrapper with empty values
         callWrapper.setKernelContext(new HashMap<>());
 
-        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Run the code
         openCLCode.launchWithoutDependencies(contextID, callWrapper, null, taskMeta, 0);
