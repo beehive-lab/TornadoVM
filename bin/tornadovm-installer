@@ -38,10 +38,11 @@ __SUPPORTED_JDKS__ = [
     config.__JDK21__,
     config.__GRAALVM21__,
     config.__CORRETTO21__,
-    config.__MICROSOFT20__,
+    config.__MICROSOFT21__,
     config.__MANDREL21__,
     config.__ZULU21__,
     config.__TEMURIN21__,
+    config.__SAPMACHINE21__,
 ]
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
@@ -344,12 +345,14 @@ def listSupportedJDKs():
     """
     TornadoVM Installer - Select a JDK implementation to install with TornadoVM:
 
-    jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
-    graal-jdk-21     : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
-    mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
-    corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
-    zulu-jdk-21      : Install TornadoVM with Azul Zulu JDK 21
-    temurin-jdk-21   : Install TornadoVM with Eclipse Temurin JDK 21
+    jdk21             : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
+    graal-jdk-21      : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+    mandrel-jdk-21    : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
+    corretto-jdk-21   : Install TornadoVM with Corretto JDK 21
+    microsoft-jdk-21  : Install TornadoVM with Microsoft JDK 21
+    zulu-jdk-21       : Install TornadoVM with Azul Zulu JDK 21
+    temurin-jdk-21    : Install TornadoVM with Eclipse Temurin JDK 21
+    sapmachine-jdk-21 : Install TornadoVM with SapMachine OpenJDK 21
 
     Usage:
       $ ./bin/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
