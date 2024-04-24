@@ -42,6 +42,7 @@ __SUPPORTED_JDKS__ = [
     config.__MANDREL21__,
     config.__ZULU21__,
     config.__TEMURIN21__,
+    config.__SAPMACHINE21__,
 ]
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
@@ -350,6 +351,7 @@ def listSupportedJDKs():
     corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
     zulu-jdk-21      : Install TornadoVM with Azul Zulu JDK 21
     temurin-jdk-21   : Install TornadoVM with Eclipse Temurin JDK 21
+    sapmachine-jdk-21: Install TornadoVM with SapMachine OpenJDK 21
 
     Usage:
       $ ./bin/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>

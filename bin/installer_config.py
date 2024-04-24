@@ -33,6 +33,7 @@ __CORRETTO21__ = "corretto-jdk-21"
 __MICROSOFT20__ = "microsoft-jdk-20"
 __ZULU21__ = "zulu-jdk-21"
 __TEMURIN21__ = "temurin-jdk-21"
+__SAPMACHINE21__ = "sapmachine-jdk-21"
 
 ## cmake
 CMAKE = {
@@ -163,6 +164,20 @@ JDK = {
         },
         __WINDOWS__: {
             __X86_64__: None,
+            __ARM__: None,
+        },
+    },
+    __SAPMACHINE21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-aarch64_bin.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-aarch64_bin.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_windows-x64_bin.zip",
             __ARM__: None,
         },
     },
