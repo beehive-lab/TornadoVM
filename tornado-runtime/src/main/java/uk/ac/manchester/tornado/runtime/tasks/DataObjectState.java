@@ -54,6 +54,12 @@ public class DataObjectState implements ObjectState {
     public DataObjectState clone() {
         DataObjectState dataObjectState = new DataObjectState();
         dataObjectState.deviceStates = new ConcurrentHashMap<>();
+        for (TornadoXPUDevice device : deviceStates.keySet()) {
+            XPUDeviceBufferState oldDeviceBufferState = deviceStates.get(device);
+            XPUDeviceBufferState xpuDeviceBufferState = new XPUDeviceBufferState();
+            xpuDeviceBufferState.setLockBuffer(oldDeviceBufferState.isLockedBuffer());
+            dataObjectState.deviceStates.put(device, xpuDeviceBufferState);
+        }
         return dataObjectState;
     }
 
