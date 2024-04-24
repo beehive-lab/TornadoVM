@@ -110,4 +110,10 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     public long getPartialCopySize() {
         return this.partialSize;
     }
+
+    public XPUDeviceBufferState createSnapshot() {
+        XPUDeviceBufferState xpuDeviceBufferState = new XPUDeviceBufferState();
+        xpuDeviceBufferState.setLockBuffer(this.isLockedBuffer());
+        return xpuDeviceBufferState;
+    }
 }
