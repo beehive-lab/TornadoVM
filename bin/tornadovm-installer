@@ -315,7 +315,7 @@ class TornadoInstaller:
 
         makeJDK = "jdk21"
         polyglotOption = ""
-        if (args.javaHome != None and "graal" in args.javaHome) or ("graal" in args.jdk):
+        if (args.javaHome != None and "graal" in args.javaHome) or (args.jdk != None and "graal" in args.jdk):
             makeJDK = "graal-jdk-21"
             polyglotOption = self.composePolyglotOption(args)
 
