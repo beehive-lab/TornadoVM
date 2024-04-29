@@ -37,7 +37,7 @@ def update_backend_file(selected_backends_str):
     This function updates the 'tornado.backend' file in the Tornado SDK with the selected backend configurations.
 
     Args:
-    selected_backends_str (str): Comma-separated string of selected backends.
+        selected_backends_str (str): Comma-separated string of selected backends.
     """
     tornado_sdk_path = os.environ.get("TORNADO_SDK")
     backend_file_path = os.path.join(tornado_sdk_path, "etc", "tornado.backend")
@@ -65,7 +65,10 @@ def copy_graal_jars():
             source_file = os.path.join(graal_jars_dir, filename)
             destination_file = os.path.join(destination_dir, filename)
             if os.path.isfile(source_file):
-                subprocess.run(["cp", source_file, destination_file])
+                if os.name == 'nt':
+                    subprocess.run(["copy", "/b", "/y", source_file, destination_file], shell=True)
+                else:
+                    subprocess.run(["cp", source_file, destination_file])
 
 
 def main():

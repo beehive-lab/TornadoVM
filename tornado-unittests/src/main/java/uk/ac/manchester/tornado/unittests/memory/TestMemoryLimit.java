@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.memoryplan;
+package uk.ac.manchester.tornado.unittests.memory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.memoryplan.TestMemoryLimit
+ * tornado-test -V uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit
  * </code>
  * </p>
  */

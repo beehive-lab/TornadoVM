@@ -25,6 +25,7 @@ def check_python_dependencies():
         import requests
     except:
         subprocess.call(["pip3", "install", "requests"], stderr=subprocess.DEVNULL)
+
     try:
         import tqdm
     except:
@@ -34,8 +35,8 @@ def check_python_dependencies():
         import urllib3
     except:
         subprocess.call(["pip3", "install", "urllib3"], stderr=subprocess.DEVNULL)
+
     try:
         import wget
     except:
-        print("Installing dependencies")
         subprocess.call(["pip3", "install", "wget"], stderr=subprocess.DEVNULL)

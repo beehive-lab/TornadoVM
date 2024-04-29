@@ -4,6 +4,7 @@ project (Tornado)
 if(MSVC)
 	set(CMAKE_PREFIX_PATH "$ENV{CommonProgramFiles\(x86\)}/Intel/Shared Libraries")
 	find_package(OpenCL REQUIRED)
+	find_package(CUDA)
 endif()
 if(APPLE)
     find_package(OpenCL REQUIRED)
@@ -74,15 +75,46 @@ add_library(tornado-opencl SHARED
 	source/OCLKernel.cpp
 	source/OCLPlatform.cpp
 	source/OCLProgram.cpp
+	source/OCLNvidiaPowerMetric.cpp
 	source/OpenCL.cpp
 	source/utils.cpp
 	source/opencl_time_utils.cpp
 	)
 
-if(MSVC OR APPLE)
-    target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+if(MSVC)
+    if(CUDA_FOUND)
+        find_path(NVML_INCLUDE_DIR NAMES nvml.h HINTS ${CUDA_INCLUDE_DIRS})
+        find_library(NVML_LIBRARY NAMES nvml PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+        if(NVML_INCLUDE_DIR AND NVML_LIBRARY)
+            set(EXTRA_LIBS ${EXTRA_LIBS} "${NVML_LIBRARY}")
+        endif()
+    else()
+        message(STATUS "CUDA not found")
+    endif()
 else()
-    target_link_libraries(tornado-opencl -lOpenCL ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+    find_path(NVML_INCLUDE_DIR NAMES nvml.h HINTS ${CUDA_INCLUDE_DIRS} /usr/local/cuda/targets/x86_64-linux/include)
+    find_library(NVML_LIBRARY NAMES nvidia-ml PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64 /usr/local/cuda/targets/x86_64-linux/lib/stubs/)
+    if(NVML_INCLUDE_DIR AND NVML_LIBRARY)
+        set(EXTRA_LIBS ${EXTRA_LIBS} "-L/usr/local/cuda/lib64/stubs -lnvidia-ml")
+    endif()
+endif()
+
+if(NVML_INCLUDE_DIR AND NVML_LIBRARY)
+    add_definitions(-DNVML_IS_SUPPORTED)
+    include_directories(${NVML_INCLUDE_DIR})
+else()
+    if(NOT NVML_INCLUDE_DIR)
+        message(STATUS "nvml.h not found")
+    endif()
+    if(NOT NVML_LIBRARY)
+        message(STATUS "nvml not found")
+    endif()
+endif()
+
+if(MSVC OR APPLE)
+    target_link_libraries(tornado-opencl ${EXTRA_LIBS} ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+else()
+    target_link_libraries(tornado-opencl -lOpenCL ${EXTRA_LIBS} ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 endif()
 if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-opencl PROPERTIES PREFIX "")

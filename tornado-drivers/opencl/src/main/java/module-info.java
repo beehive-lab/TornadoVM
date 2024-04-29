@@ -28,6 +28,7 @@ module tornado.drivers.opencl {
     exports uk.ac.manchester.tornado.drivers.opencl.mm;
     exports uk.ac.manchester.tornado.drivers.opencl.runtime;
     exports uk.ac.manchester.tornado.drivers.opencl.tests;
+    exports uk.ac.manchester.tornado.drivers.opencl.power;
 
     provides TornadoBackendProvider with
             uk.ac.manchester.tornado.drivers.opencl.OCLTornadoDriverProvider;
