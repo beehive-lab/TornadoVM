@@ -140,9 +140,9 @@ public class TestPTXJITCompiler {
 
         callWrapper.setKernelContext(new HashMap<>());
 
-        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Run the code
         ptxCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);

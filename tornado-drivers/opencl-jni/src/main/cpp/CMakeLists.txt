@@ -53,16 +53,16 @@ endif()
 
 if(APPLE)
     include_directories(
-	source/
-	${JNI_INCLUDE_DIRS}
-	${OPENCL_INCLUDE_DIRS}
-	)
+	    source/
+	    ${JNI_INCLUDE_DIRS}
+	    ${OPENCL_INCLUDE_DIRS}
+	    )
 else()
     include_directories(
-	source/
-	headers/include
-	${JNI_INCLUDE_DIRS}
-	${OPENCL_INCLUDE_DIRS}
+	    source/
+	    headers/include
+	    ${JNI_INCLUDE_DIRS}
+	    ${OPENCL_INCLUDE_DIRS}
 	)
 endif()
 

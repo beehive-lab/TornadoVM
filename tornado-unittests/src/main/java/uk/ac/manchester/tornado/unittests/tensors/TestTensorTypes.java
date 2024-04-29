@@ -36,6 +36,14 @@ import uk.ac.manchester.tornado.api.types.tensors.TensorInt32;
 import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ * tornado-test -V uk.ac.manchester.tornado.unittests.tensors.TestTensorTypes
+ * </code>
+ */
 public class TestTensorTypes extends TornadoTestBase {
 
     public static void tensorAdditionFloat16(TensorFP16 tensorA, TensorFP16 tensorB, TensorFP16 tensorC) {

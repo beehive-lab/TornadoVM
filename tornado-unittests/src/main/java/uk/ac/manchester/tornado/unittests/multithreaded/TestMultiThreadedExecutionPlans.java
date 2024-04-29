@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -43,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * $ tornado-test -V --fast uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans
+ * $ tornado-test --jvm="-Dtornado.device.memory=2GB" -V --fast uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans
  * </code>
  * </p>
  */
@@ -62,6 +63,17 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         }
     }
 
+    /**
+     * Two execution plan instances coming from the same task-graph.
+     *
+     * <p>
+     * In practice, each execution plan has its own instance of an Immutable Task Graph.
+     * However, some internal data structure might be shared. This test checks that
+     * TornadoVM can run with multiple execution plans using the same graph of computation.
+     * </p>
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void test01() throws InterruptedException {
 
@@ -69,10 +81,13 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         Thread t1;
 
         KernelContext context = new KernelContext();
-        final int size = 1024 * 1024 * 32;
+
+        final int size = 1024 * 1024 * 64;   // ~ 256MB per Float Array
         FloatArray input = new FloatArray(size);
-        input.init(1.0f);
         FloatArray output = new FloatArray(size);
+
+        // Init data
+        input.init(1.0f);
 
         TaskGraph taskGraph = new TaskGraph("check") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -85,15 +100,21 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         t0 = new Thread(() -> {
             System.out.print("Running thread t0");
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.withGridScheduler(gridScheduler).execute();
+            try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+                executionPlan.withGridScheduler(gridScheduler).execute();
+            } catch (TornadoExecutionPlanException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         t1 = new Thread(() -> {
             System.out.print("Running thread t1");
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.withGridScheduler(gridScheduler).execute();
+            try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+                executionPlan.withGridScheduler(gridScheduler).execute();
+            } catch (TornadoExecutionPlanException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         t0.start();
@@ -121,14 +142,20 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
 
         t0 = new Thread(() -> {
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.execute();
+            try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+                executionPlan.execute();
+            } catch (TornadoExecutionPlanException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         t1 = new Thread(() -> {
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.execute();
+            try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+                executionPlan.execute();
+            } catch (TornadoExecutionPlanException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         t0.start();
@@ -138,7 +165,7 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
         t1.join();
     }
 
-    private void compute(int size, int id, boolean profiling) {
+    private void compute(int size, int id, boolean profiling) throws TornadoExecutionPlanException {
         FloatArray input = new FloatArray(size);
         input.init(1.0f);
         FloatArray output = new FloatArray(size);
@@ -149,22 +176,32 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        if (profiling) {
-            executionPlan.withProfiler(ProfilerMode.SILENT);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            if (profiling) {
+                executionPlan.withProfiler(ProfilerMode.SILENT);
+            }
+            executionPlan.execute();
         }
-
-        executionPlan.execute();
-        executionPlan.freeDeviceMemory();
     }
 
     @Test
     public void test03() {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
-            Thread t1 = new Thread(() -> compute(1014 * 1024, finalI, false));
-            Thread t2 = new Thread(() -> compute(1014 * 1024, finalI + 100, false));
+            Thread t1 = new Thread(() -> {
+                try {
+                    compute(1014 * 1024, finalI, false);
+                } catch (TornadoExecutionPlanException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            Thread t2 = new Thread(() -> {
+                try {
+                    compute(1014 * 1024, finalI + 100, false);
+                } catch (TornadoExecutionPlanException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             t1.start();
             t2.start();
@@ -188,8 +225,20 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
     public void test04() {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
-            Thread t1 = new Thread(() -> compute(1014 * 1024 * 64, finalI, true));
-            Thread t2 = new Thread(() -> compute(1014 * 1024 * 64, finalI + 100, true));
+            Thread t1 = new Thread(() -> {
+                try {
+                    compute(1014 * 1024 * 64, finalI, true);
+                } catch (TornadoExecutionPlanException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            Thread t2 = new Thread(() -> {
+                try {
+                    compute(1014 * 1024 * 64, finalI + 100, true);
+                } catch (TornadoExecutionPlanException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             t1.start();
             t2.start();

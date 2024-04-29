@@ -120,7 +120,6 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
-    TestEntry("uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"),
@@ -155,6 +154,9 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
                   "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
+
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
+              testParameters=["-Dtornado.device.memory=4GB"]),
 
     TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
               testParameters=[
