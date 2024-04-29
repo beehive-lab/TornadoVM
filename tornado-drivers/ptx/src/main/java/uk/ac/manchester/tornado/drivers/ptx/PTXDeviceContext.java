@@ -159,7 +159,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     @Override
     public Set<Long> getRegisteredPlanIds() {
-        return Set.of();
+        return executionIDs;
     }
 
     @Override

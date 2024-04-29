@@ -548,12 +548,10 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void clean() {
-        Set<Long> ids = device.getPTXContext().getDeviceContext().getRegisteredPlanIds();
         // Reset only the execution plans attached to the PTX backend.
+        Set<Long> ids = device.getPTXContext().getDeviceContext().getRegisteredPlanIds();
         ids.forEach(id -> device.getPTXContext().getDeviceContext().reset(id));
-        if (!ids.isEmpty()) {
-            ids.clear();
-        }
+        ids.clear();
         disableProfilerOptions();
     }
 
