@@ -31,11 +31,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -548,10 +547,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void reset() {
-        IntStream.range(0, //
-                TornadoExecutionPlan.getTotalPlans()) //
-                .forEach(i -> device.getPTXContext().getDeviceContext().reset(i));
+    public void clean() {
+        // Reset only the execution plans attached to the PTX backend.
+        Set<Long> ids = device.getPTXContext().getDeviceContext().getRegisteredPlanIds();
+        ids.forEach(id -> device.getPTXContext().getDeviceContext().reset(id));
+        ids.clear();
         disableProfilerOptions();
     }
 

@@ -61,7 +61,7 @@ public abstract class TornadoBufferProvider {
 
     protected abstract void releaseBuffer(long buffer);
 
-    private long allocate(long size) {
+    private synchronized long allocate(long size) {
         long buffer = allocateBuffer(size);
         currentMemoryAvailable -= size;
         BufferContainer bufferInfo = new BufferContainer(buffer, size);
@@ -69,7 +69,7 @@ public abstract class TornadoBufferProvider {
         return bufferInfo.buffer;
     }
 
-    private void freeBuffers(long size) {
+    private synchronized void freeBuffers(long size) {
         // Attempts to free buffers of given size.
         long remainingSize = size;
         while (!freeBuffers.isEmpty() && remainingSize > 0) {
@@ -81,7 +81,7 @@ public abstract class TornadoBufferProvider {
         }
     }
 
-    private BufferContainer markBufferUsed(int freeBufferIndex) {
+    private synchronized BufferContainer markBufferUsed(int freeBufferIndex) {
         BufferContainer buffer = freeBuffers.get(freeBufferIndex);
         usedBuffers.add(buffer);
         freeBuffers.remove(buffer);
@@ -99,7 +99,7 @@ public abstract class TornadoBufferProvider {
      * @return returns the index position of a free buffer within the free buffer
      *     list. It returns -1 if a free buffer slot is not found.
      */
-    private int bufferIndexOfAFreeSpace(long sizeInBytes) {
+    private synchronized int bufferIndexOfAFreeSpace(long sizeInBytes) {
         int minBufferIndex = -1;
         for (int i = 0; i < freeBuffers.size(); i++) {
             BufferContainer bufferInfo = freeBuffers.get(i);
@@ -118,7 +118,7 @@ public abstract class TornadoBufferProvider {
      *     Size in bytes for the requested buffer.
      * @return It returns a buffer native pointer.
      */
-    private long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes) {
+    private synchronized long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes) {
         freeBuffers(sizeInBytes);
         if (sizeInBytes <= currentMemoryAvailable) {
             return allocate(sizeInBytes);
@@ -182,7 +182,7 @@ public abstract class TornadoBufferProvider {
         return freeBuffers.size() >= numBuffersRequired;
     }
 
-    public void resetBuffers() {
+    public synchronized void resetBuffers() {
         freeBuffers(DEVICE_AVAILABLE_MEMORY);
     }
 

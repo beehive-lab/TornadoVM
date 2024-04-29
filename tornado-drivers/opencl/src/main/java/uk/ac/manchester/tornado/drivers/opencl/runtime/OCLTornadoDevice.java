@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -183,8 +184,10 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void reset() {
-        device.getDeviceContext().reset();
+    public void clean() {
+        Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
+        ids.forEach(id -> device.getDeviceContext().reset(id));
+        ids.clear();
         disableProfilerOptions();
     }
 
