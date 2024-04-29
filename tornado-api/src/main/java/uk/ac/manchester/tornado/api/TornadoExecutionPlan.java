@@ -471,9 +471,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
         }
 
         void resetDevice() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.resetDevice();
-            }
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::resetDevice);
         }
 
         long getTotalTime() {
