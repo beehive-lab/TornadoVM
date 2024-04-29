@@ -27,6 +27,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -477,8 +478,10 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void reset() {
-        device.getDeviceContext().reset();
+    public void clean() {
+        Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
+        ids.forEach(id -> device.getDeviceContext().reset(id));
+        ids.clear();
         disableProfilerOptions();
     }
 

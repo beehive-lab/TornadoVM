@@ -132,7 +132,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i).getFloat32(), HalfFloat.add(tensorA.get(i), tensorB.get(i)).getFloat32(), 0.00f);
+            Assert.assertEquals(HalfFloat.add(tensorA.get(i), tensorB.get(i)).getFloat32(), tensorC.get(i).getFloat32(), 0.01f);
         }
 
     }
@@ -167,7 +167,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
 
     }
@@ -202,7 +202,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
 
     }
@@ -237,7 +237,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
 
     }
@@ -272,7 +272,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
     }
 
@@ -306,7 +306,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
     }
 
@@ -340,7 +340,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
     }
 

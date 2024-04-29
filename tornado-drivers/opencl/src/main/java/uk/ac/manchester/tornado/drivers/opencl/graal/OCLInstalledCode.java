@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
@@ -265,7 +264,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             }
 
             if (meta.shouldDumpProfiles()) {
-                deviceContext.retainEvent(task);
+                deviceContext.retainEvent(executionPlanId, task);
                 meta.addProfile(task);
             }
 
@@ -331,7 +330,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         if (meta.shouldDumpProfiles()) {
-            deviceContext.retainEvent(task);
+            deviceContext.retainEvent(executionPlanId, task);
             meta.addProfile(task);
         }
 

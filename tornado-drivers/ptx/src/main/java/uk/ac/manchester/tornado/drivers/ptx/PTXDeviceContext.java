@@ -30,8 +30,11 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernel
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -59,7 +62,6 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     private final PTXDevice device;
     private final PTXMemoryManager memoryManager;
-    //    private final PTXStream stream;
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
@@ -67,6 +69,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PowerMetric powerMetric;
 
     private final Map<Long, PTXStreamTable> streamTable;
+
+    private Set<Long> executionIDs;
 
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
@@ -77,6 +81,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
         wasReset = false;
+        executionIDs = Collections.synchronizedSet(new HashSet<>());
     }
 
     @Override
@@ -150,6 +155,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     @Override
     public int getDriverIndex() {
         return TornadoRuntime.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
+    }
+
+    @Override
+    public Set<Long> getRegisteredPlanIds() {
+        return executionIDs;
     }
 
     @Override
@@ -544,6 +554,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     private PTXStream getStream(long executionPlanId) {
+        executionIDs.add(executionPlanId);
         if (!streamTable.containsKey(executionPlanId)) {
             PTXStreamTable ptxStreamTable = new PTXStreamTable();
             ptxStreamTable.get(device);
