@@ -30,6 +30,8 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernel
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +70,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     private final Map<Long, PTXStreamTable> streamTable;
 
+    private Set<Long> executionIDs;
+
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
         streamTable = new ConcurrentHashMap<>();
@@ -77,6 +81,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
         wasReset = false;
+        executionIDs = Collections.synchronizedSet(new HashSet<>());
     }
 
     @Override
@@ -549,6 +554,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     private PTXStream getStream(long executionPlanId) {
+        executionIDs.add(executionPlanId);
         if (!streamTable.containsKey(executionPlanId)) {
             PTXStreamTable ptxStreamTable = new PTXStreamTable();
             ptxStreamTable.get(device);
