@@ -126,28 +126,37 @@ public class Compute {
     }
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        TaskGraph taskGraph = new TaskGraph("s0")
+
+        // Create a task-graph with multiple tasks. Each task points to an exising Java method 
+        // that can be accelerated on a GPU/FPGA
+        TaskGraph taskGraph = new TaskGraph("myCompute")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
-                .task("t0", Compute::mxmLoop, A, B, C, size)              // Each task points to an existing Java method
+                .task("mxm", Compute::mxmLoop, A, B, C, size)             // Each task points to an existing Java method
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
+        
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
 
         // Create an execution plan from an immutable task-graph
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Execute the execution plan
-        TorandoExecutionResult executionResult = executionPlan.execute();
+            // Run the execution plan on the default device
+            TorandoExecutionResult executionResult = executionPlan.execute();
+
+        } catch (TornadoExecutionPlanException e) {
+            // handle exception 
+            // ...
+        }
     }
 }
 ```
 
 #### b) Kernel API
 
-Another way to express compute-kernels in TornadoVM is via the **kernel API**.
-To do so, TornadoVM exposes a `KernelContext` with which the application can directly access the thread-id, allocate
+Another way to express compute-kernels in TornadoVM is via the **Kernel API**.
+To do so, TornadoVM exposes the `KernelContext` data structure, in which the application can directly access the thread-id, allocate
 memory in local memory (shared memory on NVIDIA devices), and insert barriers.
-This model is similar to programming compute-kernels in OpenCL and CUDA.
+This model is similar to programming compute-kernels in SYCL, oneAPI, OpenCL and CUDA.
 Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing
 CUDA/OpenCL compute kernels into TornadoVM.
 
@@ -166,27 +175,32 @@ public class Compute {
     }
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        // When using the kernel-parallel API, we need to create a Grid and a Worker
-
-        WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create a 2D Worker
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);  // Attach the worker to the Grid
-        KernelContext context = new KernelContext();             // Create a context
-        workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
-
-        TaskGraph taskGraph = new TaskGraph("s0")
+        
+        TaskGraph taskGraph = new TaskGraph("myCompute")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
-                .task("t0", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
+                .task("mxm", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
+
+        // When using the kernel-parallel API, we need to create a Grid and a Worker
+        WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create a 2D Worker
+        GridScheduler gridScheduler = new GridScheduler("myCompute.mxm", workerGrid);  // Attach the worker to the Grid
+        KernelContext context = new KernelContext();             // Create a context
+        workerGrid.setLocalWork(16, 16, 1);                      // Set the local-group size
 
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan from an immutable task-graph
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        // Execute the execution plan
-        executionPlan.withGridScheduler(gridScheduler)
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            // Run the execution plan on the default device
+            // Execute the execution plan
+            TorandoExecutionResult executionResult = executionPlan
+                        .withGridScheduler(gridScheduler)
+                        .execute();
+        } catch (TornadoExecutionPlanException e) {
+            // handle exception 
+            // ...
+        }    
     }
 }
 ```
@@ -215,9 +229,7 @@ For example:
 ```java
 // TornadoVM will execute the code in the best accelerator.
 executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL)
-             .
-
-execute();
+             .execute();
 ```
 
 Further details and instructions on how to enable this feature can be found here.
