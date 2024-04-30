@@ -127,7 +127,7 @@ public class Compute {
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
 
-        // Create a task-graph with multiple tasks. Each tasks points to an exising Java method 
+        // Create a task-graph with multiple tasks. Each task points to an exising Java method 
         // that can be accelerated on a GPU/FPGA
         TaskGraph taskGraph = new TaskGraph("myCompute")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
