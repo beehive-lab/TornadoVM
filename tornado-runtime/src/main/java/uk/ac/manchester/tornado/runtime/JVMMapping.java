@@ -23,13 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-<<<<<<< HEAD
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-=======
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
->>>>>>> develop
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
