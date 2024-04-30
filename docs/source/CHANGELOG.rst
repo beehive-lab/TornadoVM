@@ -5,6 +5,47 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.4
+----------------
+30th April 2024
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- `#369 <https://github.com/beehive-lab/TornadoVM/pull/369>`_: Introduction of Tensor types in TornadoVM API and interoperability with ONNX Runtime.
+- `#370 <https://github.com/beehive-lab/TornadoVM/pull/370>`_ : Array concatenation operation for TornadoVM native arrays.
+- `#371 <https://github.com/beehive-lab/TornadoVM/pull/371>`_: TornadoVM installer script ported for Windows 10/11.
+- `#372 <https://github.com/beehive-lab/TornadoVM/pull/372>`_: Add support for ``HalfFloat`` (``Float16``) in vector types.
+- `#374 <https://github.com/beehive-lab/TornadoVM/pull/374>`_: Support for TornadoVM array concatenations from the constructor-level.
+- `#375 <https://github.com/beehive-lab/TornadoVM/pull/375>`_: Support for TornadoVM native arrays using slices from the Panama API.
+- `#376 <https://github.com/beehive-lab/TornadoVM/pull/376>`_: Support for lazy copy-outs in the batch processing mode.
+- `#377 <https://github.com/beehive-lab/TornadoVM/pull/377>`_: Expand the TornadoVM profiler with power metrics for NVIDIA GPUs (OpenCL and PTX backends).
+- `#384 <https://github.com/beehive-lab/TornadoVM/pull/384>`_: Auto-closable Execution Plans for automatic memory management.
+
+Compatibility
+~~~~~~~~~~~~~~~~~~
+
+- `#386 <https://github.com/beehive-lab/TornadoVM/issues/386>`_: OpenJDK 17 support removed.
+- `#390 <https://github.com/beehive-lab/TornadoVM/pull/390>`_: SapMachine OpenJDK 21 supported.
+- `#395 <https://github.com/beehive-lab/TornadoVM/issues/395>`_: OpenJDK 22 and GraalVM 22.0.1 supported.
+- TornadoVM tested with Apple M3 chips.
+
+Bug Fixes
+~~~~~~~~~~~~~~~~~~
+
+- `#367 <https://github.com/beehive-lab/TornadoVM/pull/367>`_: Fix for Graal/Truffle languages in which some Java modules were not visible.
+- `#373 <https://github.com/beehive-lab/TornadoVM/pull/373>`_: Fix for data copies of the ``HalfFloat`` types for all backends.
+- `#378 <https://github.com/beehive-lab/TornadoVM/pull/378>`_: Fix free memory markers when running multi-thread execution plans.
+- `#379 <https://github.com/beehive-lab/TornadoVM/pull/379>`_: Refactoring package of vector api unit-tests.
+- `#380 <https://github.com/beehive-lab/TornadoVM/pull/380>`_: Fix event list sizes to accommodate profiling of large applications.
+- `#385 <https://github.com/beehive-lab/TornadoVM/pull/385>`_: Fix code check style.
+- `#387 <https://github.com/beehive-lab/TornadoVM/pull/387>`_: Fix TornadoVM internal events in OpenCL, SPIR-V and PTX for running multi-threaded execution plans.
+- `#388 <https://github.com/beehive-lab/TornadoVM/pull/388>`_: Fix of expected and actual values of tests.
+- `#392 <https://github.com/beehive-lab/TornadoVM/pull/392>`_: Fix installer for using existing JDKs.
+- `#389 <https://github.com/beehive-lab/TornadoVM/pull/389>`_: Fix ``DataObjectState`` for multi-thread execution plans.
+- `#396 <https://github.com/beehive-lab/TornadoVM/pull/396>`_: Fix JNI code for the CUDA NVML library access with OpenCL.
+
+
 TornadoVM 1.0.3
 ----------------
 27th March 2024
