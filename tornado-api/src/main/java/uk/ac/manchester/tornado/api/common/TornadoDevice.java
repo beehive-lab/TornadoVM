@@ -151,7 +151,7 @@ public interface TornadoDevice {
 
     void flush(long executionPlanId);
 
-    void reset();
+    void clean();
 
     void dumpEvents(long executionPlanId);
 

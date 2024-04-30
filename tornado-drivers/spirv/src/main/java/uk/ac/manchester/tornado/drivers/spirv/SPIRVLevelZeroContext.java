@@ -229,7 +229,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
 
         int result = levelZeroContext.zeMemFree(levelZeroContext.getDefaultContextPtr(), deviceBuffer);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+        LevelZeroUtils.errorLog("zeMemFree", result);
     }
 
     @Override

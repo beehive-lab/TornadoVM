@@ -47,7 +47,7 @@ public enum ProfilerType {
     TOTAL_CODE_GENERATION_TIME("Total-Task-Code-Generation-Time"),
     TOTAL_KERNEL_TIME("Kernel-Time"),
     TOTAL_TASK_GRAPH_TIME("TS-Total-Time"),
-
+    POWER_USAGE_mW("Power Usage"),
     BACKEND("Backend");
     // @formatter:on
 

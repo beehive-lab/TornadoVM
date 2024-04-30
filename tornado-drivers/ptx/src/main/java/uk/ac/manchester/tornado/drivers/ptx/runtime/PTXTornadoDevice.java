@@ -31,11 +31,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -304,10 +303,10 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize);
-            state.setObjectBuffer(buffer);
+            state.setXPUBuffer(buffer);
             buffer.allocate(object, batchSize);
         } else {
-            buffer = state.getObjectBuffer();
+            buffer = state.getXPUBuffer();
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
@@ -321,9 +320,9 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             return -1;
         }
 
-        state.getObjectBuffer().deallocate();
+        state.getXPUBuffer().deallocate();
         state.setContents(false);
-        state.setObjectBuffer(null);
+        state.setXPUBuffer(null);
         return -1;
     }
 
@@ -395,7 +394,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
         if (!objectState.hasContent() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
+            return objectState.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
         }
         return null;
     }
@@ -422,7 +421,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long hostOffset, DeviceBufferState objectState, int[] events) {
         objectState.setContents(true);
-        return objectState.getObjectBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
+        return objectState.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
     }
 
     /**
@@ -444,7 +443,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public int streamOut(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-        int event = objectState.getObjectBuffer().enqueueRead(executionPlanId, object, hostOffset, events, events != null);
+        int event = objectState.getXPUBuffer().enqueueRead(executionPlanId, object, hostOffset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -470,7 +469,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
-        return objectState.getObjectBuffer().read(executionPlanId, object, hostOffset, objectState.getPartialCopySize(), events, events != null);
+        return objectState.getXPUBuffer().read(executionPlanId, object, hostOffset, objectState.getPartialCopySize(), events, events != null);
     }
 
     /**
@@ -548,10 +547,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void reset() {
-        IntStream.range(0, //
-                TornadoExecutionPlan.getTotalPlans()) //
-                .forEach(i -> device.getPTXContext().getDeviceContext().reset(i));
+    public void clean() {
+        // Reset only the execution plans attached to the PTX backend.
+        Set<Long> ids = device.getPTXContext().getDeviceContext().getRegisteredPlanIds();
+        ids.forEach(id -> device.getPTXContext().getDeviceContext().reset(id));
+        ids.clear();
         disableProfilerOptions();
     }
 

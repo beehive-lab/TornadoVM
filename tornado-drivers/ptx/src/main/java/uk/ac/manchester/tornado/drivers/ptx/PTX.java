@@ -30,9 +30,9 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -126,7 +126,7 @@ public class PTX {
 
         // Pass arguments to the call callWrapper
         for (int i = 0; i < numArgs; i++) {
-            callWrapper.addCallArgument(states.get(i).getObjectBuffer().toBuffer(), true);
+            callWrapper.addCallArgument(states.get(i).getXPUBuffer().toBuffer(), true);
         }
 
         // Run the code

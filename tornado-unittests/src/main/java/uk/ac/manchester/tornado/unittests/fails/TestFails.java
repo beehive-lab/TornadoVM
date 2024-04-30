@@ -45,10 +45,10 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestFails extends TornadoTestBase {
 
     private void reset() {
-        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumBackends(); i++) {
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(i);
-            for (int j = 0; j < driver.getDeviceCount(); j++) {
-                driver.getDevice(j).reset();
+        for (int backendIndex = 0; backendIndex < TornadoRuntime.getTornadoRuntime().getNumBackends(); backendIndex++) {
+            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(backendIndex);
+            for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
+                driver.getDevice(deviceIndex).clean();
             }
         }
     }

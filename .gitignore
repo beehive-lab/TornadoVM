@@ -44,6 +44,7 @@ setvars.sh
 tornado-drivers/ptx-jni/target/
 dist/
 level-zero/
+OpenCL-Headers/
 target/
 .venv/
 docs/build/

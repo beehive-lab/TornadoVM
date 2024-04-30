@@ -28,8 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectState;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 
 public class DataObjectState implements ObjectState {
 
@@ -42,7 +42,7 @@ public class DataObjectState implements ObjectState {
     @Override
     public XPUDeviceBufferState getDeviceBufferState(TornadoDevice device) {
         if (!(device instanceof TornadoXPUDevice)) {
-            throw new TornadoRuntimeException("[ERROR] Device not compatible");
+            throw new TornadoRuntimeException("[ERROR] Device not compatible: " + device.getClass());
         }
         if (!deviceStates.containsKey(device)) {
             deviceStates.put((TornadoXPUDevice) device, new XPUDeviceBufferState());
@@ -53,7 +53,11 @@ public class DataObjectState implements ObjectState {
     @Override
     public DataObjectState clone() {
         DataObjectState dataObjectState = new DataObjectState();
-        dataObjectState.deviceStates = new ConcurrentHashMap<>(deviceStates);
+        dataObjectState.deviceStates = new ConcurrentHashMap<>();
+        deviceStates.keySet().forEach(device -> {
+            XPUDeviceBufferState xpuDeviceBufferState = deviceStates.get(device).createSnapshot();
+            dataObjectState.deviceStates.put(device, xpuDeviceBufferState);
+        });
         return dataObjectState;
     }
 

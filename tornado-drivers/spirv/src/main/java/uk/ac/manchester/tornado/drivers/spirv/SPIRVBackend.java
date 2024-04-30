@@ -230,8 +230,8 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
         return this.context;
     }
 
-    public void reset() {
-        getDeviceContext().reset();
+    public void reset(long executionPlanId) {
+        getDeviceContext().reset(executionPlanId);
     }
 
     @Override

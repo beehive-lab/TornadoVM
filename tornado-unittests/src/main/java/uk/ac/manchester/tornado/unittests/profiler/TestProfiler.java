@@ -77,7 +77,7 @@ public class TestProfiler extends TornadoTestBase {
         // testProfilerDisabled might execute first. We must make sure that the code
         // cache is reset.
         // Otherwise, we get 0 compile time.
-        TornadoRuntime.getTornadoRuntime().getDefaultDevice().reset();
+        TornadoRuntime.getTornadoRuntime().getDefaultDevice().clean();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//

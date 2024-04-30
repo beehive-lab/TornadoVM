@@ -60,6 +60,7 @@ add_library(tornado-ptx SHARED
 	source/PTXDevice.cpp
 	source/PTXEvent.cpp
 	source/PTX.cpp
+	source/PTXNvidiaPowerMetric.cpp
 	source/ptx_utils.cpp
 	source/ptx_log.h
 	)
@@ -72,9 +73,19 @@ if(CUDAToolkit_FOUND)
     if(CMAKE_HOST_WIN32)
         set_target_properties(tornado-ptx PROPERTIES PREFIX "")
         find_library(CUDA_LIB cuda PATHS ${CUDAToolkit_LIBRARY_DIR})
-        target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} ${CUDA_LIB})
+        find_path(NVML_INCLUDE_DIR NAMES nvml.h HINTS ${CUDAToolkit_INCLUDE_DIRS})
+        if(NOT NVML_INCLUDE_DIR)
+            message(STATUS "nvml.h not found")
+        endif()
+        find_library(NVML_LIBRARY NAMES nvml PATHS ${CUDAToolkit_LIBRARY_DIR})
+        if(NOT NVML_LIBRARY)
+            message(STATUS "nvml not found")
+        else()
+            set(EXTRA_LIBS ${EXTRA_LIBS} "${NVML_LIBRARY}")
+        endif()
+        target_link_libraries(tornado-ptx ${EXTRA_LIBS} ${JNI_LIB_DIRS} ${CUDA_LIB})
     else()
-        target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda")
+        target_link_libraries(tornado-ptx ${JNI_LIB_DIRS} "-L/usr/local/cuda/lib64/stubs -lcuda -lnvidia-ml")
     endif()
 else(CUDAToolkit_FOUND)
     message("CUDA is not installed on this system.")

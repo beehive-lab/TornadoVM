@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Set;
+
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 
@@ -46,4 +48,5 @@ public interface TornadoDeviceContext {
 
     int getDriverIndex();
 
+    Set<Long> getRegisteredPlanIds();
 }

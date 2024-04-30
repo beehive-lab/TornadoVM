@@ -38,11 +38,17 @@ import java.util.List;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 
 /**
- * Class which holds mapping between OpenCL events and TornadoVM local events
- * and handles event registration and serialization. Also contains extra
- * information such as events description and tag.
- * 
+ * Class which holds mapping between OpenCL events and TornadoVM runtime events,
+ * and handles event registration and serialization. It also keeps metadata such
+ * as events description and tag.
+ *
+ * <p>
  * Each device holds an event pool. Only one instance of the pool per device.
+ * </p>
+ *
+ * <p>
+ * Relationship: one instance of the {@link OCLEventPool} per {@link OCLDeviceContext}.
+ * </p>
  */
 class OCLEventPool {
 

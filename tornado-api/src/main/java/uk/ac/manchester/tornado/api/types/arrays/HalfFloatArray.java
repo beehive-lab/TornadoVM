@@ -292,8 +292,6 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * Extracts a slice of elements from a given {@linkHalfFloatArray}, creating a new {@linkHalfFloatArray} instance.
      *
      *
-     * @param array
-     *     The {@linkHalfFloatArray} from which to extract the slice.
      * @param offset
      *     The starting index from which to begin the slice, inclusive.
      * @param length
