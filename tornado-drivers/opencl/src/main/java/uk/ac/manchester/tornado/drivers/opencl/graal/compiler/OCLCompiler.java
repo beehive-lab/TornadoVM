@@ -124,7 +124,7 @@ public class OCLCompiler {
         assert !r.graph.isFrozen();
         try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
             emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
-                    r.batchThreads);
+                    r.batchThreads, r.batchNumber, r.batchSize);
             boolean isParallel = false;
             /**
              * A task is determined as parallel if: (i) it has loops annotated with
@@ -159,7 +159,7 @@ public class OCLCompiler {
      */
     private static void emitFrontEnd(Providers providers, OCLBackend backend, ResolvedJavaMethod method, Object[] args, TaskMetaData meta, StructuredGraph graph,
             PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, boolean isKernel, boolean buildGraph,
-            long batchThreads) {
+            long batchThreads, int batchNumber, long batchSize) {
         try (DebugContext.Scope s = getDebugContext().scope("OpenCLFrontend", new DebugDumpScope("OpenCLFrontend")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
 
             /*
@@ -167,7 +167,7 @@ public class OCLCompiler {
              */
             ((OCLCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), method, args, meta);
 
-            final TornadoHighTierContext highTierContext = new TornadoHighTierContext(providers, graphBuilderSuite, optimisticOpts, method, args, meta, isKernel, batchThreads);
+            final TornadoHighTierContext highTierContext = new TornadoHighTierContext(providers, graphBuilderSuite, optimisticOpts, method, args, meta, isKernel, batchThreads, batchNumber, batchSize);
 
             if (buildGraph) {
                 if (isGraphEmpty(graph)) {
@@ -309,12 +309,12 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend, TornadoProfiler profiler) {
-        return compileCodeForDevice(resolvedMethod, args, meta, providers, backend, 0, profiler);
+        return compileCodeForDevice(resolvedMethod, args, meta, providers, backend, 0, 0, 0, profiler);
 
     }
 
     public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend, long batchThreads,
-            TornadoProfiler profiler) {
+            int batchNumber, long batchSize, TornadoProfiler profiler) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
@@ -333,7 +333,7 @@ public class OCLCompiler {
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
         Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(kernelGraph, resolvedMethod, args, meta, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, true, batchThreads, profiler);
+                profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, true, batchThreads, batchNumber, batchSize, profiler);
 
         kernelCompilationRequest.execute();
 
@@ -348,7 +348,7 @@ public class OCLCompiler {
             final StructuredGraph graph = builder.build();
             final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
             Request<OCLCompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                    profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true, 0, profiler);
+                    profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true, 0, 0, 0, profiler);
 
             methodCompilationRequest.execute();
             workList.addAll(compResult.getNonInlinedMethods());
@@ -368,6 +368,8 @@ public class OCLCompiler {
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
         final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();
+        final int batchNumber = task.getBatchNumber();
+        final long batchSize = task.getBatchSize();
         taskMeta.setCompiledGraph(resolvedMethod);
 
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
@@ -381,7 +383,7 @@ public class OCLCompiler {
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
         Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(kernelGraph, resolvedMethod, args, taskMeta, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, false, batchThreads, profiler);
+                profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, false, batchThreads, batchNumber, batchSize, profiler);
 
         kernelCompilationRequest.execute();
 
@@ -418,7 +420,7 @@ public class OCLCompiler {
             Request<OCLCompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, //
                     null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), //
                     optimisticOpts, profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), //
-                    compResult, factory, false, false, 0, profiler);
+                    compResult, factory, false, false, 0, 0, 0, profiler);
 
             methodCompilationRequest.execute();
             workList.addAll(compResult.getNonInlinedMethods());
@@ -476,11 +478,13 @@ public class OCLCompiler {
         public final boolean isKernel;
         public final boolean buildGraph;
         public final long batchThreads;
+        public final int batchNumber;
+        public final long batchSize;
         public TornadoProfiler profiler;
 
         public Request(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, OCLBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads, TornadoProfiler profiler) {
+                T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads, int batchNumber, long batchSize, TornadoProfiler profiler) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
             this.args = args;
@@ -497,6 +501,8 @@ public class OCLCompiler {
             this.isKernel = isKernel;
             this.buildGraph = buildGraph;
             this.batchThreads = batchThreads;
+            this.batchNumber = batchNumber;
+            this.batchSize = batchSize;
             this.profiler = profiler;
         }
 

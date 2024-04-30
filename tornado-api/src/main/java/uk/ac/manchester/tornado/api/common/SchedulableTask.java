@@ -45,6 +45,14 @@ public interface SchedulableTask {
 
     long getBatchThreads();
 
+    void setBatchNumber(int batchNumber);
+
+    int getBatchNumber();
+
+    void setBatchSize(long batchSize);
+
+    long getBatchSize();
+
     void attachProfiler(TornadoProfiler tornadoProfiler);
 
     TornadoProfiler getProfiler();

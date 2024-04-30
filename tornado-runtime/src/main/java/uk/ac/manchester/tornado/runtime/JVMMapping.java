@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -38,6 +39,9 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -243,6 +247,18 @@ public class JVMMapping implements TornadoXPUDevice {
     @Override
     public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
+    }
+
+    @Override
+    public boolean loopIndexInWrite(SchedulableTask task) {
+        if (task instanceof CompilableTask) {
+            final CompilableTask executable = (CompilableTask) task;
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+            return sketch.isIndexInWrite();
+        } else {
+            return false;
+        }
     }
 
     @Override

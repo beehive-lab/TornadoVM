@@ -180,7 +180,11 @@ public class TornadoSketcher {
                 mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 
-            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses);
+            Sketch sketch = new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses);
+            if (highTierContext.isIndexInWrite()) {
+                sketch.indexInWrite();
+            }
+            return sketch;
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());

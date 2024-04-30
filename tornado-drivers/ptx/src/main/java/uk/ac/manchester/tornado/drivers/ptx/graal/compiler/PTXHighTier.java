@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.TornadoVal
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoBatchGlobalIndexOffset;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoHalfFloatReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoParallelScheduler;
@@ -80,6 +81,7 @@ public class PTXHighTier extends TornadoHighTier {
         }
 
         appendPhase(new TornadoTaskSpecialisation(canonicalizer));
+        appendPhase(new TornadoBatchGlobalIndexOffset());
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 

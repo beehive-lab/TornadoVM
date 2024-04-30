@@ -31,6 +31,8 @@ public class Sketch {
 
     private final Graph graph;
 
+    private boolean indexInWrite;
+
     /**
      * Argument accesses of the {@link #graph}. If arguments escape to callees, it
      * will contain the updated accesses based on what the non-inlined methods do.
@@ -48,6 +50,14 @@ public class Sketch {
 
     public Access[] getArgumentsAccess() {
         return argumentsAccess;
+    }
+
+    public boolean isIndexInWrite() {
+        return indexInWrite;
+    }
+
+    public void indexInWrite() {
+        this.indexInWrite = true;
     }
 
 }

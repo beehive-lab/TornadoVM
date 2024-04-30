@@ -243,6 +243,18 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         throw new RuntimeException("Unsupported");
     }
 
+    @Override
+    public boolean loopIndexInWrite(SchedulableTask task) {
+        if (task instanceof CompilableTask) {
+            final CompilableTask executable = (CompilableTask) task;
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+            return sketch.isIndexInWrite();
+        } else {
+            return false;
+        }
+    }
+
     private XPUBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
         if (klass == int[].class) {
             return new SPIRVIntArrayWrapper(device, batchSize);

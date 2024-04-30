@@ -440,6 +440,18 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
+    public boolean loopIndexInWrite(SchedulableTask task) {
+        if (task instanceof CompilableTask) {
+            final CompilableTask executable = (CompilableTask) task;
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+            return sketch.isIndexInWrite();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public int getAvailableProcessors() {
         return ((VirtualOCLDevice) device).getAvailableProcessors();
     }

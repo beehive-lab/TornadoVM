@@ -302,7 +302,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @throws IllegalArgumentException
      *     if the specified slice is out of the bounds of the original array.
      */
-    public HalfFloatArray slice( int offset, int length) {
+    public HalfFloatArray slice(int offset, int length) {
         if (offset < 0 || length < 0 || offset + length > getSize()) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
