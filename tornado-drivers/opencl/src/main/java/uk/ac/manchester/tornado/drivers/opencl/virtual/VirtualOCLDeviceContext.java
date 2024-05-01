@@ -219,7 +219,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel) {
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel) {
         return null;
     }
 

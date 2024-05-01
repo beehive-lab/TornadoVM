@@ -477,7 +477,7 @@ public class OCLCodeCache {
         return deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().split("\\(")[0];
     }
 
-    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean shouldCompile, boolean printKernel) { // TODO Override this method for each FPGA backend
+    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean printKernel) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = fpgaSourceDir + entryPoint + OPENCL_SOURCE_SUFFIX;
         final String outputFile = fpgaSourceDir + entryPoint;
@@ -502,54 +502,43 @@ public class OCLCodeCache {
             pendingTasks.put(taskNames[0], tasks);
         }
 
-        if (shouldCompile) {
-            if (isPlatform("xilinx")) {
-                compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                linkObjectFiles.add(entryPoint);
-                linkCommand = composeXilinxHLSLinkCommand(entryPoint);
-            } else if (isPlatform("intel")) {
-                if (runOnIntelFPGAWithOneAPI()) {
-                    if (isQuartusHLSRequired()) {
-                        assertIfQuartusHLSIsPresent();
-                        compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
-                    } else {
-                        compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
-                    }
-                } else {
+        if (isPlatform("xilinx")) {
+            compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+            linkObjectFiles.add(entryPoint);
+            linkCommand = composeXilinxHLSLinkCommand(entryPoint);
+        } else if (isPlatform("intel")) {
+            if (runOnIntelFPGAWithOneAPI()) {
+                if (isQuartusHLSRequired()) {
+                    assertIfQuartusHLSIsPresent();
                     compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+                } else {
+                    compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
                 }
             } else {
-                // Should not reach here
-                throw new TornadoRuntimeException("[ERROR] FPGA vendor not supported yet.");
+                compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             }
+        } else {
+            // Should not reach here
+            throw new TornadoRuntimeException("[ERROR] FPGA vendor not supported yet.");
+        }
 
-            String vendor = getDeviceVendor();
+        String vendor = getDeviceVendor();
 
-            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir, entryPoint };
-            Path path = Paths.get(outputFile);
-            addNewEntryInBitstreamHashMap(id, outputFile);
-            if (fpgaBitStreamFile.exists()) {
-                return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
-            } else {
-                invokeShellCommand(compilationCommand);
-                invokeShellCommand(commandRename);
-                invokeShellCommand(linkCommand);
-                if (isFPGAInAWS) {
-                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream, entryPoint };
-                    invokeShellCommand(afiAWSCommand);
-                }
-            }
+        commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir, entryPoint };
+        Path path = Paths.get(outputFile);
+        addNewEntryInBitstreamHashMap(id, outputFile);
+        if (fpgaBitStreamFile.exists()) {
             return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
         } else {
-            // For Xilinx we can compile separated modules and then link them together in
-            // the final phase.
-            if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
-                linkObjectFiles.add(entryPoint);
-                compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                invokeShellCommand(compilationCommand);
+            invokeShellCommand(compilationCommand);
+            invokeShellCommand(commandRename);
+            invokeShellCommand(linkCommand);
+            if (isFPGAInAWS) {
+                String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream, entryPoint };
+                invokeShellCommand(afiAWSCommand);
             }
         }
-        return null;
+        return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
     }
 
     private boolean isInputSourceSPIRVBinary(byte[] source) {
