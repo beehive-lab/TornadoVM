@@ -147,16 +147,16 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
         if (null != device.getDeviceType()) {
 
             if (Tornado.FORCE_ALL_TO_GPU) {
-                return TornadoSchedulingStrategy.PER_ITERATION;
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
 
             if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
-                return TornadoSchedulingStrategy.PER_BLOCK;
+                return TornadoSchedulingStrategy.PER_CPU_BLOCK;
             }
-            return TornadoSchedulingStrategy.PER_ITERATION;
+            return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
         }
         TornadoInternalError.shouldNotReachHere();
-        return TornadoSchedulingStrategy.PER_ITERATION;
+        return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
     }
 
     @Override

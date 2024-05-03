@@ -112,7 +112,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        return TornadoSchedulingStrategy.PER_ITERATION;
+        return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
     }
 
     @Override

@@ -35,6 +35,8 @@ public class TornadoOptions {
     public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
 
+    public static final boolean TORNADO_LOOP_INTERCHANGE = getBooleanValue("tornado.loops.interchange", "True");
+
     /**
      * Enable thread deployment debugging from the TornadoVM runtime and code dispatcher.
      */
