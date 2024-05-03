@@ -29,12 +29,29 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 public class TornadoOptions {
 
-    public static final String FALSE = "FALSE";
-    public static final String TRUE = "TRUE";
+    private static final String FALSE = "FALSE";
+    private static final String TRUE = "TRUE";
+
+    /**
+     * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
+     */
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
-    public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
+
+    /**
+     * Index for the default backend in TornadoVM. Default is 0.
+     */
+    public static final int DEFAULT_BACKEND_INDEX = Integer.parseInt(Tornado.getProperty("tornado.backend", "0"));
+
+    /**
+     * Index for the default device in TornadoVM. Default is 0.
+     */
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
 
+    /**
+     * Enable/disable loop interchange optimization from the Sketcher compilation. This optimization is enabled
+     * by default. The optimization that reverses the ordering of the loops is:
+     * {@link uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoApiReplacement}.
+     */
     public static final boolean TORNADO_LOOP_INTERCHANGE = getBooleanValue("tornado.loop.interchange", "True");
 
     /**
