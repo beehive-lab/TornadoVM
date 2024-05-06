@@ -45,6 +45,8 @@ import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
@@ -92,6 +94,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {
         // build node -> annotation mapping
+        TornadoDevice device = context.getDevice();
         Map<ResolvedJavaMethod, ParallelAnnotationProvider[]> methodToAnnotations = new HashMap<>();
 
         methodToAnnotations.put(context.getMethod(), asmClassVisitorProvider.getParallelAnnotations(context.getMethod()));
@@ -123,7 +126,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             data.detectCountedLoops();
             int loopIndex = 0;
             final List<LoopEx> loops = data.outerFirst();
-            if (TORNADO_LOOPS_REVERSE) {
+            if (device.getDeviceType() != TornadoDeviceType.CPU && TORNADO_LOOPS_REVERSE) {
+                // We do not apply loop interchange for CPU-only execution. 
                 Collections.reverse(loops);
             }
 
