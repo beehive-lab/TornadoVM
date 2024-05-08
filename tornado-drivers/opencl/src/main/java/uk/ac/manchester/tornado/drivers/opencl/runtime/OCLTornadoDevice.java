@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -88,7 +89,6 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLXPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -198,19 +198,22 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        if (null != device.getDeviceType()) {
-
-            if (Tornado.FORCE_ALL_TO_GPU) {
+        switch (Objects.requireNonNull(device.getDeviceType())) {
+            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
                 return TornadoSchedulingStrategy.PER_ITERATION;
             }
-
-            if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
-                return TornadoSchedulingStrategy.PER_BLOCK;
+            case CL_DEVICE_TYPE_CPU -> {
+                if (TornadoOptions.USE_CPU_SCHEDULER) {
+                    return TornadoSchedulingStrategy.PER_BLOCK;
+                } else {
+                    return TornadoSchedulingStrategy.PER_ITERATION;
+                }
             }
-            return TornadoSchedulingStrategy.PER_ITERATION;
+            default -> {
+                TornadoInternalError.shouldNotReachHere();
+                return TornadoSchedulingStrategy.PER_ITERATION;
+            }
         }
-        TornadoInternalError.shouldNotReachHere();
-        return TornadoSchedulingStrategy.PER_ITERATION;
     }
 
     @Override

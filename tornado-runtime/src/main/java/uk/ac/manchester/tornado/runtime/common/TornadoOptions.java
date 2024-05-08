@@ -56,7 +56,7 @@ public class TornadoOptions {
      */
     public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
     /**
-     * Priority of the SPIRV Backend. The higher the number, the more priority over
+     * Priority of the SPIR-V Backend. The higher the number, the more priority over
      * the rest of the backends.
      */
     public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
@@ -261,6 +261,11 @@ public class TornadoOptions {
      * to perform the sync.
      */
     public static final int MAX_EVENTS = getIntValue("tornado.max.events", "32768");
+
+    /**
+     * When running on CPUs, use the default CPU scheduler instead of the GPU scheduler.
+     */
+    public static boolean USE_CPU_SCHEDULER = getBooleanValue("tornado.cpu.scheduler", TRUE);
 
     public static boolean TORNADO_PROFILER_LOG = false;
 
