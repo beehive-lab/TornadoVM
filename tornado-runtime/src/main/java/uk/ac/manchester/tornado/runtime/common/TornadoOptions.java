@@ -263,9 +263,10 @@ public class TornadoOptions {
     public static final int MAX_EVENTS = getIntValue("tornado.max.events", "32768");
 
     /**
-     * When running on CPUs, use the default CPU scheduler instead of the GPU scheduler.
+     * Partitions the iteration space into blocks. When running on CPUs, the number of blocks is equal to the
+     * number of CPU visible cores at runtime. False by default.
      */
-    public static boolean USE_CPU_SCHEDULER = getBooleanValue("tornado.cpu.scheduler", TRUE);
+    public static boolean USE_BLOCK_SCHEDULER = getBooleanValue("tornado.scheduler.block", FALSE);
 
     public static boolean TORNADO_PROFILER_LOG = false;
 

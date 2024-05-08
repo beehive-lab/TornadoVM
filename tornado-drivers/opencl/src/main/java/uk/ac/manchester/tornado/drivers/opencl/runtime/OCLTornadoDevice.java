@@ -203,7 +203,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 return TornadoSchedulingStrategy.PER_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
-                if (TornadoOptions.USE_CPU_SCHEDULER) {
+                if (TornadoOptions.USE_BLOCK_SCHEDULER) {
                     return TornadoSchedulingStrategy.PER_BLOCK;
                 } else {
                     return TornadoSchedulingStrategy.PER_ITERATION;

@@ -46,7 +46,7 @@ public class OCLScheduler {
             case CL_DEVICE_TYPE_ACCELERATOR:
                 return context.isPlatformFPGA() ? new OCLFPGAScheduler(context) : new OCLCPUScheduler(context);
             case CL_DEVICE_TYPE_CPU:
-                return TornadoOptions.USE_CPU_SCHEDULER ? new OCLCPUScheduler(context) : getInstanceGPUScheduler(context);
+                return TornadoOptions.USE_BLOCK_SCHEDULER ? new OCLCPUScheduler(context) : getInstanceGPUScheduler(context);
             default:
                 Tornado.fatal("No scheduler available for device: %s", context);
                 break;
