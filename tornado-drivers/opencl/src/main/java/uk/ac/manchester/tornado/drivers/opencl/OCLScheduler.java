@@ -55,9 +55,6 @@ public class OCLScheduler {
     }
 
     public static OCLKernelScheduler create(final OCLDeviceContext context) {
-        if (Tornado.FORCE_ALL_TO_GPU) {
-            return getInstanceGPUScheduler(context);
-        }
         if (context.getDevice().getDeviceType() != null) {
             OCLDeviceType type = context.getDevice().getDeviceType();
             return instanceScheduler(type, context);
