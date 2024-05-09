@@ -25,6 +25,7 @@ import tarfile
 import zipfile
 
 import install_python_modules as tornadoReq
+import config_utils as cutils
 
 tornadoReq.check_python_dependencies()
 
@@ -233,20 +234,6 @@ class TornadoInstaller:
             command = "make " + makeJDK + " " + backend + " " + polyglotOption
         os.system(command)
 
-    def runPyInstaller(self, currentDirectory, tornadoSDKPath):
-        path = os.path.join(tornadoSDKPath, "bin")
-        os.chdir(path)
-
-        ## List of scripts to compile
-        scripts = ["tornado", "tornado-test", "tornado-benchmarks.py"]
-        for s in scripts:
-            print("creating tornado binary ....  "),
-            command = "pyinstaller " + s + " --onefile"
-            os.system(command)
-            print("ok ")
-
-        os.chdir(currentDirectory)
-
     def createSourceFile(self):
         print(" ------------------------------------------")
         print("        TornadoVM installation done        ")
@@ -260,7 +247,7 @@ class TornadoInstaller:
 
         if os.name == 'nt':
             binariesDistribution = os.path.join(os.environ["TORNADO_SDK"], "bin", "dist")
-            self.runPyInstaller(os.getcwd(), os.environ["TORNADO_SDK"])
+            cutils.runPyInstaller(os.getcwd(), os.environ["TORNADO_SDK"])
             fileContent = "set JAVA_HOME=" + os.environ["JAVA_HOME"] + "\n"
             levelZeroPath = os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
             fileContent = fileContent + "set PATH=" + allPaths + levelZeroPath + os.pathsep + binariesDistribution + os.pathsep + "%PATH%" + "\n"
