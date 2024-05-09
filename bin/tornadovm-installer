@@ -233,6 +233,19 @@ class TornadoInstaller:
             command = "make " + makeJDK + " " + backend + " " + polyglotOption
         os.system(command)
 
+    def runPyInstaller(self, currentDirectory, tornadoSDKPath):
+        path = os.path.join(tornadoSDKPath, "bin")
+        os.chdir(path)
+        print("creating tornado binary ....  "),
+        command = "pyinstaller tornado --onefile"
+        os.system(command)
+        print("ok ")
+        print("creating-test binary ....  "),
+        command = "pyinstaller tornado-test --onefile"
+        os.system(command)
+        print("ok ")
+        os.chdir(currentDirectory)
+
     def createSourceFile(self):
         print(" ------------------------------------------")
         print("        TornadoVM installation done        ")
@@ -245,9 +258,11 @@ class TornadoInstaller:
             allPaths = allPaths + p + os.pathsep
 
         if os.name == 'nt':
+            binariesDistribution = os.path.join(os.environ["TORNADO_SDK"], "bin", "dist")
+            self.runPyInstaller(os.getcwd(), os.environ["TORNADO_SDK"])
             fileContent = "set JAVA_HOME=" + os.environ["JAVA_HOME"] + "\n"
             levelZeroPath = os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
-            fileContent = fileContent + "set PATH=" + allPaths + levelZeroPath + os.pathsep + "%PATH%" + "\n"
+            fileContent = fileContent + "set PATH=" + allPaths + levelZeroPath + os.pathsep + binariesDistribution + os.pathsep + "%PATH%" + "\n"
             fileContent = (
                     fileContent + "set TORNADO_SDK=" + os.environ["TORNADO_SDK"] + "\n"
             )
