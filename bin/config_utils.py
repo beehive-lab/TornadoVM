@@ -18,7 +18,7 @@
 #
 import os
 
-def runPyInstaller(self, currentDirectory, tornadoSDKPath):
+def runPyInstaller(currentDirectory, tornadoSDKPath):
     path = os.path.join(tornadoSDKPath, "bin")
     os.chdir(path)
 
