@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.FloatBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -121,6 +122,20 @@ public final class FloatArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / FLOAT_BYTES);
         FloatArray floatArray = new FloatArray(numElements);
         MemorySegment.copy(segment, 0, floatArray.segment, floatArray.baseIndex * FLOAT_BYTES, byteSize);
+        return floatArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link FloatArray} class from a {@link FloatBuffer}.
+     *
+     * @param buffer
+     *     The {@link FloatBuffer} containing the float data.
+     * @return A new {@link FloatArray} instance, initialized with the buffer data.
+     */
+    public static FloatArray fromFloatBuffer(FloatBuffer buffer) {
+        int numElements = buffer.remaining();
+        FloatArray floatArray = new FloatArray(numElements);
+        floatArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return floatArray;
     }
 

@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -45,22 +45,18 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
 
-    private void replaceOffsetNode(StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
-        final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
-
-        final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(index));
-
-        final AddNode addNode = graph.addOrUnique(new AddNode(threadId, offset.value()));
-
-        final MulNode mulNode = graph.addOrUnique(new MulNode(addNode, range.stride().value()));
-
-        offset.replaceAtUsages(mulNode);
-        offset.safeDelete();
-    }
-
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
+    }
+
+    private void replaceOffsetNode(StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
+        final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
+        final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(index));
+        final AddNode addNode = graph.addOrUnique(new AddNode(threadId, offset.value()));
+        final MulNode mulNode = graph.addOrUnique(new MulNode(addNode, range.stride().value()));
+        offset.replaceAtUsages(mulNode);
+        offset.safeDelete();
     }
 
     private void replaceStrideNode(StructuredGraph graph, ParallelStrideNode stride) {
@@ -91,7 +87,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
                 replaceRangeNode(node);
                 replaceOffsetNode(graph, offset, node);
                 replaceStrideNode(graph, stride);
-
             } else {
                 serialiseLoop(node);
             }
@@ -112,15 +107,11 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     private void serialiseLoop(ParallelRangeNode range) {
         ParallelOffsetNode offset = range.offset();
         ParallelStrideNode stride = range.stride();
-
         range.replaceAtUsages(range.value());
         killNode(range);
-
         offset.replaceAtUsages(offset.value());
         stride.replaceAtUsages(stride.value());
-
         killNode(offset);
         killNode(stride);
-
     }
 }

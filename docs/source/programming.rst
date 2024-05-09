@@ -54,6 +54,8 @@ Additionally, developers can create an instance of a TornadoVM native array by i
    public static FloatArray concat(FloatArray... arrays);
    // from a slice of a TornadoVM native array
    public FloatArray slice(int offset,int length);
+   // from a FloatBuffer to a TornadoVM native array
+   public FloatArray fromFloatBuffer(FloatBuffer buffer);
 
 The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. 
 

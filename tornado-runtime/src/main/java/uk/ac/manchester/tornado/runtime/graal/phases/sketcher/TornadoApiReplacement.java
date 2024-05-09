@@ -21,8 +21,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -45,12 +43,11 @@ import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
 import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
@@ -58,6 +55,11 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     /*
      * A singleton is used because we don't need to support all the logic of loading
@@ -77,14 +79,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             Constructor<?> constructor = klass.getConstructor();
             asmClassVisitorProvider = (ASMClassVisitorProvider) constructor.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            e.printStackTrace();
-            throw new RuntimeException("[ERROR] Tornado Annotation Implementation class not found");
+            throw new RuntimeException("[ERROR] Tornado Annotation Implementation class not found", e);
         }
-    }
-
-    @Override
-    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
-        return ALWAYS_APPLICABLE;
     }
 
     @Override
@@ -93,41 +89,48 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
     }
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {
-        // build node -> annotation mapping
-        TornadoDevice device = context.getDevice();
+        Map<Node, ParallelAnnotationProvider> parallelNodes = getAnnotatedNodes(graph, context);
+        addParallelProcessingNodes(graph, parallelNodes);
+    }
+
+    private Map<Node, ParallelAnnotationProvider> getAnnotatedNodes(StructuredGraph graph, TornadoSketchTierContext context) {
         Map<ResolvedJavaMethod, ParallelAnnotationProvider[]> methodToAnnotations = new HashMap<>();
 
         methodToAnnotations.put(context.getMethod(), asmClassVisitorProvider.getParallelAnnotations(context.getMethod()));
 
-        for (ResolvedJavaMethod inlinee : graph.getMethods()) {
-            ParallelAnnotationProvider[] inlineParallelAnnotations = asmClassVisitorProvider.getParallelAnnotations(inlinee);
+        for (ResolvedJavaMethod resolvedJavaMethod : graph.getMethods()) {
+            ParallelAnnotationProvider[] inlineParallelAnnotations = asmClassVisitorProvider.getParallelAnnotations(resolvedJavaMethod);
             if (inlineParallelAnnotations.length > 0) {
-                methodToAnnotations.put(inlinee, inlineParallelAnnotations);
+                methodToAnnotations.put(resolvedJavaMethod, inlineParallelAnnotations);
             }
         }
-
         Map<Node, ParallelAnnotationProvider> parallelNodes = new HashMap<>();
 
-        graph.getNodes().filter(FrameState.class).forEach(fs -> {
-            if (methodToAnnotations.containsKey(fs.getMethod())) {
-                for (ParallelAnnotationProvider an : methodToAnnotations.get(fs.getMethod())) {
-                    if (fs.bci >= an.getStart() && fs.bci < an.getStart() + an.getLength()) {
-                        Node localNode = fs.localAt(an.getIndex());
+        graph.getNodes().filter(FrameState.class).forEach(frameState -> {
+            if (methodToAnnotations.containsKey(frameState.getMethod())) {
+                for (ParallelAnnotationProvider annotation : methodToAnnotations.get(frameState.getMethod())) {
+                    if (frameState.bci >= annotation.getStart() && frameState.bci < annotation.getStart() + annotation.getLength()) {
+                        Node localNode = frameState.localAt(annotation.getIndex());
                         if (!parallelNodes.containsKey(localNode)) {
-                            parallelNodes.put(localNode, an);
+                            parallelNodes.put(localNode, annotation);
                         }
                     }
                 }
             }
         });
+        return parallelNodes;
+    }
 
+    private void addParallelProcessingNodes(StructuredGraph graph, Map<Node, ParallelAnnotationProvider> parallelNodes) {
         if (graph.hasLoops()) {
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
             int loopIndex = 0;
             final List<LoopEx> loops = data.outerFirst();
-            if (device.getDeviceType() != TornadoDeviceType.CPU && TORNADO_LOOPS_REVERSE) {
-                // We do not apply loop interchange for CPU-only execution. 
+
+            // Enable loop interchange - Parallel Loops are processed in the IR reversed order
+            // to set the ranges and offset of the corresponding <thread-ids> for each dimension.
+            if (TornadoOptions.TORNADO_LOOP_INTERCHANGE) {
                 Collections.reverse(loops);
             }
 
@@ -136,15 +139,10 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
                         continue;
                     }
-                    ValueNode maxIterations;
                     List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
-
                     final IntegerLessThanNode lessThan = conditions.getFirst();
-
-                    maxIterations = lessThan.getY();
-
+                    ValueNode maxIterations = lessThan.getY();
                     parallelizationReplacement(graph, iv, loopIndex, maxIterations, conditions);
-
                     loopIndex++;
                 }
             }
