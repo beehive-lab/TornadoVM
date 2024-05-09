@@ -41,6 +41,7 @@ import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
+import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 import java.util.ArrayList;
@@ -55,16 +56,23 @@ import java.util.Optional;
  */
 public class TornadoBatchGlobalIndexOffset extends BasePhase<TornadoHighTierContext> {
 
+    private long batchSize;
+    private int batchNumber;
+
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+        BatchCompilationConfig batchCompilationConfig = context.getBatchCompilationConfig();
+        batchSize = batchCompilationConfig.getBatchSize();
         // This phase is only applied for batch processing.
-        if (context.getBatchSize() == 0) {
+        if (batchSize == 0) {
             return;
         }
+
+        batchNumber = batchCompilationConfig.getBatchNumber();
 
         for (ValuePhiNode phiNode : graph.getNodes().filter(ValuePhiNode.class)) {
             ArrayList<ValueNode> indexUsages = new ArrayList<>();
@@ -74,8 +82,8 @@ public class TornadoBatchGlobalIndexOffset extends BasePhase<TornadoHighTierCont
                 }
             }
             for (ValueNode phiIndexUsage : indexUsages) {
-                Constant batchNumber = new RawConstant(context.getBatchNumber() * context.getBatchSize());
-                ConstantNode batchNumberNode = new ConstantNode(batchNumber, StampFactory.forKind(JavaKind.Int));
+                Constant batchNumberConstant = new RawConstant(batchNumber * batchSize);
+                ConstantNode batchNumberNode = new ConstantNode(batchNumberConstant, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(batchNumberNode);
 
                 AddNode addOffsets = new AddNode(batchNumberNode, phiNode);

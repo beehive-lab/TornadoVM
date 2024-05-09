@@ -83,6 +83,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
@@ -222,7 +223,7 @@ public class PTXCompiler {
     private static void emitFrontEnd(PTXCompilationRequest r) {
         try (DebugContext.Scope s = getDebugContext().scope("PTXFrontend", new DebugDumpScope("PTXFrontend")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
             final TornadoHighTierContext highTierContext = new TornadoHighTierContext(r.providers, r.graphBuilderSuite, r.optimisticOpts, r.installedCodeOwner, r.args, r.meta, r.isKernel,
-                    r.batchThreads, r.batchNumber, r.batchSize);
+                    r.batchCompilationConfig);
 
             if (r.buildGraph) {
                 if (isGraphEmpty(r.graph)) {
@@ -264,6 +265,7 @@ public class PTXCompiler {
         final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();
         final int batchNumber = task.getBatchNumber();
         final long batchSize = task.getBatchSize();
+        BatchCompilationConfig batchCompilationConfig = new BatchCompilationConfig(batchThreads, batchNumber, batchSize);
 
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
@@ -292,9 +294,7 @@ public class PTXCompiler {
                 .isKernel(true)//
                 .buildGraph(true)//
                 .includePrintf(includePrintf)//
-                .withBatchThreads(batchThreads)//
-                .setBatchNumber(batchNumber)
-                .setBatchSize(batchSize)
+                .setBatchCompilationConfig(batchCompilationConfig)
                 .withProfiler(profiler) //
                 .build();
 
@@ -343,9 +343,7 @@ public class PTXCompiler {
                     .isKernel(false)
                     .buildGraph(false)
                     .includePrintf(false)
-                    .withBatchThreads(0)
-                    .setBatchNumber(0)
-                    .setBatchSize(0)
+                    .setBatchCompilationConfig(new BatchCompilationConfig(0, 0, 0))
                     .withProfiler(profiler)
                     .build();
             // @formatter:on
@@ -389,7 +387,7 @@ public class PTXCompiler {
         return kernelCompResult;
     }
 
-    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend, long batchThreads, int batchNumber, long batchSize,
+    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend, BatchCompilationConfig batchCompilationConfig,
             TornadoProfiler profiler) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
@@ -426,9 +424,7 @@ public class PTXCompiler {
                 .isKernel(true)
                 .buildGraph(true)
                 .includePrintf(false)
-                .withBatchThreads(batchThreads)
-                .setBatchNumber(batchNumber)
-                .setBatchSize(batchSize)
+                .setBatchCompilationConfig(batchCompilationConfig)
                 .withProfiler(profiler)
                 .build();
         // @formatter:on
@@ -463,9 +459,7 @@ public class PTXCompiler {
                     .isKernel(false)
                     .buildGraph(true)
                     .includePrintf(false)
-                    .withBatchThreads(0)
-                    .setBatchNumber(0)
-                    .setBatchSize(0)
+                    .setBatchCompilationConfig(new BatchCompilationConfig(0, 0, 0))
                     .withProfiler(profiler)
                     .build();
             // @formatter:on
@@ -497,15 +491,13 @@ public class PTXCompiler {
         public final CompilationResultBuilderFactory factory;
         public final boolean isKernel;
         public final boolean buildGraph;
-        public final long batchThreads;
-        public final int batchNumber;
-        public final long batchSize;
+        public final BatchCompilationConfig batchCompilationConfig;
         public final boolean includePrintf;
         private final TornadoProfiler profiler;
 
         private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads, int batchNumber, long batchSize, boolean includePrintf,
+                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig, boolean includePrintf,
                 TornadoProfiler profiler) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
@@ -522,9 +514,7 @@ public class PTXCompiler {
             this.factory = factory;
             this.isKernel = isKernel;
             this.buildGraph = buildGraph;
-            this.batchThreads = batchThreads;
-            this.batchNumber = batchNumber;
-            this.batchSize = batchSize;
+            this.batchCompilationConfig = batchCompilationConfig;
             this.includePrintf = includePrintf;
             this.profiler = profiler;
         }
@@ -550,9 +540,7 @@ public class PTXCompiler {
             private CompilationResultBuilderFactory factory;
             private boolean isKernel;
             private boolean buildGraph;
-            private long batchThreads;
-            private int batchNumber;
-            private long batchSize;
+            private BatchCompilationConfig batchCompilationConfig;
             private boolean includePrintf;
 
             private TornadoProfiler profiler;
@@ -566,7 +554,7 @@ public class PTXCompiler {
 
             public PTXCompilationRequest build() {
                 return new PTXCompilationRequest(graph, codeOwner, args, meta, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
-                        isKernel, buildGraph, batchThreads, batchNumber, batchSize, includePrintf, profiler);
+                        isKernel, buildGraph, batchCompilationConfig, includePrintf, profiler);
             }
 
             public PTXCompilationRequestBuilder withGraph(StructuredGraph graph) {
@@ -649,18 +637,8 @@ public class PTXCompiler {
                 return this;
             }
 
-            public PTXCompilationRequestBuilder withBatchThreads(long batchThreads) {
-                this.batchThreads = batchThreads;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder setBatchNumber(int batchNumber) {
-                this.batchNumber = batchNumber;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder setBatchSize(long batchSize) {
-                this.batchSize = batchSize;
+            public PTXCompilationRequestBuilder setBatchCompilationConfig(BatchCompilationConfig batchCompilationConfig) {
+                this.batchCompilationConfig = batchCompilationConfig;
                 return this;
             }
 

@@ -313,7 +313,7 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
         int iterations = 0;
         int lastNodeCount = graph.getNodeCount();
         boolean hasWork = true;
-        this.batchThreads = context.getBatchThreads();
+        this.batchThreads = context.getBatchCompilationConfig().getBatchThreads();
         this.gridScheduling = context.isGridSchedulerEnabled();
 
         while (hasWork) {
