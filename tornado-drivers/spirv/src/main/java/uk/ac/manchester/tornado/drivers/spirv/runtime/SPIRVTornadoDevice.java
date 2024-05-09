@@ -250,7 +250,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             final CompilableTask executable = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
             final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-            return sketch.isIndexInWrite();
+            return sketch.getBatchWriteThreadIndex();
         } else {
             return false;
         }

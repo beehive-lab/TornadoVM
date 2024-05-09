@@ -52,7 +52,7 @@ public class TornadoBatchFunctionAnalysis extends BasePhase<TornadoSketchTierCon
         for (ValuePhiNode phiNode : graph.getNodes().filter(ValuePhiNode.class)) {
             for (Node phiNodeUsage : phiNode.usages()) {
                 if (isIndexUsedInJavaWrite(phiNodeUsage)) {
-                    context.setIndexInWrite();
+                    context.setBatchWriteThreadIndex();
                 }
             }
         }

@@ -39,7 +39,7 @@ public class TornadoSketchTierContext extends HighTierContext {
      * It includes accesses of arguments passed to non-inlined callees of the {@link #method}.
      */
     private final Access[] argumentAccess;
-    private boolean indexInWrite;
+    private boolean batchWriteThreadIndex;
 
     public TornadoSketchTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method) {
         super(providers, graphBuilderSuite, optimisticOpts);
@@ -56,11 +56,11 @@ public class TornadoSketchTierContext extends HighTierContext {
         return argumentAccess;
     }
 
-    public void setIndexInWrite() {
-        this.indexInWrite = true;
+    public void setBatchWriteThreadIndex() {
+        this.batchWriteThreadIndex = true;
     }
 
-    public boolean isIndexInWrite() {
-        return this.indexInWrite;
+    public boolean getBatchWriteThreadIndex() {
+        return this.batchWriteThreadIndex;
     }
 }

@@ -31,7 +31,7 @@ public class Sketch {
 
     private final Graph graph;
 
-    private boolean indexInWrite;
+    private boolean batchWriteThreadIndex;
 
     /**
      * Argument accesses of the {@link #graph}. If arguments escape to callees, it
@@ -39,9 +39,10 @@ public class Sketch {
      */
     private final Access[] argumentsAccess;
 
-    Sketch(Graph graph, Access[] argumentAccesses) {
+    Sketch(Graph graph, Access[] argumentAccesses, boolean batchWriteThreadIndex) {
         this.graph = graph;
         this.argumentsAccess = argumentAccesses;
+        this.batchWriteThreadIndex = batchWriteThreadIndex;
     }
 
     public Graph getGraph() {
@@ -52,12 +53,8 @@ public class Sketch {
         return argumentsAccess;
     }
 
-    public boolean isIndexInWrite() {
-        return indexInWrite;
-    }
-
-    public void indexInWrite() {
-        this.indexInWrite = true;
+    public boolean getBatchWriteThreadIndex() {
+        return this.batchWriteThreadIndex;
     }
 
 }
