@@ -128,11 +128,11 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                     return;
                 }
 
-                final InductionVariable iv = ivs.get(0);
+                final InductionVariable iv = ivs.getFirst();
                 ValueNode maxIterations;
 
                 List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
-                final IntegerLessThanNode lessThan = conditions.get(0);
+                final IntegerLessThanNode lessThan = conditions.getFirst();
                 maxIterations = lessThan.getY();
 
                 parallelizationReplacement(graph, iv, parallelDepth, maxIterations, conditions);

@@ -320,7 +320,7 @@ public class PTXCompiler {
             } else {
                 nonInlinedCompiledMethods.add(currentMethod);
             }
-            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 

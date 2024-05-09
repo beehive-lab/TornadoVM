@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -54,13 +54,9 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     private void replaceOffsetNode(StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
         final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
-
         final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(index));
-
         final AddNode addNode = graph.addOrUnique(new AddNode(threadId, offset.value()));
-
         final MulNode mulNode = graph.addOrUnique(new MulNode(addNode, range.stride().value()));
-
         offset.replaceAtUsages(mulNode);
         offset.safeDelete();
     }
@@ -113,15 +109,11 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     private void serialiseLoop(ParallelRangeNode range) {
         ParallelOffsetNode offset = range.offset();
         ParallelStrideNode stride = range.stride();
-
         range.replaceAtUsages(range.value());
         killNode(range);
-
         offset.replaceAtUsages(offset.value());
         stride.replaceAtUsages(stride.value());
-
         killNode(offset);
         killNode(stride);
-
     }
 }

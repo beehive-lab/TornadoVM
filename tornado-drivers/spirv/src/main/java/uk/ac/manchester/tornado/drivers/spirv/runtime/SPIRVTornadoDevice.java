@@ -159,7 +159,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         final SPIRVDeviceContext deviceContext = getDeviceContext();
 
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(task.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
         final TaskMetaData taskMeta = task.meta();
