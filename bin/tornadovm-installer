@@ -299,14 +299,24 @@ class TornadoInstaller:
         backend = "BACKEND=" + backend
         return backend
 
-    def composePolyglotOption(sekf, args):
+
+    def composePolyglotOption(self, args):
         if args.polyglot:
             polyglotOption = "polyglot"
         else:
             polyglotOption = ""
         return polyglotOption
+    
+
+    def check_or_install_python_modules(self):
+        command = "pip3 install -r bin/tornadoDepModules.txt"
+        os.system(command)
+
 
     def install(self, args):
+
+        self.check_or_install_python_modules()
+
         if args.javaHome == None:
             self.checkJDKOption(args)
 
