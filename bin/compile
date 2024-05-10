@@ -24,8 +24,9 @@ import subprocess
 import sys
 
 import install_python_modules as tornadoReq
-
 tornadoReq.check_python_dependencies()
+
+import config_utils as cutils
 
 import update_paths as updp
 import pull_graal_jars
@@ -315,10 +316,7 @@ def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
         if os.path.isfile(source_file):
             shutil.copy(source_file, destination_file)
 
-
-def post_installation_actions(
-        backend_profiles, mvn_build_result, jdk, graal_jars_status
-):
+def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
     """
     Performs post-installation actions.
 
@@ -342,6 +340,10 @@ def post_installation_actions(
             graal_jars_dst_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "share", "java", "graalJars")
             os.makedirs(graal_jars_dst_dir, exist_ok=True)
             copy_jars(graal_jars_src_dir, graal_jars_dst_dir)
+
+        if os.name == 'nt':
+            cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
+
     else:
         print("\nCompilation failed\n")
         sys.exit(-1)
