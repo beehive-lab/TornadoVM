@@ -30,14 +30,14 @@ public enum OCLBuildStatus {
     CL_BUILD_IN_PROGRESS(-3), //
     CL_BUILD_UNKNOWN(-4);
 
-    private final int errorCode;
+    private final int buildStatusCode;
 
     OCLBuildStatus(final int v) {
-        errorCode = v;
+        buildStatusCode = v;
     }
 
-    public int getErrorCode() {
-        return errorCode;
+    public int getBuildStatusCode() {
+        return buildStatusCode;
     }
 
     public static OCLBuildStatus toEnum(final int errorCode) {
