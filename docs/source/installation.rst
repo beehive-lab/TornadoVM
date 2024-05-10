@@ -107,6 +107,9 @@ Windows example: to build TornadoVM with GraalVM and all supported backends (min
 
 .. code-block:: bash
 
+  rem invoke the Microsoft Visual Studio Tool Terminal 
+  .\bin\windowsMicrosoftStudioTools2022.cmd
+
   rem create and activate a virtual environment
 
   python -m venv .venv
@@ -123,7 +126,7 @@ Windows example: to build TornadoVM with GraalVM and all supported backends (min
 
   .. code-block:: bash
 
-    nmake /f Makefile.mak tests
+    tornado-test -V
 
 
 After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM.
