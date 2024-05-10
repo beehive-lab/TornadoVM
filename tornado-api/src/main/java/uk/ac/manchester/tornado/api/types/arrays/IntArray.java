@@ -21,6 +21,8 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -121,6 +123,20 @@ public final class IntArray extends TornadoNativeArray {
         return intArray;
     }
 
+    /**
+     * Creates a new instance of the {@link IntArray} class from a {@link IntBuffer}.
+     *
+     * @param buffer
+     *     The {@link IntBuffer} containing the int data.
+     * @return A new {@link IntArray} instance, initialized with the buffer data.
+     */
+    public static IntArray fromIntBuffer(IntBuffer buffer) {
+        int numElements = buffer.remaining();
+        IntArray intArray = new IntArray(numElements);
+        intArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
+        return intArray;
+    }
+    
     /**
      * Converts the int data from off-heap to on-heap, by copying the values of a {@link IntArray}
      * instance into a new on-heap array.

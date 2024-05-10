@@ -366,7 +366,7 @@ public class SPIRVCompiler {
         final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompilationResult.getNonInlinedMethods());
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
-            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), taskMeta.getDeviceIndex());
+            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getBackendIndex(), taskMeta.getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(task.getId(), currentMethod.getName(), taskMeta);

@@ -226,7 +226,7 @@ public class TornadoGraphBuilder {
 
                 if (task instanceof CompilableTask) {
                     final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                    Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+                    Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
                     accesses = sketch.getArgumentsAccess();
                 } else {
                     accesses = task.getArgumentsAccess();

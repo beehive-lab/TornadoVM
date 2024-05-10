@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -121,6 +122,20 @@ public final class DoubleArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / DOUBLE_BYTES);
         DoubleArray doubleArray = new DoubleArray(numElements);
         MemorySegment.copy(segment, 0, doubleArray.segment, doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
+        return doubleArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link DoubleArray} class from a {@link DoubleBuffer}.
+     *
+     * @param buffer
+     *     The {@link DoubleBuffer} containing the double data.
+     * @return A new {@link DoubleArray} instance, initialized with the buffer data.
+     */
+    public static DoubleArray fromDoubleBuffer(DoubleBuffer buffer) {
+        int numElements = buffer.remaining();
+        DoubleArray doubleArray = new DoubleArray(numElements);
+        doubleArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return doubleArray;
     }
 
