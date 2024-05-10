@@ -65,8 +65,8 @@ public class CompilerUtil {
     }
 
     public static Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskMetaData taskMetaData, Providers providers, TornadoSuitesProvider suites) {
-        new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex())//
+        new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex())//
                 .run();
-        return TornadoSketcher.lookup(resolvedJavaMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
+        return TornadoSketcher.lookup(resolvedJavaMethod, taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex());
     }
 }

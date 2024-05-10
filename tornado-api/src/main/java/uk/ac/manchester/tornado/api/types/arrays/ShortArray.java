@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.ShortBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -120,6 +121,20 @@ public final class ShortArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / SHORT_BYTES);
         ShortArray shortArray = new ShortArray(numElements);
         MemorySegment.copy(segment, 0, shortArray.segment, shortArray.baseIndex * SHORT_BYTES, byteSize);
+        return shortArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link ShortArray} class from a {@link ShortBuffer}.
+     *
+     * @param buffer
+     *     The {@link ShortBuffer} containing the short data.
+     * @return A new {@link ShortArray} instance, initialized with the buffer data.
+     */
+    public static ShortArray fromShortBuffer(ShortBuffer buffer) {
+        int numElements = buffer.remaining();
+        ShortArray shortArray = new ShortArray(numElements);
+        shortArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return shortArray;
     }
 

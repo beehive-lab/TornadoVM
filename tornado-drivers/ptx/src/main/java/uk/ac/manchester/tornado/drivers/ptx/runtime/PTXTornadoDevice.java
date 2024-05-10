@@ -112,7 +112,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        return TornadoSchedulingStrategy.PER_ITERATION;
+        return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
     }
 
     @Override
@@ -166,7 +166,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
         final TaskMetaData taskMeta = executable.meta();

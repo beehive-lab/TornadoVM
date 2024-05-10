@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.CharBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -119,6 +120,20 @@ public final class CharArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / CHAR_BYTES);
         CharArray charArray = new CharArray(numElements);
         MemorySegment.copy(segment, 0, charArray.segment, charArray.baseIndex * CHAR_BYTES, byteSize);
+        return charArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link CharArray} class from a {@link CharBuffer}.
+     *
+     * @param buffer
+     *     The {@link CharBuffer} containing the float data.
+     * @return A new {@link CharArray} instance, initialized with the buffer data.
+     */
+    public static CharArray fromCharBuffer(CharBuffer buffer) {
+        int numElements = buffer.remaining();
+        CharArray charArray = new CharArray(numElements);
+        charArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return charArray;
     }
 
