@@ -75,7 +75,7 @@ public class TestFields extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(100, foo.output[i]);
+            assertEquals(100, foo.output.get(i));
         }
     }
 
@@ -97,7 +97,7 @@ public class TestFields extends TornadoTestBase {
         executionResult.transferToHost(foo.output);
 
         for (int i = 0; i < N; i++) {
-            //              assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
+           assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
         }
     }
 
@@ -201,41 +201,33 @@ public class TestFields extends TornadoTestBase {
     }
 
     private static class Foo {
-        //        final IntArray output;
-        //        final IntArray a;
-        //        final IntArray b;
-        final int[] output;
-        final int[] a;
-        final int[] b;
+        final IntArray output;
+        final IntArray a;
+        final IntArray b;
 
         Foo(int elements) {
-            //            output = new IntArray(elements);
-            //            a = new IntArray(elements);
-            //            b = new IntArray(elements);
-            output = new int[elements];
-            a = new int[elements];
-            b = new int[elements];
+            output = new IntArray(elements);
+            a = new IntArray(elements);
+            b = new IntArray(elements);
         }
 
         public void initRandom() {
             Random r = new Random();
-            IntStream.range(0, a.length).forEach(idx -> {
-                //                a.set(idx, r.nextInt(100));
-                //                b.set(idx, r.nextInt(100));
-                a[idx] = r.nextInt(100);
-                b[idx] = r.nextInt(100);
+            IntStream.range(0, a.getSize()).forEach(idx -> {
+                a.set(idx, r.nextInt(100));
+                b.set(idx, r.nextInt(100));
             });
         }
 
         public void computeInit() {
-            for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = 100;
+            for (@Parallel int i = 0; i < output.getSize(); i++) {
+                output.set(i, 100);
             }
         }
 
         public void computeAdd() {
-            for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = a[i] + b[i];
+            for (@Parallel int i = 0; i < output.getSize(); i++) {
+                output.set(i, a.get(i) + b.get(i));
             }
         }
     }
