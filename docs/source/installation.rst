@@ -610,6 +610,7 @@ We will refer hereafter the directory with TornadoVM sources as ``<TornadoVM>``.
 
    python -m venv .venv
    .venv\Scripts\activate.bat
+   .\bin\windowsMicrosoftStudioTools2022.cmd
    python bin\tornadovm-installer --jdk jdk21 --backend=opencl 
    setvars.cmd
 
