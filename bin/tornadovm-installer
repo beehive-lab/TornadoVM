@@ -309,7 +309,7 @@ class TornadoInstaller:
     
 
     def check_or_install_python_modules(self):
-        command = "pip install -r bin/tornadoDepModules.txt"
+        command = "pip3 install -r bin/tornadoDepModules.txt"
         os.system(command)
 
 
