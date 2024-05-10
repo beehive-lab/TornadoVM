@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.LongBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -119,6 +120,20 @@ public final class LongArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / LONG_BYTES);
         LongArray longArray = new LongArray(numElements);
         MemorySegment.copy(segment, 0, longArray.segment, longArray.baseIndex * LONG_BYTES, byteSize);
+        return longArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link LongArray} class from a {@link LongBuffer}.
+     *
+     * @param buffer
+     *     The {@link LongBuffer} containing the long data.
+     * @return A new {@link LongArray} instance, initialized with the buffer data.
+     */
+    public static LongArray fromLongBuffer(LongBuffer buffer) {
+        int numElements = buffer.remaining();
+        LongArray longArray = new LongArray(numElements);
+        longArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return longArray;
     }
 

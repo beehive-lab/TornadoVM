@@ -147,18 +147,18 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     public TornadoSchedulingStrategy getPreferredSchedule() {
         switch (Objects.requireNonNull(device.getDeviceType())) {
             case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
-                return TornadoSchedulingStrategy.PER_ITERATION;
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
                 if (TornadoOptions.USE_BLOCK_SCHEDULER) {
-                    return TornadoSchedulingStrategy.PER_BLOCK;
+                    return TornadoSchedulingStrategy.PER_CPU_BLOCK;
                 } else {
-                    return TornadoSchedulingStrategy.PER_ITERATION;
+                    return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
                 }
             }
             default -> {
                 TornadoInternalError.shouldNotReachHere();
-                return TornadoSchedulingStrategy.PER_ITERATION;
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
         }
     }
@@ -184,7 +184,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
         final TaskMetaData taskMeta = executable.meta();

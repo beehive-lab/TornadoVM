@@ -54,6 +54,6 @@ test-slam:
 	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 
 docs:
-	cd docs && make html
+	sphinx-build -M html docs/source/ docs/build
 
 .PHONY: docs

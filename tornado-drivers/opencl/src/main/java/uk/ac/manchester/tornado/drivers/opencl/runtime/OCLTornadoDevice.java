@@ -200,18 +200,18 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     public TornadoSchedulingStrategy getPreferredSchedule() {
         switch (Objects.requireNonNull(device.getDeviceType())) {
             case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
-                return TornadoSchedulingStrategy.PER_ITERATION;
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
                 if (TornadoOptions.USE_BLOCK_SCHEDULER) {
-                    return TornadoSchedulingStrategy.PER_BLOCK;
+                    return TornadoSchedulingStrategy.PER_CPU_BLOCK;
                 } else {
-                    return TornadoSchedulingStrategy.PER_ITERATION;
+                    return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
                 }
             }
             default -> {
                 TornadoInternalError.shouldNotReachHere();
-                return TornadoSchedulingStrategy.PER_ITERATION;
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
         }
     }
@@ -247,7 +247,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // Return the code from the cache
         if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
@@ -368,7 +368,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         TaskMetaDataInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
             TaskMetaData metaData = (TaskMetaData) task.meta();
-            return task.getId() + ".device=" + metaData.getDriverIndex() + ":" + metaData.getDeviceIndex();
+            return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
         } else {
             throw new RuntimeException("[ERROR] TaskMetadata expected");
         }

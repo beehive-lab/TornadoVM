@@ -409,7 +409,7 @@ public class OCLCompiler {
             } else {
                 nonInlinedCompiledMethods.add(currentMethod);
             }
-            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             String subKernelName = OCLDeviceContext.checkKernelName(currentMethod.getName());

@@ -601,7 +601,7 @@ public class TornadoVMInterpreter {
         if (timeProfiler instanceof TimeProfiler) {
             // Register the backends only when the profiler is enabled
             timeProfiler.registerBackend(task.getId(), task.getDevice().getTornadoVMBackend().name());
-            timeProfiler.registerDeviceID(task.getId(), task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex());
+            timeProfiler.registerDeviceID(task.getId(), task.meta().getBackendIndex() + ":" + task.meta().getDeviceIndex());
             timeProfiler.registerDeviceName(task.getId(), task.getDevice().getPhysicalDevice().getDeviceName());
         }
 

@@ -40,6 +40,7 @@ Contents
    flags
    ide-integration
    developer-guidelines
+   build-documentation
    faq
    unsupported
    resources
