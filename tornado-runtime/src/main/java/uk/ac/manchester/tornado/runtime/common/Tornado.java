@@ -35,12 +35,12 @@ import uk.ac.manchester.tornado.api.TornadoCI;
 public final class Tornado implements TornadoCI {
 
     public static final TornadoLogger log = new TornadoLogger(TornadoLogger.class);
+
     private static final Properties settings = System.getProperties();
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "False"));
 
     public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));
     public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
-    public static final boolean FORCE_ALL_TO_GPU = Boolean.parseBoolean(settings.getProperty("tornado.opencl.forcegpu", "False"));
     public static final boolean USE_SYNC_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.syncflush", "False"));
     public static final boolean USE_VM_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.vmflush", "True"));
     public static final int EVENT_WINDOW = Integer.parseInt(getProperty("tornado.eventpool.size", "1024"));
