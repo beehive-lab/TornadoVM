@@ -577,25 +577,6 @@ public class OCLCodeCache {
 
     }
 
-    private void dumpOpenCLKernel(String id, String entryPoint, String log, byte[] source) {
-        final Path outDir = resolveLogDirectory();
-        final String identifier = STR."\{id}-\{entryPoint}";
-        error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
-
-        File file = new File(STR."\{outDir}/\{identifier}.log");
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(log.getBytes());
-        } catch (IOException e) {
-            error("unable to write error log: ", e.getMessage());
-        }
-        file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(source);
-        } catch (IOException e) {
-            error("unable to write error log: ", e.getMessage());
-        }
-    }
-
     private void installCodeInCodeCache(OCLProgram program, TaskMetaData meta, String id, String entryPoint, OCLInstalledCode code) {
         
         cache.put(STR."\{id}-\{entryPoint}", code);
