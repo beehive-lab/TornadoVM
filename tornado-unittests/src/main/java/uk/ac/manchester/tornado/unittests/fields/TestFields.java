@@ -201,14 +201,14 @@ public class TestFields extends TornadoTestBase {
     }
 
     private static class Foo {
-                final IntArray output;
-                final IntArray a;
-                final IntArray b;
+        final IntArray output;
+        final IntArray a;
+        final IntArray b;
 
         Foo(int elements) {
-                        output = new IntArray(elements);
-                        a = new IntArray(elements);
-                        b = new IntArray(elements);
+            output = new IntArray(elements);
+            a = new IntArray(elements);
+            b = new IntArray(elements);
         }
 
         public void initRandom() {
