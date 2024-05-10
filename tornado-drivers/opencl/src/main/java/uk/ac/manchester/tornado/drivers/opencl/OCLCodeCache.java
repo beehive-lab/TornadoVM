@@ -89,7 +89,6 @@ public class OCLCodeCache {
      * </p>
      */
     private final StringBuilder OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
-    private final boolean PRINT_WARNINGS = false;
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContextInterface deviceContext;
     private String fpgaName;
@@ -558,6 +557,38 @@ public class OCLCodeCache {
         return value == SPIRV_MAGIC_NUMBER;
     }
 
+    private void dumpKernelSource(String id, String entryPoint, String log, byte[] source) {
+        final Path outDir = resolveLogDirectory();
+        final String identifier = STR."\{id}-\{entryPoint}";
+        error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
+
+        File file = new File(STR."\{outDir}/\{identifier}.log");
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(log.getBytes());
+        } catch (IOException e) {
+            error("unable to write error log: ", e.getMessage());
+        }
+        file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(source);
+        } catch (IOException e) {
+            error("unable to write error log: ", e.getMessage());
+        }
+
+    }
+
+    private void installCodeInCodeCache(OCLProgram program, TaskMetaData meta, String id, String entryPoint, OCLInstalledCode code) {
+        
+        cache.put(STR."\{id}-\{entryPoint}", code);
+
+        // BUG Apple does not seem to like implementing the OpenCL spec
+        // properly, this causes a SIGFAULT.
+        if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
+            final Path outDir = resolveCacheDirectory();
+            program.dumpBinaries(STR."\{outDir.toAbsolutePath()}/\{entryPoint}");
+        }
+    }
+
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
@@ -595,55 +626,26 @@ public class OCLCodeCache {
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         debug("\tOpenCL compilation status = %s", status.toString());
 
-        final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
-
-        if (PRINT_WARNINGS || (status == OCLBuildStatus.CL_BUILD_ERROR)) {
-            if (!log.isEmpty()) {
-                debug(log);
-            }
-            final Path outDir = resolveLogDirectory();
-            final String identifier = STR."\{id}-\{entryPoint}";
-            error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
-
-            File file = new File(STR."\{outDir}/\{identifier}.log");
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                fos.write(log.getBytes());
-            } catch (IOException e) {
-                error("unable to write error log: ", e.getMessage());
-            }
-            file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                fos.write(source);
-            } catch (IOException e) {
-                error("unable to write error log: ", e.getMessage());
-            }
-        }
-
         if (status == OCLBuildStatus.CL_BUILD_ERROR) {
+            final String log = program.getBuildLog(deviceContext.getDeviceId());
+            System.err.println("\n[ERROR] TornadoVM JIT Compiler - OpenCL Build Error Log:\n\n" + log + "\n");
+            dumpKernelSource(id, entryPoint, log, source);
             throw new TornadoBailoutRuntimeException("Error during code compilation with the OpenCL driver");
         }
 
-        final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
-
-        if (kernel != null) {
+        OCLKernel kernel = null;
+        if (status == CL_BUILD_SUCCESS) {
+            kernel = program.getKernel(entryPoint);
             kernelAvailable = true;
         }
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
-
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             if (meta.shouldPrintCompileTimes()) {
                 debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
-            cache.put(STR."\{id}-\{entryPoint}", code);
-
-            // BUG Apple does not seem to like implementing the OpenCL spec
-            // properly, this causes a SIGFAULT.
-            if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
-                final Path outDir = resolveCacheDirectory();
-                program.dumpBinaries(STR."\{outDir.toAbsolutePath()}/\{entryPoint}");
-            }
+            installCodeInCodeCache(program, meta, id, entryPoint, code);
         } else {
             warn("\tunable to compile %s", entryPoint);
             code.invalidate();
