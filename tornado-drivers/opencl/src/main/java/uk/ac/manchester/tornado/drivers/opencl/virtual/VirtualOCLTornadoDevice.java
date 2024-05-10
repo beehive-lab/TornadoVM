@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -57,9 +58,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -144,19 +145,22 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        if (null != device.getDeviceType()) {
-
-            if (Tornado.FORCE_ALL_TO_GPU) {
-                return TornadoSchedulingStrategy.PER_ITERATION;
+        switch (Objects.requireNonNull(device.getDeviceType())) {
+            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
-
-            if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
-                return TornadoSchedulingStrategy.PER_BLOCK;
+            case CL_DEVICE_TYPE_CPU -> {
+                if (TornadoOptions.USE_BLOCK_SCHEDULER) {
+                    return TornadoSchedulingStrategy.PER_CPU_BLOCK;
+                } else {
+                    return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+                }
             }
-            return TornadoSchedulingStrategy.PER_ITERATION;
+            default -> {
+                TornadoInternalError.shouldNotReachHere();
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+            }
         }
-        TornadoInternalError.shouldNotReachHere();
-        return TornadoSchedulingStrategy.PER_ITERATION;
     }
 
     @Override
@@ -180,7 +184,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
         final TaskMetaData taskMeta = executable.meta();

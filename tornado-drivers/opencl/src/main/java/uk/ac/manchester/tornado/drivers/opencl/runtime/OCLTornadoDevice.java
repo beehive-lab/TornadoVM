@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -88,7 +89,6 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLXPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -198,19 +198,22 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        if (null != device.getDeviceType()) {
-
-            if (Tornado.FORCE_ALL_TO_GPU) {
-                return TornadoSchedulingStrategy.PER_ITERATION;
+        switch (Objects.requireNonNull(device.getDeviceType())) {
+            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
-
-            if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
-                return TornadoSchedulingStrategy.PER_BLOCK;
+            case CL_DEVICE_TYPE_CPU -> {
+                if (TornadoOptions.USE_BLOCK_SCHEDULER) {
+                    return TornadoSchedulingStrategy.PER_CPU_BLOCK;
+                } else {
+                    return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+                }
             }
-            return TornadoSchedulingStrategy.PER_ITERATION;
+            default -> {
+                TornadoInternalError.shouldNotReachHere();
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+            }
         }
-        TornadoInternalError.shouldNotReachHere();
-        return TornadoSchedulingStrategy.PER_ITERATION;
     }
 
     @Override
@@ -244,7 +247,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // Return the code from the cache
         if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
@@ -365,7 +368,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         TaskMetaDataInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
             TaskMetaData metaData = (TaskMetaData) task.meta();
-            return task.getId() + ".device=" + metaData.getDriverIndex() + ":" + metaData.getDeviceIndex();
+            return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
         } else {
             throw new RuntimeException("[ERROR] TaskMetadata expected");
         }

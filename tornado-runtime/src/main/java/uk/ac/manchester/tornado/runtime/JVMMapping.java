@@ -91,7 +91,7 @@ public class JVMMapping implements TornadoXPUDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        return TornadoSchedulingStrategy.PER_BLOCK;
+        return TornadoSchedulingStrategy.PER_CPU_BLOCK;
     }
 
     @Override

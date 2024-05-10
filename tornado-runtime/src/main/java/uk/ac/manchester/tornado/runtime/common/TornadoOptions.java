@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,11 +29,30 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 public class TornadoOptions {
 
-    public static final String FALSE = "FALSE";
-    public static final String TRUE = "TRUE";
+    private static final String FALSE = "FALSE";
+    private static final String TRUE = "TRUE";
+
+    /**
+     * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
+     */
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
-    public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
+
+    /**
+     * Index for the default backend in TornadoVM. Default is 0.
+     */
+    public static final int DEFAULT_BACKEND_INDEX = Integer.parseInt(Tornado.getProperty("tornado.backend", "0"));
+
+    /**
+     * Index for the default device in TornadoVM. Default is 0.
+     */
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
+
+    /**
+     * Enable/disable loop interchange optimization from the Sketcher compilation. This optimization is enabled
+     * by default. The optimization that reverses the ordering of the loops is:
+     * {@link uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoApiReplacement}.
+     */
+    public static final boolean TORNADO_LOOP_INTERCHANGE = getBooleanValue("tornado.loop.interchange", "True");
 
     /**
      * Enable thread deployment debugging from the TornadoVM runtime and code dispatcher.
@@ -56,7 +75,7 @@ public class TornadoOptions {
      */
     public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
     /**
-     * Priority of the SPIRV Backend. The higher the number, the more priority over
+     * Priority of the SPIR-V Backend. The higher the number, the more priority over
      * the rest of the backends.
      */
     public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
@@ -261,6 +280,12 @@ public class TornadoOptions {
      * to perform the sync.
      */
     public static final int MAX_EVENTS = getIntValue("tornado.max.events", "32768");
+
+    /**
+     * Partitions the iteration space into blocks. When running on CPUs, the number of blocks is equal to the
+     * number of CPU visible cores at runtime. False by default.
+     */
+    public static boolean USE_BLOCK_SCHEDULER = getBooleanValue("tornado.scheduler.block", FALSE);
 
     public static boolean TORNADO_PROFILER_LOG = false;
 

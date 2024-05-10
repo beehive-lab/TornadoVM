@@ -21,22 +21,33 @@ import subprocess
 
 
 def check_python_dependencies():
+    """
+    Check the required dependencies for the installation of TornadoVM.
+    """
+    
     try:
         import requests
     except:
         subprocess.call(["pip3", "install", "requests"], stderr=subprocess.DEVNULL)
-
+        import requests
+    
     try:
         import tqdm
     except:
         subprocess.call(["pip3", "install", "tqdm"], stderr=subprocess.DEVNULL)
-
+        import tqdm
+    
     try:
         import urllib3
     except:
         subprocess.call(["pip3", "install", "urllib3"], stderr=subprocess.DEVNULL)
-
+        import urllib3
+    
     try:
         import wget
     except:
         subprocess.call(["pip3", "install", "wget"], stderr=subprocess.DEVNULL)
+        import wget
+
+    return 0
+    

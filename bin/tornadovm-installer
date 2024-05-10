@@ -25,6 +25,7 @@ import tarfile
 import zipfile
 
 import install_python_modules as tornadoReq
+import config_utils as cutils
 
 tornadoReq.check_python_dependencies()
 
@@ -245,9 +246,11 @@ class TornadoInstaller:
             allPaths = allPaths + p + os.pathsep
 
         if os.name == 'nt':
+            binariesDistribution = os.path.join(os.environ["TORNADO_SDK"], "bin", "dist")
+            cutils.runPyInstaller(os.getcwd(), os.environ["TORNADO_SDK"])
             fileContent = "set JAVA_HOME=" + os.environ["JAVA_HOME"] + "\n"
             levelZeroPath = os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
-            fileContent = fileContent + "set PATH=" + allPaths + levelZeroPath + os.pathsep + "%PATH%" + "\n"
+            fileContent = fileContent + "set PATH=" + allPaths + levelZeroPath + os.pathsep + binariesDistribution + os.pathsep + "%PATH%" + "\n"
             fileContent = (
                     fileContent + "set TORNADO_SDK=" + os.environ["TORNADO_SDK"] + "\n"
             )
@@ -296,14 +299,24 @@ class TornadoInstaller:
         backend = "BACKEND=" + backend
         return backend
 
-    def composePolyglotOption(sekf, args):
+
+    def composePolyglotOption(self, args):
         if args.polyglot:
             polyglotOption = "polyglot"
         else:
             polyglotOption = ""
         return polyglotOption
+    
+
+    def check_or_install_python_modules(self):
+        command = "pip3 install -r bin/tornadoDepModules.txt"
+        os.system(command)
+
 
     def install(self, args):
+
+        self.check_or_install_python_modules()
+
         if args.javaHome == None:
             self.checkJDKOption(args)
 

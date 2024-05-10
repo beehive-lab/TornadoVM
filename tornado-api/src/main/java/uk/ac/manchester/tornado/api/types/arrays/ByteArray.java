@@ -22,6 +22,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -119,6 +120,20 @@ public final class ByteArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / BYTE_BYTES);
         ByteArray byteArray = new ByteArray(numElements);
         MemorySegment.copy(segment, 0, byteArray.segment, byteArray.baseIndex * BYTE_BYTES, byteSize);
+        return byteArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link ByteArray} class from a {@link ByteBuffer}.
+     *
+     * @param buffer
+     *     The {@link ByteBuffer} containing the float data.
+     * @return A new {@link ByteArray} instance, initialized with the buffer data.
+     */
+    public static ByteArray fromByteBuffer(ByteBuffer buffer) {
+        int numElements = buffer.remaining();
+        ByteArray byteArray = new ByteArray(numElements);
+        byteArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return byteArray;
     }
 
