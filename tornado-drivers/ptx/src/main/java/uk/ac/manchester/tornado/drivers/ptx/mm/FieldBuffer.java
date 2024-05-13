@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
@@ -56,7 +54,7 @@ public class FieldBuffer {
 
     public int enqueueRead(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
-            trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            TornadoLogger.trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: Offset 0
         int eventId = objectBuffer.enqueueRead(executionPlanId, getFieldValue(ref), 0, (useDeps) ? events : null, useDeps);
@@ -65,7 +63,7 @@ public class FieldBuffer {
 
     public List<Integer> enqueueWrite(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
-            trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            TornadoLogger.trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         List<Integer> eventsIds = objectBuffer.enqueueWrite(executionPlanId, getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps);
         return (useDeps) ? eventsIds : Collections.emptyList();
@@ -76,7 +74,7 @@ public class FieldBuffer {
         try {
             value = field.get(container);
         } catch (IllegalArgumentException | IllegalAccessException e) {
-            warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
+            TornadoLogger.warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
         }
         return value;
     }
@@ -99,7 +97,7 @@ public class FieldBuffer {
 
     public void write(long executionPlanId, final Object ref) {
         if (DEBUG) {
-            trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            TornadoLogger.trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         objectBuffer.write(executionPlanId, getFieldValue(ref));
     }

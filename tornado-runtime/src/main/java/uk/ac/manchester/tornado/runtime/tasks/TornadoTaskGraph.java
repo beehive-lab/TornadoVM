@@ -105,7 +105,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -962,7 +962,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void transferToHost(final int mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
-                Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
+                TornadoLogger.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
             }
 

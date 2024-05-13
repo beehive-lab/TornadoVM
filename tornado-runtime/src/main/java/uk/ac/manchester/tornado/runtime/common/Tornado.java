@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,12 +34,9 @@ import uk.ac.manchester.tornado.api.TornadoSettingInterface;
 
 public final class Tornado implements TornadoSettingInterface {
 
-    public static final TornadoLogger log = new TornadoLogger(TornadoLogger.class);
+    private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
 
     private static final Properties settings = System.getProperties();
-
-    private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
-    public static boolean FORCE_BLOCKING_API_CALLS = false;
 
     static {
         tryLoadSettings();
@@ -57,10 +54,6 @@ public final class Tornado implements TornadoSettingInterface {
         return settings.getProperty(key, defaultValue);
     }
 
-    public static void debug(final String msg) {
-        log.debug(msg);
-    }
-
     private static void loadSettings(String filename) {
         final File localSettings = new File(filename);
         Properties loadProperties = new Properties();
@@ -68,43 +61,19 @@ public final class Tornado implements TornadoSettingInterface {
             try (FileInputStream fileInputStream = new FileInputStream(localSettings)) {
                 loadProperties.load(fileInputStream);
             } catch (IOException e) {
-                warn("Unable to load settings from %s", localSettings.getAbsolutePath());
+                TornadoLogger.warn("Unable to load settings from %s", localSettings.getAbsolutePath());
             }
         }
-        /*
-         * merge local and system properties, note that command line arguments override
-         * saved properties
-         */
         Set<String> localKeys = loadProperties.stringPropertyNames();
         Set<String> systemKeys = settings.stringPropertyNames();
         Set<String> diff = new HashSet<>(localKeys);
         diff.removeAll(systemKeys);
-
-        for (String key : diff) {
-            settings.setProperty(key, loadProperties.getProperty(key));
-        }
-        FORCE_BLOCKING_API_CALLS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.blocking", "False"));
+        diff.forEach(key -> settings.setProperty(key, loadProperties.getProperty(key)));
     }
 
     private static void tryLoadSettings() {
         final String tornadoRoot = System.getenv(TORNADO_SDK_VARIABLE);
         loadSettings(tornadoRoot + "/etc/tornado.properties");
-    }
-
-    public static void trace(final String msg) {
-        log.trace(msg);
-    }
-
-    public static void trace(final String pattern, final Object... args) {
-        trace(String.format(pattern, args));
-    }
-
-    public static void warn(final String msg) {
-        log.warn(msg);
-    }
-
-    public static void warn(final String pattern, final Object... args) {
-        warn(String.format(pattern, args));
     }
 
     @Override

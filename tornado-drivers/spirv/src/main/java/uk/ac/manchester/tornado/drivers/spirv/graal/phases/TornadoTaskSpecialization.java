@@ -63,7 +63,6 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoV
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVKernelContextAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
@@ -385,7 +384,7 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
         });
 
         if (iterations == MAX_ITERATIONS) {
-            Tornado.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
+            TornadoLogger.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
         }
         TornadoLogger.debug("TaskSpecialisation ran %d iterations", iterations);
         TornadoLogger.debug("valid graph? %s", graph.verify());

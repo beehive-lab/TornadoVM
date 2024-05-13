@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-
 import java.nio.ByteBuffer;
+
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 // FIXME <REFACTOR> Remove this class (common.mm)
 public class PrimitiveSerialiser {
@@ -52,7 +52,7 @@ public class PrimitiveSerialiser {
         } else if (value instanceof Double) {
             buffer.putDouble((double) value);
         } else {
-            Tornado.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
+            TornadoLogger.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
         }
 
         if (alignment != 0) {

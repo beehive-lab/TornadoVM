@@ -93,11 +93,19 @@ public class TornadoLogger {
         }
     }
 
+    public static void trace(final String pattern, final Object... args) {
+        trace(String.format(pattern, args));
+    }
+
     public static void warn(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.WARNING);
             logger.warning(msg);
         }
+    }
+
+    public static void warn(final String msg, final Object... args) {
+        trace(String.format(msg, args));
     }
 
 }

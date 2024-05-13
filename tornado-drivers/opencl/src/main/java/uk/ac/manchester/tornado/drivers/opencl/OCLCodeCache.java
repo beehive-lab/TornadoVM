@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -634,7 +633,7 @@ public class OCLCodeCache {
             }
             installCodeInCodeCache(program, meta, id, entryPoint, code);
         } else {
-            warn("\tunable to compile %s", entryPoint);
+            TornadoLogger.warn("\tunable to compile %s", entryPoint);
             code.invalidate();
         }
 
@@ -708,7 +707,7 @@ public class OCLCodeCache {
                 RuntimeUtilities.writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
             }
         } else {
-            warn("\tunable to install binary for %s", entryPoint);
+            TornadoLogger.warn("\tunable to install binary for %s", entryPoint);
             code.invalidate();
         }
 

@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -351,7 +350,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             } else if (type == HalfFloat[].class) {
                 return JavaKind.Object;
             } else {
-                warn("cannot wrap field: array type=%s", type.getName());
+                TornadoLogger.warn("cannot wrap field: array type=%s", type.getName());
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class) {
             return JavaKind.Object;

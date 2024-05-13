@@ -36,7 +36,6 @@ import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
 import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
@@ -106,7 +105,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
 
         if (valid) {
-            Tornado.trace("loop nest depth = %d\n", domainTree.getDepth());
+            TornadoLogger.trace("loop nest depth = %d\n", domainTree.getDepth());
             TornadoLogger.debug("discovered parallel domain: %s\n", domainTree);
             context.getMeta().setDomain(domainTree);
         }
