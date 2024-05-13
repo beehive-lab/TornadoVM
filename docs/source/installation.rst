@@ -2,7 +2,7 @@ Installation & Configuration
 ##################################
 
 Pre-requisites
-***************
+****************
 
 These need to be installed before executing either automatic or manual TornadoVM installation:
 
@@ -428,8 +428,9 @@ setup of the required paths:
 
 For macOS: the exports above may be added to ``~/.profile``
 
+
 3. Install CMAKE (if cmake < 3.6)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For Linux:
 ^^^^^^^^^^
@@ -524,14 +525,13 @@ To run individual tests:
 
 .. _installation_windows:
 
-TornadoVM for Windows 10/11 using GraalVM
-================================================
+Installing TornadoVM for Windows 10/11
+======================================
 
-**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows 10/11 it is still experimental.**
+**[DISCLAIMER] Please, note that, although TornadoVM can run on Windows 10/11, it is still experimental.**
 
 1. Install prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 Maven
 ^^^^^^
@@ -551,34 +551,8 @@ CMake
 Download and install CMake from the `official site <https://cmake.org/download/>`__. Although the installer should have updated ``PATH``, check whether the executable "cmake.exe" can be found and correct "PATH" if necessary.
 
 
-2. Download TornadoVM
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-Clone the latest TornadoVM source code from the GitHub `repository <https://github.com/beehive-lab/TornadoVM>`__:
-
-.. code:: bash
-
-   cd %USERPROFILE%\MyProjects
-   git clone https://github.com/beehive-lab/TornadoVM.git
-   cd TornadoVM
-
-We will refer hereafter the directory with TornadoVM sources as ``<TornadoVM>``.
-
-3. Download GraalVM for JDK 21 Community 21.0.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-TornadoVM can run with JDK 21. Visit `GraalVM for JDK21 <https://www.graalvm.org/downloads/>`__
-and download the following build:
-
--  `Download for JDK 21 <https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_windows-x64_bin.zip>`__
-
-Extract the downloaded file to any directory (e.g. ``%ProgramFiles%\Java``).
-
-4. Install the NVIDIA drivers and CUDA Toolkit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+2. Install the GPU drivers and toolkits (e.g., NVIDIA drivers and CUDA Toolkit)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A) CUDA Driver
 
@@ -603,70 +577,87 @@ The only thing to note is that the GPU driver you are currently using should be 
 Thus, if you have the driver already installed, make sure that the version required by the CUDA Toolkit is same or higher, otherwise update the GPU driver during toolkit installation.
 Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA Toolkit - so you may skip installing them.
 
-5. Configure the TornadoVM build: setting ENV variables
+
+3. Install Visual Studio Community 2022 and Python (use the Windows installer for each of those)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- `Visual Studio Community 2022 <https://visualstudio.microsoft.com/vs/community/>`_. 
+- `Python3 for Windows <https://www.python.org/downloads/windows/>`_.
+
+If you have not configured Visual Studio 2022 to use C++, you may need to install it using the Visual Studio Installer. 
+In this case, enable the following packages:
+
+- MSVC C++ x86/64 build tools (latest)
+- MSVC C++ x86/64 Spectre-mitigated libs (latest)
+- C++ ATL for latest build tools (latest for x86/64)
+- C++ ATL for latest build tools with Spectre Mitigations (x86/64)
+
+
+4. Download TornadoVM
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Clone the latest TornadoVM source code from the GitHub `repository <https://github.com/beehive-lab/TornadoVM>`__:
+
+.. code:: bash
+
+   git clone https://github.com/beehive-lab/TornadoVM.git
+   cd TornadoVM
+
+Hereafter, the directory with the source code will be referred as ``<TornadoVM>``.
+
+
+5. Configure/Compile the TornadoVM Project 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+There are two ways to install it. Choose one of them. We highly recommend the first option, since it will install
+the required software dependencies.
 
-Using any text editor create file ``<TornadoVM>/etc/setvars.cmd`` with
-the following content:
 
-.. code:: bash
+A) Using the automatic installation script. This script downloads the following dependencies:
 
-   rem UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL
-   set JAVA_HOME=%ProgramFiles%\Java\graalvm-jdk-21.0.1+12.1
-   
-   rem SUBSTITUTE <TornadoVM> WITH ACTUAL DIRECTORY
-   set PATH=<TornadoVM>\bin\bin;<TornadoVM>\level-zero\build\bin\Release;%PATH%
-
-   rem SUBSTITUTE <TornadoVM> WITH ACTUAL DIRECTORY
-   set TORNADO_SDK=<TornadoVM>\bin\sdk
-
-   rem NEXT LINE IS NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND (USUALLY SET BY CUDA INSTALLER)
-   set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
-
-Check each variable to meet your configuration. Especially substitute ``<TornadoVM>`` in ``PATH`` and ``TORNADO_SDK`` with your TornadoVM directory.
-
-6. Compile TornadoVM
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Start a ``cmd.exe`` terminal, navigate to the ``<TornadoVM>`` directory, and build TornadoVM as follows:
+- Java
+- Maven
+- cmake
 
 .. code:: bash
 
-   cd %USERPROFILE%\MyProjects\TornadoVM
-   etc/setvars.cmd
-   nmake /f Makefile.mak graal-jdk-21 BACKEND=opencl,ptx
+   python -m venv .venv
+   .venv\Scripts\activate.bat
+   .\bin\windowsMicrosoftStudioTools2022.cmd
+   python bin\tornadovm-installer --jdk jdk21 --backend=opencl 
+   setvars.cmd
 
-The ``BACKEND`` parameter has to be a comma-separated list of ``ptx``, ``spirv`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU Computing Toolkit (CUDA) is installed. The ``spirv`` backend makes use of the `Intel Level Zero API <https://dgpu-docs.intel.com/technologies/level-zero.html>`__.
 
-7. Check the installation
+
+B) Manual installation
+
+In this case, you need to install all dependencies (Java, maven and cmake) before building the project.
+Once all dependencies are provided, execute the following commands:
+
+
+.. code:: bash
+
+   python -m venv .venv
+   .venv\Scripts\activate.bat
+   .\bin\windowsMicrosoftStudioTools2022.cmd
+   nmake /f Makefile.mak jdk21 BACKEND=opencl,ptx
+   setvars.cmd
+
+
+6. Check the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Don't close ``cmd.exe`` after the build. Run the following command to see that TornadoVM is working:
-
 .. code:: bash
 
-   python %TORNADO_SDK%\bin\tornado --devices
+   # list the accelerator devices that are reachable from TornadoVM
+   tornado --devices
 
-You should see a list of OpenCL and/or CUDA devices available on your system.
+   # run unit tests
+   tornado-test -V
 
-Now try to run a simple test. To run examples with Graal JDK 21, TornadoVM uses modules:
+   ## run specific examples (e.g., NBody)
+   tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody
 
-.. code:: bash
-
-   python %TORNADO_SDK%\bin\tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D --params="512"
-
-To run individual tests:
-
-.. code:: bash
-
-   python %TORNADO_SDK%\bin\tornado --jvm="-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner --params="uk.ac.manchester.tornado.unittests.arrays.TestArrays"
-
-To run all unit-tests:
-
-.. code:: bash
-
-   nmake /f Makefile.mak tests
 
 
 .. _installation_mali:
