@@ -135,7 +135,7 @@ public class TornadoSketcher {
         sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
     }
 
-    private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex,
+    private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int backendIndex,
             int deviceIndex) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
@@ -151,7 +151,7 @@ public class TornadoSketcher {
         }
 
         try (DebugContext.Scope ignored = getDebugContext().scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(getDebugContext())) {
-            final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod);
+            final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, backendIndex, deviceIndex);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
@@ -169,14 +169,14 @@ public class TornadoSketcher {
                             throw new TornadoRuntimeException(
                                     STR."[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: \{invoke.callTarget().targetMethod().getName()}");
                         }
-                        SketchRequest newRequest = new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, driverIndex, deviceIndex);
+                        SketchRequest newRequest = new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex);
                         buildSketch(newRequest);
                     });
 
             Access[] methodAccesses = highTierContext.getAccesses();
             graph.getInvokes().forEach(invoke -> {
                 // Merge the accesses of the caller with the accesses of the callee
-                Sketch sketch = lookup(invoke.callTarget().targetMethod(), driverIndex, deviceIndex);
+                Sketch sketch = lookup(invoke.callTarget().targetMethod(), backendIndex, deviceIndex);
                 mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLScheduler {
 
@@ -45,7 +46,7 @@ public class OCLScheduler {
             case CL_DEVICE_TYPE_ACCELERATOR:
                 return context.isPlatformFPGA() ? new OCLFPGAScheduler(context) : new OCLCPUScheduler(context);
             case CL_DEVICE_TYPE_CPU:
-                return new OCLCPUScheduler(context);
+                return TornadoOptions.USE_BLOCK_SCHEDULER ? new OCLCPUScheduler(context) : getInstanceGPUScheduler(context);
             default:
                 Tornado.fatal("No scheduler available for device: %s", context);
                 break;
@@ -54,9 +55,6 @@ public class OCLScheduler {
     }
 
     public static OCLKernelScheduler create(final OCLDeviceContext context) {
-        if (Tornado.FORCE_ALL_TO_GPU) {
-            return getInstanceGPUScheduler(context);
-        }
         if (context.getDevice().getDeviceType() != null) {
             OCLDeviceType type = context.getDevice().getDeviceType();
             return instanceScheduler(type, context);

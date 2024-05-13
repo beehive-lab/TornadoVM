@@ -43,6 +43,8 @@ import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
@@ -90,7 +92,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {
         Map<Node, ParallelAnnotationProvider> parallelNodes = getAnnotatedNodes(graph, context);
-        addParallelProcessingNodes(graph, parallelNodes);
+        addParallelProcessingNodes(graph, parallelNodes, context.getDevice());
     }
 
     private Map<Node, ParallelAnnotationProvider> getAnnotatedNodes(StructuredGraph graph, TornadoSketchTierContext context) {
@@ -121,7 +123,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         return parallelNodes;
     }
 
-    private void addParallelProcessingNodes(StructuredGraph graph, Map<Node, ParallelAnnotationProvider> parallelNodes) {
+    private void addParallelProcessingNodes(StructuredGraph graph, Map<Node, ParallelAnnotationProvider> parallelNodes, TornadoDevice device) {
         if (graph.hasLoops()) {
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
@@ -130,7 +132,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
             // Enable loop interchange - Parallel Loops are processed in the IR reversed order
             // to set the ranges and offset of the corresponding <thread-ids> for each dimension.
-            if (TornadoOptions.TORNADO_LOOP_INTERCHANGE) {
+            if (device.getDeviceType() != TornadoDeviceType.CPU && TornadoOptions.TORNADO_LOOP_INTERCHANGE) {
                 Collections.reverse(loops);
             }
 

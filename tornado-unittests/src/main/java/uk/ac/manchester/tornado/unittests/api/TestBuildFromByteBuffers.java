@@ -67,7 +67,6 @@ public class TestBuildFromByteBuffers extends TornadoTestBase {
 
     @Test
     public void testBuildFromDoubleBuffer() {
-        final int SIZE = 10;
         DoubleBuffer buffer = DoubleBuffer.allocate(SIZE);
         buffer.put(new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 1.0, 2.0, 3.0, 4.0, 5.0 });
         buffer.flip();
@@ -81,7 +80,6 @@ public class TestBuildFromByteBuffers extends TornadoTestBase {
 
     @Test
     public void testBuildFromIntBuffer() {
-        final int SIZE = 10;
         IntBuffer buffer = IntBuffer.allocate(SIZE);
         buffer.put(new int[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 });
         buffer.flip();
@@ -95,7 +93,6 @@ public class TestBuildFromByteBuffers extends TornadoTestBase {
 
     @Test
     public void testBuildFromLongBuffer() {
-        final int SIZE = 10;
         LongBuffer buffer = LongBuffer.allocate(SIZE);
         buffer.put(new long[] { 1L, 2L, 3L, 4L, 5L, 1L, 2L, 3L, 4L, 5L });
         buffer.flip();
@@ -109,7 +106,6 @@ public class TestBuildFromByteBuffers extends TornadoTestBase {
 
     @Test
     public void testBuildFromShortBuffer() {
-        final int SIZE = 10;
         ShortBuffer buffer = ShortBuffer.allocate(SIZE);
         buffer.put(new short[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 });
         buffer.flip();
@@ -123,7 +119,6 @@ public class TestBuildFromByteBuffers extends TornadoTestBase {
 
     @Test
     public void testBuildFromCharBuffer() {
-        final int SIZE = 10;
         CharBuffer buffer = CharBuffer.allocate(SIZE);
         buffer.put(new char[] { 'a', 'b', 'c', 'd', 'e', 'a', 'b', 'c', 'd', 'e' });
         buffer.flip();
@@ -137,7 +132,6 @@ public class TestBuildFromByteBuffers extends TornadoTestBase {
 
     @Test
     public void testBuildFromByteBuffer() {
-        final int SIZE = 10;
         ByteBuffer buffer = ByteBuffer.allocate(SIZE);
         buffer.put(new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 });
         buffer.flip();
