@@ -267,7 +267,7 @@ public class TornadoOptions {
      * Option to run concurrently on multiple device in single or multi-backend
      * configuration. False by default.
      */
-    public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
+    public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", FALSE));
 
     /**
      * Panama Object Header in TornadoVM.
@@ -330,7 +330,12 @@ public class TornadoOptions {
     /**
      * Enable Full Debug Mode. Disabled by default.
      */
-    public static final boolean FULL_DEBUG = getBooleanValue("tornado.fullDebug", "False");
+    public static final boolean FULL_DEBUG = getBooleanValue("tornado.fullDebug", FALSE);
+
+    /**
+     * Enable debugging of the kernel parameters. Disable by default.
+     */
+    public static final boolean DEBUG_KERNEL_ARGS = getBooleanValue("tornado.debug.kernelargs", FALSE);
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be
