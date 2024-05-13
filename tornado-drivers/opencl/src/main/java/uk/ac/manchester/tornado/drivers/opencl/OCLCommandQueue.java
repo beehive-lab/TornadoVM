@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
 
 import java.nio.ByteBuffer;
 
@@ -407,9 +406,6 @@ public class OCLCommandQueue {
     }
 
     public long enqueueMarker(long[] waitEvents) {
-        if (MARKER_USE_BARRIER) {
-            return enqueueBarrier(waitEvents);
-        }
         return (openclVersion < 120) ? enqueueMarker11(waitEvents) : enqueueMarker12(waitEvents);
     }
 

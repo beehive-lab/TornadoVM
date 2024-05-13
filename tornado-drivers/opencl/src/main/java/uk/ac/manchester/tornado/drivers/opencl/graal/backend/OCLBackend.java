@@ -319,7 +319,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
 
-            if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
+            if (DEBUG_KERNEL_ARGS && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName())) {
                 emitDebugKernelArgs(asm, method);
             }
 

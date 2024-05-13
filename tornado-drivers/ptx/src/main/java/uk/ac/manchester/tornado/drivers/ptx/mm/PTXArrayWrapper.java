@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.ptx.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
@@ -99,17 +98,8 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-        if (VALIDATE_ARRAY_HEADERS) {
-            if (validateArrayHeader(executionPlanId, array)) {
-                return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            } else {
-                shouldNotReachHere("Array header is invalid");
-            }
-        } else {
-            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
-            return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
-        }
-        return -1;
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
+        return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
     }
 
     private boolean validateArrayHeader(long executionPlanId, T array) {
