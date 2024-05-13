@@ -580,7 +580,7 @@ Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for T
 - `Visual Studio Community 2022 <https://visualstudio.microsoft.com/vs/community/>`_. 
 - `Python3 for Windows <https://www.python.org/downloads/windows/>`_.
 
-If you haven't configured Visual Studio 2022 to use C++, you may need to install it using the Visual Studio Installer. 
+If you have not configured Visual Studio 2022 to use C++, you may need to install it using the Visual Studio Installer. 
 In this case, enable the following packages:
 
 - MSVC C++ x86/64 build tools (latest)
