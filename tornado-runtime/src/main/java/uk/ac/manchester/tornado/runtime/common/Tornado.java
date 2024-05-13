@@ -53,7 +53,6 @@ public final class Tornado implements TornadoSettingInterface {
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
     public static final boolean FPGA_DUMP_LOG = Boolean.parseBoolean(settings.getProperty("tornado.fpgaDumpLog", "False"));
 
-    public static final boolean FULL_DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.fullDebug", "False"));
     private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
     public static boolean FORCE_BLOCKING_API_CALLS = false;
 

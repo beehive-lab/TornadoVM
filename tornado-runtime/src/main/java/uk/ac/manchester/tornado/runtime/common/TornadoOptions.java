@@ -328,6 +328,11 @@ public class TornadoOptions {
     public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
 
     /**
+     * Enable Full Debug Mode. Disabled by default.
+     */
+    public static final boolean FULL_DEBUG = getBooleanValue("tornado.fullDebug", "False");
+
+    /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
      *
