@@ -600,7 +600,7 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
 
-We will refer hereafter the directory with TornadoVM sources as ``<TornadoVM>``.
+Hereafter, the directory with the source code will be referred as ``<TornadoVM>``.
 
 
 5. Configure/Compile the TornadoVM Project 
