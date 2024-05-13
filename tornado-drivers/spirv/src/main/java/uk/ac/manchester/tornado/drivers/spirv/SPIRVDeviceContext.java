@@ -48,7 +48,6 @@ import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeSt
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -182,7 +181,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     public void reset(long executionPlanId) {
-        spirvEventPool.put(executionPlanId, new SPIRVEventPool(Tornado.EVENT_WINDOW));
+        spirvEventPool.put(executionPlanId, new SPIRVEventPool(TornadoOptions.EVENT_WINDOW));
         codeCache.reset();
         wasReset = true;
     }
@@ -326,7 +325,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     private SPIRVEventPool getEventPool(long executionPlanId) {
         if (!spirvEventPool.containsKey(executionPlanId)) {
-            SPIRVEventPool eventPool = new SPIRVEventPool(Tornado.EVENT_WINDOW);
+            SPIRVEventPool eventPool = new SPIRVEventPool(TornadoOptions.EVENT_WINDOW);
             spirvEventPool.put(executionPlanId, eventPool);
         }
         return spirvEventPool.get(executionPlanId);

@@ -353,6 +353,16 @@ public class TornadoOptions {
     public static final boolean USE_VM_FLUSH = getBooleanValue("tornado.vmflush", TRUE);
 
     /**
+     * Define the maximum number of events to wait for in the OpenCL Event Pool. Default is 64.
+     */
+    public static final int MAX_WAIT_EVENTS = getIntValue("tornado.eventpool.maxwaitevents", "64");
+
+    /**
+     * Define the event windows for the Internal Event Pool. Default is 1024.
+     */
+    public static final int EVENT_WINDOW = getIntValue("tornado.eventpool.size", "1024");
+
+    /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
      *

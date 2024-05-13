@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime.interpreter;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
@@ -200,7 +199,7 @@ public class TornadoVMInterpreter {
     }
 
     public void dumpEvents() {
-        if (!ENABLE_PROFILING || !executionContext.meta().shouldDumpEvents()) {
+        if (!TornadoOptions.TORNADO_PROFILER || !executionContext.meta().shouldDumpEvents()) {
             TornadoLogger.info("profiling and/or event dumping is not enabled");
             return;
         }

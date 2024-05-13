@@ -42,13 +42,10 @@ public class OCLVectorNodePlugin implements NodePlugin {
         if (!ENABLE_VECTORS) {
             return false;
         }
-
         if (type.getAnnotation(Vector.class) != null) {
             return createVectorInstance(b, type);
         }
-
         return false;
-
     }
 
     private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {

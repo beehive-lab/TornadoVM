@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.MAX_WAIT_EVENTS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
@@ -36,6 +35,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * Class which holds mapping between OpenCL events and TornadoVM runtime events,
@@ -69,7 +69,7 @@ class OCLEventPool {
         this.descriptors = new EventDescriptor[eventPoolSize];
         this.eventQueues = new OCLCommandQueue[eventPoolSize];
         this.eventIndex = 0;
-        this.waitEventsBuffer = new long[MAX_WAIT_EVENTS];
+        this.waitEventsBuffer = new long[TornadoOptions.MAX_WAIT_EVENTS];
         this.internalEvent = new OCLEvent();
     }
 
