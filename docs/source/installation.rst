@@ -2,7 +2,7 @@ Installation & Configuration
 ##################################
 
 Pre-requisites
-***************
+****************
 
 These need to be installed before executing either automatic or manual TornadoVM installation:
 
@@ -425,8 +425,9 @@ setup of the required paths:
 
 For macOS: the exports above may be added to ``~/.profile``
 
+
 3. Install CMAKE (if cmake < 3.6)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For Linux:
 ^^^^^^^^^^
@@ -522,7 +523,7 @@ To run individual tests:
 .. _installation_windows:
 
 Installing TornadoVM for Windows 10/11
-=============================
+======================================
 
 **[DISCLAIMER] Please, note that, although TornadoVM can run on Windows 10/11, it is still experimental.**
 
