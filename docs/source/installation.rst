@@ -626,7 +626,7 @@ A) Using the automatic installation script. This script downloads the following 
 
 
 
-b) Manual installation
+B) Manual installation
 
 In this case, you need to install all dependencies (Java, maven and cmake) before building the project.
 Once all dependencies are provided, execute the following commands:
