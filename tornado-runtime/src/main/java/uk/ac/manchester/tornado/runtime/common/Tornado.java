@@ -48,7 +48,6 @@ public final class Tornado implements TornadoSettingInterface {
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
-    public static final boolean FPGA_DUMP_LOG = Boolean.parseBoolean(settings.getProperty("tornado.fpgaDumpLog", "False"));
 
     private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
     public static boolean FORCE_BLOCKING_API_CALLS = false;

@@ -433,7 +433,7 @@ public class OCLCodeCache {
     private void invokeShellCommand(String[] command) {
         try {
             if (command != null) {
-                RuntimeUtilities.systemCall(command, Tornado.FPGA_DUMP_LOG, directoryBitstream);
+                RuntimeUtilities.systemCall(command, TornadoOptions.FULL_DEBUG, directoryBitstream);
             }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
