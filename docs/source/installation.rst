@@ -619,7 +619,8 @@ Hereafter, the directory with the source code will be referred as ``<TornadoVM>`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
-   # explore accelerator reachable from TornadoVM
+
+   # list the accelerator devices that are reachable from TornadoVM
    tornado --devices
 
    # run unit tests
