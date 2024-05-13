@@ -41,6 +41,7 @@ public class TornadoSketchTierContext extends HighTierContext {
      * It includes accesses of arguments passed to non-inlined callees of the {@link #method}.
      */
     private final Access[] argumentAccess;
+    private boolean batchWriteThreadIndex;
 
     private TornadoDevice device;
 
@@ -63,5 +64,13 @@ public class TornadoSketchTierContext extends HighTierContext {
 
     public Access[] getAccesses() {
         return argumentAccess;
+    }
+
+    public void setBatchWriteThreadIndex() {
+        this.batchWriteThreadIndex = true;
+    }
+
+    public boolean getBatchWriteThreadIndex() {
+        return this.batchWriteThreadIndex;
     }
 }

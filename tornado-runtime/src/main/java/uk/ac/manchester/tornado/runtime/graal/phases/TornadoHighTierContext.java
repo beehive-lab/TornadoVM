@@ -27,6 +27,7 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -36,16 +37,16 @@ public class TornadoHighTierContext extends HighTierContext {
     protected final Object[] args;
     protected final TaskMetaData meta;
     protected final boolean isKernel;
-    private long batchThreads;
+    private BatchCompilationConfig batchCompilationConfig;
 
     public TornadoHighTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, Object[] args,
-            TaskMetaData meta, boolean isKernel, long batchThreads) {
+            TaskMetaData meta, boolean isKernel, BatchCompilationConfig batchCompilationConfig) {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
         this.args = args;
         this.meta = meta;
         this.isKernel = isKernel;
-        this.batchThreads = batchThreads;
+        this.batchCompilationConfig = batchCompilationConfig;
     }
 
     public ResolvedJavaMethod getMethod() {
@@ -84,8 +85,8 @@ public class TornadoHighTierContext extends HighTierContext {
         return isKernel;
     }
 
-    public long getBatchThreads() {
-        return batchThreads;
+    public BatchCompilationConfig getBatchCompilationConfig() {
+        return batchCompilationConfig;
     }
 
     public boolean isGridSchedulerEnabled() {

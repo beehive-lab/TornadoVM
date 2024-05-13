@@ -43,6 +43,8 @@ public class PrebuiltTask implements SchedulableTask {
     private final String filename;
     private final Access[] argumentsAccess;
     protected long batchThreads;
+    protected int batchNumber;
+    protected long batchSize;
 
     private TornadoProfiler profiler;
     private boolean forceCompiler;
@@ -166,6 +168,26 @@ public class PrebuiltTask implements SchedulableTask {
     @Override
     public void setBatchThreads(long batchThreads) {
         this.batchThreads = batchThreads;
+    }
+
+    @Override
+    public void setBatchNumber(int batchNumber) {
+        this.batchNumber = batchNumber;
+    }
+
+    @Override
+    public int getBatchNumber() {
+        return this.batchNumber;
+    }
+
+    @Override
+    public void setBatchSize(long batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    @Override
+    public long getBatchSize() {
+        return this.batchSize;
     }
 
     @Override

@@ -43,6 +43,8 @@ public class CompilableTask implements SchedulableTask {
     protected TaskMetaData meta;
     protected boolean shouldCompile;
     private long batchNumThreads;
+    private int batchNumber;
+    private long batchSize;
 
     private TornadoProfiler profiler;
     private boolean forceCompiler;
@@ -142,6 +144,26 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public void setBatchThreads(long batchThreads) {
         this.batchNumThreads = batchThreads;
+    }
+
+    @Override
+    public void setBatchNumber(int batchNumber) {
+        this.batchNumber = batchNumber;
+    }
+
+    @Override
+    public int getBatchNumber() {
+        return this.batchNumber;
+    }
+
+    @Override
+    public void setBatchSize(long batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    @Override
+    public long getBatchSize() {
+        return this.batchSize;
     }
 
     @Override

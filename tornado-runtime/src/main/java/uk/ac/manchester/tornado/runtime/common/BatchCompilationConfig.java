@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,40 +21,33 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.sketcher;
+package uk.ac.manchester.tornado.runtime.common;
 
-import org.graalvm.compiler.graph.Graph;
+/**
+ * This class encapsulates all the information related to batch processing
+ * that is necessary during compilation.
+ */
+public class BatchCompilationConfig {
 
-import uk.ac.manchester.tornado.api.common.Access;
+    private long batchThreads;
+    private int batchNumber;
+    private long batchSize;
 
-public class Sketch {
-
-    private final Graph graph;
-
-    private boolean batchWriteThreadIndex;
-
-    /**
-     * Argument accesses of the {@link #graph}. If arguments escape to callees, it
-     * will contain the updated accesses based on what the non-inlined methods do.
-     */
-    private final Access[] argumentsAccess;
-
-    Sketch(Graph graph, Access[] argumentAccesses, boolean batchWriteThreadIndex) {
-        this.graph = graph;
-        this.argumentsAccess = argumentAccesses;
-        this.batchWriteThreadIndex = batchWriteThreadIndex;
+    public BatchCompilationConfig(long batchThreads, int batchNumber, long batchSize) {
+        this.batchThreads = batchThreads;
+        this.batchNumber = batchNumber;
+        this.batchSize = batchSize;
     }
 
-    public Graph getGraph() {
-        return graph;
+    public long getBatchThreads() {
+        return batchThreads;
     }
 
-    public Access[] getArgumentsAccess() {
-        return argumentsAccess;
+    public int getBatchNumber() {
+        return batchNumber;
     }
 
-    public boolean getBatchWriteThreadIndex() {
-        return this.batchWriteThreadIndex;
+    public long getBatchSize() {
+        return batchSize;
     }
-
 }

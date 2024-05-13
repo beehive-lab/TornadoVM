@@ -580,17 +580,30 @@ public class TornadoVMInterpreter {
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
+        int currentBatch = task.getBatchNumber();
         TaskMetaDataInterface meta = task.meta();
         meta.setPrintKernelFlag(executionContext.meta().isPrintKernelEnabled());
 
-        // Check if a different batch size was used for the same kernel. If true, then
-        // the kernel needs to be recompiled.
-        if (!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
+        boolean indexInWrite = deviceForInterpreter.loopIndexInWrite(task);
+        // Check if a different batch size was used for the same kernel or
+        // if the loop index is written in the output buffer, and we are not in the first batch.
+        // If any is true, then the kernel needs to be recompiled.
+        if ((!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) || (currentBatch > 0 && indexInWrite)) {
             task.forceCompilation();
             installedCodes[globalToLocalTaskIndex(taskIndex)].invalidate();
         }
+
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
+
+        // The batch size is only set once. This is because, for the calculations of the
+        // offset to be correct, we need to propagate the initial batch size, not the size
+        // of the remaining chunk, if the batches are uneven.
+        if (task.getBatchSize() == 0 && indexInWrite) {
+            task.setBatchSize(batchThreads);
+        }
+
+        task.setBatchNumber(currentBatch);
         task.enableDefaultThreadScheduler(executionContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
@@ -618,6 +631,11 @@ public class TornadoVMInterpreter {
 
                 installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
+                // After the compilation has been completed, increment
+                // the batch number of the task and update it.
+                if (indexInWrite) {
+                    task.setBatchNumber(++currentBatch);
+                }
             } catch (TornadoBailoutRuntimeException e) {
                 throw new TornadoBailoutRuntimeException("Unable to compile " + task.getFullName() + "\n" + "The internal error is: " + e.getMessage() + "\n" + "Stacktrace: " + Arrays.toString(e
                         .getStackTrace()), e);

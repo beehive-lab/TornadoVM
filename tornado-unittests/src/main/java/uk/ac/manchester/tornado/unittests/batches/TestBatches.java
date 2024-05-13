@@ -162,6 +162,12 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
+    public static void compute(FloatArray data, float beta) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            data.set(i, i * 20 + beta);
+        }
+    }
+
     @Test
     public void test100MBSmall() {
 
@@ -904,6 +910,33 @@ public class TestBatches extends TornadoTestBase {
 
         for (int i = 0; i < array.getSize(); i++) {
             assertEquals(array2.get(i) * 4, array.get(i), 0.01f);
+        }
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void testBatchThreadIndex() {
+        checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
+
+        // Allocate ~ 64MB
+        FloatArray array = new FloatArray(1024 * 1024 * 16);
+        FloatArray arraySeq = new FloatArray(1024 * 1024 * 16);
+
+        float beta = 2.0f;
+        for (int i = 0; i < arraySeq.getSize(); i++) {
+            arraySeq.set(i,  i * 20 + beta);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", TestBatches::compute, array, beta) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        executionPlan.withBatch("10MB") // Batches of 10MB
+                .execute();
+
+        for (int i = 0; i < array.getSize(); i++) {
+            assertEquals(arraySeq.get(i), array.get(i), 0.01f);
         }
         executionPlan.freeDeviceMemory();
     }

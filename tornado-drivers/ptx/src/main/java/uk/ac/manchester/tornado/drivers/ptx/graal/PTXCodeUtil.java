@@ -171,6 +171,10 @@ public class PTXCodeUtil {
                 emitSignatureForGenericParameter(sb, arg);
             }
         }
+        // If the batch number is greater than 0 append the name
+        if (task.getBatchNumber() > 0) {
+            sb.append("_").append(task.getBatchNumber());
+        }
         return sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "").replaceAll(PACKAGE_PANAMA_COLLECTION, "").replaceAll("&", "").toLowerCase();
     }
 
