@@ -524,7 +524,7 @@ To run individual tests:
 Installing TornadoVM for Windows 10/11
 =============================
 
-**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows 10/11, it is still experimental.**
+**[DISCLAIMER] Please, note that, although TornadoVM can run on Windows 10/11, it is still experimental.**
 
 1. Install prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -596,7 +596,6 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 
 .. code:: bash
 
-   cd %USERPROFILE%\MyProjects
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
 
@@ -606,12 +605,38 @@ Hereafter, the directory with the source code will be referred as ``<TornadoVM>`
 5. Configure/Compile the TornadoVM Project 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+There are two ways to install it. Choose one of them. We highly recommend the first option, since it will install
+the required software dependencies.
+
+
+A) Using the automatic installation script. This script downloads the following dependencies:
+
+- Java
+- Maven
+- cmake
+
 .. code:: bash
 
    python -m venv .venv
    .venv\Scripts\activate.bat
    .\bin\windowsMicrosoftStudioTools2022.cmd
    python bin\tornadovm-installer --jdk jdk21 --backend=opencl 
+   setvars.cmd
+
+
+
+b) Manual installation
+
+In this case, you need to install all dependencies (Java, maven and cmake) before building the project.
+Once all dependencies are provided, execute the following commands:
+
+
+.. code:: bash
+
+   python -m venv .venv
+   .venv\Scripts\activate.bat
+   .\bin\windowsMicrosoftStudioTools2022.cmd
+   nmake /f Makefile.mak jdk21 BACKEND=opencl,ptx
    setvars.cmd
 
 
