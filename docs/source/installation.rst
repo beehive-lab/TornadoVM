@@ -574,7 +574,7 @@ Thus, if you have the driver already installed, make sure that the version requi
 Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA Toolkit - so you may skip installing them.
 
 
-3. Install Visual Studio Community 2022 and Python (using respective Windows installer for each)
+3. Install Visual Studio Community 2022 and Python (use the Windows installer for each of those)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - `Visual Studio Community 2022 <https://visualstudio.microsoft.com/vs/community/>`_. 
