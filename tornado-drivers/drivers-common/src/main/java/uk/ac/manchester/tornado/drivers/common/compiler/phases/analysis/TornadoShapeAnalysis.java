@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -98,7 +99,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
                 domainTree.set(index, new IntDomain(getIntegerValue(range.offset().value()), getIntegerValue(range.stride().value()), getIntegerValue(range.value())));
             } else {
                 valid = false;
-                Tornado.info("unsupported multiple parallel loops");
+                TornadoLogger.info("unsupported multiple parallel loops");
                 break;
             }
             lastIndex = index;
@@ -106,7 +107,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
         if (valid) {
             Tornado.trace("loop nest depth = %d\n", domainTree.getDepth());
-            Tornado.debug("discovered parallel domain: %s\n", domainTree);
+            TornadoLogger.debug("discovered parallel domain: %s\n", domainTree);
             context.getMeta().setDomain(domainTree);
         }
     }

@@ -27,7 +27,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
@@ -55,6 +54,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends.
@@ -169,7 +169,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (DEBUG) {
-            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+            TornadoLogger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
@@ -177,7 +177,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
         setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
         if (DEBUG) {
-            debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
+            TornadoLogger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
         }
     }
 

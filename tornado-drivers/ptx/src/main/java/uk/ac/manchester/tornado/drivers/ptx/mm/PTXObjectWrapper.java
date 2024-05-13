@@ -27,7 +27,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
@@ -53,6 +52,7 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class PTXObjectWrapper implements XPUBuffer {
@@ -152,13 +152,13 @@ public class PTXObjectWrapper implements XPUBuffer {
     @Override
     public void allocate(Object reference, long batchSize) {
         if (DEBUG) {
-            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+            TornadoLogger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
         this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize());
 
         if (DEBUG) {
-            debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
+            TornadoLogger.debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
         }
         for (FieldBuffer buffer : wrappedFields) {
             if (buffer != null) {

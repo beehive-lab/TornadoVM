@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.lang.reflect.Array;
@@ -50,6 +49,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
@@ -98,8 +98,8 @@ public class PTXVectorWrapper implements XPUBuffer {
         this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("allocated: %s", toString());
+            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            TornadoLogger.info("allocated: %s", toString());
         }
 
     }
@@ -113,8 +113,9 @@ public class PTXVectorWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("deallocated: %s", toString());
+            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            TornadoLogger.info("deallocated: %s", toString());
         }
     }
 

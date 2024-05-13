@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.lang.reflect.Array;
@@ -49,6 +48,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
@@ -95,7 +95,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
 
@@ -110,9 +110,9 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
-            info("deallocated: %s", toString());
+            TornadoLogger.info("deallocated: %s", toString());
         }
     }
 

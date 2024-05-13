@@ -25,8 +25,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 import java.util.ArrayList;
@@ -35,6 +33,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
@@ -86,8 +85,8 @@ class OCLEventPool {
          * exit.
          */
         if (oclEventId == -1) {
-            fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
-            fatal("terminating application as system integrity has been compromised.");
+            TornadoLogger.fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
+            TornadoLogger.fatal("terminating application as system integrity has been compromised.");
             System.exit(-1);
         }
 
@@ -127,7 +126,7 @@ class OCLEventPool {
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
-                debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
+                TornadoLogger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
 
             }
         }

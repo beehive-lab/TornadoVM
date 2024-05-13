@@ -22,8 +22,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +36,7 @@ import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
@@ -192,7 +191,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (TornadoOptions.FULL_DEBUG) {
-            info("allocated: %s", toString());
+            TornadoLogger.info("allocated: %s", toString());
         }
     }
 
@@ -204,7 +203,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            info("deallocated: %s", toString());
+            TornadoLogger.info("deallocated: %s", toString());
         }
     }
 

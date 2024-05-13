@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -57,6 +55,7 @@ import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -326,7 +325,7 @@ public class TornadoExecutionContext {
 
         setDevice(accelerator);
 
-        info("assigning %s to %s", id, target.getDeviceName());
+        TornadoLogger.info("assigning %s to %s", id, target.getDeviceName());
 
         taskToDeviceMapTable[index] = accelerator;
     }

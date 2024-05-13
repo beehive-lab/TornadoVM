@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
@@ -32,6 +31,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 // FIXME <REFACTOR> This entire class can be common for all three backends
 public class FieldBuffer {
@@ -76,7 +76,7 @@ public class FieldBuffer {
 
     public int read(long executionPlanId, final Object ref, int[] events, boolean useDeps) {
         if (DEBUG) {
-            debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            TornadoLogger.debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: reading with offset != 0
         return objectBuffer.read(executionPlanId, getFieldValue(ref), 0, 0, events, useDeps);

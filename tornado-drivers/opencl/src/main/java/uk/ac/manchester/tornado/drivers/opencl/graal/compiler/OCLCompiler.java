@@ -26,8 +26,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_COMPILED_METHODS;
 
 import java.io.File;
@@ -88,7 +86,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
@@ -316,7 +314,7 @@ public class OCLCompiler {
 
     public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend,
             BatchCompilationConfig batchCompilationConfig, TornadoProfiler profiler) {
-        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        TornadoLogger.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
         Builder builder = new Builder(TornadoCoreRuntime.getOptions(), getDebugContext(), AllowAssumptions.YES);
@@ -364,7 +362,7 @@ public class OCLCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
-        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        TornadoLogger.info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
@@ -441,8 +439,8 @@ public class OCLCompiler {
                 try {
                     Files.createDirectories(outDir);
                 } catch (IOException e) {
-                    error("unable to create cache dir: %s", outDir.toString());
-                    error(e.getMessage());
+                    TornadoLogger.error("unable to create cache dir: %s", outDir.toString());
+                    TornadoLogger.error(e.getMessage());
                 }
             }
 
@@ -454,7 +452,7 @@ public class OCLCompiler {
                     pw.printf("%s,%s\n", m.getDeclaringClass().getName(), m.getName());
                 }
             } catch (IOException e) {
-                error("unable to dump source: ", e.getMessage());
+                TornadoLogger.error("unable to dump source: ", e.getMessage());
             }
         }
 
