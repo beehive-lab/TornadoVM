@@ -328,6 +328,11 @@ public class TornadoOptions {
     public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
 
     /**
+     * Enable basic debug information. Disabled by default.
+     */
+    public static final boolean DEBUG = getBooleanValue("tornado.debug", FALSE);
+
+    /**
      * Enable Full Debug Mode. Disabled by default.
      */
     public static final boolean FULL_DEBUG = getBooleanValue("tornado.fullDebug", FALSE);

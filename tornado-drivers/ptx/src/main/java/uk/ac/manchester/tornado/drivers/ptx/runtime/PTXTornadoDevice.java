@@ -192,7 +192,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
         } catch (Exception e) {
-            if (Tornado.DEBUG) {
+            if (TornadoOptions.DEBUG) {
                 System.err.println(e.getMessage());
             }
             TornadoLogger.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());

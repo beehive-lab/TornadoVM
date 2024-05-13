@@ -124,7 +124,7 @@ public class BatchConfiguration {
         int totalChunks = (int) (totalSize / batchSize);
         int remainingChunkSize = (int) (totalSize % batchSize);
 
-        if (Tornado.DEBUG) {
+        if (TornadoOptions.DEBUG) {
             System.out.println(STR."Batch Size: \{batchSize}");
             System.out.println(STR."Total chunks: \{totalChunks}");
             System.out.println(STR."remainingChunkSize: \{remainingChunkSize}");

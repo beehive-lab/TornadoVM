@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
@@ -91,7 +91,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         }
         long timeStamp = System.nanoTime();
         String file = STR."\{spirvTempDirectory}/\{timeStamp}-\{id}\{entryPoint}.spv";
-        if (Tornado.DEBUG) {
+        if (TornadoOptions.DEBUG) {
             System.out.println(STR."SPIRV-File : \{file}");
         }
         writeBufferToFile(buffer, file);
@@ -164,7 +164,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
         ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
-        if (Tornado.DEBUG) {
+        if (TornadoOptions.DEBUG) {
             Logger.traceRuntime(Logger.BACKEND.SPIRV, STR."Set SPIR-V entry point: \{entryPoint}");
         }
         kernelDesc.setKernelName(entryPoint);

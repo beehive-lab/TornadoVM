@@ -78,7 +78,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SlotsBaseAddressNode;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
@@ -363,7 +362,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(Plugins plugins) {
-        if (Tornado.DEBUG) {
+        if (TornadoOptions.DEBUG) {
             Logger.traceRuntime(Logger.BACKEND.SPIRV, "SPIRV Registering VM Intrinsics Plugins - pending");
         }
     }

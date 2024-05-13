@@ -30,7 +30,7 @@ public class TornadoLogger {
 
     private static Logger logger;
 
-    static boolean isLogOptionEnabled = Tornado.DEBUG || TornadoOptions.FULL_DEBUG;
+    static boolean isLogOptionEnabled = TornadoOptions.DEBUG || TornadoOptions.FULL_DEBUG;
 
     public TornadoLogger(Class<?> clazz) {
         logger = Logger.getLogger(clazz == null ? this.getClass().getName() : clazz.getName());
