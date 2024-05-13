@@ -30,9 +30,9 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernel
 import static uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationPhase.LIRGenerationContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METHODS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_COMPILED_METHODS;
 
 import java.io.File;
 import java.io.IOException;
@@ -294,8 +294,7 @@ public class PTXCompiler {
                 .isKernel(true)//
                 .buildGraph(true)//
                 .includePrintf(includePrintf)//
-                .setBatchCompilationConfig(batchCompilationConfig)
-                .withProfiler(profiler) //
+                .setBatchCompilationConfig(batchCompilationConfig).withProfiler(profiler) //
                 .build();
 
         kernelCompilationRequest.execute();
@@ -387,8 +386,8 @@ public class PTXCompiler {
         return kernelCompResult;
     }
 
-    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend, BatchCompilationConfig batchCompilationConfig,
-            TornadoProfiler profiler) {
+    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend,
+            BatchCompilationConfig batchCompilationConfig, TornadoProfiler profiler) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
@@ -497,8 +496,8 @@ public class PTXCompiler {
 
         private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig, boolean includePrintf,
-                TornadoProfiler profiler) {
+                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig,
+                boolean includePrintf, TornadoProfiler profiler) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
             this.args = args;

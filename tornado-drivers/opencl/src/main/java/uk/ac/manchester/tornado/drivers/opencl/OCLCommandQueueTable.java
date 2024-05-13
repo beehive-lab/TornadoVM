@@ -23,12 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLCommandQueueTable {
 
@@ -57,7 +56,7 @@ public class OCLCommandQueueTable {
         public OCLCommandQueue get(long threadId, OCLTargetDevice device, OCLContext context) {
             if (!commandQueueMap.containsKey(threadId)) {
                 final int deviceVersion = device.deviceVersion();
-                long commandProperties = context.getProperties(device.getIndex());
+                long commandProperties = context.getProperties();
                 long commandQueuePtr;
                 try {
                     commandQueuePtr = context.clCreateCommandQueue(context.getContextId(), device.getId(), commandProperties);

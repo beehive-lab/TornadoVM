@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.runtime.interpreter;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VM_USE_DEPS;
 
 import java.util.Arrays;
 import java.util.BitSet;

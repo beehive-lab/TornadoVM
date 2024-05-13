@@ -904,7 +904,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void waitOn() {
-        if (Tornado.VM_USE_DEPS && event != null) {
+        if (TornadoOptions.VM_USE_DEPS && event != null) {
             event.waitOn();
         } else {
             for (TornadoXPUDevice tornadoXPUDevice : executionContext.getDevices()) {
