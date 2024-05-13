@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime;
 
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -160,15 +159,12 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         int index = 0;
         for (TornadoBackendProvider provider : providerList) {
             if (Tornado.FULL_DEBUG) {
-                System.out.println(STR."[INFO] Loading Backend: \{provider}");
+                System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            boolean isRMI = provider.getName().equalsIgnoreCase("RMI Backend");
-            if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
-                TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
-                if (backend != null) {
-                    tornadoAcceleratorBackends[index] = backend;
-                    index++;
-                }
+            TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
+            if (backend != null) {
+                tornadoAcceleratorBackends[index] = backend;
+                index++;
             }
         }
         backendCount = index;
