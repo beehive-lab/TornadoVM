@@ -124,7 +124,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testFields04() {
+    public void testFieldsPartialCopyout() {
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -151,6 +151,28 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testFieldsLazyCopyout() {
+        final int N = 1024;
+        Foo foo = new Foo(N);
+        foo.initRandom();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, foo.a, foo.b)
+                .task("t0", foo::computeAdd, foo.a, foo.b, foo.output)
+                .transferToHost(DataTransferMode.UNDER_DEMAND, foo.output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
+
+        executionResult.transferToHost(foo.output);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
+        }
+    }
+
+    @Test
+    public void testFieldsPartialLazyCopyout() {
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
