@@ -547,7 +547,7 @@ CMake
 Download and install CMake from the `official site <https://cmake.org/download/>`__. Although the installer should have updated ``PATH``, check whether the executable "cmake.exe" can be found and correct "PATH" if necessary.
 
 
-2. Install your GPU drivers and compute toolkits (e.g., NVIDIA drivers and CUDA Toolkit)
+2. Install the GPU drivers and toolkits (e.g., NVIDIA drivers and CUDA Toolkit)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A) CUDA Driver
