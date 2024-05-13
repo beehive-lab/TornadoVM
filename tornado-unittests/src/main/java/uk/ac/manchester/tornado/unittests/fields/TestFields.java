@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.fields;
 
 import org.junit.Test;
+import uk.ac.manchester.tornado.api.DataRange;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -119,6 +120,32 @@ public class TestFields extends TornadoTestBase {
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output.get(i));
+        }
+    }
+
+    @Test
+    public void testFields04() {
+        final int N = 1024;
+        Foo foo = new Foo(N);
+        foo.initRandom();
+
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", foo::computeAdd);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
+
+        executionPlan.freeDeviceMemory();
+
+        DataRange dataRange = new DataRange(foo.output);
+
+        executionResult.transferToHost(dataRange.withSize(N / 2));
+
+        executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
         }
     }
 
