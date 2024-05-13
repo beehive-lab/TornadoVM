@@ -338,6 +338,16 @@ public class TornadoOptions {
     public static final boolean DEBUG_KERNEL_ARGS = getBooleanValue("tornado.debug.kernelargs", FALSE);
 
     /**
+     * Use flush in OpenCL to sync all pending commands from the command queue. Disabled by default.
+     */
+    public static final boolean USE_SYNC_FLUSH = getBooleanValue("tornado.opencl.syncflush", FALSE);
+
+    /**
+     * Run VM Flush when TornadoVM finishes the execution of the TornadoVM interpreter.
+     */
+    public static final boolean USE_VM_FLUSH = getBooleanValue("tornado.vmflush", TRUE);
+
+    /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
      *

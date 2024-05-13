@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime.interpreter;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
@@ -366,7 +365,7 @@ public class TornadoVMInterpreter {
                 barrier = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), event);
             }
 
-            if (USE_VM_FLUSH) {
+            if (TornadoOptions.USE_VM_FLUSH) {
                 deviceForInterpreter.flush(executionContext.getExecutionPlanId());
             }
         }

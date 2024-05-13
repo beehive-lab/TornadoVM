@@ -38,8 +38,6 @@ public final class Tornado implements TornadoSettingInterface {
 
     private static final Properties settings = System.getProperties();
 
-    public static final boolean USE_SYNC_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.syncflush", "False"));
-    public static final boolean USE_VM_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.vmflush", "True"));
     public static final int EVENT_WINDOW = Integer.parseInt(getProperty("tornado.eventpool.size", "1024"));
     public static final int MAX_WAIT_EVENTS = Integer.parseInt(getProperty("tornado.eventpool.maxwaitevents", "32"));
     public static final boolean DUMP_COMPILED_METHODS = Boolean.parseBoolean(getProperty("tornado.compiled.dump", "False"));
