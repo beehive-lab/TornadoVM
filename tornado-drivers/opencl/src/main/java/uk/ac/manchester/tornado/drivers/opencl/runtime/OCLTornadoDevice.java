@@ -289,7 +289,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             OCLInstalledCode installedCode;
             if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA
-                installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), task.shouldCompile(), task.meta().isPrintKernelEnabled());
+                installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), task.meta().isPrintKernelEnabled());
             } else {
                 // B) for CPU multi-core or GPU
                 installedCode = deviceContext.installCode(result);
@@ -324,7 +324,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             OCLInstalledCode installedCode;
             if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA
-                installedCode = deviceContext.installCode(task.getId(), executable.getEntryPoint(), source, task.shouldCompile(), task.meta().isPrintKernelEnabled());
+                installedCode = deviceContext.installCode(task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
             } else {
                 // B) for CPU multi-core or GPU
                 installedCode = deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);

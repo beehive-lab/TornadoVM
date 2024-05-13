@@ -37,8 +37,9 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(
-            OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE) + ".";
+    public final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + ((getDefaultLocalWorkGroup() != null)
+            ? Arrays.toString(getDefaultLocalWorkGroup())
+            : "null") + ".";
 
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
@@ -49,6 +50,10 @@ public abstract class OCLKernelScheduler {
     public abstract void calculateGlobalWork(final TaskMetaData meta, long batchThreads);
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
+
+    public long[] getDefaultLocalWorkGroup() {
+        return null;
+    }
 
     public int submit(long executionPlanId, final OCLKernel kernel, final TaskMetaData meta, long batchThreads) {
         return submit(executionPlanId, kernel, meta, null, batchThreads);

@@ -626,8 +626,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel) {
-        return codeCache.installFPGASource(id, entryPoint, code, shouldCompile, printKernel);
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel) {
+        return codeCache.installFPGASource(id, entryPoint, code, printKernel);
     }
 
     @Override
