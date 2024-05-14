@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.LIRKind;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;

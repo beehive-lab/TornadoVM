@@ -25,8 +25,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.code.DataSection.Data;
-import org.graalvm.compiler.lir.asm.DataBuilder;
+import jdk.graal.compiler.code.DataSection.Data;
+import jdk.graal.compiler.lir.asm.DataBuilder;
 
 import jdk.vm.ci.meta.Constant;
 

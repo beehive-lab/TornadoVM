@@ -33,12 +33,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.asm.AbstractAddress;
+import jdk.graal.compiler.asm.Assembler;
+import jdk.graal.compiler.asm.Label;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;

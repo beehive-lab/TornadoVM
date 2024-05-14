@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime.graal;
 
-import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
-import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
-import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import jdk.graal.compiler.lir.phases.LIRPhaseSuite;
+import jdk.graal.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
+import jdk.graal.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAllocationStage;
 

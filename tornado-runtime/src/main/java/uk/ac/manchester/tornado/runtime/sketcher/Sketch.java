@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import org.graalvm.compiler.graph.Graph;
+import jdk.graal.compiler.graph.Graph;
 
 import uk.ac.manchester.tornado.api.common.Access;
 

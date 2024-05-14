@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 
-import org.graalvm.compiler.code.CompilationResult;
+import jdk.graal.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;

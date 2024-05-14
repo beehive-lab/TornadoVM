@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;

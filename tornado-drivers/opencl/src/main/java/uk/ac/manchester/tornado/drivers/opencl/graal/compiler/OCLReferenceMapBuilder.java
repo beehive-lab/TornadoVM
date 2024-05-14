@@ -23,8 +23,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.framemap.ReferenceMapBuilder;
 
 import jdk.vm.ci.code.ReferenceMap;
 import jdk.vm.ci.meta.Value;

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import org.graalvm.compiler.graph.Node;
+import jdk.graal.compiler.graph.Node;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadIdNode;

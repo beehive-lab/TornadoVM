@@ -28,14 +28,14 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateExpressions;
 
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
-import org.graalvm.compiler.phases.common.GuardLoweringPhase;
-import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
-import org.graalvm.compiler.phases.common.ReassociationPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.phases.common.CanonicalizerPhase;
+import jdk.graal.compiler.phases.common.FrameStateAssignmentPhase;
+import jdk.graal.compiler.phases.common.GuardLoweringPhase;
+import jdk.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import jdk.graal.compiler.phases.common.MidTierLoweringPhase;
+import jdk.graal.compiler.phases.common.ReassociationPhase;
+import jdk.graal.compiler.phases.common.RemoveValueProxyPhase;
 
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.BoundCheckEliminationPhase;

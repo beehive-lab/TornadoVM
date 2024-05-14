@@ -48,8 +48,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.phases.util.Providers;
+import jdk.graal.compiler.graph.Graph;
+import jdk.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.DRMode;

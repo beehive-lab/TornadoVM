@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
-import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
+import jdk.graal.compiler.lir.phases.AllocationPhase.AllocationContext;
+import jdk.graal.compiler.lir.phases.LIRPhaseSuite;
 
 public class TornadoAllocationStage extends LIRPhaseSuite<AllocationContext> {
 

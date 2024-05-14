@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static org.graalvm.compiler.debug.GraalError.guarantee;
+import static jdk.graal.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import java.lang.reflect.Method;
@@ -37,14 +37,14 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.StreamSupport;
 
 import org.graalvm.collections.EconomicMap;
-import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
-import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import jdk.graal.compiler.core.common.GraalOptions;
+import jdk.graal.compiler.debug.DebugContext;
+import jdk.graal.compiler.hotspot.HotSpotGraalOptionValues;
+import jdk.graal.compiler.lir.constopt.ConstantLoadOptimization;
+import jdk.graal.compiler.lir.phases.PostAllocationOptimizationStage;
+import jdk.graal.compiler.options.OptionKey;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.printer.GraalDebugHandlersFactory;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;

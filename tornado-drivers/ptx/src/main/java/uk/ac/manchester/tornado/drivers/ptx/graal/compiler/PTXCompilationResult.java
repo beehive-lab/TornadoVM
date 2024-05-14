@@ -28,7 +28,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.prependToTa
 import java.util.HashSet;
 import java.util.Set;
 
-import org.graalvm.compiler.code.CompilationResult;
+import jdk.graal.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;

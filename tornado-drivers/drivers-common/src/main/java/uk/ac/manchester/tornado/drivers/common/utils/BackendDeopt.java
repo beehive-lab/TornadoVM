@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common.utils;
 
-import org.graalvm.compiler.phases.util.Providers;
+import jdk.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
