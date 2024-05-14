@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatform;
+import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
 /**
  * Proof of Concept plugin in the OpenCL driver for SPIRV dispatch.
@@ -44,7 +44,7 @@ public class SPIRVOpenCLDriver implements SPIRVDispatcher {
         int numOpenCLPlatforms = OpenCL.getNumPlatforms();
         spirvPlatforms = new ArrayList<>();
         for (int platformIndex = 0; platformIndex < numOpenCLPlatforms; platformIndex++) {
-            TornadoPlatform oclPlatform = OpenCL.getPlatform(platformIndex);
+            TornadoPlatformInterface oclPlatform = OpenCL.getPlatform(platformIndex);
             SPIRVOpenCLPlatform spirvOCLPlatform = new SPIRVOpenCLPlatform(platformIndex, oclPlatform);
             spirvPlatforms.add(spirvOCLPlatform);
         }

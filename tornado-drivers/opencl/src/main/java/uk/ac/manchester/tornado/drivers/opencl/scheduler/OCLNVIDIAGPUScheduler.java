@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,35 +21,24 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
-import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLAMDScheduler extends OCLKernelScheduler {
+public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
-    private static final int WARP_SIZE = 64;
+    private static final int WARP_SIZE = 32;
     private boolean ADJUST_IRREGULAR = false;
 
     private final long[] maxWorkItemSizes;
 
-    public OCLAMDScheduler(final OCLDeviceContext context) {
+    public OCLNVIDIAGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLTargetDevice device = context.getDevice();
-        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
-    }
 
-    @Override
-    public int launch(long executionPlanId, OCLKernel kernel, TaskMetaData meta, int[] waitEvents, long batchThreads) {
-        if (meta.isWorkerGridAvailable()) {
-            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
-            long[] global = grid.getGlobalWork();
-            long[] offset = grid.getGlobalOffset();
-            long[] local = grid.getLocalWork();
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents);
-        } else {
-            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
-        }
+        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
     }
 
     @Override
@@ -57,7 +46,6 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
-            // adjust for irregular problem sizes
             if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
                 value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
             }
@@ -70,31 +58,49 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
         final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
-                /// XXX: Support 3D
-                localWork[2] = calculateGroupSize(maxWorkItemSizes[2], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[2]);
+                localWork[2] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[2], meta.getGlobalWork()[2], 3);
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 3);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 3);
+                break;
             case 2:
-                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 2);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 2);
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 1);
                 break;
             default:
                 break;
         }
     }
 
-    private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize, int dim) {
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;
         }
-        int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
+
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
         if (value == 0) {
             return 1;
         }
         while (globalWorkSize % value != 0) {
             value--;
         }
+        if (value >= 32 && dim > 1) {
+            value /= 2;
+        }
         return value;
+    }
+
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+        long[] localWorkGroups = new long[] { 1, 1, 1 };
+        if (metaData.getDims() == 1) {
+            localWorkGroups[0] = maxWorkItemSizes[0];
+        } else {
+            for (int i = 0; i < metaData.getDims(); i++) {
+                localWorkGroups[i] = (long) Math.sqrt(maxWorkItemSizes[i]);
+            }
+        }
+        return localWorkGroups;
     }
 }

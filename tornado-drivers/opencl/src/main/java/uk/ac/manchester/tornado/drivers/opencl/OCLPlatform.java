@@ -33,9 +33,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLPlatform implements TornadoPlatform {
+public class OCLPlatform implements TornadoPlatformInterface {
 
     private final int index;
     private final long id;

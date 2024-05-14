@@ -21,8 +21,9 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -30,12 +31,15 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public class OCLScheduler {
 
     private static final String AMD_VENDOR = "Advanced Micro Devices";
+    private static final String NVIDIA = "NVIDIA";
 
     private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
         if (context.getDevice().getDeviceVendor().contains(AMD_VENDOR)) {
             return new OCLAMDScheduler(context);
+        } else if (context.getDevice().getDeviceVendor().contains(NVIDIA)) {
+            return new OCLNVIDIAGPUScheduler(context);
         } else {
-            return new OCLGPUScheduler(context);
+            return new OCLGenericGPUScheduler(context);
         }
     }
 
@@ -61,5 +65,4 @@ public class OCLScheduler {
         }
         return null;
     }
-
 }
