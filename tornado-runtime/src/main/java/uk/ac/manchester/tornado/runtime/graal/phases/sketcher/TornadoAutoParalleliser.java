@@ -23,9 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +46,7 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -65,7 +63,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         if (!TornadoOptions.AUTO_PARALLELISATION || graph.getNodes().filter(ParallelRangeNode.class).isNotEmpty()) {
-            info("auto parallelisation disabled");
+            TornadoLogger.info("auto parallelisation disabled");
             return;
         }
         autoParallelise(graph);
@@ -81,7 +79,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             // is single loop nest?
             for (int i = loops.size() - 1; i > 1; i--) {
                 if (loops.get(i).parent() != loops.get(i - 1)) {
-                    info("method %s does not have a single loop-nest", graph.method().getName());
+                    TornadoLogger.info("method %s does not have a single loop-nest", graph.method().getName());
                     return;
                 }
             }
@@ -92,22 +90,22 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                 final LoopBeginNode loopBegin = current.loopBegin();
                 final EconomicMap<Node, InductionVariable> ivMap = current.getInductionVariables();
 
-                info("%s loop info:\n", loopBegin);
+                TornadoLogger.info("%s loop info:\n", loopBegin);
                 final Set<Node> phis = new HashSet<>();
                 for (PhiNode phi : loopBegin.phis()) {
-                    info("\tphi: %s\n", phi);
+                    TornadoLogger.info("\tphi: %s\n", phi);
                     phis.add(phi);
                 }
 
                 List<InductionVariable> ivs = new ArrayList<>();
                 for (Node n : ivMap.getKeys()) {
-                    info("\tiv: node=%s iv=%s\n", n, ivMap.get(n));
+                    TornadoLogger.info("\tiv: node=%s iv=%s\n", n, ivMap.get(n));
                     phis.remove(n);
                     ivs.add(ivMap.get(n));
                 }
 
                 if (!phis.isEmpty()) {
-                    info("unable to parallelise because of loop-dependencies:\n");
+                    TornadoLogger.info("unable to parallelise because of loop-dependencies:\n");
                     for (Node n : phis) {
                         PhiNode phi = (PhiNode) n;
                         StringBuilder sb = new StringBuilder();
@@ -117,14 +115,14 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                             }
                             sb.append("\n");
                         }
-                        info("\tnode %s updated:\n", n);
-                        info(sb.toString().trim());
+                        TornadoLogger.info("\tnode %s updated:\n", n);
+                        TornadoLogger.info(sb.toString().trim());
                     }
                     throw new TornadoBailoutRuntimeException("unable to parallelise because of loop-dependencies.");
                 }
 
                 if (ivs.size() > 1) {
-                    debug("Too many ivs");
+                    TornadoLogger.debug("Too many ivs");
                     return;
                 }
 
@@ -139,7 +137,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
                 parallelDepth++;
             }
-            info("automatically parallelised %s (%dD kernel)\n", graph.method().getName(), parallelDepth);
+            TornadoLogger.info("automatically parallelised %s (%dD kernel)\n", graph.method().getName(), parallelDepth);
         }
     }
 

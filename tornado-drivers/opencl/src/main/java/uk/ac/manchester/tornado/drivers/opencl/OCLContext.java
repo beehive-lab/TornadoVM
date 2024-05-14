@@ -35,7 +35,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -111,20 +110,21 @@ public class OCLContext implements OCLExecutionEnvironment {
         }
     }
 
-    public long getProperties(int index) {
+    public long getProperties() {
         long properties = 0;
-        if (Tornado.ENABLE_PROFILING) {
+        if (TornadoOptions.ENABLE_OPENCL_PROFILING) {
             properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
         }
 
-        if (Tornado.ENABLE_OOO_EXECUTION) {
+        if (TornadoOptions.ENABLE_OOO_EXECUTION) {
             properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         return properties;
     }
 
+    @Override
     public void createCommandQueue(int index) {
-        long properties = getProperties(index);
+        long properties = getProperties();
         createCommandQueue(index, properties);
     }
 
@@ -186,7 +186,7 @@ public class OCLContext implements OCLExecutionEnvironment {
             clReleaseContext(contextID);
             long t2 = System.nanoTime();
 
-            if (Tornado.FULL_DEBUG) {
+            if (TornadoOptions.FULL_DEBUG) {
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "programs", (t1 - t0) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t2 - t0) * 1e-9);

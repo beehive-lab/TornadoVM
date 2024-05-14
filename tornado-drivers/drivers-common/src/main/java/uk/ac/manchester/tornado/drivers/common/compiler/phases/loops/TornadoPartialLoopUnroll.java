@@ -33,7 +33,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 /**
@@ -68,7 +68,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     }
 
     private static int getUnrollFactor() {
-        return (isPowerOfTwo(Tornado.UNROLL_FACTOR) && Tornado.UNROLL_FACTOR <= 32) ? Tornado.UNROLL_FACTOR : LOOP_UNROLL_FACTOR_DEFAULT;
+        return (isPowerOfTwo(TornadoOptions.UNROLL_FACTOR) && TornadoOptions.UNROLL_FACTOR <= 32) ? TornadoOptions.UNROLL_FACTOR : LOOP_UNROLL_FACTOR_DEFAULT;
     }
 
     private static int getUpperGraphLimit(int initialGraphNodeCount) {

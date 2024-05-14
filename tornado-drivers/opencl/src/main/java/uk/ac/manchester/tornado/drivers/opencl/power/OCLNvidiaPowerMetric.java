@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.power;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLNvidiaPowerMetric implements PowerMetric {
     private final OCLDeviceContext deviceContext;
@@ -47,7 +47,7 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
         try {
             clNvmlInit();
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 
@@ -56,7 +56,7 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
         try {
             clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), device);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 
@@ -65,7 +65,7 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
         try {
             clNvmlDeviceGetPowerUsage(device, powerUsage);
         } catch (OCLException e) {
-            error(e.getMessage());
+            TornadoLogger.error(e.getMessage());
         }
     }
 }

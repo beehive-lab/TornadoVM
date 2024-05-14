@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-public interface TornadoCI {
+public interface TornadoSettingInterface {
 
     void setTornadoProperty(String key, String value);
 

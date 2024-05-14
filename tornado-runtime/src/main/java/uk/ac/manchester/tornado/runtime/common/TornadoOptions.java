@@ -267,7 +267,7 @@ public class TornadoOptions {
      * Option to run concurrently on multiple device in single or multi-backend
      * configuration. False by default.
      */
-    public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
+    public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", FALSE));
 
     /**
      * Panama Object Header in TornadoVM.
@@ -321,6 +321,71 @@ public class TornadoOptions {
     public static boolean isProfilerEnabled() {
         return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
+
+    /**
+     * Set Loop unrolling factor for the FPGA compilation. Default is set to 2.
+     */
+    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
+
+    /**
+     * Enable basic debug information. Disabled by default.
+     */
+    public static final boolean DEBUG = getBooleanValue("tornado.debug", FALSE);
+
+    /**
+     * Enable Full Debug Mode. Disabled by default.
+     */
+    public static final boolean FULL_DEBUG = getBooleanValue("tornado.fullDebug", FALSE);
+
+    /**
+     * Enable debugging of the kernel parameters. Disable by default.
+     */
+    public static final boolean DEBUG_KERNEL_ARGS = getBooleanValue("tornado.debug.kernelargs", FALSE);
+
+    /**
+     * Use flush in OpenCL to sync all pending commands from the command queue. Disabled by default.
+     */
+    public static final boolean USE_SYNC_FLUSH = getBooleanValue("tornado.opencl.syncflush", FALSE);
+
+    /**
+     * Run VM Flush when TornadoVM finishes the execution of the TornadoVM interpreter.
+     */
+    public static final boolean USE_VM_FLUSH = getBooleanValue("tornado.vmflush", TRUE);
+
+    /**
+     * Define the maximum number of events to wait for in the OpenCL Event Pool. Default is 64.
+     */
+    public static final int MAX_WAIT_EVENTS = getIntValue("tornado.eventpool.maxwaitevents", "64");
+
+    /**
+     * Define the event windows for the Internal Event Pool. Default is 1024.
+     */
+    public static final int EVENT_WINDOW = getIntValue("tornado.eventpool.size", "1024");
+
+    /**
+     * Enable BIFS Math operations. Disabled by default.
+     */
+    public static final boolean TORNADO_ENABLE_BIFS = getBooleanValue("tornado.bifs.enable", FALSE);
+
+    /**
+     * Enable VM Dependency Path. Disabled by default. This option is only for testing.
+     */
+    public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
+
+    /**
+     * Enable OpenCL Profiling. Enabled by default.
+     */
+    public static final boolean ENABLE_OPENCL_PROFILING = getBooleanValue("tornado.opencl.profiling.enable", TRUE);
+
+    /**
+     * Enable to dump the generated methods to a file for debugging purposes. Disabled by default.
+     */
+    public static final boolean DUMP_COMPILED_METHODS = getBooleanValue("tornado.compiled.dump", FALSE);
+
+    /**
+     * Enable out-of-order execution. False by default.
+     */
+    public static final boolean ENABLE_OOO_EXECUTION = getBooleanValue("tornado.ooo-execution.enable", FALSE);
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be

@@ -28,9 +28,6 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -42,7 +39,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
@@ -103,9 +101,9 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
-        if (Tornado.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("allocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            TornadoLogger.info("allocated: %s", toString());
         }
 
     }
@@ -118,9 +116,10 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (Tornado.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("deallocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            TornadoLogger.info("deallocated: %s", toString());
         }
     }
 
@@ -262,18 +261,8 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-
-        if (VALIDATE_ARRAY_HEADERS) {
-            if (validateArrayHeader(executionPlanId, array)) {
-                return readArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            } else {
-                shouldNotReachHere("Array header is invalid");
-            }
-        } else {
-            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
-            return readArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, numBytes, array, hostOffset, (useDeps) ? events : null);
-        }
-        return -1;
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
+        return readArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, numBytes, array, hostOffset, (useDeps) ? events : null);
     }
 
     protected abstract int readArrayData(long executionPlanId, long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
@@ -319,7 +308,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
-            fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            TornadoLogger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
             header.dump(8);
         }
         return valid;

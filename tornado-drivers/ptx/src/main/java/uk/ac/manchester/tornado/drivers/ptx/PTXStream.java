@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.util.ArrayList;
 import java.util.Arrays;

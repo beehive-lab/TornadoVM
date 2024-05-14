@@ -22,8 +22,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
-import uk.ac.manchester.tornado.api.TornadoCI;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
+import uk.ac.manchester.tornado.api.TornadoSettingInterface;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.exceptions.TornadoAPIException;
 
@@ -55,13 +55,13 @@ public class TornadoAPIProvider {
         return runtime;
     }
 
-    public static TornadoCI loadTornado() {
-        TornadoCI tornado;
+    public static TornadoSettingInterface loadTornado() {
+        TornadoSettingInterface tornado;
         try {
             String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation");
             Class<?> klass = Class.forName(tornadoImplementation);
             Constructor<?> constructor = klass.getConstructor();
-            tornado = (TornadoCI) constructor.newInstance();
+            tornado = (TornadoSettingInterface) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
             throw new TornadoAPIException("[ERROR] Tornado Implementation class not found", e);
         }

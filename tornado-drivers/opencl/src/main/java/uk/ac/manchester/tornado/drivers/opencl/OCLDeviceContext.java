@@ -24,8 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
 import java.util.Collections;
@@ -50,6 +49,7 @@ import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLDeviceContext implements OCLDeviceContextInterface {
@@ -141,7 +141,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
-        if (USE_SYNC_FLUSH) {
+        if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
         commandQueue.finish();

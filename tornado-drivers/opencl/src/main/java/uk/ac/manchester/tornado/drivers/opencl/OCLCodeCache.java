@@ -27,11 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -322,8 +319,8 @@ public class OCLCodeCache {
             try {
                 Files.createDirectories(dir);
             } catch (IOException e) {
-                error("unable to create dir: %s", dir.toString());
-                error(e.getMessage());
+                TornadoLogger.error("unable to create dir: %s", dir.toString());
+                TornadoLogger.error(e.getMessage());
             }
         }
         guarantee(Files.isDirectory(dir), "target directory is not a directory: %s", dir.toAbsolutePath().toString());
@@ -433,7 +430,7 @@ public class OCLCodeCache {
     private void invokeShellCommand(String[] command) {
         try {
             if (command != null) {
-                RuntimeUtilities.systemCall(command, Tornado.FPGA_DUMP_LOG, directoryBitstream);
+                RuntimeUtilities.systemCall(command, TornadoOptions.FULL_DEBUG, directoryBitstream);
             }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
@@ -549,19 +546,19 @@ public class OCLCodeCache {
     private void dumpKernelSource(String id, String entryPoint, String log, byte[] source) {
         final Path outDir = resolveLogDirectory();
         final String identifier = STR."\{id}-\{entryPoint}";
-        error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
+        TornadoLogger.error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
 
         File file = new File(STR."\{outDir}/\{identifier}.log");
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(log.getBytes());
         } catch (IOException e) {
-            error("unable to write error log: ", e.getMessage());
+            TornadoLogger.error("unable to write error log: ", e.getMessage());
         }
         file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(source);
         } catch (IOException e) {
-            error("unable to write error log: ", e.getMessage());
+            TornadoLogger.error("unable to write error log: ", e.getMessage());
         }
 
     }
@@ -580,7 +577,7 @@ public class OCLCodeCache {
 
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
-        info("Installing code for %s into code cache", entryPoint);
+        TornadoLogger.info("Installing code for %s into code cache", entryPoint);
 
         boolean isSPIRVBinary = isInputSourceSPIRVBinary(source);
         final OCLProgram program;
@@ -596,7 +593,7 @@ public class OCLCodeCache {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
             } catch (IOException e) {
-                error("unable to dump source: ", e.getMessage());
+                TornadoLogger.error("unable to dump source: ", e.getMessage());
             }
         }
 
@@ -613,7 +610,7 @@ public class OCLCodeCache {
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
-        debug("\tOpenCL compilation status = %s", status.toString());
+        TornadoLogger.debug("\tOpenCL compilation status = %s", status.toString());
 
         if (status == OCLBuildStatus.CL_BUILD_ERROR) {
             final String log = program.getBuildLog(deviceContext.getDeviceId());
@@ -630,13 +627,13 @@ public class OCLCodeCache {
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
+            TornadoLogger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             if (meta.shouldPrintCompileTimes()) {
-                debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
+                TornadoLogger.debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
             installCodeInCodeCache(program, meta, id, entryPoint, code);
         } else {
-            warn("\tunable to compile %s", entryPoint);
+            TornadoLogger.warn("\tunable to compile %s", entryPoint);
             code.invalidate();
         }
 
@@ -644,7 +641,7 @@ public class OCLCodeCache {
     }
 
     private OCLInstalledCode installBinary(String id, String entryPoint, byte[] binary) throws OCLException {
-        info("Installing binary for %s into code cache", entryPoint);
+        TornadoLogger.info("Installing binary for %s into code cache", entryPoint);
 
         if (entryPoint.contains("-")) {
             entryPoint = entryPoint.split("-")[1];
@@ -676,11 +673,11 @@ public class OCLCodeCache {
             program.build("");
 
             status = program.getStatus(deviceContext.getDeviceId());
-            debug("\tOpenCL compilation status = %s", status.toString());
+            TornadoLogger.debug("\tOpenCL compilation status = %s", status.toString());
 
             final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
             if (!log.isEmpty()) {
-                debug(log);
+                TornadoLogger.debug(log);
             }
         }
 
@@ -688,7 +685,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
 
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
+            TornadoLogger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             cache.put(entryPoint, code);
 
             String taskScheduleName = splitTaskGraphAndTaskName(id)[0];
@@ -710,7 +707,7 @@ public class OCLCodeCache {
                 RuntimeUtilities.writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
             }
         } else {
-            warn("\tunable to install binary for %s", entryPoint);
+            TornadoLogger.warn("\tunable to install binary for %s", entryPoint);
             code.invalidate();
         }
 
@@ -732,13 +729,13 @@ public class OCLCodeCache {
         final File file = lookupPath.toFile();
         OCLInstalledCode lookupCode = null;
         if (file.length() == 0) {
-            error("Empty input binary: %s", file);
+            TornadoLogger.error("Empty input binary: %s", file);
         }
         try {
             final byte[] binary = Files.readAllBytes(lookupPath);
             lookupCode = installBinary(id, entrypoint, binary);
         } catch (OCLException | IOException e) {
-            error("unable to load binary: %s (%s)", file, e.getMessage());
+            TornadoLogger.error("unable to load binary: %s (%s)", file, e.getMessage());
         }
         return lookupCode;
     }

@@ -24,8 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_ENABLE_BIFS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.TORNADO_ENABLE_BIFS;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
@@ -98,116 +97,113 @@ public final class OCLVectorPlugins {
 
     public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
 
-        if (ENABLE_VECTORS) {
-            ps.appendNodePlugin(new NodePlugin() {
-                @Override
-                public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                    OCLKind vectorKind = OCLKind.resolveToVectorKind(method.getDeclaringClass());
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                OCLKind vectorKind = OCLKind.resolveToVectorKind(method.getDeclaringClass());
 
-                    if (vectorKind == OCLKind.ILLEGAL) {
-                        return false;
-                    }
-                    if (method.getName().equals("<init>")) {
-                        final VectorValueNode vector = resolveReceiver(args[0]);
-                        if (args.length > 1) {
-                            int offset = (vector == args[0]) ? 1 : 0;
-                            for (int i = offset; i < args.length; i++) {
-                                vector.setElement(i - offset, args[i]);
-                            }
-                        } else {
-                            // BUG check whether this should be <= 8
-                            if (vectorKind.getVectorLength() < 8) {
-                                vector.initialiseToDefaultValues(vector.graph());
-                            }
-                        }
-                        return true;
-                    }
+                if (vectorKind == OCLKind.ILLEGAL) {
                     return false;
                 }
-
-            });
-
-            // Adding floats
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT2, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT16, FloatArray.class, float.class);
-
-            // Adding half floats
-            registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, OCLKind.HALF8, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, OCLKind.HALF16, HalfFloat.class, short.class);
-
-            // Adding ints
-            registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT3, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT4, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT8, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT16, IntArray.class, int.class);
-
-            // Adding shorts
-            registerVectorPlugins(ps, plugins, OCLKind.SHORT2, ShortArray.class, short.class);
-
-            // Adding char
-            registerVectorPlugins(ps, plugins, OCLKind.CHAR3, ByteArray.class, byte.class);
-            registerVectorPlugins(ps, plugins, OCLKind.CHAR4, ByteArray.class, byte.class);
-
-            // Adding double
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE2, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE16, DoubleArray.class, double.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT2, FloatArray.class, Float2.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT3, FloatArray.class, Float3.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT8, FloatArray.class, Float8.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT16, FloatArray.class, Float16.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT2, IntArray.class, Int2.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT3, IntArray.class, Int3.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT4, IntArray.class, Int4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT8, IntArray.class, Int8.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT16, IntArray.class, Int16.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF16, HalfFloatArray.class, Half16.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX4X4FLOAT, FloatArray.class, Float4.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEFLOAT3, FloatArray.class, Float3.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEFLOAT8, FloatArray.class, Float8.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.VOLUMESHORT2, ShortArray.class, Short2.class);
-
-            registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEBYTE3, ByteArray.class, Byte3.class);
-            registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEBYTE4, ByteArray.class, Byte4.class);
-
-            /*
-             * Geometric BIFS for floating point vectors
-             */
-            if (TORNADO_ENABLE_BIFS) {
-                registerGeometricBIFS(plugins, OCLKind.FLOAT3);
-                registerGeometricBIFS(plugins, OCLKind.FLOAT4);
+                if (method.getName().equals("<init>")) {
+                    final VectorValueNode vector = resolveReceiver(args[0]);
+                    if (args.length > 1) {
+                        int offset = (vector == args[0]) ? 1 : 0;
+                        for (int i = offset; i < args.length; i++) {
+                            vector.setElement(i - offset, args[i]);
+                        }
+                    } else {
+                        // BUG check whether this should be <= 8
+                        if (vectorKind.getVectorLength() < 8) {
+                            vector.initialiseToDefaultValues(vector.graph());
+                        }
+                    }
+                    return true;
+                }
+                return false;
             }
-        }
 
+        });
+
+        // Adding floats
+        registerVectorPlugins(ps, plugins, OCLKind.FLOAT2, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, OCLKind.FLOAT16, FloatArray.class, float.class);
+
+        // Adding half floats
+        registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF8, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF16, HalfFloat.class, short.class);
+
+        // Adding ints
+        registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, OCLKind.INT3, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, OCLKind.INT4, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, OCLKind.INT8, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, OCLKind.INT16, IntArray.class, int.class);
+
+        // Adding shorts
+        registerVectorPlugins(ps, plugins, OCLKind.SHORT2, ShortArray.class, short.class);
+
+        // Adding char
+        registerVectorPlugins(ps, plugins, OCLKind.CHAR3, ByteArray.class, byte.class);
+        registerVectorPlugins(ps, plugins, OCLKind.CHAR4, ByteArray.class, byte.class);
+
+        // Adding double
+        registerVectorPlugins(ps, plugins, OCLKind.DOUBLE2, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, OCLKind.DOUBLE16, DoubleArray.class, double.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT2, FloatArray.class, Float2.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT3, FloatArray.class, Float3.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT8, FloatArray.class, Float8.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT16, FloatArray.class, Float16.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT2, IntArray.class, Int2.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT3, IntArray.class, Int3.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT4, IntArray.class, Int4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT8, IntArray.class, Int8.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT16, IntArray.class, Int16.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.VECTORHALF16, HalfFloatArray.class, Half16.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX4X4FLOAT, FloatArray.class, Float4.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEFLOAT3, FloatArray.class, Float3.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEFLOAT8, FloatArray.class, Float8.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.VOLUMESHORT2, ShortArray.class, Short2.class);
+
+        registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEBYTE3, ByteArray.class, Byte3.class);
+        registerVectorCollectionsPlugins(plugins, OCLKind.IMAGEBYTE4, ByteArray.class, Byte4.class);
+
+        /*
+         * Geometric BIFS for floating point vectors
+         */
+        if (TORNADO_ENABLE_BIFS) {
+            registerGeometricBIFS(plugins, OCLKind.FLOAT3);
+            registerGeometricBIFS(plugins, OCLKind.FLOAT4);
+        }
     }
 
     private static VectorValueNode resolveReceiver(ValueNode thisObject) {

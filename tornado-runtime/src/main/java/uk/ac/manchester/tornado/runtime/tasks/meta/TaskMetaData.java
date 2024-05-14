@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

@@ -32,16 +32,11 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class SPIRVVectorNodePlugin implements NodePlugin {
 
     @Override
     public boolean handleNewInstance(GraphBuilderContext builderContext, ResolvedJavaType type) {
-        // FIXME <REFACTOR> I think vectors should be mandatory for TornadoVM
-        if (!Tornado.ENABLE_VECTORS) {
-            return false;
-        }
         if (type.getAnnotation(Vector.class) != null) {
             return createVectorInstance(builderContext, type);
         }

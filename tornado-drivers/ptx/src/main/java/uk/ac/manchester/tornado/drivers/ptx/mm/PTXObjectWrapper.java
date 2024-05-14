@@ -27,10 +27,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
@@ -53,6 +50,7 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class PTXObjectWrapper implements XPUBuffer {
@@ -89,7 +87,7 @@ public class PTXObjectWrapper implements XPUBuffer {
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
-                trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
+                TornadoLogger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
             XPUBuffer wrappedField = null;
@@ -107,7 +105,7 @@ public class PTXObjectWrapper implements XPUBuffer {
                 } else if (type == byte[].class) {
                     wrappedField = new PTXByteArrayWrapper(deviceContext);
                 } else {
-                    warn("cannot wrap field: array type=%s", type.getName());
+                    TornadoLogger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
@@ -152,13 +150,13 @@ public class PTXObjectWrapper implements XPUBuffer {
     @Override
     public void allocate(Object reference, long batchSize) {
         if (DEBUG) {
-            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+            TornadoLogger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
         this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize());
 
         if (DEBUG) {
-            debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
+            TornadoLogger.debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
         }
         for (FieldBuffer buffer : wrappedFields) {
             if (buffer != null) {
@@ -262,7 +260,7 @@ public class PTXObjectWrapper implements XPUBuffer {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
                 if (DEBUG) {
-                    trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    TornadoLogger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
 
                 buffer.position(field.getOffset());
@@ -282,7 +280,7 @@ public class PTXObjectWrapper implements XPUBuffer {
                 Field f = getField(type, field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
-                    trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    TornadoLogger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
                 readFieldFromBuffer(i, f, object);
             }

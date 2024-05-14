@@ -134,7 +134,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -449,18 +448,18 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
             }
         }
 
-        if (Tornado.FULL_DEBUG) {
+        if (TornadoOptions.FULL_DEBUG) {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
         }
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
-            if (Tornado.FULL_DEBUG) {
+            if (TornadoOptions.FULL_DEBUG) {
                 Logger.traceCodeGen(Logger.BACKEND.SPIRV, "VARIABLES -------------- ");
                 Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tTYPE: " + spirvKind);
             }
             for (Variable var : kindToVariable.get(spirvKind)) {
-                if (Tornado.FULL_DEBUG) {
+                if (TornadoOptions.FULL_DEBUG) {
                     Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tNAME: " + var);
                 }
                 SPIRVId variable = asm.module.getNextId();

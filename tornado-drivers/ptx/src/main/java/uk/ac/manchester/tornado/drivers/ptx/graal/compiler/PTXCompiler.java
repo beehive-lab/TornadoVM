@@ -24,16 +24,6 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationPhase.LIRGenerationContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METHODS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -77,14 +67,17 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
@@ -110,7 +103,8 @@ public class PTXCompiler {
 
     private static PTXCompilationResult compile(PTXCompilationRequest r) {
         assert !r.graph.isFrozen();
-        try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
+        try (DebugContext.Scope s0 = TornadoCoreRuntime.getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache());
+                DebugCloseable a = CompilerTimer.start(TornadoCoreRuntime.getDebugContext())) {
             emitFrontEnd(r);
             boolean isParallel = false;
             if (r.meta != null && r.meta.isParallel()) {
@@ -118,28 +112,28 @@ public class PTXCompiler {
             }
             emitBackEnd(r, isParallel);
         } catch (Throwable e) {
-            throw getDebugContext().handle(e);
+            throw TornadoCoreRuntime.getDebugContext().handle(e);
         }
 
         return r.compilationResult;
     }
 
     private static void emitBackEnd(PTXCompilationRequest r, boolean isParallel) {
-        try (DebugContext.Scope s = getDebugContext().scope("PTXBackend", r.graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
+        try (DebugContext.Scope s = TornadoCoreRuntime.getDebugContext().scope("PTXBackend", r.graph.getLastSchedule()); DebugCloseable a = BackEnd.start(TornadoCoreRuntime.getDebugContext())) {
             LIRGenerationResult lirGen = emitLIR(r);
-            try (DebugContext.Scope s2 = getDebugContext().scope("PTXCodeGen", lirGen, lirGen.getLIR())) {
+            try (DebugContext.Scope s2 = TornadoCoreRuntime.getDebugContext().scope("PTXCodeGen", lirGen, lirGen.getLIR())) {
                 r.compilationResult.setHasUnsafeAccess(r.graph.hasUnsafeAccess());
                 emitCode(r, lirGen, isParallel);
             } catch (Throwable e) {
-                throw getDebugContext().handle(e);
+                throw TornadoCoreRuntime.getDebugContext().handle(e);
             }
         } catch (Throwable e) {
-            throw getDebugContext().handle(e);
+            throw TornadoCoreRuntime.getDebugContext().handle(e);
         }
     }
 
     private static void emitCode(PTXCompilationRequest r, LIRGenerationResult lirGenRes, boolean isParallel) {
-        try (DebugCloseable a = EmitCode.start(getDebugContext())) {
+        try (DebugCloseable a = EmitCode.start(TornadoCoreRuntime.getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
             final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel, r.includePrintf, lirGenRes
                     .getLIR());
@@ -158,17 +152,17 @@ public class PTXCompiler {
             r.compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
             crb.finish();
 
-            if (getDebugContext().isCountEnabled()) {
-                DebugContext.counter("CompilationResults").increment(getDebugContext());
-                DebugContext.counter("CodeBytesEmitted").add(getDebugContext(), r.compilationResult.getTargetCodeSize());
+            if (TornadoCoreRuntime.getDebugContext().isCountEnabled()) {
+                DebugContext.counter("CompilationResults").increment(TornadoCoreRuntime.getDebugContext());
+                DebugContext.counter("CodeBytesEmitted").add(TornadoCoreRuntime.getDebugContext(), r.compilationResult.getTargetCodeSize());
             }
 
-            getDebugContext().dump(DebugContext.BASIC_LEVEL, r.compilationResult, "After code generation");
+            TornadoCoreRuntime.getDebugContext().dump(DebugContext.BASIC_LEVEL, r.compilationResult, "After code generation");
         }
     }
 
     private static LIRGenerationResult emitLIR(PTXCompilationRequest r) {
-        try (DebugContext.Scope ds = getDebugContext().scope("EmitLIR"); DebugCloseable a = EmitLIR.start(getDebugContext())) {
+        try (DebugContext.Scope ds = TornadoCoreRuntime.getDebugContext().scope("EmitLIR"); DebugCloseable a = EmitLIR.start(TornadoCoreRuntime.getDebugContext())) {
             OptionValues options = r.graph.getOptions();
             StructuredGraph.ScheduleResult schedule = r.graph.getLastSchedule();
             HIRBlock[] blocks = schedule.getCFG().getBlocks();
@@ -177,13 +171,13 @@ public class PTXCompiler {
             assert startBlock.getPredecessorCount() == 0;
 
             LIR lir = null;
-            try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
+            try (DebugContext.Scope s = TornadoCoreRuntime.getDebugContext().scope("ComputeLinearScanOrder", lir)) {
                 CodeEmissionOrder<?> blockOrder = r.backend.newBlockOrder(blocks.length, startBlock);
                 int[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
                 lir = new LIR(schedule.getCFG(), linearScanOrder, r.graph.getOptions(), r.graph.getDebug());
-                getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
+                TornadoCoreRuntime.getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
             } catch (Throwable e) {
-                throw getDebugContext().handle(e);
+                throw TornadoCoreRuntime.getDebugContext().handle(e);
             }
             RegisterAllocationConfig registerAllocationConfig = r.backend.newRegisterAllocationConfig(null, new String[] {});
             FrameMapBuilder frameMapBuilder = r.backend.newFrameMapBuilder(null);
@@ -192,19 +186,19 @@ public class PTXCompiler {
             NodeLIRBuilderTool nodeLirGen = r.backend.newNodeLIRBuilder(r.graph, lirGen);
 
             // LIR generation
-            LIRGenerationContext context = new LIRGenerationContext(lirGen, nodeLirGen, r.graph, schedule, r.isKernel);
+            PTXLIRGenerationPhase.LIRGenerationContext context = new PTXLIRGenerationPhase.LIRGenerationContext(lirGen, nodeLirGen, r.graph, schedule, r.isKernel);
             LIR_GENERATION_PHASE.apply(r.backend.getTarget(), lirGenRes, context);
 
-            try (DebugContext.Scope s = getDebugContext().scope("LIRStages", nodeLirGen, lir)) {
-                getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "After LIR generation");
+            try (DebugContext.Scope s = TornadoCoreRuntime.getDebugContext().scope("LIRStages", nodeLirGen, lir)) {
+                TornadoCoreRuntime.getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "After LIR generation");
                 LIRGenerationResult result = emitLowLevel(r.backend.getTarget(), lirGenRes, lirGen, r.lirSuites, registerAllocationConfig);
-                getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "Before code generation");
+                TornadoCoreRuntime.getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "Before code generation");
                 return result;
             } catch (Throwable e) {
-                throw getDebugContext().handle(e);
+                throw TornadoCoreRuntime.getDebugContext().handle(e);
             }
         } catch (Throwable e) {
-            throw getDebugContext().handle(e);
+            throw TornadoCoreRuntime.getDebugContext().handle(e);
         }
     }
 
@@ -221,16 +215,17 @@ public class PTXCompiler {
      * Builds the graph and optimizes it.
      */
     private static void emitFrontEnd(PTXCompilationRequest r) {
-        try (DebugContext.Scope s = getDebugContext().scope("PTXFrontend", new DebugDumpScope("PTXFrontend")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
+        try (DebugContext.Scope s = TornadoCoreRuntime.getDebugContext().scope("PTXFrontend", new DebugDumpScope("PTXFrontend"));
+                DebugCloseable a = FrontEnd.start(TornadoCoreRuntime.getDebugContext())) {
             final TornadoHighTierContext highTierContext = new TornadoHighTierContext(r.providers, r.graphBuilderSuite, r.optimisticOpts, r.installedCodeOwner, r.args, r.meta, r.isKernel,
                     r.batchCompilationConfig);
 
             if (r.buildGraph) {
                 if (isGraphEmpty(r.graph)) {
                     r.graphBuilderSuite.apply(r.graph, highTierContext);
-                    new DeadCodeEliminationPhase(Optional).apply(r.graph);
+                    new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Optional).apply(r.graph);
                 } else {
-                    getDebugContext().dump(DebugContext.INFO_LEVEL, r.graph, "initial state");
+                    TornadoCoreRuntime.getDebugContext().dump(DebugContext.INFO_LEVEL, r.graph, "initial state");
                 }
             }
             r.suites.getHighTier().apply(r.graph, highTierContext);
@@ -244,9 +239,9 @@ public class PTXCompiler {
             final TornadoLowTierContext lowTierContext = new TornadoLowTierContext(r.providers, r.backend, r.meta);
             r.suites.getLowTier().apply(r.graph, lowTierContext);
 
-            getDebugContext().dump(DebugContext.BASIC_LEVEL, r.graph.getLastSchedule(), "Final HIR schedule");
+            TornadoCoreRuntime.getDebugContext().dump(DebugContext.BASIC_LEVEL, r.graph.getLastSchedule(), "Final HIR schedule");
         } catch (Throwable e) {
-            throw getDebugContext().handle(e);
+            throw TornadoCoreRuntime.getDebugContext().handle(e);
         }
     }
 
@@ -255,10 +250,10 @@ public class PTXCompiler {
     }
 
     public synchronized static PTXCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, PTXProviders providers, PTXBackend backend, TornadoProfiler profiler) {
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(TornadoCoreRuntime.getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
-        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        TornadoLogger.info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
@@ -270,7 +265,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), task), taskMeta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(PTXCodeUtil.buildKernelName(resolvedMethod.getName(), task), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -294,13 +289,12 @@ public class PTXCompiler {
                 .isKernel(true)//
                 .buildGraph(true)//
                 .includePrintf(includePrintf)//
-                .setBatchCompilationConfig(batchCompilationConfig)
-                .withProfiler(profiler) //
+                .setBatchCompilationConfig(batchCompilationConfig).withProfiler(profiler) //
                 .build();
 
         kernelCompilationRequest.execute();
 
-        if (DUMP_COMPILED_METHODS) {
+        if (TornadoOptions.DUMP_COMPILED_METHODS) {
             methods.add(kernelGraph.method());
             methods.addAll(kernelGraph.getMethods());
             methods.addAll(Arrays.asList(kernelCompResult.getMethods()));
@@ -326,7 +320,7 @@ public class PTXCompiler {
             }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(TornadoCoreRuntime.getDebugContext());
 
             // @formatter:off
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph)
@@ -351,7 +345,7 @@ public class PTXCompiler {
             methodCompilationRequest.execute();
             workList.addAll(compResult.getNonInlinedMethods());
 
-            if (DUMP_COMPILED_METHODS) {
+            if (TornadoOptions.DUMP_COMPILED_METHODS) {
                 methods.add(graph.method());
                 methods.addAll(graph.getMethods());
             }
@@ -361,18 +355,18 @@ public class PTXCompiler {
 
         kernelCompResult.addPTXHeader(backend);
 
-        if (DUMP_COMPILED_METHODS) {
+        if (TornadoOptions.DUMP_COMPILED_METHODS) {
             final Path outDir = Paths.get("./ptx-compiled-methods");
             if (!Files.exists(outDir)) {
                 try {
                     Files.createDirectories(outDir);
                 } catch (IOException e) {
-                    error("unable to create cache dir: %s", outDir.toString());
-                    error(e.getMessage());
+                    TornadoLogger.error("unable to create cache dir: %s", outDir.toString());
+                    TornadoLogger.error(e.getMessage());
                 }
             }
 
-            guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
+            TornadoInternalError.guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
 
             File file = new File(outDir + "/" + task.getId() + "-" + resolvedMethod.getName());
             try (PrintWriter pw = new PrintWriter(file)) {
@@ -380,19 +374,19 @@ public class PTXCompiler {
                     pw.printf("%s,%s\n", m.getDeclaringClass().getName(), m.getName());
                 }
             } catch (IOException e) {
-                error("unable to dump source: ", e.getMessage());
+                TornadoLogger.error("unable to dump source: ", e.getMessage());
             }
         }
 
         return kernelCompResult;
     }
 
-    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend, BatchCompilationConfig batchCompilationConfig,
-            TornadoProfiler profiler) {
-        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend,
+            BatchCompilationConfig batchCompilationConfig, TornadoProfiler profiler) {
+        TornadoLogger.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
-        StructuredGraph.Builder builder = new StructuredGraph.Builder(getTornadoRuntime().getOptions(), getDebugContext(), StructuredGraph.AllowAssumptions.YES);
+        StructuredGraph.Builder builder = new StructuredGraph.Builder(TornadoCoreRuntime.getTornadoRuntime().getOptions(), TornadoCoreRuntime.getDebugContext(), StructuredGraph.AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
         builder.name("compile-kernel" + resolvedMethod.getName());
@@ -436,7 +430,7 @@ public class PTXCompiler {
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), meta);
-            StructuredGraph.Builder builder1 = new StructuredGraph.Builder(TornadoCoreRuntime.getOptions(), getDebugContext(), StructuredGraph.AllowAssumptions.YES);
+            StructuredGraph.Builder builder1 = new StructuredGraph.Builder(TornadoCoreRuntime.getOptions(), TornadoCoreRuntime.getDebugContext(), StructuredGraph.AllowAssumptions.YES);
             builder1.method(resolvedMethod);
             builder1.compilationId(id);
             builder1.name("internal" + currentMethod.getName());
@@ -497,8 +491,8 @@ public class PTXCompiler {
 
         private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig, boolean includePrintf,
-                TornadoProfiler profiler) {
+                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig,
+                boolean includePrintf, TornadoProfiler profiler) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
             this.args = args;

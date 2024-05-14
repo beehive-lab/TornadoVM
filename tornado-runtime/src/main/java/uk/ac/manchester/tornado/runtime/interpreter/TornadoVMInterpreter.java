@@ -24,10 +24,8 @@
 package uk.ac.manchester.tornado.runtime.interpreter;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VM_USE_DEPS;
 
 import java.util.Arrays;
 import java.util.BitSet;
@@ -53,7 +51,6 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -202,7 +199,7 @@ public class TornadoVMInterpreter {
     }
 
     public void dumpEvents() {
-        if (!ENABLE_PROFILING || !executionContext.meta().shouldDumpEvents()) {
+        if (!TornadoOptions.TORNADO_PROFILER || !executionContext.meta().shouldDumpEvents()) {
             TornadoLogger.info("profiling and/or event dumping is not enabled");
             return;
         }
@@ -366,7 +363,7 @@ public class TornadoVMInterpreter {
                 barrier = deviceForInterpreter.resolveEvent(executionContext.getExecutionPlanId(), event);
             }
 
-            if (USE_VM_FLUSH) {
+            if (TornadoOptions.USE_VM_FLUSH) {
                 deviceForInterpreter.flush(executionContext.getExecutionPlanId());
             }
         }
@@ -767,7 +764,7 @@ public class TornadoVMInterpreter {
             resetEventIndexes(eventList);
             return lastEvent;
         } catch (Exception e) {
-            if (Tornado.DEBUG) {
+            if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
             }
             throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + e.toString(), e);
