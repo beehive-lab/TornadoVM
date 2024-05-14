@@ -93,24 +93,14 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
     }
 
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
-        long[] intermediates = new long[] { 1, 1, 1 };
-        switch (metaData.getDims()) {
-            case 3:
-                intermediates[2] = (long) Math.sqrt(maxWorkItemSizes[2]);
-                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
-                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
-                break;
-            case 2:
-                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
-                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
-                break;
-            case 1:
-                intermediates[0] = maxWorkItemSizes[0];
-                break;
-            default:
-                break;
-
+        long[] localWorkGroups = new long[] { 1, 1, 1 };
+        if (metaData.getDims() == 1) {
+            localWorkGroups[0] = maxWorkItemSizes[0];
+        } else {
+            for (int i = 0; i < metaData.getDims(); i++) {
+                localWorkGroups[i] = (long) Math.sqrt(maxWorkItemSizes[i]);
+            }
         }
-        return intermediates;
+        return localWorkGroups;
     }
 }
