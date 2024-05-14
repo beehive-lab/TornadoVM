@@ -66,7 +66,6 @@ public class Mandelbrot {
         frame.setVisible(true);
     }
 
-    @SuppressWarnings("serial")
     public static class MandelbrotImage extends Component {
 
         private BufferedImage image;
@@ -143,7 +142,8 @@ public class Mandelbrot {
             try {
                 img = new BufferedImage(size, size, BufferedImage.TYPE_INT_BGR);
                 WritableRaster write = img.getRaster();
-                File outputFile = new File("/tmp/mandelbrot.png");
+                String tmpDirsLocation = System.getProperty("java.io.tmpdir");
+                File outputFile = new File(tmpDirsLocation + File.separator + "mandelbrot.png");
 
                 for (int i = 0; i < size; i++) {
                     for (int j = 0; j < size; j++) {
