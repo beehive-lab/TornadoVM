@@ -113,7 +113,8 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
         if (partialReadSize != 0) {
             // Partial Copy Out due to a copy under demand copy by the user
-            returnEvent = spirvDeviceContext.readBuffer(executionPlanId, toBuffer(), TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, waitEvents);
+            // in this case the host offset is equal to the device offset
+            returnEvent = spirvDeviceContext.readBuffer(executionPlanId, toBuffer(), hostOffset, partialReadSize, segment.address(), hostOffset, waitEvents);
         } else if (batchSize <= 0) {
             // Partial Copy Out due to batch processing
             returnEvent = spirvDeviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
