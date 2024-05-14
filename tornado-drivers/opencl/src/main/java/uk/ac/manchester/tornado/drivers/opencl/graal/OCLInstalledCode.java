@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLGPUScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLGenericGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -73,7 +73,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.code = code;
         this.deviceContext = deviceContext;
         this.scheduler = OCLScheduler.create(deviceContext);
-        this.DEFAULT_SCHEDULER = new OCLGPUScheduler(deviceContext);
+        this.DEFAULT_SCHEDULER = new OCLGenericGPUScheduler(deviceContext);
         this.kernel = kernel;
         this.program = program;
         valid = kernel != null;

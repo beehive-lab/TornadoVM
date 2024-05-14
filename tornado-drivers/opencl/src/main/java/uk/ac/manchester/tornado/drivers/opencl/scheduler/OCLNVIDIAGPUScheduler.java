@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,14 +27,14 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLGPUScheduler extends OCLKernelScheduler {
+public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
     private static final int WARP_SIZE = 32;
     private boolean ADJUST_IRREGULAR = false;
 
     private final long[] maxWorkItemSizes;
 
-    public OCLGPUScheduler(final OCLDeviceContext context) {
+    public OCLNVIDIAGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLTargetDevice device = context.getDevice();
 
@@ -44,7 +44,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     @Override
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
-
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
             if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
@@ -57,26 +56,25 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.initLocalWork();
-
         switch (meta.getDims()) {
             case 3:
-                localWork[2] = 1;
-                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                localWork[2] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[2], meta.getGlobalWork()[2], 3);
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 3);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 3);
                 break;
             case 2:
-                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 2);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 2);
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 1);
                 break;
             default:
                 break;
         }
     }
 
-    private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize, int dim) {
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;
         }
@@ -88,12 +86,14 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         while (globalWorkSize % value != 0) {
             value--;
         }
+        if (value >= 32 && dim > 1) {
+            value /= 2;
+        }
         return value;
     }
 
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
         long[] intermediates = new long[] { 1, 1, 1 };
-
         switch (metaData.getDims()) {
             case 3:
                 intermediates[2] = (long) Math.sqrt(maxWorkItemSizes[2]);
