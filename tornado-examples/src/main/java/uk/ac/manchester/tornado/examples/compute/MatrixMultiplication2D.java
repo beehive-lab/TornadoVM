@@ -137,7 +137,7 @@ public class MatrixMultiplication2D {
         long nanoSecStreamElaptedTime = (endStream - startStream);
 
         double flops = 2 * Math.pow(size, 3);
-        double gpuGigaFlops = (1.0E-9 * flops) / (nanoSecondsGPUElapsedTime / 1000000000.0f);
+        double gpuGigaFlops = (1.0E-9 * flops) / (nanoSecGPUElapsedTime / 1000000000.0f);
         double cpuGigaFlops = (1.0E-9 * flops) / (nanoSecCPUElaptedTime / 1000000000.0f);
         double streamGigaFlops = (1.0E-9 * flops) / (nanoSecStreamElaptedTime / 1000000000.0f);
         double speedup = (double) (endSequential - startSequential) / (double) (end - start);
