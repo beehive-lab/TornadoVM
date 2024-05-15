@@ -31,7 +31,6 @@ import java.nio.ByteOrder;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class VirtualOCLDevice implements OCLTargetDevice {
 
@@ -103,6 +102,7 @@ public class VirtualOCLDevice implements OCLTargetDevice {
         return "DummyVendor";
     }
 
+    @Override
     public String getDriverVersion() {
         return "DummyDriverVersion";
     }
