@@ -33,6 +33,7 @@ public class OCLScheduler {
 
     private static final String AMD_VENDOR = "Advanced Micro Devices";
     private static final String NVIDIA = "NVIDIA";
+    private static final int NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER = 550;
 
     private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
         OCLTargetDevice device = context.getDevice();
@@ -40,7 +41,7 @@ public class OCLScheduler {
             return new OCLAMDScheduler(context);
         } else if (device.getDeviceVendor().contains(NVIDIA)) {
             int majorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[0]);
-            if (majorVersion >= 550) {
+            if (majorVersion >= NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER) {
                 return new OCLNVIDIAGPUScheduler(context);
             } else {
                 return new OCLGenericGPUScheduler(context);
