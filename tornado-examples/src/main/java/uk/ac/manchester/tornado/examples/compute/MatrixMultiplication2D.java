@@ -132,7 +132,7 @@ public class MatrixMultiplication2D {
         long endStream = System.nanoTime();
 
         // Compute Gigaflops and performance
-        long nanoSecondsGPUElapsedTime = (end - start);
+        long nanoSecGPUElapsedTime = (end - start);
         long nanoSecCPUElaptedTime = (endSequential - startSequential);
         long nanoSecStreamElaptedTime = (endStream - startStream);
 
