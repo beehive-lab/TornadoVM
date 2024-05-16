@@ -1071,9 +1071,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat2 output = new VectorFloat2(size);
         VectorFloat2 seq = new VectorFloat2(size);
 
-        for (int x = 0; x < b.getLength(); x++) {
-            a.set(x, new Float2(x, x));
-            b.set(x, new Int2(1, 2));
+        Random r = new Random();
+        for (int i = 0; i < b.getLength(); i++) {
+            a.set(i, new Float2(r.nextFloat(), r.nextFloat()));
+            b.set(i, new Int2(r.nextInt(), r.nextInt()));
         }
 
         TaskGraph graph = new TaskGraph("s0") //
@@ -1102,9 +1103,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat4 output = new VectorFloat4(size);
         VectorFloat4 seq = new VectorFloat4(size);
 
-        for (int x = 0; x < b.getLength(); x++) {
-            a.set(x, new Float4(x, x, x, x));
-            b.set(x, new Int4(0, 1, 2, 3));
+        Random r = new Random();
+        for (int i = 0; i < b.getLength(); i++) {
+            a.set(i, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
+            b.set(i, new Int4(r.nextInt(), r.nextInt(), r.nextInt(), r.nextInt()));
         }
 
         TaskGraph graph = new TaskGraph("s0") //
@@ -1135,9 +1137,26 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat8 output = new VectorFloat8(size);
         VectorFloat8 seq = new VectorFloat8(size);
 
-        for (int x = 0; x < b.getLength(); x++) {
-            a.set(x, new Float8(x, x, x, x, x, x, x, x));
-            b.set(x, new Int8(0, 1, 2, 3, 3, 2, 1, 0));
+        Random r = new Random();
+        for (int i = 0; i < b.getLength(); i++) {
+            // This is very ugly to initialize, and we should have a lambda or a set
+            // of methods to facilitate initialization (e.g., via an array)
+            a.set(i, new Float8(r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat()));
+            b.set(i, new Int8(r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt()));
         }
 
         TaskGraph graph = new TaskGraph("s0") //
@@ -1167,9 +1186,43 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat16 output = new VectorFloat16(size);
         VectorFloat16 seq = new VectorFloat16(size);
 
-        for (int x = 0; x < b.getLength(); x++) {
-            a.set(x, new Float16(x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x));
-            b.set(x, new Int16(0, 1, 2, 3, 3, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0));
+        Random r = new Random();
+        for (int i = 0; i < b.getLength(); i++) {
+            // This is very ugly to initialize, and we should have a lambda or a set
+            // of methods to facilitate initialization (e.g., via an array)
+            a.set(i, new Float16(r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat(), //
+                    r.nextFloat()));
+
+            b.set(i, new Int16(r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt(), //
+                    r.nextInt()));
         }
 
         TaskGraph graph = new TaskGraph("s0") //
