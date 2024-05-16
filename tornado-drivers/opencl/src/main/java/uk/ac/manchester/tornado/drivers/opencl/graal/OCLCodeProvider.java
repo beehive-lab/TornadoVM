@@ -82,7 +82,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public boolean shouldDebugNonSafepoints() {
-        TornadoLogger.warn("Debug non safe points not implemented yet.");
+        new TornadoLogger().warn("Debug non safe points not implemented yet.");
         return false;
     }
 

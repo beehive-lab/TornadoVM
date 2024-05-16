@@ -28,84 +28,86 @@ import java.util.logging.Logger;
 
 public class TornadoLogger {
 
-    private static Logger logger = Logger.getAnonymousLogger();
-
-    static boolean isLogOptionEnabled = TornadoOptions.DEBUG || TornadoOptions.FULL_DEBUG;
+    private final Logger logger;
+    private final boolean isLogOptionEnabled = TornadoOptions.DEBUG || TornadoOptions.FULL_DEBUG;
 
     public TornadoLogger(Class<?> clazz) {
-        logger = Logger.getLogger(clazz == null ? this.getClass().getName() : clazz.getName());
+        if (clazz == null) {
+            logger = Logger.getAnonymousLogger();
+        } else {
+            logger = Logger.getLogger(clazz.getName());
+        }
     }
 
     public TornadoLogger() {
         this(null);
     }
 
-    public static void debug(final String msg) {
+    public void debug(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.INFO);
             logger.info(msg);
         }
     }
 
-    public static void debug(final String pattern, final Object... args) {
+    public void debug(final String pattern, final Object... args) {
         debug(String.format(pattern, args));
     }
 
-    public static void error(final String msg) {
+    public void error(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.SEVERE);
             logger.severe(msg);
         }
     }
 
-    public static void error(final String pattern, final Object... args) {
+    public void error(final String pattern, final Object... args) {
         if (isLogOptionEnabled) {
             error(String.format(pattern, args));
         }
     }
 
-    public static void fatal(final String msg) {
+    public void fatal(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.SEVERE);
             logger.severe(msg);
         }
     }
 
-    public static void fatal(final String pattern, final Object... args) {
+    public void fatal(final String pattern, final Object... args) {
         fatal(String.format(pattern, args));
     }
 
-    public static void info(final String msg) {
+    public void info(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.INFO);
             logger.info(msg);
         }
     }
 
-    public static void info(final String pattern, final Object... args) {
+    public void info(final String pattern, final Object... args) {
         info(String.format(pattern, args));
     }
 
-    public static void trace(final String msg) {
+    public void trace(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.INFO);
             logger.info(msg);
         }
     }
 
-    public static void trace(final String pattern, final Object... args) {
+    public void trace(final String pattern, final Object... args) {
         trace(String.format(pattern, args));
     }
 
-    public static void warn(final String msg) {
+    public void warn(final String msg) {
         if (isLogOptionEnabled) {
             logger.setLevel(Level.WARNING);
             logger.warning(msg);
         }
     }
 
-    public static void warn(final String msg, final Object... args) {
+    public void warn(final String msg, final Object... args) {
         trace(String.format(msg, args));
     }
-
 }

@@ -61,7 +61,7 @@ public final class Tornado implements TornadoSettingInterface {
             try (FileInputStream fileInputStream = new FileInputStream(localSettings)) {
                 loadProperties.load(fileInputStream);
             } catch (IOException e) {
-                TornadoLogger.warn("Unable to load settings from %s", localSettings.getAbsolutePath());
+                new TornadoLogger().warn("Unable to load settings from %s", localSettings.getAbsolutePath());
             }
         }
         Set<String> localKeys = loadProperties.stringPropertyNames();

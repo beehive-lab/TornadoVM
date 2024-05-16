@@ -82,7 +82,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            TornadoLogger.fatal("OOM: multi-dim array: %s", e.getMessage());
+            new TornadoLogger().fatal("OOM: multi-dim array: %s", e.getMessage());
             System.exit(-1);
         }
     }

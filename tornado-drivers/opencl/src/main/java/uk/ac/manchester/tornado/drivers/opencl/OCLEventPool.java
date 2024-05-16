@@ -59,6 +59,7 @@ class OCLEventPool {
     private final OCLEvent internalEvent;
     private int eventIndex;
     private int eventPoolSize;
+    private final TornadoLogger logger;
 
     protected OCLEventPool(int poolSize) {
         this.eventPoolSize = poolSize;
@@ -70,6 +71,7 @@ class OCLEventPool {
         this.eventIndex = 0;
         this.waitEventsBuffer = new long[TornadoOptions.MAX_WAIT_EVENTS];
         this.internalEvent = new OCLEvent();
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     protected int registerEvent(long oclEventId, EventDescriptor descriptorId, OCLCommandQueue queue) {
@@ -85,8 +87,8 @@ class OCLEventPool {
          * exit.
          */
         if (oclEventId == -1) {
-            TornadoLogger.fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
-            TornadoLogger.fatal("terminating application as system integrity has been compromised.");
+            logger.fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
+            logger.fatal("terminating application as system integrity has been compromised.");
             System.exit(-1);
         }
 
@@ -126,7 +128,7 @@ class OCLEventPool {
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
-                TornadoLogger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
+                logger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
 
             }
         }

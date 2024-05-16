@@ -50,7 +50,7 @@ public class PrimitiveSerialiser {
             case Float floatValue -> buffer.putFloat(floatValue);
             case Long longValue -> buffer.putLong(longValue);
             case Double doubleValue -> buffer.putDouble(doubleValue);
-            case null, default -> TornadoLogger.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
+            case null, default -> new TornadoLogger().warn("unable to serialise: %s (%s)", value, value.getClass().getName());
         }
 
         if (alignment != 0) {
