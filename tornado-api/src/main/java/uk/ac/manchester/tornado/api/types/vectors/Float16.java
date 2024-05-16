@@ -68,6 +68,22 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
         return result;
     }
 
+    public static Float16 add(Int16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) + b.get(i));
+        }
+        return result;
+    }
+
+    public static Float16 add(Float16 a, Int16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) + b.get(i));
+        }
+        return result;
+    }
+
     public static Float16 add(Float16 a, float b) {
         final Float16 result = new Float16();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -77,6 +93,22 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
     }
 
     public static Float16 sub(Float16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) - b.get(i));
+        }
+        return result;
+    }
+
+    public static Float16 sub(Int16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) - b.get(i));
+        }
+        return result;
+    }
+
+    public static Float16 sub(Float16 a, Int16 b) {
         final Float16 result = new Float16();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
@@ -100,6 +132,22 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
         return result;
     }
 
+    public static Float16 div(Int16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) / b.get(i));
+        }
+        return result;
+    }
+
+    public static Float16 div(Float16 a, Int16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) / b.get(i));
+        }
+        return result;
+    }
+
     public static Float16 div(Float16 a, float value) {
         final Float16 result = new Float16();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -109,6 +157,22 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
     }
 
     public static Float16 mult(Float16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
+    public static Float16 mult(Int16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
+    public static Float16 mult(Float16 a, Int16 b) {
         final Float16 result = new Float16();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
@@ -132,6 +196,22 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
         return result;
     }
 
+    public static Float16 min(Int16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.min(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
+    public static Float16 min(Float16 a, Int16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.min(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
     public static float min(Float16 value) {
         float result = Float.MAX_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -141,6 +221,22 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
     }
 
     public static Float16 max(Float16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.max(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
+    public static Float16 max(Int16 a, Float16 b) {
+        final Float16 result = new Float16();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.max(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
+    public static Float16 max(Float16 a, Int16 b) {
         final Float16 result = new Float16();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
