@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.unittests.vectortypes;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -1138,26 +1139,14 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat8 seq = new VectorFloat8(size);
 
         Random r = new Random();
-        for (int i = 0; i < b.getLength(); i++) {
-            // This is very ugly to initialize, and we should have a lambda or a set
-            // of methods to facilitate initialization (e.g., via an array)
-            a.set(i, new Float8(r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat()));
-            b.set(i, new Int8(r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt()));
-        }
+        IntStream.range(0, b.getLength()).forEach(i -> {
+            Float8 vectorFloat = new Float8();
+            IntStream.range(0, vectorFloat.size()).forEach(j -> vectorFloat.set(j, r.nextFloat()));
+            a.set(i, vectorFloat);
+            Int8 vectorInt = new Int8();
+            IntStream.range(0, vectorInt.size()).forEach(j -> vectorInt.set(j, r.nextInt()));
+            b.set(i, vectorInt);
+        });
 
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
@@ -1187,43 +1176,16 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat16 seq = new VectorFloat16(size);
 
         Random r = new Random();
-        for (int i = 0; i < b.getLength(); i++) {
-            // This is very ugly to initialize, and we should have a lambda or a set
-            // of methods to facilitate initialization (e.g., via an array)
-            a.set(i, new Float16(r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat(), //
-                    r.nextFloat()));
+        IntStream.range(0, b.getLength()).forEach(i -> {
 
-            b.set(i, new Int16(r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt(), //
-                    r.nextInt()));
-        }
+            Float16 vectorFloat = new Float16();
+            IntStream.range(0, vectorFloat.size()).forEach(j -> vectorFloat.set(j, r.nextFloat()));
+            a.set(i, vectorFloat);
+
+            Int16 vectorInt = new Int16();
+            IntStream.range(0, vectorInt.size()).forEach(j -> vectorInt.set(j, r.nextInt()));
+            b.set(i, vectorInt);
+        });
 
         TaskGraph graph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
