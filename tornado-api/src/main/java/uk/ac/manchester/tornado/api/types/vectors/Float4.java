@@ -59,7 +59,23 @@ public final class Float4 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
+    public static Float4 add(Int4 a, Float4 b) {
+        return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
+    }
+
+    public static Float4 add(Float4 a, Int4 b) {
+        return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
+    }
+
     public static Float4 sub(Float4 a, Float4 b) {
+        return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
+    }
+
+    public static Float4 sub(Int4 a, Float4 b) {
+        return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
+    }
+
+    public static Float4 sub(Float4 a, Int4 b) {
         return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
@@ -67,11 +83,35 @@ public final class Float4 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
+    public static Float4 div(Int4 a, Float4 b) {
+        return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
+    }
+
+    public static Float4 div(Float4 a, Int4 b) {
+        return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
+    }
+
     public static Float4 mult(Float4 a, Float4 b) {
         return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
+    public static Float4 mult(Int4 a, Float4 b) {
+        return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
+    }
+
+    public static Float4 mult(Float4 a, Int4 b) {
+        return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
+    }
+
     public static Float4 min(Float4 a, Float4 b) {
+        return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+    }
+
+    public static Float4 min(Int4 a, Float4 b) {
+        return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+    }
+
+    public static Float4 min(Float4 a, Int4 b) {
         return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
