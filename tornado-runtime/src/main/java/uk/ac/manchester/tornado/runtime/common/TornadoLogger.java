@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 public class TornadoLogger {
 
-    private static Logger logger;
+    private static Logger logger = Logger.getAnonymousLogger();
 
     static boolean isLogOptionEnabled = TornadoOptions.DEBUG || TornadoOptions.FULL_DEBUG;
 
