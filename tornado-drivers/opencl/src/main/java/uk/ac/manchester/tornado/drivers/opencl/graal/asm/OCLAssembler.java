@@ -947,6 +947,14 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate NEW_PRIVATE_SHORT_ARRAY = new OCLBinaryTemplate("new private array short", "__private short %s[%s]");
         public static final OCLBinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new OCLBinaryTemplate("new private array byte", "__private byte %s[%s]");
 
+        public static final OCLBinaryTemplate PRIVATE_INT_ARRAY_PTR = new OCLBinaryTemplate("private pointer array int", "__private int* %s = %s");
+        public static final OCLBinaryTemplate PRIVATE_CHAR_ARRAY_PTR = new OCLBinaryTemplate("private pointer array char", "__private char* %s = %s");
+        public static final OCLBinaryTemplate PRIVATE_FLOAT_ARRAY_PTR = new OCLBinaryTemplate("private pointer array float", "__private float* %s = %s");
+        public static final OCLBinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR = new OCLBinaryTemplate("private pointer array double", "__private double* %s = %s");
+        public static final OCLBinaryTemplate PRIVATE_LONG_ARRAY_PTR = new OCLBinaryTemplate("private pointer array long", "__private long* %s = %s");
+        public static final OCLBinaryTemplate PRIVATE_SHORT_ARRAY_PTR = new OCLBinaryTemplate("private pointer array short", "__private short* %s = %s");
+        public static final OCLBinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new OCLBinaryTemplate("private pointer array byte", "__private byte* %s = %s");
+
         public static final OCLBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local float %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array int", "__local int %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new OCLBinaryTemplate("local memory array double", "__local double %s[%s]");
