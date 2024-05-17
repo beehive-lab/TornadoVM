@@ -19,6 +19,7 @@ open module tornado.examples {
     requires transitive java.desktop;
     requires transitive tornado.api;
     requires org.graalvm.polyglot;
+    requires jdk.incubator.vector;
 
     exports uk.ac.manchester.tornado.examples;
     exports uk.ac.manchester.tornado.examples.arrays;

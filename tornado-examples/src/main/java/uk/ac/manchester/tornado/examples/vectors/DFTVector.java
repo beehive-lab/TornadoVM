@@ -18,8 +18,11 @@
 package uk.ac.manchester.tornado.examples.vectors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.VectorSpecies;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -27,6 +30,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
@@ -40,7 +44,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
- * Select in the first argument the desired vector length: {vector2, vector4, vector8}.
+ * Select in the first argument the desired vector length: {vector2, vector4, vector8, vector16}.
  * This test sets the device index to 2. To change the device index.
  *
  * <p>
@@ -50,57 +54,216 @@ import uk.ac.manchester.tornado.examples.utils.Utils;
  * <code>
  * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector vector8
  * </code>
- *
+ * <p>
  * Run with no vector types:
  * <code>
  * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector plain
  * </code>
- *
+ * <p>
  * Run with Java Streams:
  * <code>
  * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector stream
  * </code>
- *
  */
 public class DFTVector {
 
     public static final int WARMUP = 100;
     public static final int ITERATIONS = 100;
 
-    public static void computeDFT(FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
-        int n = inreal.getSize();
+    public static void computeDFT(FloatArray inReal, FloatArray inImag, FloatArray outReal, FloatArray outImag) {
+        int n = inReal.getSize();
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 float angle = ((2 * TornadoMath.floatPI() * t * k) / n);
-                sumReal += inreal.get(t) * TornadoMath.cos(angle) + inimag.get(t) * TornadoMath.sin(angle);
-                simImag += -inreal.get(t) * TornadoMath.sin(angle) + inimag.get(t) * TornadoMath.cos(angle);
+                sumReal += inReal.get(t) * TornadoMath.cos(angle) + inImag.get(t) * TornadoMath.sin(angle);
+                simImag += -inReal.get(t) * TornadoMath.sin(angle) + inImag.get(t) * TornadoMath.cos(angle);
             }
-            outreal.set(k, sumReal);
-            outimag.set(k, simImag);
+            outReal.set(k, sumReal);
+            outImag.set(k, simImag);
         }
+    }
+
+    public static void computeDFTJavaVectorAPI(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        final int n = inreal.length;
+
+        // Pre-compute angles
+        // Because AFAIK, there are no APIs to compute Math.cos over a Java Vector Type,
+        // we need to pre-compute the angles to be ble to pre-compute cos and sin operations.
+        // There are two ways:
+        // a) Just pre-compute the angles and then inside the actual DFT, use this
+        //    intermediate values to compute the Math.con and Math.sin. This strategy
+        //    penalizes the overall execution with Vector API. Thus, option b)
+        // b) Pre-compute all Math.cos and Math.sin that will be used for later.
+        float[][] cosAngles = new float[n][n];
+        float[][] sinAnbles = new float[n][n];
+        for (int i = 0; i < cosAngles.length; i++) {
+            for (int j = 0; j < cosAngles.length; j++) {
+                float angle = (2 * TornadoMath.floatPI() * j * i) / n;
+                cosAngles[i][j] = TornadoMath.cos(angle);
+                sinAnbles[i][j] = TornadoMath.sin(angle);
+            }
+        }
+
+        VectorSpecies<Float> speciesPreferred = FloatVector.SPECIES_PREFERRED;
+        final int upperBound = FloatVector.SPECIES_PREFERRED.loopBound(inreal.length);
+        final int vectorWidth = FloatVector.SPECIES_PREFERRED.length();
+        float[] init = new float[vectorWidth];
+        Arrays.fill(init, -1);
+
+        for (int k = 0; k < upperBound; k += vectorWidth) {
+
+            //Float2 sumReal = new Float2(0, 0);
+            var sumReal = FloatVector.zero(speciesPreferred);
+
+            //Float2 simImag = new Float2(0, 0);
+            var simImag = FloatVector.zero(speciesPreferred);
+
+            for (int t = 0; t < upperBound; t += vectorWidth) {
+                //float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+
+                // Take the pre-compute cosAngles and sinAngles
+                var cosAngle = FloatVector.fromArray(speciesPreferred, cosAngles[k], t);
+                var sinAngle = FloatVector.fromArray(speciesPreferred, sinAnbles[k], t);
+
+                //Float2 partA = Float2.mult(inreal.get(t), TornadoMath.cos(angle));
+                var va = FloatVector.fromArray(speciesPreferred, inreal, t);
+                var res1 = va.mul(cosAngle);
+
+                //Float2 partB = Float2.mult(inimag.get(t), TornadoMath.sin(angle));
+                var vb = FloatVector.fromArray(speciesPreferred, inimag, t);
+                var res2 = vb.mul(sinAngle);
+                //Float2 partC = Float2.add(partA, partB);
+                var partC = res1.add(res2);
+
+                //sumReal = Float2.add(sumReal, partC);
+                sumReal = sumReal.add(partC);
+
+                var initVector = FloatVector.fromArray(speciesPreferred, inimag, 0);
+                va = FloatVector.fromArray(speciesPreferred, inreal, t);
+                //Float2 neg = Float2.mult(inreal.get(t), new Float2(-1, -1));
+                //Float2 partAImag = Float2.mult(neg, TornadoMath.sin(angle));
+                var partAImag = va.mul(initVector).mul(sinAngle);
+
+                //Float2 partBImag = Float2.mult(inimag.get(t), TornadoMath.cos(angle));
+                var partBImag = vb.mul(cosAngle);
+
+                //Float2 partCImag = Float2.add(partAImag, partBImag);
+                var partCImag = partAImag.add(partBImag);
+
+                //simImag = Float2.add(simImag, partCImag);
+                simImag = simImag.add(partCImag);
+            }
+            sumReal.intoArray(outreal, k);
+            simImag.intoArray(outimag, k);
+        }
+    }
+
+    public static void computeDFTJavaVectorAPIWithStreams(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        final int n = inreal.length;
+
+        // Pre-compute angles
+        // Because AFAIK, there are no APIs to compute Math.cos over a Java Vector Type,
+        // we need to pre-compute the angles to be ble to pre-compute cos and sin operations.
+        // There are two ways:
+        // a) Just pre-compute the angles and then inside the actual DFT, use this
+        //    intermediate values to compute the Math.con and Math.sin. This strategy
+        //    penalizes the overall execution with Vector API. Thus, option b)
+        // b) Pre-compute all Math.cos and Math.sin that will be used for later.
+        float[][] cosAngles = new float[n][n];
+        float[][] sinAnbles = new float[n][n];
+        for (int i = 0; i < cosAngles.length; i++) {
+            for (int j = 0; j < cosAngles.length; j++) {
+                float angle = (2 * TornadoMath.floatPI() * j * i) / n;
+                cosAngles[i][j] = TornadoMath.cos(angle);
+                sinAnbles[i][j] = TornadoMath.sin(angle);
+            }
+        }
+
+        VectorSpecies<Float> speciesPreferred = FloatVector.SPECIES_PREFERRED;
+        final int upperBound = FloatVector.SPECIES_PREFERRED.loopBound(inreal.length);
+        final int vectorWidth = FloatVector.SPECIES_PREFERRED.length();
+        float[] init = new float[vectorWidth];
+        Arrays.fill(init, -1);
+
+        // split iteration space
+        ArrayList<Integer> iterationSpace = new ArrayList<>();
+        for (int k = 0; k < upperBound; k += vectorWidth) {
+            iterationSpace.add(k);
+        }
+
+        iterationSpace.stream().parallel().forEach(k -> {
+            //Float2 sumReal = new Float2(0, 0);
+            var sumReal = FloatVector.zero(speciesPreferred);
+
+            //Float2 simImag = new Float2(0, 0);
+            var simImag = FloatVector.zero(speciesPreferred);
+
+            for (int t = 0; t < upperBound; t += vectorWidth) {
+
+                //float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+                var cosAngle = FloatVector.fromArray(speciesPreferred, cosAngles[k], t);
+                var sinAngle = FloatVector.fromArray(speciesPreferred, sinAnbles[k], t);
+
+                //Float2 partA = Float2.mult(inreal.get(t), TornadoMath.cos(angle));
+                var va = FloatVector.fromArray(speciesPreferred, inreal, t);
+                var res1 = va.mul(cosAngle);
+
+                //Float2 partB = Float2.mult(inimag.get(t), TornadoMath.sin(angle));
+                var vb = FloatVector.fromArray(speciesPreferred, inimag, t);
+                var res2 = vb.mul(sinAngle);
+                //Float2 partC = Float2.add(partA, partB);
+                var partC = res1.add(res2);
+
+                //sumReal = Float2.add(sumReal, partC);
+                sumReal = sumReal.add(partC);
+
+                var initVector = FloatVector.fromArray(speciesPreferred, inimag, 0);
+                va = FloatVector.fromArray(speciesPreferred, inreal, t);
+                //Float2 neg = Float2.mult(inreal.get(t), new Float2(-1, -1));
+                //Float2 partAImag = Float2.mult(neg, TornadoMath.sin(angle));
+                var partAImag = va.mul(initVector).mul(sinAngle);
+
+                //Float2 partBImag = Float2.mult(inimag.get(t), TornadoMath.cos(angle));
+                var partBImag = vb.mul(cosAngle);
+
+                //Float2 partCImag = Float2.add(partAImag, partBImag);
+                var partCImag = partAImag.add(partBImag);
+
+                //simImag = Float2.add(simImag, partCImag);
+                simImag = simImag.add(partCImag);
+            }
+
+            sumReal.intoArray(outreal, k);
+            simImag.intoArray(outimag, k);
+        });
     }
 
     public static void computeDFTVector2(VectorFloat2 inreal, VectorFloat2 inimag, VectorFloat2 outreal, VectorFloat2 outimag) {
         int n = inreal.getLength();
-        for (@Parallel int k = 0; k < n; k++) { // For each output element
+        for (@Parallel int k = 0; k < n; k++) {
             Float2 sumReal = new Float2(0, 0);
             Float2 simImag = new Float2(0, 0);
-            for (int t = 0; t < n; t++) { // For each input element
-                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+            float base = (2 * TornadoMath.floatPI() * k) / n;
+            for (int t = 0; t < n; t++) {
+                int tt = t * 2;
+                float angle0 = base * tt;
+                float angle1 = base * (tt + 1);
+                Float2 angleVector = new Float2(angle0, angle1);
 
-                Float2 partA = Float2.mult(inreal.get(t), TornadoMath.cos(angle));
-                Float2 partB = Float2.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float2 cosAngleVector = TornadoMath.cos(angleVector);
+                Float2 sinAngleVector = TornadoMath.sin(angleVector);
+                Float2 partA = Float2.mult(inreal.get(t), cosAngleVector);
+                Float2 partB = Float2.mult(inimag.get(t), sinAngleVector);
                 Float2 partC = Float2.add(partA, partB);
                 sumReal = Float2.add(sumReal, partC);
 
                 Float2 neg = Float2.mult(inreal.get(t), new Float2(-1, -1));
-                Float2 partAImag = Float2.mult(neg, TornadoMath.sin(angle));
-                Float2 partBImag = Float2.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float2 partAImag = Float2.mult(neg, sinAngleVector);
+                Float2 partBImag = Float2.mult(inimag.get(t), cosAngleVector);
                 Float2 partCImag = Float2.add(partAImag, partBImag);
                 simImag = Float2.add(simImag, partCImag);
-
             }
             outreal.set(k, sumReal);
             outimag.set(k, simImag);
@@ -112,17 +275,25 @@ public class DFTVector {
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             Float4 sumReal = new Float4(0, 0, 0, 0);
             Float4 simImag = new Float4(0, 0, 0, 0);
+            float base = (2 * TornadoMath.floatPI() * k) / n;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+                int tt = t * 4;
+                float angle0 = base * tt;
+                float angle1 = base * (tt + 1);
+                float angle2 = base * (tt + 2);
+                float angle3 = base * (tt + 3);
+                Float4 angleVector = new Float4(angle0, angle1, angle2, angle3);
 
-                Float4 partA = Float4.mult(inreal.get(t), TornadoMath.cos(angle));
-                Float4 partB = Float4.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float4 cosAngleVector = TornadoMath.cos(angleVector);
+                Float4 sinAngleVector = TornadoMath.sin(angleVector);
+                Float4 partA = Float4.mult(inreal.get(t), cosAngleVector);
+                Float4 partB = Float4.mult(inimag.get(t), sinAngleVector);
                 Float4 partC = Float4.add(partA, partB);
                 sumReal = Float4.add(sumReal, partC);
 
                 Float4 neg = Float4.mult(inreal.get(t), new Float4(-1, -1, -1, -1));
-                Float4 partAImag = Float4.mult(neg, TornadoMath.sin(angle));
-                Float4 partBImag = Float4.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float4 partAImag = Float4.mult(neg, sinAngleVector);
+                Float4 partBImag = Float4.mult(inimag.get(t), cosAngleVector);
                 Float4 partCImag = Float4.add(partAImag, partBImag);
                 simImag = Float4.add(simImag, partCImag);
 
@@ -137,17 +308,29 @@ public class DFTVector {
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             Float8 sumReal = new Float8(0, 0, 0, 0, 0, 0, 0, 0);
             Float8 simImag = new Float8(0, 0, 0, 0, 0, 0, 0, 0);
+            float base = (2 * TornadoMath.floatPI() * k) / n;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+                int tt = t * 8;
+                float angle0 = base * tt;
+                float angle1 = base * (tt + 1);
+                float angle2 = base * (tt + 2);
+                float angle3 = base * (tt + 3);
+                float angle4 = base * (tt + 4);
+                float angle5 = base * (tt + 5);
+                float angle6 = base * (tt + 6);
+                float angle7 = base * (tt + 7);
+                Float8 angleVector = new Float8(angle0, angle1, angle2, angle3, angle4, angle5, angle6, angle7);
 
-                Float8 partA = Float8.mult(inreal.get(t), TornadoMath.cos(angle));
-                Float8 partB = Float8.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float8 cosAngleVector = TornadoMath.cos(angleVector);
+                Float8 sinAngleVector = TornadoMath.sin(angleVector);
+                Float8 partA = Float8.mult(inreal.get(t), cosAngleVector);
+                Float8 partB = Float8.mult(inimag.get(t), sinAngleVector);
                 Float8 partC = Float8.add(partA, partB);
                 sumReal = Float8.add(sumReal, partC);
 
                 Float8 neg = Float8.mult(inreal.get(t), new Float8(-1, -1, -1, -1, -1, -1, -1, -1));
-                Float8 partAImag = Float8.mult(neg, TornadoMath.sin(angle));
-                Float8 partBImag = Float8.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float8 partAImag = Float8.mult(neg, sinAngleVector);
+                Float8 partBImag = Float8.mult(inimag.get(t), cosAngleVector);
                 Float8 partCImag = Float8.add(partAImag, partBImag);
                 simImag = Float8.add(simImag, partCImag);
 
@@ -162,18 +345,37 @@ public class DFTVector {
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             Float16 sumReal = new Float16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             Float16 sumImag = new Float16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
+            float base = (2 * TornadoMath.floatPI() * k) / n;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+                int tt = t * 16;
+                float angle0 = base * tt;
+                float angle1 = base * (tt + 1);
+                float angle2 = base * (tt + 2);
+                float angle3 = base * (tt + 3);
+                float angle4 = base * (tt + 4);
+                float angle5 = base * (tt + 5);
+                float angle6 = base * (tt + 6);
+                float angle7 = base * (tt + 7);
+                float angle8 = base * (tt + 8);
+                float angle9 = base * (tt + 9);
+                float angle10 = base * (tt + 10);
+                float angle11 = base * (tt + 11);
+                float angle12 = base * (tt + 12);
+                float angle13 = base * (tt + 13);
+                float angle14 = base * (tt + 14);
+                float angle15 = base * (tt + 15);
+                Float16 angleVector = new Float16(angle0, angle1, angle2, angle3, angle4, angle5, angle6, angle7, angle8, angle9, angle10, angle11, angle12, angle13, angle14, angle15);
 
-                Float16 partA = Float16.mult(inreal.get(t), TornadoMath.cos(angle));
-                Float16 partB = Float16.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float16 cosAngleVector = TornadoMath.cos(angleVector);
+                Float16 sinAngleVector = TornadoMath.sin(angleVector);
+                Float16 partA = Float16.mult(inreal.get(t), cosAngleVector);
+                Float16 partB = Float16.mult(inimag.get(t), sinAngleVector);
                 Float16 partC = Float16.add(partA, partB);
                 sumReal = Float16.add(sumReal, partC);
 
                 Float16 neg = Float16.mult(inreal.get(t), new Float16(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
-                Float16 partAImag = Float16.mult(neg, TornadoMath.sin(angle));
-                Float16 partBImag = Float16.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float16 partAImag = Float16.mult(neg, sinAngleVector);
+                Float16 partBImag = Float16.mult(inimag.get(t), cosAngleVector);
                 Float16 partCImag = Float16.add(partAImag, partBImag);
                 sumImag = Float16.add(sumImag, partCImag);
             }
@@ -202,29 +404,30 @@ public class DFTVector {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withDevice(device).withWarmUp();
 
-        for (int i = 0; i < WARMUP; i++) {
-            executionPlan.execute();
+            for (int i = 0; i < WARMUP; i++) {
+                executionPlan.execute();
+            }
+
+            ArrayList<Long> kernelTimers = new ArrayList<>();
+            ArrayList<Long> totalTimers = new ArrayList<>();
+            for (int i = 0; i < ITERATIONS; i++) {
+                TornadoExecutionResult executionResult = executionPlan.execute();
+                kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+                totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+            }
+
+            long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
+            long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+            System.out.println("Stats KernelTime");
+            Utils.computeStatistics(kernelTimersLong);
+            System.out.println("Stats TotalTime");
+            Utils.computeStatistics(totalTimersLong);
+        } catch (TornadoExecutionPlanException e) {
+            e.printStackTrace();
         }
-
-        ArrayList<Long> kernelTimers = new ArrayList<>();
-        ArrayList<Long> totalTimers = new ArrayList<>();
-        for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
-            kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
-            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
-        }
-
-        executionPlan.freeDeviceMemory();
-
-        long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats KernelTime");
-        Utils.computeStatistics(kernelTimersLong);
-        System.out.println("Stats TotalTime");
-        Utils.computeStatistics(totalTimersLong);
     }
 
     private static void runWithVectorTypes2(int size, TornadoDevice device) {
@@ -247,29 +450,32 @@ public class DFTVector {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withDevice(device).withWarmUp();
 
-        for (int i = 0; i < WARMUP; i++) {
-            executionPlan.execute();
+            for (int i = 0; i < WARMUP; i++) {
+                executionPlan.execute();
+            }
+
+            ArrayList<Long> kernelTimers = new ArrayList<>();
+            ArrayList<Long> totalTimers = new ArrayList<>();
+            for (int i = 0; i < ITERATIONS; i++) {
+                TornadoExecutionResult executionResult = executionPlan.execute();
+                kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+                totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+            }
+
+            executionPlan.freeDeviceMemory();
+
+            long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
+            long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+            System.out.println("Stats KernelTime");
+            Utils.computeStatistics(kernelTimersLong);
+            System.out.println("Stats TotalTime");
+            Utils.computeStatistics(totalTimersLong);
+        } catch (TornadoExecutionPlanException e) {
+            e.printStackTrace();
         }
-
-        ArrayList<Long> kernelTimers = new ArrayList<>();
-        ArrayList<Long> totalTimers = new ArrayList<>();
-        for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
-            kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
-            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
-        }
-
-        executionPlan.freeDeviceMemory();
-
-        long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats KernelTime");
-        Utils.computeStatistics(kernelTimersLong);
-        System.out.println("Stats TotalTime");
-        Utils.computeStatistics(totalTimersLong);
     }
 
     private static void runWithVectorTypes8(int size, TornadoDevice device) {
@@ -292,29 +498,32 @@ public class DFTVector {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withDevice(device).withWarmUp();
 
-        for (int i = 0; i < WARMUP; i++) {
-            executionPlan.execute();
+            for (int i = 0; i < WARMUP; i++) {
+                executionPlan.execute();
+            }
+
+            ArrayList<Long> kernelTimers = new ArrayList<>();
+            ArrayList<Long> totalTimers = new ArrayList<>();
+            for (int i = 0; i < ITERATIONS; i++) {
+                TornadoExecutionResult executionResult = executionPlan.execute();
+                kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+                totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+            }
+
+            executionPlan.freeDeviceMemory();
+
+            long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
+            long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+            System.out.println("Stats KernelTime");
+            Utils.computeStatistics(kernelTimersLong);
+            System.out.println("Stats TotalTime");
+            Utils.computeStatistics(totalTimersLong);
+        } catch (TornadoExecutionPlanException e) {
+
         }
-
-        ArrayList<Long> kernelTimers = new ArrayList<>();
-        ArrayList<Long> totalTimers = new ArrayList<>();
-        for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
-            kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
-            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
-        }
-
-        executionPlan.freeDeviceMemory();
-
-        long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats KernelTime");
-        Utils.computeStatistics(kernelTimersLong);
-        System.out.println("Stats TotalTime");
-        Utils.computeStatistics(totalTimersLong);
     }
 
     private static void runWithVectorTypes16(int size, TornadoDevice device) {
@@ -337,29 +546,32 @@ public class DFTVector {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withDevice(device).withWarmUp();
 
-        for (int i = 0; i < WARMUP; i++) {
-            executionPlan.execute();
+            for (int i = 0; i < WARMUP; i++) {
+                executionPlan.execute();
+            }
+
+            ArrayList<Long> kernelTimers = new ArrayList<>();
+            ArrayList<Long> totalTimers = new ArrayList<>();
+            for (int i = 0; i < ITERATIONS; i++) {
+                TornadoExecutionResult executionResult = executionPlan.execute();
+                kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+                totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+            }
+
+            executionPlan.freeDeviceMemory();
+
+            long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
+            long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+            System.out.println("Stats KernelTime");
+            Utils.computeStatistics(kernelTimersLong);
+            System.out.println("Stats TotalTime");
+            Utils.computeStatistics(totalTimersLong);
+        } catch (TornadoExecutionPlanException e) {
+
         }
-
-        ArrayList<Long> kernelTimers = new ArrayList<>();
-        ArrayList<Long> totalTimers = new ArrayList<>();
-        for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
-            kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
-            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
-        }
-
-        executionPlan.freeDeviceMemory();
-
-        long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats KernelTime");
-        Utils.computeStatistics(kernelTimersLong);
-        System.out.println("Stats TotalTime");
-        Utils.computeStatistics(totalTimersLong);
     }
 
     private static void computeWithStreams(final int size, FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
@@ -368,7 +580,7 @@ public class DFTVector {
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * TornadoMath.floatPI() * t * k) / n);
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
                 sumReal += inreal.get(t) * TornadoMath.cos(angle) + inimag.get(t) * TornadoMath.sin(angle);
                 simImag += -inreal.get(t) * TornadoMath.sin(angle) + inimag.get(t) * TornadoMath.cos(angle);
             }
@@ -424,29 +636,88 @@ public class DFTVector {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp().withDevice(device);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp().withDevice(device);
+
+            for (int i = 0; i < WARMUP; i++) {
+                executionPlan.execute();
+            }
+
+            ArrayList<Long> kernelTimers = new ArrayList<>();
+            ArrayList<Long> totalTimers = new ArrayList<>();
+            for (int i = 0; i < ITERATIONS; i++) {
+                TornadoExecutionResult executionResult = executionPlan.execute();
+                kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+                totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+            }
+
+            executionPlan.freeDeviceMemory();
+
+            long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
+            long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+            System.out.println("Stats KernelTime");
+            Utils.computeStatistics(kernelTimersLong);
+            System.out.println("Stats TotalTime");
+            Utils.computeStatistics(totalTimersLong);
+        } catch (TornadoExecutionPlanException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void runWithJavaVectorAPI(int size) {
+        size = size * 4;
+        float[] inReal = new float[size];
+        float[] inImag = new float[size];
+        float[] outReal = new float[size];
+        float[] outImag = new float[size];
+        for (int i = 0; i < size; i++) {
+            inReal[i] = 1 / (float) (i + 2);
+            inImag[i] = 1 / (float) (i + 2);
+        }
 
         for (int i = 0; i < WARMUP; i++) {
-            executionPlan.execute();
+            computeDFTJavaVectorAPI(inReal, inImag, outReal, outImag);
         }
 
-        ArrayList<Long> kernelTimers = new ArrayList<>();
-        ArrayList<Long> totalTimers = new ArrayList<>();
+        ArrayList<Long> kernelTimersVectors = new ArrayList<>();
         for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
-            kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
-            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+            long start = System.nanoTime();
+            computeDFTJavaVectorAPI(inReal, inImag, outReal, outImag);
+            long end = System.nanoTime();
+            kernelTimersVectors.add((end - start));
         }
 
-        executionPlan.freeDeviceMemory();
+        long[] kernelTimersVectorsLong = kernelTimersVectors.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats");
+        Utils.computeStatistics(kernelTimersVectorsLong);
+    }
 
-        long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats KernelTime");
-        Utils.computeStatistics(kernelTimersLong);
-        System.out.println("Stats TotalTime");
-        Utils.computeStatistics(totalTimersLong);
+    private static void runWithJavaVectorAPIStreamAPI(int size) {
+        size = size * 4;
+        float[] inReal = new float[size];
+        float[] inImag = new float[size];
+        float[] outReal = new float[size];
+        float[] outImag = new float[size];
+        for (int i = 0; i < size; i++) {
+            inReal[i] = 1 / (float) (i + 2);
+            inImag[i] = 1 / (float) (i + 2);
+        }
+
+        for (int i = 0; i < WARMUP; i++) {
+            computeDFTJavaVectorAPIWithStreams(inReal, inImag, outReal, outImag);
+        }
+
+        ArrayList<Long> kernelTimersVectors = new ArrayList<>();
+        for (int i = 0; i < ITERATIONS; i++) {
+            long start = System.nanoTime();
+            computeDFTJavaVectorAPIWithStreams(inReal, inImag, outReal, outImag);
+            long end = System.nanoTime();
+            kernelTimersVectors.add((end - start));
+        }
+
+        long[] kernelTimersVectorsLong = kernelTimersVectors.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats");
+        Utils.computeStatistics(kernelTimersVectorsLong);
     }
 
     public static void main(String[] args) {
@@ -454,7 +725,8 @@ public class DFTVector {
         if (args.length > 0) {
             try {
                 version = args[0];
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
             }
         }
 
@@ -480,6 +752,10 @@ public class DFTVector {
             runWithJavaStreams(size);
         } else if (version.startsWith("plain")) {
             runWithoutVectorTypes(size, device);
+        } else if (version.startsWith("javaVector")) {
+            runWithJavaVectorAPI(size);
+        } else if (version.startsWith("javaStreamsVector")) {
+            runWithJavaVectorAPIStreamAPI(size);
         } else {
             throw new RuntimeException("Option not found");
         }
