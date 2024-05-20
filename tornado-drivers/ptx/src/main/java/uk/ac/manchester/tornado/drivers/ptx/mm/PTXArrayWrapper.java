@@ -50,6 +50,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     private long bufferSize;
     private JavaKind kind;
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public PTXArrayWrapper(PTXDeviceContext deviceContext, JavaKind kind) {
         this.deviceContext = deviceContext;
@@ -59,6 +60,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
+        logger = new TornadoLogger(this.getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -107,7 +109,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
-            TornadoLogger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            logger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
             header.dump(8);
         }
         return valid;
@@ -210,8 +212,8 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            TornadoLogger.info("allocated: %s", toString());
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("allocated: %s", toString());
         }
     }
 
@@ -224,9 +226,8 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
-                    arrayHeaderSize);
-            TornadoLogger.info("deallocated: %s", toString());
+            logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("deallocated: %s", toString());
         }
     }
 

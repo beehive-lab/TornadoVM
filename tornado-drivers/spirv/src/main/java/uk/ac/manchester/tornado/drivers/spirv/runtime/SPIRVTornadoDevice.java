@@ -189,8 +189,9 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
         } catch (Exception e) {
-            TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            TornadoLogger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
+            TornadoLogger logger = new TornadoLogger(this.getClass());
+            logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            logger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException(STR."[Error During the Task Compilation]: \{e.getMessage()}");
             } else {

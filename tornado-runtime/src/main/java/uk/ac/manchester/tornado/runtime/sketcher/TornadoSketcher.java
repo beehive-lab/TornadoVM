@@ -77,6 +77,7 @@ public class TornadoSketcher {
     private static final Map<ResolvedJavaMethod, List<TornadoSketcherCacheEntry>> cache = new ConcurrentHashMap<>();
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
+    private static TornadoLogger logger = new TornadoLogger();
 
     private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
         List<TornadoSketcherCacheEntry> entries = cache.get(method);
@@ -109,7 +110,7 @@ public class TornadoSketcher {
             }
             guarantee(sketch != null, "No sketch available for %d:%d %s", driverIndex, deviceIndex, resolvedMethod.getName());
         } catch (InterruptedException | ExecutionException e) {
-            TornadoLogger.fatal("Failed to retrieve sketch for %d:%d %s ", driverIndex, deviceIndex, resolvedMethod.getName());
+            logger.fatal("Failed to retrieve sketch for %d:%d %s ", driverIndex, deviceIndex, resolvedMethod.getName());
             if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
             }
@@ -136,7 +137,7 @@ public class TornadoSketcher {
 
     private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int backendIndex,
             int deviceIndex) {
-        TornadoLogger.info("Building sketch of %s", resolvedMethod.getName());
+        logger.info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
@@ -182,7 +183,7 @@ public class TornadoSketcher {
             return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex());
 
         } catch (Throwable e) {
-            TornadoLogger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
+            logger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
             if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
             }

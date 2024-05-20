@@ -51,6 +51,7 @@ public class OCLProgram {
     private final long[] devices;
     private final List<OCLKernel> kernels;
     private final ByteBuffer buffer;
+    private final TornadoLogger logger;
 
     public OCLProgram(long oclProgramPointer, OCLDeviceContext deviceContext) {
         this.programPointer = oclProgramPointer;
@@ -59,6 +60,7 @@ public class OCLProgram {
         this.kernels = new ArrayList<>();
         this.buffer = ByteBuffer.allocate(8192);
         this.buffer.order(OpenCL.BYTE_ORDER);
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     static native void clReleaseProgram(long programId) throws OCLException;
@@ -80,7 +82,7 @@ public class OCLProgram {
             clGetProgramBuildInfo(programPointer, deviceId, CL_PROGRAM_BUILD_STATUS.getValue(), buffer.array());
             result = OCLBuildStatus.toEnum(buffer.getInt());
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
@@ -93,7 +95,7 @@ public class OCLProgram {
             clGetProgramBuildInfo(programPointer, deviceId, CL_PROGRAM_BUILD_LOG.getValue(), buffer.array());
             result = new String(buffer.array(), "ASCII");
         } catch (OCLException | UnsupportedEncodingException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         result = result.substring(0, result.indexOf('\0'));
@@ -105,7 +107,7 @@ public class OCLProgram {
         try {
             clBuildProgram(programPointer, devices, options);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
     }
@@ -126,7 +128,7 @@ public class OCLProgram {
             clGetProgramInfo(programPointer, CL_PROGRAM_NUM_DEVICES.getValue(), buffer.array());
             result = buffer.getInt();
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
@@ -142,7 +144,7 @@ public class OCLProgram {
                 result[i] = buffer.getLong();
             }
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
@@ -158,7 +160,7 @@ public class OCLProgram {
                 result[i] = buffer.getLong();
             }
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return result;
@@ -188,17 +190,17 @@ public class OCLProgram {
         try {
             getBinaries(programPointer, numDevices, binary);
 
-            TornadoLogger.info("dumping binary %s", filenamePrefix);
+            logger.info("dumping binary %s", filenamePrefix);
             try (FileOutputStream fis = new FileOutputStream(filenamePrefix); FileChannel vChannel = fis.getChannel();) {
                 binary.position(offset);
                 binary.limit(offset + (int) sizes[index]);
                 vChannel.write(binary);
             } catch (IOException e) {
-                TornadoLogger.error("unable to dump binary: %s", e.getMessage());
+                logger.error("unable to dump binary: %s", e.getMessage());
             }
 
         } catch (OCLException e) {
-            TornadoLogger.error("unable to retrieve binary from OpenCL driver: %s", e.getMessage());
+            logger.error("unable to retrieve binary from OpenCL driver: %s", e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
 
@@ -221,7 +223,7 @@ public class OCLProgram {
         try {
             kernel = new OCLKernel(clCreateKernel(programPointer, entryPoint), deviceContext);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
 
         return kernel;
@@ -229,7 +231,7 @@ public class OCLProgram {
 
     public void dump() {
         final int numDevices = getNumDevices();
-        TornadoLogger.debug("Num devices: %d", numDevices);
+        new TornadoLogger().debug("Num devices: %d", numDevices);
     }
 
 }

@@ -61,7 +61,7 @@ public class TornadoVMGraphCompiler {
 
         intermediateTornadoGraph.analyzeDependencies();
 
-        TornadoLogger.debug("Compiling bytecodes...");
+        new TornadoLogger().debug("Compiling bytecodes...");
 
         for (int i = 0; i < tornadoVMBytecodeResults.length; i++) {
 

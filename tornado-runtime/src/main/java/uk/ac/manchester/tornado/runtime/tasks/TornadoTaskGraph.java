@@ -962,7 +962,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void transferToHost(final int mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
-                TornadoLogger.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
+                new TornadoLogger().warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
             }
 

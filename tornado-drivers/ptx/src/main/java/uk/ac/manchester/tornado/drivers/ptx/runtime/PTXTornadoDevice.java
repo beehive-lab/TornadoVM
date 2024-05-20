@@ -99,6 +99,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     private static PTXBackendImpl driver = null;
     private final PTXDevice device;
     private final int deviceIndex;
+    private final TornadoLogger logger;
 
     public PTXTornadoDevice(final int deviceIndex) {
         this.deviceIndex = deviceIndex;
@@ -107,6 +108,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             throw new RuntimeException("TornadoVM PTX Driver not found");
         }
         device = PTX.getPlatform().getDevice(deviceIndex);
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     @Override
@@ -126,7 +128,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
-        TornadoLogger.debug("[PTX] Atomics not implemented ! Returning null");
+        logger.debug("[PTX] Atomics not implemented ! Returning null");
         return null;
     }
 
@@ -194,8 +196,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             if (TornadoOptions.DEBUG) {
                 System.err.println(e.getMessage());
             }
-            TornadoLogger.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            TornadoLogger.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            logger.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            logger.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }

@@ -39,6 +39,7 @@ public class OCLKernel {
     private final OCLDeviceContext deviceContext;
     private final ByteBuffer buffer;
     private String kernelName;
+    private final TornadoLogger logger;
 
     public OCLKernel(long id, OCLDeviceContext deviceContext) {
         this.oclKernelID = id;
@@ -46,7 +47,7 @@ public class OCLKernel {
         this.buffer = ByteBuffer.allocate(1024);
         this.buffer.order(OpenCL.BYTE_ORDER);
         this.kernelName = "unknown";
-
+        this.logger = new TornadoLogger(this.getClass());
         queryName();
 
     }
@@ -63,7 +64,7 @@ public class OCLKernel {
         try {
             clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -72,7 +73,7 @@ public class OCLKernel {
         try {
             clSetKernelArgRef(oclKernelID, index, devicePtr);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -80,7 +81,7 @@ public class OCLKernel {
         try {
             clSetKernelArg(oclKernelID, index, 8, null);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -96,7 +97,7 @@ public class OCLKernel {
         try {
             clSetKernelArg(oclKernelID, index, size, null);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 

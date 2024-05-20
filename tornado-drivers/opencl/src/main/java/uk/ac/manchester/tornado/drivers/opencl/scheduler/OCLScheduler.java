@@ -60,7 +60,7 @@ public class OCLScheduler {
             case CL_DEVICE_TYPE_CPU:
                 return TornadoOptions.USE_BLOCK_SCHEDULER ? new OCLCPUScheduler(context) : getInstanceGPUScheduler(context);
             default:
-                TornadoLogger.fatal("No scheduler available for device: %s", context);
+                new TornadoLogger().fatal("No scheduler available for device: %s", context);
                 break;
         }
         return null;

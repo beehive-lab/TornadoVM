@@ -36,9 +36,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class PTXScheduler {
 
     private final PTXDevice device;
+    private final TornadoLogger logger;
 
     public PTXScheduler(final PTXDevice device) {
         this.device = device;
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
@@ -73,8 +75,8 @@ public class PTXScheduler {
                 defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(dimension, maxBlockThreads), globalWork[i]);
             }
         } catch (Exception e) {
-            TornadoLogger.warn("[CUDA-PTX] Failed to calculate blocks for " + javaName);
-            TornadoLogger.warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
+            logger.warn("[CUDA-PTX] Failed to calculate blocks for " + javaName);
+            logger.warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
             }
@@ -121,8 +123,8 @@ public class PTXScheduler {
                 defaultGrids[i] = Math.max(Math.min(workSize / blockDimension[i], (int) maxGridSizes[i]), 1);
             }
         } catch (Exception e) {
-            TornadoLogger.warn("[CUDA-PTX] Failed to calculate grids for " + javaName);
-            TornadoLogger.warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
+            logger.warn("[CUDA-PTX] Failed to calculate grids for " + javaName);
+            logger.warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
             }

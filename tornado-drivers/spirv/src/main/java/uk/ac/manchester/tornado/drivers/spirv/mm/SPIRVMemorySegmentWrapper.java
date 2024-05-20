@@ -183,7 +183,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            new TornadoLogger().info("allocated: %s", toString());
         }
     }
 
@@ -194,7 +194,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            new TornadoLogger().info("allocated: %s", toString());
         }
     }
 

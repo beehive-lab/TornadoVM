@@ -192,7 +192,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            new TornadoLogger().info("allocated: %s", toString());
         }
     }
 
@@ -204,7 +204,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: %s", toString());
+            new TornadoLogger().info("deallocated: %s", toString());
         }
     }
 
