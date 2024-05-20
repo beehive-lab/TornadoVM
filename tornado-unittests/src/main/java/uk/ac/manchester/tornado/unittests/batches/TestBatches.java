@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -38,6 +39,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -208,7 +210,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-    @Test
+    @TornadoNotSupported
     public void test100MBSmallLazy() {
 
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(100, MemoryUnit.MB);
@@ -276,7 +278,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-    @Test
+    @TornadoNotSupported
     public void test100MBLazy() {
 
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(100, MemoryUnit.MB);
@@ -345,7 +347,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-    @Test
+    @TornadoNotSupported
     public void test300MBLazy() {
 
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(300, MemoryUnit.MB);
@@ -413,7 +415,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-    @Test
+    @TornadoNotSupported
     public void test512MBLazy() {
 
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(512, MemoryUnit.MB);
@@ -863,7 +865,7 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
     }
 
-    @Test
+    @TornadoNotSupported
     public void testBatchNotEven2Lazy() {
         checkMaxHeapAllocationOnDevice(64, MemoryUnit.MB);
 

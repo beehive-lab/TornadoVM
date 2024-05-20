@@ -8,6 +8,7 @@ open module tornado.unittests {
     requires org.junit.platform.launcher;
     requires jdk.incubator.vector;
     requires com.microsoft.onnxruntime;
+    requires junit;
 
 
     exports uk.ac.manchester.tornado.unittests;
