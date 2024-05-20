@@ -233,14 +233,16 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     @Override
     public TornadoDeviceType getTornadoDeviceType() {
         ZeDeviceType type = deviceProperties.getType();
-        if (type == ZeDeviceType.ZE_DEVICE_TYPE_GPU) {
-            return TornadoDeviceType.GPU;
-        } else if (type == ZeDeviceType.ZE_DEVICE_TYPE_FPGA) {
-            return TornadoDeviceType.FPGA;
-        } else if (type == ZeDeviceType.ZE_DEVICE_TYPE_CPU) {
-            return TornadoDeviceType.CPU;
-        }
-        return null;
+        return switch (type) {
+            case ZE_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case ZE_DEVICE_TYPE_FPGA -> TornadoDeviceType.FPGA;
+            case ZE_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            // Memory Copy Accelerator
+            case ZE_DEVICE_TYPE_MCA -> TornadoDeviceType.ACCELERATOR;
+            // Vision Processing Unit
+            case ZE_DEVICE_TYPE_VPU -> TornadoDeviceType.CUSTOM;
+            default -> null;
+        };
     }
 
     @Override
