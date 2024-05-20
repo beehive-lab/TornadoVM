@@ -17,7 +17,7 @@ pipeline {
         ZULU_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/zulu21.28.85-ca-jdk21.0.0-linux_x64"
         CORRETTO_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/amazon-corretto-21.0.3.9.1-linux-x64"
         MICROSOFT_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3+9"
-        TORNADO_ROOT="/var/lib/jenkins/jobs/Tornado-pipeline"
+        TORNADO_ROOT="/var/lib/jenkins/workspace/TornadoVM-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
         CMAKE_ROOT="/opt/jenkins/cmake-3.25.2-linux-x86_64"
