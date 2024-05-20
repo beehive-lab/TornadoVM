@@ -142,7 +142,7 @@ JDK = {
     __ZULU21__: {
         __LINUX__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_x64.tar.gz",
-            __ARM__: "https://cdn.azul.com/zulu/bin/zzulu21.28.85-ca-jdk21.0.0-linux_aarch64.tar.gz",
+            __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_aarch64.tar.gz",
         },
         __APPLE__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_x64.tar.gz",
