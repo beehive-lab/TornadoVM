@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeImpl;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
@@ -97,7 +97,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     public SPIRVTornadoDevice(int platformIndex, int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
-        device = SPIRVProxy.getPlatform(platformIndex).getDevice(deviceIndex);
+        device = SPIRVRuntimeImpl.getInstance().getPlatform(platformIndex).getDevice(deviceIndex);
     }
 
     public SPIRVTornadoDevice(SPIRVDevice lowLevelDevice) {

@@ -142,6 +142,15 @@ public class OCLPlatform implements TornadoPlatformInterface {
         return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
     }
 
+    @Override
+    public boolean isSPIRVSupported() {
+        for (OCLTargetDevice device : devices) {
+            // This indicates that this platform has at least one device with support for SPIR-V.
+            return device.isSPIRVSupported();
+        }
+        return false;
+    }
+
     public String getName() {
         return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_NAME.getValue());
     }

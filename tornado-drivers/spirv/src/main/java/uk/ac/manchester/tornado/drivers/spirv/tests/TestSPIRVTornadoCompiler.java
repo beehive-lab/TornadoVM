@@ -23,10 +23,14 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.tests;
 
-import uk.ac.manchester.tornado.drivers.spirv.*;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVCodeCache;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVContext;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCodeCache;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVPlatform;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeImpl;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -34,14 +38,14 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * How to test?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVTornadoCompiler
+ * $ tornado --printKernel uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVTornadoCompiler
  * </code>
  */
 public class TestSPIRVTornadoCompiler {
 
     public static void main(String[] args) {
 
-        SPIRVPlatform platform = SPIRVProxy.getPlatform(0);
+        SPIRVPlatform platform = SPIRVRuntimeImpl.getInstance().getPlatform(0);
         SPIRVContext context = platform.createContext();
         SPIRVDeviceContext deviceContext = context.getDeviceContext(0);
         SPIRVCodeCache codeCache = new SPIRVLevelZeroCodeCache(deviceContext);

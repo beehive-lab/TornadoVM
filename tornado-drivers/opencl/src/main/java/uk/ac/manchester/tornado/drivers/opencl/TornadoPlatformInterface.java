@@ -34,4 +34,6 @@ public interface TornadoPlatformInterface {
     String getVendor();
 
     String getVersion();
+
+    boolean isSPIRVSupported();
 }

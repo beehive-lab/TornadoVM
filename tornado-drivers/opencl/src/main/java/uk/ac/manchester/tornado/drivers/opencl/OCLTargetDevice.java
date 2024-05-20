@@ -61,4 +61,6 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
     void setDeviceContext(OCLDeviceContextInterface deviceContext);
 
     int deviceVersion();
+
+    boolean isSPIRVSupported();
 }

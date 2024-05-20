@@ -65,17 +65,17 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     private List<TornadoDevice> devices;
 
     public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
-        int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
+        int numPlatforms = SPIRVRuntimeImpl.getInstance().getNumPlatforms();
         this.logger = new TornadoLogger(this.getClass());
-        logger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
+        logger.info("[SPIRV] Found %d platforms", numPlatforms);
 
-        if (numSPIRVPlatforms < 1) {
+        if (numPlatforms < 1) {
             throw new TornadoBailoutRuntimeException("[Warning] No SPIRV platforms found. Deoptimizing to sequential execution");
         }
 
-        backends = new SPIRVBackend[numSPIRVPlatforms][];
+        backends = new SPIRVBackend[numPlatforms][];
 
-        discoverDevices(options, vmRuntime, vmCon, numSPIRVPlatforms);
+        discoverDevices(options, vmRuntime, vmCon, numPlatforms);
         flatBackends = new SPIRVBackend[deviceCount];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
@@ -88,7 +88,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
-            SPIRVPlatform platform = SPIRVProxy.getPlatform(platformIndex);
+            SPIRVPlatform platform = SPIRVRuntimeImpl.getInstance().getPlatform(platformIndex);
             SPIRVContext context = platform.createContext();
             int numDevices = platform.getNumDevices();
             backends[platformIndex] = new SPIRVBackend[numDevices];
