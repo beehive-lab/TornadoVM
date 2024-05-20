@@ -35,21 +35,18 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 
 public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
 
-    private long driverPointer;
-    private int indexDriver;
-    private LevelZeroDriver driver;
-    private ZeDriverHandle driversHandler;
+    private final int indexDriver;
+    private final LevelZeroDriver driver;
+    private final ZeDriverHandle driversHandler;
     private int deviceCount = -1;
-    private List<LevelZeroDevice> devices;
     private List<SPIRVDevice> spirvDevices;
 
     SPIRVContext spirvContext;
     LevelZeroContext levelZeroContext;
 
-    public SPIRVLevelZeroPlatform(LevelZeroDriver driver, ZeDriverHandle driversHandler, int indexDriver, long levelZeroDriverPointer) {
+    public SPIRVLevelZeroPlatform(LevelZeroDriver driver, ZeDriverHandle driversHandler, int indexDriver) {
         this.driver = driver;
         this.driversHandler = driversHandler;
-        this.driverPointer = levelZeroDriverPointer;
         this.indexDriver = indexDriver;
         initDevices();
     }
@@ -64,7 +61,7 @@ public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
         ZeDevicesHandle deviceHandler = new ZeDevicesHandle(deviceCount);
         driver.zeDeviceGet(driversHandler, indexDriver, deviceCountArray, deviceHandler);
 
-        devices = new ArrayList<>();
+        List<LevelZeroDevice> devices = new ArrayList<>();
         spirvDevices = new ArrayList<>();
 
         for (int i = 0; i < deviceCount; i++) {

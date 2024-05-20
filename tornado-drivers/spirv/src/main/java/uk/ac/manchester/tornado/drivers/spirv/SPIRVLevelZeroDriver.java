@@ -54,7 +54,7 @@ public class SPIRVLevelZeroDriver implements SPIRVDispatcher {
         driversHandler = new ZeDriverHandle(numDrivers[0]);
         driver.zeDriverGet(numDrivers, driversHandler);
         for (int i = 0; i < numDrivers[0]; i++) {
-            SPIRVPlatform platform = new SPIRVLevelZeroPlatform(driver, driversHandler, i, driversHandler.getZe_driver_handle_t_ptr()[i]);
+            SPIRVPlatform platform = new SPIRVLevelZeroPlatform(driver, driversHandler, i);
             spirvPlatforms.add(platform);
         }
     }

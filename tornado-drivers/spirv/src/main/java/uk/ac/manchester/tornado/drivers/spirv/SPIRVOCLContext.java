@@ -117,10 +117,6 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        if (oclExecutionEnvironment instanceof OCLContext oclContext) {
-            oclContext.
-        }
-
         throw new RuntimeException("Unimplemented");
     }
 
