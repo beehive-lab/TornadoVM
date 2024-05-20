@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
 public class SPIRVOpenCLDriver implements SPIRVDispatcher {
 
-    private List<SPIRVPlatform> spirvOpenCLPlatforms;
+    private final List<SPIRVPlatform> spirvOpenCLPlatforms;
 
     public SPIRVOpenCLDriver() {
         int numOpenCLPlatforms = OpenCL.getNumPlatforms();
