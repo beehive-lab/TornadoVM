@@ -244,14 +244,14 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
-    public String getPlatformName() {
-        return "LevelZero";
-    }
-
-    @Override
     public boolean isSPIRVSupported() {
         // The Level-Zero backend supports SPIR-V
         return true;
+    }
+
+    @Override
+    public String getPlatformName() {
+        return "LevelZero";
     }
 
 }
