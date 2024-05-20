@@ -50,6 +50,8 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      */
     private final SPIRVBackend[][] spirvBackends;
 
+    private final SPIRVPlatform[] platforms;
+
     /**
      * Flat representation of the backends
      */
@@ -64,7 +66,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     private int deviceCount;
     private List<TornadoDevice> devices;
 
-    public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
+    public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfigAccess) {
         int numPlatforms = SPIRVRuntimeImpl.getInstance().getNumPlatforms();
         logger = new TornadoLogger(this.getClass());
         logger.info("[SPIR-V] Found %d platforms", numPlatforms);
@@ -72,9 +74,10 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         if (numPlatforms < 1) {
             throw new TornadoBailoutRuntimeException("[Warning] No SPIR-V platforms found. Deoptimizing to sequential execution");
         }
-
+        platforms = new SPIRVPlatform[numPlatforms];
         spirvBackends = new SPIRVBackend[numPlatforms][];
-        discoverDevices(options, vmRuntime, vmCon, numPlatforms);
+
+        discoverDevices(options, vmRuntime, vmConfigAccess, numPlatforms);
 
         flatBackends = new SPIRVBackend[deviceCount];
         int index = 0;
@@ -89,6 +92,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
             SPIRVPlatform platform = SPIRVRuntimeImpl.getInstance().getPlatform(platformIndex);
+            platforms[platformIndex] = platform;
             SPIRVContext context = platform.createContext();
             int numDevices = platform.getNumDevices();
 
@@ -209,5 +213,9 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {
         return checkAndInitBackend(platformIndex, deviceIndex);
+    }
+
+    public SPIRVPlatform[] getPlatforms() {
+        return this.platforms;
     }
 }

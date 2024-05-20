@@ -70,4 +70,9 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
         return new SPIRVOCLContext(this, spirvDevices, context);
     }
 
+    @Override
+    public SPIRVDevice[] getDevices() {
+        return spirvDevices.toArray(new SPIRVDevice[0]);
+    }
+
 }

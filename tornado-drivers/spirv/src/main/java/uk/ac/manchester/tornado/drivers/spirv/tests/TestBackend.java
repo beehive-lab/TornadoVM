@@ -26,6 +26,8 @@ package uk.ac.manchester.tornado.drivers.spirv.tests;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVPlatform;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
 public class TestBackend {
@@ -34,15 +36,21 @@ public class TestBackend {
 
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
+        SPIRVBackendImpl backend = tornadoRuntime.getBackend(SPIRVBackendImpl.class);
 
-        // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
+        System.out.println("Querying all device  ............................. ");
+        for (SPIRVPlatform platform : tornadoRuntime.getBackend(SPIRVBackendImpl.class).getPlatforms()) {
+            for (SPIRVDevice spirvDevice : platform.getDevices()) {
+                System.out.println("\t-> SPIR-V Device: " + spirvDevice.getDeviceName());
+            }
+        }
 
+        // Get the default backend from TornadoVM
+        System.out.println("\nDefault  ............................. ");
+        SPIRVBackend spirvBackend = backend.getDefaultBackend();
         TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
-
-        System.out.println("Selecting Device: " + device.getPhysicalDevice().getDeviceName());
-
-        System.out.println("BACKEND: " + spirvBackend);
+        System.out.println("Selecting Device: --> " + device.getPhysicalDevice().getDeviceName());
+        System.out.println("\tFrom backend: --> " + spirvBackend);
 
     }
 
@@ -51,7 +59,7 @@ public class TestBackend {
     }
 
     public static void main(String[] args) {
-        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestBackend");
+        System.out.println("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestBackend");
         new TestBackend().test();
     }
 
