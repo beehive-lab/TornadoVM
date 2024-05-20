@@ -60,9 +60,9 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         initDriverVersion();
     }
 
-    private static void errorLog(String method, int result) {
+    private static void errorLog(String methodName, int result) {
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
-            System.out.println("Error " + method);
+            System.out.println("Error " + methodName);
         }
     }
 
