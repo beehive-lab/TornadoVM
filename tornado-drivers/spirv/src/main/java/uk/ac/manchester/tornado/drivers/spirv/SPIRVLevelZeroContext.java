@@ -34,15 +34,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescriptor;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
@@ -82,62 +73,8 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
     }
 
-    public static int getCommandQueueOrdinal(LevelZeroDevice device) {
-        int[] numQueueGroups = new int[1];
-        int result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, null);
-        LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
-
-        if (numQueueGroups[0] == 0) {
-            throw new RuntimeException(STR."Number of Queue Groups is 0 for device: \{device.getDeviceProperties().getName()}");
-        }
-        int ordinal = numQueueGroups[0];
-
-        if (device.getCommandQueueGroupProperties() == null) {
-            ZeCommandQueueGroupProperties[] commandQueueGroupProperties = new ZeCommandQueueGroupProperties[numQueueGroups[0]];
-            result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, commandQueueGroupProperties);
-            LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
-        }
-
-        for (int i = 0; i < numQueueGroups[0]; i++) {
-            if ((device.getCommandQueueGroupProperties(i).getFlags() & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) //
-                    == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
-                ordinal = i;
-                break;
-            }
-        }
-
-        return ordinal;
-    }
-
     public LevelZeroContext getLevelZeroContext() {
         return levelZeroContext;
-    }
-
-    private LevelZeroCommandQueue createCommandQueue(LevelZeroContext context, SPIRVDevice spirvDevice) {
-        LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
-        // Create Command Queue
-        ZeCommandQueueDescriptor cmdDescriptor = new ZeCommandQueueDescriptor();
-        cmdDescriptor.setFlags(0);
-        cmdDescriptor.setMode(ZeCommandQueueMode.ZE_COMMAND_QUEUE_MODE_DEFAULT);
-        cmdDescriptor.setPriority(ZeCommandQueuePriority.ZE_COMMAND_QUEUE_PRIORITY_NORMAL);
-        cmdDescriptor.setOrdinal(getCommandQueueOrdinal(device));
-        cmdDescriptor.setIndex(0);
-
-        ZeCommandQueueHandle zeCommandQueueHandle = new ZeCommandQueueHandle();
-        int result = context.zeCommandQueueCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), cmdDescriptor, zeCommandQueueHandle);
-        LevelZeroUtils.errorLog("zeCommandQueueCreate", result);
-        return new LevelZeroCommandQueue(context, zeCommandQueueHandle);
-    }
-
-    private LevelZeroCommandList createCommandList(LevelZeroContext context, SPIRVDevice spirvDevice) {
-        LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
-        ZeCommandListDescriptor cmdListDescriptor = new ZeCommandListDescriptor();
-        cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
-        cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
-        ZeCommandListHandle commandListHandler = new ZeCommandListHandle();
-        int result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), cmdListDescriptor, commandListHandler);
-        LevelZeroUtils.errorLog("zeCommandListCreate", result);
-        return new LevelZeroCommandList(context, commandListHandler);
     }
 
     @Override

@@ -27,7 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
 public class SPIRVOCLContext extends SPIRVContext {
 
@@ -65,7 +67,12 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public long allocateMemory(int deviceIndex, long numBytes) {
-        throw new RuntimeException("Unimplemented");
+        if (oclExecutionEnvironment instanceof OCLContext oclContext) {
+            System.out.println("[debug] ALLOC " + numBytes);
+            return oclContext.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, numBytes).getBuffer();
+        } else {
+            throw new RuntimeException("Unimplemented");
+        }
     }
 
     @Override
@@ -110,6 +117,10 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        if (oclExecutionEnvironment instanceof OCLContext oclContext) {
+            oclContext.
+        }
+
         throw new RuntimeException("Unimplemented");
     }
 

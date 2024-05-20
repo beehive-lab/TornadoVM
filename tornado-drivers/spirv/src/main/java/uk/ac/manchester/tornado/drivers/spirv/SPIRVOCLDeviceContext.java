@@ -31,8 +31,6 @@ public class SPIRVOCLDeviceContext extends SPIRVDeviceContext {
         super(device, context);
     }
 
-    // TODO: Override all methods to work with the OCLExecutionContext for OpenCL
-
     @Override
     public Event resolveEvent(long executionPlanId, int event) {
         return null;

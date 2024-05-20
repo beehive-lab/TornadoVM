@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
@@ -97,7 +96,6 @@ public class OCLContext implements OCLExecutionEnvironment {
 
     private void createCommandQueue(int index, long properties) {
         OCLTargetDevice device = devices.get(index);
-        long commandQueuePtr;
         try {
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
@@ -106,7 +104,7 @@ public class OCLContext implements OCLExecutionEnvironment {
             logger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
             logger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
-            commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
+            clCreateCommandQueue(contextID, device.getId(), properties);
         } catch (OCLException e) {
             logger.error(e.getMessage());
             throw new TornadoRuntimeException("[ERROR] OpenCL Command Queue Initialization not valid");
@@ -212,24 +210,6 @@ public class OCLContext implements OCLExecutionEnvironment {
         final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), this);
         deviceContexts.add(deviceContext);
         return deviceContext;
-    }
-
-    /**
-     * Allocates off-heap memory.
-     *
-     * @param bytes
-     *     to be allocated.
-     * @param alignment
-     *     alignment
-     *
-     * @return base address
-     */
-    public long allocate(long bytes, long alignment) {
-        final long address = allocateOffHeapMemory(bytes, alignment);
-        if (address == 0) {
-            throw new TornadoInternalError("Unable to allocate off-heap memory");
-        }
-        return address;
     }
 
     public OCLBufferResult createBuffer(long flags, long bytes) {
