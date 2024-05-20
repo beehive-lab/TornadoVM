@@ -29,7 +29,7 @@ pipeline {
         stage('Checkout Current Branch') {
             steps {
                 step([$class: 'WsCleanup'])
-                checkout([$class: 'GitSCM', branches: [[name: params.fullBuild_branchToBuild]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-tornadovm-credentials', url: 'https://github.com/stratika/TornadoVM.git']]])
+                checkout([$class: 'GitSCM', branches: [[name: params.fullBuild_branchToBuild]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-tornadovm-credentials', url: 'https://github.com/beehive-lab/TornadoVM.git']]])
             }
         }
 
