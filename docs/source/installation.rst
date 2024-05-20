@@ -52,8 +52,8 @@ Installation
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code.
 
-Installer Script
-=================
+Installation Script
+====================
 
 The ``tornadovm-installer`` script provided in this repository will compile/download ``OpenJDK``, ``CMake``, ``Maven`` and it will build the TornadoVM project.
 This installation script has been tested on Linux, macOS and Windows.
@@ -143,7 +143,7 @@ On Windows by using:
 .. _installation_linux:
 
 Installation for Linux 
-=================================
+=======================
 
 Download dependencies (Red Hat-based):
 
@@ -246,7 +246,7 @@ To recompile TornadoVM after an update:
 
 .. _installation_windows:
 
-Installattion for Windows 10/11
+Installation for Windows 10/11
 ======================================
 
 **[DISCLAIMER] Please, note that, although TornadoVM can run on Windows 10/11, it is still experimental.**
@@ -346,7 +346,7 @@ The installer script downloads the following dependencies:
    setvars.cmd
 
 
-And TornadoVM is readyt to be used. If you want to recompile with a different backend: 
+And TornadoVM is ready to be used. If you want to recompile with a different backend: 
 
 .. code:: bash
 
@@ -375,14 +375,13 @@ And TornadoVM is readyt to be used. If you want to recompile with a different ba
 
 .. _installation_mali:
 
-Installattion for ARM Mali GPUs
+Installation for ARM Mali GPUs
 ====================================
 
 1. Installation
 ~~~~~~~~~~~~~~~~~
 
 The installation of TornadoVM to run on ARM Mali GPUs requires JDK21 with GraalVM.
-See the :ref:`installation_graalvm` for details about the installation.
 
 The OpenCL driver for Mali GPUs on Linux that has been tested is:
 
