@@ -75,4 +75,9 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
         return spirvDevices.toArray(new SPIRVDevice[0]);
     }
 
+    @Override
+    public SPIRVRuntime getRuntime() {
+        return SPIRVRuntime.OPENCL;
+    }
+
 }

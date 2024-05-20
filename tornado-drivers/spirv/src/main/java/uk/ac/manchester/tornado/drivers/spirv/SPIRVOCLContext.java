@@ -31,12 +31,12 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 
 public class SPIRVOCLContext extends SPIRVContext {
 
-    private OCLExecutionEnvironment context;
+    private OCLExecutionEnvironment oclExecutionEnvironment;
     private List<SPIRVOCLDeviceContext> spirvoclDeviceContext;
 
     public SPIRVOCLContext(SPIRVPlatform platform, List<SPIRVDevice> devices, OCLExecutionEnvironment context) {
         super(platform, devices);
-        this.context = context;
+        this.oclExecutionEnvironment = context;
 
         // Create a command queue per device;
         for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
@@ -47,7 +47,7 @@ public class SPIRVOCLContext extends SPIRVContext {
         for (SPIRVDevice device : devices) {
             // We do not need command queue from this class, it was already created in the
             // constructor
-            SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(device, context);
+            SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(device, this);
             device.setDeviceContext(deviceContext);
             spirvoclDeviceContext.add(deviceContext);
         }

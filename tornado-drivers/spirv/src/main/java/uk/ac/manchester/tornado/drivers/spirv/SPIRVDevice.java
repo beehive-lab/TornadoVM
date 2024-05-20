@@ -81,4 +81,5 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
 
     public abstract boolean isSPIRVSupported();
 
+    public abstract SPIRVRuntime getSPIRVRuntime();
 }

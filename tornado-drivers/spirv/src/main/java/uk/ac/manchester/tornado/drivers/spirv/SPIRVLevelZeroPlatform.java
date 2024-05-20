@@ -102,4 +102,9 @@ public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
     public SPIRVDevice[] getDevices() {
         return spirvDevices.toArray(new SPIRVDevice[0]);
     }
+
+    @Override
+    public SPIRVRuntime getRuntime() {
+        return SPIRVRuntime.LEVEL_ZERO;
+    }
 }

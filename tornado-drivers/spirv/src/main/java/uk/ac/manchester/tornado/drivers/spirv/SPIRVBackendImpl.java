@@ -50,7 +50,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      */
     private final SPIRVBackend[][] spirvBackends;
 
-    private final SPIRVPlatform[] platforms;
+    private final List<SPIRVPlatform> platforms;
 
     /**
      * Flat representation of the backends
@@ -74,7 +74,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         if (numPlatforms < 1) {
             throw new TornadoBailoutRuntimeException("[Warning] No SPIR-V platforms found. Deoptimizing to sequential execution");
         }
-        platforms = new SPIRVPlatform[numPlatforms];
+        platforms = new ArrayList<>();
         spirvBackends = new SPIRVBackend[numPlatforms][];
 
         discoverDevices(options, vmRuntime, vmConfigAccess, numPlatforms);
@@ -92,28 +92,25 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
             SPIRVPlatform platform = SPIRVRuntimeImpl.getInstance().getPlatform(platformIndex);
-            platforms[platformIndex] = platform;
+            platforms.add(platform);
             SPIRVContext context = platform.createContext();
             int numDevices = platform.getNumDevices();
 
             // Since a platform can have more than one device and not all of them must be SPIR-V supported,
             // we need to filter again to only add those that support SPIR-V >= 1.2.
-
-            //spirvBackends[platformIndex] = new SPIRVBackend[numDevices];
             List<SPIRVBackend> devices = new ArrayList<>();
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
                 if (device.isSPIRVSupported()) {
-                    devices.add(createSPIRVJITCompiler(options, vmRuntime, vmCon, device, context));
+                    devices.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context));
                     deviceCount++;
                 }
             }
             spirvBackends[platformIndex] = devices.toArray(new SPIRVBackend[0]);
         }
-        //        deviceCount = getNumDevices();
     }
 
-    private SPIRVBackend createSPIRVJITCompiler(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context) {
+    private SPIRVBackend createSPIRVJITCompilerBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context) {
         return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context);
     }
 
@@ -158,14 +155,6 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private int getNumDevices() {
-        int count = 0;
-        for (int i = 0; i < getNumPlatforms(); i++) {
-            count += getNumDevicesForPlatform(i);
-        }
-        return count;
-    }
-
     @Override
     public int getDeviceCount() {
         return deviceCount;
@@ -197,11 +186,6 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     }
 
     @Override
-    public String getName() {
-        return "SPIRV";
-    }
-
-    @Override
     public int getNumPlatforms() {
         return spirvBackends.length;
     }
@@ -211,11 +195,28 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         return TornadoVMBackendType.SPIRV;
     }
 
+    public SPIRVBackend getBackend(SPIRVRuntime port) {
+        for (SPIRVBackend[] spirvBackend : spirvBackends) {
+            for (SPIRVBackend backend : spirvBackend) {
+                SPIRVRuntime spirvRuntime = backend.getDeviceContext().device.getSPIRVRuntime();
+                if (spirvRuntime.equals(port)) {
+                    return backend;
+                }
+            }
+        }
+        return null;
+    }
+
     public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {
         return checkAndInitBackend(platformIndex, deviceIndex);
     }
 
-    public SPIRVPlatform[] getPlatforms() {
+    public List<SPIRVPlatform> getPlatforms() {
         return this.platforms;
+    }
+
+    @Override
+    public String getName() {
+        return "SPIR-V";
     }
 }

@@ -252,6 +252,11 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
+    public SPIRVRuntime getSPIRVRuntime() {
+        return SPIRVRuntime.LEVEL_ZERO;
+    }
+
+    @Override
     public String getPlatformName() {
         return "LevelZero";
     }

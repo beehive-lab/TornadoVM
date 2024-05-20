@@ -162,4 +162,9 @@ public class SPIRVOCLDevice extends SPIRVDevice {
         return device.isSPIRVSupported();
     }
 
+    @Override
+    public SPIRVRuntime getSPIRVRuntime() {
+        return SPIRVRuntime.OPENCL;
+    }
+
 }

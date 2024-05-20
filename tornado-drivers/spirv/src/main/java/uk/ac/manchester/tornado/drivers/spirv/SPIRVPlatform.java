@@ -32,4 +32,6 @@ public interface SPIRVPlatform {
     SPIRVContext createContext();
 
     SPIRVDevice[] getDevices();
+
+    SPIRVRuntime getRuntime();
 }

@@ -24,12 +24,11 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 
 public class SPIRVOCLDeviceContext extends SPIRVDeviceContext {
 
-    public SPIRVOCLDeviceContext(SPIRVDevice device, OCLExecutionEnvironment context) {
-        super(device, null);
+    public SPIRVOCLDeviceContext(SPIRVDevice device, SPIRVContext context) {
+        super(device, context);
     }
 
     // TODO: Override all methods to work with the OCLExecutionContext for OpenCL

@@ -23,6 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-public enum SPIRVPort {
+public enum SPIRVRuntime {
     LEVEL_ZERO, OPENCL
 }
