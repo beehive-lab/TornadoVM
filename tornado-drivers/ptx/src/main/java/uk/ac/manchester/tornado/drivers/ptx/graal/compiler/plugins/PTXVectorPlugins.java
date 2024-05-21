@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
@@ -94,107 +93,104 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
 
 public final class PTXVectorPlugins {
 
-    public static final void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
 
-        if (ENABLE_VECTORS) {
-            ps.appendNodePlugin(new NodePlugin() {
-                @Override
-                public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                    PTXKind vectorKind = PTXKind.resolveToVectorKind(method.getDeclaringClass());
-                    if (vectorKind == PTXKind.ILLEGAL) {
-                        return false;
-                    }
-                    if (method.getName().equals("<init>")) {
-                        final VectorValueNode vector = resolveReceiver(b, vectorKind, args[0]);
-                        if (args.length > 1) {
-                            int offset = (vector == args[0]) ? 1 : 0;
-                            for (int i = offset; i < args.length; i++) {
-                                vector.setElement(i - offset, args[i]);
-                            }
-                        } else {
-                            if (vectorKind.getVectorLength() < 8) {
-                                vector.initialiseToDefaultValues(vector.graph());
-                            }
-                        }
-                        return true;
-                    }
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                PTXKind vectorKind = PTXKind.resolveToVectorKind(method.getDeclaringClass());
+                if (vectorKind == PTXKind.ILLEGAL) {
                     return false;
                 }
+                if (method.getName().equals("<init>")) {
+                    final VectorValueNode vector = resolveReceiver(b, vectorKind, args[0]);
+                    if (args.length > 1) {
+                        int offset = (vector == args[0]) ? 1 : 0;
+                        for (int i = offset; i < args.length; i++) {
+                            vector.setElement(i - offset, args[i]);
+                        }
+                    } else {
+                        if (vectorKind.getVectorLength() < 8) {
+                            vector.initialiseToDefaultValues(vector.graph());
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
 
-            });
+        });
 
-            // Adding floats
-            registerVectorPlugins(ps, plugins, PTXKind.FLOAT2, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, PTXKind.FLOAT3, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, PTXKind.FLOAT4, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, PTXKind.FLOAT8, FloatArray.class, float.class);
-            registerVectorPlugins(ps, plugins, PTXKind.FLOAT16, FloatArray.class, float.class);
+        // Adding floats
+        registerVectorPlugins(ps, plugins, PTXKind.FLOAT2, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, PTXKind.FLOAT3, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, PTXKind.FLOAT4, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, PTXKind.FLOAT8, FloatArray.class, float.class);
+        registerVectorPlugins(ps, plugins, PTXKind.FLOAT16, FloatArray.class, float.class);
 
-            // Adding ints
-            registerVectorPlugins(ps, plugins, PTXKind.INT2, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, PTXKind.INT3, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, PTXKind.INT4, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, PTXKind.INT8, IntArray.class, int.class);
-            registerVectorPlugins(ps, plugins, PTXKind.INT16, IntArray.class, int.class);
+        // Adding ints
+        registerVectorPlugins(ps, plugins, PTXKind.INT2, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, PTXKind.INT3, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, PTXKind.INT4, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, PTXKind.INT8, IntArray.class, int.class);
+        registerVectorPlugins(ps, plugins, PTXKind.INT16, IntArray.class, int.class);
 
-            // Adding shorts
-            registerVectorPlugins(ps, plugins, PTXKind.SHORT2, ShortArray.class, short.class);
+        // Adding shorts
+        registerVectorPlugins(ps, plugins, PTXKind.SHORT2, ShortArray.class, short.class);
 
-            // Adding char
-            registerVectorPlugins(ps, plugins, PTXKind.CHAR3, ByteArray.class, byte.class);
-            registerVectorPlugins(ps, plugins, PTXKind.CHAR4, ByteArray.class, byte.class);
+        // Adding char
+        registerVectorPlugins(ps, plugins, PTXKind.CHAR3, ByteArray.class, byte.class);
+        registerVectorPlugins(ps, plugins, PTXKind.CHAR4, ByteArray.class, byte.class);
 
-            // Adding double
-            registerVectorPlugins(ps, plugins, PTXKind.DOUBLE2, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, PTXKind.DOUBLE3, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, PTXKind.DOUBLE4, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, PTXKind.DOUBLE8, DoubleArray.class, double.class);
-            registerVectorPlugins(ps, plugins, PTXKind.DOUBLE16, DoubleArray.class, double.class);
+        // Adding double
+        registerVectorPlugins(ps, plugins, PTXKind.DOUBLE2, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, PTXKind.DOUBLE3, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, PTXKind.DOUBLE4, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, PTXKind.DOUBLE8, DoubleArray.class, double.class);
+        registerVectorPlugins(ps, plugins, PTXKind.DOUBLE16, DoubleArray.class, double.class);
 
-            registerVectorPlugins(ps, plugins, PTXKind.HALF2, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, PTXKind.HALF3, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, PTXKind.HALF4, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, PTXKind.HALF8, HalfFloat.class, short.class);
-            registerVectorPlugins(ps, plugins, PTXKind.HALF16, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, PTXKind.HALF2, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, PTXKind.HALF3, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, PTXKind.HALF4, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, PTXKind.HALF8, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, PTXKind.HALF16, HalfFloat.class, short.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT2, FloatArray.class, Float2.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT3, FloatArray.class, Float3.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT8, FloatArray.class, Float8.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT16, FloatArray.class, Float16.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT2, FloatArray.class, Float2.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT3, FloatArray.class, Float3.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT8, FloatArray.class, Float8.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT16, FloatArray.class, Float16.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT2, IntArray.class, Int2.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT3, IntArray.class, Int3.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT4, IntArray.class, Int4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT8, IntArray.class, Int8.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT16, IntArray.class, Int16.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT2, IntArray.class, Int2.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT3, IntArray.class, Int3.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT4, IntArray.class, Int4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT8, IntArray.class, Int8.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT16, IntArray.class, Int16.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF16, HalfFloatArray.class, Half16.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF2, HalfFloatArray.class, Half2.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF3, HalfFloatArray.class, Half3.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF4, HalfFloatArray.class, Half4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF8, HalfFloatArray.class, Half8.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VECTORHALF16, HalfFloatArray.class, Half16.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX4X4FLOAT, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX4X4FLOAT, FloatArray.class, Float4.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT3, FloatArray.class, Float3.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT4, FloatArray.class, Float4.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT8, FloatArray.class, Float8.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT3, FloatArray.class, Float3.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT4, FloatArray.class, Float4.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT8, FloatArray.class, Float8.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.VOLUMESHORT2, ShortArray.class, Short2.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.VOLUMESHORT2, ShortArray.class, Short2.class);
 
-            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEBYTE3, ByteArray.class, Byte3.class);
-            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEBYTE4, ByteArray.class, Byte4.class);
-        }
-
+        registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEBYTE3, ByteArray.class, Byte3.class);
+        registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEBYTE4, ByteArray.class, Byte4.class);
     }
 
     private static VectorValueNode resolveReceiver(GraphBuilderContext b, PTXKind vectorKind, ValueNode thisObject) {

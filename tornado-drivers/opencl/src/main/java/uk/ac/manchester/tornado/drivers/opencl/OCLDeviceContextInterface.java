@@ -42,7 +42,7 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLInstalledCode getInstalledCode(String id, String entryPoint);
 
-    OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel);
+    OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel);
 
     OCLInstalledCode installCode(OCLCompilationResult result);
 
@@ -50,7 +50,7 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     boolean isKernelAvailable();
 
-    void reset();
+    void reset(long executionPlanId);
 
     TornadoXPUDevice asMapping();
 

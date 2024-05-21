@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.api.runtime;
 
-import uk.ac.manchester.tornado.api.TornadoCI;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
+import uk.ac.manchester.tornado.api.TornadoSettingInterface;
 
 public class TornadoRuntime {
 
     private static TornadoRuntimeInterface runtimeImpl;
-    private static TornadoCI tornadoImpl;
+    private static TornadoSettingInterface tornadoImpl;
 
     static {
         init();

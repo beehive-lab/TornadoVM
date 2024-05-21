@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventScopeFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class LevelZeroKernelTimeStamp {
@@ -116,7 +116,7 @@ public class LevelZeroKernelTimeStamp {
 
         resultKernel.resolve(timeStampBuffer);
 
-        if (Tornado.DEBUG) {
+        if (TornadoOptions.DEBUG) {
             resultKernel.printTimers();
         }
     }

@@ -23,29 +23,29 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class FieldBuffer {
 
     private final Field field;
     private final XPUBuffer objectBuffer;
+    private final TornadoLogger logger;
 
     public FieldBuffer(final Field field, final XPUBuffer objectBuffer) {
         this.objectBuffer = objectBuffer;
         this.field = field;
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     public int enqueueRead(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
-            trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            logger.trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: Offset 0
         return (useDeps) ? objectBuffer.enqueueRead(executionPlanId, getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
@@ -53,7 +53,7 @@ public class FieldBuffer {
 
     public List<Integer> enqueueWrite(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
-            trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            logger.trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         return (useDeps) ? objectBuffer.enqueueWrite(executionPlanId, getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
     }
@@ -63,7 +63,7 @@ public class FieldBuffer {
         try {
             value = field.get(container);
         } catch (IllegalArgumentException | IllegalAccessException e) {
-            warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
+            logger.warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
         }
         return value;
     }
@@ -74,7 +74,7 @@ public class FieldBuffer {
 
     public int read(long executionPlanId, final Object ref, int[] events, boolean useDeps) {
         if (DEBUG) {
-            debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            logger.debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: reading with offset != 0
         return objectBuffer.read(executionPlanId, getFieldValue(ref), 0, 0, events, useDeps);
@@ -82,7 +82,7 @@ public class FieldBuffer {
 
     public void write(long executionPlanId, final Object ref) {
         if (DEBUG) {
-            trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
+            logger.trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         objectBuffer.write(executionPlanId, getFieldValue(ref));
     }

@@ -25,12 +25,12 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
-import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 
 public class XPUDeviceBufferState implements DeviceBufferState {
 
-    private XPUBuffer objectBuffer;
+    private XPUBuffer xpuBuffer;
     private boolean atomicRegionPresent;
 
     private boolean contents;
@@ -40,23 +40,27 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     public XPUDeviceBufferState() {
     }
 
-    public void setObjectBuffer(XPUBuffer value) {
-        objectBuffer = value;
+    @Override
+    public void setXPUBuffer(XPUBuffer value) {
+        xpuBuffer = value;
     }
 
     public void setAtomicRegion(XPUBuffer buffer) {
-        this.objectBuffer = buffer;
+        this.xpuBuffer = buffer;
         atomicRegionPresent = true;
     }
 
+    @Override
     public boolean hasObjectBuffer() {
-        return objectBuffer != null;
+        return xpuBuffer != null;
     }
 
-    public XPUBuffer getObjectBuffer() {
-        return objectBuffer;
+    @Override
+    public XPUBuffer getXPUBuffer() {
+        return xpuBuffer;
     }
 
+    @Override
     public boolean isLockedBuffer() {
         return lockBuffer;
     }
@@ -65,10 +69,12 @@ public class XPUDeviceBufferState implements DeviceBufferState {
         this.lockBuffer = lockBuffer;
     }
 
+    @Override
     public boolean hasContent() {
         return contents;
     }
 
+    @Override
     public void setContents(boolean value) {
         contents = value;
     }
@@ -82,7 +88,7 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (hasObjectBuffer()) {
-            sb.append(String.format(" buffer=0x%x, size=%s ", objectBuffer.toBuffer(), humanReadableByteCount(objectBuffer.size(), true)));
+            sb.append(String.format(" buffer=0x%x, size=%s ", xpuBuffer.toBuffer(), humanReadableByteCount(xpuBuffer.size(), true)));
         } else {
             sb.append(" <unbuffered>");
         }
@@ -103,5 +109,11 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     @Override
     public long getPartialCopySize() {
         return this.partialSize;
+    }
+
+    public XPUDeviceBufferState createSnapshot() {
+        XPUDeviceBufferState xpuDeviceBufferState = new XPUDeviceBufferState();
+        xpuDeviceBufferState.setLockBuffer(this.isLockedBuffer());
+        return xpuDeviceBufferState;
     }
 }

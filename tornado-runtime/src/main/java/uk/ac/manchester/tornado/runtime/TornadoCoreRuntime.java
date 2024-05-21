@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime;
 
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -56,7 +55,6 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
@@ -159,16 +157,13 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
         TornadoAcceleratorBackend[] tornadoAcceleratorBackends = new TornadoAcceleratorBackend[TornadoBackends.values().length];
         int index = 0;
         for (TornadoBackendProvider provider : providerList) {
-            if (Tornado.FULL_DEBUG) {
-                System.out.println(STR."[INFO] Loading Backend: \{provider}");
+            if (TornadoOptions.FULL_DEBUG) {
+                System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            boolean isRMI = provider.getName().equalsIgnoreCase("RMI Backend");
-            if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
-                TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
-                if (backend != null) {
-                    tornadoAcceleratorBackends[index] = backend;
-                    index++;
-                }
+            TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
+            if (backend != null) {
+                tornadoAcceleratorBackends[index] = backend;
+                index++;
             }
         }
         backendCount = index;

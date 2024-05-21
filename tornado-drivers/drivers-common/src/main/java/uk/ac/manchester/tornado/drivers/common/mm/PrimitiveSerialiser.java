@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.common.mm;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class PrimitiveSerialiser {
 
@@ -50,7 +50,7 @@ public class PrimitiveSerialiser {
             case Float floatValue -> buffer.putFloat(floatValue);
             case Long longValue -> buffer.putLong(longValue);
             case Double doubleValue -> buffer.putDouble(doubleValue);
-            case null, default -> Tornado.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
+            case null, default -> new TornadoLogger().warn("unable to serialise: %s (%s)", value, value.getClass().getName());
         }
 
         if (alignment != 0) {

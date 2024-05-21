@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoF
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoBatchGlobalIndexOffset;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoHalfFloatReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoSPIRVIntrinsicsReplacements;
@@ -81,6 +82,7 @@ public class SPIRVHighTier extends TornadoHighTier {
         }
 
         appendPhase(new TornadoTaskSpecialization(canonicalizer));
+        appendPhase(new TornadoBatchGlobalIndexOffset());
         appendPhase(new TornadoFieldAccessFixup());
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));

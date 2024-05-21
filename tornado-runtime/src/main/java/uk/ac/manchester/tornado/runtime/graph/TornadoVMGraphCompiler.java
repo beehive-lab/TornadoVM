@@ -28,7 +28,7 @@ import java.util.BitSet;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -61,7 +61,7 @@ public class TornadoVMGraphCompiler {
 
         intermediateTornadoGraph.analyzeDependencies();
 
-        Tornado.debug("Compiling bytecodes...");
+        new TornadoLogger().debug("Compiling bytecodes...");
 
         for (int i = 0; i < tornadoVMBytecodeResults.length; i++) {
 

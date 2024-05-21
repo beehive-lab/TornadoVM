@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
 import java.io.BufferedReader;
@@ -410,6 +408,8 @@ public final class RuntimeUtilities {
         StringBuilder errorOutput = new StringBuilder();
         final String lineSeparator = System.lineSeparator();
 
+        TornadoLogger logger = new TornadoLogger();
+
         try {
             Process p = Runtime.getRuntime().exec(command);
             p.waitFor();
@@ -437,10 +437,10 @@ public final class RuntimeUtilities {
             writeStringToFile(loggingDirectory + FPGA_OUTPUT_FILENAME, standardOutput.toString(), true);
             writeStringToFile(loggingDirectory + FPGA_ERROR_FILENAME, errorOutput.toString(), true);
         } catch (IOException e) {
-            error("Unable to make a native system call.", e);
+            logger.error("Unable to make a native system call.", e);
             throw new IOException(e);
         } catch (Throwable t) {
-            error("Unable to make a native system call.", t);
+            logger.error("Unable to make a native system call.", t);
             throw new TornadoRuntimeException(t.getMessage());
         }
     }
@@ -449,7 +449,7 @@ public final class RuntimeUtilities {
         try (FileOutputStream fos = (append ? new FileOutputStream(file, true) : new FileOutputStream(file))) {
             fos.write(source);
         } catch (IOException e) {
-            error("unable to dump source: ", e.getMessage());
+            new TornadoLogger().error("unable to dump source: ", e.getMessage());
             throw new RuntimeException("unable to dump source: " + e.getMessage());
         }
 
@@ -462,14 +462,14 @@ public final class RuntimeUtilities {
             bw.flush();
             bw.close();
         } catch (IOException e) {
-            error("unable to dump source: ", e.getMessage());
+            new TornadoLogger().error("unable to dump source: ", e.getMessage());
             throw new RuntimeException("unable to dump source: " + e.getMessage());
         }
 
     }
 
     public static void writeToFile(String file, byte[] binary) {
-        info("dumping binary %s", file);
+        new TornadoLogger().info("dumping binary %s", file);
         try (FileOutputStream fis = new FileOutputStream(file);) {
             fis.write(binary);
         } catch (IOException e) {

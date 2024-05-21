@@ -49,6 +49,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private static final String TRUE = "True";
     private static final String FALSE = "False";
     private final boolean isDeviceDefined;
+
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList(//
             "-cl-single-precision-constant", //
             "-cl-denorms-are-zero", //
@@ -96,7 +97,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final String cpuConfig;
     private String id;
     private TornadoXPUDevice device;
-    private int driverIndex;
+    private int backendIndex;
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
@@ -122,13 +123,13 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
             int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
-            driverIndex = a[0];
+            backendIndex = a[0];
             deviceIndex = a[1];
         } else if (null != parent) {
-            driverIndex = parent.getDriverIndex();
+            backendIndex = parent.getBackendIndex();
             deviceIndex = parent.getDeviceIndex();
         } else {
-            driverIndex = TornadoOptions.DEFAULT_DRIVER_INDEX;
+            backendIndex = TornadoOptions.DEFAULT_BACKEND_INDEX;
             deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
         }
 
@@ -189,7 +190,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     public TornadoXPUDevice getLogicDevice() {
-        return device != null ? device : (device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex)));
+        return device != null ? device : (device = resolveDevice(Tornado.getProperty(id + ".device", backendIndex + ":" + deviceIndex)));
     }
 
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
@@ -216,31 +217,17 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      *     {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
-        this.driverIndex = device.getDriverIndex();
-        this.deviceIndex = getDeviceIndex(driverIndex, device);
+        this.backendIndex = device.getDriverIndex();
+        this.deviceIndex = getDeviceIndex(backendIndex, device);
         if (device instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             this.device = tornadoAcceleratorDevice;
         }
         deviceManuallySet = true;
     }
 
-    /**
-     * Set a device from a specific Tornado driver.
-     *
-     * @param driverIndex
-     *     Driver Index
-     * @param device
-     *     {@link TornadoXPUDevice}
-     */
-    public void setDriverDevice(int driverIndex, TornadoXPUDevice device) {
-        this.driverIndex = driverIndex;
-        this.deviceIndex = getDeviceIndex(driverIndex, device);
-        this.device = device;
-    }
-
     @Override
-    public int getDriverIndex() {
-        return driverIndex;
+    public int getBackendIndex() {
+        return backendIndex;
     }
 
     @Override

@@ -48,6 +48,8 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
 
     String getDeviceVendor();
 
+    String getDriverVersion();
+
     boolean isDeviceAvailable();
 
     String getDeviceOpenCLCVersion();

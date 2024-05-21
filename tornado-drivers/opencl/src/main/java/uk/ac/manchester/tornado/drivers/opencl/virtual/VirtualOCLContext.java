@@ -59,7 +59,7 @@ public class VirtualOCLContext implements OCLExecutionEnvironment {
 
     @Override
     public VirtualOCLDeviceContext createDeviceContext(int index) {
-        TornadoLogger.debug("creating device context for device: %s", devices.get(index).toString());
+        new TornadoLogger().debug("creating device context for device: %s", devices.get(index).toString());
         return new VirtualOCLDeviceContext(devices.get(index), this);
     }
 

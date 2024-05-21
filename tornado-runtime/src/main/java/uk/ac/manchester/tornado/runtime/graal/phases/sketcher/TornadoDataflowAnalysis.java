@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Optional;
@@ -60,6 +58,7 @@ import org.graalvm.compiler.phases.BasePhase;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -80,7 +79,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             if (param != null && param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                 accesses[i] = processUsages(param, context.getMetaAccess());
             }
-            debug("access: parameter %d -> %s\n", i, accesses[i]);
+            new TornadoLogger().debug("access: parameter %d -> %s\n", i, accesses[i]);
         }
     }
 

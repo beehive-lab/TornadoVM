@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
+import java.util.Set;
+
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -37,7 +39,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
@@ -46,24 +47,12 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     private final VirtualOCLContext context;
     private final OCLCodeCache codeCache;
     private boolean wasReset;
-    private boolean useRelativeAddresses;
-    private boolean printOnce = true;
 
     protected VirtualOCLDeviceContext(OCLTargetDevice device, VirtualOCLContext context) {
         this.device = device;
         this.context = context;
         this.codeCache = new OCLCodeCache(this);
-
-        setRelativeAddressesFlag();
         device.setDeviceContext(this);
-    }
-
-    private void setRelativeAddressesFlag() {
-        if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
-            useRelativeAddresses = true;
-        } else {
-            useRelativeAddresses = Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-        }
     }
 
     public OCLTargetDevice getDevice() {
@@ -78,6 +67,11 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public int getDriverIndex() {
         return TornadoRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
+    }
+
+    @Override
+    public Set<Long> getRegisteredPlanIds() {
+        return Set.of();
     }
 
     @Override
@@ -153,7 +147,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public void reset() {
+    public void reset(long executionPlanId) {
         wasReset = true;
     }
 
@@ -225,7 +219,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile, boolean printKernel) {
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel) {
         return null;
     }
 

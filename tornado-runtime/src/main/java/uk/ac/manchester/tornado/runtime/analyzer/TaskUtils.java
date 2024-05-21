@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -124,7 +124,7 @@ public class TaskUtils {
             m.setAccessible(true);
             return m;
         } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
-            Tornado.debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
+            new TornadoLogger().debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
             useToJavaMethod = true;
             return callToJava(javaMethod);
         }

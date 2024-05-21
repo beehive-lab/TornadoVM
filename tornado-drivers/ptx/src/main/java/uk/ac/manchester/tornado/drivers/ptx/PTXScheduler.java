@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,21 +24,23 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.FULL_DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.FULL_DEBUG;
 
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXScheduler {
 
     private final PTXDevice device;
+    private final TornadoLogger logger;
 
     public PTXScheduler(final PTXDevice device) {
         this.device = device;
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
@@ -73,8 +75,8 @@ public class PTXScheduler {
                 defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(dimension, maxBlockThreads), globalWork[i]);
             }
         } catch (Exception e) {
-            warn("[CUDA-PTX] Failed to calculate blocks for " + javaName);
-            warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
+            logger.warn("[CUDA-PTX] Failed to calculate blocks for " + javaName);
+            logger.warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
             }
@@ -121,8 +123,8 @@ public class PTXScheduler {
                 defaultGrids[i] = Math.max(Math.min(workSize / blockDimension[i], (int) maxGridSizes[i]), 1);
             }
         } catch (Exception e) {
-            warn("[CUDA-PTX] Failed to calculate grids for " + javaName);
-            warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
+            logger.warn("[CUDA-PTX] Failed to calculate grids for " + javaName);
+            logger.warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
             }

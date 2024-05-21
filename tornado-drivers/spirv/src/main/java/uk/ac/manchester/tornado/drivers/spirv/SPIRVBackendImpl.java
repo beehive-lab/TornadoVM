@@ -38,7 +38,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
@@ -56,6 +55,8 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      */
     private final SPIRVBackend[] flatBackends;
 
+    private final TornadoLogger logger;
+
     /**
      * Total number of devices available (include all backends platform and
      * devices).
@@ -65,13 +66,15 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
-        TornadoLogger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
+        this.logger = new TornadoLogger(this.getClass());
+        logger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
 
         if (numSPIRVPlatforms < 1) {
             throw new TornadoBailoutRuntimeException("[Warning] No SPIRV platforms found. Deoptimizing to sequential execution");
         }
 
         backends = new SPIRVBackend[numSPIRVPlatforms][];
+
         discoverDevices(options, vmRuntime, vmCon, numSPIRVPlatforms);
         flatBackends = new SPIRVBackend[deviceCount];
         int index = 0;
@@ -104,7 +107,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
         SPIRVBackend backend = backends[platformIndex][deviceIndex];
         if (!backend.isInitialised()) {
-            Tornado.info("SPIRV Backend Initialization");
+            logger.info("SPIRV Backend Initialization");
             backend.init();
         }
         return backend;

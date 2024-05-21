@@ -27,7 +27,6 @@ import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 /**
  * A buffer for inspecting data within an OpenCL device. It is not backed by any
@@ -290,7 +289,4 @@ public class OCLByteBuffer {
         return deviceContext.getMemoryManager().toAtomicAddress();
     }
 
-    public void zeroMemory() {
-        Tornado.warn("zero memory unimplemented");
-    }
 }

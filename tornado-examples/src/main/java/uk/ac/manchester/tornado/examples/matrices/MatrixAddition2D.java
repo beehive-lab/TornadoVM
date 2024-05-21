@@ -64,7 +64,7 @@ public class MatrixAddition2D {
     private static void reset() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumBackends(); i++) {
             final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(i);
-            driver.getDefaultDevice().reset();
+            driver.getDefaultDevice().clean();
         }
     }
 

@@ -31,15 +31,18 @@ public class Sketch {
 
     private final Graph graph;
 
+    private boolean batchWriteThreadIndex;
+
     /**
      * Argument accesses of the {@link #graph}. If arguments escape to callees, it
      * will contain the updated accesses based on what the non-inlined methods do.
      */
     private final Access[] argumentsAccess;
 
-    Sketch(Graph graph, Access[] argumentAccesses) {
+    Sketch(Graph graph, Access[] argumentAccesses, boolean batchWriteThreadIndex) {
         this.graph = graph;
         this.argumentsAccess = argumentAccesses;
+        this.batchWriteThreadIndex = batchWriteThreadIndex;
     }
 
     public Graph getGraph() {
@@ -48,6 +51,10 @@ public class Sketch {
 
     public Access[] getArgumentsAccess() {
         return argumentsAccess;
+    }
+
+    public boolean getBatchWriteThreadIndex() {
+        return this.batchWriteThreadIndex;
     }
 
 }

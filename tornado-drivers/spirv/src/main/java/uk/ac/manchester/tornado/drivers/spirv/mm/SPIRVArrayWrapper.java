@@ -23,11 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -40,7 +36,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
 
@@ -54,6 +51,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public SPIRVArrayWrapper(SPIRVDeviceContext deviceContext, JavaKind javaKind, long batchSize) {
         this.deviceContext = deviceContext;
@@ -62,6 +60,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         this.bufferId = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
         this.bufferOffset = 0;
+        this.logger = new TornadoLogger(this.getClass());
 
         this.arrayLengthOffset = TornadoCoreRuntime.getVMConfig().arrayOopDescLengthOffset();
         this.arrayHeaderSize = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(kind);
@@ -137,7 +136,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
-            fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            logger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
             header.dump(8);
         }
         return valid;
@@ -149,18 +148,8 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-
-        if (VALIDATE_ARRAY_HEADERS) {
-            if (validateArrayHeader(executionPlanId, array)) {
-                return readArrayData(executionPlanId, toBuffer(), bufferOffset + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            } else {
-                shouldNotReachHere("Array header is invalid");
-            }
-        } else {
-            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
-            return readArrayData(executionPlanId, toBuffer(), bufferOffset + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
-        }
-        return -1;
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
+        return readArrayData(executionPlanId, toBuffer(), bufferOffset + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
     }
 
     // FIXME <REFACTOR> <Same for all backends>
@@ -267,9 +256,9 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
-        if (Tornado.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("allocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("allocated: %s", toString());
         }
 
     }
@@ -282,9 +271,9 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (Tornado.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("deallocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("deallocated: %s", toString());
         }
     }
 

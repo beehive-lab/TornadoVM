@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatFixedGuardE
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoAutoParalleliser;
+import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoBatchFunctionAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoKernelContextReplacement;
@@ -83,6 +84,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         appendPhase(new TornadoAutoParalleliser());
         appendPhase(new TornadoDataflowAnalysis());
         appendPhase(new TornadoPanamaPrivateMemory());
+        appendPhase(new TornadoBatchFunctionAnalysis());
     }
 
     private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {

@@ -27,10 +27,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
@@ -55,6 +52,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends.
@@ -72,10 +70,12 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     private long bufferOffset;
     private ByteBuffer buffer;
     private long subRegionSize;
+    private final TornadoLogger logger;
 
     public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object) {
         this.objectType = object.getClass();
         this.deviceContext = deviceContext;
+        this.logger = new TornadoLogger(this.getClass());
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -92,7 +92,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
-                trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
+                logger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
             XPUBuffer wrappedField = null;
@@ -113,7 +113,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
                 } else if (type == byte[].class) {
                     wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, deviceContext, 0);
                 } else {
-                    warn("cannot wrap field: array type=%s", type.getName());
+                    logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
@@ -169,7 +169,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (DEBUG) {
-            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+            logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
@@ -177,7 +177,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
         setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
         if (DEBUG) {
-            debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
+            logger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
         }
     }
 
@@ -269,7 +269,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(objectType, field.getName());
                 if (DEBUG) {
-                    trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
 
                 buffer.position(field.getOffset());
@@ -289,7 +289,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
                 Field f = getField(objectType, field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
-                    trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
                 readFieldFromBuffer(i, f, object);
             }

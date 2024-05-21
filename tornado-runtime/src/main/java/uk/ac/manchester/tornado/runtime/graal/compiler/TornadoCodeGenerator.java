@@ -30,7 +30,7 @@ public final class TornadoCodeGenerator {
     public static final TornadoLogger log = new TornadoLogger(TornadoCodeGenerator.class);
 
     public static void debug(final String msg) {
-        TornadoLogger.debug(msg);
+        log.debug(msg);
     }
 
     public static void debug(final String pattern, final Object... args) {

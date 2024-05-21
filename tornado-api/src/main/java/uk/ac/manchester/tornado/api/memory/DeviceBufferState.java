@@ -19,11 +19,11 @@ package uk.ac.manchester.tornado.api.memory;
 
 public interface DeviceBufferState {
 
-    void setObjectBuffer(XPUBuffer value);
+    void setXPUBuffer(XPUBuffer value);
 
     boolean hasObjectBuffer();
 
-    XPUBuffer getObjectBuffer();
+    XPUBuffer getXPUBuffer();
 
     boolean isAtomicRegionPresent();
 

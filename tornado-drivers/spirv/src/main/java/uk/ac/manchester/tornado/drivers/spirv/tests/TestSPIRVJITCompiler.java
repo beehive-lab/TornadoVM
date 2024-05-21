@@ -142,9 +142,9 @@ public class TestSPIRVJITCompiler {
         callWrapper.setKernelContext(new HashMap<>());
 
         // Add kernel arguments to the SPIR-V Call Stack
-        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Launch the generated kernel
         installedCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);

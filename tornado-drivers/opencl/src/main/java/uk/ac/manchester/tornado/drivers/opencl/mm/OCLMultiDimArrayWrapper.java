@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-
 import java.lang.reflect.Array;
 import java.util.function.Function;
 
@@ -32,6 +30,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
@@ -83,7 +82,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            fatal("OOM: multi-dim array: %s", e.getMessage());
+            new TornadoLogger().fatal("OOM: multi-dim array: %s", e.getMessage());
             System.exit(-1);
         }
     }

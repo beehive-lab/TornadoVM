@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-
 import java.nio.ByteBuffer;
+
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 // FIXME <REFACTOR> Remove this class (common.mm)
 public class PrimitiveSerialiser {
@@ -41,18 +41,13 @@ public class PrimitiveSerialiser {
     }
 
     public static void put(ByteBuffer buffer, Object value, int alignment) {
-        if (value instanceof Integer) {
-            buffer.putInt((int) value);
-        } else if (value instanceof Long) {
-            buffer.putLong((long) value);
-        } else if (value instanceof Short) {
-            buffer.putShort((short) value);
-        } else if (value instanceof Float) {
-            buffer.putFloat((float) value);
-        } else if (value instanceof Double) {
-            buffer.putDouble((double) value);
-        } else {
-            Tornado.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
+        switch (value) {
+            case Integer i -> buffer.putInt((int) value);
+            case Long l -> buffer.putLong((long) value);
+            case Short i -> buffer.putShort((short) value);
+            case Float v -> buffer.putFloat((float) value);
+            case Double v -> buffer.putDouble((double) value);
+            case null, default -> new TornadoLogger().warn("unable to serialise: %s (%s)", value, value.getClass().getName());
         }
 
         if (alignment != 0) {

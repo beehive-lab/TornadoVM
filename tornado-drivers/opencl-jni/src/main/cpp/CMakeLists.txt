@@ -53,16 +53,16 @@ endif()
 
 if(APPLE)
     include_directories(
-	source/
-	${JNI_INCLUDE_DIRS}
-	${OPENCL_INCLUDE_DIRS}
-	)
+	    source/
+	    ${JNI_INCLUDE_DIRS}
+	    ${OPENCL_INCLUDE_DIRS}
+	    )
 else()
     include_directories(
-	source/
-	headers/include
-	${JNI_INCLUDE_DIRS}
-	${OPENCL_INCLUDE_DIRS}
+	    source/
+	    headers/include
+	    ${JNI_INCLUDE_DIRS}
+	    ${OPENCL_INCLUDE_DIRS}
 	)
 endif()
 
@@ -92,8 +92,8 @@ if(MSVC)
         message(STATUS "CUDA not found")
     endif()
 else()
-    find_path(NVML_INCLUDE_DIR NAMES nvml.h HINTS ${CUDA_INCLUDE_DIRS} /usr/local/cuda/targets/x86_64-linux/include)
-    find_library(NVML_LIBRARY NAMES nvidia-ml PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64 /usr/local/cuda/targets/x86_64-linux/lib/stubs/)
+    find_path(NVML_INCLUDE_DIR NAMES nvml.h HINTS ${CUDA_INCLUDE_DIRS} /usr/local/cuda/targets/x86_64-linux/include /usr/local/cuda/targets/sbsa-linux/include)
+    find_library(NVML_LIBRARY NAMES nvidia-ml PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64 /usr/local/cuda/targets/x86_64-linux/lib/stubs/ /usr/local/cuda/targets/sbsa-linux/lib/stubs/)
     if(NVML_INCLUDE_DIR AND NVML_LIBRARY)
         set(EXTRA_LIBS ${EXTRA_LIBS} "-L/usr/local/cuda/lib64/stubs -lnvidia-ml")
     endif()

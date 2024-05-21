@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoV
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVKernelContextAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
@@ -313,7 +313,7 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
         int iterations = 0;
         int lastNodeCount = graph.getNodeCount();
         boolean hasWork = true;
-        this.batchThreads = context.getBatchThreads();
+        this.batchThreads = context.getBatchCompilationConfig().getBatchThreads();
         this.gridScheduling = context.isGridSchedulerEnabled();
 
         while (hasWork) {
@@ -383,11 +383,12 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
             }
         });
 
+        TornadoLogger logger = new TornadoLogger(this.getClass());
         if (iterations == MAX_ITERATIONS) {
-            Tornado.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
+            logger.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
         }
-        Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
-        Tornado.debug("valid graph? %s", graph.verify());
+        logger.debug("TaskSpecialisation ran %d iterations", iterations);
+        logger.debug("valid graph? %s", graph.verify());
         index = 0;
     }
 

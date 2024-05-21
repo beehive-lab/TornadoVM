@@ -26,9 +26,6 @@ package uk.ac.manchester.tornado.drivers.ptx.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -40,7 +37,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
@@ -52,6 +50,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     private long bufferSize;
     private JavaKind kind;
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public PTXArrayWrapper(PTXDeviceContext deviceContext, JavaKind kind) {
         this.deviceContext = deviceContext;
@@ -61,6 +60,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
+        logger = new TornadoLogger(this.getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -99,17 +99,8 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-        if (VALIDATE_ARRAY_HEADERS) {
-            if (validateArrayHeader(executionPlanId, array)) {
-                return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            } else {
-                shouldNotReachHere("Array header is invalid");
-            }
-        } else {
-            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
-            return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
-        }
-        return -1;
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
+        return readArrayData(executionPlanId, toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
     }
 
     private boolean validateArrayHeader(long executionPlanId, T array) {
@@ -118,7 +109,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
-            fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            logger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
             header.dump(8);
         }
         return valid;
@@ -220,9 +211,9 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
         this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
-        if (Tornado.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("allocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("allocated: %s", toString());
         }
     }
 
@@ -234,9 +225,9 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         buffer = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (Tornado.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("deallocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("deallocated: %s", toString());
         }
     }
 

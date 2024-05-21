@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
-
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 
@@ -39,16 +37,10 @@ public class OCLVectorNodePlugin implements NodePlugin {
 
     @Override
     public boolean handleNewInstance(GraphBuilderContext b, ResolvedJavaType type) {
-        if (!ENABLE_VECTORS) {
-            return false;
-        }
-
         if (type.getAnnotation(Vector.class) != null) {
             return createVectorInstance(b, type);
         }
-
         return false;
-
     }
 
     private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {

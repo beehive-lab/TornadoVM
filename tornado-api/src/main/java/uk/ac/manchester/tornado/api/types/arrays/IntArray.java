@@ -21,6 +21,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -118,6 +119,20 @@ public final class IntArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / INT_BYTES);
         IntArray intArray = new IntArray(numElements);
         MemorySegment.copy(segment, 0, intArray.segment, intArray.baseIndex * INT_BYTES, byteSize);
+        return intArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link IntArray} class from a {@link IntBuffer}.
+     *
+     * @param buffer
+     *     The {@link IntBuffer} containing the int data.
+     * @return A new {@link IntArray} instance, initialized with the buffer data.
+     */
+    public static IntArray fromIntBuffer(IntBuffer buffer) {
+        int numElements = buffer.remaining();
+        IntArray intArray = new IntArray(numElements);
+        intArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return intArray;
     }
 

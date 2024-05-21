@@ -171,4 +171,11 @@ public interface TornadoXPUDevice extends TornadoDevice {
      */
     void setAtomicRegion(XPUBuffer bufferAtomics);
 
+    /**
+     * It returns from the sketch of a task whether the loop index is written in the output buffer.
+     * @param task
+     * @return
+     */
+    boolean loopIndexInWrite(SchedulableTask task);
+
 }

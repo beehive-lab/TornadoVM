@@ -30,9 +30,10 @@ __JDK21__ = "jdk21"
 __GRAALVM21__ = "graalvm-jdk-21"
 __MANDREL21__ = "mandrel-jdk-21"
 __CORRETTO21__ = "corretto-jdk-21"
-__MICROSOFT20__ = "microsoft-jdk-20"
+__MICROSOFT21__ = "microsoft-jdk-21"
 __ZULU21__ = "zulu-jdk-21"
 __TEMURIN21__ = "temurin-jdk-21"
+__SAPMACHINE21__ = "sapmachine-jdk-21"
 
 ## cmake
 CMAKE = {
@@ -124,24 +125,24 @@ JDK = {
             __ARM__: None,
         },
     },
-    __MICROSOFT20__: {
+    __MICROSOFT21__: {
         __LINUX__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-aarch64.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz",
         },
         __WINDOWS__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-aarch64.zip",
         },
     },
     __ZULU21__: {
         __LINUX__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_x64.tar.gz",
-            __ARM__: "https://cdn.azul.com/zulu/bin/zzulu21.28.85-ca-jdk21.0.0-linux_aarch64.tar.gz",
+            __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_aarch64.tar.gz",
         },
         __APPLE__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_x64.tar.gz",
@@ -163,6 +164,20 @@ JDK = {
         },
         __WINDOWS__: {
             __X86_64__: None,
+            __ARM__: None,
+        },
+    },
+    __SAPMACHINE21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-aarch64_bin.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-aarch64_bin.tar.gz",
+        },
+        __WINDOWS__: {
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_windows-x64_bin.zip",
             __ARM__: None,
         },
     },

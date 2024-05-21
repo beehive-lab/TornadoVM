@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,13 +23,19 @@
  * Authors: Michalis Papadimitriou
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
 
-    public static final int[] DEFAULT_LOCAL_WORK_SIZE = { 64, 1, 1 };
+    public static final long[] DEFAULT_LOCAL_WORK_SIZE = { 64, 1, 1 };
+    public static final String WARNING_FPGA_DEFAULT_LOCAL = "[TornadoVM OCL] Warning: TornadoVM uses as default local work group size for FPGAs: " + Arrays.toString(DEFAULT_LOCAL_WORK_SIZE) + ".";
     private static final int WARP = 32;
 
     public OCLFPGAScheduler(final OCLDeviceContext context) {
@@ -50,7 +56,7 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
 
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
-        final long[] localWork = meta.initLocalWork();
+        final long[] localWork = DEFAULT_LOCAL_WORK_SIZE;
         switch (meta.getDims()) {
             case 3:
                 setLocalWork(3, localWork, meta);
@@ -66,10 +72,32 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
         }
     }
 
+    @Override
+    public int launch(long executionPlanId, final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+        if (meta.isWorkerGridAvailable()) {
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            long[] global = grid.getGlobalWork();
+            long[] offset = grid.getGlobalOffset();
+            long[] local = grid.getLocalWork();
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents);
+        } else {
+            if (meta.shouldUseOpenCLDriverScheduling()) {
+                System.out.println(WARNING_FPGA_DEFAULT_LOCAL);
+            }
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+        }
+    }
+
+    @Override
+    public long[] getDefaultLocalWorkGroup() {
+        return DEFAULT_LOCAL_WORK_SIZE;
+    }
+
     private void setLocalWork(final int dimensions, long[] localWork, final TaskMetaData meta) {
         for (int i = 0; i < dimensions; i++) {
             localWork[i] = calculateGroupSize(DEFAULT_LOCAL_WORK_SIZE[i], meta.getGlobalWork()[i]);
         }
+        meta.setLocalWork(localWork);
     }
 
     private int calculateGroupSize(long maxWorkItemSizes, long globalWorkSize) {

@@ -58,10 +58,23 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
         setS7(s7);
     }
 
-    /**
-     * * Operations on Float8 vectors.
-     */
     public static Float8 add(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) + b.get(i));
+        }
+        return result;
+    }
+
+    public static Float8 add(Int8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) + b.get(i));
+        }
+        return result;
+    }
+
+    public static Float8 add(Float8 a, Int8 b) {
         final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
@@ -85,6 +98,22 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
         return result;
     }
 
+    public static Float8 sub(Int8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) - b.get(i));
+        }
+        return result;
+    }
+
+    public static Float8 sub(Float8 a, Int8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) - b.get(i));
+        }
+        return result;
+    }
+
     public static Float8 sub(Float8 a, float b) {
         final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -94,6 +123,22 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
     }
 
     public static Float8 div(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) / b.get(i));
+        }
+        return result;
+    }
+
+    public static Float8 div(Int8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) / b.get(i));
+        }
+        return result;
+    }
+
+    public static Float8 div(Float8 a, Int8 b) {
         final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
@@ -117,6 +162,22 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
         return result;
     }
 
+    public static Float8 mult(Int8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
+    public static Float8 mult(Float8 a, Int8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
     public static Float8 mult(Float8 a, float value) {
         final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -133,6 +194,22 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
         return result;
     }
 
+    public static Float8 min(Int8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.min(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
+    public static Float8 min(Float8 a, Int8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.min(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
     public static float min(Float8 value) {
         float result = Float.MAX_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -142,6 +219,22 @@ public final class Float8 implements TornadoVectorsInterface<FloatBuffer> {
     }
 
     public static Float8 max(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.max(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
+    public static Float8 max(Int8 a, Float8 b) {
+        final Float8 result = new Float8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, Math.max(a.get(i), b.get(i)));
+        }
+        return result;
+    }
+
+    public static Float8 max(Float8 a, Int8 b) {
         final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));

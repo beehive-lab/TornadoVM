@@ -37,19 +37,20 @@ import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
 import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class PTXMemorySegmentWrapper implements XPUBuffer {
+
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
-
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
@@ -57,6 +58,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        logger = new TornadoLogger(this.getClass());
     }
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize) {
@@ -65,6 +67,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        logger = new TornadoLogger(this.getClass());
     }
 
     @Override
@@ -111,7 +114,8 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (partialReadSize != 0) {
             // Partial Copy Out due to a copy under demand copy by the user
-            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            // in this case the host offset is equal to the device offset
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer() + hostOffset, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else if (batchSize <= 0) {
             returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
@@ -185,8 +189,8 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
             throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
         }
 
-        if (Tornado.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("allocated: %s", toString());
         }
     }
 
@@ -197,8 +201,8 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (Tornado.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: %s", toString());
+        if (TornadoOptions.FULL_DEBUG) {
+            logger.info("deallocated: %s", toString());
         }
     }
 

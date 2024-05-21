@@ -27,11 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -89,7 +86,6 @@ public class OCLCodeCache {
      * </p>
      */
     private final StringBuilder OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
-    private final boolean PRINT_WARNINGS = false;
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContextInterface deviceContext;
     private String fpgaName;
@@ -104,6 +100,8 @@ public class OCLCodeCache {
     private boolean kernelAvailable;
 
     private HashMap<String, String> precompiledBinariesPerDevice;
+
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     public OCLCodeCache(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
@@ -323,8 +321,8 @@ public class OCLCodeCache {
             try {
                 Files.createDirectories(dir);
             } catch (IOException e) {
-                error("unable to create dir: %s", dir.toString());
-                error(e.getMessage());
+                logger.error("unable to create dir: %s", dir.toString());
+                logger.error(e.getMessage());
             }
         }
         guarantee(Files.isDirectory(dir), "target directory is not a directory: %s", dir.toAbsolutePath().toString());
@@ -434,7 +432,7 @@ public class OCLCodeCache {
     private void invokeShellCommand(String[] command) {
         try {
             if (command != null) {
-                RuntimeUtilities.systemCall(command, Tornado.FPGA_DUMP_LOG, directoryBitstream);
+                RuntimeUtilities.systemCall(command, TornadoOptions.FULL_DEBUG, directoryBitstream);
             }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
@@ -477,7 +475,7 @@ public class OCLCodeCache {
         return deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().split("\\(")[0];
     }
 
-    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean shouldCompile, boolean printKernel) { // TODO Override this method for each FPGA backend
+    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean printKernel) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = fpgaSourceDir + entryPoint + OPENCL_SOURCE_SUFFIX;
         final String outputFile = fpgaSourceDir + entryPoint;
@@ -502,54 +500,43 @@ public class OCLCodeCache {
             pendingTasks.put(taskNames[0], tasks);
         }
 
-        if (shouldCompile) {
-            if (isPlatform("xilinx")) {
-                compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                linkObjectFiles.add(entryPoint);
-                linkCommand = composeXilinxHLSLinkCommand(entryPoint);
-            } else if (isPlatform("intel")) {
-                if (runOnIntelFPGAWithOneAPI()) {
-                    if (isQuartusHLSRequired()) {
-                        assertIfQuartusHLSIsPresent();
-                        compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
-                    } else {
-                        compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
-                    }
-                } else {
+        if (isPlatform("xilinx")) {
+            compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+            linkObjectFiles.add(entryPoint);
+            linkCommand = composeXilinxHLSLinkCommand(entryPoint);
+        } else if (isPlatform("intel")) {
+            if (runOnIntelFPGAWithOneAPI()) {
+                if (isQuartusHLSRequired()) {
+                    assertIfQuartusHLSIsPresent();
                     compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+                } else {
+                    compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
                 }
             } else {
-                // Should not reach here
-                throw new TornadoRuntimeException("[ERROR] FPGA vendor not supported yet.");
+                compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             }
+        } else {
+            // Should not reach here
+            throw new TornadoRuntimeException("[ERROR] FPGA vendor not supported yet.");
+        }
 
-            String vendor = getDeviceVendor();
+        String vendor = getDeviceVendor();
 
-            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir, entryPoint };
-            Path path = Paths.get(outputFile);
-            addNewEntryInBitstreamHashMap(id, outputFile);
-            if (fpgaBitStreamFile.exists()) {
-                return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
-            } else {
-                invokeShellCommand(compilationCommand);
-                invokeShellCommand(commandRename);
-                invokeShellCommand(linkCommand);
-                if (isFPGAInAWS) {
-                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream, entryPoint };
-                    invokeShellCommand(afiAWSCommand);
-                }
-            }
+        commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir, entryPoint };
+        Path path = Paths.get(outputFile);
+        addNewEntryInBitstreamHashMap(id, outputFile);
+        if (fpgaBitStreamFile.exists()) {
             return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
         } else {
-            // For Xilinx we can compile separated modules and then link them together in
-            // the final phase.
-            if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
-                linkObjectFiles.add(entryPoint);
-                compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                invokeShellCommand(compilationCommand);
+            invokeShellCommand(compilationCommand);
+            invokeShellCommand(commandRename);
+            invokeShellCommand(linkCommand);
+            if (isFPGAInAWS) {
+                String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream, entryPoint };
+                invokeShellCommand(afiAWSCommand);
             }
         }
-        return null;
+        return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
     }
 
     private boolean isInputSourceSPIRVBinary(byte[] source) {
@@ -558,9 +545,41 @@ public class OCLCodeCache {
         return value == SPIRV_MAGIC_NUMBER;
     }
 
+    private void dumpKernelSource(String id, String entryPoint, String log, byte[] source) {
+        final Path outDir = resolveLogDirectory();
+        final String identifier = STR."\{id}-\{entryPoint}";
+        logger.error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
+
+        File file = new File(STR."\{outDir}/\{identifier}.log");
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(log.getBytes());
+        } catch (IOException e) {
+            logger.error("unable to write error log: ", e.getMessage());
+        }
+        file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(source);
+        } catch (IOException e) {
+            logger.error("unable to write error log: ", e.getMessage());
+        }
+
+    }
+
+    private void installCodeInCodeCache(OCLProgram program, TaskMetaData meta, String id, String entryPoint, OCLInstalledCode code) {
+        
+        cache.put(STR."\{id}-\{entryPoint}", code);
+
+        // BUG Apple does not seem to like implementing the OpenCL spec
+        // properly, this causes a SIGFAULT.
+        if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
+            final Path outDir = resolveCacheDirectory();
+            program.dumpBinaries(STR."\{outDir.toAbsolutePath()}/\{entryPoint}");
+        }
+    }
+
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
-        info("Installing code for %s into code cache", entryPoint);
+        logger.info("Installing code for %s into code cache", entryPoint);
 
         boolean isSPIRVBinary = isInputSourceSPIRVBinary(source);
         final OCLProgram program;
@@ -576,7 +595,7 @@ public class OCLCodeCache {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
             } catch (IOException e) {
-                error("unable to dump source: ", e.getMessage());
+                logger.error("unable to dump source: ", e.getMessage());
             }
         }
 
@@ -593,59 +612,30 @@ public class OCLCodeCache {
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
-        debug("\tOpenCL compilation status = %s", status.toString());
-
-        final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
-
-        if (PRINT_WARNINGS || (status == OCLBuildStatus.CL_BUILD_ERROR)) {
-            if (!log.isEmpty()) {
-                debug(log);
-            }
-            final Path outDir = resolveLogDirectory();
-            final String identifier = STR."\{id}-\{entryPoint}";
-            error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
-
-            File file = new File(STR."\{outDir}/\{identifier}.log");
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                fos.write(log.getBytes());
-            } catch (IOException e) {
-                error("unable to write error log: ", e.getMessage());
-            }
-            file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                fos.write(source);
-            } catch (IOException e) {
-                error("unable to write error log: ", e.getMessage());
-            }
-        }
+        logger.debug("\tOpenCL compilation status = %s", status.toString());
 
         if (status == OCLBuildStatus.CL_BUILD_ERROR) {
+            final String log = program.getBuildLog(deviceContext.getDeviceId());
+            System.err.println("\n[ERROR] TornadoVM JIT Compiler - OpenCL Build Error Log:\n\n" + log + "\n");
+            dumpKernelSource(id, entryPoint, log, source);
             throw new TornadoBailoutRuntimeException("Error during code compilation with the OpenCL driver");
         }
 
-        final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
-
-        if (kernel != null) {
+        OCLKernel kernel = null;
+        if (status == CL_BUILD_SUCCESS) {
+            kernel = program.getKernel(entryPoint);
             kernelAvailable = true;
         }
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
-
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
+            logger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             if (meta.shouldPrintCompileTimes()) {
-                debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
+                logger.debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
-            cache.put(STR."\{id}-\{entryPoint}", code);
-
-            // BUG Apple does not seem to like implementing the OpenCL spec
-            // properly, this causes a SIGFAULT.
-            if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
-                final Path outDir = resolveCacheDirectory();
-                program.dumpBinaries(STR."\{outDir.toAbsolutePath()}/\{entryPoint}");
-            }
+            installCodeInCodeCache(program, meta, id, entryPoint, code);
         } else {
-            warn("\tunable to compile %s", entryPoint);
+            logger.warn("\tunable to compile %s", entryPoint);
             code.invalidate();
         }
 
@@ -653,7 +643,7 @@ public class OCLCodeCache {
     }
 
     private OCLInstalledCode installBinary(String id, String entryPoint, byte[] binary) throws OCLException {
-        info("Installing binary for %s into code cache", entryPoint);
+        logger.info("Installing binary for %s into code cache", entryPoint);
 
         if (entryPoint.contains("-")) {
             entryPoint = entryPoint.split("-")[1];
@@ -685,11 +675,11 @@ public class OCLCodeCache {
             program.build("");
 
             status = program.getStatus(deviceContext.getDeviceId());
-            debug("\tOpenCL compilation status = %s", status.toString());
+            logger.debug("\tOpenCL compilation status = %s", status.toString());
 
             final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
             if (!log.isEmpty()) {
-                debug(log);
+                logger.debug(log);
             }
         }
 
@@ -697,7 +687,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
 
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
+            logger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             cache.put(entryPoint, code);
 
             String taskScheduleName = splitTaskGraphAndTaskName(id)[0];
@@ -719,7 +709,7 @@ public class OCLCodeCache {
                 RuntimeUtilities.writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
             }
         } else {
-            warn("\tunable to install binary for %s", entryPoint);
+            logger.warn("\tunable to install binary for %s", entryPoint);
             code.invalidate();
         }
 
@@ -741,13 +731,13 @@ public class OCLCodeCache {
         final File file = lookupPath.toFile();
         OCLInstalledCode lookupCode = null;
         if (file.length() == 0) {
-            error("Empty input binary: %s", file);
+            logger.error("Empty input binary: %s", file);
         }
         try {
             final byte[] binary = Files.readAllBytes(lookupPath);
             lookupCode = installBinary(id, entrypoint, binary);
         } catch (OCLException | IOException e) {
-            error("unable to load binary: %s (%s)", file, e.getMessage());
+            logger.error("unable to load binary: %s (%s)", file, e.getMessage());
         }
         return lookupCode;
     }

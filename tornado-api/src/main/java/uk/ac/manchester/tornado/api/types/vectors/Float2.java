@@ -57,7 +57,23 @@ public final class Float2 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float2(a.getX() + b.getX(), a.getY() + b.getY());
     }
 
+    public static Float2 add(Float2 a, Int2 b) {
+        return new Float2(a.getX() + b.getX(), a.getY() + b.getY());
+    }
+
+    public static Float2 add(Int2 a, Float2 b) {
+        return new Float2(a.getX() + b.getX(), a.getY() + b.getY());
+    }
+
     public static Float2 sub(Float2 a, Float2 b) {
+        return new Float2(a.getX() - b.getX(), a.getY() - b.getY());
+    }
+
+    public static Float2 sub(Int2 a, Float2 b) {
+        return new Float2(a.getX() - b.getX(), a.getY() - b.getY());
+    }
+
+    public static Float2 sub(Float2 a, Int2 b) {
         return new Float2(a.getX() - b.getX(), a.getY() - b.getY());
     }
 
@@ -65,7 +81,23 @@ public final class Float2 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float2(a.getX() / b.getX(), a.getY() / b.getY());
     }
 
+    public static Float2 div(Int2 a, Float2 b) {
+        return new Float2(a.getX() / b.getX(), a.getY() / b.getY());
+    }
+
+    public static Float2 div(Float2 a, Int2 b) {
+        return new Float2(a.getX() / b.getX(), a.getY() / b.getY());
+    }
+
     public static Float2 mult(Float2 a, Float2 b) {
+        return new Float2(a.getX() * b.getX(), a.getY() * b.getY());
+    }
+
+    public static Float2 mult(Int2 a, Float2 b) {
+        return new Float2(a.getX() * b.getX(), a.getY() * b.getY());
+    }
+
+    public static Float2 mult(Float2 a, Int2 b) {
         return new Float2(a.getX() * b.getX(), a.getY() * b.getY());
     }
 
@@ -73,7 +105,23 @@ public final class Float2 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float2(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()));
     }
 
+    public static Float2 min(Int2 a, Float2 b) {
+        return new Float2(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()));
+    }
+
+    public static Float2 min(Float2 a, Int2 b) {
+        return new Float2(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()));
+    }
+
     public static Float2 max(Float2 a, Float2 b) {
+        return new Float2(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()));
+    }
+
+    public static Float2 max(Int2 a, Float2 b) {
+        return new Float2(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()));
+    }
+
+    public static Float2 max(Float2 a, Int2 b) {
         return new Float2(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()));
     }
 

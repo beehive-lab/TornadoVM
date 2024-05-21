@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -27,15 +27,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatform;
+import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
 public class SPIRVOpenCLPlatform implements SPIRVPlatform {
 
-    private TornadoPlatform oclPlatform;
+    private TornadoPlatformInterface oclPlatform;
     private OCLExecutionEnvironment context;
     private List<SPIRVDevice> spirvDevices;
 
-    public SPIRVOpenCLPlatform(int platformIndex, TornadoPlatform oclPlatform) {
+    public SPIRVOpenCLPlatform(int platformIndex, TornadoPlatformInterface oclPlatform) {
         this.oclPlatform = oclPlatform;
         context = this.oclPlatform.createContext();
 
@@ -48,7 +48,7 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
 
     }
 
-    public TornadoPlatform getPlatform() {
+    public TornadoPlatformInterface getPlatform() {
         return this.oclPlatform;
     }
 

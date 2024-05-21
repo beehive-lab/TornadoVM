@@ -17,8 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tensors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -35,9 +37,14 @@ import uk.ac.manchester.tornado.api.types.tensors.TensorInt32;
 import uk.ac.manchester.tornado.api.types.tensors.TensorInt64;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ * tornado-test -V uk.ac.manchester.tornado.unittests.tensors.TestTensorTypes
+ * </code>
+ */
 public class TestTensorTypes extends TornadoTestBase {
 
     public static void tensorAdditionFloat16(TensorFP16 tensorA, TensorFP16 tensorB, TensorFP16 tensorC) {
@@ -266,7 +273,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-           assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
     }
 
@@ -300,7 +307,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-           assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
     }
 

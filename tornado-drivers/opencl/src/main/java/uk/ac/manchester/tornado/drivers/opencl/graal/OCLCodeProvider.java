@@ -33,7 +33,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLCodeProvider implements CodeCacheProvider {
 
@@ -82,7 +82,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public boolean shouldDebugNonSafepoints() {
-        Tornado.warn("Debug non safe points not implemented yet.");
+        new TornadoLogger().warn("Debug non safe points not implemented yet.");
         return false;
     }
 
