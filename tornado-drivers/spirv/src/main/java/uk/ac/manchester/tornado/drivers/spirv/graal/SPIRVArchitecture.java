@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
 
 /**
- * It represents a SPIRV Architecture.
+ * It represents a SPIR-V Architecture.
  *
  * <p>
  * It contains information such as byte ordering, platform king, memory
