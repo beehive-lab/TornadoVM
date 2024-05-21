@@ -102,7 +102,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
                 if (device.isSPIRVSupported()) {
-                    backendImplementations.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context));
+                    backendImplementations.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context, device.getSPIRVRuntime()));
                     backendCounter++;
                 }
             }
@@ -110,8 +110,9 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private SPIRVBackend createSPIRVJITCompilerBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context) {
-        return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context);
+    private SPIRVBackend createSPIRVJITCompilerBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context,
+            SPIRVRuntime spirvRuntime) {
+        return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context, spirvRuntime);
     }
 
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
