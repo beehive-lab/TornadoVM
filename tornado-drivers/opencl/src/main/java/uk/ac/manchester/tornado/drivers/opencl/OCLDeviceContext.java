@@ -70,7 +70,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private boolean wasReset;
     private Set<Long> executionIDs;
 
-    OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
+    public OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
         this.device = device;
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);

@@ -55,8 +55,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
- * Testing the SPIRV JIT Compiler and integration with the TornadoVM SPIRV
- * Runtime.
+ * Testing the SPIR-V JIT Compiler and integration with the TornadoVM SPIR-V Runtime.
  *
  * How to run?
  *

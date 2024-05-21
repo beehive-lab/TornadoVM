@@ -48,9 +48,9 @@ public class OCLContext implements OCLContextInterface {
 
     private final TornadoLogger logger;
 
-    public OCLContext(OCLPlatform platform, long id, List<OCLTargetDevice> devices) {
+    public OCLContext(OCLPlatform platform, long contextPointer, List<OCLTargetDevice> devices) {
         this.platform = platform;
-        this.contextID = id;
+        this.contextID = contextPointer;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
         this.programs = new ArrayList<>();
@@ -80,7 +80,7 @@ public class OCLContext implements OCLContextInterface {
 
     native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
 
-    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
+    public native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
 
     public int getNumDevices() {
         return devices.size();

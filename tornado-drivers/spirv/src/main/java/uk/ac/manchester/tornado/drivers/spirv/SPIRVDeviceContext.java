@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -47,7 +46,6 @@ import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -126,34 +124,6 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     @Override
     public boolean isFP64Supported() {
         return device.isDeviceDoubleFPSupported();
-    }
-
-    private String buildKernelName(String methodName, SchedulableTask task) {
-        StringBuilder sb = new StringBuilder(methodName);
-
-        for (Object arg : task.getArguments()) {
-            // Object is either array or primitive
-            sb.append('_');
-            Class<?> argClass = arg.getClass();
-            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-                // Only need to append value.
-                // If negative value, remove the minus sign in front
-                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
-            } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
-                // Need to append type and length
-                sb.append(argClass.getComponentType().getName());
-                sb.append(Array.getLength(arg));
-            } else {
-                sb.append(argClass.getName().replace('.', '_'));
-
-                // Since with objects there is no way to know what will be a
-                // constant differentiate using the hashcode of the object
-                sb.append('_');
-                sb.append(arg.hashCode());
-            }
-        }
-
-        return sb.toString();
     }
 
     @Override

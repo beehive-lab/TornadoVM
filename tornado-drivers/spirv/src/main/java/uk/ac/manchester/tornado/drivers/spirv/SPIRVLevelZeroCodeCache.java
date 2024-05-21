@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -61,20 +60,8 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         super(deviceContext);
     }
 
-    private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
-        buffer.flip();
-        try (FileOutputStream fos = new FileOutputStream(filepath)) {
-            fos.write(buffer.array());
-        } catch (Exception e) {
-            throw new RuntimeException("[ERROR] Store of the SPIR-V File failed.");
-        } finally {
-            buffer.clear();
-        }
-    }
-
     @Override
     public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
-
         if (code == null || code.length == 0) {
             throw new RuntimeException("[ERROR] Binary SPIR-V Module is Empty");
         }
@@ -96,13 +83,6 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         }
         writeBufferToFile(buffer, file);
         return installSPIRVBinary(meta, id, entryPoint, file);
-    }
-
-    private void checkBinaryFileExists(String pathToFile) {
-        final Path pathToSPIRVBin = Paths.get(pathToFile);
-        if (!pathToSPIRVBin.toFile().exists()) {
-            throw new RuntimeException("Binary File does not exist");
-        }
     }
 
     @Override

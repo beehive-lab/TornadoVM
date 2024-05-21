@@ -71,6 +71,10 @@ public class SPIRVOCLContext extends SPIRVContext {
         }
     }
 
+    public OCLContextInterface getOpenCLLayer() {
+        return oclContext;
+    }
+
     @Override
     public SPIRVDeviceContext getDeviceContext(int deviceIndex) {
         return spirvoclDeviceContext.get(deviceIndex);
