@@ -41,11 +41,11 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
-public class SPIRVCommandQueueTable {
+public class SPIRVLevelZeroCommandQueueTable {
 
     private final Map<SPIRVDevice, ThreadCommandQueueTable> deviceCommandMap;
 
-    public SPIRVCommandQueueTable() {
+    public SPIRVLevelZeroCommandQueueTable() {
         deviceCommandMap = new ConcurrentHashMap<>();
     }
 

@@ -129,7 +129,6 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceMaxWorkItemSizes();
         getDeviceMaxWorkGroupSize();
         getDeviceName();
-        getDeviceVersion();
         getDeviceType();
         getDeviceVendor();
         getDriverVersion();

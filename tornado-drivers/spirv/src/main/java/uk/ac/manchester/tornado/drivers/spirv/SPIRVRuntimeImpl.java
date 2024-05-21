@@ -57,8 +57,12 @@ public class SPIRVRuntimeImpl {
     private synchronized void init() {
         if (platforms == null) {
             SPIRVDispatcher[] dispatchers = new SPIRVDispatcher[SPIRVRuntime.values().length];
-            dispatchers[SPIRVRuntime.LEVEL_ZERO.ordinal()] = new SPIRVLevelZeroDriver();
-            dispatchers[SPIRVRuntime.OPENCL.ordinal()] = new SPIRVOpenCLDriver();
+            //            dispatchers[SPIRVRuntime.LEVEL_ZERO.ordinal()] = new SPIRVLevelZeroDriver();
+            //            dispatchers[SPIRVRuntime.OPENCL.ordinal()] = new SPIRVOpenCLDriver();
+
+            dispatchers[1] = new SPIRVLevelZeroDriver();
+            dispatchers[0] = new SPIRVOpenCLDriver();
+
             platforms = new ArrayList<>();
             for (SPIRVDispatcher dispatcher : dispatchers) {
                 IntStream.range(0, dispatcher.getNumPlatforms()).forEach(platformIndex -> platforms.add(dispatcher.getPlatform(platformIndex)));

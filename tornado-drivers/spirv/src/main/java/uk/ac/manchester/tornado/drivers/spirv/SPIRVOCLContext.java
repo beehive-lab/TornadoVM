@@ -33,14 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueueTable;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCLBlocking;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
@@ -49,7 +46,7 @@ public class SPIRVOCLContext extends SPIRVContext {
     private OCLContextInterface oclContext;
     private List<SPIRVOCLDeviceContext> spirvoclDeviceContext;
 
-    private final Map<Long, OCLCommandQueueTable> commmandQueueTable;
+    private final Map<Long, SPIRVOCLCommandQueueTable> commmandQueueTable;
     private final Map<Long, OCLEventPool> oclEventPool;
     private Set<Long> executionIDs;
 
@@ -81,24 +78,17 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public SPIRVCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex) {
-        if (!commmandQueueTable.containsKey(executionPlanId)) {
-            SPIRVDevice device = devices.get(deviceIndex);
-            OCLCommandQueueTable oclCommandQueueTable = new OCLCommandQueueTable();
-            oclCommandQueueTable.get((OCLTargetDevice) device, (OCLContext) oclContext);
-            commmandQueueTable.put(executionPlanId, oclCommandQueueTable);
-        }
-        return commmandQueueTable.get(executionPlanId).get(devices.get(deviceIndex), oclContext);
+        throw new RuntimeException("Unimplemented: " + oclContext.getClass());
     }
 
     private OCLCommandQueue getCommandQueue(long executionPlanId, int deviceIndex) {
-        executionIDs.add(executionPlanId);
         if (!commmandQueueTable.containsKey(executionPlanId)) {
-            SPIRVOCLDevice device = (SPIRVOCLDevice) devices.get(deviceIndex);
-            OCLCommandQueueTable oclCommandQueueTable = new OCLCommandQueueTable();
-            oclCommandQueueTable.get(device, oclContext);
+            SPIRVDevice device = devices.get(deviceIndex);
+            SPIRVOCLCommandQueueTable oclCommandQueueTable = new SPIRVOCLCommandQueueTable();
+            oclCommandQueueTable.get((SPIRVOCLDevice) device, (OCLContext) oclContext);
             commmandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
-        return commmandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
+        return commmandQueueTable.get(executionPlanId).get((SPIRVOCLDevice) devices.get(deviceIndex), (OCLContext) oclContext);
     }
 
     private OCLEventPool getOCLEventPool(long executionPlanId) {
@@ -129,96 +119,160 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransferp) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        OCLCommandQueue commandQueue = getCommandQueueForDevice(executionPlanId, deviceIndex);
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_READ_FLOAT, commandQueue);
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvent, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvent, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public int enqueueWriteBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, value, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_WRITE_BYTE, commandQueue);
     }
 
     @Override
     public void enqueueBarrier(long executionPlanId, int deviceIndex) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        long oclEvent = commandQueue.enqueueBarrier();
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
     @Override
     public void flush(long executionPlanId, int deviceIndex) {
-        throw new RuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        commandQueue.flushEvents();
     }
 
     @Override
     public void readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents,
             ProfilerTransfer profilerTransfer) {
-        throw new TornadoRuntimeException("Unimplemented");
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, offHeapSegmentAddress, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+                ? eventPool.waitEventsBuffer
+                : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
     }
 }

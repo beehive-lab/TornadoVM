@@ -41,6 +41,14 @@ public class SPIRVOCLDevice extends SPIRVDevice {
         this.device = device;
     }
 
+    public int deviceVersion() {
+        return device.deviceVersion();
+    }
+
+    public long getId() {
+        return device.getId();
+    }
+
     @Override
     public boolean isDeviceDoubleFPSupported() {
         return device.isDeviceDoubleFPSupported();

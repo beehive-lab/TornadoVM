@@ -55,7 +55,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     // Maps buffer ID -> LevelZeroByteBuffer
     private final Map<Long, LevelZeroByteBuffer> deviceBufferMap;
 
-    private final Map<Long, SPIRVCommandQueueTable> commmandQueueTable;
+    private final Map<Long, SPIRVLevelZeroCommandQueueTable> commmandQueueTable;
 
     public SPIRVLevelZeroContext(SPIRVPlatform platform, List<SPIRVDevice> devices, LevelZeroContext levelZeroContext) {
         super(platform, devices);
@@ -86,7 +86,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     public SPIRVLevelZeroCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex) {
         if (!commmandQueueTable.containsKey(executionPlanId)) {
             SPIRVDevice device = devices.get(deviceIndex);
-            SPIRVCommandQueueTable spirvCommandQueueTable = new SPIRVCommandQueueTable();
+            SPIRVLevelZeroCommandQueueTable spirvCommandQueueTable = new SPIRVLevelZeroCommandQueueTable();
             spirvCommandQueueTable.get(device, levelZeroContext);
             commmandQueueTable.put(executionPlanId, spirvCommandQueueTable);
         }

@@ -61,7 +61,7 @@ public class OCLContext implements OCLContextInterface {
 
     native void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException;
 
-    native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
+    public native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
 
     native long allocateOffHeapMemory(long size, long alignment);
 
