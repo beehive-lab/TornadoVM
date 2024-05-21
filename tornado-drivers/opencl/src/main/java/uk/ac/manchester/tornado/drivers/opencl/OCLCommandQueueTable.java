@@ -69,5 +69,4 @@ public class OCLCommandQueueTable {
             return commandQueueMap.get(threadId);
         }
     }
-
 }

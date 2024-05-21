@@ -27,7 +27,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 
-public interface OCLExecutionEnvironment {
+public interface OCLContextInterface {
 
     int getNumDevices();
 

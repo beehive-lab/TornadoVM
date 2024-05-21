@@ -270,7 +270,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
             oclCommandQueueTable.get(device, context);
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
-        return commandQueueTable.get(executionPlanId).get(device, context);
+        return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
     }
 
     private OCLEventPool getOCLEventPool(long executionPlanId) {

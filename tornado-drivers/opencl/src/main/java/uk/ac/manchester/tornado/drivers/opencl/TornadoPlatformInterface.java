@@ -27,7 +27,7 @@ public interface TornadoPlatformInterface {
 
     void cleanup();
 
-    OCLExecutionEnvironment createContext();
+    OCLContextInterface createContext();
 
     String getName();
 

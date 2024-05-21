@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

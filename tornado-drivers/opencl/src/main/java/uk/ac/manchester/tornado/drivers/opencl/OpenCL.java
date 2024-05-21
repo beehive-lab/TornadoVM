@@ -228,7 +228,7 @@ public class OpenCL {
         for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
             final TornadoPlatformInterface platform = platforms.get(platformIndex);
             System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
-            final OCLExecutionEnvironment context = platform.createContext();
+            final OCLContextInterface context = platform.createContext();
             for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
                 OCLDeviceContext deviceContext = (OCLDeviceContext) context.createDeviceContext(deviceIndex);
                 System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, deviceContext.getDeviceName());

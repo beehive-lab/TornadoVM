@@ -60,7 +60,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
             OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
             OCLDeviceType.CL_DEVICE_TYPE_CUSTOM);
     private final OCLBackend[][] backends;
-    private final List<OCLExecutionEnvironment> contexts;
+    private final List<OCLContextInterface> contexts;
     private OCLBackend[] flatBackends;
     private List<TornadoDevice> devices;
     private final TornadoLogger logger;
@@ -200,7 +200,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private OCLBackend createOCLJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, final OCLExecutionEnvironment context,
+    private OCLBackend createOCLJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfigAccess vmConfig, final OCLContextInterface context,
             final int deviceIndex) {
         final OCLTargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
@@ -209,7 +209,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
 
     private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         logger.info("OpenCL[%d]: Platform %s", platformIndex, platform.getName());
-        final OCLExecutionEnvironment context = platform.createContext();
+        final OCLContextInterface context = platform.createContext();
         assert context != null : "OpenCL context is null";
         contexts.add(context);
         final int numDevices = context.getNumDevices();
@@ -251,7 +251,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
         return backends.length;
     }
 
-    public OCLExecutionEnvironment getPlatformContext(final int index) {
+    public OCLContextInterface getPlatformContext(final int index) {
         return (index < contexts.size()) ? contexts.get(index) : contexts.get(0);
     }
 

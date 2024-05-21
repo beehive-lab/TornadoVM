@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-public class OCLContext implements OCLExecutionEnvironment {
+public class OCLContext implements OCLContextInterface {
 
     private final long contextID;
     private final List<OCLTargetDevice> devices;
@@ -57,30 +57,30 @@ public class OCLContext implements OCLExecutionEnvironment {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    static native void clReleaseContext(long id) throws OCLException;
+    native void clReleaseContext(long id) throws OCLException;
 
-    static native void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException;
+    native void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException;
 
-    static native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
+    native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
 
-    static native long allocateOffHeapMemory(long size, long alignment);
+    native long allocateOffHeapMemory(long size, long alignment);
 
-    static native void freeOffHeapMemory(long address);
+    native void freeOffHeapMemory(long address);
 
-    static native ByteBuffer asByteBuffer(long address, long size);
+    native ByteBuffer asByteBuffer(long address, long size);
 
     // creates an empty buffer on the device
-    static native OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
+    native OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
 
-    static native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
+    native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
 
-    static native void clReleaseMemObject(long memId) throws OCLException;
+    native void clReleaseMemObject(long memId) throws OCLException;
 
-    static native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws OCLException;
+    native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws OCLException;
 
-    static native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
+    native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
 
-    static native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
+    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
 
     public int getNumDevices() {
         return devices.size();
