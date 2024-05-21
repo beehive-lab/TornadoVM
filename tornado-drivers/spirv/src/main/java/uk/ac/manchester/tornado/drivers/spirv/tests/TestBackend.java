@@ -30,6 +30,13 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPlatform;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
+/**
+ * How to run?
+ *
+ * <code>
+ * tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestBackend
+ * </code>
+ */
 public class TestBackend {
 
     public void invokeSPIRVBackend() {
@@ -40,6 +47,7 @@ public class TestBackend {
 
         System.out.println("Querying all device  ............................. ");
         for (SPIRVPlatform platform : tornadoRuntime.getBackend(SPIRVBackendImpl.class).getPlatforms()) {
+            System.out.println("--> Runtime: " + platform.getRuntime().name());
             for (SPIRVDevice spirvDevice : platform.getDevices()) {
                 System.out.println("\t-> SPIR-V Device: " + spirvDevice.getDeviceName());
             }
