@@ -63,7 +63,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      * Total number of devices available (include all backends platform and
      * devices).
      */
-    private int deviceCount;
+    private int backendCounter;
     private List<TornadoDevice> devices;
 
     public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfigAccess) {
@@ -79,7 +79,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
         discoverDevices(options, vmRuntime, vmConfigAccess, numPlatforms);
 
-        flatBackends = new SPIRVBackend[deviceCount];
+        flatBackends = new SPIRVBackend[backendCounter];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
             for (int j = 0; j < getNumDevicesForPlatform(i); j++, index++) {
@@ -98,15 +98,15 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
             // Since a platform can have more than one device and not all of them must be SPIR-V supported,
             // we need to filter again to only add those that support SPIR-V >= 1.2.
-            List<SPIRVBackend> devices = new ArrayList<>();
+            List<SPIRVBackend> backendImplementations = new ArrayList<>();
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
                 if (device.isSPIRVSupported()) {
-                    devices.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context));
-                    deviceCount++;
+                    backendImplementations.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context));
+                    backendCounter++;
                 }
             }
-            spirvBackends[platformIndex] = devices.toArray(new SPIRVBackend[0]);
+            spirvBackends[platformIndex] = backendImplementations.toArray(new SPIRVBackend[0]);
         }
     }
 
@@ -117,7 +117,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
         SPIRVBackend backend = spirvBackends[platformIndex][deviceIndex];
         if (!backend.isInitialised()) {
-            logger.info("SPIRV Backend Initialization");
+            logger.info("SPIR-V Backend Initialization");
             backend.init();
         }
         return backend;
@@ -156,8 +156,8 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     }
 
     @Override
-    public int getDeviceCount() {
-        return deviceCount;
+    public int getBackendCounter() {
+        return backendCounter;
     }
 
     @Override
@@ -173,7 +173,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
             devices = new ArrayList<>();
-            for (int i = 0; i < getDeviceCount(); i++) {
+            for (int i = 0; i < getBackendCounter(); i++) {
                 devices.add(flatBackends[i].getDeviceContext().asMapping());
             }
         }

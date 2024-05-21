@@ -82,7 +82,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     }
 
     private OCLBackend[] flattenBackends(OCLBackend[][] backends) {
-        OCLBackend[] flatBackendList = new OCLBackend[getDeviceCount()];
+        OCLBackend[] flatBackendList = new OCLBackend[getBackendCounter()];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
             for (int j = 0; j < getNumDevices(i); j++, index++) {
@@ -168,7 +168,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
             devices = new ArrayList<>();
-            for (int deviceIndex = 0; deviceIndex < getDeviceCount(); deviceIndex++) {
+            for (int deviceIndex = 0; deviceIndex < getBackendCounter(); deviceIndex++) {
                 devices.add(getDevice(deviceIndex));
             }
         }
@@ -176,7 +176,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     }
 
     @Override
-    public int getDeviceCount() {
+    public int getBackendCounter() {
         return IntStream.range(0, getNumPlatforms()).map(this::getNumDevices).sum();
     }
 

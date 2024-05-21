@@ -103,7 +103,7 @@ public abstract class BenchmarkRunner {
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
 
             final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex);
-            final int numDevices = driver.getDeviceCount();
+            final int numDevices = driver.getBackendCounter();
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 if (blacklistedDevices.containsKey(driverIndex)) {

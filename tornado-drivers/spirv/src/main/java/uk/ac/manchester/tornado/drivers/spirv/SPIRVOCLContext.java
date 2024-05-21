@@ -67,17 +67,21 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public long allocateMemory(int deviceIndex, long numBytes) {
+        spirvoclDeviceContext.get(deviceIndex).getMemoryManager();
         if (oclExecutionEnvironment instanceof OCLContext oclContext) {
-            System.out.println("[debug] ALLOC " + numBytes);
             return oclContext.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, numBytes).getBuffer();
         } else {
-            throw new RuntimeException("Unimplemented");
+            throw new RuntimeException("Unimplemented: " + oclExecutionEnvironment.getClass());
         }
     }
 
     @Override
     public void freeMemory(long buffer, int deviceIndex) {
-        throw new RuntimeException("Unimplemented");
+        if (oclExecutionEnvironment instanceof OCLContext oclContext) {
+            oclContext.releaseBuffer(buffer);
+        } else {
+            throw new RuntimeException("Unimplemented: " + oclExecutionEnvironment.getClass());
+        }
     }
 
     @Override

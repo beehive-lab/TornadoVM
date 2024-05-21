@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 
 /**
- * Test copies within TornadoVM and Level Zero driver.
+ * Test copies within TornadoVM and OpenCL Runtime/Level Zero Runtime.
  *
  * How to run?
  *
@@ -46,7 +46,6 @@ import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 public class TestVM {
 
     public TornadoDevice invokeSPIRVBackend(SPIRVRuntime spirvRuntime) {
-
         // Get the backend from TornadoVM
         SPIRVBackend spirvBackend = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getBackend(spirvRuntime);
         System.out.println("Query SPIR_V Runtime: " + spirvBackend);

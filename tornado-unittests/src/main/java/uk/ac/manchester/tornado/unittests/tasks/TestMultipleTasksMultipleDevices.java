@@ -105,7 +105,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     private static void assertAvailableDevices() {
-        if (TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount() < 2) {
+        if (TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + 2 + " devices enabled");
         }
     }

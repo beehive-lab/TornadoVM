@@ -78,7 +78,7 @@ public class TornadoDeviceQuery {
             final TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
             TornadoVMBackendType backendType = TornadoCoreRuntime.getTornadoRuntime().getBackendType(driverIndex);
             String colour = colourMapping.get(backendType);
-            final int numDevices = driver.getDeviceCount();
+            final int numDevices = driver.getBackendCounter();
             deviceInfoBuffer.append("Driver: " + colour + driver.getName() + ColoursTerminal.RESET + "\n");
             deviceInfoBuffer.append("  Total number of " + driver.getName() + " devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
