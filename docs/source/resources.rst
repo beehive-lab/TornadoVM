@@ -8,11 +8,17 @@ Videos
 
 - M. Papadimitriou, `Revolutionizing Java-based LLMs: Unleashing the Power of GPUs with TornadoVM <https://www.youtube.com/watch?v=ca4YFm6IaIQ>`_, Devoxx UK 2024.
 
+- A. Stratikopoulos, `Java… to unlock GPU acceleration for Polyglot Language Runtimes <https://ftp.fau.de/fosdem/2024/ub5132/fosdem-2024-3085-java-to-unlock-gpu-acceleration-for-polyglot-language-runtimes.mp4>`_, FOSDEM 2024.
+
 - A. Stratikopoulos, `TornadoVM: Write once, run everywhere everywhere! <https://www.youtube.com/watch?v=POanHvoC4qA>`_, Devoxx Belgium 2023.
 
 - J. Fumero, `From CPU to GPU and FPGAs: Supercharging Java Applications with TornadoVM <https://www.youtube.com/watch?v=VTzGlnv6nuA>`_, JVMLS 2023.
 
+- J. Fumero, `oneAPI Meetup TornadoVM with Juan Fumero <https://www.youtube.com/watch?v=StL5XOgflE4>`_ oneAPI Meetup 2023.
+
 - A. Stratikopoulos, `Write Once, Run Anywhere... Well, What About Heterogeneous Hardware? <https://fosdem.org/2023/schedule/event/hardware/>`__, FOSDEM 2023.
+
+- A. Stratikopoulos, `TornadoVM: Hardware Acceleration For Java In Practice <https://ftp.fau.de/fosdem/2022/D.openjdk/tornadovm.webm>`__, FOSDEM 2022.
 
 - J. Fumero, `TornadoVM: Transparent Hardware Acceleration for Java…and Beyond! <https://2021.javazone.no/#/program/6591db29-1f41-4610-aaa9-9ac26998b683>`_, JavaZone 2021.
 
@@ -20,11 +26,11 @@ Videos
 
 - J. Fumero, `Level up Your Java Performance with TornadoVM <https://www.youtube.com/watch?v=Bo0zMdcdCk4>`__, QCon Plus 2021. 
 
-- A. Stratikopoulos, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware of Java programs <https://mirrors.dotsrc.org/fosdem/2020/H.1302/tornadovm.mp4>`__, FOSDEM, 01/02/2020.
+- A. Stratikopoulos, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware of Java programs <https://mirrors.dotsrc.org/fosdem/2020/H.1302/tornadovm.mp4>`__, FOSDEM 2020.
 
-- J. Fumero, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware <https://www.youtube.com/watch?v=6oRmxjoe03g>`__, Joker<?> Conference, 26/10/2019.
+- J. Fumero, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware <https://www.youtube.com/watch?v=6oRmxjoe03g>`__, Joker<?> 2019.
 
-- J. Fumero, `Overview of TornadoVM <https://www.youtube.com/watch?v=nPlacnadR6k>`__, JVMLS, 31/07/2019.
+- J. Fumero, `Overview of TornadoVM <https://www.youtube.com/watch?v=nPlacnadR6k>`__, JVMLS 2019.
 
 
 Presentations
