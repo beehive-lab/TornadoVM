@@ -38,7 +38,6 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -70,11 +69,12 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
             throw new TornadoBailoutRuntimeException("Error - Exception when creating the temp directory for SPIR-V");
         }
         long timeStamp = System.nanoTime();
-        String file = STR."\{spirvTempDirectory}/\{timeStamp}-\{id}\{entryPoint}.spv";
-        if (TornadoOptions.DEBUG) {
+        String file = STR."\{spirvTempDirectory}/\{timeStamp}-\{id}\{entryPoint}.spv";if(TornadoOptions.DEBUG)
+    {
             System.out.println(STR."SPIRV-File : \{file}");
         }
-        writeBufferToFile(buffer, file);
+
+    writeBufferToFile(buffer, file);
         return installSPIRVBinary(meta, id, entryPoint, file);
     }
 
@@ -119,19 +119,14 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
 
         byte[] binary = readFile(pathToFile);
 
-        SPIRVContext context = deviceContext.getSpirvContext();
-        long contextId = -1;
+        long contextId = deviceContext.getSpirvContext().getOpenCLLayer().getContextId();
         long programPointer = -1;
-        if (((SPIRVOCLContext) context).getOpenCLLayer() instanceof OCLContext oclContext) {
-            contextId = oclContext.getContextId();
-            try {
-                programPointer = oclContext.clCreateProgramWithIL(contextId, binary, new long[] { binary.length });
-            } catch (OCLException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            programPointer = deviceContext.getSpirvContext().getOpenCLLayer().clCreateProgramWithIL(contextId, binary, new long[] { binary.length });
+        } catch (OCLException e) {
+            throw new RuntimeException(e);
         }
 
-        //
         //        // Compile the SPIR-V Program using createProgramWithIL (we need the contextID (pointer))
         //
         //        SPIRVOCLModule module = new SPIRVOCLModule(programPointer, kernel, entryPoint, pathToFile);
@@ -140,6 +135,7 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
         //        // Install module in the code cache
         //        cache.put(STR."\{id}-\{entryPoint}", installedCode);
         //        return installedCode;
+
         return null;
     }
 

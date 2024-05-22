@@ -26,12 +26,15 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public interface OCLContextInterface {
 
     int getNumDevices();
 
     List<OCLTargetDevice> devices();
+
+    long getContextId();
 
     TornadoDeviceContext createDeviceContext(int deviceIndex);
 
@@ -40,4 +43,7 @@ public interface OCLContextInterface {
     void createCommandQueue(int index);
 
     int getPlatformIndex();
+
+    long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
+
 }

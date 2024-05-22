@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -75,6 +77,11 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     public LevelZeroContext getLevelZeroContext() {
         return levelZeroContext;
+    }
+
+    @Override
+    public OCLContextInterface getOpenCLLayer() {
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     @Override

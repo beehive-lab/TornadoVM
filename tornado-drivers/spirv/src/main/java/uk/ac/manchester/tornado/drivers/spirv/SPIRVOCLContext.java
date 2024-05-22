@@ -71,6 +71,7 @@ public class SPIRVOCLContext extends SPIRVContext {
         }
     }
 
+    @Override
     public OCLContextInterface getOpenCLLayer() {
         return oclContext;
     }
