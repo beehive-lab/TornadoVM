@@ -25,8 +25,6 @@ package uk.ac.manchester.tornado.drivers.spirv.ocl;
 
 public class SPIRVOCLNativeCompiler {
 
-    public static final int CL_SUCCESS = 0;
-
     public SPIRVOCLNativeCompiler() {
     }
 
