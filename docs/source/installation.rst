@@ -331,7 +331,7 @@ Hereafter, the directory with the source code will be referred as ``<TornadoVM>`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The installer script downloads the following dependencies:
+The installation script downloads the following dependencies:
 
 - Java
 - Maven
