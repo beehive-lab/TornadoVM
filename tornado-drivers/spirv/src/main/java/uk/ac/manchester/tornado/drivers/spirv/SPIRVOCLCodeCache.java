@@ -42,14 +42,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVOCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeCompiler;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLCodeCache extends SPIRVCodeCache {
-
-    private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     public SPIRVOCLCodeCache(SPIRVDeviceContext deviceContext) {
         super(deviceContext);
@@ -135,25 +133,21 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
         OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getSPIRVDevice().getDeviceRuntime();
         int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getId() }, "");
         if (status != OCLErrorCode.CL_SUCCESS) {
-            // TODO: Print errors
-            throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
+            String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getId());
+            System.out.println(log);
+            throw new TornadoRuntimeException("[ERROR] - clBuildProgram failed");
         }
 
         long kernelPointer = spirvoclNativeCompiler.clCreateKernel(programPointer, entryPoint, errorCode);
         if (errorCode[0] != OCLErrorCode.CL_SUCCESS) {
-            throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
+            throw new TornadoRuntimeException("[ERROR] - clCreateKernel failed");
         }
 
-        //        // Compile the SPIR-V Program using createProgramWithIL (we need the contextID (pointer))
-        //
-        //        SPIRVOCLModule module = new SPIRVOCLModule(programPointer, kernel, entryPoint, pathToFile);
-        //        final SPIRVOCLInstalledCode installedCode = new SPIRVOCLInstalledCode(entryPoint, module, deviceContext);
-        //
-        //        // Install module in the code cache
-        //        cache.put(STR."\{id}-\{entryPoint}", installedCode);
-        //        return installedCode;
-
-        return null;
+        SPIRVOCLModule module = new SPIRVOCLModule(programPointer, kernelPointer, entryPoint, pathToFile);
+        final SPIRVOCLInstalledCode installedCode = new SPIRVOCLInstalledCode(entryPoint, module, deviceContext);
+        
+        // Install code in the code cache
+        cache.put(STR."\{id}-\{entryPoint}", installedCode);
+        return installedCode;
     }
-
 }

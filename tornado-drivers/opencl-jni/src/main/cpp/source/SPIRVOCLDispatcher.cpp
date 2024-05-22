@@ -92,3 +92,19 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
     env->ReleaseStringUTFChars(kernelName, kernelNameC);
     return reinterpret_cast<jlong>(kernel);
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Method:    clGetProgramBuildInfo_native
+ * Signature: (JJ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clGetProgramBuildInfo_1native
+        (JNIEnv * env, jobject object, jlong programPointer, jlong devicePointer) {
+    size_t log_size;
+    clGetProgramBuildInfo((cl_program) programPointer,  (cl_device_id) devicePointer, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+    char* log = (char*)malloc(log_size);
+    clGetProgramBuildInfo((cl_program) programPointer, (cl_device_id) devicePointer, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+    printf("Build log:\n%s\n", log);
+    free(log);
+    return env->NewStringUTF(log);
+}

@@ -33,6 +33,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clCreateKernel_1native
         (JNIEnv *, jobject, jlong, jstring, jintArray);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Method:    clGetProgramBuildInfo_native
+ * Signature: (JJ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clGetProgramBuildInfo_1native
+        (JNIEnv *, jobject, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

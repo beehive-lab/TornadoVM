@@ -81,4 +81,20 @@ public class SPIRVOCLNativeCompiler {
     public long clCreateKernel(long programPointer, String kernelName, int[] errorCode) {
         return clCreateKernel_native(programPointer, kernelName, errorCode);
     }
+
+    private native String clGetProgramBuildInfo_native(long programPointer, long oclDevice);
+
+    /**
+     * 
+     * @param programPointer
+     *     OpeCL Program Pointer
+     * @param devicePointer
+     *     OpenCL Device Pointer
+     *
+     * @return String
+     *     Full Log
+     */
+    public String clGetProgramBuildInfo(long programPointer, long devicePointer) {
+        return clGetProgramBuildInfo_native(programPointer, devicePointer);
+    }
 }

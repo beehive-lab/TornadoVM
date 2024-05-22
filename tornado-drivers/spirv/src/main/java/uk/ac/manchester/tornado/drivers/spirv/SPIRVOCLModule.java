@@ -1,26 +1,24 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
-
 public class SPIRVOCLModule implements SPIRVModule {
 
     private long oclProgram;
-    private OCLKernel kernel;
+    private long kernel;
     private String entryPoint;
     private String pathToSPIRVBinary;
 
-    public SPIRVOCLModule(long programPointer, OCLKernel kernel, String entryPoint, String pathToSPIRVBinary) {
+    public SPIRVOCLModule(long programPointer, long kernel, String entryPoint, String pathToSPIRVBinary) {
         this.oclProgram = programPointer;
         this.kernel = kernel;
         this.entryPoint = entryPoint;
         this.pathToSPIRVBinary = pathToSPIRVBinary;
     }
 
-    public long getOclProgram() {
+    public long getOpenCLProgramPointer() {
         return oclProgram;
     }
 
-    public OCLKernel getKernel() {
+    public long getKernelPointer() {
         return kernel;
     }
 
