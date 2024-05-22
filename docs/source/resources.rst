@@ -42,7 +42,7 @@ Podcast
 
 -  Adam Bien Podcast with Juan Fumero: `TornadoVM, Paravox.ai: Java, AI, LLMs and Hardware Acceleration <https://airhacks.fm/#episode_282>`_.
 
--  Adam Bien Podcast with Juan Fumero: `FPGAs, GPUs or Data Science with Java <https://airhacks.fm/#episode_282>`_.
+-  Adam Bien Podcast with Juan Fumero: `FPGAs, GPUs or Data Science with Java <https://airhacks.fm/#episode_250>`_.
 
 -  Foojay Podcast #17: Execute Java Code with TornadoVM on CPUs, GPUs, and FPGAs (March 2023): `link <https://medium.com/javarevisited/foojay-podcast-17-execute-java-code-with-tornadovm-on-cpus-gpus-and-fpgas-d924cc2e34d2>`__  
 
