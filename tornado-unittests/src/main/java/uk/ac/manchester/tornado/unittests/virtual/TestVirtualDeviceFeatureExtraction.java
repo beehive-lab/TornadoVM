@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,15 +17,17 @@
  */
 package uk.ac.manchester.tornado.unittests.virtual;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -41,8 +43,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
- *     -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
+ * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
+ * -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
  * </code>
  */
 public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
@@ -77,7 +79,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         return sourceSum == expectedSum;
     }
 
-    @After
+    @AfterEach
     public void after() {
         // make sure the source file generated is deleted
         File fileLog = new File(FEATURE_DUMP_DIR);
@@ -116,11 +118,11 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
             expectedBytes = Files.readAllBytes(expectedKernelFile.toPath());
         } catch (IOException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
 
         boolean fileEquivalent = performComparison(inputBytes, expectedBytes);
-        Assert.assertTrue(fileEquivalent);
+        assertTrue(fileEquivalent);
     }
 
     @Test

@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.branching;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * How to test?

@@ -17,8 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.tensors;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -96,10 +97,10 @@ public class TestTensorTypes extends TornadoTestBase {
 
         tensorA.init(new HalfFloat(1f));
 
-        Assert.assertEquals("Expected shape does not match", "Shape{dimensions=[64, 64, 64]}", tensorA.getShape().toString());
-        Assert.assertEquals("Expected data type does not match", "HALF_FLOAT", tensorA.getDTypeAsString());
-        Assert.assertEquals("Expected TensorFlow shape string does not match", "[64,64,64]", tensorA.getShape().toTensorFlowShapeString());
-        Assert.assertEquals("Expected ONNX shape string does not match", "{dim_0: 64, dim_1: 64, dim_2: 64}", tensorA.getShape().toONNXShapeString());
+        assertEquals("Expected shape does not match", "Shape{dimensions=[64, 64, 64]}", tensorA.getShape().toString());
+        assertEquals("Expected data type does not match", "HALF_FLOAT", tensorA.getDTypeAsString());
+        assertEquals("Expected TensorFlow shape string does not match", "[64,64,64]", tensorA.getShape().toTensorFlowShapeString());
+        assertEquals("Expected ONNX shape string does not match", "{dim_0: 64, dim_1: 64, dim_2: 64}", tensorA.getShape().toONNXShapeString());
     }
 
     @Test
@@ -132,7 +133,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(HalfFloat.add(tensorA.get(i), tensorB.get(i)).getFloat32(), tensorC.get(i).getFloat32(), 0.01f);
+            assertEquals(tensorC.get(i).getFloat32(), HalfFloat.add(tensorA.get(i), tensorB.get(i)).getFloat32(), 0.00f);
         }
 
     }
@@ -167,7 +168,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
 
     }
@@ -202,7 +203,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
 
     }
@@ -237,7 +238,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
 
     }
@@ -272,7 +273,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
     }
 
@@ -306,7 +307,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
     }
 
@@ -340,7 +341,7 @@ public class TestTensorTypes extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < tensorC.getSize(); i++) {
-            Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
+            assertEquals(tensorC.get(i), tensorA.get(i) + tensorB.get(i), 0.00f);
         }
     }
 

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,20 +17,20 @@
  */
 package uk.ac.manchester.tornado.unittests.loops;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoops
+ * tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoops
  * </code>
  */
 public class TestLoops extends TornadoTestBase {
@@ -61,7 +61,6 @@ public class TestLoops extends TornadoTestBase {
             a.set(i, 10);
         }
     }
-
 
     public static void forConstant04(Matrix2DFloat m, int n) {
         for (@Parallel int i = 0; i <= n; i++) {
@@ -92,7 +91,6 @@ public class TestLoops extends TornadoTestBase {
             a.set(i, 10);
         }
     }
-
 
     public static void steppedLoop(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 2) {
@@ -138,7 +136,6 @@ public class TestLoops extends TornadoTestBase {
             a.set(i, 200);
         }
     }
-
 
     public static void conditionalInLoop(IntArray a) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
@@ -331,6 +328,7 @@ public class TestLoops extends TornadoTestBase {
             assertEquals(10, a.get(i));
         }
     }
+
     @Test
     public void testForConstant02() {
         final int size = 256;
@@ -666,7 +664,7 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testTwoDLoopTwoDArray() {
         final int size = 10;
 
@@ -707,7 +705,7 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testNestedForLoopTwoDArray() {
         final int size = 10;
 
@@ -854,7 +852,7 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testInnerDoWhileLoop() {
         final int size = 100;
 
@@ -943,7 +941,7 @@ public class TestLoops extends TornadoTestBase {
 
         inTor.set(0, size / 4 - 1);
         inSeq.set(0, size / 4 - 1);
-       // inTor[0] = inSeq[0] = size / 4 - 1;
+        // inTor[0] = inSeq[0] = size / 4 - 1;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, inTor) //
@@ -979,7 +977,7 @@ public class TestLoops extends TornadoTestBase {
 
         inTor.set(0, size / 4 - 1);
         inSeq.set(0, size / 4 - 1);
-       // inTor[0] = inSeq[0] = size / 4 - 1;
+        // inTor[0] = inSeq[0] = size / 4 - 1;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, inTor) //
