@@ -59,6 +59,12 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         throw new RuntimeException("Not implemented yet");
     }
 
+    private void checkStatus(int status, String lowLevelFunction) {
+        if (status != OCLErrorCode.CL_SUCCESS) {
+            throw new TornadoRuntimeException("[ERROR] " + lowLevelFunction);
+        }
+    }
+
     private void setKernelArgs(long executionPlanId, final SPIRVKernelStackFrame callWrapper) {
         // Enqueue write
         callWrapper.enqueueWrite(executionPlanId, null);
@@ -69,6 +75,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         // device's kernel context
         SPIRVOCLNativeCompiler dispatcher = new SPIRVOCLNativeCompiler();
         int status = dispatcher.clSetKernelArg(kernelPointer, 0, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
+        checkStatus(status, "clSetKernelArg");
 
         // Set all user parameters to the SPIR-V kernel
         for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
@@ -77,6 +84,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
 
             if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
                 status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
+                checkStatus(status, "clSetKernelArg");
                 continue;
             }
 
@@ -85,6 +93,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
                     continue;
                 }
                 status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
+                checkStatus(status, "clSetKernelArg");
             } else {
                 TornadoInternalError.shouldNotReachHere();
             }
