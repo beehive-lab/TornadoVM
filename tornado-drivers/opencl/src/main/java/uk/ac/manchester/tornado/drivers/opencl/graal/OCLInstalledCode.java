@@ -113,7 +113,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     public void resolveEvent(long executionPlanId, final OCLByteBuffer stack, final TaskMetaData meta, int task) {
         Event event = deviceContext.resolveEvent(executionPlanId, task);
-        logger.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+        logger.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getSPIRVDevice().getDeviceName());
         if (event != null) {
             logger.debug("\tstatus   : %s", event.getStatus());
 
@@ -226,7 +226,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         guarantee(kernel != null, "kernel is null");
 
         if (DEBUG) {
-            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getSPIRVDevice().getDeviceName());
         }
 
         /*
@@ -351,7 +351,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         checkKernelNotNull();
 
         if (DEBUG) {
-            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getSPIRVDevice().getDeviceName());
         }
 
         setKernelArgs(oclKernelStackFrame, atomicSpace, meta);

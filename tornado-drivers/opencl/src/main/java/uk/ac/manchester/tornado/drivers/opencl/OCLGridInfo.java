@@ -50,7 +50,7 @@ public class OCLGridInfo implements GridInfo {
         if (deviceContext.isPlatformFPGA()) {
             return checkFPGADefaultLocalWorkGroup();
         } else {
-            long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
+            long[] blockMaxWorkGroupSize = deviceContext.getSPIRVDevice().getDeviceMaxWorkGroupSize();
             long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
             long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
 

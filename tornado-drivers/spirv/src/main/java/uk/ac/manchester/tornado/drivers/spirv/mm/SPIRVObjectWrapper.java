@@ -162,7 +162,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
 
         if (buffer == null) {
             buffer = ByteBuffer.allocate((int) getObjectSize());
-            buffer.order(this.deviceContext.getDevice().getByteOrder());
+            buffer.order(this.deviceContext.getSPIRVDevice().getByteOrder());
         }
     }
 
@@ -368,7 +368,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
 
     protected void dump(int width) {
         System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true), RuntimeUtilities.humanReadableByteCount(buffer
-                .position(), true), deviceContext.getDevice().getDeviceName());
+                .position(), true), deviceContext.getSPIRVDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {

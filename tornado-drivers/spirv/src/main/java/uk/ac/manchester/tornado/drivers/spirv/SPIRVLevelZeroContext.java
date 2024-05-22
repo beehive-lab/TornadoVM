@@ -123,7 +123,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     @Override
     public long allocateMemory(int deviceIndex, long numBytes) {
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
-        LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
+        LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDeviceRuntime();
         ZeDeviceMemAllocDescriptor deviceMemAllocDesc = createDeviceDescription();
 
         ZeRelaxedAllocationLimitsExpDescriptor relaxedAllocationLimitsExpDescriptor = null;

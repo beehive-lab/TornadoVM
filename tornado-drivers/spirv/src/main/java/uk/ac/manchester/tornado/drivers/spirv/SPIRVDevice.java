@@ -63,7 +63,7 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
 
     public abstract String getName();
 
-    public abstract Object getDevice();
+    public abstract Object getDeviceRuntime();
 
     public abstract long getDeviceGlobalMemorySize();
 

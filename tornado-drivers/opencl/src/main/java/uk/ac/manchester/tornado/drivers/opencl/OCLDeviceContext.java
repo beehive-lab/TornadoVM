@@ -99,13 +99,13 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLTargetDevice getDevice() {
+    public OCLTargetDevice getSPIRVDevice() {
         return device;
     }
 
     @Override
     public String toString() {
-        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
+        return String.format("[%d] %s", this.getSPIRVDevice().getIndex(), this.getSPIRVDevice().getDeviceName());
     }
 
     @Override
@@ -555,7 +555,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+        return this.getSPIRVDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains(
+                "fpga") || isPlatformXilinxFPGA());
     }
 
     @Override

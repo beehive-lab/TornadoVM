@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,11 +34,11 @@ public class PTXBufferProvider extends TornadoBufferProvider {
 
     @Override
     public long allocateBuffer(long size) {
-        return ((PTXDeviceContext) deviceContext).getDevice().getPTXContext().allocateMemory(size);
+        return ((PTXDeviceContext) deviceContext).getSPIRVDevice().getPTXContext().allocateMemory(size);
     }
 
     @Override
     protected void releaseBuffer(long buffer) {
-        ((PTXDeviceContext) deviceContext).getDevice().getPTXContext().freeMemory(buffer);
+        ((PTXDeviceContext) deviceContext).getSPIRVDevice().getPTXContext().freeMemory(buffer);
     }
 }

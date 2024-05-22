@@ -321,7 +321,7 @@ public class SPIRVCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedJavaMethod = kernelGraph.method();
 
-        new TornadoLogger().info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        new TornadoLogger().info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getSPIRVDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();

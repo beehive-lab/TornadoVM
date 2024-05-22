@@ -38,8 +38,10 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
+import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeCompiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -120,11 +122,25 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
         byte[] binary = readFile(pathToFile);
 
         long contextId = deviceContext.getSpirvContext().getOpenCLLayer().getContextId();
-        long programPointer = -1;
-        try {
-            programPointer = deviceContext.getSpirvContext().getOpenCLLayer().clCreateProgramWithIL(contextId, binary, new long[] { binary.length });
-        } catch (OCLException e) {
-            throw new RuntimeException(e);
+        long programPointer;
+
+        SPIRVOCLNativeCompiler spirvoclNativeCompiler = new SPIRVOCLNativeCompiler();
+        int[] errorCode = new int[1];
+        programPointer = spirvoclNativeCompiler.clCreateProgramWithIL(contextId, binary, new long[] { binary.length }, errorCode);
+        if (errorCode[0] != SPIRVOCLNativeCompiler.CL_SUCCESS) {
+            throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
+        }
+
+        OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getSPIRVDevice().getDeviceRuntime();
+        int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getId() }, "");
+        if (status != SPIRVOCLNativeCompiler.CL_SUCCESS) {
+            // TODO: Print errors
+            throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
+        }
+
+        long kernelPointer = spirvoclNativeCompiler.clCreateKernel(programPointer, entryPoint, errorCode);
+        if (status != SPIRVOCLNativeCompiler.CL_SUCCESS) {
+            throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
         }
 
         //        // Compile the SPIR-V Program using createProgramWithIL (we need the contextID (pointer))

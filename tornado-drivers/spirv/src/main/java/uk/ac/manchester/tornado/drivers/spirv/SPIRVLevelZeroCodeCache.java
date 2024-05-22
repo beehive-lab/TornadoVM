@@ -99,9 +99,9 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         SPIRVLevelZeroContext levelZeroContext = (SPIRVLevelZeroContext) spirvContext;
         LevelZeroContext context = levelZeroContext.getLevelZeroContext();
 
-        SPIRVDevice spirvDevice = deviceContext.getDevice();
+        SPIRVDevice spirvDevice = deviceContext.getSPIRVDevice();
         SPIRVLevelZeroDevice levelZeroDevice = (SPIRVLevelZeroDevice) spirvDevice;
-        LevelZeroDevice device = levelZeroDevice.getDevice();
+        LevelZeroDevice device = levelZeroDevice.getDeviceRuntime();
 
         int result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, pathToFile);
         LevelZeroUtils.errorLog("zeModuleCreate", result);

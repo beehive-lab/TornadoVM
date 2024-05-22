@@ -70,7 +70,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     }
 
     @Override
-    public OCLTargetDevice getDevice() {
+    public OCLTargetDevice getDeviceRuntime() {
         return device;
     }
 

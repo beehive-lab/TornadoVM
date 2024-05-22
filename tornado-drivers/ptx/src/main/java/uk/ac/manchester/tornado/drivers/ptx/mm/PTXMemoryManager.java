@@ -26,12 +26,11 @@ package uk.ac.manchester.tornado.drivers.ptx.mm;
 import static uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXMemoryManager implements TornadoMemoryProvider {
 
@@ -49,7 +48,7 @@ public class PTXMemoryManager implements TornadoMemoryProvider {
 
     public PTXKernelStackFrame createCallWrapper(final long threadId, final int maxArgs) {
         if (!ptxKernelStackFrame.containsKey(threadId)) {
-            long kernelCallBuffer = deviceContext.getDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
+            long kernelCallBuffer = deviceContext.getSPIRVDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
             ptxKernelStackFrame.put(threadId, new PTXKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
         return ptxKernelStackFrame.get(threadId);

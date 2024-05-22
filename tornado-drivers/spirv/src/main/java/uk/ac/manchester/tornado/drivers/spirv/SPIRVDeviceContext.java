@@ -93,7 +93,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return this.spirvContext;
     }
 
-    public SPIRVDevice getDevice() {
+    public SPIRVDevice getSPIRVDevice() {
         return device;
     }
 
@@ -286,8 +286,8 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     private ProfilerTransfer createStartAndStopBufferTimers() {
         if (TornadoOptions.isProfilerEnabled()) {
-            LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
-            LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
+            LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDeviceRuntime());
+            LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDeviceRuntime());
             return new ProfilerTransfer(start, stop);
         }
         return null;

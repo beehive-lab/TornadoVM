@@ -117,7 +117,7 @@ public class OCLByteBuffer {
     public void dump(final int width) {
         buffer.position(buffer.capacity());
         System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true), RuntimeUtilities.humanReadableByteCount(buffer.position(),
-                true), deviceContext.getDevice().getDeviceName());
+                true), deviceContext.getSPIRVDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {

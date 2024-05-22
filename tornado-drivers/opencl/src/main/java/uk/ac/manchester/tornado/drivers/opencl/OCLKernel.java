@@ -86,13 +86,13 @@ public class OCLKernel {
     }
 
     public void setConstantRegion(int index, ByteBuffer buffer) {
-        long maxSize = deviceContext.getDevice().getDeviceMaxConstantBufferSize();
+        long maxSize = deviceContext.getSPIRVDevice().getDeviceMaxConstantBufferSize();
         guarantee(buffer.position() <= maxSize, "constant buffer is too large for device");
         setArg(index, buffer);
     }
 
     public void setLocalRegion(int index, long size) {
-        long maxSize = deviceContext.getDevice().getDeviceLocalMemorySize();
+        long maxSize = deviceContext.getSPIRVDevice().getDeviceLocalMemorySize();
         guarantee(size <= maxSize, "local allocation is too large for device");
         try {
             clSetKernelArg(oclKernelID, index, size, null);

@@ -56,7 +56,7 @@ public class PTXNvidiaPowerMetric implements PowerMetric {
     @Override
     public void getHandleByIndex(long[] device) {
         try {
-            ptxNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getDeviceIndex(), device);
+            ptxNvmlDeviceGetHandleByIndex(this.deviceContext.getSPIRVDevice().getDeviceIndex(), device);
         } catch (RuntimeException e) {
             logger.error(e.getMessage());
         }

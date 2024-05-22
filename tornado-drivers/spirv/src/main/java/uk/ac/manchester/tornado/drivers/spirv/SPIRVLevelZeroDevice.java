@@ -133,7 +133,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
-    public LevelZeroDevice getDevice() {
+    public LevelZeroDevice getDeviceRuntime() {
         return device;
     }
 

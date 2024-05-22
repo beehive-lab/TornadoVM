@@ -26,10 +26,8 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class VirtualOCLContext implements OCLContextInterface {
@@ -72,11 +70,6 @@ public class VirtualOCLContext implements OCLContextInterface {
 
     public int getPlatformIndex() {
         return platform.getIndex();
-    }
-
-    @Override
-    public long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException {
-        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public VirtualOCLPlatform getPlatform() {

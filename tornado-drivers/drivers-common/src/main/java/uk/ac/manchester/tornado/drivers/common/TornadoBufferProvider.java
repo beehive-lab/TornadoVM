@@ -140,7 +140,7 @@ public abstract class TornadoBufferProvider {
      *     TornadoOutOfMemoryException}
      */
     public synchronized long getOrAllocateBufferWithSize(long sizeInBytes) {
-        TornadoTargetDevice device = deviceContext.getDevice();
+        TornadoTargetDevice device = deviceContext.getSPIRVDevice();
         if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
             // Allocate if there is enough device memory.
             return allocate(sizeInBytes);

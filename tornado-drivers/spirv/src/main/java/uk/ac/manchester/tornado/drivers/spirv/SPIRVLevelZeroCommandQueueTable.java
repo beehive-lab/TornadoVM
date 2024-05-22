@@ -71,14 +71,14 @@ public class SPIRVLevelZeroCommandQueueTable {
                 // Create Command Queue and Command List
                 LevelZeroCommandQueue commandQueue = createCommandQueue(levelZeroContext, device);
                 LevelZeroCommandList commandList = createCommandList(levelZeroContext, device);
-                SPIRVLevelZeroCommandQueue spirvLevelZeroCommandQueue = new SPIRVLevelZeroCommandQueue(commandQueue, commandList, (LevelZeroDevice) device.getDevice());
+                SPIRVLevelZeroCommandQueue spirvLevelZeroCommandQueue = new SPIRVLevelZeroCommandQueue(commandQueue, commandList, (LevelZeroDevice) device.getDeviceRuntime());
                 commandQueueMap.put(threadId, spirvLevelZeroCommandQueue);
             }
             return commandQueueMap.get(threadId);
         }
 
         private LevelZeroCommandQueue createCommandQueue(LevelZeroContext context, SPIRVDevice spirvDevice) {
-            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
+            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDeviceRuntime();
             // Create Command Queue
             ZeCommandQueueDescriptor cmdDescriptor = new ZeCommandQueueDescriptor();
             cmdDescriptor.setFlags(0);
@@ -94,7 +94,7 @@ public class SPIRVLevelZeroCommandQueueTable {
         }
 
         private LevelZeroCommandList createCommandList(LevelZeroContext context, SPIRVDevice spirvDevice) {
-            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
+            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDeviceRuntime();
             ZeCommandListDescriptor cmdListDescriptor = new ZeCommandListDescriptor();
             cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
             cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));

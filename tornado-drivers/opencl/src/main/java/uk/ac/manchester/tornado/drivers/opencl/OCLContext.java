@@ -80,7 +80,7 @@ public class OCLContext implements OCLContextInterface {
 
     native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
 
-    public native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
+    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
 
     public int getNumDevices() {
         return devices.size();

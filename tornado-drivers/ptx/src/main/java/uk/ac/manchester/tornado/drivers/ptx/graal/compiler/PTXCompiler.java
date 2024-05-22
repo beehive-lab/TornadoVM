@@ -251,7 +251,7 @@ public class PTXCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(TornadoCoreRuntime.getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
-        new TornadoLogger().info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        new TornadoLogger().info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getSPIRVDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
@@ -382,7 +382,7 @@ public class PTXCompiler {
 
     public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend,
             BatchCompilationConfig batchCompilationConfig, TornadoProfiler profiler) {
-        new TornadoLogger().info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        new TornadoLogger().info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getSPIRVDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
         StructuredGraph.Builder builder = new StructuredGraph.Builder(TornadoCoreRuntime.getTornadoRuntime().getOptions(), TornadoCoreRuntime.getDebugContext(), StructuredGraph.AllowAssumptions.YES);

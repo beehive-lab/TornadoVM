@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -38,7 +38,7 @@ public class LevelZeroGridInfo {
     }
 
     public boolean checkGridDimensions() {
-        long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
+        long[] blockMaxWorkGroupSize = deviceContext.getSPIRVDevice().getDeviceMaxWorkGroupSize();
         long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
         long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
         return totalThreads <= maxWorkGroupSize;

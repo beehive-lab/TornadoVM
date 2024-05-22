@@ -239,7 +239,7 @@ public class OpenCL {
     public static TornadoTargetDevice getDevice(int platformIndex, int deviceIndex) {
         final TornadoPlatformInterface platform = platforms.get(platformIndex);
         OCLDeviceContext deviceContext = (OCLDeviceContext) platform.createContext().createDeviceContext(deviceIndex);
-        return deviceContext.getDevice();
+        return deviceContext.getSPIRVDevice();
     }
 
     public static void main(String[] args) {

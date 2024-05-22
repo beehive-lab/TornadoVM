@@ -138,7 +138,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return codeCache;
     }
 
-    public PTXDevice getDevice() {
+    public PTXDevice getSPIRVDevice() {
         return device;
     }
 

@@ -57,7 +57,7 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
     @Override
     public void getHandleByIndex(long[] device) {
         try {
-            clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), device);
+            clNvmlDeviceGetHandleByIndex(this.deviceContext.getSPIRVDevice().getIndex(), device);
         } catch (OCLException e) {
             logger.error(e.getMessage());
         }
