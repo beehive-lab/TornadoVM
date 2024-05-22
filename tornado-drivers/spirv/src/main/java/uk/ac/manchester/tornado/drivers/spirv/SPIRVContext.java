@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.List;
 
+import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 
 public abstract class SPIRVContext {
@@ -39,7 +40,7 @@ public abstract class SPIRVContext {
 
     public abstract SPIRVDeviceContext getDeviceContext(int deviceIndex);
 
-    public abstract SPIRVCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex);
+    public abstract CommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex);
 
     public abstract OCLContextInterface getOpenCLLayer();
 

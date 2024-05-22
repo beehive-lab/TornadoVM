@@ -102,9 +102,55 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVO
         (JNIEnv * env, jobject object, jlong programPointer, jlong devicePointer) {
     size_t log_size;
     clGetProgramBuildInfo((cl_program) programPointer,  (cl_device_id) devicePointer, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-    char* log = (char*)malloc(log_size);
+    char* log = (char*) malloc(log_size);
     clGetProgramBuildInfo((cl_program) programPointer, (cl_device_id) devicePointer, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-    printf("Build log:\n%s\n", log);
-    free(log);
     return env->NewStringUTF(log);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Method:    clSetKernelArg_native
+ * Signature: (JIIJ)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clSetKernelArg_1native
+        (JNIEnv * env, jobject object, jlong kernelPointer, jint argIndex, jint argSize, jlong argument) {
+    cl_uint status = clSetKernelArg((cl_kernel) kernelPointer, (cl_uint) argIndex, (size_t) argSize, (void*) &argument);
+    LOG_OCL_AND_VALIDATE("clSetKernelArg", status);
+    return status;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Method:    clEnqueueNDRangeKernel_native
+ * Signature: (JJI[J[J[JLjava/lang/Object;Ljava/lang/Object;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clEnqueueNDRangeKernel_1native
+        (JNIEnv * env, jobject object, jlong commandQueuePointer, jlong kernelPointer, jint dimensions, jlongArray offset, jlongArray globalWorkGroup, jlongArray localWorkGroup, jobject events, jobject events1) {
+
+    jlong *global_work_offset = static_cast<jlong *>((offset != nullptr) ? env->GetPrimitiveArrayCritical(offset, nullptr) : nullptr);
+    jlong *global_work_size = static_cast<jlong *>((globalWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(globalWorkGroup, nullptr) : nullptr);
+    jlong *local_work_size = static_cast<jlong *>((localWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(localWorkGroup, nullptr) : nullptr);
+
+    cl_event kernelEvent;
+    cl_int status = clEnqueueNDRangeKernel((cl_command_queue) commandQueuePointer,
+                                           (cl_kernel) kernelPointer,
+                                           (cl_uint) dimensions,
+                                           (size_t*) global_work_offset,
+                                           (size_t*) global_work_size,
+                                           (size_t*) localWorkGroup,
+                                           0,
+                                           nullptr,
+                                           &kernelEvent);
+    LOG_OCL_AND_VALIDATE("clEnqueueNDRangeKernel", status);
+
+    if (offset != nullptr) {
+        env->ReleasePrimitiveArrayCritical(offset, global_work_offset, JNI_ABORT);
+    }
+    if (globalWorkGroup != nullptr) {
+        env->ReleasePrimitiveArrayCritical(globalWorkGroup, global_work_size, JNI_ABORT);
+    }
+    if (localWorkGroup != nullptr) {
+        env->ReleasePrimitiveArrayCritical(localWorkGroup, local_work_size, JNI_ABORT);
+    }
+    return status;
 }

@@ -68,7 +68,6 @@ public class SPIRVOCLNativeCompiler {
     private native long clCreateKernel_native(long programPointer, String kernelName, int[] errorCode);
 
     /**
-     *
      * @param programPointer
      *     OpenCL Program Pointer
      * @param kernelName
@@ -85,16 +84,26 @@ public class SPIRVOCLNativeCompiler {
     private native String clGetProgramBuildInfo_native(long programPointer, long oclDevice);
 
     /**
-     * 
      * @param programPointer
      *     OpeCL Program Pointer
      * @param devicePointer
      *     OpenCL Device Pointer
-     *
      * @return String
      *     Full Log
      */
     public String clGetProgramBuildInfo(long programPointer, long devicePointer) {
         return clGetProgramBuildInfo_native(programPointer, devicePointer);
+    }
+
+    private native int clSetKernelArg_native(long kernelPointer, int argIndex, int numBytes, long buffer);
+
+    public int clSetKernelArg(long kernelPointer, int argIndex, int numBytes, long buffer) {
+        return clSetKernelArg_native(kernelPointer, argIndex, numBytes, buffer);
+    }
+
+    private native int clEnqueueNDRangeKernel_native(long queuePointer, long kernelPointer, int dimensions, long[] offset, long[] globalWorkGroup, long[] localWorkGroup, Object o, Object o1);
+
+    public int clEnqueueNDRangeKernel(long queuePointer, long kernelPointer, int dimensions, long[] offset, long[] globalWorkGroup, long[] localWorkGroup, Object o, Object o1) {
+        return clEnqueueNDRangeKernel_native(queuePointer, kernelPointer, dimensions, offset, globalWorkGroup, localWorkGroup, null, null);
     }
 }

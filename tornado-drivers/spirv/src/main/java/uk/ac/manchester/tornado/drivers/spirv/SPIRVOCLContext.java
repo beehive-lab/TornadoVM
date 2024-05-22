@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -82,8 +83,8 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public SPIRVCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex) {
-        throw new RuntimeException("Unimplemented: " + oclContext.getClass());
+    public CommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex) {
+        return getCommandQueue(executionPlanId, deviceIndex);
     }
 
     private OCLCommandQueue getCommandQueue(long executionPlanId, int deviceIndex) {

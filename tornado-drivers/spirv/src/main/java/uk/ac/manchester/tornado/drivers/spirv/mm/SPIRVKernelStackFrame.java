@@ -30,7 +30,6 @@ import java.util.List;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
-// FIXME <REFACTOR> THis class has similarities with the rest of the backends
 public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStackFrame {
 
     public static final int RESERVED_SLOTS = 3;
