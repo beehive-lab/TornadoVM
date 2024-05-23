@@ -80,7 +80,6 @@ add_library(tornado-opencl SHARED
 	source/utils.cpp
 	source/opencl_time_utils.cpp
     source/SPIRVOCLDispatcher.cpp
-		source/SPIRVOCLDispatcher.cpp
 )
 
 if(MSVC)

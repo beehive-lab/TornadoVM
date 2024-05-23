@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.ocl;
 
-public class SPIRVOCLNativeCompiler {
+public class SPIRVOCLNativeDispatcher {
 
-    public SPIRVOCLNativeCompiler() {
+    public SPIRVOCLNativeDispatcher() {
     }
 
     native long clCreateProgramWithIL_native(long contextPointer, byte[] spirvBinaryCode, long[] lengths, int[] returnCode);
@@ -95,15 +95,49 @@ public class SPIRVOCLNativeCompiler {
         return clGetProgramBuildInfo_native(programPointer, devicePointer);
     }
 
-    private native int clSetKernelArg_native(long kernelPointer, int argIndex, int numBytes, long buffer);
+    private native int clSetKernelArg_native(long kernelPointer, int argIndex, int numBytes, long bufferPointer);
 
-    public int clSetKernelArg(long kernelPointer, int argIndex, int numBytes, long buffer) {
-        return clSetKernelArg_native(kernelPointer, argIndex, numBytes, buffer);
+    /**
+     * 
+     * @param kernelPointer
+     *     OpenCL kernel pointer
+     * @param argIndex
+     *     Argument Index
+     * @param numBytes
+     *     Number of Bytes for the argument
+     * @param bufferPointer
+     *     Buffer Pointer
+     * @return int: status
+     */
+    public int clSetKernelArg(long kernelPointer, int argIndex, int numBytes, long bufferPointer) {
+        return clSetKernelArg_native(kernelPointer, argIndex, numBytes, bufferPointer);
     }
 
-    private native int clEnqueueNDRangeKernel_native(long queuePointer, long kernelPointer, int dimensions, long[] offset, long[] globalWorkGroup, long[] localWorkGroup, Object o, Object o1);
+    private native int clEnqueueNDRangeKernel_native(long queuePointer, long kernelPointer, int dimensions, long[] offset, long[] globalWorkGroup, long[] localWorkGroup, long[] waitEvents,
+            long[] kernelEvent);
 
-    public int clEnqueueNDRangeKernel(long queuePointer, long kernelPointer, int dimensions, long[] offset, long[] globalWorkGroup, long[] localWorkGroup, Object o, Object o1) {
-        return clEnqueueNDRangeKernel_native(queuePointer, kernelPointer, dimensions, offset, globalWorkGroup, localWorkGroup, null, null);
+    /**
+     * 
+     * @param queuePointer
+     *     OpenCL Command Queue Pointer
+     * @param kernelPointer
+     *     OpenCL kernel pointer
+     * @param dimensions
+     *     Parallel Dimensions of the Kernel (1, 2 or 3).
+     * @param offset
+     *     Global Offset
+     * @param globalWorkGroup
+     *     Global Work Size
+     * @param localWorkGroup
+     *     Local Work Size
+     * @param waitEvents
+     *     Array for the events to wait before the kernel launch
+     * @param kernelEvent
+     *     Kernel Event that will be return after the clEnqueueNDRangeKernel_native
+     *
+     * @return int: status
+     */
+    public int clEnqueueNDRangeKernel(long queuePointer, long kernelPointer, int dimensions, long[] offset, long[] globalWorkGroup, long[] localWorkGroup, long[] waitEvents, long[] kernelEvent) {
+        return clEnqueueNDRangeKernel_native(queuePointer, kernelPointer, dimensions, offset, globalWorkGroup, localWorkGroup, waitEvents, kernelEvent);
     }
 }

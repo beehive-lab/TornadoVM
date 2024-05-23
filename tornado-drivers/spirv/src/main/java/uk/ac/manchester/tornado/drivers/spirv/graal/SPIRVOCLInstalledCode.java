@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
-import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeCompiler;
+import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -72,11 +72,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         // Calculate the GWS and LWS
         calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
 
-        int status = submit(executionPlanId, kernelPointer, meta, null, batchThreads);
-        if (status == OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE) {
-            throw new TornadoRuntimeException("[ERROR] CL_INVALID_WORK_GROUP_SIZE (-54)");
-        }
-        return 0;
+        return submit(executionPlanId, kernelPointer, meta, null);
     }
 
     private void checkStatus(int status, String lowLevelFunction) {
@@ -93,7 +89,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         long kernelPointer = module.getKernelPointer();
 
         // device's kernel context
-        SPIRVOCLNativeCompiler dispatcher = new SPIRVOCLNativeCompiler();
+        SPIRVOCLNativeDispatcher dispatcher = new SPIRVOCLNativeDispatcher();
         int status = dispatcher.clSetKernelArg(kernelPointer, 0, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
         checkStatus(status, "clSetKernelArg");
 
@@ -120,17 +116,18 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    public int submit(long executionPlanId, long kernelPointer, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+    public int submit(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents) {
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
-        final int taskEvent = launch(executionPlanId, kernelPointer, meta, waitEvents, batchThreads);
+        long[] kernelEvent = new long[1];
+        final int taskEvent = launch(executionPlanId, kernelPointer, meta, waitEvents, kernelEvent);
         updateProfiler(executionPlanId, taskEvent, meta);
         return taskEvent;
     }
 
-    public int launch(long executionPlanId, long kernelPointer, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
-        SPIRVOCLNativeCompiler dispatcher = new SPIRVOCLNativeCompiler();
+    public int launch(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents, long[] kernelEvent) {
+        SPIRVOCLNativeDispatcher dispatcher = new SPIRVOCLNativeDispatcher();
         OCLCommandQueue commandQueue = (OCLCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
         long queuePointer = commandQueue.getCommandQueuePtr();
 
@@ -138,7 +135,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
             return dispatcher.clEnqueueNDRangeKernel(queuePointer, kernelPointer, //
                     meta.getDims(), grid.getGlobalOffset(), grid.getGlobalWork(), grid.getLocalWork(),//
-                    null, null);//
+                    waitEvents, kernelEvent);//
         } else {
             long[] localWorkGroup = null;
             if (!meta.shouldUseOpenCLDriverScheduling()) {
@@ -146,7 +143,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             }
             return dispatcher.clEnqueueNDRangeKernel(queuePointer, kernelPointer, //
                     meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), //
-                    localWorkGroup, null, null);//
+                    localWorkGroup, waitEvents, kernelEvent);//
         }
     }
 

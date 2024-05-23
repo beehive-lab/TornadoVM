@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVOCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeCompiler;
+import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -123,7 +123,7 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
         long contextId = deviceContext.getSpirvContext().getOpenCLLayer().getContextId();
         long programPointer;
 
-        SPIRVOCLNativeCompiler spirvoclNativeCompiler = new SPIRVOCLNativeCompiler();
+        SPIRVOCLNativeDispatcher spirvoclNativeCompiler = new SPIRVOCLNativeDispatcher();
         int[] errorCode = new int[1];
         programPointer = spirvoclNativeCompiler.clCreateProgramWithIL(contextId, binary, new long[] { binary.length }, errorCode);
         if (errorCode[0] != OCLErrorCode.CL_SUCCESS) {

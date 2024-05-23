@@ -36,11 +36,11 @@
 #include "ocl_log.h"
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher
  * Method:    clCreateProgramWithIL_native
  * Signature: (J[B[J[I)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clCreateProgramWithIL_1native
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clCreateProgramWithIL_1native
         (JNIEnv * env, jobject object, jlong contextPointer, jbyteArray spirvBinary, jlongArray spirvArrayLength, jintArray errorCodeArray) {
 
     auto context = reinterpret_cast<cl_context>(contextPointer);
@@ -61,11 +61,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher
  * Method:    clBuildProgram_native
  * Signature: (JI[JLjava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clBuildProgram_1native
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clBuildProgram_1native
         (JNIEnv * env, jobject object, jlong programPointer, jint numDevices, jlongArray devicesArray, jstring optionsString) {
     auto *devices = static_cast<jlong *>(env->GetPrimitiveArrayCritical(devicesArray, NULL));
     const char *options = env->GetStringUTFChars(optionsString, NULL);
@@ -77,11 +77,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher
  * Method:    clCreateKernel_native
  * Signature: (JLjava/lang/String;[I)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clCreateKernel_1native
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clCreateKernel_1native
         (JNIEnv * env, jobject object, jlong programPointer, jstring kernelName, jintArray errorCode) {
     const char *kernelNameC = env->GetStringUTFChars(kernelName, NULL);
     cl_int status;
@@ -94,11 +94,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher
  * Method:    clGetProgramBuildInfo_native
  * Signature: (JJ)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clGetProgramBuildInfo_1native
+JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clGetProgramBuildInfo_1native
         (JNIEnv * env, jobject object, jlong programPointer, jlong devicePointer) {
     size_t log_size;
     clGetProgramBuildInfo((cl_program) programPointer,  (cl_device_id) devicePointer, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -108,11 +108,11 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVO
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher
  * Method:    clSetKernelArg_native
  * Signature: (JIIJ)I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clSetKernelArg_1native
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clSetKernelArg_1native
         (JNIEnv * env, jobject object, jlong kernelPointer, jint argIndex, jint argSize, jlong argument) {
     cl_int status = clSetKernelArg((cl_kernel) kernelPointer, (cl_uint) argIndex, (size_t) argSize, (void*) &argument);
     LOG_OCL_AND_VALIDATE("clSetKernelArg", status);
@@ -120,16 +120,22 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher
  * Method:    clEnqueueNDRangeKernel_native
- * Signature: (JJI[J[J[JLjava/lang/Object;Ljava/lang/Object;)I
+ * Signature: (JJI[J[J[J[J[J)I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clEnqueueNDRangeKernel_1native
-        (JNIEnv * env, jobject object, jlong commandQueuePointer, jlong kernelPointer, jint dimensions, jlongArray globalOffsets, jlongArray globalWorkGroup, jlongArray localWorkGroup, jobject events, jobject events1) {
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clEnqueueNDRangeKernel_1native
+        (JNIEnv * env, jobject object, jlong commandQueuePointer, jlong kernelPointer, jint dimensions, jlongArray globalOffsets, jlongArray globalWorkGroup, jlongArray localWorkGroup, jlongArray waitEvents, jlongArray kernelEventArray) {
 
     auto *gwo = static_cast<jlong *>((globalOffsets != nullptr) ? env->GetPrimitiveArrayCritical(globalOffsets, nullptr) : nullptr);
     auto *gws = static_cast<jlong *>((globalWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(globalWorkGroup, nullptr) : nullptr);
     auto *lws = static_cast<jlong *>((localWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(localWorkGroup, nullptr) : nullptr);
+
+    auto *clWaitEvents = static_cast<jlong *>((waitEvents != nullptr) ? env->GetPrimitiveArrayCritical(waitEvents, nullptr) : nullptr);
+    jsize numEvents = 0;
+    if (waitEvents != nullptr) {
+        numEvents = env->GetArrayLength(waitEvents);
+    }
 
     cl_event kernelEvent;
     cl_int status = clEnqueueNDRangeKernel((cl_command_queue) commandQueuePointer,
@@ -138,8 +144,8 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
                                            (size_t*) gwo,
                                            (size_t*) gws,
                                            (size_t*) lws,
-                                           0,
-                                           nullptr,
+                                           numEvents,
+                                           (cl_event*) clWaitEvents,
                                            &kernelEvent);
     LOG_OCL_AND_VALIDATE("clEnqueueNDRangeKernel", status);
 
@@ -151,6 +157,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
     }
     if (localWorkGroup != nullptr) {
         env->ReleasePrimitiveArrayCritical(localWorkGroup, lws, JNI_ABORT);
+    }
+
+    if (kernelEventArray != nullptr) {
+        long kernelEventNative[1];
+        kernelEventNative[0] = reinterpret_cast<long>(kernelEvent);
+        env->SetLongArrayRegion(kernelEventArray, 0, 1, kernelEventNative);
     }
     return status;
 }
