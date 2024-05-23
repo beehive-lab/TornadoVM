@@ -43,7 +43,7 @@
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clCreateProgramWithIL_1native
         (JNIEnv * env, jobject object, jlong contextPointer, jbyteArray spirvBinary, jlongArray spirvArrayLength, jintArray errorCodeArray) {
 
-    cl_context context = reinterpret_cast<cl_context>(contextPointer);
+    auto context = reinterpret_cast<cl_context>(contextPointer);
     jbyte* spirv = env->GetByteArrayElements(spirvBinary, 0);
     long* length = env->GetLongArrayElements(spirvArrayLength, 0);
     cl_int status;
@@ -67,7 +67,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clBuildProgram_1native
         (JNIEnv * env, jobject object, jlong programPointer, jint numDevices, jlongArray devicesArray, jstring optionsString) {
-    jlong *devices = static_cast<jlong *>(env->GetPrimitiveArrayCritical(devicesArray, NULL));
+    auto *devices = static_cast<jlong *>(env->GetPrimitiveArrayCritical(devicesArray, NULL));
     const char *options = env->GetStringUTFChars(optionsString, NULL);
     cl_int status = clBuildProgram((cl_program) programPointer, (cl_uint) numDevices, (cl_device_id*) devices, options, NULL, NULL);
     LOG_OCL_AND_VALIDATE("clBuildProgram", status);
@@ -114,9 +114,9 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVO
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clSetKernelArg_1native
         (JNIEnv * env, jobject object, jlong kernelPointer, jint argIndex, jint argSize, jlong argument) {
-    cl_uint status = clSetKernelArg((cl_kernel) kernelPointer, (cl_uint) argIndex, (size_t) argSize, (void*) &argument);
+    cl_int status = clSetKernelArg((cl_kernel) kernelPointer, (cl_uint) argIndex, (size_t) argSize, (void*) &argument);
     LOG_OCL_AND_VALIDATE("clSetKernelArg", status);
-    return status;
+    return (cl_int) status;
 }
 
 /*
@@ -125,32 +125,32 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
  * Signature: (JJI[J[J[JLjava/lang/Object;Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeCompiler_clEnqueueNDRangeKernel_1native
-        (JNIEnv * env, jobject object, jlong commandQueuePointer, jlong kernelPointer, jint dimensions, jlongArray offset, jlongArray globalWorkGroup, jlongArray localWorkGroup, jobject events, jobject events1) {
+        (JNIEnv * env, jobject object, jlong commandQueuePointer, jlong kernelPointer, jint dimensions, jlongArray globalOffsets, jlongArray globalWorkGroup, jlongArray localWorkGroup, jobject events, jobject events1) {
 
-    jlong *global_work_offset = static_cast<jlong *>((offset != nullptr) ? env->GetPrimitiveArrayCritical(offset, nullptr) : nullptr);
-    jlong *global_work_size = static_cast<jlong *>((globalWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(globalWorkGroup, nullptr) : nullptr);
-    jlong *local_work_size = static_cast<jlong *>((localWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(localWorkGroup, nullptr) : nullptr);
+    auto *gwo = static_cast<jlong *>((globalOffsets != nullptr) ? env->GetPrimitiveArrayCritical(globalOffsets, nullptr) : nullptr);
+    auto *gws = static_cast<jlong *>((globalWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(globalWorkGroup, nullptr) : nullptr);
+    auto *lws = static_cast<jlong *>((localWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(localWorkGroup, nullptr) : nullptr);
 
     cl_event kernelEvent;
     cl_int status = clEnqueueNDRangeKernel((cl_command_queue) commandQueuePointer,
                                            (cl_kernel) kernelPointer,
                                            (cl_uint) dimensions,
-                                           (size_t*) global_work_offset,
-                                           (size_t*) global_work_size,
-                                           (size_t*) localWorkGroup,
+                                           (size_t*) gwo,
+                                           (size_t*) gws,
+                                           (size_t*) lws,
                                            0,
                                            nullptr,
                                            &kernelEvent);
     LOG_OCL_AND_VALIDATE("clEnqueueNDRangeKernel", status);
 
-    if (offset != nullptr) {
-        env->ReleasePrimitiveArrayCritical(offset, global_work_offset, JNI_ABORT);
+    if (globalOffsets != nullptr) {
+        env->ReleasePrimitiveArrayCritical(globalOffsets, gwo, JNI_ABORT);
     }
     if (globalWorkGroup != nullptr) {
-        env->ReleasePrimitiveArrayCritical(globalWorkGroup, global_work_size, JNI_ABORT);
+        env->ReleasePrimitiveArrayCritical(globalWorkGroup, gws, JNI_ABORT);
     }
     if (localWorkGroup != nullptr) {
-        env->ReleasePrimitiveArrayCritical(localWorkGroup, local_work_size, JNI_ABORT);
+        env->ReleasePrimitiveArrayCritical(localWorkGroup, lws, JNI_ABORT);
     }
     return status;
 }

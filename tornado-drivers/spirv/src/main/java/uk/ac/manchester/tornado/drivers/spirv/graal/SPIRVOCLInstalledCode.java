@@ -26,9 +26,11 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
@@ -39,12 +41,12 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeCompiler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
 
     private boolean valid;
-
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM SPIR-V] Warning: TornadoVM changed the user-defined local thread sizes to the suggested values by the driver.";
     private static final int WARP_SIZE = 32;
     private boolean ADJUST_IRREGULAR = false;
@@ -57,6 +59,24 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
     @Override
     public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Not implemented yet");
+    }
+
+    @Override
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+
+        // Set kernel args
+        setKernelArgs(executionPlanId, (SPIRVKernelStackFrame) callWrapper);
+        SPIRVOCLModule module = (SPIRVOCLModule) spirvModule;
+        long kernelPointer = module.getKernelPointer();
+
+        // Calculate the GWS and LWS
+        calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
+
+        int status = submit(executionPlanId, kernelPointer, meta, null, batchThreads);
+        if (status == OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE) {
+            throw new TornadoRuntimeException("[ERROR] CL_INVALID_WORK_GROUP_SIZE (-54)");
+        }
+        return 0;
     }
 
     private void checkStatus(int status, String lowLevelFunction) {
@@ -100,38 +120,59 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    @Override
-    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int submit(long executionPlanId, long kernelPointer, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+        if (meta.isThreadInfoEnabled()) {
+            meta.printThreadDims();
+        }
+        final int taskEvent = launch(executionPlanId, kernelPointer, meta, waitEvents, batchThreads);
+        updateProfiler(executionPlanId, taskEvent, meta);
+        return taskEvent;
+    }
 
-        setKernelArgs(executionPlanId, (SPIRVKernelStackFrame) callWrapper);
-        SPIRVOCLModule module = (SPIRVOCLModule) spirvModule;
-        long kernelPointer = module.getKernelPointer();
-        // Set kernel args
-
-        // TODO: Calculate the number of blocks
-        calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
-
-        // launch kernel
+    public int launch(long executionPlanId, long kernelPointer, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
         SPIRVOCLNativeCompiler dispatcher = new SPIRVOCLNativeCompiler();
         OCLCommandQueue commandQueue = (OCLCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
         long queuePointer = commandQueue.getCommandQueuePtr();
 
-        if (meta.isThreadInfoEnabled()) {
-            meta.printThreadDims();
+        if (meta.isWorkerGridAvailable()) {
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            return dispatcher.clEnqueueNDRangeKernel(queuePointer, kernelPointer, //
+                    meta.getDims(), grid.getGlobalOffset(), grid.getGlobalWork(), grid.getLocalWork(),//
+                    null, null);//
+        } else {
+            long[] localWorkGroup = null;
+            if (!meta.shouldUseOpenCLDriverScheduling()) {
+                localWorkGroup = meta.getLocalWork();
+            }
+            return dispatcher.clEnqueueNDRangeKernel(queuePointer, kernelPointer, //
+                    meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), //
+                    localWorkGroup, null, null);//
         }
+    }
 
-        int status = dispatcher.clEnqueueNDRangeKernel(queuePointer, kernelPointer, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, null, null);
-        if (status == OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE) {
-            throw new TornadoRuntimeException("[ERROR] CL_INVALID_WORK_GROUP_SIZE (-54)");
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
+        if (TornadoOptions.isProfilerEnabled()) {
+            Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
+            tornadoKernelEvent.waitForEvents(executionPlanId);
+            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            // Register globalTime
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
+            // Register the time for the task
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            // TODO: Add Power User Metric
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
         }
-        return 0;
     }
 
     private void calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
-        long[] globalWork = new long[3];
-        long[] localWork = new long[3];
-        Arrays.fill(globalWork, 1);
-        Arrays.fill(localWork, 1);
+        long[] globalWorkGroup = new long[3];
+        long[] localWorkGroup = new long[3];
+        Arrays.fill(globalWorkGroup, 1);
+        Arrays.fill(localWorkGroup, 1);
 
         if (!meta.isGridSchedulerEnabled()) {
             int dims = meta.getDims();
@@ -141,24 +182,21 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             if (!meta.isLocalWorkDefined()) {
                 calculateLocalWork(meta);
             }
-            System.arraycopy(meta.getGlobalWork(), 0, globalWork, 0, dims);
-            System.arraycopy(meta.getLocalWork(), 0, localWork, 0, dims);
+
+            System.arraycopy(meta.getGlobalWork(), 0, globalWorkGroup, 0, dims);
+            System.arraycopy(meta.getLocalWork(), 0, localWorkGroup, 0, dims);
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
-
             WorkerGrid worker = meta.getWorkerGrid(meta.getId());
             int dims = worker.dimension();
-
-            System.arraycopy(worker.getGlobalWork(), 0, globalWork, 0, dims);
-
+            System.arraycopy(worker.getGlobalWork(), 0, globalWorkGroup, 0, dims);
             if (worker.getLocalWork() != null) {
-                System.arraycopy(worker.getLocalWork(), 0, localWork, 0, dims);
+                System.arraycopy(worker.getLocalWork(), 0, localWorkGroup, 0, dims);
             }
-
         }
     }
 
-    private void calculateLocalWork(TaskMetaData meta) {
+    public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.initLocalWork();
 
         switch (meta.getDims()) {
@@ -219,9 +257,8 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         return intermediates;
     }
 
-    private void calculateGlobalWork(TaskMetaData meta, long batchThreads) {
+    private void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
-
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
             if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {

@@ -433,4 +433,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return executionIds;
     }
 
+    public long getPowerUsage() {
+        return 0;
+    }
 }
