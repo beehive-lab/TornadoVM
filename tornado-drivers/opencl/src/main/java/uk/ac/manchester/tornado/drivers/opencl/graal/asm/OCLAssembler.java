@@ -955,6 +955,14 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate PRIVATE_SHORT_ARRAY_PTR = new OCLBinaryTemplate("private pointer array short", "__private short* %s = %s");
         public static final OCLBinaryTemplate PRIVATE_BYTE_ARRAY_PTR = new OCLBinaryTemplate("private pointer array byte", "__private byte* %s = %s");
 
+        public static final OCLBinaryTemplate PRIVATE_INT_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array int", "__private int* %s = ((__private int *) %s)");
+        public static final OCLBinaryTemplate PRIVATE_CHAR_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array char", "__private char* %s = ((__private char *) %s)");
+        public static final OCLBinaryTemplate PRIVATE_FLOAT_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array float", "__private float* %s = ((__private float *) %s)");
+        public static final OCLBinaryTemplate PRIVATE_DOUBLE_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array double", "__private double* %s = ((__private double *) %s)");
+        public static final OCLBinaryTemplate PRIVATE_LONG_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array long", "__private long* %s = ((__private long *) %s)");
+        public static final OCLBinaryTemplate PRIVATE_SHORT_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array short", "__private short* %s = ((__private short *) %s)");
+        public static final OCLBinaryTemplate PRIVATE_BYTE_ARRAY_PTR_COPY = new OCLBinaryTemplate("private pointer copy array byte", "__private byte* %s = ((__private byte *) %s)");
+
         public static final OCLBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local float %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array int", "__local int %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new OCLBinaryTemplate("local memory array double", "__local double %s[%s]");

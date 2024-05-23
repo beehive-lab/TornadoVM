@@ -275,6 +275,25 @@ public enum OCLKind implements PlatformKind {
         return null;
     }
 
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerCopyTemplate(JavaKind type) {
+        if (type == JavaKind.Int) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Double) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Float) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Short) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Long) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Char) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Byte) {
+            return OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR_COPY;
+        }
+        return null;
+    }
+
     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {
         if (type == JavaKind.Int) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
@@ -304,6 +323,10 @@ public enum OCLKind implements PlatformKind {
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerTemplate(ResolvedJavaType type) {
         return resolvePrivatePointerTemplate(type.getJavaKind());
+    }
+
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerCopyTemplate(ResolvedJavaType type) {
+        return resolvePrivatePointerCopyTemplate(type.getJavaKind());
     }
 
     public static OCLKind resolveToVectorKind(ResolvedJavaType type) {
