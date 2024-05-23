@@ -52,9 +52,11 @@ public class OCLEvent implements Event {
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private String name;
     private int status;
+    private TornadoLogger logger;
 
     OCLEvent() {
         buffer.order(OpenCL.BYTE_ORDER);
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     OCLEvent(String eventNameDescription, final OCLCommandQueue queue, final int event, final long oclEventID) {
@@ -89,7 +91,7 @@ public class OCLEvent implements Event {
             clGetEventProfilingInfo(oclEventID, eventType.getValue(), buffer.array());
             time = buffer.getLong();
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
         return time;
     }
@@ -130,7 +132,7 @@ public class OCLEvent implements Event {
             clGetEventInfo(oclEventID, CL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
             status = buffer.getInt();
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
 
         return createOCLCommandExecutionStatus(status);
@@ -149,7 +151,7 @@ public class OCLEvent implements Event {
                 break;
             case CL_ERROR:
             case CL_UNKNOWN:
-                TornadoLogger.fatal("error on event: %s", name);
+                logger.fatal("error on event: %s", name);
         }
     }
 
@@ -159,7 +161,7 @@ public class OCLEvent implements Event {
             internalBuffer[1] = oclEventID;
             clWaitForEvents(internalBuffer);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -226,7 +228,7 @@ public class OCLEvent implements Event {
         try {
             clReleaseEvent(oclEventID);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 }

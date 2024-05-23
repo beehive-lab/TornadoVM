@@ -299,8 +299,9 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
             return installedCode;
         } catch (Exception e) {
-            TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            TornadoLogger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            TornadoLogger logger = new TornadoLogger();
+            logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            logger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
             } else {

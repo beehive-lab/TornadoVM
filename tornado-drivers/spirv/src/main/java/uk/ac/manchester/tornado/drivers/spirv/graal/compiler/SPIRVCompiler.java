@@ -319,7 +319,7 @@ public class SPIRVCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedJavaMethod = kernelGraph.method();
 
-        TornadoLogger.info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        new TornadoLogger().info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
@@ -439,8 +439,9 @@ public class SPIRVCompiler {
                 try {
                     Files.createDirectories(outDir);
                 } catch (IOException e) {
-                    TornadoLogger.error("unable to create cache dir: %s", outDir.toString());
-                    TornadoLogger.error(e.getMessage());
+                    TornadoLogger tornadoLogger = new TornadoLogger();
+                    tornadoLogger.error("unable to create cache dir: %s", outDir.toString());
+                    tornadoLogger.error(e.getMessage());
                 }
             }
 
@@ -452,7 +453,7 @@ public class SPIRVCompiler {
                     pw.printf("%s,%s\n", m.getDeclaringClass().getName(), m.getName());
                 }
             } catch (IOException e) {
-                TornadoLogger.error("unable to dump source: ", e.getMessage());
+                new TornadoLogger().error("unable to dump source: ", e.getMessage());
             }
         }
 

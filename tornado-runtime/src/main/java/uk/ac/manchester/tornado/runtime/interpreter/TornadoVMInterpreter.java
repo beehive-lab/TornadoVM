@@ -99,6 +99,8 @@ public class TornadoVMInterpreter {
 
     private GridScheduler gridScheduler;
 
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
+
     /**
      * It constructs a new TornadoVMInterpreter object.
      *
@@ -123,7 +125,7 @@ public class TornadoVMInterpreter {
         totalTime = 0;
         invocations = 0;
 
-        TornadoLogger.debug("init an instance of a TornadoVM interpreter...");
+        logger.debug("init an instance of a TornadoVM interpreter...");
 
         this.bytecodeResult.getLong(); // Skips bytes not needed
 
@@ -140,8 +142,8 @@ public class TornadoVMInterpreter {
             eventsIndexes[i] = 0;
         }
 
-        TornadoLogger.debug("created %d kernelStackFrame", kernelStackFrame.length);
-        TornadoLogger.debug("created %d event lists", events.length);
+        logger.debug("created %d kernelStackFrame", kernelStackFrame.length);
+        logger.debug("created %d event lists", events.length);
 
         objects = executionContext.getObjects();
         dataObjectStates = new DataObjectState[objects.size()];
@@ -152,7 +154,7 @@ public class TornadoVMInterpreter {
         constants = executionContext.getConstants();
         tasks = executionContext.getTasks();
 
-        TornadoLogger.debug("interpreter for device %s is ready to go", device.toString());
+        logger.debug("interpreter for device %s is ready to go", device.toString());
 
         this.bytecodeResult.mark();
     }
@@ -175,11 +177,11 @@ public class TornadoVMInterpreter {
             TornadoInternalError.guarantee(op == TornadoVMBytecodes.CONTEXT.value(), "invalid code: 0x%x", op);
             final int deviceIndex = bytecodeResult.getInt();
             assert deviceIndex == deviceForInterpreter.getDeviceContext().getDeviceIndex();
-            TornadoLogger.debug("loading context %s", deviceForInterpreter.toString());
+            logger.debug("loading context %s", deviceForInterpreter.toString());
             final long t0 = System.nanoTime();
             deviceForInterpreter.ensureLoaded(executionContext.getExecutionPlanId());
             final long t1 = System.nanoTime();
-            TornadoLogger.debug("loaded in %.9f s", (t1 - t0) * 1e-9);
+            logger.debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = bytecodeResult.get();
         }
     }
@@ -200,7 +202,7 @@ public class TornadoVMInterpreter {
 
     public void dumpEvents() {
         if (!TornadoOptions.TORNADO_PROFILER || !executionContext.meta().shouldDumpEvents()) {
-            TornadoLogger.info("profiling and/or event dumping is not enabled");
+            logger.info("profiling and/or event dumping is not enabled");
             return;
         }
 
@@ -209,7 +211,7 @@ public class TornadoVMInterpreter {
 
     public void dumpProfiles() {
         if (!executionContext.meta().shouldDumpProfiles()) {
-            TornadoLogger.info("profiling is not enabled");
+            logger.info("profiling is not enabled");
             return;
         }
 
@@ -376,7 +378,7 @@ public class TornadoVMInterpreter {
         }
 
         if (executionContext.meta().isDebug()) {
-            TornadoLogger.debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
+            logger.debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
         }
 
         bytecodeResult.reset();
@@ -797,7 +799,7 @@ public class TornadoVMInterpreter {
 
     private void throwErrorInterpreter(byte op) {
         if (executionContext.meta().isDebug()) {
-            TornadoLogger.debug("bc: invalid op 0x%x(%d)", op, op);
+            logger.debug("bc: invalid op 0x%x(%d)", op, op);
         }
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
     }
@@ -822,7 +824,7 @@ public class TornadoVMInterpreter {
 
     private KernelStackFrame resolveCallWrapper(int index, int numArgs, KernelStackFrame[] kernelStackFrame, TornadoXPUDevice device, boolean redeployOnDevice) {
         if (executionContext.meta().isDebug() && redeployOnDevice) {
-            TornadoLogger.debug("Recompiling task on device " + device);
+            logger.debug("Recompiling task on device " + device);
         }
         if (kernelStackFrame[index] == null || redeployOnDevice) {
             kernelStackFrame[index] = device.createKernelStackFrame(numArgs);

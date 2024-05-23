@@ -325,7 +325,7 @@ public class TornadoExecutionContext {
 
         setDevice(accelerator);
 
-        TornadoLogger.info("assigning %s to %s", id, target.getDeviceName());
+        new TornadoLogger().info("assigning %s to %s", id, target.getDeviceName());
 
         taskToDeviceMapTable[index] = accelerator;
     }

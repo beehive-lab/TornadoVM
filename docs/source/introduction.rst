@@ -8,9 +8,9 @@ Introduction to TornadoVM
   :align: left
 
 TornadoVM is a plug-in to OpenJDK and other JDK distributions (e.g., GraalVM, Red Hat Mandrel, Amazon Corretto, Microsoft OpenJDK, Azul Zulu) 
-that allows developers to automatically run Java programs on heterogeneous hardware. 
-TornadoVM targets devices compatible with OpenCL, PTX and Level-Zero, which include multi-core CPUs,
-dedicated GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
+that allows developers to automatically offload and run a subset of Java programs on heterogeneous hardware. 
+TornadoVM targets devices compatible with OpenCL, NVIDIA PTX, and Level-Zero, which include multi-core CPUs (Intel and AMD),
+dedicated GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics, Apple M1/M2/M3, and ARM Mali), and FPGAs (Intel and Xilinx).
 
 .. image:: images/tornadovm-01.png
   :width: 800
@@ -19,7 +19,7 @@ dedicated GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM 
 
 TornadoVM currently has three backends:
 It compiles Java code, at runtime, from Java bytecode to OpenCL C, NVIDIA CUDA PTX, and SPIR-V binary.
-Developers can choose which backends to install and run.
+Developers can choose which backend/s to install and run.
 
 .. image:: images/tornadovm-02.png
   :width: 800
@@ -44,4 +44,4 @@ TornadoVM includes the following features:
 -   **Containers:** TornadoVM can be used within Docker containers for running on NVIDIA GPUs, Intel CPUs and Intel GPUs.
 
 
-TornadoVM is a research project developed at APT Group at The University of Manchester.
+TornadoVM is a research project in active development created under the `APT Group <https://apt.cs.manchester.ac.uk/>`_ at `The University of Manchester <https://www.manchester.ac.uk/>`_.

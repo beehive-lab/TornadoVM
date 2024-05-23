@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-
 import java.util.List;
+
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 
 public interface OCLExecutionEnvironment {
 
@@ -35,7 +35,7 @@ public interface OCLExecutionEnvironment {
 
     TornadoDeviceContext createDeviceContext(int deviceIndex);
 
-    TornadoPlatform getPlatform();
+    TornadoPlatformInterface getPlatform();
 
     void createCommandQueue(int index);
 

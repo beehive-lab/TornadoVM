@@ -53,13 +53,16 @@ public final class Float3 implements TornadoVectorsInterface<FloatBuffer> {
         setZ(z);
     }
 
-    /**
-     * * Operations on Float3 vectors.
-     */
-    /*
-     * vector = op( vector, vector )
-     */
+    // vector = op (vector, vector)
     public static Float3 add(Float3 a, Float3 b) {
+        return new Float3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
+    }
+
+    public static Float3 add(Int3 a, Float3 b) {
+        return new Float3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
+    }
+
+    public static Float3 add(Float3 a, Int3 b) {
         return new Float3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
     }
 
@@ -67,7 +70,23 @@ public final class Float3 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float3(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ());
     }
 
+    public static Float3 sub(Int3 a, Float3 b) {
+        return new Float3(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ());
+    }
+
+    public static Float3 sub(Float3 a, Int3 b) {
+        return new Float3(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ());
+    }
+
     public static Float3 div(Float3 a, Float3 b) {
+        return new Float3(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ());
+    }
+
+    public static Float3 div(Int3 a, Float3 b) {
+        return new Float3(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ());
+    }
+
+    public static Float3 div(Float3 a, Int3 b) {
         return new Float3(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ());
     }
 
@@ -75,7 +94,23 @@ public final class Float3 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float3(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ());
     }
 
+    public static Float3 mult(Int3 a, Float3 b) {
+        return new Float3(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ());
+    }
+
+    public static Float3 mult(Float3 a, Int3 b) {
+        return new Float3(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ());
+    }
+
     public static Float3 min(Float3 a, Float3 b) {
+        return new Float3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+    }
+
+    public static Float3 min(Int3 a, Float3 b) {
+        return new Float3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+    }
+
+    public static Float3 min(Float3 a, Int3 b) {
         return new Float3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
     }
 
@@ -83,13 +118,19 @@ public final class Float3 implements TornadoVectorsInterface<FloatBuffer> {
         return new Float3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
     }
 
+    public static Float3 max(Int3 a, Float3 b) {
+        return new Float3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+    }
+
+    public static Float3 max(Float3 a, Int3 b) {
+        return new Float3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+    }
+
     public static Float3 cross(Float3 a, Float3 b) {
         return new Float3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
     }
 
-    /*
-     * vector = op (vector, scalar)
-     */
+    // vector = op (vector, scalar)
     public static Float3 add(Float3 a, float b) {
         return new Float3(a.getX() + b, a.getY() + b, a.getZ() + b);
     }

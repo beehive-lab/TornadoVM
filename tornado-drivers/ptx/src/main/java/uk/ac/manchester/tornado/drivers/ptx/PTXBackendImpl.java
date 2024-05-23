@@ -48,12 +48,14 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
 
     private final PTXBackend[] backends;
     private List<TornadoDevice> devices;
+    private final TornadoLogger logger;
 
     public PTXBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
 
         int deviceCount = PTX.getPlatform().getDeviceCount();
+        logger = new TornadoLogger(this.getClass());
         backends = new PTXBackend[deviceCount];
-        TornadoLogger.info("CUDA: Has %d devices...", deviceCount);
+        logger.info("CUDA: Has %d devices...", deviceCount);
         if (deviceCount == 0) {
             throw new TornadoBailoutRuntimeException("[WARNING] No PTX devices found. Deoptimizing to sequential execution.");
         }
@@ -65,7 +67,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
 
     private void installDevice(int deviceIndex, OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
         PTXDevice device = PTX.getPlatform().getDevice(deviceIndex);
-        TornadoLogger.info("Creating backend for %s", device.getDeviceName());
+        logger.info("Creating backend for %s", device.getDeviceName());
         backends[deviceIndex] = PTXHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device);
     }
 

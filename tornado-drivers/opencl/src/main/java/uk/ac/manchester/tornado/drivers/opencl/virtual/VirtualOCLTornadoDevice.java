@@ -206,9 +206,10 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
             return null;
         } catch (Exception e) {
-            TornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            TornadoLogger.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
-            TornadoLogger.fatal("exception: %s", e.toString());
+            TornadoLogger tornadoLogger = new TornadoLogger();
+            tornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+            tornadoLogger.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
+            tornadoLogger.fatal("exception: %s", e.toString());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }

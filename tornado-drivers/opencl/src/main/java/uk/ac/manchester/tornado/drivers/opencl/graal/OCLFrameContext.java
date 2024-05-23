@@ -32,12 +32,12 @@ public class OCLFrameContext implements FrameContext {
 
     @Override
     public void enter(CompilationResultBuilder crb) {
-        TornadoLogger.trace("FrameContext.enter()");
+        new TornadoLogger().trace("FrameContext.enter()");
     }
 
     @Override
     public void leave(CompilationResultBuilder crb) {
-        TornadoLogger.trace("FrameContext.leave()");
+        new TornadoLogger().trace("FrameContext.leave()");
     }
 
     @Override

@@ -386,11 +386,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             }
         });
 
+        TornadoLogger logger = new TornadoLogger(this.getClass());
         if (iterations == MAX_ITERATIONS) {
-            TornadoLogger.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
+            logger.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
         }
-        TornadoLogger.debug("TaskSpecialisation ran %d iterations", iterations);
-        TornadoLogger.debug("valid graph? %s", graph.verify());
+        logger.debug("TaskSpecialisation ran %d iterations", iterations);
+        logger.debug("valid graph? %s", graph.verify());
         index = 0;
     }
 

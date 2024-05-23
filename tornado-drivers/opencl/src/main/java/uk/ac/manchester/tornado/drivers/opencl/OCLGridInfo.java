@@ -22,11 +22,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.drivers.common.GridInfo;
+import static uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE;
 
 import java.util.Arrays;
 
-import static uk.ac.manchester.tornado.drivers.opencl.OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE;
+import uk.ac.manchester.tornado.drivers.common.GridInfo;
 
 public class OCLGridInfo implements GridInfo {
     OCLDeviceContext deviceContext;

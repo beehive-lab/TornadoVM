@@ -124,7 +124,7 @@ public class TaskUtils {
             m.setAccessible(true);
             return m;
         } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
-            TornadoLogger.debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
+            new TornadoLogger().debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
             useToJavaMethod = true;
             return callToJava(javaMethod);
         }

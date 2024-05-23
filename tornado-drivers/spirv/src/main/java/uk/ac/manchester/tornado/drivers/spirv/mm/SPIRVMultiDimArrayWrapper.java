@@ -70,7 +70,7 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            TornadoLogger.fatal("OOM: multi-dim array: %s", e.getMessage());
+            new TornadoLogger().fatal("OOM: multi-dim array: %s", e.getMessage());
             throw new RuntimeException(e);
         }
     }

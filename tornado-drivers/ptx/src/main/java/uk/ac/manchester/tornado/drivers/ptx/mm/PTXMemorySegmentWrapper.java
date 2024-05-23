@@ -42,14 +42,15 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class PTXMemorySegmentWrapper implements XPUBuffer {
+
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
-
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
@@ -57,6 +58,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        logger = new TornadoLogger(this.getClass());
     }
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize) {
@@ -65,6 +67,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        logger = new TornadoLogger(this.getClass());
     }
 
     @Override
@@ -185,7 +188,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            logger.info("allocated: %s", toString());
         }
     }
 
@@ -197,7 +200,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: %s", toString());
+            logger.info("deallocated: %s", toString());
         }
     }
 

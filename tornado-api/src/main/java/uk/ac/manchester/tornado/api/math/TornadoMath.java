@@ -31,7 +31,11 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 
 public class TornadoMath {
 
@@ -161,6 +165,54 @@ public class TornadoMath {
 
     public static double fract(double f) {
         return f - floor(f);
+    }
+
+    public static Float2 cos(Float2 f) {
+        return new Float2(TornadoMath.cos(f.getX()), TornadoMath.cos(f.getY()));
+    }
+
+    public static Float4 cos(Float4 f) {
+        return new Float4(TornadoMath.cos(f.getX()), TornadoMath.cos(f.getY()), TornadoMath.cos(f.getZ()), TornadoMath.cos(f.getW()));
+    }
+
+    public static Float8 cos(Float8 f) {
+        Float8 result = new Float8();
+        for (int i = 0; i < f.size(); i++) {
+            result.set(i, TornadoMath.cos(f.get(i)));
+        }
+        return result;
+    }
+
+    public static Float16 cos(Float16 f) {
+        Float16 result = new Float16();
+        for (int i = 0; i < f.size(); i++) {
+            result.set(i, TornadoMath.cos(f.get(i)));
+        }
+        return result;
+    }
+
+    public static Float2 sin(Float2 f) {
+        return new Float2(TornadoMath.sin(f.getX()), TornadoMath.sin(f.getY()));
+    }
+
+    public static Float4 sin(Float4 f) {
+        return new Float4(TornadoMath.sin(f.getX()), TornadoMath.sin(f.getY()), TornadoMath.sin(f.getZ()), TornadoMath.sin(f.getW()));
+    }
+
+    public static Float8 sin(Float8 f) {
+        Float8 result = new Float8();
+        for (int i = 0; i < f.size(); i++) {
+            result.set(i, TornadoMath.sin(f.get(i)));
+        }
+        return result;
+    }
+
+    public static Float16 sin(Float16 f) {
+        Float16 result = new Float16();
+        for (int i = 0; i < f.size(); i++) {
+            result.set(i, TornadoMath.sin(f.get(i)));
+        }
+        return result;
     }
 
     public static boolean isEqual(float[] a, float[] b) {
