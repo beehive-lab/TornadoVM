@@ -44,7 +44,7 @@ public class SPIRVByteBuffer {
         this.bytes = numBytes;
         this.offset = offset;
         buffer = ByteBuffer.allocate((int) numBytes);
-        buffer.order(this.deviceContext.getSPIRVDevice().getByteOrder());
+        buffer.order(this.deviceContext.getDevice().getByteOrder());
     }
 
     public long getSize() {
@@ -89,7 +89,7 @@ public class SPIRVByteBuffer {
     public void dump(int width) {
         buffer.position(buffer.capacity());
         System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true), RuntimeUtilities.humanReadableByteCount(buffer.position(),
-                true), deviceContext.getSPIRVDevice().getDeviceName());
+                true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {

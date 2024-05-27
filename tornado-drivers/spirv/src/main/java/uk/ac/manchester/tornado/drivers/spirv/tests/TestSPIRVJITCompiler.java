@@ -110,7 +110,7 @@ public class TestSPIRVJITCompiler {
         SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, compilableTask, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());
 
         // 3. Install the SPIR-V code into the VM
-        SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getSPIRVDevice();
+        SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getDevice();
         SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(spirvCompilationResult);
 
         return new MetaCompilation(taskMeta, spirvInstalledCode);

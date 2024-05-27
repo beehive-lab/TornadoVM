@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 
 public interface TornadoDeviceContext {
 
-    TornadoTargetDevice getSPIRVDevice();
+    TornadoTargetDevice getDevice();
 
     TornadoMemoryProvider getMemoryManager();
 

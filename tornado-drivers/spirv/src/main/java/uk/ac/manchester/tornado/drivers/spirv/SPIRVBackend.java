@@ -235,7 +235,7 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
 
     @Override
     public String toString() {
-        return String.format("Backend: arch=%s, device=%s", spirvArchitecture.getName(), deviceContext.getSPIRVDevice().getDeviceName());
+        return String.format("Backend: arch=%s, device=%s", spirvArchitecture.getName(), deviceContext.getDevice().getDeviceName());
     }
 
     @Override

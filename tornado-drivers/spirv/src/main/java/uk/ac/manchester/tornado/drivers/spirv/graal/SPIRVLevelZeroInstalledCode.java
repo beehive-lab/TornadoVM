@@ -293,7 +293,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
         long[] intermediates = new long[] { 1, 1, 1 };
 
-        long[] maxWorkItemSizes = deviceContext.getSPIRVDevice().getDeviceMaxWorkItemSizes();
+        long[] maxWorkItemSizes = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
 
         switch (metaData.getDims()) {
             case 3:

@@ -34,11 +34,11 @@ public class PTXBufferProvider extends TornadoBufferProvider {
 
     @Override
     public long allocateBuffer(long size) {
-        return ((PTXDeviceContext) deviceContext).getSPIRVDevice().getPTXContext().allocateMemory(size);
+        return ((PTXDeviceContext) deviceContext).getDevice().getPTXContext().allocateMemory(size);
     }
 
     @Override
     protected void releaseBuffer(long buffer) {
-        ((PTXDeviceContext) deviceContext).getSPIRVDevice().getPTXContext().freeMemory(buffer);
+        ((PTXDeviceContext) deviceContext).getDevice().getPTXContext().freeMemory(buffer);
     }
 }

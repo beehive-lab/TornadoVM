@@ -49,7 +49,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     public SPIRVKernelStackFrame createKernelStackFrame(long threadId, final int maxArgs) {
         if (!spirvKernelStackFrame.containsKey(threadId)) {
-            long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getSPIRVDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
+            long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
             spirvKernelStackFrame.put(threadId, new SPIRVKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
         return spirvKernelStackFrame.get(threadId);

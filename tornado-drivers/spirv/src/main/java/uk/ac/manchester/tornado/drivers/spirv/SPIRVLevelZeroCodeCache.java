@@ -99,7 +99,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         SPIRVLevelZeroContext levelZeroContext = (SPIRVLevelZeroContext) spirvContext;
         LevelZeroContext context = levelZeroContext.getLevelZeroContext();
 
-        SPIRVDevice spirvDevice = deviceContext.getSPIRVDevice();
+        SPIRVDevice spirvDevice = deviceContext.getDevice();
         SPIRVLevelZeroDevice levelZeroDevice = (SPIRVLevelZeroDevice) spirvDevice;
         LevelZeroDevice device = levelZeroDevice.getDeviceRuntime();
 

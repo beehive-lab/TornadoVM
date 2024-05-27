@@ -36,7 +36,7 @@ public class OCLScheduler {
     private static final int NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER = 550;
 
     private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
-        OCLTargetDevice device = context.getSPIRVDevice();
+        OCLTargetDevice device = context.getDevice();
         if (device.getDeviceVendor().contains(AMD_VENDOR)) {
             return new OCLAMDScheduler(context);
         } else if (device.getDeviceVendor().contains(NVIDIA)) {
@@ -67,8 +67,8 @@ public class OCLScheduler {
     }
 
     public static OCLKernelScheduler create(final OCLDeviceContext context) {
-        if (context.getSPIRVDevice().getDeviceType() != null) {
-            OCLDeviceType type = context.getSPIRVDevice().getDeviceType();
+        if (context.getDevice().getDeviceType() != null) {
+            OCLDeviceType type = context.getDevice().getDeviceType();
             return instanceScheduler(type, context);
         }
         return null;

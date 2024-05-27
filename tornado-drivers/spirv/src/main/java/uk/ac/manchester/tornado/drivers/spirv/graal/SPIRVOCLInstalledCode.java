@@ -243,7 +243,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
         long[] intermediates = new long[] { 1, 1, 1 };
 
-        long[] maxWorkItemSizes = deviceContext.getSPIRVDevice().getDeviceMaxWorkItemSizes();
+        long[] maxWorkItemSizes = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
 
         switch (metaData.getDims()) {
             case 3:
@@ -280,7 +280,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
-            long[] blockMaxWorkGroupSize = deviceContext.getSPIRVDevice().getDeviceMaxWorkGroupSize();
+            long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
             long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
             long totalThreads = Arrays.stream(local).reduce(1, (a, b) -> a * b);
             boolean checkedDimensions = totalThreads <= maxWorkGroupSize;

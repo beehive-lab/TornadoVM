@@ -105,7 +105,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
 
         // Populate deviceTypeMap with backends for each device type
         for (OCLBackend backend : flatBackends) {
-            OCLDeviceType deviceType = backend.getDeviceContext().getSPIRVDevice().getDeviceType();
+            OCLDeviceType deviceType = backend.getDeviceContext().getDevice().getDeviceType();
             List<OCLBackend> backendListForDeviceType = deviceTypeMap.computeIfAbsent(deviceType, k -> new ArrayList<>());
             backendListForDeviceType.add(backend);
         }
@@ -118,12 +118,12 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
             }
         }
 
-        Map<OCLDeviceType, List<OCLBackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getSPIRVDevice().getDeviceType()));
+        Map<OCLDeviceType, List<OCLBackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getDevice().getDeviceType()));
 
         // Sort each sublist by size in descending order
         groupedByDeviceType.forEach((deviceType, sublist) -> Collections.sort(sublist, (backend1, backend2) -> {
-            long size1 = backend1.getDeviceContext().getSPIRVDevice().getDeviceContext().getSPIRVDevice().getMaxThreadsPerBlock();
-            long size2 = backend2.getDeviceContext().getSPIRVDevice().getDeviceContext().getSPIRVDevice().getMaxThreadsPerBlock();
+            long size1 = backend1.getDeviceContext().getDevice().getDeviceContext().getDevice().getMaxThreadsPerBlock();
+            long size2 = backend2.getDeviceContext().getDevice().getDeviceContext().getDevice().getMaxThreadsPerBlock();
             return Long.compare(size2, size1); // Sort in descending order
         }));
 

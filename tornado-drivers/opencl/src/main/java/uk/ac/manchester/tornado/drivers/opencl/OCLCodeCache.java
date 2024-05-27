@@ -142,7 +142,7 @@ public class OCLCodeCache {
     }
 
     private String fetchFPGAConfigurationFile() {
-        if (deviceContext.getSPIRVDevice().getDeviceVendor().equalsIgnoreCase("xilinx")) {
+        if (deviceContext.getDevice().getDeviceVendor().equalsIgnoreCase("xilinx")) {
             return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_XILINX;
         } else {
             if (runOnIntelFPGAWithOneAPI()) {
@@ -330,7 +330,7 @@ public class OCLCodeCache {
 
     private Path resolveDirectory(String dir) {
         final String tornadoRoot = System.getenv("TORNADO_SDK");
-        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getSPIRVDevice().getIndex());
+        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
         final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         createOrReuseDirectory(outDir);
         return outDir;
@@ -599,7 +599,7 @@ public class OCLCodeCache {
             }
         }
 
-        if (deviceContext.getSPIRVDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
+        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             appendSourceToFile(source, entryPoint);
         }
 
@@ -717,7 +717,7 @@ public class OCLCodeCache {
     }
 
     private boolean shouldReuseProgramObject(String entryPoint) {
-        return deviceContext.getSPIRVDevice().getDeviceName().toLowerCase().startsWith("xilinx");
+        return deviceContext.getDevice().getDeviceName().toLowerCase().startsWith("xilinx");
     }
 
     public void reset() {

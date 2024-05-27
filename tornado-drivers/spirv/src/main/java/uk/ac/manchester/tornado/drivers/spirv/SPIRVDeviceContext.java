@@ -96,7 +96,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return this.spirvContext;
     }
 
-    public SPIRVDevice getSPIRVDevice() {
+    public SPIRVDevice getDevice() {
         return device;
     }
 

@@ -36,7 +36,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
     public OCLNVIDIAGPUScheduler(final OCLDeviceContext context) {
         super(context);
-        OCLTargetDevice device = context.getSPIRVDevice();
+        OCLTargetDevice device = context.getDevice();
 
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
     }

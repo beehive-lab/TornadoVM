@@ -163,7 +163,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
         for (int i = 0; i < numDev; i++) {
             TornadoXPUDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getDevice(i);
             OCLTargetDevice dev = (OCLTargetDevice) device.getPhysicalDevice();
-            if (dev == deviceContext.getSPIRVDevice()) {
+            if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }
         }
@@ -441,7 +441,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
 
     @Override
     public String toString() {
-        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getSPIRVDevice().getDeviceName());
+        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getDeviceName());
     }
 
     @Override

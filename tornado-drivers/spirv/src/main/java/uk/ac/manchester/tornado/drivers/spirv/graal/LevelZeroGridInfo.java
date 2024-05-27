@@ -38,7 +38,7 @@ public class LevelZeroGridInfo {
     }
 
     public boolean checkGridDimensions() {
-        long[] blockMaxWorkGroupSize = deviceContext.getSPIRVDevice().getDeviceMaxWorkGroupSize();
+        long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
         long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
         long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
         return totalThreads <= maxWorkGroupSize;

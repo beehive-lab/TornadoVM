@@ -36,7 +36,7 @@ public class OCLGenericGPUScheduler extends OCLKernelScheduler {
 
     public OCLGenericGPUScheduler(final OCLDeviceContext context) {
         super(context);
-        OCLTargetDevice device = context.getSPIRVDevice();
+        OCLTargetDevice device = context.getDevice();
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
     }
 

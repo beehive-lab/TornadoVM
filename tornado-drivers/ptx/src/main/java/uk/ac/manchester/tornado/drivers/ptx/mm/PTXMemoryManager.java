@@ -48,7 +48,7 @@ public class PTXMemoryManager implements TornadoMemoryProvider {
 
     public PTXKernelStackFrame createCallWrapper(final long threadId, final int maxArgs) {
         if (!ptxKernelStackFrame.containsKey(threadId)) {
-            long kernelCallBuffer = deviceContext.getSPIRVDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
+            long kernelCallBuffer = deviceContext.getDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
             ptxKernelStackFrame.put(threadId, new PTXKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
         return ptxKernelStackFrame.get(threadId);

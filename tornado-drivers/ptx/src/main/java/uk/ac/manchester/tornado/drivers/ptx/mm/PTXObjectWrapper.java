@@ -349,7 +349,7 @@ public class PTXObjectWrapper implements XPUBuffer {
 
     protected void dump(int width) {
         System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true), RuntimeUtilities.humanReadableByteCount(buffer
-                .position(), true), deviceContext.getSPIRVDevice().getDeviceName());
+                .position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {

@@ -179,7 +179,7 @@ public class PTXCodeUtil {
     }
 
     public static byte[] getCodeWithAttachedPTXHeader(byte[] targetCode, PTXBackend backend) {
-        PTXDevice device = backend.getDeviceContext().getSPIRVDevice();
+        PTXDevice device = backend.getDeviceContext().getDevice();
         String header = String.format(PTX_HEADER_FORMAT, device.getTargetPTXVersion(), device.getTargetArchitecture(), backend.getTarget().getArch().getWordSize() * 8);
 
         return prependToTargetCode(targetCode, header.getBytes());

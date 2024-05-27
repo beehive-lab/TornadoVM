@@ -55,7 +55,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
         device.setDeviceContext(this);
     }
 
-    public OCLTargetDevice getSPIRVDevice() {
+    public OCLTargetDevice getDevice() {
         return device;
     }
 
@@ -180,8 +180,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return this.getSPIRVDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains(
-                "fpga") || isPlatformXilinxFPGA());
+        return this.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
     }
 
     @Override
