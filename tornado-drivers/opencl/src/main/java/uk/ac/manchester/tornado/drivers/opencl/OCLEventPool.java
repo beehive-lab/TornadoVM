@@ -168,11 +168,11 @@ public class OCLEventPool {
         retain.clear(localEventID);
     }
 
-    protected long getOCLEvent(int localEventID) {
+    public long getOCLEvent(int localEventID) {
         return events[localEventID];
     }
 
-    protected EventDescriptor getDescriptor(int localEventID) {
+    public EventDescriptor getDescriptor(int localEventID) {
         return descriptors[localEventID];
     }
 

@@ -27,6 +27,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
 
 public abstract class SPIRVContext {
 
@@ -43,6 +44,8 @@ public abstract class SPIRVContext {
     public abstract CommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex);
 
     public abstract OCLContextInterface getOpenCLLayer();
+
+    public abstract OCLEventPool getOCLEventPool(long executionPlanId);
 
     public abstract long allocateMemory(int deviceIndex, long numBytes);
 

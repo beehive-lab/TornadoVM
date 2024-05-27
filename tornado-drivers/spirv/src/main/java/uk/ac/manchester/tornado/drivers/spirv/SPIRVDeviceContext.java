@@ -37,6 +37,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
+import uk.ac.manchester.tornado.drivers.opencl.OCLEvent;
+import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
@@ -285,7 +288,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     private ProfilerTransfer createStartAndStopBufferTimers() {
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (this instanceof SPIRVLevelZeroDeviceContext && TornadoOptions.isProfilerEnabled()) {
             LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDeviceRuntime());
             LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDeviceRuntime());
             return new ProfilerTransfer(start, stop);
@@ -415,17 +418,23 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         if (eventId == -1) {
             return EMPTY_EVENT;
         }
-        SPIRVEventPool eventPool = getEventPool(executionPlanId);
-        LinkedList<TimeStamp> list = eventPool.getTimers(eventId);
-        EventDescriptor eventDescriptor = eventPool.getDescriptor(eventId);
-        if (TornadoOptions.USE_LEVELZERO_FOR_SPIRV) {
-            if (!TornadoOptions.isProfilerEnabled()) {
-                return new SPIRVLevelZeroEvent(eventDescriptor, eventId, null, null);
-            } else {
+        if (this instanceof SPIRVLevelZeroDeviceContext) {
+            SPIRVEventPool eventPool = getEventPool(executionPlanId);
+            LinkedList<TimeStamp> list = eventPool.getTimers(eventId);
+            EventDescriptor eventDescriptor = eventPool.getDescriptor(eventId);
+            if (TornadoOptions.isProfilerEnabled()) {
                 return new SPIRVLevelZeroEvent(eventDescriptor, eventId, list.get(0), list.get(1));
+            } else {
+                return new SPIRVLevelZeroEvent(eventDescriptor, eventId, null, null);
             }
+        } else if (this instanceof SPIRVOCLDeviceContext spirvoclDeviceContext) {
+            SPIRVOCLContext context = (SPIRVOCLContext) spirvoclDeviceContext.getSpirvContext();
+            OCLCommandQueue commandQueue = context.getCommandQueue(executionPlanId, spirvoclDeviceContext.getDeviceIndex());
+            OCLEventPool eventPool = context.getOCLEventPool(executionPlanId);
+            return new OCLEvent(eventPool.getDescriptor(eventId).getNameDescription(), commandQueue, eventId, eventPool.getOCLEvent(eventId));
+        } else {
+            throw new RuntimeException("Not implemented yet");
         }
-        throw new RuntimeException("Not implemented yet");
     }
 
     @Override

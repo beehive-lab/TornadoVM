@@ -23,17 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.api.common.Event;
-
 public class SPIRVOCLDeviceContext extends SPIRVDeviceContext {
 
     public SPIRVOCLDeviceContext(SPIRVDevice device, SPIRVContext context) {
         super(device, context);
     }
-
-    @Override
-    public Event resolveEvent(long executionPlanId, int event) {
-        return null;
-    }
-
 }

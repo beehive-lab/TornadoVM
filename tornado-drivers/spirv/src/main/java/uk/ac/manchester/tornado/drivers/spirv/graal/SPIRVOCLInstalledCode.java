@@ -31,8 +31,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
+import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLModule;
@@ -72,7 +74,8 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         // Calculate the GWS and LWS
         calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
 
-        return submit(executionPlanId, kernelPointer, meta, null);
+        submit(executionPlanId, kernelPointer, meta, null);
+        return -1;
     }
 
     private void checkStatus(int status, String lowLevelFunction) {
@@ -118,7 +121,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    public int submit(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents) {
+    public void submit(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents) {
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
@@ -130,8 +133,11 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
                 case OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE -> System.err.println("[OCL Error] Invalid Work Group Size");
             }
         }
-        updateProfiler(executionPlanId, (int) kernelEvent[0], meta);
-        return (int) kernelEvent[0];
+
+        OCLCommandQueue commandQueue = (OCLCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
+        OCLEventPool eventPool = deviceContext.getSpirvContext().getOCLEventPool(executionPlanId);
+        int value = eventPool.registerEvent(kernelEvent[0], EventDescriptor.DESC_PARALLEL_KERNEL, commandQueue);
+        updateProfiler(executionPlanId, value, meta);
     }
 
     public int launch(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents, long[] kernelEvent) {

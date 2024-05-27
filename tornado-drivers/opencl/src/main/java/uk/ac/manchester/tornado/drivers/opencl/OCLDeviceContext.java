@@ -282,12 +282,12 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        // create command queue if needed
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        long eventId = commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
+                : null);
+        return eventPool.registerEvent(eventId, EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
     }
 
     /*

@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -81,6 +82,11 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     @Override
     public OCLContextInterface getOpenCLLayer() {
+        throw new TornadoRuntimeException("Unimplemented");
+    }
+
+    @Override
+    public OCLEventPool getOCLEventPool(long executionPlanId) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 

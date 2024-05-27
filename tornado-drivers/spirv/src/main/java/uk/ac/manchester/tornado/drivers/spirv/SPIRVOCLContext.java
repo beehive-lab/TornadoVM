@@ -87,7 +87,7 @@ public class SPIRVOCLContext extends SPIRVContext {
         return getCommandQueue(executionPlanId, deviceIndex);
     }
 
-    private OCLCommandQueue getCommandQueue(long executionPlanId, int deviceIndex) {
+    public OCLCommandQueue getCommandQueue(long executionPlanId, int deviceIndex) {
         if (!commmandQueueTable.containsKey(executionPlanId)) {
             SPIRVDevice device = devices.get(deviceIndex);
             SPIRVOCLCommandQueueTable oclCommandQueueTable = new SPIRVOCLCommandQueueTable();
@@ -97,7 +97,7 @@ public class SPIRVOCLContext extends SPIRVContext {
         return commmandQueueTable.get(executionPlanId).get((SPIRVOCLDevice) devices.get(deviceIndex), (OCLContext) oclContext);
     }
 
-    private OCLEventPool getOCLEventPool(long executionPlanId) {
+    public OCLEventPool getOCLEventPool(long executionPlanId) {
         if (!oclEventPool.containsKey(executionPlanId)) {
             OCLEventPool eventPool = new OCLEventPool(EVENT_WINDOW);
             oclEventPool.put(executionPlanId, eventPool);
