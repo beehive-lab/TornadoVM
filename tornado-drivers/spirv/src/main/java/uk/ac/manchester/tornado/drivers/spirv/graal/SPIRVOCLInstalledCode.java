@@ -140,9 +140,10 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         long queuePointer = commandQueue.getCommandQueuePtr();
 
         if (meta.isWorkerGridAvailable()) {
-            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            WorkerGrid workerGrid = meta.getWorkerGrid(meta.getId());
+            assert workerGrid != null;
             return dispatcher.clEnqueueNDRangeKernel(queuePointer, kernelPointer, //
-                    meta.getDims(), grid.getGlobalOffset(), grid.getGlobalWork(), grid.getLocalWork(),//
+                    workerGrid.dimension(), workerGrid.getGlobalOffset(), workerGrid.getGlobalWork(), workerGrid.getLocalWork(),//
                     waitEvents, kernelEvent);//
         } else {
             long[] localWorkGroup = meta.getLocalWork();
@@ -174,10 +175,8 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
     }
 
     private void calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
-        long[] globalWorkGroup = new long[3];
-        long[] localWorkGroup = new long[3];
-        Arrays.fill(globalWorkGroup, 1);
-        Arrays.fill(localWorkGroup, 1);
+        long[] gwg = new long[] { 1, 1, 1 };
+        long[] lwg = new long[] { 1, 1, 1 };
 
         if (!meta.isGridSchedulerEnabled()) {
             int dims = meta.getDims();
@@ -187,16 +186,14 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             if (!meta.isLocalWorkDefined()) {
                 calculateLocalWork(meta);
             }
-
-            System.arraycopy(meta.getGlobalWork(), 0, globalWorkGroup, 0, dims);
-            System.arraycopy(meta.getLocalWork(), 0, localWorkGroup, 0, dims);
+            System.arraycopy(meta.getGlobalWork(), 0, gwg, 0, dims);
+            System.arraycopy(meta.getLocalWork(), 0, lwg, 0, dims);
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
             WorkerGrid worker = meta.getWorkerGrid(meta.getId());
-            int dims = worker.dimension();
-            System.arraycopy(worker.getGlobalWork(), 0, globalWorkGroup, 0, dims);
+            System.arraycopy(worker.getGlobalWork(), 0, gwg, 0, gwg.length);
             if (worker.getLocalWork() != null) {
-                System.arraycopy(worker.getLocalWork(), 0, localWorkGroup, 0, dims);
+                System.arraycopy(worker.getLocalWork(), 0, lwg, 0, lwg.length);
             }
         }
     }
@@ -277,8 +274,11 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
-            LevelZeroGridInfo gridInfo = new LevelZeroGridInfo(deviceContext, local);
-            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            long[] blockMaxWorkGroupSize = deviceContext.getSPIRVDevice().getDeviceMaxWorkGroupSize();
+            long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
+            long totalThreads = Arrays.stream(local).reduce(1, (a, b) -> a * b);
+            boolean checkedDimensions = totalThreads <= maxWorkGroupSize;
+
             if (!checkedDimensions) {
                 System.out.println(WARNING_THREAD_LOCAL);
                 grid.setLocalWorkToNull();
