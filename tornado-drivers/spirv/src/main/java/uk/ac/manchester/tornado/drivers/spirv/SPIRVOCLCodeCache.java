@@ -143,7 +143,7 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
             throw new TornadoRuntimeException("[ERROR] - clCreateKernel failed");
         }
 
-        SPIRVOCLModule module = new SPIRVOCLModule(programPointer, kernelPointer, entryPoint, pathToFile);
+        SPIRVOCLModule module = new SPIRVOCLModule(kernelPointer, entryPoint, pathToFile);
         final SPIRVOCLInstalledCode installedCode = new SPIRVOCLInstalledCode(entryPoint, module, deviceContext);
         
         // Install code in the code cache
