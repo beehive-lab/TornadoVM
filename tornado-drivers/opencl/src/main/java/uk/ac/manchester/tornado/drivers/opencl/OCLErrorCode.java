@@ -30,5 +30,6 @@ public class OCLErrorCode {
     public static final int CL_DEVICE_NOT_AVAILABLE = -2;
     public static final int CL_COMPILER_NOT_AVAILABLE = -3;
     // TODO: complete this list
-    public static int CL_INVALID_WORK_GROUP_SIZE = -54;
+    public static final int CL_INVALID_KERNEL_ARGS = -52;
+    public static final int CL_INVALID_WORK_GROUP_SIZE = -54;
 }

@@ -106,9 +106,11 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
 
             if (RuntimeUtilities.isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 if (!arg.isReferenceType()) {
-                    continue;
+                    // In OpenCL, we need to set the argument. But it is set as buffer pointer. So we add the kernelContext as a dummy one.
+                    status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
+                } else {
+                    status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
                 }
-                status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
                 checkStatus(status, "clSetKernelArg");
             } else {
                 TornadoInternalError.shouldNotReachHere();
@@ -121,9 +123,15 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             meta.printThreadDims();
         }
         long[] kernelEvent = new long[1];
-        final int taskEvent = launch(executionPlanId, kernelPointer, meta, waitEvents, kernelEvent);
-        updateProfiler(executionPlanId, taskEvent, meta);
-        return taskEvent;
+        final int status = launch(executionPlanId, kernelPointer, meta, waitEvents, kernelEvent);
+        if (status != OCLErrorCode.CL_SUCCESS) {
+            switch (status) {
+                case OCLErrorCode.CL_INVALID_KERNEL_ARGS -> System.err.println("[OCL Error] Invalid Kernel Args");
+                case OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE -> System.err.println("[OCL Error] Invalid Work Group Size");
+            }
+        }
+        updateProfiler(executionPlanId, (int) kernelEvent[0], meta);
+        return (int) kernelEvent[0];
     }
 
     public int launch(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents, long[] kernelEvent) {
@@ -137,7 +145,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
                     meta.getDims(), grid.getGlobalOffset(), grid.getGlobalWork(), grid.getLocalWork(),//
                     waitEvents, kernelEvent);//
         } else {
-            long[] localWorkGroup = null;
+            long[] localWorkGroup = meta.getLocalWork();
             if (!meta.shouldUseOpenCLDriverScheduling()) {
                 localWorkGroup = meta.getLocalWork();
             }
