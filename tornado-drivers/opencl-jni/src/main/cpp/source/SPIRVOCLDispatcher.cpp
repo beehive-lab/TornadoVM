@@ -48,12 +48,12 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
     #else
     cl_context context = reinterpret_cast<cl_context>(contextPointer);
     jbyte* spirv = env->GetByteArrayElements(spirvBinary, 0);
-    long* length = env->GetLongArrayElements(spirvArrayLength, 0);
+    jlong* length = env->GetLongArrayElements(spirvArrayLength, 0);
     cl_int status;
     cl_program programPointer = clCreateProgramWithIL(context, spirv , length[0], &status);
     LOG_OCL_AND_VALIDATE("clCreateProgramWithIL", status);
 
-    int statusArray[1];
+    jint* statusArray = static_cast<jint *>(malloc(sizeof(jint)));
     statusArray[0] = status;
     env->SetIntArrayRegion(errorCodeArray, 0, 1, statusArray);
 
@@ -90,7 +90,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
     const char *kernelNameC = env->GetStringUTFChars(kernelName, NULL);
     cl_int status;
     cl_kernel kernel = clCreateKernel((cl_program) programPointer,kernelNameC, &status);
-    int statusArray[1];
+    jint* statusArray = static_cast<jint *>(malloc(sizeof(jint)));
     statusArray[0] = status;
     env->SetIntArrayRegion(errorCode, 0, 1, statusArray);
     env->ReleaseStringUTFChars(kernelName, kernelNameC);
@@ -164,8 +164,8 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
     }
 
     if (kernelEventArray != nullptr) {
-        long kernelEventNative[1];
-        kernelEventNative[0] = reinterpret_cast<long>(kernelEvent);
+        jlong* kernelEventNative = static_cast<jlong *>(malloc(sizeof(jlong)));
+        kernelEventNative[0] = reinterpret_cast<jlong>(kernelEvent);
         env->SetLongArrayRegion(kernelEventArray, 0, 1, kernelEventNative);
     }
     return status;
