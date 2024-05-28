@@ -35,7 +35,7 @@ public class SPIRVTornadoDriverProvider implements TornadoBackendProvider {
 
     private final TornadoBackends priority = TornadoBackends.SPIRV;
 
-    private static final String DRIVER_NAME = "SPIRV Driver";
+    private static final String DRIVER_NAME = "SPIR-V Driver";
 
     @Override
     public String getName() {

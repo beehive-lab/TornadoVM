@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
+import java.nio.ByteBuffer;
+
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-
-import java.nio.ByteBuffer;
 
 public class PTXByteBuffer {
     protected ByteBuffer buffer;

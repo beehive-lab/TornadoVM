@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
@@ -74,6 +75,7 @@ public class OCLDevice implements OCLTargetDevice {
     private OCLLocalMemType localMemoryType;
     private int deviceVendorID;
     private OCLDeviceContextInterface deviceContext;
+    private float spirvVersion = -1;
 
     public OCLDevice(int index, long id) {
         this.index = index;
@@ -127,7 +129,6 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceMaxWorkItemSizes();
         getDeviceMaxWorkGroupSize();
         getDeviceName();
-        getDeviceVersion();
         getDeviceType();
         getDeviceVendor();
         getDriverVersion();
@@ -439,6 +440,26 @@ public class OCLDevice implements OCLTargetDevice {
     @Override
     public int deviceVersion() {
         return Integer.parseInt(getVersion().split(" ")[1].replace(".", "")) * 10;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        if (spirvVersion != -1) {
+            return spirvVersion >= 1.2;
+        } else {
+            queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_IL_VERSION.getValue());
+            String versionQuery = new String(buffer.array(), StandardCharsets.US_ASCII);
+            String[] version = versionQuery.split("_");
+            if (version.length > 1) {
+                try {
+                    spirvVersion = Float.parseFloat(version[1]);
+                    return spirvVersion >= 1.2;
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            }
+            return false;
+        }
     }
 
     public int getWordSize() {

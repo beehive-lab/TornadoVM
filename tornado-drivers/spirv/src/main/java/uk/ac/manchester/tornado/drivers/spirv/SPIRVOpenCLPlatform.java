@@ -26,13 +26,13 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
 public class SPIRVOpenCLPlatform implements SPIRVPlatform {
 
     private TornadoPlatformInterface oclPlatform;
-    private OCLExecutionEnvironment context;
+    private OCLContextInterface context;
     private List<SPIRVDevice> spirvDevices;
 
     public SPIRVOpenCLPlatform(int platformIndex, TornadoPlatformInterface oclPlatform) {
@@ -68,6 +68,16 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
             context = oclPlatform.createContext();
         }
         return new SPIRVOCLContext(this, spirvDevices, context);
+    }
+
+    @Override
+    public SPIRVDevice[] getDevices() {
+        return spirvDevices.toArray(new SPIRVDevice[0]);
+    }
+
+    @Override
+    public SPIRVRuntime getRuntime() {
+        return SPIRVRuntime.OPENCL;
     }
 
 }

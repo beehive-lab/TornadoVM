@@ -82,7 +82,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void enoughDevices() {
         super.before();
         TornadoBackend driver = getTornadoRuntime().getBackend(0);
-        if (driver.getDeviceCount() < 2) {
+        if (driver.getBackendCounter() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("Not enough devices to run tests");
         }
     }
@@ -103,7 +103,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         for (int i = 0; i < numDrivers; i++) {
             TornadoBackend driver = getTornadoRuntime().getBackend(i);
             assertNotNull(driver);
-            int numDevices = driver.getDeviceCount();
+            int numDevices = driver.getBackendCounter();
             for (int j = 0; j < numDevices; j++) {
                 assertNotNull(driver.getDevice(j));
             }
@@ -319,7 +319,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
             TaskGraph taskGraph = new TaskGraph(taskScheduleName);
             TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
 
-            final int numDevices = driver.getDeviceCount();
+            final int numDevices = driver.getBackendCounter();
             totalNumDevices += numDevices;
 
             String taskName = "t0";
@@ -359,7 +359,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         dataA.init(100);
         dataB.init(100);
 
-        if (tornadoDriver.getDeviceCount() < 2) {
+        if (tornadoDriver.getBackendCounter() < 2) {
             assertFalse("The current driver has less than 2 devices", true);
         }
 

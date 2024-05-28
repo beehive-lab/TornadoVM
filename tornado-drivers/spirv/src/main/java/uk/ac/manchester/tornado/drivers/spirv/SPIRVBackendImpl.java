@@ -48,7 +48,9 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      * Matrix of backend instances. Each row has a driver implementation (e.g.,
      * Level Zero). Each column represents a device within that backend.
      */
-    private final SPIRVBackend[][] backends;
+    private final SPIRVBackend[][] spirvBackends;
+
+    private final List<SPIRVPlatform> platforms;
 
     /**
      * Flat representation of the backends
@@ -61,26 +63,27 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      * Total number of devices available (include all backends platform and
      * devices).
      */
-    private int deviceCount;
+    private int backendCounter;
     private List<TornadoDevice> devices;
 
-    public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon) {
-        int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
-        this.logger = new TornadoLogger(this.getClass());
-        logger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
+    public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfigAccess) {
+        int numPlatforms = SPIRVRuntimeImpl.getInstance().getNumPlatforms();
+        logger = new TornadoLogger(this.getClass());
+        logger.info("[SPIR-V] Found %d platforms", numPlatforms);
 
-        if (numSPIRVPlatforms < 1) {
-            throw new TornadoBailoutRuntimeException("[Warning] No SPIRV platforms found. Deoptimizing to sequential execution");
+        if (numPlatforms < 1) {
+            throw new TornadoBailoutRuntimeException("[Warning] No SPIR-V platforms found. Deoptimizing to sequential execution");
         }
+        platforms = new ArrayList<>();
+        spirvBackends = new SPIRVBackend[numPlatforms][];
 
-        backends = new SPIRVBackend[numSPIRVPlatforms][];
+        discoverDevices(options, vmRuntime, vmConfigAccess, numPlatforms);
 
-        discoverDevices(options, vmRuntime, vmCon, numSPIRVPlatforms);
-        flatBackends = new SPIRVBackend[deviceCount];
+        flatBackends = new SPIRVBackend[backendCounter];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
             for (int j = 0; j < getNumDevicesForPlatform(i); j++, index++) {
-                flatBackends[index] = backends[i][j];
+                flatBackends[index] = spirvBackends[i][j];
             }
         }
 
@@ -88,26 +91,34 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
-            SPIRVPlatform platform = SPIRVProxy.getPlatform(platformIndex);
+            SPIRVPlatform platform = SPIRVRuntimeImpl.getInstance().getPlatform(platformIndex);
+            platforms.add(platform);
             SPIRVContext context = platform.createContext();
             int numDevices = platform.getNumDevices();
-            backends[platformIndex] = new SPIRVBackend[numDevices];
+
+            // Since a platform can have more than one device and not all of them must be SPIR-V supported,
+            // we need to filter again to only add those that support SPIR-V >= 1.2.
+            List<SPIRVBackend> backendImplementations = new ArrayList<>();
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
-                backends[platformIndex][deviceIndex] = createSPIRVJITCompiler(options, vmRuntime, vmCon, device, context);
+                if (device.isSPIRVSupported()) {
+                    backendImplementations.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context, device.getSPIRVRuntime()));
+                    backendCounter++;
+                }
             }
+            spirvBackends[platformIndex] = backendImplementations.toArray(new SPIRVBackend[0]);
         }
-        deviceCount = getNumDevices();
     }
 
-    private SPIRVBackend createSPIRVJITCompiler(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context) {
-        return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context);
+    private SPIRVBackend createSPIRVJITCompilerBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig, SPIRVDevice device, SPIRVContext context,
+            SPIRVRuntime spirvRuntime) {
+        return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context, spirvRuntime);
     }
 
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
-        SPIRVBackend backend = backends[platformIndex][deviceIndex];
+        SPIRVBackend backend = spirvBackends[platformIndex][deviceIndex];
         if (!backend.isInitialised()) {
-            logger.info("SPIRV Backend Initialization");
+            logger.info("SPIR-V Backend Initialization");
             backend.init();
         }
         return backend;
@@ -139,23 +150,15 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     private int getNumDevicesForPlatform(int platform) {
         try {
-            return backends[platform].length;
+            return spirvBackends[platform].length;
         } catch (NullPointerException e) {
             return 0;
         }
     }
 
-    private int getNumDevices() {
-        int count = 0;
-        for (int i = 0; i < getNumPlatforms(); i++) {
-            count += getNumDevicesForPlatform(i);
-        }
-        return count;
-    }
-
     @Override
-    public int getDeviceCount() {
-        return deviceCount;
+    public int getBackendCounter() {
+        return backendCounter;
     }
 
     @Override
@@ -163,7 +166,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound(STR."[ERROR]-[SPIRV-DRIVER] Device required not found: \{index} - Max: \{backends.length}");
+            throw new TornadoDeviceNotFound(STR."[ERROR]-[SPIRV-DRIVER] Device required not found: \{index} - Max: \{spirvBackends.length}");
         }
     }
 
@@ -171,7 +174,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
             devices = new ArrayList<>();
-            for (int i = 0; i < getDeviceCount(); i++) {
+            for (int i = 0; i < getBackendCounter(); i++) {
                 devices.add(flatBackends[i].getDeviceContext().asMapping());
             }
         }
@@ -184,13 +187,8 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     }
 
     @Override
-    public String getName() {
-        return "SPIRV";
-    }
-
-    @Override
     public int getNumPlatforms() {
-        return backends.length;
+        return spirvBackends.length;
     }
 
     @Override
@@ -198,7 +196,28 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         return TornadoVMBackendType.SPIRV;
     }
 
+    public SPIRVBackend getBackend(SPIRVRuntime port) {
+        for (SPIRVBackend[] spirvBackend : spirvBackends) {
+            for (SPIRVBackend backend : spirvBackend) {
+                SPIRVRuntime spirvRuntime = backend.getDeviceContext().device.getSPIRVRuntime();
+                if (spirvRuntime.equals(port)) {
+                    return backend;
+                }
+            }
+        }
+        return null;
+    }
+
     public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {
         return checkAndInitBackend(platformIndex, deviceIndex);
+    }
+
+    public List<SPIRVPlatform> getPlatforms() {
+        return this.platforms;
+    }
+
+    @Override
+    public String getName() {
+        return "SPIR-V";
     }
 }

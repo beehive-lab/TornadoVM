@@ -29,7 +29,7 @@ public interface TornadoBackend {
 
     void setDefaultDevice(int index);
 
-    int getDeviceCount();
+    int getBackendCounter();
 
     TornadoDevice getDevice(int index);
 

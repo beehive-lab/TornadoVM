@@ -180,7 +180,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+        return this.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
     }
 
     @Override

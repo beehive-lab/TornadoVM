@@ -27,11 +27,13 @@ public interface TornadoPlatformInterface {
 
     void cleanup();
 
-    OCLExecutionEnvironment createContext();
+    OCLContextInterface createContext();
 
     String getName();
 
     String getVendor();
 
     String getVersion();
+
+    boolean isSPIRVSupported();
 }

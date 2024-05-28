@@ -59,7 +59,7 @@ public class OCLEvent implements Event {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    OCLEvent(String eventNameDescription, final OCLCommandQueue queue, final int event, final long oclEventID) {
+    public OCLEvent(String eventNameDescription, final OCLCommandQueue queue, final int event, final long oclEventID) {
         this();
         this.queue = queue;
         this.localId = event;

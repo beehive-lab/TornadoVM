@@ -28,13 +28,14 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntime;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 
 /**
- * Test copies within TornadoVM and Level Zero driver.
+ * Test copies within TornadoVM and OpenCL Runtime/Level Zero Runtime.
  *
  * How to run?
  *
@@ -44,23 +45,11 @@ import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
  */
 public class TestVM {
 
-    public TornadoDevice invokeSPIRVBackend() {
-
-        // Get Tornado Runtime
-        TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-
+    public TornadoDevice invokeSPIRVBackend(SPIRVRuntime spirvRuntime) {
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultBackend();
-
-        // Get a Device
-        TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
-
-        System.out.println(STR."Selecting Device: \{device.getPhysicalDevice().getDeviceName()}");
-
-        System.out.println(STR."BACKEND: \{spirvBackend}");
-
-        return device;
-
+        SPIRVBackend spirvBackend = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getBackend(spirvRuntime);
+        System.out.println("Query SPIR_V Runtime: " + spirvBackend);
+        return spirvBackend.getDeviceContext().asMapping();
     }
 
     public void runWithTornadoVM(SPIRVTornadoDevice device, int[] a, int[] b, int[] c) {
@@ -118,8 +107,8 @@ public class TestVM {
 
     }
 
-    public void test() {
-        TornadoDevice device = invokeSPIRVBackend();
+    public void test(SPIRVRuntime runtime) {
+        TornadoDevice device = invokeSPIRVBackend(runtime);
         int[] a = new int[64];
         int[] b = new int[64];
         int[] c = new int[64];
@@ -135,6 +124,7 @@ public class TestVM {
 
     public static void main(String[] args) {
         System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestVM");
-        new TestVM().test();
+        new TestVM().test(SPIRVRuntime.OPENCL);
+        new TestVM().test(SPIRVRuntime.LEVEL_ZERO);
     }
 }

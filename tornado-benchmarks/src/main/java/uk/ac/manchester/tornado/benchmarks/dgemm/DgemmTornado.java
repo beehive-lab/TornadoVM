@@ -85,7 +85,7 @@ public class DgemmTornado extends BenchmarkDriver {
         } else {
             String filePath = "/tmp/mxmDouble.spv";
             TornadoDevice device = null;
-            int maxDevices = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+            int maxDevices = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
             for (int i = 0; i < maxDevices; i++) {
                 device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i);
                 if (device.isSPIRVSupported()) {

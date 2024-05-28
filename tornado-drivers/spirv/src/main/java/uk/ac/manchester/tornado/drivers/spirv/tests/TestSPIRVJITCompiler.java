@@ -55,8 +55,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
- * Testing the SPIRV JIT Compiler and integration with the TornadoVM SPIRV
- * Runtime.
+ * Testing the SPIR-V JIT Compiler and integration with the TornadoVM SPIR-V Runtime.
  *
  * How to run?
  *
@@ -73,7 +72,7 @@ public class TestSPIRVJITCompiler {
     }
 
     public static void main(String[] args) {
-        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
+        System.out.println("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
         new TestSPIRVJITCompiler().test();
     }
 
@@ -138,16 +137,16 @@ public class TestSPIRVJITCompiler {
         spirvTornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
-        KernelStackFrame callWrapper = spirvTornadoDevice.createKernelStackFrame(3);
-        callWrapper.setKernelContext(new HashMap<>());
+        KernelStackFrame stackFrame = spirvTornadoDevice.createKernelStackFrame(3);
+        stackFrame.setKernelContext(new HashMap<>());
 
-        // Add kernel arguments to the SPIR-V Call Stack
-        callWrapper.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
+        // Add kernel arguments to the SPIR-V Stack Frame
+        stackFrame.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
+        stackFrame.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
+        stackFrame.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Launch the generated kernel
-        installedCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
+        installedCode.launchWithoutDependencies(executionPlanId, stackFrame, null, taskMeta, 0);
 
         // Transfer the result from the device to the host (this is a blocking call)
         spirvTornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);

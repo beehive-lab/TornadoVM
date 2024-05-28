@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,46 +21,31 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.nio.ByteOrder;
+public class SPIRVOCLModule implements SPIRVModule {
 
-import uk.ac.manchester.tornado.api.TornadoTargetDevice;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+    private final long kernelPointer;
+    private final String entryPoint;
+    private final String pathToSPIRVBinary;
 
-public interface OCLTargetDevice extends TornadoTargetDevice {
+    public SPIRVOCLModule(long kernel, String entryPoint, String pathToSPIRVBinary) {
+        this.kernelPointer = kernel;
+        this.entryPoint = entryPoint;
+        this.pathToSPIRVBinary = pathToSPIRVBinary;
+    }
 
-    long getId();
+    public long getKernelPointer() {
+        return kernelPointer;
+    }
 
-    String getVersion();
+    @Override
+    public String getEntryPoint() {
+        return entryPoint;
+    }
 
-    int getIndex();
-
-    int getWordSize();
-
-    ByteOrder getByteOrder();
-
-    boolean isDeviceDoubleFPSupported();
-
-    String getDeviceExtensions();
-
-    OCLDeviceType getDeviceType();
-
-    String getDeviceVendor();
-
-    String getDriverVersion();
-
-    boolean isDeviceAvailable();
-
-    String getDeviceOpenCLCVersion();
-
-    boolean isLittleEndian();
-
-    OCLDeviceContextInterface getDeviceContext();
-
-    void setDeviceContext(OCLDeviceContextInterface deviceContext);
-
-    int deviceVersion();
-
-    boolean isSPIRVSupported();
+    @Override
+    public String getPathToSPIRVBinary() {
+        return pathToSPIRVBinary;
+    }
 }

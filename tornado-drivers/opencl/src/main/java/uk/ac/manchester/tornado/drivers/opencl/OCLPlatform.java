@@ -25,9 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import java.nio.LongBuffer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
@@ -37,11 +35,8 @@ import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 public class OCLPlatform implements TornadoPlatformInterface {
 
     private final int index;
-    private final long id;
+    private final long oclPlatformId;
     private final List<OCLTargetDevice> devices;
-
-    // FIXME <REVISIT> It seems that this object is no longer needed
-    private final Set<OCLContext> contexts;
 
     private enum Vendor {
         CODEPLAY("Codeplay"), //
@@ -64,9 +59,8 @@ public class OCLPlatform implements TornadoPlatformInterface {
 
     public OCLPlatform(int index, long id) {
         this.index = index;
-        this.id = id;
+        this.oclPlatformId = id;
         this.devices = new ArrayList<>();
-        this.contexts = new HashSet<>();
 
         final int deviceCount;
 
@@ -115,9 +109,8 @@ public class OCLPlatform implements TornadoPlatformInterface {
             deviceIds.put(device.getId());
         }
         try {
-            long contextPtr = clCreateContext(id, deviceIds.array());
+            long contextPtr = clCreateContext(oclPlatformId, deviceIds.array());
             contextObject = new OCLContext(this, contextPtr, devices);
-            contexts.add(contextObject);
         } catch (OCLException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
 
@@ -126,32 +119,36 @@ public class OCLPlatform implements TornadoPlatformInterface {
     }
 
     public void cleanup() {
-        for (OCLContext context : contexts) {
-            if (context != null) {
-                context.cleanup();
-            }
-        }
     }
 
     public String getProfile() {
-        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_PROFILE.getValue());
+        return clGetPlatformInfo(oclPlatformId, OCLPlatformInfo.CL_PLATFORM_PROFILE.getValue());
     }
 
     @Override
     public String getVersion() {
-        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
+        return clGetPlatformInfo(oclPlatformId, OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        for (OCLTargetDevice device : devices) {
+            // This indicates that this platform has at least one device with support for SPIR-V.
+            return device.isSPIRVSupported();
+        }
+        return false;
     }
 
     public String getName() {
-        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_NAME.getValue());
+        return clGetPlatformInfo(oclPlatformId, OCLPlatformInfo.CL_PLATFORM_NAME.getValue());
     }
 
     public String getVendor() {
-        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VENDOR.getValue());
+        return clGetPlatformInfo(oclPlatformId, OCLPlatformInfo.CL_PLATFORM_VENDOR.getValue());
     }
 
     public String getExtensions() {
-        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_EXTENSIONS.getValue());
+        return clGetPlatformInfo(oclPlatformId, OCLPlatformInfo.CL_PLATFORM_EXTENSIONS.getValue());
     }
 
     @Override

@@ -70,7 +70,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private boolean wasReset;
     private Set<Long> executionIDs;
 
-    OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
+    public OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
         this.device = device;
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
@@ -105,7 +105,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public String toString() {
-        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
+        return String.format("[%d] %s", this.getDevice().getIndex(), this.getDevice().getDeviceName());
     }
 
     @Override
@@ -270,7 +270,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
             oclCommandQueueTable.get(device, context);
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
-        return commandQueueTable.get(executionPlanId).get(device, context);
+        return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
     }
 
     private OCLEventPool getOCLEventPool(long executionPlanId) {
@@ -282,12 +282,12 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        // create command queue if needed
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        long eventId = commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
+                : null);
+        return eventPool.registerEvent(eventId, EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
     }
 
     /*
@@ -555,7 +555,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+        return this.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
     }
 
     @Override

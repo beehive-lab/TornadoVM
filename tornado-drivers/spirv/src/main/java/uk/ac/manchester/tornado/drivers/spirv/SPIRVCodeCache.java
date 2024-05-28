@@ -23,6 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
@@ -55,6 +59,24 @@ public abstract class SPIRVCodeCache {
 
     public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
         return cache.get(STR."\{id}-\{entryPoint}");
+    }
+
+    protected void writeBufferToFile(ByteBuffer buffer, String filepath) {
+        buffer.flip();
+        try (FileOutputStream fos = new FileOutputStream(filepath)) {
+            fos.write(buffer.array());
+        } catch (Exception e) {
+            throw new RuntimeException("[ERROR] Store of the SPIR-V File failed.");
+        } finally {
+            buffer.clear();
+        }
+    }
+
+    protected void checkBinaryFileExists(String pathToFile) {
+        final Path pathToSPIRVBin = Paths.get(pathToFile);
+        if (!pathToSPIRVBin.toFile().exists()) {
+            throw new RuntimeException("Binary File does not exist");
+        }
     }
 
     public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile);

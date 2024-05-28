@@ -126,7 +126,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
         // select device 1 it is available
         int deviceNumber = 0;
-        if (driver.getDeviceCount() > 1) {
+        if (driver.getBackendCounter() > 1) {
             deviceNumber = 1;
         }
 

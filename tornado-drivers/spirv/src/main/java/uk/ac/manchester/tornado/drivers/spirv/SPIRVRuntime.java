@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,23 +21,9 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.util.List;
-
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-
-public interface OCLExecutionEnvironment {
-
-    int getNumDevices();
-
-    List<OCLTargetDevice> devices();
-
-    TornadoDeviceContext createDeviceContext(int deviceIndex);
-
-    TornadoPlatformInterface getPlatform();
-
-    void createCommandQueue(int index);
-
-    int getPlatformIndex();
+public enum SPIRVRuntime {
+    OPENCL, //
+    LEVEL_ZERO,
 }

@@ -26,12 +26,11 @@ package uk.ac.manchester.tornado.drivers.ptx.mm;
 import static uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXMemoryManager implements TornadoMemoryProvider {
 

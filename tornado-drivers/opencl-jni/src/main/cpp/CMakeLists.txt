@@ -79,7 +79,8 @@ add_library(tornado-opencl SHARED
 	source/OpenCL.cpp
 	source/utils.cpp
 	source/opencl_time_utils.cpp
-	)
+	source/SPIRVOCLDispatcher.cpp
+)
 
 if(MSVC)
     if(CUDA_FOUND)

@@ -41,7 +41,7 @@ public abstract class TornadoTestBase {
     public void before() {
         for (int backendIndex = 0; backendIndex < TornadoRuntime.getTornadoRuntime().getNumBackends(); backendIndex++) {
             final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(backendIndex);
-            for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
+            for (int deviceIndex = 0; deviceIndex < driver.getBackendCounter(); deviceIndex++) {
                 driver.getDevice(deviceIndex).clean();
             }
         }
@@ -135,7 +135,7 @@ public abstract class TornadoTestBase {
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
             if (driver.getBackendType() != TornadoVMBackendType.PTX) {
-                int maxDevices = driver.getDeviceCount();
+                int maxDevices = driver.getBackendCounter();
                 for (int i = 0; i < maxDevices; i++) {
                     TornadoDevice device = driver.getDevice(i);
                     if (device.isSPIRVSupported()) {

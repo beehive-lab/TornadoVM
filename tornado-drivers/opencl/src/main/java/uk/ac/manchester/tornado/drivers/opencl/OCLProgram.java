@@ -218,12 +218,12 @@ public class OCLProgram {
         return sb.toString();
     }
 
-    public OCLKernel getKernel(String entryPoint) {
-        OCLKernel kernel = null;
+    public OCLKernel clCreateKernel(String entryPoint) {
+        OCLKernel kernel;
         try {
             kernel = new OCLKernel(clCreateKernel(programPointer, entryPoint), deviceContext);
         } catch (OCLException e) {
-            logger.error(e.getMessage());
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
 
         return kernel;

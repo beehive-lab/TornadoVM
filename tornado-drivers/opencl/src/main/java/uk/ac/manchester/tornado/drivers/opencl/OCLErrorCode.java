@@ -23,44 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.nio.ByteOrder;
+public class OCLErrorCode {
 
-import uk.ac.manchester.tornado.api.TornadoTargetDevice;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-
-public interface OCLTargetDevice extends TornadoTargetDevice {
-
-    long getId();
-
-    String getVersion();
-
-    int getIndex();
-
-    int getWordSize();
-
-    ByteOrder getByteOrder();
-
-    boolean isDeviceDoubleFPSupported();
-
-    String getDeviceExtensions();
-
-    OCLDeviceType getDeviceType();
-
-    String getDeviceVendor();
-
-    String getDriverVersion();
-
-    boolean isDeviceAvailable();
-
-    String getDeviceOpenCLCVersion();
-
-    boolean isLittleEndian();
-
-    OCLDeviceContextInterface getDeviceContext();
-
-    void setDeviceContext(OCLDeviceContextInterface deviceContext);
-
-    int deviceVersion();
-
-    boolean isSPIRVSupported();
+    public static final int CL_SUCCESS = 0;
+    public static final int CL_DEVICE_NOT_FOUND = -1;
+    public static final int CL_DEVICE_NOT_AVAILABLE = -2;
+    public static final int CL_COMPILER_NOT_AVAILABLE = -3;
+    // TODO: complete this list
+    public static final int CL_INVALID_KERNEL_ARGS = -52;
+    public static final int CL_INVALID_WORK_GROUP_SIZE = -54;
 }

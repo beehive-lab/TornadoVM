@@ -23,44 +23,24 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.nio.ByteOrder;
+import java.util.List;
 
-import uk.ac.manchester.tornado.api.TornadoTargetDevice;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 
-public interface OCLTargetDevice extends TornadoTargetDevice {
+public interface OCLContextInterface {
 
-    long getId();
+    int getNumDevices();
 
-    String getVersion();
+    List<OCLTargetDevice> devices();
 
-    int getIndex();
+    long getContextId();
 
-    int getWordSize();
+    TornadoDeviceContext createDeviceContext(int deviceIndex);
 
-    ByteOrder getByteOrder();
+    TornadoPlatformInterface getPlatform();
 
-    boolean isDeviceDoubleFPSupported();
+    void createCommandQueue(int index);
 
-    String getDeviceExtensions();
+    int getPlatformIndex();
 
-    OCLDeviceType getDeviceType();
-
-    String getDeviceVendor();
-
-    String getDriverVersion();
-
-    boolean isDeviceAvailable();
-
-    String getDeviceOpenCLCVersion();
-
-    boolean isLittleEndian();
-
-    OCLDeviceContextInterface getDeviceContext();
-
-    void setDeviceContext(OCLDeviceContextInterface deviceContext);
-
-    int deviceVersion();
-
-    boolean isSPIRVSupported();
 }
