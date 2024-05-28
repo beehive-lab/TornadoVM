@@ -43,7 +43,10 @@
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clCreateProgramWithIL_1native
         (JNIEnv * env, jobject object, jlong contextPointer, jbyteArray spirvBinary, jlongArray spirvArrayLength, jintArray errorCodeArray) {
 
-    auto context = reinterpret_cast<cl_context>(contextPointer);
+    #ifdef __APPLE__
+        return 0;
+    #else
+    cl_context context = reinterpret_cast<cl_context>(contextPointer);
     jbyte* spirv = env->GetByteArrayElements(spirvBinary, 0);
     long* length = env->GetLongArrayElements(spirvArrayLength, 0);
     cl_int status;
@@ -58,6 +61,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
     env->ReleaseLongArrayElements(spirvArrayLength, length, 0);
     env->ReleaseByteArrayElements(spirvBinary, spirv, 0);
     return reinterpret_cast<jlong>(programPointer);
+    #endif
 }
 
 /*
@@ -67,7 +71,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCL
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clBuildProgram_1native
         (JNIEnv * env, jobject object, jlong programPointer, jint numDevices, jlongArray devicesArray, jstring optionsString) {
-    auto *devices = static_cast<jlong *>(env->GetPrimitiveArrayCritical(devicesArray, NULL));
+    jlong *devices = static_cast<jlong *>(env->GetPrimitiveArrayCritical(devicesArray, NULL));
     const char *options = env->GetStringUTFChars(optionsString, NULL);
     cl_int status = clBuildProgram((cl_program) programPointer, (cl_uint) numDevices, (cl_device_id*) devices, options, NULL, NULL);
     LOG_OCL_AND_VALIDATE("clBuildProgram", status);
@@ -127,11 +131,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLN
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_ocl_SPIRVOCLNativeDispatcher_clEnqueueNDRangeKernel_1native
         (JNIEnv * env, jobject object, jlong commandQueuePointer, jlong kernelPointer, jint dimensions, jlongArray globalOffsets, jlongArray globalWorkGroup, jlongArray localWorkGroup, jlongArray waitEvents, jlongArray kernelEventArray) {
 
-    auto *gwo = static_cast<jlong *>((globalOffsets != nullptr) ? env->GetPrimitiveArrayCritical(globalOffsets, nullptr) : nullptr);
-    auto *gws = static_cast<jlong *>((globalWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(globalWorkGroup, nullptr) : nullptr);
-    auto *lws = static_cast<jlong *>((localWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(localWorkGroup, nullptr) : nullptr);
+    jlong *gwo = static_cast<jlong *>((globalOffsets != nullptr) ? env->GetPrimitiveArrayCritical(globalOffsets, nullptr) : nullptr);
+    jlong *gws = static_cast<jlong *>((globalWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(globalWorkGroup, nullptr) : nullptr);
+    jlong *lws = static_cast<jlong *>((localWorkGroup != nullptr) ? env->GetPrimitiveArrayCritical(localWorkGroup, nullptr) : nullptr);
 
-    auto *clWaitEvents = static_cast<jlong *>((waitEvents != nullptr) ? env->GetPrimitiveArrayCritical(waitEvents, nullptr) : nullptr);
+    jlong *clWaitEvents = static_cast<jlong *>((waitEvents != nullptr) ? env->GetPrimitiveArrayCritical(waitEvents, nullptr) : nullptr);
     jsize numEvents = 0;
     if (waitEvents != nullptr) {
         numEvents = env->GetArrayLength(waitEvents);
