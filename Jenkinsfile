@@ -33,6 +33,7 @@ pipeline {
                     // Ensure we're checking out the PR branch without merging
                     if (env.CHANGE_ID) {
                         // This is a PR build
+                        echo "This is a PR build"
                         checkout([$class: 'GitSCM',
                                   branches: [[name: "PR-${env.CHANGE_ID}"]],
                                   doGenerateSubmoduleConfigurations: false,
@@ -42,6 +43,7 @@ pipeline {
                                  ])
                     } else {
                         // This is a branch build
+                        echo "This is a branch build"
                         checkout([$class: 'GitSCM',
                                   branches: [[name: params.fullBuild_branchToBuild]],
                                   doGenerateSubmoduleConfigurations: false,
