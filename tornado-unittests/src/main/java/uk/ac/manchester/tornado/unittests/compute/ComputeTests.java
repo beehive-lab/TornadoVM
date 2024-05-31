@@ -37,21 +37,22 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
-import uk.ac.manchester.tornado.api.types.vectors.Byte3;
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.images.ImageByte3;
-import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -821,7 +822,7 @@ public class ComputeTests extends TornadoTestBase {
     }
 
     @Test
-    public void testJuliaSets() {
+    public void testJuliaSets() throws TornadoExecutionPlanException {
         final int size = 1024;
         FloatArray hue = new FloatArray(size * size);
         FloatArray brightness = new FloatArray(size * size);
@@ -832,16 +833,15 @@ public class ComputeTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, hue, brightness);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 result.set(i * size + j, Color.HSBtoRGB(hue.get(i * size + j) % 1, 1, brightness.get(i * size + j)));
             }
         }
-
-        writeFile(result, size);
 
         // Run Sequential Code
         FloatArray hueSeq = new FloatArray(size * size);
