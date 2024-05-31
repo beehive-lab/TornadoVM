@@ -26,36 +26,6 @@ pipeline {
         JAVAFX_SDK="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-21.0.3/"
     }
     stages {
-        stage('Checkout Current Branch or PR') {
-            steps {
-                step([$class: 'WsCleanup'])
-                script {
-                    // Ensure we're checking out the PR branch without merging
-                    if (env.CHANGE_ID) {
-                        // This is a PR build
-                        echo "This is a PR build"
-                        checkout([$class: 'GitSCM',
-                                  branches: [[name: "PR-${env.CHANGE_ID}"]],
-                                  doGenerateSubmoduleConfigurations: false,
-                                  extensions: [[$class: 'CleanCheckout']],
-                                  submoduleCfg: [],
-                                  userRemoteConfigs: [[url: 'https://github.com/beehive-lab/TornadoVM.git']]
-                                 ])
-                    } else {
-                        // This is a branch build
-                        echo "This is a branch build"
-                        checkout([$class: 'GitSCM',
-                                  branches: [[name: params.fullBuild_branchToBuild]],
-                                  doGenerateSubmoduleConfigurations: false,
-                                  extensions: [[$class: 'LocalBranch']],
-                                  submoduleCfg: [],
-                                  userRemoteConfigs: [[url: 'https://github.com/beehive-lab/TornadoVM.git']]
-                                 ])
-                    }
-                }
-            }
-        }
-
         stage('Prepare build') {
             steps {
                 script {
