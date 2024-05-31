@@ -18,20 +18,41 @@ pipeline {
         CORRETTO_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/amazon-corretto-21.0.3.9.1-linux-x64"
         MICROSOFT_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3+9"
         TORNADO_ROOT="/var/lib/jenkins/workspace/TornadoVM-pipeline"
-        PATH="/opt/maven/bin:/var/lib/jenkins/workspace/kfusion-tornadovm/bin:/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/bin:$PATH"    
-        TORNADO_SDK="/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/sdk" 
+        PATH="/opt/maven/bin:/var/lib/jenkins/workspace/kfusion-tornadovm/bin:/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/bin:$PATH"
+        TORNADO_SDK="/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/sdk"
         CMAKE_ROOT="/opt/jenkins/cmake-3.25.2-linux-x86_64"
         KFUSION_ROOT="/var/lib/jenkins/workspace/kfusion-tornadovm"
         TORNADO_RAY_TRACER_ROOT="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer"
         JAVAFX_SDK="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-21.0.3/"
     }
     stages {
-        stage('Checkout Current Branch') {
-            steps {
-                step([$class: 'WsCleanup'])
-                checkout([$class: 'GitSCM', branches: [[name: params.fullBuild_branchToBuild]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-tornadovm-credentials', url: 'https://github.com/beehive-lab/TornadoVM.git']]])
-            }
-        }
+        stage('Checkout Current Branch or PR') {
+                    steps {
+                        step([$class: 'WsCleanup'])
+                        script {
+                            // Ensure we're checking out the PR branch without merging
+                            if (env.CHANGE_ID) {
+                                // This is a PR build
+                                checkout([$class: 'GitSCM',
+                                          branches: [[name: "PR-${env.CHANGE_ID}"]],
+                                          doGenerateSubmoduleConfigurations: false,
+                                          extensions: [[$class: 'CleanCheckout']],
+                                          submoduleCfg: [],
+                                          userRemoteConfigs: [[url: 'https://github.com/beehive-lab/TornadoVM.git']]
+                                         ])
+                            } else {
+                                // This is a branch build
+                                checkout([$class: 'GitSCM',
+                                          branches: [[name: params.fullBuild_branchToBuild]],
+                                          doGenerateSubmoduleConfigurations: false,
+                                          extensions: [[$class: 'LocalBranch']],
+                                          submoduleCfg: [],
+                                          userRemoteConfigs: [[url: 'https://github.com/beehive-lab/TornadoVM.git']]
+                                         ])
+                            }
+                        }
+                    }
+                }
 
         stage('Prepare build') {
             steps {
