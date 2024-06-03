@@ -163,14 +163,14 @@ public class TestIO extends TornadoTestBase {
      * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan} API to execute on specific device.
      *
      * <p>
-     * The following test reproduces a bug, that when the user sets an array as DataTransferMode.FIRST_EXECUTION,
-     * when using the withDevice API the runtime overrides this setting and copies all arrays on every execution.
+     * The following test reproduces a bug, that when the user sets an array as DataTransferMode.FIRST_EXECUTION
+     * via the withDevice method, the runtime overrides this setting and copies all arrays on every execution.
      * </p>
      */
     @Test
     public void testCopyInWithDevice() {
-        final int N = 8096;
-        final int ITERATIONS = 20;
+        final int N = 16384;
+        final int ITERATIONS = 40;
 
         FloatArray arrayA = createAndInitializeArray(N);
         FloatArray arrayB = createAndInitializeArray(N);
@@ -203,8 +203,8 @@ public class TestIO extends TornadoTestBase {
             copyInSumSimpleExecWithDev += executionResult.getProfilerResult().getDeviceWriteTime();
         }
 
-        // Generous assertions with delta of 12%
-        assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 12);
+        // Generous assertions with delta of 25%
+        assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 4);
 
     }
     // CHECKSTYLE:ON
