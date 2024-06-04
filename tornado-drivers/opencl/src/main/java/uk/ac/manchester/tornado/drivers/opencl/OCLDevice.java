@@ -449,15 +449,24 @@ public class OCLDevice implements OCLTargetDevice {
         } else {
             queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_IL_VERSION.getValue());
             String versionQuery = new String(buffer.array(), StandardCharsets.US_ASCII);
-            String[] version = versionQuery.split("_");
-            if (version.length > 1) {
-                try {
-                    spirvVersion = Float.parseFloat(version[1]);
-                    return spirvVersion >= 1.2;
-                } catch (NumberFormatException e) {
-                    return false;
+            if (versionQuery.isEmpty()) {
+                return false;
+            }
+            String[] spirvVersions = versionQuery.trim().split(" ");
+            // We iterate through all supported versions and check there
+            // is support for SPIR-V >= 1.2
+            for (String version : spirvVersions) {
+                if (!version.isEmpty()) {
+                    String v = version.split("_")[1];
+                    try {
+                        spirvVersion = Float.parseFloat(v);
+                        return spirvVersion >= 1.2;
+                    } catch (NumberFormatException e) {
+                    }
                 }
             }
+            // if all versions have been visited and none of them is >= 1.2
+            // then, we return false;
             return false;
         }
     }
