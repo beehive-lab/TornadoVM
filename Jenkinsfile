@@ -165,7 +165,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
             }
         )
     }
-    stage("SPIR-V: Unit Tests") {
+    stage("SPIR-V (OpenCL Runtime): Unit Tests") {
         timeout(time: 12, unit: 'MINUTES') {
             sh 'tornado --devices'
             sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
@@ -173,6 +173,14 @@ void buildAndTest(String JDK, String tornadoProfile) {
             sh 'test-native.sh'
         }
     }
+    stage("SPIR-V (LevelZero Runtime): Unit Tests") {
+            timeout(time: 12, unit: 'MINUTES') {
+                sh 'tornado --devices'
+                sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
+                sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                sh 'test-native.sh'
+            }
+        }
     stage('Benchmarks') {
         timeout(time: 15, unit: 'MINUTES') {
             sh 'python3 tornado-assembly/src/bin/tornado-benchmarks.py --printBenchmarks '
