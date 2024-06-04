@@ -452,9 +452,9 @@ public class OCLDevice implements OCLTargetDevice {
             // We query the device properties and the current device does not support
             // OpenCL 1.2 or higher. 
             return false;
-        } else if (spirvVersion >= SPIRV_SUPPPORTED) {
+        } else if (spirvVersion > 0) {
             // We query the device properties and the device supports at least SPIR-V 1.2.
-            return spirvVersion >= 1.2;
+            return spirvVersion >= SPIRV_SUPPPORTED;
         } else {
             // Query the device properties and parse the version
             queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_IL_VERSION.getValue());
