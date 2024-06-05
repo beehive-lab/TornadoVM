@@ -112,3 +112,15 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
     env->ReleaseLongArrayElements(array, devices, 0);
     return (jlong) context;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
+ * Method:    nativeFree
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_nativeFree
+        (JNIEnv * env, jclass object, jlong nativePointer) {
+    void* ptr = reinterpret_cast<void *>(nativePointer);
+    free(ptr);
+    LOG_OCL_AND_VALIDATE("free", 0);
+}

@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 public interface OCLTargetDevice extends TornadoTargetDevice {
 
-    long getId();
+    long getDevicePointer();
 
     String getVersion();
 

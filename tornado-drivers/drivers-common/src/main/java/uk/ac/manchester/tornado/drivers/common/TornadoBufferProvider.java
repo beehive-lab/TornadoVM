@@ -153,7 +153,7 @@ public abstract class TornadoBufferProvider {
                 return freeUnusedNativeBufferAndAssignRegion(sizeInBytes);
             }
         } else {
-            throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory.");
+            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory.");
         }
     }
 

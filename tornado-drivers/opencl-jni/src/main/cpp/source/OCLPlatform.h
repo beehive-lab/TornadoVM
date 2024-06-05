@@ -64,6 +64,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clCreateContext
         (JNIEnv *, jclass, jlong, jlongArray);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
+ * Method:    nativeFree
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_nativeFree
+        (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif
