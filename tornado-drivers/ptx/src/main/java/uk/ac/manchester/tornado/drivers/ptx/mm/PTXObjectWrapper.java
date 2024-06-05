@@ -445,4 +445,9 @@ public class PTXObjectWrapper implements XPUBuffer {
         XPUBuffer.super.setIntBuffer(arr);
     }
 
+    @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
+
 }

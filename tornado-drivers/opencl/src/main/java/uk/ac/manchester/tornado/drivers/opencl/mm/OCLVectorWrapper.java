@@ -356,4 +356,9 @@ public class OCLVectorWrapper implements XPUBuffer {
     public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
+
+    @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
 }

@@ -292,4 +292,9 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         this.setSubRegionSize = batchSize;
     }
 
+    @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
+
 }

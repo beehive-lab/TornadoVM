@@ -125,6 +125,11 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
+
+    @Override
     public long size() {
         return bufferSize;
     }

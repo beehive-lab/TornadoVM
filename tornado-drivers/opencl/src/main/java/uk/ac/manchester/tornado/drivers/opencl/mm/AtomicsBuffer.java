@@ -124,4 +124,9 @@ public class AtomicsBuffer implements XPUBuffer {
         this.atomicsList = arr;
     }
 
+    @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
+
 }

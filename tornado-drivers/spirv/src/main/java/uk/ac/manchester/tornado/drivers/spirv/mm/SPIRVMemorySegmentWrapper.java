@@ -212,4 +212,9 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     public long getSizeSubRegionSize() {
         return subregionSize;
     }
+
+    @Override
+    public void releaseMemory() {
+        spirvDeviceContext.getBufferProvider().deallocate();
+    }
 }

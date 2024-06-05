@@ -316,14 +316,17 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
-        if (state.isLockedBuffer()) {
+    public synchronized int deallocate(DeviceBufferState deviceBufferState) {
+        if (deviceBufferState.isLockedBuffer()) {
             return -1;
         }
 
-        state.getXPUBuffer().deallocate();
-        state.setContents(false);
-        state.setXPUBuffer(null);
+        deviceBufferState.getXPUBuffer().deallocate();
+        if (!TornadoOptions.isReusedBuffersEnabled()) {
+            deviceBufferState.getXPUBuffer().releaseMemory();
+        }
+        deviceBufferState.setContents(false);
+        deviceBufferState.setXPUBuffer(null);
         return -1;
     }
 

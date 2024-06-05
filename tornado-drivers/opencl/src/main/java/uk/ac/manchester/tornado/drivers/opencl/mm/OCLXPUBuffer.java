@@ -457,4 +457,8 @@ public class OCLXPUBuffer implements XPUBuffer {
         return setSubRegionSize;
     }
 
+    @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
 }

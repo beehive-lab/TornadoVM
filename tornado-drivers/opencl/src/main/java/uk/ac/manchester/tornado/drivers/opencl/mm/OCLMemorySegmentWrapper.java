@@ -209,6 +209,11 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
+
+    @Override
     public long size() {
         return bufferSize;
     }

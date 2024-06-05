@@ -60,10 +60,13 @@ public interface XPUBuffer {
 
     long getSizeSubRegionSize();
 
+    void releaseMemory();
+
     default int[] getIntBuffer() {
         return null;
     }
 
     default void setIntBuffer(int[] arr) {
     }
+
 }

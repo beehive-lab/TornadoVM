@@ -618,6 +618,9 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             return -1;
         }
         deviceBufferState.getXPUBuffer().deallocate();
+        if (!TornadoOptions.isReusedBuffersEnabled()) {
+            deviceBufferState.getXPUBuffer().releaseMemory();
+        }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
         return -1;

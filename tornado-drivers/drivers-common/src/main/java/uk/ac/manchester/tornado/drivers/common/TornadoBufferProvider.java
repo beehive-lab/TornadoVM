@@ -81,6 +81,16 @@ public abstract class TornadoBufferProvider {
         }
     }
 
+    public synchronized void deallocate() {
+        // Attempts to free buffers of given size.
+        while (!freeBuffers.isEmpty()) {
+            BufferContainer bufferInfo = freeBuffers.removeFirst();
+            TornadoInternalError.guarantee(!usedBuffers.contains(bufferInfo), "This buffer should not be used");
+            currentMemoryAvailable += bufferInfo.size;
+            releaseBuffer(bufferInfo.buffer);
+        }
+    }
+
     private synchronized BufferContainer markBufferUsed(int freeBufferIndex) {
         BufferContainer buffer = freeBuffers.get(freeBufferIndex);
         usedBuffers.add(buffer);

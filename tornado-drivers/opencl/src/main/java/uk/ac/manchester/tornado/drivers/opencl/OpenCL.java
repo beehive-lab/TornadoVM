@@ -59,8 +59,9 @@ public class OpenCL {
 
     static {
         if (VIRTUAL_DEVICE_ENABLED) {
-            initializeVirtual();
+            initializeVirtualPlatform();
         } else {
+            // Initialize physical platform
             try {
                 // Loading JNI OpenCL library
                 System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
@@ -102,7 +103,7 @@ public class OpenCL {
         return platforms.size();
     }
 
-    private static void initializeVirtual() {
+    private static void initializeVirtualPlatform() {
         if (!initialised) {
             VirtualDeviceDescriptor info = VirtualJSONParser.getDeviceDescriptor();
 

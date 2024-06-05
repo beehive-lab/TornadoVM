@@ -459,4 +459,9 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     public long getSizeSubRegionSize() {
         return subRegionSize;
     }
+
+    @Override
+    public void releaseMemory() {
+        deviceContext.getBufferProvider().deallocate();
+    }
 }
