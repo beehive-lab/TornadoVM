@@ -90,7 +90,6 @@ public class OpenCL {
 
     public static void cleanup() {
         if (initialised) {
-            System.out.println("CLEAN-UP !!!!!!!!!!!!!!!");
             platforms.forEach(TornadoPlatformInterface::cleanup);
         }
     }
