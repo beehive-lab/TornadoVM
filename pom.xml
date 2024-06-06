@@ -226,8 +226,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>21</source>
-                            <target>21</target>
+                            <source>22</source>
+                            <target>22</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1047,7 +1047,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-21</id>
+            <id>graal-jdk-22</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
