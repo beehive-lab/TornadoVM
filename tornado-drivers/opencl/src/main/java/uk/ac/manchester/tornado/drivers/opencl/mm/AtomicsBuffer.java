@@ -95,7 +95,7 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deviceContext.getMemoryManager().deallocateAtomicRegion();
     }
 
@@ -125,7 +125,7 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
-    public void releaseMemory() {
+    public void deallocate() {
         deviceContext.getBufferProvider().deallocate();
     }
 

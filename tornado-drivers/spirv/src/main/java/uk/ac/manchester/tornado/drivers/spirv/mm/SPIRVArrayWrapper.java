@@ -264,7 +264,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -293,7 +293,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void releaseMemory() {
+    public void deallocate() {
         deviceContext.getBufferProvider().deallocate();
     }
 

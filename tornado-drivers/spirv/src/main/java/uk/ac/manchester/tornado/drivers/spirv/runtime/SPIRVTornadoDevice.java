@@ -375,9 +375,9 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             return -1;
         }
 
-        deviceBufferState.getXPUBuffer().deallocate();
+        deviceBufferState.getXPUBuffer().markAsFreeBuffer();
         if (!TornadoOptions.isReusedBuffersEnabled()) {
-            deviceBufferState.getXPUBuffer().releaseMemory();
+            deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);

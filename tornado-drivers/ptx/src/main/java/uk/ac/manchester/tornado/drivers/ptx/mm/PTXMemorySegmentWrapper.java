@@ -193,7 +193,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
         bufferId = INIT_VALUE;
@@ -205,7 +205,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void releaseMemory() {
+    public void deallocate() {
         deviceContext.getBufferProvider().deallocate();
     }
 
