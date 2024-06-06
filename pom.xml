@@ -201,7 +201,7 @@
         </profile>
 
         <profile>
-            <id>jdk21</id>
+            <id>jdk22</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
