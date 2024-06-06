@@ -31,7 +31,7 @@
 #define PRINT_DATA_TIMES 0
 #define PRINT_DATA_SIZES 0
 
-#define LOG_JNI 1
+#define LOG_JNI 0
 
 #define LOG_OCL_AND_VALIDATE(name, result)                     \
     if (LOG_JNI == 1)  {                                       \

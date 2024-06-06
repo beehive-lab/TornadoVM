@@ -26,7 +26,7 @@
 #define TORNADO_PTX_LOG_H
 
 #include <cuda.h>
-#define LOG_PTX 1
+#define LOG_PTX 0
 
 #define LOG_PTX_AND_VALIDATE(name, result)                      \
     if (LOG_PTX == 1)  {                                        \
