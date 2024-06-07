@@ -98,8 +98,6 @@ public class OCLPlatform implements TornadoPlatformInterface {
 
     native long clCreateContext(long platform, long[] devices) throws OCLException;
 
-    native void nativeFree(long pointer);
-
     public List<OCLTargetDevice> getDevices() {
         return devices;
     }
