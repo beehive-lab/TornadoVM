@@ -47,7 +47,7 @@ Run and Debug TornadoVM with Intellij
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Normal maven lifecycle goals like *package* and *install* will not
-result a succefull build for TornadoVM.
+result a successful build for TornadoVM.
 
 Two different configurations are needed for **Build** and **Debug**.
 
@@ -58,8 +58,8 @@ Build/Run Configuration
 
 -  **In the Project Tab:**
 
-   -  The Project SDK uses the same java version as the project (e.g. Java 17).
-   -  The Project language level is using the same java version (e.g. Java 17 with Lambdas, type annotations etc.).
+   -  The Project SDK uses the same java version as the project (e.g. Java 21).
+   -  The Project Language Level is using the same java version (e.g. Java 21 (Preview).
 
 -  **In the Modules Tab:**
 
@@ -115,8 +115,8 @@ Output should be something similar to this:
 
 .. code:: bash 
 
-   /PATH_TO_JDK/jdk1.8.0_131/bin/java
-   -server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado -Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory -Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory
+   /PATH_TO_JDK/java/current/bin/java
+    -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=...
 
 You need to copy from ``-server`` to end.
 
@@ -131,13 +131,54 @@ Then, add your own parameters similar to the following:
    uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 -  **VM Options:** What you copied from ``-server`` and on
 -  **Working Directory:** ``/home/tornadovm``
--  **JRE:** Default (Should point to the 1.8.0_131)
--  **Use classpath of module** Select from drop-down menu e.g
+-  **Module:** Default (Should point to any supported JDK 21)
+-  **Use classpath of module (-cp):** Select from drop-down menu e.g
    ``tornado-examples``
 
 Finally, you can select the new custom configuration by selecting the
 configuration from the right top drop-down menu. Now, you can run it by
 pressing the **play button** on the top right corner or **Shift+F10**.
+
+Debug/Run Configuration with a Unit-test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case you need to rerun a unit test previously executed via the terminal using the `tornado-test` utility, you will need the following configuration.
+
+To run and debug Java code through TornadoVM, a custom configuration is required.
+This configuration must include the TornadoVM `JAVA_FLAGS` and `CLASSPATHS`.
+
+Firstly, obtain the JAVA_FLAGS used by TornadoVM by executing the following commands:
+
+.. code:: bash
+
+   $ make BACKENDS={opencl,ptx,spirv}
+   $ tornado --printJavaFlags
+
+Output should be something similar to this:
+
+.. code:: bash
+
+   /PATH_TO_JDK/java/current/bin/java
+    -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=...
+
+You need to copy from ``-server`` to end.
+
+**Now, introduce a new Run Configuration**
+
+Again, **Run > Edit Configurations > Application > Add new (e.g. plus
+sign)**
+
+Then, add your own parameters similar to the following:
+
+-  **Main Class:**
+   uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner
+-  **Parameters**
+   uk.ac.manchester.tornado.unittests.foundation.TestFloats#testVectorFloatAdd
+-  **VM Options:** What you copied from ``-server`` and on
+-  **Working Directory:** ``/home/tornadovm``
+-  **Module:** Default (Should point to any JDK21)
+-  **Use classpath of module (-cp):** Select from drop-down menu e.g
+   ``tornado-unittests``
 
 CheckStyle-IDEA Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
