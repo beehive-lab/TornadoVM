@@ -567,6 +567,30 @@ public class TornadoVMInterpreter {
         resetEventIndexes(eventList);
     }
 
+    private boolean isRecompilationNeededForLastBatch(int taskIndex, SchedulableTask task, long batchThreads) {
+        return (!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads);
+    }
+
+    private boolean currentBatchUsesThreadId(int currentBatch, boolean indexInWrite) {
+        return (currentBatch > 0 && indexInWrite);
+    }
+
+    private void updateBatchThreads(SchedulableTask task, long batchThreads, boolean indexInWrite, int currentBatch) {
+        // Set the batch size in the task information
+        task.setBatchThreads(batchThreads);
+
+        // The batch size is only set once. This is because, for the calculations of the
+        // offset to be correct, we need to propagate the initial batch size, not the size
+        // of the remaining chunk, if the batches are uneven.
+        if (task.getBatchSize() == 0 && indexInWrite) {
+            task.setBatchSize(batchThreads);
+        }
+
+        if (batchThreads != 0) {
+            task.setBatchNumber(currentBatch);
+        }
+    }
+
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
 
         if (deviceForInterpreter.getDeviceContext().wasReset() && finishedWarmup) {
@@ -587,22 +611,13 @@ public class TornadoVMInterpreter {
         // Check if a different batch size was used for the same kernel or
         // if the loop index is written in the output buffer, and we are not in the first batch.
         // If any is true, then the kernel needs to be recompiled.
-        if ((!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) || (currentBatch > 0 && indexInWrite)) {
+        if (isRecompilationNeededForLastBatch(taskIndex, task, batchThreads) || currentBatchUsesThreadId(currentBatch, indexInWrite)) {
             task.forceCompilation();
             installedCodes[globalToLocalTaskIndex(taskIndex)].invalidate();
         }
 
-        // Set the batch size in the task information
-        task.setBatchThreads(batchThreads);
+        updateBatchThreads(task, batchThreads, indexInWrite, currentBatch);
 
-        // The batch size is only set once. This is because, for the calculations of the
-        // offset to be correct, we need to propagate the initial batch size, not the size
-        // of the remaining chunk, if the batches are uneven.
-        if (task.getBatchSize() == 0 && indexInWrite) {
-            task.setBatchSize(batchThreads);
-        }
-
-        task.setBatchNumber(currentBatch);
         task.enableDefaultThreadScheduler(executionContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
@@ -632,7 +647,7 @@ public class TornadoVMInterpreter {
                 profilerUpdateForPreCompiledTask(task);
                 // After the compilation has been completed, increment
                 // the batch number of the task and update it.
-                if (indexInWrite) {
+                if (indexInWrite && batchThreads != 0) {
                     task.setBatchNumber(++currentBatch);
                 }
             } catch (TornadoBailoutRuntimeException e) {
