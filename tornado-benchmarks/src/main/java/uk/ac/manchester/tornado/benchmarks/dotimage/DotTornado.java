@@ -25,7 +25,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
@@ -89,7 +88,7 @@ public class DotTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -98,7 +97,7 @@ public class DotTornado extends BenchmarkDriver {
 
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
-        benchmarkMethod(device);
+        runBenchmark(device);
         executionResult.transferToHost(c);
         executionPlan.clearProfiles();
 
@@ -117,11 +116,4 @@ public class DotTornado extends BenchmarkDriver {
         return Float.compare(maxULP, MAX_ULP) <= 0;
     }
 
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
-        }
-    }
 }

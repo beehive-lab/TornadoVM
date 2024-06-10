@@ -135,7 +135,7 @@ public class SgemmTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         if (grid != null) {
             executionPlan.withGridScheduler(grid);
         }
@@ -148,7 +148,7 @@ public class SgemmTornado extends BenchmarkDriver {
         final FloatArray result = new FloatArray(m * n);
         boolean val = true;
 
-        benchmarkMethod(device);
+        runBenchmark(device);
         executionResult.transferToHost(c);
 
         executionPlan.clearProfiles();
@@ -165,14 +165,6 @@ public class SgemmTornado extends BenchmarkDriver {
         }
         System.out.printf("Number validation: " + val + "\n");
         return val;
-    }
-
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
-        }
     }
 
 }

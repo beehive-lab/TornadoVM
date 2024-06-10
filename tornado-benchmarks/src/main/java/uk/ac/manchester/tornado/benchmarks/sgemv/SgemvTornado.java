@@ -90,7 +90,7 @@ public class SgemvTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -99,7 +99,7 @@ public class SgemvTornado extends BenchmarkDriver {
 
         final FloatArray result = new FloatArray(n);
 
-        benchmarkMethod(device);
+        runBenchmark(device);
         executionResult.transferToHost(y);
         executionPlan.clearProfiles();
 
@@ -107,14 +107,6 @@ public class SgemvTornado extends BenchmarkDriver {
 
         final float ulp = findULPDistance(y, result);
         return ulp < MAX_ULP;
-    }
-
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
-        }
     }
 
 }

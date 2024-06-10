@@ -42,7 +42,7 @@ public class MandelbrotJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         ComputeKernels.mandelbrot(size, result);
     }
 }

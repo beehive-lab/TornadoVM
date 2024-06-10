@@ -66,7 +66,7 @@ public class SgemvJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         sgemv(m, n, a, x, y);
     }
 

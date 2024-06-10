@@ -42,7 +42,7 @@ public abstract class BenchmarkDriver {
 
     protected final long iterations;
     private double elapsed;
-    private boolean validResult;
+
     private double[] timers;
 
     private List<Long> deviceKernelTimers;
@@ -75,7 +75,7 @@ public abstract class BenchmarkDriver {
 
     public abstract boolean validate(TornadoDevice device);
 
-    public abstract void benchmarkMethod(TornadoDevice device);
+    public abstract void runBenchmark(TornadoDevice device);
 
     public TaskGraph getTaskGraph() {
         return taskGraph;
@@ -104,46 +104,44 @@ public abstract class BenchmarkDriver {
     public void benchmark(TornadoDevice device, boolean isProfilerEnabled) {
 
         setUp();
-
-        validResult = (!VALIDATE) || validate(device);
-
         int size = toIntExact(iterations);
-
         timers = new double[size];
-
         if (isProfilerEnabled) {
             deviceKernelTimers = new ArrayList<>();
             deviceCopyIn = new ArrayList<>();
             deviceCopyOut = new ArrayList<>();
         }
 
-        if (validResult) {
-            for (long i = 0; i < iterations; i++) {
-                if (!skipGC()) {
-                    System.gc();
-                }
-                final long start = System.nanoTime();
-                benchmarkMethod(device);
-                final long end = System.nanoTime();
-
-                if (isProfilerEnabled) {
-                    // Ensure the execution was correct, so we can count for general stats.
-                    TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
-                    if (profilerResult.getDeviceKernelTime() != 0) {
-                        deviceKernelTimers.add(profilerResult.getDeviceKernelTime());
-                    }
-                    if (profilerResult.getDeviceWriteTime() != 0) {
-                        deviceCopyIn.add(profilerResult.getDeviceWriteTime());
-                    }
-                    if (profilerResult.getDeviceReadTime() != 0) {
-                        deviceCopyOut.add(profilerResult.getDeviceReadTime());
-                    }
-                }
-
-                timers[toIntExact(i)] = (end - start);
+        for (long i = 0; i < iterations; i++) {
+            if (!skipGC()) {
+                System.gc();
             }
-            barrier();
+            final long start = System.nanoTime();
+            runBenchmark(device);
+            final long end = System.nanoTime();
+
+            if (isProfilerEnabled) {
+                // Ensure the execution was correct, so we can count for general stats.
+                TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
+                if (profilerResult.getDeviceKernelTime() != 0) {
+                    deviceKernelTimers.add(profilerResult.getDeviceKernelTime());
+                }
+                if (profilerResult.getDeviceWriteTime() != 0) {
+                    deviceCopyIn.add(profilerResult.getDeviceWriteTime());
+                }
+                if (profilerResult.getDeviceReadTime() != 0) {
+                    deviceCopyOut.add(profilerResult.getDeviceReadTime());
+                }
+            }
+
+            timers[toIntExact(i)] = (end - start);
         }
+        barrier();
+
+        if (VALIDATE) {
+            validate(device);
+        }
+
         tearDown();
     }
 
@@ -189,14 +187,6 @@ public abstract class BenchmarkDriver {
 
     public double getAverageCopyOutTime() {
         return getAverage(toArray(deviceCopyOut));
-    }
-
-    public double getBestCopyIn() {
-        return getMin(toArray(deviceCopyIn));
-    }
-
-    public double getBestCopyOut() {
-        return getMin(toArray(deviceCopyOut));
     }
 
     public double getBestExecution() {
@@ -250,10 +240,6 @@ public abstract class BenchmarkDriver {
 
     public double getElapsedPerIteration() {
         return elapsed / iterations;
-    }
-
-    public boolean isValid() {
-        return validResult;
     }
 
     public String getPreciseSummary() {

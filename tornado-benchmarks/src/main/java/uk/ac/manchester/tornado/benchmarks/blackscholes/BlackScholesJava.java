@@ -53,7 +53,7 @@ public class BlackScholesJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         blackscholes(randArray, call, put);
     }
 }

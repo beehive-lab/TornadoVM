@@ -60,7 +60,7 @@ public class DFTJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         ComputeKernels.computeDFT(inReal, inImag, outReal, outImag);
     }
 }

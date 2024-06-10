@@ -19,10 +19,10 @@ package uk.ac.manchester.tornado.benchmarks.rotateimage;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateImageStreams;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class RotateStreams extends BenchmarkDriver {
@@ -66,7 +66,7 @@ public class RotateStreams extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         rotateImageStreams(output, m, input);
     }
 

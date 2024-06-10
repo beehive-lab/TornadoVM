@@ -73,7 +73,7 @@ public class NBodyJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         nBody(numBodies, posSeq, velSeq, delT, espSqr);
     }
 }
