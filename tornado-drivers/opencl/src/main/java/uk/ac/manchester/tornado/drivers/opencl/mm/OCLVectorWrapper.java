@@ -101,7 +101,7 @@ public class OCLVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -355,5 +355,10 @@ public class OCLVectorWrapper implements XPUBuffer {
     @Override
     public long getSizeSubRegionSize() {
         return setSubRegionSize;
+    }
+
+    @Override
+    public void deallocate() {
+        deviceContext.getBufferProvider().deallocate();
     }
 }

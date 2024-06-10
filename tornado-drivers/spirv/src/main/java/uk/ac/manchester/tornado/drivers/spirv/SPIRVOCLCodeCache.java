@@ -131,9 +131,9 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
         }
 
         OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getDevice().getDeviceRuntime();
-        int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getId() }, "");
+        int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getDevicePointer() }, "");
         if (status != OCLErrorCode.CL_SUCCESS) {
-            String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getId());
+            String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getDevicePointer());
             System.out.println(log);
             throw new TornadoRuntimeException("[ERROR] - clBuildProgram failed");
         }

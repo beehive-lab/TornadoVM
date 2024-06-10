@@ -105,7 +105,7 @@ public class OCLContext implements OCLContextInterface {
             logger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
             logger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
-            clCreateCommandQueue(contextID, device.getId(), properties);
+            clCreateCommandQueue(contextID, device.getDevicePointer(), properties);
         } catch (OCLException e) {
             logger.error(e.getMessage());
             throw new TornadoRuntimeException("[ERROR] OpenCL Command Queue Initialization not valid");

@@ -46,7 +46,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     }
 
     public long getId() {
-        return device.getId();
+        return device.getDevicePointer();
     }
 
     @Override
