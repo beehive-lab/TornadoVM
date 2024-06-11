@@ -23,7 +23,6 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -89,7 +88,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         FloatArray randArraySeq;
         FloatArray callTor;
         FloatArray putTor;
-        FloatArray calSeq;
+        FloatArray callSeq;
         FloatArray putSeq;
         boolean val;
 
@@ -98,35 +97,36 @@ public class BlackScholesTornado extends BenchmarkDriver {
         randArraySeq = new FloatArray(size);
         callTor = new FloatArray(size);
         putTor = new FloatArray(size);
-        calSeq = new FloatArray(size);
+        callSeq = new FloatArray(size);
         putSeq = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
             randArraySeq.set(i, randArray.get(i));
         }
 
-        TaskGraph taskGraph = new TaskGraph("benchmark");
-        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, randArraySeq);
-        taskGraph.task("t0", ComputeKernels::blackscholes, randArraySeq, putTor, callTor);
+        TaskGraph taskGraph = new TaskGraph("benchmark") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, randArraySeq) //
+                .task("t0", ComputeKernels::blackscholes, randArraySeq, putTor, callTor) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, putTor, callTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            TornadoExecutionResult executionResult = executionPlan.withWarmUp().execute();
-            executionResult.transferToHost(putTor, callTor);
-            executionPlan.clearProfiles();
+            executionPlan.execute();
         } catch (TornadoExecutionPlanException e) {
             e.printStackTrace();
             throw new TornadoRuntimeException(e);
         }
 
-        blackscholes(randArraySeq, putSeq, calSeq);
+        blackscholes(randArraySeq, putSeq, callSeq);
 
         for (int i = 0; i < size; i++) {
             if (abs(putTor.get(i) - putSeq.get(i)) > 0.01) {
+                System.out.printf("Number validation: " + putTor.get(i) + " vs " + putSeq.get(i) + "\n");
                 val = false;
                 break;
             }
-            if (abs(callTor.get(i) - calSeq.get(i)) > 0.01) {
+            if (abs(callTor.get(i) - callSeq.get(i)) > 0.01) {
+                System.out.printf("Number validation: " + callTor.get(i) + " vs " + callSeq.get(i) + "\n");
                 val = false;
                 break;
             }
