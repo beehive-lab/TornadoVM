@@ -149,7 +149,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public long getDeviceId() {
-        return device.getId();
+        return device.getDevicePointer();
     }
 
     @Override
@@ -175,7 +175,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
-        return context.createProgramWithBinary(device.getId(), binary, lengths, this);
+        return context.createProgramWithBinary(device.getDevicePointer(), binary, lengths, this);
     }
 
     @Override

@@ -77,7 +77,7 @@ public class VirtualOCLDevice implements OCLTargetDevice {
         this.availableProcessors = info.getAvailableProcessors();
     }
 
-    public long getId() {
+    public long getDevicePointer() {
         return -1;
     }
 

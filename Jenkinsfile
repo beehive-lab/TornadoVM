@@ -135,7 +135,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
     echo "Tornado profile " + tornadoProfile
     echo "-------------------------"
     stage('Build with ' + JDK) {
-        sh "make ${tornadoProfile} BACKEND=ptx,opencl"
+        sh "make ${tornadoProfile} BACKEND=ptx,opencl,spirv"
     }
     stage('PTX: Unit Tests') {
         timeout(time: 12, unit: 'MINUTES') {
@@ -150,21 +150,37 @@ void buildAndTest(String JDK, String tornadoProfile) {
             "OpenCL and GPU: Nvidia Quadro GP100" : {
                 timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado --devices'
-                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
-                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0"'
+                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             },
             "OpenCL and Integrated GPU: Intel(R) UHD Graphics 630" : {
                 timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado --devices'
-                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
-                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1"'
+                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             }
         )
     }
+    stage("SPIR-V (OpenCL Runtime): Unit Tests") {
+        timeout(time: 12, unit: 'MINUTES') {
+            sh 'tornado --devices'
+            sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
+            sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+            sh 'test-native.sh'
+        }
+    }
+    stage("SPIR-V (LevelZero Runtime): Unit Tests") {
+            timeout(time: 12, unit: 'MINUTES') {
+                sh 'tornado --devices'
+                sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
+                sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                sh 'test-native.sh'
+            }
+        }
     stage('Benchmarks') {
         timeout(time: 15, unit: 'MINUTES') {
             sh 'python3 tornado-assembly/src/bin/tornado-benchmarks.py --printBenchmarks '

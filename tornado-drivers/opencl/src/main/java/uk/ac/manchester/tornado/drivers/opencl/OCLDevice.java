@@ -45,7 +45,7 @@ public class OCLDevice implements OCLTargetDevice {
     private static final int INIT_VALUE = -1;
     private static final int MAX_BUFFER_SIZE = 8192;
 
-    private final long id;
+    private final long devicePtr;
     private final int index;
 
     private final ByteBuffer buffer;
@@ -81,9 +81,9 @@ public class OCLDevice implements OCLTargetDevice {
     private static final int SPIRV_NOT_SUPPORTED = -2;
     private static final float SPIRV_SUPPPORTED = 1.2f;
 
-    public OCLDevice(int index, long id) {
+    public OCLDevice(int index, long devicePointer) {
         this.index = index;
-        this.id = id;
+        this.devicePtr = devicePointer;
         this.buffer = ByteBuffer.allocate(MAX_BUFFER_SIZE);
         this.buffer.order(OpenCL.BYTE_ORDER);
         initialValues();
@@ -146,8 +146,8 @@ public class OCLDevice implements OCLTargetDevice {
 
     static native void clGetDeviceInfo(long id, int info, byte[] buffer);
 
-    public long getId() {
-        return id;
+    public long getDevicePointer() {
+        return devicePtr;
     }
 
     public int getIndex() {
@@ -506,18 +506,18 @@ public class OCLDevice implements OCLTargetDevice {
     private void queryOpenCLAPI(int value) {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, value, buffer.array());
+        clGetDeviceInfo(devicePtr, value, buffer.array());
     }
 
     @Override
     public String toString() {
-        return String.format("id=0x%x, deviceName=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable());
+        return String.format("id=0x%x, deviceName=%s, type=%s, available=%s", devicePtr, getDeviceName(), getDeviceType().toString(), isDeviceAvailable());
     }
 
     @Override
     public String getDeviceInfo() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
+        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", devicePtr, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         sb.append(String.format("Freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
         sb.append(String.format("Global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getDeviceGlobalMemorySize(), false), humanReadableByteCount(
                 getDeviceLocalMemorySize(), false)));
