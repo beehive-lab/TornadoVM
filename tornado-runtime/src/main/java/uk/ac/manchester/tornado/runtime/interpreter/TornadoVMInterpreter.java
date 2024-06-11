@@ -827,7 +827,7 @@ public class TornadoVMInterpreter {
             logger.debug("Recompiling task on device " + device);
         }
         if (kernelStackFrame[index] == null || redeployOnDevice) {
-            kernelStackFrame[index] = device.createKernelStackFrame(numArgs);
+            kernelStackFrame[index] = device.createKernelStackFrame(executionContext.getExecutionPlanId(), numArgs);
         }
         return kernelStackFrame[index];
     }

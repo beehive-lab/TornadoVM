@@ -137,7 +137,7 @@ public class TestSPIRVJITCompiler {
         spirvTornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
-        KernelStackFrame stackFrame = spirvTornadoDevice.createKernelStackFrame(3);
+        KernelStackFrame stackFrame = spirvTornadoDevice.createKernelStackFrame(executionPlanId, 3);
         stackFrame.setKernelContext(new HashMap<>());
 
         // Add kernel arguments to the SPIR-V Stack Frame

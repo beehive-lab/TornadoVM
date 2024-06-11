@@ -121,8 +121,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createKernelStackFrame(Thread.currentThread().threadId(), numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
     }
 
     @Override
@@ -137,7 +137,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask((PrebuiltTask) task);
         } else {
-            throw new RuntimeException("SchedulableTask task not supported");
+            throw new RuntimeException("SchedulableTask type is not supported: " + task.getClass());
         }
     }
 
