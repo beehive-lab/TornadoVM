@@ -105,7 +105,7 @@ public class EulerTornado extends BenchmarkDriver {
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputA, outputB, outputC, outputD, outputE);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.withDevice(device).execute();
     }

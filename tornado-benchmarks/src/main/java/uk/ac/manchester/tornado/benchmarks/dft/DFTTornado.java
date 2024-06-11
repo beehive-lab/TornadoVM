@@ -82,9 +82,9 @@ public class DFTTornado extends BenchmarkDriver {
                 .withWarmUp() //
                 .execute();
 
-        executionResult.transferToHost(outReal, outImag);
-
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
+
+        executionPlan.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor.get(i) - outImag.get(i)) > 0.01) {

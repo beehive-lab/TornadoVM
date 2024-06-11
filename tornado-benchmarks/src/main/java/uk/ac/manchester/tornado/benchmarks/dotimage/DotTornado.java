@@ -96,9 +96,7 @@ public class DotTornado extends BenchmarkDriver {
     public boolean validate(TornadoDevice device) {
 
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
-
         runBenchmark(device);
-        executionResult.transferToHost(c);
         executionPlan.clearProfiles();
 
         GraphicsKernels.dotImage(a, b, result);

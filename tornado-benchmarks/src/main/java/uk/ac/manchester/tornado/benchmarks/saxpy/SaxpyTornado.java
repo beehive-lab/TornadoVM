@@ -90,7 +90,6 @@ public class SaxpyTornado extends BenchmarkDriver {
         final FloatArray result = new FloatArray(numElements);
 
         runBenchmark(device);
-        executionResult.transferToHost(y);
         executionPlan.clearProfiles();
 
         saxpy(alpha, x, result);

@@ -108,7 +108,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputTornado);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        ImmutableTaskGraph immutableTaskGraph = s0.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDevice(device).execute();
 

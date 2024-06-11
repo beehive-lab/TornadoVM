@@ -98,9 +98,6 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         runBenchmark(device);
 
-        executionResult.transferToHost(output);
-        executionPlan.clearProfiles();
-
         GraphicsKernels.convolveImage(input, filter, result);
 
         float maxULP = 0f;

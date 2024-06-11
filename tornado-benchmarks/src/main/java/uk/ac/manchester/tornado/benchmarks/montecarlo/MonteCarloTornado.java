@@ -77,11 +77,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new FloatArray(size);
 
         ComputeKernels.monteCarlo(result, size);
-        executionPlan.withDevice(device).withWarmUp();
-        for (int i = 0; i < 3; i++) {
-            executionPlan.execute();
-        }
-        executionResult.transferToHost(output);
+        executionPlan.withDevice(device).execute();
         executionPlan.clearProfiles();
 
         for (int i = 0; i < size; i++) {

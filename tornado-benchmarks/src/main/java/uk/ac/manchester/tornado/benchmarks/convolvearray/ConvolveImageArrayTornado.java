@@ -95,8 +95,6 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         final FloatArray result = new FloatArray(imageSizeX * imageSizeY);
 
         runBenchmark(device);
-        executionResult.transferToHost(output);
-        executionPlan.clearProfiles();
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX, imageSizeY, filterSize, filterSize);
 

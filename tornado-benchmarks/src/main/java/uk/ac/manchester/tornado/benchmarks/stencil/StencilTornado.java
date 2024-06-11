@@ -102,10 +102,7 @@ public class StencilTornado extends BenchmarkDriver {
         final FloatArray b1 = new FloatArray(ainit.getSize());
 
         copy(sz, ainit, b0);
-        for (int i = 0; i < iterations; i++) {
-            runBenchmark(device);
-        }
-        barrier();
+        runBenchmark(device);
         executionPlan.clearProfiles();
 
         for (int i = 0; i < iterations; i++) {

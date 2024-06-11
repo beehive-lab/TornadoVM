@@ -149,10 +149,7 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         runBenchmark(device);
-        executionResult.transferToHost(c);
-
         executionPlan.clearProfiles();
-
         sgemm(m, n, m, a, b, result);
 
         for (int i = 0; i < n; i++) {

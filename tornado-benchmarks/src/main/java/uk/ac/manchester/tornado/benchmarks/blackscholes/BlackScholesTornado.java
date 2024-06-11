@@ -111,7 +111,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
+            executionPlan.withDevice(device).execute();
         } catch (TornadoExecutionPlanException e) {
             e.printStackTrace();
             throw new TornadoRuntimeException(e);

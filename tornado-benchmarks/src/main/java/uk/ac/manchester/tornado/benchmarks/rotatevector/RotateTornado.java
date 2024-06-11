@@ -94,7 +94,6 @@ public class RotateTornado extends BenchmarkDriver {
         final VectorFloat3 result = new VectorFloat3(numElements);
 
         runBenchmark(device);
-        executionResult.transferToHost(output);
         executionPlan.clearProfiles();
 
         rotateVector(result, m, input);
