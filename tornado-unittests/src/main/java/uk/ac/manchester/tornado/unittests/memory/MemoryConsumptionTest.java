@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 
 /**
@@ -33,7 +34,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
  *
  * <p>
  * <code>
- * tornado-test --enableProfiler console -V uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest
  * </code>
  * </p>
  */
@@ -49,7 +50,7 @@ public class MemoryConsumptionTest extends TestMemoryCommon {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
+            TornadoExecutionResult executionResult = executionPlan.withProfiler(ProfilerMode.SILENT).execute();
             long totalBytesTransferred = executionResult.getProfilerResult().getTotalBytesTransferred();
             long copyInBytes = executionResult.getProfilerResult().getTotalBytesCopyIn();
             long copyOutBytes = executionResult.getProfilerResult().getTotalBytesCopyOut();
@@ -67,7 +68,7 @@ public class MemoryConsumptionTest extends TestMemoryCommon {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            TornadoExecutionResult executionResult = executionPlan.execute();
+            TornadoExecutionResult executionResult = executionPlan.withProfiler(ProfilerMode.SILENT).execute();
             long totalMemoryUsedInBytes = executionResult.getProfilerResult().getTotalDeviceMemoryUsage();
 
             // 3 Arrays
@@ -87,7 +88,7 @@ public class MemoryConsumptionTest extends TestMemoryCommon {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
+            executionPlan.withProfiler(ProfilerMode.SILENT).execute();
             long currentMemoryUsageInBytes = executionPlan.getCurrentMemoryUsage();
             final long sizeAllocated = a.getNumBytesOfSegmentWithHeader() * 3;
             assertEquals(sizeAllocated, currentMemoryUsageInBytes);
