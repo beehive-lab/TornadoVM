@@ -43,7 +43,7 @@ public class HilbertJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         ComputeKernels.hilbertComputation(hilbertMatrix, size, size);
     }
 }

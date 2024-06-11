@@ -25,6 +25,7 @@ import java.util.Set;
 
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class BenchmarkRunner {
@@ -32,10 +33,6 @@ public abstract class BenchmarkRunner {
     private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", "False"));
 
     private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
-
-    private static final boolean TORNADO_ENABLED = Boolean.parseBoolean(TornadoRuntime.getProperty("tornado.enable", "True"));
-
-    private static final boolean TORNADO_PROFILER = TornadoRuntime.isProfilerEnabled();
 
     protected abstract String getName();
 
@@ -53,6 +50,10 @@ public abstract class BenchmarkRunner {
 
     protected int iterations;
 
+    private static boolean isProfilerEnabled() {
+        return TornadoRuntime.isProfilerEnabled();
+    }
+
     public void run() {
         final String id = getIdString();
 
@@ -60,7 +61,7 @@ public abstract class BenchmarkRunner {
         final double refElapsedMedian;
         final double refFirstIteration;
 
-        if (!TORNADO_PROFILER && !SKIP_SERIAL) {
+        if (!isProfilerEnabled() && !SKIP_SERIAL) {
             // Run the Java Reference
             final BenchmarkDriver referenceTest = getJavaDriver();
             referenceTest.benchmark(null, false);
@@ -82,17 +83,15 @@ public abstract class BenchmarkRunner {
             refFirstIteration = -1;
         }
 
-        if (TORNADO_ENABLED) {
-            final String selectedDevices = TornadoRuntime.getProperty("devices");
-            if (selectedDevices == null || selectedDevices.isEmpty()) {
-                benchmarkAll(id, refElapsed, refElapsedMedian, refFirstIteration);
-            } else {
-                benchmarkSelected(id, selectedDevices, refElapsed, refElapsedMedian, refFirstIteration);
-            }
+        final String selectedDevices = TornadoRuntime.getProperty("devices");
+        if (selectedDevices == null || selectedDevices.isEmpty()) {
+            runBenchmarkAllDevices(id, refElapsed, refElapsedMedian, refFirstIteration);
+        } else {
+            bechmarkForSelectedDevice(id, selectedDevices, refElapsed, refElapsedMedian, refFirstIteration);
         }
     }
 
-    private void benchmarkAll(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
+    private void runBenchmarkAllDevices(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
 
         final Map<Integer, Set<Integer>> blacklistedDevices = new HashMap<>();
 
@@ -117,14 +116,13 @@ public abstract class BenchmarkRunner {
 
                 TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver benchmarkDriver = getTornadoDriver();
-                boolean isProfilerEnabled = TORNADO_PROFILER;
                 try {
-                    benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled);
+                    benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                if (!isProfilerEnabled) {
+                if (!isProfilerEnabled()) {
                     System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", //
                             id, //
                             driverIndex + ":" + deviceIndex, //
@@ -150,7 +148,7 @@ public abstract class BenchmarkRunner {
         }
     }
 
-    private void benchmarkSelected(String id, String selectedDevices, double refElapsed, double refElapsedMedian, double refFirstIteration) {
+    private void bechmarkForSelectedDevice(String id, String selectedDevices, double refElapsed, double refElapsedMedian, double refFirstIteration) {
 
         final String[] devices = selectedDevices.split(",");
         for (String device : devices) {
@@ -161,40 +159,12 @@ public abstract class BenchmarkRunner {
             final BenchmarkDriver deviceTest = getTornadoDriver();
             final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
-            deviceTest.benchmark(tornadoDevice, TORNADO_PROFILER);
+            deviceTest.benchmark(tornadoDevice, isProfilerEnabled());
 
             System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex, deviceTest
                     .getPreciseSummary(), refElapsed / deviceTest.getAverage(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(), deviceTest.getCV(),
                     driver.getDevice(deviceIndex));
         }
-    }
-
-    public abstract void parseArgs(String[] args);
-
-    public static void main(String[] args) {
-
-        if (args.length < 1) {
-            String buffer = "[ERROR] Provide a benchmark to run " + "\n Example: $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner juliaset 10 4096";
-            System.out.println(buffer);
-            System.exit(0);
-        }
-
-        try {
-            final String canonicalName = String.format("%s.%s.Benchmark", BenchmarkRunner.class.getPackage().getName(), args[0]);
-            final BenchmarkRunner benchmarkRunner = (BenchmarkRunner) Class.forName(canonicalName).newInstance();
-            final String[] benchmarkArgs = Arrays.copyOfRange(args, 1, args.length);
-
-            if (System.getProperty("config") != null) {
-                TornadoRuntime.loadSettings(System.getProperty("config"));
-            }
-
-            benchmarkRunner.parseArgs(benchmarkArgs);
-            benchmarkRunner.run();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-            e.printStackTrace();
-            System.exit(0);
-        }
-
     }
 
     private void findBlacklisted(Map<Integer, Set<Integer>> blacklist, String property) {
@@ -219,4 +189,50 @@ public abstract class BenchmarkRunner {
         }
     }
 
+    public abstract void parseArgs(String[] args);
+
+    private static BenchmarkRunner getBenchMarkInstance(String benchmark) {
+        benchmark = benchmark.toLowerCase();
+        return switch (benchmark) {
+            case "addimage" -> new uk.ac.manchester.tornado.benchmarks.addImage.Benchmark();
+            case "blackscholes" -> new uk.ac.manchester.tornado.benchmarks.blackscholes.Benchmark();
+            case "blurfilter" -> new uk.ac.manchester.tornado.benchmarks.blurFilter.Benchmark();
+            case "convolvearray" -> new uk.ac.manchester.tornado.benchmarks.convolvearray.Benchmark();
+            case "convolveirray" -> new uk.ac.manchester.tornado.benchmarks.convolveimage.Benchmark();
+            case "dft" -> new uk.ac.manchester.tornado.benchmarks.dft.Benchmark();
+            case "dgemm" -> new uk.ac.manchester.tornado.benchmarks.dgemm.Benchmark();
+            case "dotimage" -> new uk.ac.manchester.tornado.benchmarks.dotimage.Benchmark();
+            case "dorvector" -> new uk.ac.manchester.tornado.benchmarks.dotvector.Benchmark();
+            case "euler" -> new uk.ac.manchester.tornado.benchmarks.euler.Benchmark();
+            case "hilbert" -> new uk.ac.manchester.tornado.benchmarks.hilbert.Benchmark();
+            case "juliaset" -> new uk.ac.manchester.tornado.benchmarks.juliaset.Benchmark();
+            case "mandelbrot" -> new uk.ac.manchester.tornado.benchmarks.mandelbrot.Benchmark();
+            case "montecarlo" -> new uk.ac.manchester.tornado.benchmarks.montecarlo.Benchmark();
+            case "nbody" -> new uk.ac.manchester.tornado.benchmarks.nbody.Benchmark();
+            case "rendertrack" -> new uk.ac.manchester.tornado.benchmarks.renderTrack.Benchmark();
+            case "rotateimage" -> new uk.ac.manchester.tornado.benchmarks.rotateimage.Benchmark();
+            case "rotatevector" -> new uk.ac.manchester.tornado.benchmarks.rotatevector.Benchmark();
+            case "saxpy" -> new uk.ac.manchester.tornado.benchmarks.saxpy.Benchmark();
+            case "sgemm" -> new uk.ac.manchester.tornado.benchmarks.sgemm.Benchmark();
+            case "spmv" -> new uk.ac.manchester.tornado.benchmarks.spmv.Benchmark();
+            case "stencil" -> new uk.ac.manchester.tornado.benchmarks.stencil.Benchmark();
+            default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
+        };
+    }
+
+    public static void main(String[] args) {
+
+        if (args.length < 1) {
+            String helpMessage = "[ERROR] Provide a benchmark to run " + "\n Example: $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner juliaset 10 4096";
+            System.out.println(helpMessage);
+            System.exit(0);
+        }
+        BenchmarkRunner benchmarkRunner = getBenchMarkInstance(args[0]);
+        final String[] benchmarkArgs = Arrays.copyOfRange(args, 1, args.length);
+        if (System.getProperty("config") != null) {
+            TornadoRuntime.loadSettings(System.getProperty("config"));
+        }
+        benchmarkRunner.parseArgs(benchmarkArgs);
+        benchmarkRunner.run();
+    }
 }

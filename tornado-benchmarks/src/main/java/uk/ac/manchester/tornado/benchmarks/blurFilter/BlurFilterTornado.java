@@ -159,7 +159,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
 
         ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph1);
-        executor.withDefaultScheduler().execute();
+        executor.withDevice(device).withDefaultScheduler().execute();
 
         // Sequential
         ComputeKernels.channelConvolution(redChannel, redFilterSeq, size, size, filter, FILTER_WIDTH);
@@ -185,7 +185,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 }
