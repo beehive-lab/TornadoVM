@@ -191,15 +191,22 @@ public class TornadoProfilerResult implements ProfileInterface {
     }
 
     /**
-     * Return the total number of bytes allocated on the target accelerators.
+     * Return the total number of bytes transferred to/from the target accelerators.
      * 
      * @return long
+     *     Number of bytes
      */
     @Override
     public long getTotalBytesTransferred() {
         return executor.getTotalBytesTransferred();
     }
 
+    /**
+     * Return the total number of bytes allocated on the target device.
+     * 
+     * @return long
+     *     Number of bytes.
+     */
     @Override
     public long getTotalDeviceMemoryUsage() {
         return executor.getTotalDeviceMemoryUsage();
