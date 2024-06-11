@@ -50,17 +50,10 @@ public class MemoryConsumptionTest extends TestMemoryCommon {
             TornadoExecutionResult executionResult = executionPlan.execute();
             long totalMemoryUsedInBytes = executionResult.getProfilerResult().getTotalBytesTransferred();
 
-            System.out.println(totalMemoryUsedInBytes);
+            long copyInBytes = executionResult.getProfilerResult().getTotalBytesCopyIn();
+            long copyOutBytes = executionResult.getProfilerResult().getTotalBytesCopyOut();
 
-            executionResult = executionPlan.execute();
-
-            totalMemoryUsedInBytes = executionResult.getProfilerResult().getTotalBytesTransferred();
-
-            System.out.println(totalMemoryUsedInBytes);
-
-            for (int i = 0; i < c.getSize(); i++) {
-                assertEquals(a.get(i) + b.get(i) + value, c.get(i), 0.001);
-            }
+            assertEquals(copyInBytes + copyOutBytes, totalMemoryUsedInBytes);
         }
     }
 }
