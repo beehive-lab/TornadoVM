@@ -514,6 +514,14 @@ public class TornadoExecutionPlan implements AutoCloseable {
             return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceKernelTime).mapToLong(Long::longValue).sum();
         }
 
+        long getTotalBytesCopyIn() {
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyIn).mapToLong(Long::longValue).sum();
+        }
+
+        long getTotalBytesCopyOut() {
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyOut).mapToLong(Long::longValue).sum();
+        }
+
         String getProfileLog() {
             return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getProfileLog).collect(Collectors.joining());
         }
@@ -565,6 +573,10 @@ public class TornadoExecutionPlan implements AutoCloseable {
 
         void withoutPrintKernel() {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
+        }
+
+        public long getTotalBytesTransferred() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalBytesTransferred).sum();
         }
     }
 }

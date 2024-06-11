@@ -39,6 +39,8 @@ public interface TornadoProfiler {
 
     long getTimer(ProfilerType type);
 
+    long getSize(ProfilerType type);
+
     long getTaskTimer(ProfilerType type, String taskName);
 
     void setTimer(ProfilerType type, long time);

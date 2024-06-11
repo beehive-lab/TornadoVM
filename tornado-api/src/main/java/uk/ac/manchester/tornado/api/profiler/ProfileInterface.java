@@ -41,4 +41,9 @@ public interface ProfileInterface {
 
     String getProfileLog();
 
+    long getTotalBytesCopyIn();
+
+    long getTotalBytesCopyOut();
+
+    long getTotalBytesTransferred();
 }

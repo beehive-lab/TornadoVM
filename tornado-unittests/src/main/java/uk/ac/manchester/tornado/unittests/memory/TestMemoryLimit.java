@@ -30,7 +30,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * How to test?
@@ -41,17 +40,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  * </p>
  */
-public class TestMemoryLimit extends TornadoTestBase {
-
-    /**
-     * Set the number of elements to select ~300MB per array.
-     */
-    private static final int NUM_ELEMENTS = 78643200;   // 314MB for an array of Integers
-    private static IntArray a = new IntArray(NUM_ELEMENTS);
-    private static IntArray b = new IntArray(NUM_ELEMENTS);
-    private static IntArray c = new IntArray(NUM_ELEMENTS);
-
-    private static int value = 10000000;
+public class TestMemoryLimit extends TestMemoryCommon {
 
     @BeforeClass
     public static void setUpBeforeClass() {

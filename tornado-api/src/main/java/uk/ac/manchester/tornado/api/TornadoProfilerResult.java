@@ -168,6 +168,16 @@ public class TornadoProfilerResult implements ProfileInterface {
         return executor.getProfileLog();
     }
 
+    @Override
+    public long getTotalBytesCopyIn() {
+        return executor.getTotalBytesCopyIn();
+    }
+
+    @Override
+    public long getTotalBytesCopyOut() {
+        return executor.getTotalBytesCopyOut();
+    }
+
     TornadoExecutor getExecutor() {
         return executor;
     }
@@ -179,4 +189,15 @@ public class TornadoProfilerResult implements ProfileInterface {
     public void dumpProfiles() {
         getExecutor().dumpProfiles();
     }
+
+    /**
+     * Return the total number of bytes allocated on the target accelerators.
+     * 
+     * @return long
+     */
+    @Override
+    public long getTotalBytesTransferred() {
+        return executor.getTotalBytesTransferred();
+    }
+
 }
