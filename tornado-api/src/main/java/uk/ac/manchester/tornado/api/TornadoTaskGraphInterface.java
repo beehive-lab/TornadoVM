@@ -121,4 +121,5 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void withGridScheduler(GridScheduler gridScheduler);
 
+    long getCurrentMemoryUsage();
 }

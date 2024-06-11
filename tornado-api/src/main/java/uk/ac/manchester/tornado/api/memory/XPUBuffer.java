@@ -60,7 +60,7 @@ public interface XPUBuffer {
 
     long getSizeSubRegionSize();
 
-    void deallocate();
+    long deallocate();
 
     default int[] getIntBuffer() {
         return null;

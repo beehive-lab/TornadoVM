@@ -208,4 +208,8 @@ public class ImmutableTaskGraph {
     public long getTotalDeviceMemoryUsage() {
         return taskGraph.getTotalDeviceMemoryUsage();
     }
+
+    public long getCurrentMemoryUsage() {
+        return taskGraph.getCurrentMemoryUsage();
+    }
 }

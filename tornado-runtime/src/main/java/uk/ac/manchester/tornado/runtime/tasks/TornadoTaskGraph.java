@@ -201,8 +201,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private long executionPlanId;
     private boolean bailout;
 
-    private long totalDeviceMemoryUsed;
-
     /**
      * Task Schedule implementation that uses GPU/FPGA and multicore backends. This constructor must be public. It is invoked using the reflection API.
      *
@@ -224,7 +222,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         streamInObjects = new ArrayList<>();
         inputModesObjects = new ArrayList<>();
         outputModeObjects = new ArrayList<>();
-        totalDeviceMemoryUsed = 0;
     }
 
     static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
@@ -485,6 +482,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void withGridScheduler(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         checkGridSchedulerNames();
+    }
+
+    @Override
+    public long getCurrentMemoryUsage() {
+        return executionContext.getCurrentMemoryUsage();
     }
 
     @Override
@@ -2311,7 +2313,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return getProfilerValue(TOTAL_KERNEL_TIME);
     }
 
-    private long __getProfilerValueFromReduceTaskGraph(ProfilerType profilerType) {
+    private long getProfilerValueFromReduceTaskGraph(ProfilerType profilerType) {
         return switch (profilerType) {
             case TOTAL_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceKernelTime();
             case TOTAL_DISPATCH_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getKernelDispatchTime();
@@ -2347,7 +2349,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private long getProfilerValue(ProfilerType profilerType) {
         if (reduceTaskGraph != null) {
-            return __getProfilerValueFromReduceTaskGraph(profilerType);
+            return getProfilerValueFromReduceTaskGraph(profilerType);
         } else {
             return __getProfilerValue(profilerType);
         }

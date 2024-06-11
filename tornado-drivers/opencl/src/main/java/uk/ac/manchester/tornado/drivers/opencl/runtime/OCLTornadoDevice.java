@@ -574,15 +574,16 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState) {
@@ -595,7 +596,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
@@ -609,21 +610,22 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState deviceBufferState) {
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long memoryRegionDellocated = 0;
         if (deviceBufferState.isLockedBuffer()) {
-            return -1;
+            return memoryRegionDellocated;
         }
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
         if (!TornadoOptions.isReusedBuffersEnabled()) {
-            deviceBufferState.getXPUBuffer().deallocate();
+            memoryRegionDellocated = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
-        return -1;
+        return memoryRegionDellocated;
     }
 
     @Override

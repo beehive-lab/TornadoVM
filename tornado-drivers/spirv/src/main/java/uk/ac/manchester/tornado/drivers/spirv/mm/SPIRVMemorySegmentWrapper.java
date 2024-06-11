@@ -214,7 +214,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
-        spirvDeviceContext.getBufferProvider().deallocate();
+    public long deallocate() {
+        return spirvDeviceContext.getBufferProvider().deallocate();
     }
 }

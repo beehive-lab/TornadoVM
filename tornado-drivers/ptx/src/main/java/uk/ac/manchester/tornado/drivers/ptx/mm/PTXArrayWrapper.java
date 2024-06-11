@@ -232,8 +232,8 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
-        deviceContext.getBufferProvider().deallocate();
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     private long sizeOf(final T array) {

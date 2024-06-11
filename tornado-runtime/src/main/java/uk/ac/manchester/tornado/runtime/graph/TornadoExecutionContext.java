@@ -90,6 +90,7 @@ public class TornadoExecutionContext {
     private boolean isPrintKernel;
 
     private long executionPlanId;  // This is set at runtime. Thus, no need to clone this value.
+    private long currentMemoryUsage;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -107,8 +108,10 @@ public class TornadoExecutionContext {
         batchSize = INIT_VALUE;
         executionPlanMemoryLimit = INIT_VALUE;
         lastDevices = new HashSet<>();
+        currentMemoryUsage = 0;
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
+
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -675,5 +678,13 @@ public class TornadoExecutionContext {
 
     public void setExecutionPlanId(long executionPlanId) {
         this.executionPlanId = executionPlanId;
+    }
+
+    public long getCurrentMemoryUsage() {
+        return currentMemoryUsage;
+    }
+
+    public void setCurrentMemoryUsage(long currentMemoryUsage) {
+        this.currentMemoryUsage = currentMemoryUsage;
     }
 }

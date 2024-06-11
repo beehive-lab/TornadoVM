@@ -393,6 +393,16 @@ public class TornadoExecutionPlan implements AutoCloseable {
         tornadoExecutor.freeDeviceMemory();
     }
 
+    /**
+     * It returns the current memory usage on the device in bytes.
+     * 
+     * @return long
+     *     Number of bytes used.
+     */
+    public long getCurrentMemoryUsage() {
+        return tornadoExecutor.getCurrentMemoryUsage();
+    }
+
     static class TornadoExecutor {
 
         private final List<ImmutableTaskGraph> immutableTaskGraphList;
@@ -581,6 +591,10 @@ public class TornadoExecutionPlan implements AutoCloseable {
 
         public long getTotalDeviceMemoryUsage() {
             return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalDeviceMemoryUsage).sum();
+        }
+
+        public long getCurrentMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentMemoryUsage).sum();
         }
     }
 }

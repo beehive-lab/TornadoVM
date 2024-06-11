@@ -287,19 +287,20 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
@@ -312,22 +313,23 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState deviceBufferState) {
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long spaceDeallocated = 0;
         if (deviceBufferState.isLockedBuffer()) {
-            return -1;
+            return spaceDeallocated;
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
         if (!TornadoOptions.isReusedBuffersEnabled()) {
-            deviceBufferState.getXPUBuffer().deallocate();
+            spaceDeallocated = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
-        return -1;
+        return spaceDeallocated;
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {

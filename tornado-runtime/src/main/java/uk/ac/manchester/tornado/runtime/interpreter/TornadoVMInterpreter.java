@@ -410,7 +410,9 @@ public class TornadoVMInterpreter {
             }
         }
 
-        int status =  deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
+        long allocationsTotalSize =  deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
+
+        executionContext.setCurrentMemoryUsage(allocationsTotalSize);
 
         if (TornadoOptions.isProfilerEnabled()) {
             // Register allocations in the profiler
@@ -418,7 +420,8 @@ public class TornadoVMInterpreter {
                 timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
             }
         }
-        return status;
+        
+        return -1;
     }
 
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
@@ -432,7 +435,10 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        return deviceForInterpreter.deallocate(objectState);
+        long spaceDeallocated =  deviceForInterpreter.deallocate(objectState);
+        // Update current device area use 
+        executionContext.setCurrentMemoryUsage(executionContext.getCurrentMemoryUsage() - spaceDeallocated);
+        return -1;
     }
 
     private void transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {

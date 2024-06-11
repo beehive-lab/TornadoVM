@@ -293,8 +293,8 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
-        deviceContext.getBufferProvider().deallocate();
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
 }

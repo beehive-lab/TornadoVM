@@ -77,4 +77,20 @@ public class MemoryConsumptionTest extends TestMemoryCommon {
         }
     }
 
+    @Test
+    public void testCurrentMemoryUsage() throws TornadoExecutionPlanException {
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestMemoryLimit::add, a, b, c, value) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+            long currentMemoryUsageInBytes = executionPlan.getCurrentMemoryUsage();
+            final long sizeAllocated = a.getNumBytesOfSegmentWithHeader() * 3;
+            assertEquals(sizeAllocated, currentMemoryUsageInBytes);
+        }
+    }
 }
