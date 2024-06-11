@@ -55,7 +55,7 @@ public class SaxpyJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         saxpy(alpha, x, y);
     }
 

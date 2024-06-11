@@ -54,8 +54,8 @@ public class DFTTornado extends BenchmarkDriver {
         outReal = new FloatArray(size);
         outImag = new FloatArray(size);
         for (int i = 0; i < size; i++) {
-            inReal.set(i, (1 /  (i + 2)));
-            inImag.set(i, (1 /  (i + 2)));
+            inReal.set(i, (1 / (i + 2)));
+            inImag.set(i, (1 / (i + 2)));
         }
     }
 
@@ -82,9 +82,9 @@ public class DFTTornado extends BenchmarkDriver {
                 .withWarmUp() //
                 .execute();
 
-        executionResult.transferToHost(outReal, outImag);
-
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
+
+        executionPlan.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor.get(i) - outImag.get(i)) > 0.01) {
@@ -112,7 +112,7 @@ public class DFTTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 }

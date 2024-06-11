@@ -64,7 +64,7 @@ public class AddJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         GraphicsKernels.addImage(a, b, c);
     }
 

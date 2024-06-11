@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
@@ -85,7 +84,7 @@ public class RotateTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -94,8 +93,7 @@ public class RotateTornado extends BenchmarkDriver {
 
         final VectorFloat3 result = new VectorFloat3(numElements);
 
-        benchmarkMethod(device);
-        executionResult.transferToHost(output);
+        runBenchmark(device);
         executionPlan.clearProfiles();
 
         rotateVector(result, m, input);
@@ -110,13 +108,5 @@ public class RotateTornado extends BenchmarkDriver {
         }
 
         return Float.compare(maxULP, MAX_ULP) <= 0;
-    }
-
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
-        }
     }
 }

@@ -77,7 +77,7 @@ public class SpmvTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -86,7 +86,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
         final FloatArray ref = new FloatArray(matrix.size);
 
-        benchmarkMethod(device);
+        runBenchmark(device);
         executionPlan.clearProfiles();
 
         spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, ref);
@@ -94,13 +94,5 @@ public class SpmvTornado extends BenchmarkDriver {
         final float ulp = findULPDistance(y, ref);
         System.out.printf("ulp is %f\n", ulp);
         return ulp < MAX_ULP;
-    }
-
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
-        }
     }
 }
