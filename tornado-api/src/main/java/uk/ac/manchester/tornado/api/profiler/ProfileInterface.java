@@ -46,4 +46,6 @@ public interface ProfileInterface {
     long getTotalBytesCopyOut();
 
     long getTotalBytesTransferred();
+
+    long getTotalDeviceMemoryUsage();
 }

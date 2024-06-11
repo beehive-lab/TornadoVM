@@ -200,4 +200,9 @@ public class TornadoProfilerResult implements ProfileInterface {
         return executor.getTotalBytesTransferred();
     }
 
+    @Override
+    public long getTotalDeviceMemoryUsage() {
+        return executor.getTotalDeviceMemoryUsage();
+    }
+
 }

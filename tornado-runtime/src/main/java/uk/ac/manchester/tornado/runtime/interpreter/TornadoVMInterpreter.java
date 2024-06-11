@@ -410,7 +410,15 @@ public class TornadoVMInterpreter {
             }
         }
 
-        return deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
+        int status =  deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            // Register allocations in the profiler
+            for (XPUDeviceBufferState objectState : objectStates) {
+                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+            }
+        }
+        return status;
     }
 
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {

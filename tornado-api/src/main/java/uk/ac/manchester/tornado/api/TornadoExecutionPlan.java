@@ -578,5 +578,9 @@ public class TornadoExecutionPlan implements AutoCloseable {
         public long getTotalBytesTransferred() {
             return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalBytesTransferred).sum();
         }
+
+        public long getTotalDeviceMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalDeviceMemoryUsage).sum();
+        }
     }
 }

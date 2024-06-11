@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.ALLOCATION_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_IN_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
@@ -489,6 +490,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
+    }
+
+    @Override
+    public long getTotalDeviceMemoryUsage() {
+        return getProfilerValue(ALLOCATION_BYTES);
     }
 
     @Override
@@ -2317,6 +2323,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case TOTAL_TASK_GRAPH_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalTime();
             case TOTAL_COPY_IN_SIZE_BYTES -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalBytesCopyIn();
             case TOTAL_COPY_OUT_SIZE_BYTES -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalBytesCopyOut();
+            case ALLOCATION_BYTES -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalDeviceMemoryUsage();
             default -> 0L;
         };
     }
@@ -2333,6 +2340,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case TOTAL_TASK_GRAPH_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             case TOTAL_COPY_IN_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES);
             case TOTAL_COPY_OUT_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES);
+            case ALLOCATION_BYTES -> timeProfiler.getSize(ProfilerType.ALLOCATION_BYTES);
             default -> 0L;
         };
     }

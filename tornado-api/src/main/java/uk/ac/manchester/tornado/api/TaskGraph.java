@@ -925,4 +925,8 @@ public class TaskGraph implements TaskGraphInterface {
     public long getTotalBytesTransferred() {
         return taskGraphImpl.getTotalBytesTransferred();
     }
+
+    public long getTotalDeviceMemoryUsage() {
+        return taskGraphImpl.getTotalDeviceMemoryUsage();
+    }
 }

@@ -31,14 +31,16 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 /**
  * How to test?
  *
+ * <p>
  * <code>
  * tornado-test --enableProfiler console -V uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest
  * </code>
+ * </p>
  */
 public class MemoryConsumptionTest extends TestMemoryCommon {
 
     @Test
-    public void testMemoryConsumption() throws TornadoExecutionPlanException {
+    public void testMemoryTransferBytes() throws TornadoExecutionPlanException {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -48,12 +50,31 @@ public class MemoryConsumptionTest extends TestMemoryCommon {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             TornadoExecutionResult executionResult = executionPlan.execute();
-            long totalMemoryUsedInBytes = executionResult.getProfilerResult().getTotalBytesTransferred();
-
+            long totalBytesTransferred = executionResult.getProfilerResult().getTotalBytesTransferred();
             long copyInBytes = executionResult.getProfilerResult().getTotalBytesCopyIn();
             long copyOutBytes = executionResult.getProfilerResult().getTotalBytesCopyOut();
-
-            assertEquals(copyInBytes + copyOutBytes, totalMemoryUsedInBytes);
+            assertEquals(copyInBytes + copyOutBytes, totalBytesTransferred);
         }
     }
+
+    @Test
+    public void testTotalMemoryUsage() throws TornadoExecutionPlanException {
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestMemoryLimit::add, a, b, c, value) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            long totalMemoryUsedInBytes = executionResult.getProfilerResult().getTotalDeviceMemoryUsage();
+
+            // 3 Arrays
+            final long sizeAllocated = a.getNumBytesOfSegmentWithHeader() * 3;
+            assertEquals(sizeAllocated, totalMemoryUsedInBytes);
+
+        }
+    }
+
 }

@@ -204,4 +204,8 @@ public class ImmutableTaskGraph {
     public long getTotalBytesTransferred() {
         return taskGraph.getTotalBytesTransferred();
     }
+
+    public long getTotalDeviceMemoryUsage() {
+        return taskGraph.getTotalDeviceMemoryUsage();
+    }
 }
