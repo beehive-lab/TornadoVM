@@ -23,9 +23,10 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -124,7 +125,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
         return null;
     }
 
@@ -139,17 +140,17 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         return -1;
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         return -1;
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
+    public synchronized long deallocate(DeviceBufferState state) {
         return 0;
     }
 

@@ -53,12 +53,13 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
         return DEVICE_AVAILABLE_MEMORY;
     }
 
-    public OCLKernelStackFrame createKernelStackFrame(long threadId, final int numberOfArguments) {
-        if (!oclKernelStackFrame.containsKey(threadId)) {
+    public OCLKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
+        if (!oclKernelStackFrame.containsKey(executionPlanId)) {
+            // Create one stack frame per execution plan ID 
             long kernelStackFramePtr = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
-            oclKernelStackFrame.put(threadId, new OCLKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
+            oclKernelStackFrame.put(executionPlanId, new OCLKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
         }
-        return oclKernelStackFrame.get(threadId);
+        return oclKernelStackFrame.get(executionPlanId);
     }
 
     public XPUBuffer createAtomicsBuffer(final int[] array) {
@@ -69,7 +70,7 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
      * Allocate regions on the device.
      */
     public void allocateDeviceMemoryRegions() {
-        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4).getBuffer();
+        this.constantPointer = createBuffer(4, OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
         allocateAtomicRegion();
     }
 

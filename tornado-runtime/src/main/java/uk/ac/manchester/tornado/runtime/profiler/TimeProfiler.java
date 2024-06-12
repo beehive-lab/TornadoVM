@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime.profiler;
 
 import java.util.HashMap;
+import java.util.Set;
 
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -42,7 +43,7 @@ public class TimeProfiler implements TornadoProfiler {
     private HashMap<ProfilerType, Long> profilerTime;
     private HashMap<String, HashMap<ProfilerType, Long>> taskTimers;
     private HashMap<String, HashMap<ProfilerType, String>> taskPowerMetrics;
-    private HashMap<String, HashMap<ProfilerType, Long>> taskThroughputMetrics;
+    private HashMap<String, HashMap<ProfilerType, Long>> taskSizeMetrics;
     private HashMap<String, HashMap<ProfilerType, String>> taskDeviceIdentifiers;
     private HashMap<String, HashMap<ProfilerType, String>> taskMethodNames;
 
@@ -56,19 +57,19 @@ public class TimeProfiler implements TornadoProfiler {
         taskPowerMetrics = new HashMap<>();
         taskDeviceIdentifiers = new HashMap<>();
         taskMethodNames = new HashMap<>();
-        taskThroughputMetrics = new HashMap<>();
+        taskSizeMetrics = new HashMap<>();
         taskBackends = new HashMap<>();
         indent = new StringBuilder("");
     }
 
     @Override
     public synchronized void addValueToMetric(ProfilerType type, String taskName, long value) {
-        if (!taskThroughputMetrics.containsKey(taskName)) {
-            taskThroughputMetrics.put(taskName, new HashMap<>());
+        if (!taskSizeMetrics.containsKey(taskName)) {
+            taskSizeMetrics.put(taskName, new HashMap<>());
         }
-        HashMap<ProfilerType, Long> profilerType = taskThroughputMetrics.get(taskName);
+        HashMap<ProfilerType, Long> profilerType = taskSizeMetrics.get(taskName);
         profilerType.put(type, profilerType.get(type) != null ? profilerType.get(type) + value : value);
-        taskThroughputMetrics.put(taskName, profilerType);
+        taskSizeMetrics.put(taskName, profilerType);
     }
 
     @Override
@@ -156,6 +157,20 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
+    public long getSize(ProfilerType type) {
+        // for all tasks in the task graph, accumulate the size
+        Set<String> strings = taskSizeMetrics.keySet();
+        long size = 0;
+        for (String s : taskSizeMetrics.keySet()) {
+            HashMap<ProfilerType, Long> copySizes = taskSizeMetrics.get(s);
+            if (copySizes.containsKey(type)) {
+                size += copySizes.get(type);
+            }
+        }
+        return size;
+    }
+
+    @Override
     public long getTaskTimer(ProfilerType type, String taskName) {
         if (!taskTimers.containsKey(taskName)) {
             return 0;
@@ -208,8 +223,8 @@ public class TimeProfiler implements TornadoProfiler {
         for (ProfilerType p : profilerTime.keySet()) {
             json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + profilerTime.get(p) + "\",\n");
         }
-        if (taskThroughputMetrics.containsKey(NO_TASK_NAME)) {
-            HashMap<ProfilerType, Long> noTaskValues = taskThroughputMetrics.get(NO_TASK_NAME);
+        if (taskSizeMetrics.containsKey(NO_TASK_NAME)) {
+            HashMap<ProfilerType, Long> noTaskValues = taskSizeMetrics.get(NO_TASK_NAME);
             for (ProfilerType p : noTaskValues.keySet()) {
                 json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + noTaskValues.get(p) + "\",\n");
             }
@@ -228,9 +243,9 @@ public class TimeProfiler implements TornadoProfiler {
             json.append(indent.toString() + "\"" + ProfilerType.METHOD + "\"" + ": " + "\"" + taskMethodNames.get(p).get(ProfilerType.METHOD) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE_ID + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE_ID) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
-            if (taskThroughputMetrics.containsKey(p)) {
-                for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {
-                    json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
+            if (taskSizeMetrics.containsKey(p)) {
+                for (ProfilerType p1 : taskSizeMetrics.get(p).keySet()) {
+                    json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskSizeMetrics.get(p).get(p1) + "\",\n");
                 }
             }
             if (taskPowerMetrics.containsKey(p)) {
@@ -266,7 +281,7 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public synchronized void clean() {
-        taskThroughputMetrics.clear();
+        taskSizeMetrics.clear();
         profilerTime.clear();
         taskTimers.clear();
         indent = new StringBuilder("");

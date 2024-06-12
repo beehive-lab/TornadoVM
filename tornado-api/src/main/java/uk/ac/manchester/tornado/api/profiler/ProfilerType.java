@@ -33,6 +33,7 @@ public enum ProfilerType {
     COPY_OUT_SIZE_BYTES_SYNC("CopyOut-Size-Sync-(Bytes)"),
     DEVICE_ID("Device-ID"),
     DEVICE("Device"),
+    ALLOCATION_BYTES("Allocation-(Bytes)"),
     TOTAL_COPY_IN_SIZE_BYTES("CopyIn-Size-(Bytes)"),
     TOTAL_COPY_OUT_SIZE_BYTES("CopyOut-Size-(Bytes)"),
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver"),

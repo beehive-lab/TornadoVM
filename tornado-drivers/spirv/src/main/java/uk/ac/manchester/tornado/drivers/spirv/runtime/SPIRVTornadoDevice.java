@@ -121,8 +121,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createKernelStackFrame(Thread.currentThread().threadId(), numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
     }
 
     @Override
@@ -137,7 +137,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask((PrebuiltTask) task);
         } else {
-            throw new RuntimeException("SchedulableTask task not supported");
+            throw new RuntimeException("SchedulableTask type is not supported: " + task.getClass());
         }
     }
 
@@ -331,15 +331,16 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state) {
@@ -352,7 +353,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
@@ -366,22 +367,23 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState deviceBufferState) {
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long deallocatedSpace = 0;
         if (deviceBufferState.isLockedBuffer()) {
-            return -1;
+            return deallocatedSpace;
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
         if (!TornadoOptions.isReusedBuffersEnabled()) {
-            deviceBufferState.getXPUBuffer().deallocate();
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
-        return -1;
+        return deallocatedSpace;
     }
 
     /**

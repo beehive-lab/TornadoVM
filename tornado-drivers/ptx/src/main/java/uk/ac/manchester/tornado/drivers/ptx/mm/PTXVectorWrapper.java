@@ -120,8 +120,8 @@ public class PTXVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
-        deviceContext.getBufferProvider().deallocate();
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override

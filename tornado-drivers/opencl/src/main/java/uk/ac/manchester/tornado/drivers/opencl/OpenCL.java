@@ -185,7 +185,7 @@ public class OpenCL {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionContextId, numArgs);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values

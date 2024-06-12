@@ -410,7 +410,18 @@ public class TornadoVMInterpreter {
             }
         }
 
-        return deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
+        long allocationsTotalSize =  deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
+
+        executionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            // Register allocations in the profiler
+            for (XPUDeviceBufferState objectState : objectStates) {
+                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+            }
+        }
+        
+        return -1;
     }
 
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
@@ -424,7 +435,10 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        return deviceForInterpreter.deallocate(objectState);
+        long spaceDeallocated =  deviceForInterpreter.deallocate(objectState);
+        // Update current device area use 
+        executionContext.setCurrentDeviceMemoryUsage(executionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
+        return -1;
     }
 
     private void transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
@@ -842,7 +856,7 @@ public class TornadoVMInterpreter {
             logger.debug("Recompiling task on device " + device);
         }
         if (kernelStackFrame[index] == null || redeployOnDevice) {
-            kernelStackFrame[index] = device.createKernelStackFrame(numArgs);
+            kernelStackFrame[index] = device.createKernelStackFrame(executionContext.getExecutionPlanId(), numArgs);
         }
         return kernelStackFrame[index];
     }

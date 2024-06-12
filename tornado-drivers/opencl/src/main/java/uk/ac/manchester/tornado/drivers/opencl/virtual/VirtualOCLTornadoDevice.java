@@ -172,7 +172,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
         return null;
     }
 
@@ -280,19 +280,19 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
+    public synchronized long deallocate(DeviceBufferState state) {
         unimplemented();
         return -1;
     }
