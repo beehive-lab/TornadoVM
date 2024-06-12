@@ -372,18 +372,18 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public synchronized long deallocate(DeviceBufferState deviceBufferState) {
-        long spaceDeallocated = 0;
+        long deallocatedSpace = 0;
         if (deviceBufferState.isLockedBuffer()) {
-            return spaceDeallocated;
+            return deallocatedSpace;
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
         if (!TornadoOptions.isReusedBuffersEnabled()) {
-            spaceDeallocated = deviceBufferState.getXPUBuffer().deallocate();
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
-        return spaceDeallocated;
+        return deallocatedSpace;
     }
 
     /**

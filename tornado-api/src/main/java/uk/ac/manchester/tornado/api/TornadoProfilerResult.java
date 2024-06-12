@@ -40,9 +40,10 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  * @since TornadoVM-0.15
  */
 public class TornadoProfilerResult implements ProfileInterface {
-    private TornadoExecutor executor;
 
-    public TornadoProfilerResult(TornadoExecutor executor) {
+    private final TornadoExecutor executor;
+
+    TornadoProfilerResult(TornadoExecutor executor) {
         this.executor = executor;
     }
 
@@ -168,11 +169,25 @@ public class TornadoProfilerResult implements ProfileInterface {
         return executor.getProfileLog();
     }
 
+    /**
+     * Returns the total number of bytes that were transferred to the hardware
+     * accelerator (host to device) for the current execution of the execution plan.
+     * 
+     * @return long
+     *     Number of bytes
+     */
     @Override
     public long getTotalBytesCopyIn() {
         return executor.getTotalBytesCopyIn();
     }
 
+    /**
+     * Returns the total number of bytes that were transferred to the host
+     * (device to host) for the current execution of the execution plan.
+     *
+     * @return long
+     *     Number of bytes
+     */
     @Override
     public long getTotalBytesCopyOut() {
         return executor.getTotalBytesCopyOut();

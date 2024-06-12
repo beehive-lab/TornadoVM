@@ -615,17 +615,17 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public synchronized long deallocate(DeviceBufferState deviceBufferState) {
-        long memoryRegionDellocated = 0;
+        long deallocatedSpace = 0;
         if (deviceBufferState.isLockedBuffer()) {
-            return memoryRegionDellocated;
+            return deallocatedSpace;
         }
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
         if (!TornadoOptions.isReusedBuffersEnabled()) {
-            memoryRegionDellocated = deviceBufferState.getXPUBuffer().deallocate();
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
-        return memoryRegionDellocated;
+        return deallocatedSpace;
     }
 
     @Override

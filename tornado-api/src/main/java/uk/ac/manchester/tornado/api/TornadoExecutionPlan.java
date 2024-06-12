@@ -399,8 +399,8 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * @return long
      *     Number of bytes used.
      */
-    public long getCurrentMemoryUsage() {
-        return tornadoExecutor.getCurrentMemoryUsage();
+    public long getCurrentDeviceMemoryUsage() {
+        return tornadoExecutor.getCurrentDeviceMemoryUsage();
     }
 
     static class TornadoExecutor {
@@ -585,16 +585,16 @@ public class TornadoExecutionPlan implements AutoCloseable {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
         }
 
-        public long getTotalBytesTransferred() {
+        long getTotalBytesTransferred() {
             return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalBytesTransferred).sum();
         }
 
-        public long getTotalDeviceMemoryUsage() {
+        long getTotalDeviceMemoryUsage() {
             return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalDeviceMemoryUsage).sum();
         }
 
-        public long getCurrentMemoryUsage() {
-            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentMemoryUsage).sum();
+        long getCurrentDeviceMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
         }
     }
 }

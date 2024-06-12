@@ -201,15 +201,15 @@ public class ImmutableTaskGraph {
         taskGraph.withGridScheduler(gridScheduler);
     }
 
-    public long getTotalBytesTransferred() {
+    long getTotalBytesTransferred() {
         return taskGraph.getTotalBytesTransferred();
     }
 
-    public long getTotalDeviceMemoryUsage() {
+    long getTotalDeviceMemoryUsage() {
         return taskGraph.getTotalDeviceMemoryUsage();
     }
 
-    public long getCurrentMemoryUsage() {
-        return taskGraph.getCurrentMemoryUsage();
+    long getCurrentDeviceMemoryUsage() {
+        return taskGraph.getCurrentDeviceMemoryUsage();
     }
 }

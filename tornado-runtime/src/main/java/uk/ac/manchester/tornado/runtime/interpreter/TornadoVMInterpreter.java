@@ -412,7 +412,7 @@ public class TornadoVMInterpreter {
 
         long allocationsTotalSize =  deviceForInterpreter.allocateObjects(objects, sizeBatch, objectStates);
 
-        executionContext.setCurrentMemoryUsage(allocationsTotalSize);
+        executionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
         if (TornadoOptions.isProfilerEnabled()) {
             // Register allocations in the profiler
@@ -437,7 +437,7 @@ public class TornadoVMInterpreter {
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         long spaceDeallocated =  deviceForInterpreter.deallocate(objectState);
         // Update current device area use 
-        executionContext.setCurrentMemoryUsage(executionContext.getCurrentMemoryUsage() - spaceDeallocated);
+        executionContext.setCurrentDeviceMemoryUsage(executionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
         return -1;
     }
 

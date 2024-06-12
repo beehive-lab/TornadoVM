@@ -922,15 +922,15 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withGridScheduler(gridScheduler);
     }
 
-    public long getTotalBytesTransferred() {
+    long getTotalBytesTransferred() {
         return taskGraphImpl.getTotalBytesTransferred();
     }
 
-    public long getTotalDeviceMemoryUsage() {
+    long getTotalDeviceMemoryUsage() {
         return taskGraphImpl.getTotalDeviceMemoryUsage();
     }
 
-    public long getCurrentMemoryUsage() {
-        return taskGraphImpl.getCurrentMemoryUsage();
+    long getCurrentDeviceMemoryUsage() {
+        return taskGraphImpl.getCurrentDeviceMemoryUsage();
     }
 }

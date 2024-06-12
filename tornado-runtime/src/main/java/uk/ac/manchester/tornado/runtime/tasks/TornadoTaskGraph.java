@@ -485,8 +485,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public long getCurrentMemoryUsage() {
-        return executionContext.getCurrentMemoryUsage();
+    public long getCurrentDeviceMemoryUsage() {
+        return executionContext.getCurrentDeviceMemoryUsage();
     }
 
     @Override
