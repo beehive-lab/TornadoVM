@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.profiler;
 
-public interface ProfileInterface {
+public interface ProfilerInterface {
 
     long getTotalTime();
 

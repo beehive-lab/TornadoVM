@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 
 /**
  * Object that stores all information related to profiling an executor. To be
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  *
  * @since TornadoVM-0.15
  */
-public class TornadoProfilerResult implements ProfileInterface {
+public class TornadoProfilerResult implements ProfilerInterface {
 
     private final TornadoExecutor executor;
 
