@@ -198,7 +198,7 @@ public abstract class BenchmarkRunner {
             case "blackscholes" -> new uk.ac.manchester.tornado.benchmarks.blackscholes.Benchmark();
             case "blurfilter" -> new uk.ac.manchester.tornado.benchmarks.blurFilter.Benchmark();
             case "convolvearray" -> new uk.ac.manchester.tornado.benchmarks.convolvearray.Benchmark();
-            case "convolveirray" -> new uk.ac.manchester.tornado.benchmarks.convolveimage.Benchmark();
+            case "convolveimage" -> new uk.ac.manchester.tornado.benchmarks.convolveimage.Benchmark();
             case "dft" -> new uk.ac.manchester.tornado.benchmarks.dft.Benchmark();
             case "dgemm" -> new uk.ac.manchester.tornado.benchmarks.dgemm.Benchmark();
             case "dotimage" -> new uk.ac.manchester.tornado.benchmarks.dotimage.Benchmark();
