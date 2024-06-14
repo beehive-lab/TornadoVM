@@ -468,6 +468,8 @@
                                 </arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>
+                                <arg>java.base/jdk.internal.foreign=tornado.drivers.opencl</arg>
+                                <arg>--add-opens</arg>
                                 <arg>java.base/java.lang=tornado.drivers.opencl</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.opencl</arg>

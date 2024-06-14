@@ -89,3 +89,4 @@
 --add-exports jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.opencl
 --add-exports jdk.graal.compiler/jdk.graal.compiler.word=tornado.drivers.opencl
 --add-exports jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.opencl
+--add-exports java.base/jdk.internal.foreign=tornado.drivers.opencl

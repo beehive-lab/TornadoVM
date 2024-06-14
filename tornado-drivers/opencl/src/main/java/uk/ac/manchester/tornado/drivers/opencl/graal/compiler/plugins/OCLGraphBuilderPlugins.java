@@ -69,6 +69,7 @@ import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaConstant;
@@ -401,7 +402,7 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, MemorySegment.class);
+        Registration r = new Registration(plugins, AbstractMemorySegmentImpl.class);
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
