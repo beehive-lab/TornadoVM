@@ -250,6 +250,29 @@ public enum PTXKind implements PlatformKind {
         return null;
     }
 
+    public static PTXAssembler.PTXBinaryTemplate resolvePrivatePointerCopyTemplate(ResolvedJavaType type) {
+        return resolvePrivatePointerCopyTemplate(type.getJavaKind());
+    }
+
+    public static PTXAssembler.PTXBinaryTemplate resolvePrivatePointerCopyTemplate(JavaKind type) {
+        if (type == JavaKind.Int) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_INT_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Double) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_DOUBLE_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Float) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_FLOAT_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Short) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_SHORT_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Long) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_LONG_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Char) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_CHAR_ARRAY_PTR_COPY;
+        } else if (type == JavaKind.Byte) {
+            return PTXAssembler.PTXBinaryTemplate.LOCAL_BYTE_ARRAY_PTR_COPY;
+        }
+        return null;
+    }
+
     public static PTXKind resolveToVectorKind(ResolvedJavaType type) {
         if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
             String typeName = type.getName();

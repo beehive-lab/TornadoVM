@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURound
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.ADD;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.DIV_APPROX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.MUL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.MUL_LO;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.SUB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ASSIGN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
@@ -789,5 +790,59 @@ public class PTXLIRStmt {
             asm.emitSymbol(STMT_DELIMITER);
             asm.eol();
         }
+    }
+
+    @Opcode("PRIVATE_ARRAY_COPY")
+    public static class PrivateArrayCopyStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<PrivateArrayCopyStmt> TYPE = LIRInstructionClass.create(PrivateArrayCopyStmt.class);
+        @Use
+        protected Value index;
+        @Use
+        protected Value arrayToBeCopied;
+        @Use
+        protected Value multResult;
+        @Use
+        protected Value addResult;
+        @Use
+        protected Value offset;
+
+        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value multResult, Value addResult, Value offset) {
+            super(TYPE);
+            this.index = index;
+            this.arrayToBeCopied = arrayToBeCopied;
+            this.multResult = multResult;
+            this.addResult = addResult;
+            this.offset = offset;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // mult index with offset
+            asm.emitSymbol(TAB);
+            // s32 should be deducted
+            asm.emit(MUL_LO + DOT + multResult.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(multResult);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(index);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset);
+            asm.delimiter();
+            asm.eol();
+            // add base with offset
+            // u32 should be deducted
+            asm.emitSymbol(TAB);
+            asm.emit(ADD + DOT + addResult.getPlatformKind());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(addResult);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(multResult);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(arrayToBeCopied);
+            asm.delimiter();
+            asm.eol();
+        }
+
     }
 }

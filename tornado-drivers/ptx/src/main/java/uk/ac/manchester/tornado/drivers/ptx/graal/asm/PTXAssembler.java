@@ -727,6 +727,14 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".local .u16 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", ".local .s8 %s[%s]");
 
+        public static final PTXBinaryTemplate LOCAL_FLOAT_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array float", "ld.local.f32 %s, [%s]");
+        public static final PTXBinaryTemplate LOCAL_INT_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array int", "ld.local.s32 %s, [%s]");
+        public static final PTXBinaryTemplate LOCAL_DOUBLE_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array double", "ld.local.f64 %s, [%s]");
+        public static final PTXBinaryTemplate LOCAL_LONG_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array long", "ld.local.s64 %s, [%s]");
+        public static final PTXBinaryTemplate LOCAL_SHORT_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array short", "ld.local.s16 %s, [%s]");
+        public static final PTXBinaryTemplate LOCAL_CHAR_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array char", "ld.local.u16 %s, [%s]");
+        public static final PTXBinaryTemplate LOCAL_BYTE_ARRAY_PTR_COPY = new PTXBinaryTemplate("local pointer copy array byte", "ld.local.s8 %s, [%s]");
+
         public static final PTXBinaryTemplate NEW_SHARED_FLOAT_ARRAY = new PTXBinaryTemplate("shared memory array float", ".shared .f32 %s[%s]");
         public static final PTXBinaryTemplate NEW_SHARED_INT_ARRAY = new PTXBinaryTemplate("shared memory array int", ".shared .s32 %s[%s]");
         public static final PTXBinaryTemplate NEW_SHARED_DOUBLE_ARRAY = new PTXBinaryTemplate("shared memory array double", ".shared .f64 %s[%s]");
