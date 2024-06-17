@@ -51,4 +51,8 @@ public class OCLCPUScheduler extends OCLKernelScheduler {
         meta.setLocalWorkToNull();
     }
 
+    @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
+    }
+
 }

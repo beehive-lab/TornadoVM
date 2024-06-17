@@ -63,44 +63,48 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
                 localWork[2] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[2], meta.getGlobalWork()[2], 3);
                 localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 3);
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 3);
-
-                localWork[2] = checkAndAdaptLocalDimensions(localWork)[2];
-                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
-                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
                 break;
             case 2:
                 localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 2);
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 2);
-
-                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
-                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
                 break;
             case 1:
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 1);
-
-                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
                 break;
             default:
                 break;
         }
     }
 
-    private int calculateGroupSize(long maxBlockSize, long globalWorkSize, int dim) {
-        if (maxBlockSize == globalWorkSize) {
-            maxBlockSize /= 4;
+    /**
+     * Checks if the selected local work group does not exceed the maximum work group size permitted by the driver.
+     * If it does, it uses a heuristic to set the local work group.
+     *
+     * @param meta
+     *     TaskMetaData.
+     */
+    @Override
+    public void checkAndAdaptLocalWork(final TaskMetaData meta) {
+        final long[] localWork = meta.getLocalWork();
+        if (localWork == null) {
+            return;
         }
-
-        int value = (int) Math.min(maxBlockSize, globalWorkSize);
-        if (value == 0) {
-            return 1;
+        switch (meta.getDims()) {
+            case 3:
+                localWork[2] = checkAndAdaptLocalDimensions(localWork)[2];
+                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
+                break;
+            case 2:
+                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
+                break;
+            case 1:
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
+                break;
+            default:
+                break;
         }
-        while (globalWorkSize % value != 0) {
-            value--;
-        }
-        if (value >= 32 && dim > 1) {
-            value /= 2;
-        }
-        return value;
     }
 
     private long[] checkAndAdaptLocalDimensions(long[] localWorkGroups) {
@@ -134,6 +138,24 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
                 break;
         }
         return newLocalWorkGroup;
+    }
+
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize, int dim) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
+        if (value == 0) {
+            return 1;
+        }
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        if (value >= 32 && dim > 1) {
+            value /= 2;
+        }
+        return value;
     }
 
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {

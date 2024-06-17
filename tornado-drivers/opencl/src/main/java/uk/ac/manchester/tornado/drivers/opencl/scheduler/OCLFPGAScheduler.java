@@ -73,6 +73,10 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
     }
 
     @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
+    }
+
+    @Override
     public int launch(long executionPlanId, final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
         if (meta.isWorkerGridAvailable()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
