@@ -62,8 +62,8 @@ public class SPIRVRuntimeImpl {
     private synchronized void init() {
         if (platforms == null) {
             SPIRVDispatcher[] dispatchers = new SPIRVDispatcher[SPIRVRuntimeType.values().length];
-            SPIRVLevelZeroDriver levelZeroDriver = new SPIRVLevelZeroDriver();
-            SPIRVOpenCLDriver openCLDriver = new SPIRVOpenCLDriver();
+            SPIRVDispatcher levelZeroDriver = new SPIRVLevelZeroDriver();
+            SPIRVDispatcher openCLDriver = new SPIRVOpenCLDriver();
             int index = 0;
             if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("opencl")) {
                 dispatchers[index++] = openCLDriver;
