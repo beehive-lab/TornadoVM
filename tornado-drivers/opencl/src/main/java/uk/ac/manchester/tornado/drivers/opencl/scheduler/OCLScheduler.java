@@ -40,7 +40,7 @@ public class OCLScheduler {
         int majorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[0]);
         int minorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[1]);
 
-        return majorVersion >= NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER && minorVersion >= NVIDIA_MINOR_VERSION_GENERIC_SCHEDULER
+        return majorVersion >= NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER && minorVersion >= NVIDIA_MINOR_VERSION_GENERIC_SCHEDULER;
     }
 
     private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
