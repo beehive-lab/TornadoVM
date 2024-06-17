@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntime;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeType;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
 
@@ -62,7 +62,7 @@ public class SPIRVArchitecture extends Architecture {
     private static final int RETURN_ADDRESS_SIZE = 0;
     public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
 
-    public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder, SPIRVRuntime runtime) {
+    public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder, SPIRVRuntimeType runtime) {
         super(BACKEND_ARCHITECTURE + "@" + runtime.name(), wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
     }
 

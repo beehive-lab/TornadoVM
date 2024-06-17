@@ -76,8 +76,8 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
     }
 
     @Override
-    public SPIRVRuntime getRuntime() {
-        return SPIRVRuntime.OPENCL;
+    public SPIRVRuntimeType getRuntime() {
+        return SPIRVRuntimeType.OPENCL;
     }
 
 }

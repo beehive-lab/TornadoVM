@@ -101,7 +101,7 @@ public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
     }
 
     @Override
-    public SPIRVRuntime getRuntime() {
-        return SPIRVRuntime.LEVEL_ZERO;
+    public SPIRVRuntimeType getRuntime() {
+        return SPIRVRuntimeType.LEVEL_ZERO;
     }
 }

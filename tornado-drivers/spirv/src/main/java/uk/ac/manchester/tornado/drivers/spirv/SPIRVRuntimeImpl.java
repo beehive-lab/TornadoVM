@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
 /**
  * Class for Calling JNI methods that can dispatch SPIR-V code.
  * code.
@@ -39,6 +42,8 @@ import java.util.stream.IntStream;
  * <p>
  */
 public class SPIRVRuntimeImpl {
+
+    private final String ERROR_PLATFORM_NOT_IMPLEMENTED = "SPIR-V Runtime Implementation not supported: " + TornadoOptions.SPIRV_DISPATCHER + " \nUse \"opencl\" or \"levelzero\"";
 
     private List<SPIRVPlatform> platforms;
     private static SPIRVRuntimeImpl instance;
@@ -56,9 +61,19 @@ public class SPIRVRuntimeImpl {
 
     private synchronized void init() {
         if (platforms == null) {
-            SPIRVDispatcher[] dispatchers = new SPIRVDispatcher[SPIRVRuntime.values().length];
-            dispatchers[SPIRVRuntime.OPENCL.ordinal()] = new SPIRVOpenCLDriver();
-            dispatchers[SPIRVRuntime.LEVEL_ZERO.ordinal()] = new SPIRVLevelZeroDriver();
+            SPIRVDispatcher[] dispatchers = new SPIRVDispatcher[SPIRVRuntimeType.values().length];
+            SPIRVDispatcher levelZeroDriver = new SPIRVLevelZeroDriver();
+            SPIRVDispatcher openCLDriver = new SPIRVOpenCLDriver();
+            int index = 0;
+            if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("opencl")) {
+                dispatchers[index++] = openCLDriver;
+                dispatchers[index] = levelZeroDriver;
+            } else if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("levelzero")) {
+                dispatchers[index++] = levelZeroDriver;
+                dispatchers[index] = openCLDriver;
+            } else {
+                throw new TornadoRuntimeException(ERROR_PLATFORM_NOT_IMPLEMENTED);
+            }
 
             platforms = new ArrayList<>();
             for (SPIRVDispatcher dispatcher : dispatchers) {
