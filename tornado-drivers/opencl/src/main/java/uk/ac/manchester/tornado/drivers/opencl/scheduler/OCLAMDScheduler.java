@@ -86,6 +86,10 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
         }
     }
 
+    @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
+    }
+
     private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;

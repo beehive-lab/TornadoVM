@@ -54,6 +54,8 @@ public abstract class OCLKernelScheduler {
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
 
+    public abstract void checkAndAdaptLocalWork(final TaskMetaData meta);
+
     public long[] getDefaultLocalWorkGroup() {
         return null;
     }
@@ -129,6 +131,7 @@ public abstract class OCLKernelScheduler {
             }
             if (!meta.isLocalWorkDefined()) {
                 calculateLocalWork(meta);
+                checkAndAdaptLocalWork(meta);
             }
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
