@@ -196,7 +196,7 @@ public class TornadoOptions {
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
     /**
-     * Use Level Zero or OpenCL as default SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero"
+     * Use Level Zero or OpenCL as the SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero". The default option is "opencl".
      */
     public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "opencl");
     /**
