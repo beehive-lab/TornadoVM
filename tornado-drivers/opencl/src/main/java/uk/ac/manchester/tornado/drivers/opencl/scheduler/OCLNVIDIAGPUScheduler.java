@@ -27,6 +27,8 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.util.Arrays;
+
 public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
     private static final int WARP_SIZE = 32;
@@ -61,13 +63,22 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
                 localWork[2] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[2], meta.getGlobalWork()[2], 3);
                 localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 3);
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 3);
+
+                localWork[2] = checkAndAdaptLocalDimensions(localWork)[2];
+                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
                 break;
             case 2:
                 localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1], 2);
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 2);
+
+                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
                 break;
             case 1:
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0], 1);
+
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
                 break;
             default:
                 break;
@@ -90,6 +101,39 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
             value /= 2;
         }
         return value;
+    }
+
+    private long[] checkAndAdaptLocalDimensions(long[] localWorkGroups) {
+        long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
+        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
+        long totalThreads = Arrays.stream(localWorkGroups).reduce(1, (a, b) -> a * b);
+
+        if (totalThreads > maxWorkGroupSize) {
+            //Get the remaining valid number of local work-items
+            return adaptLocalDimensions(localWorkGroups, maxWorkGroupSize);
+        }
+
+        return localWorkGroups;
+    }
+
+    private long[] adaptLocalDimensions(long[] localWorkGroups, long maxWorkGroupSize) {
+        long[] newLocalWorkGroup = new long[localWorkGroups.length];
+        switch (localWorkGroups.length) {
+            case 3:
+                newLocalWorkGroup[0] = localWorkGroups[0];
+                newLocalWorkGroup[1] = localWorkGroups[1];
+                newLocalWorkGroup[2] = maxWorkGroupSize / (newLocalWorkGroup[0] * newLocalWorkGroup[1]);
+                break;
+            case 2:
+                newLocalWorkGroup[1] = maxWorkGroupSize / localWorkGroups[0];
+                break;
+            case 1:
+                newLocalWorkGroup[0] = maxWorkGroupSize;
+                break;
+            default:
+                break;
+        }
+        return newLocalWorkGroup;
     }
 
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
