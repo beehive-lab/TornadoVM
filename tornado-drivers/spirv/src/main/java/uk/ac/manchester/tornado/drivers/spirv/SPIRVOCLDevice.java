@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,94 +34,94 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     // Holds a reference to the OpenCL device implementation from the OpenCL
     // backend. It reuses the JNI low level code from the OpenCL Backend.
-    private OCLTargetDevice device;
+    private final OCLTargetDevice oclDevice;
 
     public SPIRVOCLDevice(int platformIndex, int deviceIndex, OCLTargetDevice device) {
         super(platformIndex, deviceIndex);
-        this.device = device;
+        this.oclDevice = device;
     }
 
     public int deviceVersion() {
-        return device.deviceVersion();
+        return oclDevice.deviceVersion();
     }
 
     public long getId() {
-        return device.getDevicePointer();
+        return oclDevice.getDevicePointer();
     }
 
     @Override
     public boolean isDeviceDoubleFPSupported() {
-        return device.isDeviceDoubleFPSupported();
+        return oclDevice.isDeviceDoubleFPSupported();
     }
 
     @Override
     public String getDeviceExtensions() {
-        return device.getDeviceExtensions();
+        return oclDevice.getDeviceExtensions();
     }
 
     @Override
     public ByteOrder getByteOrder() {
-        return device.getByteOrder();
+        return oclDevice.getByteOrder();
     }
 
     @Override
     public String getName() {
-        return "SPIRV OCL - " + device.getDeviceName();
+        return "SPIRV OCL - " + oclDevice.getDeviceName();
     }
 
     @Override
     public OCLTargetDevice getDeviceRuntime() {
-        return device;
+        return oclDevice;
     }
 
     @Override
     public String getDeviceName() {
-        return device.getDeviceName();
+        return oclDevice.getDeviceName();
     }
 
     @Override
     public long getDeviceGlobalMemorySize() {
-        return device.getDeviceGlobalMemorySize();
+        return oclDevice.getDeviceGlobalMemorySize();
     }
 
     @Override
     public long getDeviceLocalMemorySize() {
-        return device.getDeviceLocalMemorySize();
+        return oclDevice.getDeviceLocalMemorySize();
     }
 
     @Override
     public int getDeviceMaxComputeUnits() {
-        return device.getDeviceMaxComputeUnits();
+        return oclDevice.getDeviceMaxComputeUnits();
     }
 
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
-        return device.getDeviceMaxWorkItemSizes();
+        return oclDevice.getDeviceMaxWorkItemSizes();
     }
 
     @Override
     public long[] getDeviceMaxWorkGroupSize() {
-        return device.getDeviceMaxWorkGroupSize();
+        return oclDevice.getDeviceMaxWorkGroupSize();
     }
 
     @Override
     public int getMaxThreadsPerBlock() {
-        return device.getMaxThreadsPerBlock();
+        return oclDevice.getMaxThreadsPerBlock();
     }
 
     @Override
     public int getDeviceMaxClockFrequency() {
-        return device.getDeviceMaxClockFrequency();
+        return oclDevice.getDeviceMaxClockFrequency();
     }
 
     @Override
     public long getDeviceMaxConstantBufferSize() {
-        return device.getDeviceMaxConstantBufferSize();
+        return oclDevice.getDeviceMaxConstantBufferSize();
     }
 
     @Override
     public long getDeviceMaxAllocationSize() {
-        return device.getDeviceMaxAllocationSize();
+        return oclDevice.getDeviceMaxAllocationSize();
     }
 
     @Override
@@ -131,33 +131,29 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
-        return device.getDeviceMaxWorkItemSizes();
+        return oclDevice.getDeviceMaxWorkItemSizes();
     }
 
     @Override
     public String getDeviceOpenCLCVersion() {
-        return device.getDeviceOpenCLCVersion();
+        return oclDevice.getDeviceOpenCLCVersion();
     }
 
     @Override
     public long getMaxAllocMemory() {
-        return device.getDeviceMaxAllocationSize();
+        return oclDevice.getDeviceMaxAllocationSize();
     }
 
     @Override
     public TornadoDeviceType getTornadoDeviceType() {
-        OCLDeviceType type = device.getDeviceType();
-        switch (type) {
-            case CL_DEVICE_TYPE_CPU:
-                return TornadoDeviceType.CPU;
-            case CL_DEVICE_TYPE_GPU:
-                return TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR:
-                return TornadoDeviceType.FPGA;
-            case CL_DEVICE_TYPE_ALL:
-                return TornadoDeviceType.DEFAULT;
-        }
-        return null;
+        OCLDeviceType type = oclDevice.getDeviceType();
+        return switch (type) {
+            case CL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.FPGA;
+            case CL_DEVICE_TYPE_ALL -> TornadoDeviceType.DEFAULT;
+            default -> null;
+        };
     }
 
     @Override
@@ -167,12 +163,12 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public boolean isSPIRVSupported() {
-        return device.isSPIRVSupported();
+        return oclDevice.isSPIRVSupported();
     }
 
     @Override
-    public SPIRVRuntime getSPIRVRuntime() {
-        return SPIRVRuntime.OPENCL;
+    public SPIRVRuntimeType getSPIRVRuntime() {
+        return SPIRVRuntimeType.OPENCL;
     }
 
 }

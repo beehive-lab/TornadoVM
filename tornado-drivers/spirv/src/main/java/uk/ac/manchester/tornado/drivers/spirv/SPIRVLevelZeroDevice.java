@@ -252,8 +252,8 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
-    public SPIRVRuntime getSPIRVRuntime() {
-        return SPIRVRuntime.LEVEL_ZERO;
+    public SPIRVRuntimeType getSPIRVRuntime() {
+        return SPIRVRuntimeType.LEVEL_ZERO;
     }
 
     @Override

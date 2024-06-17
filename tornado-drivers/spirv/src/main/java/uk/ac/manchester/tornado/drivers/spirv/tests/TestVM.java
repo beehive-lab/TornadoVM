@@ -28,7 +28,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntime;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeType;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
  */
 public class TestVM {
 
-    public TornadoDevice invokeSPIRVBackend(SPIRVRuntime spirvRuntime) {
+    public TornadoDevice invokeSPIRVBackend(SPIRVRuntimeType spirvRuntime) {
         // Get the backend from TornadoVM
         SPIRVBackend spirvBackend = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getBackend(spirvRuntime);
         System.out.println("Query SPIR_V Runtime: " + spirvBackend);
@@ -107,7 +107,7 @@ public class TestVM {
 
     }
 
-    public void test(SPIRVRuntime runtime) {
+    public void test(SPIRVRuntimeType runtime) {
         TornadoDevice device = invokeSPIRVBackend(runtime);
         int[] a = new int[64];
         int[] b = new int[64];
@@ -124,7 +124,7 @@ public class TestVM {
 
     public static void main(String[] args) {
         System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestVM");
-        new TestVM().test(SPIRVRuntime.OPENCL);
-        new TestVM().test(SPIRVRuntime.LEVEL_ZERO);
+        new TestVM().test(SPIRVRuntimeType.OPENCL);
+        new TestVM().test(SPIRVRuntimeType.LEVEL_ZERO);
     }
 }
