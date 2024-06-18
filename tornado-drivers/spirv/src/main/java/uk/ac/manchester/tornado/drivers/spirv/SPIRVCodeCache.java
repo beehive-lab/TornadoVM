@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,6 +78,13 @@ public abstract class SPIRVCodeCache {
         if (!pathToSPIRVBin.toFile().exists()) {
             throw new RuntimeException("Binary File does not exist");
         }
+    }
+
+    protected String createSPIRVTempDirectoryName() {
+        String tempDirectory = System.getProperty("java.io.tmpdir");
+        String user = System.getProperty("user.name");
+        String pathSeparator = FileSystems.getDefault().getSeparator();
+        return tempDirectory + pathSeparator + user + pathSeparator + "tornadoVM-spirv";
     }
 
     public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile);

@@ -68,8 +68,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ByteBuffer buffer = ByteBuffer.allocate(code.length);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.put(code);
-        String tempDirectory = System.getProperty("java.io.tmpdir");
-        String spirvTempDirectory = STR."\{tempDirectory}/tornadoVM-spirv";
+        String spirvTempDirectory = createSPIRVTempDirectoryName();
         Path path = Paths.get(spirvTempDirectory);
         try {
             Files.createDirectories(path);
