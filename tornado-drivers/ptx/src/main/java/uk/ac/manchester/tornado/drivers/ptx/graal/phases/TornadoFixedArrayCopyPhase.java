@@ -33,8 +33,10 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 
 import java.util.Optional;
 
@@ -51,10 +53,11 @@ public class TornadoFixedArrayCopyPhase extends Phase {
 
     protected void run(StructuredGraph graph) {
         ValuePhiNode phiNodeToReplace = null;
+        ResolvedJavaType resolvedJavaType = null;
         for (ValuePhiNode phiNode : graph.getNodes().filter(ValuePhiNode.class)) {
             if (phiNode.usages().filter(OffsetAddressNode.class).isNotEmpty() && phiNode.values().filter(FixedArrayNode.class).isNotEmpty()) {
                 FixedArrayNode fixedArrayNode = phiNode.values().filter(FixedArrayNode.class).first();
-                ResolvedJavaType resolvedJavaType = fixedArrayNode.getElementType();
+                resolvedJavaType = fixedArrayNode.getElementType();
                 PTXArchitecture.PTXMemoryBase oclMemoryBase = fixedArrayNode.getMemoryRegister();
                 OffsetAddressNode offsetAddressNode = phiNode.usages().filter(OffsetAddressNode.class).first();
                 // finally, since we know that the data accessed is a fixed array, fix the offset
@@ -78,7 +81,7 @@ public class TornadoFixedArrayCopyPhase extends Phase {
             }
         }
         if (phiNodeToReplace != null) {
-            ValuePhiNode newPhiNode = new ValuePhiNode(StampFactory.forKind(JavaKind.Int), phiNodeToReplace.merge(), phiNodeToReplace.valueAt(0), phiNodeToReplace.valueAt(1));
+            ValuePhiNode newPhiNode = new ValuePhiNode(StampFactory.forKind(resolvedJavaType.getJavaKind()), phiNodeToReplace.merge(), phiNodeToReplace.valueAt(0), phiNodeToReplace.valueAt(1));
             graph.addWithoutUnique(newPhiNode);
             phiNodeToReplace.replaceAtUsages(newPhiNode);
             phiNodeToReplace.safeDelete();

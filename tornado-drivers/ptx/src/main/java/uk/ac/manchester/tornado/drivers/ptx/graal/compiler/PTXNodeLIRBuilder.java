@@ -109,6 +109,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
 public class PTXNodeLIRBuilder extends NodeLIRBuilder {
@@ -566,7 +567,15 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new PTXLIRStmt.AssignStmt(result, operand(value)));
+//                if (value instanceof FixedArrayNode) {
+//                    LIRKind lirKind = LIRKind.value(PTXKind.U32);
+//                    Value cast = gen.newVariable(lirKind);
+//                    Value original = operand(value);
+//                    append(new PTXLIRStmt.AssignStmt(cast, original));
+//                    append(new PTXLIRStmt.AssignStmt(result, cast));
+//                } else {
+                    append(new PTXLIRStmt.AssignStmt(result, operand(value)));
+                //}
             }
         }
 

@@ -803,14 +803,17 @@ public class PTXLIRStmt {
         @Use
         protected Value multResult;
         @Use
+        protected Value moveResult;
+        @Use
         protected Value addResult;
         @Use
         protected Value offset;
 
-        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value multResult, Value addResult, Value offset) {
+        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value moveResult, Value multResult, Value addResult, Value offset) {
             super(TYPE);
             this.index = index;
             this.arrayToBeCopied = arrayToBeCopied;
+            this.moveResult = moveResult;
             this.multResult = multResult;
             this.addResult = addResult;
             this.offset = offset;
@@ -820,8 +823,17 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             // mult index with offset
             asm.emitSymbol(TAB);
+            // mov
+            asm.emit(MOVE + DOT + "u32");
+            asm.emit(SPACE);
+            asm.emitValue(moveResult);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(arrayToBeCopied);
+            asm.delimiter();
+            asm.eol();
             // s32 should be deducted
-            asm.emit(MUL_LO + DOT + multResult.getPlatformKind());
+            asm.emitSymbol(TAB);
+            asm.emit(MUL_LO + DOT + "s32");
             asm.emitSymbol(SPACE);
             asm.emitValue(multResult);
             asm.emitSymbol(COMMA + SPACE);
@@ -833,13 +845,13 @@ public class PTXLIRStmt {
             // add base with offset
             // u32 should be deducted
             asm.emitSymbol(TAB);
-            asm.emit(ADD + DOT + addResult.getPlatformKind());
+            asm.emit(ADD + DOT + "u32");
             asm.emitSymbol(SPACE);
             asm.emitValue(addResult);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(multResult);
+            asm.emitValue(moveResult);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(arrayToBeCopied);
+            asm.emitValue(multResult);
             asm.delimiter();
             asm.eol();
         }

@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 
@@ -96,14 +97,27 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         final Value index = gen.operand(address);
         final Value arrayToBeCopied = gen.operand(conditionalPhiNode);
-        LIRKind lirKind = LIRKind.value(PTXKind.fromResolvedJavaType(elementType));
-        final Value multResult = tool.newVariable(lirKind);
-        final Value addResult = tool.newVariable(lirKind);
+        PTXKind ptxKind = PTXKind.fromResolvedJavaType(elementType);
+        LIRKind lirKind = LIRKind.value(ptxKind);
+        LIRKind lirKindMult = LIRKind.value(PTXKind.S32);
+        LIRKind lirKindAdd = LIRKind.value(PTXKind.U32);
+        final Value multResult = tool.newVariable(lirKindMult);
+        final Value addResult = tool.newVariable(lirKindAdd);
+        final Value moveResult = tool.newVariable(lirKindAdd);
         // offset should be automatic
         int offset = getOffset();
         final Value offsetValue = tool.emitConstant(lirKind, new RawConstant(offset));
-        tool.append(new PTXLIRStmt.PrivateArrayCopyStmt(index, arrayToBeCopied, multResult, addResult, offsetValue));
-        final PTXBinary.Expr declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, multResult, addResult);
+        tool.append(new PTXLIRStmt.PrivateArrayCopyStmt(index, arrayToBeCopied, moveResult, multResult, addResult, offsetValue));
+
+        final PTXBinary.Expr declarationPtr;
+        if (ptxKind.isF32()) {
+            final Value convert = tool.newVariable(lirKind);
+            tool.append(new PTXLIRStmt.AssignStmt(convert, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE, lirKind, addResult)));
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, convert, addResult);
+        } else {
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, multResult, addResult);
+        }
+
         final PTXLIRStmt.ExprStmt ptrExpr = new PTXLIRStmt.ExprStmt(declarationPtr);
         tool.append(ptrExpr);
         gen.setResult(this, multResult);
