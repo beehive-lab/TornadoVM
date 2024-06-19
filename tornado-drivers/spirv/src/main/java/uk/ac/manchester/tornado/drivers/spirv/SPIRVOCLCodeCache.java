@@ -27,11 +27,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
@@ -44,39 +39,12 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVOCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLCodeCache extends SPIRVCodeCache {
 
     public SPIRVOCLCodeCache(SPIRVDeviceContext deviceContext) {
         super(deviceContext);
-    }
-
-    @Override
-    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] binary) {
-        if (binary == null || binary.length == 0) {
-            throw new RuntimeException("[ERROR] Binary SPIR-V Module is Empty");
-        }
-        ByteBuffer buffer = ByteBuffer.allocate(binary.length);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.put(binary);
-        String tempDirectory = System.getProperty("java.io.tmpdir");
-        String spirvTempDirectory = STR."\{tempDirectory}/tornadoVM-spirv";
-        Path path = Paths.get(spirvTempDirectory);
-        try {
-            Files.createDirectories(path);
-        } catch (IOException e) {
-            throw new TornadoBailoutRuntimeException("Error - Exception when creating the temp directory for SPIR-V");
-        }
-        long timeStamp = System.nanoTime();
-        String file = STR."\{spirvTempDirectory}/\{timeStamp}-\{id}\{entryPoint}.spv";if(TornadoOptions.DEBUG)
-    {
-            System.out.println(STR."SPIRV-File : \{file}");
-        }
-
-    writeBufferToFile(buffer, file);
-        return installSPIRVBinary(meta, id, entryPoint, file);
     }
 
     private byte[] readFile(String spirvFile) {
