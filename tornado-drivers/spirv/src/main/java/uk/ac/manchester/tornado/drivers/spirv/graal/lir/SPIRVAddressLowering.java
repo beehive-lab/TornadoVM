@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
 
@@ -48,7 +49,7 @@ public class SPIRVAddressLowering extends AddressLoweringByNodePhase.AddressLowe
         } else if (base instanceof LocalArrayNode) {
             memoryRegister = ((LocalArrayNode) base).getMemoryRegister();
         } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode)
-                || (base instanceof PiNode))) {
+                || (base instanceof PiNode) || (base instanceof FixedArrayCopyNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 

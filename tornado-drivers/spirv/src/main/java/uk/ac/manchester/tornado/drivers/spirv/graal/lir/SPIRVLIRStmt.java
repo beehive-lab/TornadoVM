@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import java.util.List;
 import java.util.Map;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -1583,6 +1584,40 @@ public class SPIRVLIRStmt {
             asm.emitValue(crb, result);
 
             emitStoreIfNeeded(asm, loadId, spirvKind);
+        }
+    }
+
+    public static class PrivateArrayPointerCopy extends AbstractInstruction {
+
+        private LIRKind lirKind;
+
+        @Def
+        private Value ptr;
+
+        @Use
+        private Value array;
+
+        public static final LIRInstructionClass<PrivateArrayPointerCopy> TYPE = LIRInstructionClass.create(PrivateArrayPointerCopy.class);
+
+        public PrivateArrayPointerCopy(LIRKind lirKind, Value ptr, Value array) {
+            super(TYPE);
+            this.lirKind = lirKind;
+            this.ptr = ptr;
+            this.array = array;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVId addressToLoad = asm.lookUpLIRInstructions(array);
+
+            SPIRVKind elementKind = ((SPIRVKind) lirKind.getPlatformKind()).getElementKind();
+
+            SPIRVId ptrConversionId = asm.module.getNextId();
+            SPIRVId re = asm.primitives.getPtrToTypeFunctionPrimitive(elementKind);
+
+            SPIRVId element = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+            SPIRVMultipleOperands op = new SPIRVMultipleOperands(element);
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(re, ptrConversionId, addressToLoad, element, op));
         }
     }
 
