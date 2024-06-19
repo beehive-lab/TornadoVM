@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 
 public class ASMMethodVisitor extends MethodVisitor {
 
-    private List<ParallelAnnotationProvider> parallelAnnotations;
+    private final List<ParallelAnnotationProvider> parallelAnnotations;
     static String parallelAnnotationClassPath = System.getProperty("tornado.load.annotation.parallel");
 
     public ASMMethodVisitor(int api, MethodVisitor methodVisitor, List<ParallelAnnotationProvider> parallelAnnotations) {
