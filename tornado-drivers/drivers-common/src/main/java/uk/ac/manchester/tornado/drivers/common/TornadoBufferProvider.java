@@ -73,12 +73,25 @@ public abstract class TornadoBufferProvider {
         // Attempts to free buffers of given size.
         long remainingSize = size;
         while (!freeBuffers.isEmpty() && remainingSize > 0) {
-            BufferContainer bufferInfo = freeBuffers.remove(0);
+            BufferContainer bufferInfo = freeBuffers.removeFirst();
             TornadoInternalError.guarantee(!usedBuffers.contains(bufferInfo), "This buffer should not be used");
             remainingSize -= bufferInfo.size;
             currentMemoryAvailable += bufferInfo.size;
             releaseBuffer(bufferInfo.buffer);
         }
+    }
+
+    public synchronized long deallocate() {
+        // Attempts to free buffers of given size.
+        long spaceDeallocated = 0;
+        while (!freeBuffers.isEmpty()) {
+            BufferContainer bufferInfo = freeBuffers.removeFirst();
+            TornadoInternalError.guarantee(!usedBuffers.contains(bufferInfo), "This buffer should not be used");
+            currentMemoryAvailable += bufferInfo.size;
+            spaceDeallocated += bufferInfo.size;
+            releaseBuffer(bufferInfo.buffer);
+        }
+        return spaceDeallocated;
     }
 
     private synchronized BufferContainer markBufferUsed(int freeBufferIndex) {
@@ -153,7 +166,7 @@ public abstract class TornadoBufferProvider {
                 return freeUnusedNativeBufferAndAssignRegion(sizeInBytes);
             }
         } else {
-            throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory.");
+            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory.");
         }
     }
 

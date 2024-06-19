@@ -393,6 +393,16 @@ public class TornadoExecutionPlan implements AutoCloseable {
         tornadoExecutor.freeDeviceMemory();
     }
 
+    /**
+     * It returns the current memory usage on the device in bytes.
+     * 
+     * @return long
+     *     Number of bytes used.
+     */
+    public long getCurrentDeviceMemoryUsage() {
+        return tornadoExecutor.getCurrentDeviceMemoryUsage();
+    }
+
     static class TornadoExecutor {
 
         private final List<ImmutableTaskGraph> immutableTaskGraphList;
@@ -514,6 +524,14 @@ public class TornadoExecutionPlan implements AutoCloseable {
             return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceKernelTime).mapToLong(Long::longValue).sum();
         }
 
+        long getTotalBytesCopyIn() {
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyIn).mapToLong(Long::longValue).sum();
+        }
+
+        long getTotalBytesCopyOut() {
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyOut).mapToLong(Long::longValue).sum();
+        }
+
         String getProfileLog() {
             return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getProfileLog).collect(Collectors.joining());
         }
@@ -565,6 +583,18 @@ public class TornadoExecutionPlan implements AutoCloseable {
 
         void withoutPrintKernel() {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
+        }
+
+        long getTotalBytesTransferred() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalBytesTransferred).sum();
+        }
+
+        long getTotalDeviceMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalDeviceMemoryUsage).sum();
+        }
+
+        long getCurrentDeviceMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
         }
     }
 }

@@ -158,7 +158,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
      * @return int[]
      */
     public int[] getDriverAndDevice() {
-        int numDev = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getDeviceCount();
+        int numDev = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getBackendCounter();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
             TornadoXPUDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getDevice(i);

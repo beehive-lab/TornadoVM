@@ -37,9 +37,6 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     private boolean lockBuffer;
     private long partialSize;
 
-    public XPUDeviceBufferState() {
-    }
-
     @Override
     public void setXPUBuffer(XPUBuffer value) {
         xpuBuffer = value;

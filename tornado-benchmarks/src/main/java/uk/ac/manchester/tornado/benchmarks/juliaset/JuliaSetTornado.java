@@ -74,7 +74,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
         final FloatArray hueSeq = new FloatArray(size * size);
         final FloatArray brightnessSeq = new FloatArray(size * size);
 
-        benchmarkMethod(device);
+        runBenchmark(device);
         executionPlan.clearProfiles();
 
         GraphicsKernels.juliaSetTornado(size, hueSeq, brightnessSeq);
@@ -100,7 +100,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 }

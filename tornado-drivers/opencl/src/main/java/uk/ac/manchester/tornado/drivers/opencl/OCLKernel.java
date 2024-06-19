@@ -25,8 +25,8 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLKernelInfo;
@@ -118,8 +118,8 @@ public class OCLKernel {
         buffer.clear();
         try {
             clGetKernelInfo(oclKernelID, OCLKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
-            kernelName = new String(buffer.array(), "ASCII").trim();
-        } catch (UnsupportedEncodingException | OCLException e) {
+            kernelName = new String(buffer.array(), StandardCharsets.US_ASCII);
+        } catch (OCLException e) {
             e.printStackTrace();
         }
     }

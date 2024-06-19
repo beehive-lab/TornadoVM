@@ -91,7 +91,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Assume that the first drivers finds, at least two devices
-        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
         if (deviceCount < 2) {
             throw new UnsupportedConfigurationException("Test requires at least two devices");
         }
@@ -140,7 +140,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Assume that the first drivers finds, at least two devices
-        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
         if (deviceCount < 3) {
             throw new UnsupportedConfigurationException("Test requires at least three devices");
         }
@@ -198,7 +198,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Assume that the first drivers finds, at least two devices
-        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
         if (deviceCount < 2) {
             throw new UnsupportedConfigurationException("Test requires at least two devices");
         }
@@ -253,7 +253,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Assume that the first drivers finds, at least two devices
-        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
         if (deviceCount < 2) {
             throw new UnsupportedConfigurationException("Test requires at least two devices");
         }
@@ -302,7 +302,7 @@ public class TestParallelTaskGraph extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Assume that the first drivers finds, at least two devices
-        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+        int deviceCount = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
         if (deviceCount < 2) {
             throw new UnsupportedConfigurationException("Test requires at least two devices");
         }

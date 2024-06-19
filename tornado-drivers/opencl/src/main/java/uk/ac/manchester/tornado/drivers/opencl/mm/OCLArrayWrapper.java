@@ -111,7 +111,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -122,6 +122,11 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override

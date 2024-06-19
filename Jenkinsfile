@@ -7,7 +7,6 @@ pipeline {
 
     parameters {
        booleanParam(name: 'fullBuild', defaultValue: false, description: 'Perform a full test across multiple JDKs')
-       string(name: 'fullBuild_branchToBuild', defaultValue: '**', description: 'Branch on which to perform the full build')
     }
 
     environment {
@@ -18,21 +17,14 @@ pipeline {
         CORRETTO_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/amazon-corretto-21.0.3.9.1-linux-x64"
         MICROSOFT_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3+9"
         TORNADO_ROOT="/var/lib/jenkins/workspace/TornadoVM-pipeline"
-        PATH="/opt/maven/bin:/var/lib/jenkins/workspace/kfusion-tornadovm/bin:/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/bin:$PATH"    
-        TORNADO_SDK="/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/sdk" 
+        PATH="/opt/maven/bin:/var/lib/jenkins/workspace/kfusion-tornadovm/bin:/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/bin:$PATH"
+        TORNADO_SDK="/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/sdk"
         CMAKE_ROOT="/opt/jenkins/cmake-3.25.2-linux-x86_64"
         KFUSION_ROOT="/var/lib/jenkins/workspace/kfusion-tornadovm"
         TORNADO_RAY_TRACER_ROOT="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer"
         JAVAFX_SDK="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-21.0.3/"
     }
     stages {
-        stage('Checkout Current Branch') {
-            steps {
-                step([$class: 'WsCleanup'])
-                checkout([$class: 'GitSCM', branches: [[name: params.fullBuild_branchToBuild]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-tornadovm-credentials', url: 'https://github.com/beehive-lab/TornadoVM.git']]])
-            }
-        }
-
         stage('Prepare build') {
             steps {
                 script {
@@ -143,7 +135,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
     echo "Tornado profile " + tornadoProfile
     echo "-------------------------"
     stage('Build with ' + JDK) {
-        sh "make ${tornadoProfile} BACKEND=ptx,opencl"
+        sh "make ${tornadoProfile} BACKEND=ptx,opencl,spirv"
     }
     stage('PTX: Unit Tests') {
         timeout(time: 12, unit: 'MINUTES') {
@@ -158,21 +150,37 @@ void buildAndTest(String JDK, String tornadoProfile) {
             "OpenCL and GPU: Nvidia Quadro GP100" : {
                 timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado --devices'
-                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
-                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0"'
+                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             },
             "OpenCL and Integrated GPU: Intel(R) UHD Graphics 630" : {
                 timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado --devices'
-                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
-                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1"'
+                    sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             }
         )
     }
+    stage("SPIR-V (OpenCL Runtime): Unit Tests") {
+        timeout(time: 12, unit: 'MINUTES') {
+            sh 'tornado --devices'
+            sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
+            sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+            sh 'test-native.sh'
+        }
+    }
+    stage("SPIR-V (LevelZero Runtime): Unit Tests") {
+            timeout(time: 12, unit: 'MINUTES') {
+                sh 'tornado --devices'
+                sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
+                sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                sh 'test-native.sh'
+            }
+        }
     stage('Benchmarks') {
         timeout(time: 15, unit: 'MINUTES') {
             sh 'python3 tornado-assembly/src/bin/tornado-benchmarks.py --printBenchmarks '

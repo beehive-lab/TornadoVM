@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 
 /**
  * Object that stores all information related to profiling an executor. To be
@@ -39,10 +39,11 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  *
  * @since TornadoVM-0.15
  */
-public class TornadoProfilerResult implements ProfileInterface {
-    private TornadoExecutor executor;
+public class TornadoProfilerResult implements ProfilerInterface {
 
-    public TornadoProfilerResult(TornadoExecutor executor) {
+    private final TornadoExecutor executor;
+
+    TornadoProfilerResult(TornadoExecutor executor) {
         this.executor = executor;
     }
 
@@ -168,6 +169,30 @@ public class TornadoProfilerResult implements ProfileInterface {
         return executor.getProfileLog();
     }
 
+    /**
+     * Returns the total number of bytes that were transferred to the hardware
+     * accelerator (host to device) for the current execution of the execution plan.
+     * 
+     * @return long
+     *     Number of bytes
+     */
+    @Override
+    public long getTotalBytesCopyIn() {
+        return executor.getTotalBytesCopyIn();
+    }
+
+    /**
+     * Returns the total number of bytes that were transferred to the host
+     * (device to host) for the current execution of the execution plan.
+     *
+     * @return long
+     *     Number of bytes
+     */
+    @Override
+    public long getTotalBytesCopyOut() {
+        return executor.getTotalBytesCopyOut();
+    }
+
     TornadoExecutor getExecutor() {
         return executor;
     }
@@ -179,4 +204,27 @@ public class TornadoProfilerResult implements ProfileInterface {
     public void dumpProfiles() {
         getExecutor().dumpProfiles();
     }
+
+    /**
+     * Return the total number of bytes transferred to/from the target accelerators.
+     * 
+     * @return long
+     *     Number of bytes
+     */
+    @Override
+    public long getTotalBytesTransferred() {
+        return executor.getTotalBytesTransferred();
+    }
+
+    /**
+     * Return the total number of bytes allocated on the target device.
+     * 
+     * @return long
+     *     Number of bytes.
+     */
+    @Override
+    public long getTotalDeviceMemoryUsage() {
+        return executor.getTotalDeviceMemoryUsage();
+    }
+
 }

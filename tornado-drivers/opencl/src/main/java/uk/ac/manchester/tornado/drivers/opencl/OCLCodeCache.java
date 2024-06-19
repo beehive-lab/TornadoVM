@@ -308,7 +308,7 @@ public class OCLCodeCache {
         final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
         if (Paths.get(dir).isAbsolute()) {
             if (!Files.exists(Paths.get(dir))) {
-                throw new TornadoRuntimeException("invalid directory: " + dir.toString());
+                throw new TornadoRuntimeException("invalid directory: " + dir);
             }
             return dir;
         } else {
@@ -623,7 +623,7 @@ public class OCLCodeCache {
 
         OCLKernel kernel = null;
         if (status == CL_BUILD_SUCCESS) {
-            kernel = program.getKernel(entryPoint);
+            kernel = program.clCreateKernel(entryPoint);
             kernelAvailable = true;
         }
 
@@ -683,7 +683,7 @@ public class OCLCodeCache {
             }
         }
 
-        final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
+        final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.clCreateKernel(entryPoint) : null;
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
 
         if (status == CL_BUILD_SUCCESS) {
@@ -696,7 +696,7 @@ public class OCLCodeCache {
                 for (Pair pair : pendingKernels) {
                     String childKernelName = pair.entryPoint;
                     if (!childKernelName.equals(entryPoint)) {
-                        final OCLKernel kernel2 = program.getKernel(childKernelName);
+                        final OCLKernel kernel2 = program.clCreateKernel(childKernelName);
                         final OCLInstalledCode code2 = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel2, isSPIRVBinary);
                         cache.put(taskScheduleName + "." + pair.taskName + "-" + childKernelName, code2);
                     }

@@ -103,7 +103,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -115,6 +115,11 @@ public class SPIRVVectorWrapper implements XPUBuffer {
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
             logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override

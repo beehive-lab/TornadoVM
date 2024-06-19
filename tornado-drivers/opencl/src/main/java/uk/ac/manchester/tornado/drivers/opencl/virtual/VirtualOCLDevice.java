@@ -77,7 +77,7 @@ public class VirtualOCLDevice implements OCLTargetDevice {
         this.availableProcessors = info.getAvailableProcessors();
     }
 
-    public long getId() {
+    public long getDevicePointer() {
         return -1;
     }
 
@@ -201,6 +201,11 @@ public class VirtualOCLDevice implements OCLTargetDevice {
     @Override
     public int deviceVersion() {
         return 0;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        return true;
     }
 
     public int getWordSize() {

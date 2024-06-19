@@ -182,7 +182,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deviceContext.getBufferProvider().markBufferReleased(this.bufferId);
         bufferId = -1;
     }
@@ -458,5 +458,10 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     @Override
     public long getSizeSubRegionSize() {
         return subRegionSize;
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 }

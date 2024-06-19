@@ -23,6 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.ALLOCATION_BYTES;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_IN_SIZE_BYTES;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
 
 import java.io.IOException;
@@ -479,6 +482,21 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void withGridScheduler(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         checkGridSchedulerNames();
+    }
+
+    @Override
+    public long getCurrentDeviceMemoryUsage() {
+        return executionContext.getCurrentDeviceMemoryUsage();
+    }
+
+    @Override
+    public long getTotalBytesTransferred() {
+        return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
+    }
+
+    @Override
+    public long getTotalDeviceMemoryUsage() {
+        return getProfilerValue(ALLOCATION_BYTES);
     }
 
     @Override
@@ -1644,7 +1662,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getDeviceCount();
+        int numDevices = tornadoDriver.getBackendCounter();
         long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
@@ -1740,7 +1758,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
-            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount()) {
+            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter()) {
                 runSequential();
             } else {
                 runTaskGraphParallelSelected(deviceWinnerIndex);
@@ -1763,7 +1781,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private void cloneInputOutputObjects() {
         final long startSearchProfiler = (TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getDeviceCount();
+        int numDevices = tornadoDriver.getBackendCounter();
         // Clone objects (only outputs) for each device
         for (int deviceNumber = 0; deviceNumber < numDevices; deviceNumber++) {
             ArrayList<Object> newInObjects = new ArrayList<>();
@@ -1907,7 +1925,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private String getListDevices() {
         StringBuilder str = new StringBuilder();
         str.append("                  : [");
-        int num = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+        int num = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
         for (int i = 0; i < num; i++) {
             TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i).getDeviceType();
             String type = switch (deviceType) {
@@ -1925,7 +1943,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void runWithSequentialProfiler(Policy policy) {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
-        int numDevices = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getDeviceCount();
+        int numDevices = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getBackendCounter();
         final int totalTornadoDevices = numDevices + 1;
         long[] totalTimers = new long[totalTornadoDevices];
 
@@ -2001,7 +2019,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             policy = Policy.PERFORMANCE;
         }
 
-        int numDevices = TornadoRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getDeviceCount();
+        int numDevices = TornadoRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getBackendCounter();
 
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);
@@ -2247,55 +2265,55 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public long getTotalTime() {
-        return getProfilerTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
+        return getProfilerValue(ProfilerType.TOTAL_TASK_GRAPH_TIME);
     }
 
     @Override
     public long getCompileTime() {
-        return getProfilerTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerValue(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
     }
 
     @Override
     public long getTornadoCompilerTime() {
-        return getProfilerTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
     }
 
     @Override
     public long getDriverInstallTime() {
-        return getProfilerTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+        return getProfilerValue(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
     }
 
     @Override
     public long getDataTransfersTime() {
-        return getProfilerTimer(ProfilerType.COPY_IN_TIME) + getProfilerTimer(ProfilerType.COPY_OUT_TIME);
+        return getProfilerValue(ProfilerType.COPY_IN_TIME) + getProfilerValue(ProfilerType.COPY_OUT_TIME);
     }
 
     @Override
     public long getDeviceWriteTime() {
-        return getProfilerTimer(ProfilerType.COPY_IN_TIME);
+        return getProfilerValue(ProfilerType.COPY_IN_TIME);
     }
 
     @Override
     public long getDeviceReadTime() {
-        return getProfilerTimer(ProfilerType.COPY_OUT_TIME);
+        return getProfilerValue(ProfilerType.COPY_OUT_TIME);
     }
 
     @Override
     public long getDataTransferDispatchTime() {
-        return getProfilerTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+        return getProfilerValue(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
     }
 
     @Override
     public long getKernelDispatchTime() {
-        return getProfilerTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+        return getProfilerValue(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
     }
 
     @Override
     public long getDeviceKernelTime() {
-        return getProfilerTimer(TOTAL_KERNEL_TIME);
+        return getProfilerValue(TOTAL_KERNEL_TIME);
     }
 
-    private long __getTimerFromReduceTaskGraph(ProfilerType profilerType) {
+    private long getProfilerValueFromReduceTaskGraph(ProfilerType profilerType) {
         return switch (profilerType) {
             case TOTAL_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceKernelTime();
             case TOTAL_DISPATCH_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getKernelDispatchTime();
@@ -2305,11 +2323,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case TOTAL_DRIVER_COMPILE_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDriverInstallTime();
             case TOTAL_GRAAL_COMPILE_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTornadoCompilerTime();
             case TOTAL_TASK_GRAPH_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalTime();
+            case TOTAL_COPY_IN_SIZE_BYTES -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalBytesCopyIn();
+            case TOTAL_COPY_OUT_SIZE_BYTES -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalBytesCopyOut();
+            case ALLOCATION_BYTES -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalDeviceMemoryUsage();
             default -> 0L;
         };
     }
 
-    private long __getProfilerTime(ProfilerType profilerType) {
+    private long __getProfilerValue(ProfilerType profilerType) {
         return switch (profilerType) {
             case TOTAL_KERNEL_TIME -> timeProfiler.getTimer(TOTAL_KERNEL_TIME);
             case TOTAL_DISPATCH_KERNEL_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
@@ -2319,21 +2340,34 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case TOTAL_DRIVER_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
             case TOTAL_GRAAL_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
             case TOTAL_TASK_GRAPH_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
-            default -> 0;
+            case TOTAL_COPY_IN_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES);
+            case TOTAL_COPY_OUT_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES);
+            case ALLOCATION_BYTES -> timeProfiler.getSize(ProfilerType.ALLOCATION_BYTES);
+            default -> 0L;
         };
     }
 
-    private long getProfilerTimer(ProfilerType profilerType) {
+    private long getProfilerValue(ProfilerType profilerType) {
         if (reduceTaskGraph != null) {
-            return __getTimerFromReduceTaskGraph(profilerType);
+            return getProfilerValueFromReduceTaskGraph(profilerType);
         } else {
-            return __getProfilerTime(profilerType);
+            return __getProfilerValue(profilerType);
         }
     }
 
     @Override
     public String getProfileLog() {
         return bufferLogProfiler.toString();
+    }
+
+    @Override
+    public long getTotalBytesCopyIn() {
+        return getProfilerValue(TOTAL_COPY_IN_SIZE_BYTES);
+    }
+
+    @Override
+    public long getTotalBytesCopyOut() {
+        return getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
 
     boolean isProfilerEnabled() {

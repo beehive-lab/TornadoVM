@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -86,7 +85,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -95,9 +94,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
         final FloatArray result = new FloatArray(imageSizeX * imageSizeY);
 
-        benchmarkMethod(device);
-        executionResult.transferToHost(output);
-        executionPlan.clearProfiles();
+        runBenchmark(device);
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX, imageSizeY, filterSize, filterSize);
 
@@ -112,11 +109,4 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         return Float.compare(maxULP, MAX_ULP) <= 0;
     }
 
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("s0.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("s0.device"));
-        }
-    }
 }

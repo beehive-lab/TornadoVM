@@ -136,7 +136,7 @@ public class TestPTXJITCompiler {
         tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(3);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3);
 
         callWrapper.setKernelContext(new HashMap<>());
 

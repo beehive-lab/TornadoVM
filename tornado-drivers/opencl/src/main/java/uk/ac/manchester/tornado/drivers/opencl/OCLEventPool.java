@@ -49,9 +49,9 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  * Relationship: one instance of the {@link OCLEventPool} per {@link OCLDeviceContext}.
  * </p>
  */
-class OCLEventPool {
+public class OCLEventPool {
 
-    protected final long[] waitEventsBuffer;
+    public final long[] waitEventsBuffer;
     private final long[] events;
     private final EventDescriptor[] descriptors;
     private final BitSet retain;
@@ -61,7 +61,7 @@ class OCLEventPool {
     private int eventPoolSize;
     private final TornadoLogger logger;
 
-    protected OCLEventPool(int poolSize) {
+    public OCLEventPool(int poolSize) {
         this.eventPoolSize = poolSize;
         this.retain = new BitSet(eventPoolSize);
         this.retain.clear();
@@ -74,7 +74,7 @@ class OCLEventPool {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    protected int registerEvent(long oclEventId, EventDescriptor descriptorId, OCLCommandQueue queue) {
+    public int registerEvent(long oclEventId, EventDescriptor descriptorId, OCLCommandQueue queue) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -115,7 +115,7 @@ class OCLEventPool {
         guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), eventPoolSize);
     }
 
-    protected boolean serialiseEvents(int[] dependencies, OCLCommandQueue queue) {
+    public boolean serialiseEvents(int[] dependencies, OCLCommandQueue queue) {
         boolean outOfOrderQueue = (queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
         if (dependencies == null || dependencies.length == 0 || !outOfOrderQueue) {
             return false;
@@ -168,11 +168,11 @@ class OCLEventPool {
         retain.clear(localEventID);
     }
 
-    protected long getOCLEvent(int localEventID) {
+    public long getOCLEvent(int localEventID) {
         return events[localEventID];
     }
 
-    protected EventDescriptor getDescriptor(int localEventID) {
+    public EventDescriptor getDescriptor(int localEventID) {
         return descriptors[localEventID];
     }
 

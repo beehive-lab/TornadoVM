@@ -116,7 +116,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
     }
 
     @Override
-    public int getDeviceCount() {
+    public int getBackendCounter() {
         return PTX.getPlatform().getDeviceCount();
     }
 
@@ -133,7 +133,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
             devices = new ArrayList<>();
-            for (int i = 0; i < getDeviceCount(); i++) {
+            for (int i = 0; i < getBackendCounter(); i++) {
                 devices.add(backends[i].getDeviceContext().asMapping());
             }
         }

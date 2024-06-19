@@ -218,7 +218,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(buffer != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(buffer);
@@ -229,6 +229,11 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
             logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     private long sizeOf(final T array) {

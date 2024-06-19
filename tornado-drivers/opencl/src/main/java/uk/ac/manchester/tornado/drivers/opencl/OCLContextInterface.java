@@ -27,11 +27,13 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 
-public interface OCLExecutionEnvironment {
+public interface OCLContextInterface {
 
     int getNumDevices();
 
     List<OCLTargetDevice> devices();
+
+    long getContextId();
 
     TornadoDeviceContext createDeviceContext(int deviceIndex);
 
@@ -40,4 +42,5 @@ public interface OCLExecutionEnvironment {
     void createCommandQueue(int index);
 
     int getPlatformIndex();
+
 }

@@ -210,7 +210,7 @@ public class MatrixMul2DLocalMemory {
         // Get the same device but running the OCL backend
         TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getBackend(1);
         TornadoDevice oclDevice = null;
-        for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
+        for (int i = 0; i < oclDriver.getBackendCounter(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);
             if (device.getPhysicalDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getPhysicalDevice().getDeviceName())) {
                 oclDevice = device;

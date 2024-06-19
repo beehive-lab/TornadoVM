@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,34 +29,32 @@ import java.util.List;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
-/**
- * Proof of Concept plugin in the OpenCL driver for SPIRV dispatch.
- * 
- * Initially we focus on the level-zero. However we will keep this place-holder
- * for later use of OpenCL as a SPIRV dispatcher.
- * 
- */
 public class SPIRVOpenCLDriver implements SPIRVDispatcher {
 
-    private List<SPIRVPlatform> spirvPlatforms;
+    private final List<SPIRVPlatform> spirvOpenCLPlatforms;
 
     public SPIRVOpenCLDriver() {
         int numOpenCLPlatforms = OpenCL.getNumPlatforms();
-        spirvPlatforms = new ArrayList<>();
+        spirvOpenCLPlatforms = new ArrayList<>();
+
+        // From all OpenCL platforms, we inspect which one/s contain device/s that support
+        // SPIR-V >= 1.2
         for (int platformIndex = 0; platformIndex < numOpenCLPlatforms; platformIndex++) {
             TornadoPlatformInterface oclPlatform = OpenCL.getPlatform(platformIndex);
-            SPIRVOpenCLPlatform spirvOCLPlatform = new SPIRVOpenCLPlatform(platformIndex, oclPlatform);
-            spirvPlatforms.add(spirvOCLPlatform);
+            if (oclPlatform.isSPIRVSupported()) {
+                // We only add the platforms that support SPIR-V
+                spirvOpenCLPlatforms.add(new SPIRVOpenCLPlatform(platformIndex, oclPlatform));
+            }
         }
     }
 
     @Override
     public int getNumPlatforms() {
-        return OpenCL.getNumPlatforms();
+        return spirvOpenCLPlatforms.size();
     }
 
     @Override
     public SPIRVPlatform getPlatform(int index) {
-        return spirvPlatforms.get(index);
+        return spirvOpenCLPlatforms.get(index);
     }
 }

@@ -37,7 +37,6 @@ public class OCLGenericGPUScheduler extends OCLKernelScheduler {
     public OCLGenericGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLTargetDevice device = context.getDevice();
-
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
     }
 
@@ -74,6 +73,10 @@ public class OCLGenericGPUScheduler extends OCLKernelScheduler {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
     }
 
     private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {

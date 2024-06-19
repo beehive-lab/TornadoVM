@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_COMPIL
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -85,6 +86,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
@@ -285,33 +287,33 @@ public class SPIRVCompiler {
         }
     }
 
-    // FIXME: <REFACTOR> Common for PTX and SPIRV
-    public static String buildKernelName(String methodName, SchedulableTask task) {
+    private static String buildFullKernelName(String methodName, SchedulableTask task) {
         StringBuilder sb = new StringBuilder(methodName);
+        for (Object arg : task.getArguments()) {
+            // Object is either array or primitive
+            sb.append('_');
+            Class<?> argClass = arg.getClass();
+            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+                // Only need to append value.
+                // If negative value, remove the minus sign in front
+                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
+            } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
+                // Need to append type and length
+                sb.append(argClass.getComponentType().getName());
+                sb.append(Array.getLength(arg));
+            } else {
+                sb.append(argClass.getName().replace('.', '_'));
+                // Since with objects there is no way to know what will be a
+                // constant differentiate using the hashcode of the object
+                sb.append('_');
+                sb.append(arg.hashCode());
+            }
+        }
+        return sb.toString();
+    }
 
-        // for (Object arg : task.getArguments()) {
-        // // Object is either array or primitive
-        // sb.append('_');
-        // Class<?> argClass = arg.getClass();
-        // if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-        // // Only need to append value.
-        // // If negative value, remove the minus sign in front
-        // sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
-        // } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass))
-        // {
-        // // Need to append type and length
-        // sb.append(argClass.getComponentType().getName());
-        // sb.append(Array.getLength(arg));
-        // } else {
-        // sb.append(argClass.getName().replace('.', '_'));
-        //
-        // // Since with objects there is no way to know what will be a
-        // // constant differentiate using the hashcode of the object
-        // sb.append('_');
-        // sb.append(arg.hashCode());
-        // }
-        // }
-
+    public static String buildKernelName(String methodName) {
+        StringBuilder sb = new StringBuilder(methodName);
         return sb.toString();
     }
 
@@ -331,7 +333,7 @@ public class SPIRVCompiler {
         OptimisticOptimizations optimisticOptimizations = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedJavaMethod.getProfilingInfo();
 
-        SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(task.getId(), buildKernelName(resolvedJavaMethod.getName(), task), taskMeta);
+        SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(task.getId(), buildKernelName(resolvedJavaMethod.getName()), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();

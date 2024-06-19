@@ -870,6 +870,14 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getDeviceKernelTime();
     }
 
+    long getTotalBytesCopyIn() {
+        return taskGraphImpl.getTotalBytesCopyIn();
+    }
+
+    long getTotalBytesCopyOut() {
+        return taskGraphImpl.getTotalBytesCopyOut();
+    }
+
     protected String getProfileLog() {
         return taskGraphImpl.getProfileLog();
     }
@@ -914,4 +922,15 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withGridScheduler(gridScheduler);
     }
 
+    long getTotalBytesTransferred() {
+        return taskGraphImpl.getTotalBytesTransferred();
+    }
+
+    long getTotalDeviceMemoryUsage() {
+        return taskGraphImpl.getTotalDeviceMemoryUsage();
+    }
+
+    long getCurrentDeviceMemoryUsage() {
+        return taskGraphImpl.getCurrentDeviceMemoryUsage();
+    }
 }

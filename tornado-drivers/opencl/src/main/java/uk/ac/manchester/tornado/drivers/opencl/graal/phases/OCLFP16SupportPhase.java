@@ -21,16 +21,17 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.phases.Phase;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLDevice;
-
-import java.util.Optional;
 
 /**
  * This compiler phase examines if the execution device supports half precision types

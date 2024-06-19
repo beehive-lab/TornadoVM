@@ -80,9 +80,11 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
+        // Set all user parameters to the SPIR-V kernel
         for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
             int kernelParamIndex = argIndex + 1;
             KernelStackFrame.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+
             if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
                 result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);

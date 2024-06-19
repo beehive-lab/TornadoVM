@@ -52,7 +52,7 @@ public interface XPUBuffer {
 
     void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
-    void deallocate() throws TornadoMemoryException;
+    void markAsFreeBuffer() throws TornadoMemoryException;
 
     long size();
 
@@ -60,10 +60,13 @@ public interface XPUBuffer {
 
     long getSizeSubRegionSize();
 
+    long deallocate();
+
     default int[] getIntBuffer() {
         return null;
     }
 
     default void setIntBuffer(int[] arr) {
     }
+
 }

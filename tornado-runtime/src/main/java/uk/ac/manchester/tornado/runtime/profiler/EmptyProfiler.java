@@ -77,6 +77,11 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public long getSize(ProfilerType type) {
+        return 0;
+    }
+
+    @Override
     public synchronized long getTaskTimer(ProfilerType type, String taskName) {
         return 0;
     }

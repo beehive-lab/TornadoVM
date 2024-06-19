@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -61,20 +60,8 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         super(deviceContext);
     }
 
-    private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
-        buffer.flip();
-        try (FileOutputStream fos = new FileOutputStream(filepath)) {
-            fos.write(buffer.array());
-        } catch (Exception e) {
-            throw new RuntimeException("[ERROR] Store of the SPIR-V File failed.");
-        } finally {
-            buffer.clear();
-        }
-    }
-
     @Override
     public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
-
         if (code == null || code.length == 0) {
             throw new RuntimeException("[ERROR] Binary SPIR-V Module is Empty");
         }
@@ -98,13 +85,6 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         return installSPIRVBinary(meta, id, entryPoint, file);
     }
 
-    private void checkBinaryFileExists(String pathToFile) {
-        final Path pathToSPIRVBin = Paths.get(pathToFile);
-        if (!pathToSPIRVBin.toFile().exists()) {
-            throw new RuntimeException("Binary File does not exist");
-        }
-    }
-
     @Override
     public synchronized SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
         ZeModuleHandle module = new ZeModuleHandle();
@@ -121,7 +101,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
         SPIRVDevice spirvDevice = deviceContext.getDevice();
         SPIRVLevelZeroDevice levelZeroDevice = (SPIRVLevelZeroDevice) spirvDevice;
-        LevelZeroDevice device = levelZeroDevice.getDevice();
+        LevelZeroDevice device = levelZeroDevice.getDeviceRuntime();
 
         int result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, pathToFile);
         LevelZeroUtils.errorLog("zeModuleCreate", result);

@@ -119,15 +119,15 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deallocateElements();
-        tableWrapper.deallocate();
+        tableWrapper.markAsFreeBuffer();
         wrappers = null;
         addresses = null;
     }
 
     private void deallocateElements() {
-        Arrays.stream(wrappers).forEach(PTXArrayWrapper::deallocate);
+        Arrays.stream(wrappers).forEach(PTXArrayWrapper::markAsFreeBuffer);
     }
 
     private int writeElements(long executionPlanId, T values) {
