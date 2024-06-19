@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -82,7 +82,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void enoughDevices() {
         super.before();
         TornadoBackend driver = getTornadoRuntime().getBackend(0);
-        if (driver.getBackendCounter() < 2) {
+        if (driver.getNumDevices() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("Not enough devices to run tests");
         }
     }
@@ -103,7 +103,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         for (int i = 0; i < numDrivers; i++) {
             TornadoBackend driver = getTornadoRuntime().getBackend(i);
             assertNotNull(driver);
-            int numDevices = driver.getBackendCounter();
+            int numDevices = driver.getNumDevices();
             for (int j = 0; j < numDevices; j++) {
                 assertNotNull(driver.getDevice(j));
             }
@@ -319,7 +319,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
             TaskGraph taskGraph = new TaskGraph(taskScheduleName);
             TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
 
-            final int numDevices = driver.getBackendCounter();
+            final int numDevices = driver.getNumDevices();
             totalNumDevices += numDevices;
 
             String taskName = "t0";
@@ -359,11 +359,11 @@ public class TestsVirtualLayer extends TornadoTestBase {
         dataA.init(100);
         dataB.init(100);
 
-        if (tornadoDriver.getBackendCounter() < 2) {
+        if (tornadoDriver.getNumDevices() < 2) {
             assertFalse("The current driver has less than 2 devices", true);
         }
 
-        TornadoRuntime.setProperty("s0.t0.device", "0:0");
+        TornadoRuntimeProvider.setProperty("s0.t0.device", "0:0");
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, dataA, dataB) //
                 .task("t0", TestsVirtualLayer::testA, dataA, 1) //
@@ -376,7 +376,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        TornadoRuntime.setProperty("s1.t1.device", "0:1");
+        TornadoRuntimeProvider.setProperty("s1.t1.device", "0:1");
         TaskGraph taskGraph2 = new TaskGraph("s1") //
                 .task("t1", TestsVirtualLayer::testA, dataB, 1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, dataB);

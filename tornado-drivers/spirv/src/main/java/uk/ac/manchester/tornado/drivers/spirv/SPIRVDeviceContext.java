@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
@@ -146,7 +146,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getBackendIndex(SPIRVBackendImpl.class);
+        return TornadoRuntimeProvider.getTornadoRuntime().getBackendIndex(SPIRVBackendImpl.class);
     }
 
     public SPIRVTornadoDevice asMapping() {

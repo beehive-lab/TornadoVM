@@ -157,7 +157,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     }
 
     @Override
-    public int getBackendCounter() {
+    public int getNumDevices() {
         return backendCounter;
     }
 
@@ -174,7 +174,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
             devices = new ArrayList<>();
-            for (int i = 0; i < getBackendCounter(); i++) {
+            for (int i = 0; i < getNumDevices(); i++) {
                 devices.add(flatBackends[i].getDeviceContext().asMapping());
             }
         }

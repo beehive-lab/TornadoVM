@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
@@ -183,7 +183,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     private void assertAvailableDrivers(int limit) {
-        if (TornadoRuntime.getTornadoRuntime().getNumBackends() < limit) {
+        if (TornadoRuntimeProvider.getTornadoRuntime().getNumBackends() < limit) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + limit + "backends with at least 1 device enabled");
         }
     }

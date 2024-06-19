@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkDriver {
 
@@ -90,11 +90,11 @@ public abstract class BenchmarkDriver {
     }
 
     public String getProperty(String key, String value) {
-        return TornadoRuntime.getProperty(key, value);
+        return TornadoRuntimeProvider.getProperty(key, value);
     }
 
     public String getProperty(String key) {
-        return TornadoRuntime.getProperty(key);
+        return TornadoRuntimeProvider.getProperty(key);
     }
 
     private boolean skipGC() {

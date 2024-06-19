@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -124,7 +124,7 @@ public class CodeGen extends TornadoTestBase {
     }
 
     private boolean isRunningOnCPU() {
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
+        TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         return device.getDeviceType() == TornadoDeviceType.CPU;
     }
 

@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -92,7 +92,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b.set(i, (float) Math.random());
         });
 
-        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
+        TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0);
         final int deviceNumber = 0;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -122,11 +122,11 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b.set(i, (float) Math.random());
         });
 
-        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
+        TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0);
 
         // select device 1 it is available
         int deviceNumber = 0;
-        if (driver.getBackendCounter() > 1) {
+        if (driver.getNumDevices() > 1) {
             deviceNumber = 1;
         }
 

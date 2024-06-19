@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
@@ -154,7 +154,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
+        return TornadoRuntimeProvider.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
     }
 
     @Override

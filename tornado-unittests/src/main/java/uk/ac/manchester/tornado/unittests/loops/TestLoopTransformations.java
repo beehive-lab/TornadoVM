@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -91,7 +91,7 @@ public class TestLoopTransformations extends TornadoTestBase {
             matrixB.set(idx, r.nextFloat());
         });
 
-        TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
+        TornadoRuntimeProvider.setProperty("tornado.experimental.partial.unroll", "True");
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
@@ -129,13 +129,13 @@ public class TestLoopTransformations extends TornadoTestBase {
             matrixB.set(idx, r.nextFloat());
         });
 
-        TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
+        TornadoRuntimeProvider.setProperty("tornado.experimental.partial.unroll", "True");
 
-        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter(); i++) {
-            if (TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i).getPlatformName().toLowerCase().contains("nvidia")) {
-                TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
+        for (int i = 0; i < TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices(); i++) {
+            if (TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i).getPlatformName().toLowerCase().contains("nvidia")) {
+                TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0);
                 driver.setDefaultDevice(i);
-                TornadoRuntime.setProperty("tornado.unroll.factor", "32");
+                TornadoRuntimeProvider.setProperty("tornado.unroll.factor", "32");
                 System.setProperty("tornado.unroll.factor", "32");
             }
         }
@@ -164,7 +164,7 @@ public class TestLoopTransformations extends TornadoTestBase {
         FloatArray matrixB = new FloatArray(N * N);
         FloatArray resultSeq = new FloatArray(N * N);
 
-        TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
+        TornadoRuntimeProvider.setProperty("tornado.experimental.partial.unroll", "True");
 
         Random r = new Random();
         IntStream.range(0, N * N).parallel().forEach(idx -> {

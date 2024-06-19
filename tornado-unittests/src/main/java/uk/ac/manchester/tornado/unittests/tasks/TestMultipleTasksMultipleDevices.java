@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
@@ -105,7 +105,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     private static void assertAvailableDevices() {
-        if (TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter() < 2) {
+        if (TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + 2 + " devices enabled");
         }
     }
