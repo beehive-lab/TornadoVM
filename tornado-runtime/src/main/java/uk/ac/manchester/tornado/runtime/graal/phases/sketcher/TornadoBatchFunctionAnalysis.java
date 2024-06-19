@@ -38,8 +38,9 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * This phase analyses the graph to deduct if the loop index is written in the output buffer. This information is necessary for batch processing, because in that case the kernel will need to be
- * recompiled to offset the value written based on the number of the batch.
+ * This phase analyses the graph to deduct if the loop index is written in the output buffer.
+ * This information is necessary for batch processing, because in that case the kernel
+ * will need to be recompiled to offset the value written based on the number of the batch.
  */
 public class TornadoBatchFunctionAnalysis extends BasePhase<TornadoSketchTierContext> {
 
