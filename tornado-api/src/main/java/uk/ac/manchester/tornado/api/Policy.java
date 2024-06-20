@@ -50,7 +50,7 @@ public enum Policy {
      *
      * <p>Note that with this mode, TornadoVM may not select the fastest device for the task if the CPU
      * is considered as a hardware accelerator too, since the TornadoVM runtime also operates on the same CPU.
-     * However, for big data application and compute-bound workloads, this solution can provide a faster answer
+     * However, for big data applications and compute-bound workloads, this solution can provide a faster answer
      * on which device is the most suitable for the task without waiting for all executions to finish.
      * </p>
      */
