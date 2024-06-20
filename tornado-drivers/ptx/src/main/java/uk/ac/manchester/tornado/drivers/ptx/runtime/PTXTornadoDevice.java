@@ -95,7 +95,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXTornadoDevice implements TornadoXPUDevice {
 
-    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static PTXBackendImpl driver = null;
     private final PTXDevice device;
     private final int deviceIndex;
@@ -398,7 +397,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      */
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.hasContent() || BENCHMARKING_MODE) {
+        if (!objectState.hasContent()) {
             objectState.setContents(true);
             return objectState.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
         }

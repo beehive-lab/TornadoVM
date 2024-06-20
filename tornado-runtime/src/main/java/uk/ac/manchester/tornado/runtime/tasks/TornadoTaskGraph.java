@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
@@ -959,7 +960,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 if (!argumentsLookUp.contains(parameter)) {
-                    // We already set function parameter in transferToHost
                     lockObjectsInMemory(parameter);
                 }
             }
@@ -1046,7 +1046,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void reuseDeviceBufferObject(Object object) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object);
-        reuseDeviceBufferObject(localState, meta().getLogicDevice());
+        // Since we do not know upfront the device to use, we need to set the lock buffer
+        // for all available devices. This does not allocate any buffer, just annotates
+        // a Java object as pinned, so the TornadoVM runtime is free to reuse the space
+        final TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+        int numBackends = runtime.getNumBackends();
+        for (int i = 0; i < numBackends; i++) {
+            TornadoBackend backend = runtime.getBackend(i);
+            // For every device from all backends, set the local state to reuse the buffer
+            backend.getAllDevices().forEach(device -> reuseDeviceBufferObject(localState, device));
+        }
     }
 
     private void reuseDeviceBufferObject(final LocalObjectState localState, final TornadoDevice device) {
@@ -1056,9 +1065,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     void lockObjectsInMemory(Object... objects) {
-        for (Object obj : objects) {
-            reuseDeviceBufferObject(obj);
-        }
+        Arrays.stream(objects).forEach(this::reuseDeviceBufferObject);
     }
 
     @Override

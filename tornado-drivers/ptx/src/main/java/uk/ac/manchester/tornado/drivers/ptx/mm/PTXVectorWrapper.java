@@ -182,7 +182,7 @@ public class PTXVectorWrapper implements XPUBuffer {
         }
         final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), bufferSize, array, hostOffset, (useDeps) ? events : null);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     private int enqueueWriteArrayData(long executionPlanId, long address, long bytes, Object value, long hostOffset, int[] waitEvents) {

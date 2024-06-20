@@ -171,7 +171,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         }
         returnEvents.add(internalEvent);
         onDevice = true;
-        return useDeps ? returnEvents : null;
+        return returnEvents;
     }
 
     @Override
