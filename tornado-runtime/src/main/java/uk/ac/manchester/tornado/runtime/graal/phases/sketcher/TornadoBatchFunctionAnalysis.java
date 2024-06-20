@@ -33,7 +33,9 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * This phase analyses the graph to deduct if the loop index is written in the output buffer.
@@ -51,21 +53,27 @@ public class TornadoBatchFunctionAnalysis extends BasePhase<TornadoSketchTierCon
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         for (ValuePhiNode phiNode : graph.getNodes().filter(ValuePhiNode.class)) {
             for (Node phiNodeUsage : phiNode.usages()) {
-                if (isIndexUsedInJavaWrite(phiNodeUsage)) {
+                Set<Node> visited = new HashSet<>();
+                if (isIndexUsedInJavaWrite(phiNodeUsage, visited)) {
                     context.setBatchWriteThreadIndex();
                 }
             }
         }
     }
 
-    private static boolean isIndexUsedInJavaWrite(Node indexUsage) {
+    private static boolean isIndexUsedInJavaWrite(Node indexUsage, Set<Node> visited) {
+        visited.add(indexUsage);
         if (indexUsage instanceof OffsetAddressNode || indexUsage instanceof FrameState || indexUsage instanceof LoadIndexedNode || indexUsage instanceof JavaReadNode) {
             return false;
         } else if (indexUsage instanceof JavaWriteNode) {
             return true;
         } else {
-            for (Node usage : indexUsage.usages()) {
-                return isIndexUsedInJavaWrite(usage);
+            for (Node node : indexUsage.usages()) {
+                if (!visited.contains(node)) {
+                    if (isIndexUsedInJavaWrite(node, visited)) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
