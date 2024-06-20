@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -265,7 +265,7 @@ public class TestAtomics extends TornadoTestBase {
         String deviceToRun = System.getProperties().getProperty("device", "0");
         int deviceNumber = Integer.parseInt(deviceToRun);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
+        TornadoDevice defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
         TaskGraph taskGraph = new TaskGraph("s0") //

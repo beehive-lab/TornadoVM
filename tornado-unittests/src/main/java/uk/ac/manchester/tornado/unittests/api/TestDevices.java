@@ -90,7 +90,7 @@ public class TestDevices extends TornadoTestBase {
         assertFalse(backends.isEmpty());
 
         // Query the number of devices that are accessible per backend
-        int numDevicesBackendZero = backends.getFirst().getBackendCounter();
+        int numDevicesBackendZero = backends.getFirst().getNumDevices();
 
         assertTrue(numDevicesBackendZero >= 1);
 
@@ -120,7 +120,7 @@ public class TestDevices extends TornadoTestBase {
         assertNotNull(openCLBackend);
 
         // Obtain all backends with at least two devices associated to it
-        List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getBackendCounter() > 1);
+        List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getNumDevices() > 1);
 
         // Obtain the backend that can support SPIR-V as default device
         List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());

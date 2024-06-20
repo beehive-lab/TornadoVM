@@ -95,7 +95,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -1611,7 +1611,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 String newTaskScheduleName = TASK_GRAPH_PREFIX + taskScheduleNumber;
                 TaskGraph task = new TaskGraph(newTaskScheduleName);
 
-                Thread.currentThread().setName(STR."Thread-DEV: \{TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName()}");
+                Thread.currentThread().setName(STR."Thread-DEV: \{TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName()}");
 
                 for (StreamingObject streamingObject : inputModesObjects) {
                     performStreamInObject(task, streamingObject.object, streamingObject.mode);
@@ -1619,7 +1619,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
                 for (TaskPackage taskPackage : taskPackages) {
                     String taskID = taskPackage.getId();
-                    TornadoRuntime.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", STR."0:\{taskScheduleNumber}");
+                    TornadoRuntimeProvider.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", STR."0:\{taskScheduleNumber}");
                     if (TornadoOptions.DEBUG) {
                         System.out.println(STR."SET DEVICE: \{newTaskScheduleName}.\{taskID}.device=0:\{taskScheduleNumber}");
                     }
@@ -1662,7 +1662,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getBackendCounter();
+        int numDevices = tornadoDriver.getNumDevices();
         long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
@@ -1721,7 +1721,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         performStreamInObject(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
         for (TaskPackage taskPackage : taskPackages) {
             String taskID = taskPackage.getId();
-            TornadoRuntime.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", STR."0:\{deviceWinnerIndex}");
+            TornadoRuntimeProvider.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", STR."0:\{deviceWinnerIndex}");
             taskToCompile.addTask(taskPackage);
         }
         performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, taskToCompile, streamOutObjects);
@@ -1730,7 +1730,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void runTaskGraphParallelSelected(int deviceWinnerIndex) {
         for (TaskPackage taskPackage : taskPackages) {
-            TornadoRuntime.setProperty(STR."\{this.getTaskGraphName()}.\{taskPackage.getId()}.device", STR."0:\{deviceWinnerIndex}");
+            TornadoRuntimeProvider.setProperty(STR."\{this.getTaskGraphName()}.\{taskPackage.getId()}.device", STR."0:\{deviceWinnerIndex}");
         }
         if (TornadoOptions.DEBUG) {
             System.out.println(STR."Running in parallel device: \{deviceWinnerIndex}");
@@ -1758,7 +1758,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
-            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter()) {
+            if (deviceWinnerIndex >= TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices()) {
                 runSequential();
             } else {
                 runTaskGraphParallelSelected(deviceWinnerIndex);
@@ -1781,7 +1781,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private void cloneInputOutputObjects() {
         final long startSearchProfiler = (TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getBackendCounter();
+        int numDevices = tornadoDriver.getNumDevices();
         // Clone objects (only outputs) for each device
         for (int deviceNumber = 0; deviceNumber < numDevices; deviceNumber++) {
             ArrayList<Object> newInObjects = new ArrayList<>();
@@ -1845,7 +1845,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     }
                 }
 
-                TornadoRuntime.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", "0:" + taskNumber);
+                TornadoRuntimeProvider.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", "0:" + taskNumber);
                 if (TornadoOptions.DEBUG) {
                     System.out.println(STR."SET DEVICE: \{newTaskScheduleName}.\{taskID}.device=0:\{taskNumber}");
                 }
@@ -1925,9 +1925,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private String getListDevices() {
         StringBuilder str = new StringBuilder();
         str.append("                  : [");
-        int num = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
+        int num = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices();
         for (int i = 0; i < num; i++) {
-            TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i).getDeviceType();
+            TornadoDeviceType deviceType = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i).getDeviceType();
             String type = switch (deviceType) {
                 case CPU -> "CPU";
                 case GPU -> "GPU";
@@ -1943,7 +1943,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void runWithSequentialProfiler(Policy policy) {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
-        int numDevices = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getBackendCounter();
+        int numDevices = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getNumDevices();
         final int totalTornadoDevices = numDevices + 1;
         long[] totalTimers = new long[totalTornadoDevices];
 
@@ -2019,7 +2019,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             policy = Policy.PERFORMANCE;
         }
 
-        int numDevices = TornadoRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getBackendCounter();
+        int numDevices = TornadoRuntimeProvider.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX).getNumDevices();
 
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);

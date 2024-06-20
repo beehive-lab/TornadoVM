@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -56,8 +56,8 @@ public class PrebuiltTest extends TornadoTestBase {
 
     @BeforeClass
     public static void init() {
-        backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
+        backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
+        defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         String tornadoSDK = System.getenv(TORNADO_SDK);
         FILE_PATH = tornadoSDK + "/examples/generated/";
     }

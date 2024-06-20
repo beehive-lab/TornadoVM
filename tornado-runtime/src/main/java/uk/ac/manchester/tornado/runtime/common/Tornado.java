@@ -30,9 +30,9 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import uk.ac.manchester.tornado.api.TornadoSettingInterface;
+import uk.ac.manchester.tornado.api.TornadoSetting;
 
-public final class Tornado implements TornadoSettingInterface {
+public final class Tornado implements TornadoSetting {
 
     private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
 
@@ -92,7 +92,7 @@ public final class Tornado implements TornadoSettingInterface {
     }
 
     @Override
-    public void loadTornadoSettings(String filename) {
+    public void loadTornadoProperty(String filename) {
         loadSettings(filename);
     }
 

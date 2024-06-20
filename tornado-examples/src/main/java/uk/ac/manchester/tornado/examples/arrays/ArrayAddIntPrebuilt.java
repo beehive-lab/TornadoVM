@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
@@ -58,7 +58,7 @@ public class ArrayAddIntPrebuilt {
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
         String filePath = tornadoSDK + "/examples/generated/";
         filePath += device.getPlatformName().contains("PTX") ? "add.ptx" : "add.cl";
 

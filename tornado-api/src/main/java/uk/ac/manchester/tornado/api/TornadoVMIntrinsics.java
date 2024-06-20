@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api;
 import uk.ac.manchester.tornado.api.internal.annotations.TornadoVMIntrinsic;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
+@Deprecated
 @TornadoVMIntrinsic
 public class TornadoVMIntrinsics {
 
@@ -31,6 +32,7 @@ public class TornadoVMIntrinsics {
      * @param value
      * @return old value
      */
+    @Deprecated
     public static synchronized int atomic_add(IntArray array, int index, int value) {
         int old = array.get(index);
         array.set(index, array.get(index) + value);

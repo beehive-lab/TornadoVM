@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -57,7 +57,7 @@ public class TestProfiler extends TornadoTestBase {
     }
 
     private boolean isBackendPTXOrSPIRV(int driverIndex) {
-        TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex).getBackendType();
+        TornadoVMBackendType type = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex).getBackendType();
         return switch (type) {
             case PTX, SPIRV -> true;
             default -> false;
@@ -77,14 +77,14 @@ public class TestProfiler extends TornadoTestBase {
         // testProfilerDisabled might execute first. We must make sure that the code
         // cache is reset.
         // Otherwise, we get 0 compile time.
-        TornadoRuntime.getTornadoRuntime().getDefaultDevice().clean();
+        TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().clean();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
                 .task("t0", TestHello::add, a, b, c)//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        int driverIndex = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
         // Build ImmutableTaskGraph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -178,7 +178,7 @@ public class TestProfiler extends TornadoTestBase {
         // Execute the plan (default TornadoVM optimization choices)
         TornadoExecutionResult executionResult = executionPlan.execute();
 
-        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        int driverIndex = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
         TornadoProfilerResult profilerResult = executionResult.getProfilerResult();
 
@@ -227,7 +227,7 @@ public class TestProfiler extends TornadoTestBase {
         // Execute the plan (default TornadoVM optimization choices)
         TornadoExecutionResult executionResult = executionPlan.execute();
 
-        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        int driverIndex = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
         assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
         assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);

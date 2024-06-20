@@ -26,7 +26,7 @@ import java.util.Set;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkRunner {
 
@@ -51,7 +51,7 @@ public abstract class BenchmarkRunner {
     protected int iterations;
 
     private static boolean isProfilerEnabled() {
-        return TornadoRuntime.isProfilerEnabled();
+        return TornadoRuntimeProvider.isProfilerEnabled();
     }
 
     public void run() {
@@ -83,7 +83,7 @@ public abstract class BenchmarkRunner {
             refFirstIteration = -1;
         }
 
-        final String selectedDevices = TornadoRuntime.getProperty("devices");
+        final String selectedDevices = TornadoRuntimeProvider.getProperty("devices");
         if (selectedDevices == null || selectedDevices.isEmpty()) {
             runBenchmarkAllDevices(id, refElapsed, refElapsedMedian, refFirstIteration);
         } else {
@@ -98,11 +98,11 @@ public abstract class BenchmarkRunner {
         // Specify in <backendIndex:deviceIndex>
         findBlacklisted(blacklistedDevices, "tornado.blacklist.devices");
 
-        final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumBackends();
+        final int numDrivers = TornadoRuntimeProvider.getTornadoRuntime().getNumBackends();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
 
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex);
-            final int numDevices = driver.getBackendCounter();
+            final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex);
+            final int numDevices = driver.getNumDevices();
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 if (blacklistedDevices.containsKey(driverIndex)) {
@@ -114,7 +114,7 @@ public abstract class BenchmarkRunner {
 
                 TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
 
-                TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
+                TornadoRuntimeProvider.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver benchmarkDriver = getTornadoDriver();
                 try {
                     benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled());
@@ -157,7 +157,7 @@ public abstract class BenchmarkRunner {
             final int deviceIndex = Integer.parseInt(stringIndex[1]);
 
             final BenchmarkDriver deviceTest = getTornadoDriver();
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(driverIndex);
+            final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
             deviceTest.benchmark(tornadoDevice, isProfilerEnabled());
 
@@ -230,7 +230,7 @@ public abstract class BenchmarkRunner {
         BenchmarkRunner benchmarkRunner = getBenchMarkInstance(args[0]);
         final String[] benchmarkArgs = Arrays.copyOfRange(args, 1, args.length);
         if (System.getProperty("config") != null) {
-            TornadoRuntime.loadSettings(System.getProperty("config"));
+            TornadoRuntimeProvider.loadSettings(System.getProperty("config"));
         }
         benchmarkRunner.parseArgs(benchmarkArgs);
         benchmarkRunner.run();
