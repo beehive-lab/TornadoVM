@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
 /**
- * Backend Interfaces in TornadoVM: It contains the minimum amount of methods to be query per backend,
+ * Interface of the TornadoVM backends. This interface contains the minimum amount of methods to be query per backend,
  * such as the total number of devices, query the default device, etc.
  */
 public interface TornadoBackend {
