@@ -300,6 +300,61 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("LOCAL_MEMORY_ACCESS")
+    public static class LocalMemoryAccessStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LocalMemoryAccessStmt> TYPE = LIRInstructionClass.create(LocalMemoryAccessStmt.class);
+        private final PTXKind lhsKind;
+        private final PTXKind rhsKind;
+        @Def
+        protected Value lhs;
+        @Use
+        protected Value rhs;
+
+        public LocalMemoryAccessStmt(Value lhs, Value rhs) {
+            this(lhs, (PTXKind) lhs.getPlatformKind(), rhs, (PTXKind) rhs.getPlatformKind());
+        }
+
+        public LocalMemoryAccessStmt(Value lhs, PTXKind lhsKind, Value rhs, PTXKind rhsKind) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+            this.lhsKind = lhsKind;
+            this.rhsKind = rhsKind;
+        }
+
+        // local memory base is always u32 regardless of the FixedArray type
+        public static boolean arrayBaseConversion(PTXKind lhsKind, PTXKind rhsKind) {
+            if ((rhsKind.isF32() || rhsKind.isS32() || rhsKind.isF64() || rhsKind.isS64()) && lhsKind.isU32()) {
+                return true;
+            }
+            return lhsKind == rhsKind && !lhsKind.is8Bit();
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            if (arrayBaseConversion(lhsKind, rhsKind)) {
+                asm.emit(MOVE + DOT + lhsKind.toString());
+            } else {
+                asm.emit(CONVERT + DOT);
+                if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                    asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                    asm.emitSymbol(DOT);
+                }
+                asm.emit(lhsKind.toString());
+                asm.emitSymbol(DOT);
+                asm.emit(rhsKind.toString());
+            }
+            asm.emitSymbol(TAB);
+            asm.emitValue(lhs);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(rhs);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
 
@@ -325,14 +380,6 @@ public class PTXLIRStmt {
 
         public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
             if (rhsKind.isF16() && lhsKind.isB16() || rhsKind.isB16() && lhsKind.isF16()) {
-                return true;
-            }
-            return lhsKind == rhsKind && !lhsKind.is8Bit();
-        }
-
-        // local memory base is always u32 regardless of the FixedArray type
-        public static boolean arrayBaseConversion(PTXKind lhsKind, PTXKind rhsKind) {
-            if ((rhsKind.isF32() || rhsKind.isS32() || rhsKind.isF64() || rhsKind.isS64()) && lhsKind.isU32()) {
                 return true;
             }
             return lhsKind == rhsKind && !lhsKind.is8Bit();
@@ -369,7 +416,7 @@ public class PTXLIRStmt {
 
             } else {
                 asm.emitSymbol(TAB);
-                if (shouldEmitMove(lhsKind, rhsKind) || arrayBaseConversion(lhsKind, rhsKind)) {
+                if (shouldEmitMove(lhsKind, rhsKind) /*|| arrayBaseConversion(lhsKind, rhsKind)*/) {
                     asm.emit(MOVE + DOT + lhsKind.toString());
                 } else {
                     asm.emit(CONVERT + DOT);

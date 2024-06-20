@@ -567,15 +567,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-//                if (value instanceof FixedArrayNode) {
-//                    LIRKind lirKind = LIRKind.value(PTXKind.U32);
-//                    Value cast = gen.newVariable(lirKind);
-//                    Value original = operand(value);
-//                    append(new PTXLIRStmt.AssignStmt(cast, original));
-//                    append(new PTXLIRStmt.AssignStmt(result, cast));
-//                } else {
+                if (value instanceof FixedArrayNode) {
+                    // if a FixedArrayNode instance is assigned to a ValuePhiNode we have a conditional copy-by-reference
+                    append(new PTXLIRStmt.LocalMemoryAccessStmt(result, operand(value)));
+                } else {
                     append(new PTXLIRStmt.AssignStmt(result, operand(value)));
-                //}
+                }
             }
         }
 
