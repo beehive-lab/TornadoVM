@@ -27,6 +27,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -61,7 +62,7 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
     protected PTXArchitecture.PTXMemoryBase memoryRegister;
 
     public FixedArrayCopyNode(ValuePhiNode conditionalPhiNode, ResolvedJavaType elementType, PTXArchitecture.PTXMemoryBase memoryRegister, ValueNode address) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
+        super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.conditionalPhiNode = conditionalPhiNode;
         this.elementType = elementType;
         this.memoryRegister = memoryRegister;
@@ -103,23 +104,27 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
         LIRKind lirKindAdd = LIRKind.value(PTXKind.U32);
         final Value multResult = tool.newVariable(lirKindMult);
         final Value addResult = tool.newVariable(lirKindAdd);
-        final Value moveResult = tool.newVariable(lirKindAdd);
-        // offset should be automatic
         int offset = getOffset();
         final Value offsetValue = tool.emitConstant(lirKind, new RawConstant(offset));
-        tool.append(new PTXLIRStmt.PrivateArrayCopyStmt(index, arrayToBeCopied, moveResult, multResult, addResult, offsetValue));
+        tool.append(new PTXLIRStmt.PrivateArrayCopyStmt(index, arrayToBeCopied, multResult, addResult, offsetValue));
 
         final PTXBinary.Expr declarationPtr;
-        if (ptxKind.isF32()) {
-            final Value convert = tool.newVariable(lirKind);
-            tool.append(new PTXLIRStmt.AssignStmt(convert, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE, lirKind, addResult)));
-            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, convert, addResult);
-        } else {
+        final Value result;
+        if (ptxKind.isF32() || ptxKind.isF64()) {
+            result = tool.newVariable(lirKind);
+            tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE, lirKind, addResult)));
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, addResult);
+        } else if (ptxKind.isS64()) {
+            result = tool.newVariable(lirKind);
+            tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT, lirKind, addResult)));
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, addResult);
+    } else {
             declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, multResult, addResult);
+            result = multResult;
         }
 
         final PTXLIRStmt.ExprStmt ptrExpr = new PTXLIRStmt.ExprStmt(declarationPtr);
         tool.append(ptrExpr);
-        gen.setResult(this, multResult);
+        gen.setResult(this, result);
     }
 }

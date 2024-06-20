@@ -100,7 +100,7 @@ public enum PTXKind implements PlatformKind {
 
     S32(4, Integer.TYPE),
     F32(4, Float.TYPE),
-    U32(4, null),
+    U32(4, Integer.TYPE),
     B32(4, null),
 
     S64(8, Long.TYPE),
@@ -491,6 +491,10 @@ public enum PTXKind implements PlatformKind {
         return kind == F32;
     }
 
+    public boolean isU32() {
+        return kind == U32;
+    }
+
     public boolean isF16() {
         return kind == F16;
     }
@@ -505,6 +509,10 @@ public enum PTXKind implements PlatformKind {
 
     public boolean isS32() {
         return kind == S32;
+    }
+
+    public boolean isS64() {
+        return kind == S64;
     }
 
     public boolean is64Bit() {

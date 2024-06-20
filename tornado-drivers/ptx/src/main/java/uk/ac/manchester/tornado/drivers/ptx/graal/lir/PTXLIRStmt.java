@@ -330,6 +330,14 @@ public class PTXLIRStmt {
             return lhsKind == rhsKind && !lhsKind.is8Bit();
         }
 
+        // local memory base is always u32 regardless of the FixedArray type
+        public static boolean arrayBaseConversion(PTXKind lhsKind, PTXKind rhsKind) {
+            if ((rhsKind.isF32() || rhsKind.isS32() || rhsKind.isF64() || rhsKind.isS64()) && lhsKind.isU32()) {
+                return true;
+            }
+            return lhsKind == rhsKind && !lhsKind.is8Bit();
+        }
+
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (rhs instanceof PTXLIROp) {
@@ -361,7 +369,7 @@ public class PTXLIRStmt {
 
             } else {
                 asm.emitSymbol(TAB);
-                if (shouldEmitMove(lhsKind, rhsKind)) {
+                if (shouldEmitMove(lhsKind, rhsKind) || arrayBaseConversion(lhsKind, rhsKind)) {
                     asm.emit(MOVE + DOT + lhsKind.toString());
                 } else {
                     asm.emit(CONVERT + DOT);
@@ -803,17 +811,14 @@ public class PTXLIRStmt {
         @Use
         protected Value multResult;
         @Use
-        protected Value moveResult;
-        @Use
         protected Value addResult;
         @Use
         protected Value offset;
 
-        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value moveResult, Value multResult, Value addResult, Value offset) {
+        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value multResult, Value addResult, Value offset) {
             super(TYPE);
             this.index = index;
             this.arrayToBeCopied = arrayToBeCopied;
-            this.moveResult = moveResult;
             this.multResult = multResult;
             this.addResult = addResult;
             this.offset = offset;
@@ -822,16 +827,6 @@ public class PTXLIRStmt {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             // mult index with offset
-            asm.emitSymbol(TAB);
-            // mov
-            asm.emit(MOVE + DOT + "u32");
-            asm.emit(SPACE);
-            asm.emitValue(moveResult);
-            asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(arrayToBeCopied);
-            asm.delimiter();
-            asm.eol();
-            // s32 should be deducted
             asm.emitSymbol(TAB);
             asm.emit(MUL_LO + DOT + "s32");
             asm.emitSymbol(SPACE);
@@ -843,13 +838,12 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
             // add base with offset
-            // u32 should be deducted
             asm.emitSymbol(TAB);
             asm.emit(ADD + DOT + "u32");
             asm.emitSymbol(SPACE);
             asm.emitValue(addResult);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(moveResult);
+            asm.emitValue(arrayToBeCopied);
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(multResult);
             asm.delimiter();
