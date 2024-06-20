@@ -24,12 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
@@ -58,31 +52,6 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
     public SPIRVLevelZeroCodeCache(SPIRVDeviceContext deviceContext) {
         super(deviceContext);
-    }
-
-    @Override
-    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
-        if (code == null || code.length == 0) {
-            throw new RuntimeException("[ERROR] Binary SPIR-V Module is Empty");
-        }
-        ByteBuffer buffer = ByteBuffer.allocate(code.length);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.put(code);
-        String tempDirectory = System.getProperty("java.io.tmpdir");
-        String spirvTempDirectory = STR."\{tempDirectory}/tornadoVM-spirv";
-        Path path = Paths.get(spirvTempDirectory);
-        try {
-            Files.createDirectories(path);
-        } catch (IOException e) {
-            throw new TornadoBailoutRuntimeException("Error - Exception when creating the temp directory for SPIR-V");
-        }
-        long timeStamp = System.nanoTime();
-        String file = STR."\{spirvTempDirectory}/\{timeStamp}-\{id}\{entryPoint}.spv";
-        if (TornadoOptions.DEBUG) {
-            System.out.println(STR."SPIRV-File : \{file}");
-        }
-        writeBufferToFile(buffer, file);
-        return installSPIRVBinary(meta, id, entryPoint, file);
     }
 
     @Override
