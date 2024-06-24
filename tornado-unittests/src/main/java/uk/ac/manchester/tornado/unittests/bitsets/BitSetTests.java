@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,8 +29,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -39,7 +40,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.bitsets.BitSetTests
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.bitsets.BitSetTests
  * </code>
  */
 public class BitSetTests extends TornadoTestBase {
@@ -53,7 +54,7 @@ public class BitSetTests extends TornadoTestBase {
     }
 
     @Test
-    public void test01() {
+    public void test01() throws TornadoExecutionPlanException {
 
         final int numWords = 8192;
         final Random rand = new Random(7);
@@ -76,8 +77,9 @@ public class BitSetTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         intersectionCount(numWords, a, b, seq);
 

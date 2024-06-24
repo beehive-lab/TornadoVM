@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
@@ -166,7 +167,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testWarmUp() {
+    public void testWarmUp() throws TornadoExecutionPlanException {
 
         final int N = 128;
         int numKernels = 16;
@@ -185,9 +186,9 @@ public class TestArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph) //
-                .withWarmUp() //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp().execute();
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(i + numKernels, data.get(i));
@@ -195,7 +196,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitByteArray() {
+    public void testInitByteArray() throws TornadoExecutionPlanException {
         // Initialization: there is no copy-in.
         final int N = 128;
         ByteArray data = new ByteArray(N);
@@ -207,9 +208,9 @@ public class TestArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph) //
-                .withWarmUp() //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp().execute();
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals((byte) 21, data.get(i));
@@ -217,7 +218,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitNotParallel() {
+    public void testInitNotParallel() throws TornadoExecutionPlanException {
         // Initialization: there is no copy-in.
 
         final int N = 128;
@@ -230,9 +231,9 @@ public class TestArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph) //
-                .withWarmUp() //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp().execute();
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(1, data.get(i), 0.0001);
@@ -240,7 +241,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitParallel() {
+    public void testInitParallel() throws TornadoExecutionPlanException {
         // Initialization: there is no copy-in.
 
         final int N = 128;
@@ -253,9 +254,9 @@ public class TestArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph) //
-                .withWarmUp() //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp().execute();
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(1, data.get(i), 0.0001);
@@ -263,7 +264,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testAdd() {
+    public void testAdd() throws TornadoExecutionPlanException {
 
         final int N = 128;
         int numKernels = 8;
@@ -284,8 +285,9 @@ public class TestArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlanPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp().execute();
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(i + numKernels, data.get(i), 0.0001);
@@ -293,7 +295,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAdditionDouble() {
+    public void testVectorAdditionDouble() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
         DoubleArray b = new DoubleArray(numElements);
@@ -310,8 +312,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.01);
@@ -319,7 +322,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAdditionFloat() {
+    public void testVectorAdditionFloat() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         FloatArray a = new FloatArray(numElements);
         FloatArray b = new FloatArray(numElements);
@@ -336,8 +339,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.01f);
@@ -345,7 +349,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAdditionInteger() {
+    public void testVectorAdditionInteger() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -363,11 +367,10 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < 10; i++) {
-            executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
         }
 
         for (int i = 0; i < c.getSize(); i++) {
@@ -379,7 +382,7 @@ public class TestArrays extends TornadoTestBase {
      * Run multiple times an execution plan built with the Kernel Context API.
      */
     @Test
-    public void testVectorAdditionIntegerKernelContext() {
+    public void testVectorAdditionIntegerKernelContext() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -400,11 +403,11 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler).execute();
-
-        for (int i = 0; i < 10; i++) {
-            executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
         }
 
         for (int i = 0; i < c.getSize(); i++) {
@@ -413,7 +416,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAdditionLong() {
+    public void testVectorAdditionLong() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         LongArray a = new LongArray(numElements);
         LongArray b = new LongArray(numElements);
@@ -430,8 +433,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i));
@@ -439,7 +443,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAdditionShort() {
+    public void testVectorAdditionShort() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         ShortArray a = new ShortArray(numElements);
         ShortArray b = new ShortArray(numElements);
@@ -456,8 +460,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i));
@@ -465,7 +470,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorChars() {
+    public void testVectorChars() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         CharArray a = new CharArray(numElements);
         CharArray b = new CharArray(numElements);
@@ -482,8 +487,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals('f', c.get(i));
@@ -491,7 +497,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorBytes() {
+    public void testVectorBytes() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         ByteArray a = new ByteArray(numElements);
         ByteArray b = new ByteArray(numElements);
@@ -508,8 +514,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(21, c.get(i));
@@ -517,7 +524,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testHalfFloatInitialization() {
+    public void testHalfFloatInitialization() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         HalfFloatArray c = new HalfFloatArray(numElements);
 
@@ -526,8 +533,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(100.0f, c.get(i).getFloat32(), 0.01f);
@@ -535,7 +543,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAdditionHalfFloat() {
+    public void testVectorAdditionHalfFloat() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         HalfFloatArray a = new HalfFloatArray(numElements);
         HalfFloatArray b = new HalfFloatArray(numElements);
@@ -549,8 +557,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(8.0f, c.get(i).getFloat32(), 0.01f);
@@ -558,7 +567,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorSubtractionHalfFloat() {
+    public void testVectorSubtractionHalfFloat() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         HalfFloatArray a = new HalfFloatArray(numElements);
         HalfFloatArray b = new HalfFloatArray(numElements);
@@ -571,8 +580,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(4.0f, c.get(i).getFloat32(), 0.01f);
@@ -580,7 +590,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorMultiplicationHalfFloat() {
+    public void testVectorMultiplicationHalfFloat() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         HalfFloatArray a = new HalfFloatArray(numElements);
         HalfFloatArray b = new HalfFloatArray(numElements);
@@ -594,8 +604,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(12.0f, c.get(i).getFloat32(), 0.01f);
@@ -603,7 +614,7 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorDivisionHalfFloat() {
+    public void testVectorDivisionHalfFloat() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         HalfFloatArray a = new HalfFloatArray(numElements);
         HalfFloatArray b = new HalfFloatArray(numElements);
@@ -617,8 +628,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(3.0f, c.get(i).getFloat32(), 0.01f);
@@ -640,7 +652,7 @@ public class TestArrays extends TornadoTestBase {
      *     </code>
      */
     @Test
-    public void testVectorCharsMessage() {
+    public void testVectorCharsMessage() throws TornadoExecutionPlanException {
 
         CharArray a = new CharArray(12);
         a.set(0, 'h');
@@ -680,8 +692,9 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals('w', a.get(0));
         assertEquals('o', a.get(1));

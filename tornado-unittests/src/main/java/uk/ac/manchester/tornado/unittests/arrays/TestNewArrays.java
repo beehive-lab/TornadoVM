@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,9 +30,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -40,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestNewArrays
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestNewArrays
  * </code>
  */
 public class TestNewArrays extends TornadoTestBase {
@@ -62,6 +63,8 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     private static void vectorAddComplexConditions(IntArray a, IntArray b, IntArray c) {
+        // Array intentionally created inside the expression for allocation either in
+        // constant memory or local memory (OpenCL).
         int[] idx = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
                 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
                 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128,
@@ -135,7 +138,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitLargeArray() {
+    public void testInitLargeArray() throws TornadoExecutionPlanException {
         int size = 256;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -152,8 +155,9 @@ public class TestNewArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorAdd(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
@@ -163,7 +167,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitLargeArrayBranches() {
+    public void testInitLargeArrayBranches() throws TornadoExecutionPlanException {
         int size = 256;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -180,8 +184,9 @@ public class TestNewArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorAddComplexConditions(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
@@ -190,7 +195,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitNewArrayNotParallel() {
+    public void testInitNewArrayNotParallel() throws TornadoExecutionPlanException {
         final int N = 128;
         IntArray data = new IntArray(N);
         IntArray dataSeq = new IntArray(N);
@@ -208,8 +213,9 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         initializeToOne(dataSeq);
 
@@ -219,7 +225,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitNewArrayInsideParallel() {
+    public void testInitNewArrayInsideParallel() throws TornadoExecutionPlanException {
         final int N = 256;
         FloatArray data = new FloatArray(N);
         FloatArray dataSeq = new FloatArray(N);
@@ -237,8 +243,9 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         initializeToOneParallelScope(dataSeq);
 
@@ -248,7 +255,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @Test
-    public void testInitNewArrayInsideParallelWithComplexAccesses() {
+    public void testInitNewArrayInsideParallelWithComplexAccesses() throws TornadoExecutionPlanException {
         final int N = 256;
         FloatArray data = new FloatArray(N);
         FloatArray dataSeq = new FloatArray(N);
@@ -266,8 +273,9 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         initializeToOneParallelScopeComplex(dataSeq);
 
@@ -277,7 +285,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    public void testInitNewArrayParallel() {
+    public void testInitNewArrayParallel() throws TornadoExecutionPlanException {
         final int N = 128;
         FloatArray data = new FloatArray(N);
         FloatArray dataSeq = new FloatArray(N);
@@ -295,8 +303,9 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         initializeToOneParallel(dataSeq);
 
@@ -306,7 +315,7 @@ public class TestNewArrays extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    public void testIniNewtArrayWithReductions() {
+    public void testIniNewtArrayWithReductions() throws TornadoExecutionPlanException {
         FloatArray input = new FloatArray(1024);
         FloatArray result = new FloatArray(1);
         final int neutral = 0;
@@ -324,8 +333,9 @@ public class TestNewArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         FloatArray sequential = new FloatArray(1);
         reductionAddFloats(input, sequential);
