@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.tensors.Shape;
 import uk.ac.manchester.tornado.api.types.tensors.TensorByte;
@@ -103,7 +104,7 @@ public class TestTensorTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testTensorFloat16Add() {
+    public void testTensorFloat16Add() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -128,8 +129,9 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(HalfFloat.add(tensorA.get(i), tensorB.get(i)).getFloat32(), tensorC.get(i).getFloat32(), 0.01f);
@@ -138,7 +140,7 @@ public class TestTensorTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testTensorFloat32Add() {
+    public void testTensorFloat32Add() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -163,8 +165,9 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
@@ -173,7 +176,7 @@ public class TestTensorTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testTensorFloat64Add() {
+    public void testTensorFloat64Add() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -198,8 +201,9 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
@@ -208,7 +212,7 @@ public class TestTensorTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testTensorInt16Add() {
+    public void testTensorInt16Add() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -233,8 +237,9 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
@@ -243,7 +248,7 @@ public class TestTensorTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testTensorInt32Add() {
+    public void testTensorInt32Add() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -268,16 +273,16 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
         }
     }
 
     @Test
-    public void testTensorInt64Add() {
+    public void testTensorInt64Add() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -302,8 +307,9 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);
@@ -311,7 +317,7 @@ public class TestTensorTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testTensorByte() {
+    public void testTensorByte() throws TornadoExecutionPlanException {
         // Define the shape for the tensors
         Shape shape = new Shape(64, 64, 64);
 
@@ -336,8 +342,9 @@ public class TestTensorTypes extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan and execute it
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < tensorC.getSize(); i++) {
             Assert.assertEquals(tensorA.get(i) + tensorB.get(i), tensorC.get(i), 0.01f);

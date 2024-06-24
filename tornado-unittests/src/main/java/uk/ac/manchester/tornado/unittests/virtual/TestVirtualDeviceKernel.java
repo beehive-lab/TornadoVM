@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -41,8 +42,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
- *     -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
+ * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
+ * -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
  * </code>
  */
 public class TestVirtualDeviceKernel extends TornadoTestBase {
@@ -65,7 +66,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         }
     }
 
-    private void testVirtualDeviceKernel(String expectedCodeFile) {
+    private void testVirtualDeviceKernel(String expectedCodeFile) throws TornadoExecutionPlanException {
         float[] input = new float[SIZE];
         float[] result = new float[1];
         IntStream.range(0, SIZE).forEach(idx -> input[idx] = idx);
@@ -78,8 +79,10 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+        ;
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedCodeFile;
@@ -101,7 +104,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceKernelGPU() {
+    public void testVirtualDeviceKernelGPU() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -109,7 +112,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceKernelCPU() {
+    public void testVirtualDeviceKernelCPU() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 

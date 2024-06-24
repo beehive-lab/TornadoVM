@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -26,14 +32,10 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -124,7 +126,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void mxm1DKernelContext() {
+    public void mxm1DKernelContext() throws TornadoExecutionPlanException {
         final int size = 16;
         FloatArray a = new FloatArray(size * size);
         FloatArray b = new FloatArray(size * size);
@@ -147,9 +149,10 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -159,7 +162,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void mxm2DKernelContext01() {
+    public void mxm2DKernelContext01() throws TornadoExecutionPlanException {
         final int size = 16;
         FloatArray a = new FloatArray(size * size);
         FloatArray b = new FloatArray(size * size);
@@ -183,9 +186,10 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -195,7 +199,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void mxm2DKernelContext02() {
+    public void mxm2DKernelContext02() throws TornadoExecutionPlanException {
         final int size = 16;
         FloatArray a = new FloatArray(size * size);
         FloatArray b = new FloatArray(size * size);
@@ -220,9 +224,10 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         worker.setLocalWork(TS, TS, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         matrixMultiplicationJava(a, b, cJava, size);
 

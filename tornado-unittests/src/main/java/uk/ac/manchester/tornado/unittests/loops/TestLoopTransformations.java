@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -56,14 +57,6 @@ public class TestLoopTransformations extends TornadoTestBase {
         }
     }
 
-    private static void matrixTranspose(final float[] A, float[] B, final int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (@Parallel int j = 0; j < size; j++) {
-                B[(i * size) + j] = A[(j * size) + i];
-            }
-        }
-    }
-
     private static void matrixTranspose(final FloatArray A, FloatArray B, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
@@ -73,7 +66,7 @@ public class TestLoopTransformations extends TornadoTestBase {
     }
 
     @Test
-    public void testPartialUnrollDefault() {
+    public void testPartialUnrollDefault() throws TornadoExecutionPlanException {
         int size = 512;
 
         FloatArray matrixA = new FloatArray(size * size);
@@ -99,8 +92,9 @@ public class TestLoopTransformations extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         matrixVectorMultiplication(matrixA, matrixB, resultSeq, size);
         for (int i = 0; i < size; i++) {
@@ -111,7 +105,7 @@ public class TestLoopTransformations extends TornadoTestBase {
     }
 
     @Test
-    public void testPartialUnrollNvidia32() {
+    public void testPartialUnrollNvidia32() throws TornadoExecutionPlanException {
         int size = 512;
 
         FloatArray matrixA = new FloatArray(size * size);
@@ -146,8 +140,9 @@ public class TestLoopTransformations extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         matrixVectorMultiplication(matrixA, matrixB, resultSeq, size);
         for (int i = 0; i < size; i++) {
@@ -158,7 +153,7 @@ public class TestLoopTransformations extends TornadoTestBase {
     }
 
     @Test
-    public void testPartialUnrollParallelLoops() {
+    public void testPartialUnrollParallelLoops() throws TornadoExecutionPlanException {
         final int N = 256;
         FloatArray matrixA = new FloatArray(N * N);
         FloatArray matrixB = new FloatArray(N * N);
@@ -178,8 +173,9 @@ public class TestLoopTransformations extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {

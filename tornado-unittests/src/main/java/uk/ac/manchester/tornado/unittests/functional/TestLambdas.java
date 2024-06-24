@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,9 +29,10 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -39,13 +40,13 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *      tornado-test -V uk.ac.manchester.tornado.unittests.functional.TestLambdas
+ * tornado-test -V uk.ac.manchester.tornado.unittests.functional.TestLambdas
  * </code>
  */
 public class TestLambdas extends TornadoTestBase {
 
     @Test
-    public void testVectorFunctionLambda() {
+    public void testVectorFunctionLambda() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
         DoubleArray b = new DoubleArray(numElements);
@@ -67,8 +68,9 @@ public class TestLambdas extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
@@ -76,7 +78,7 @@ public class TestLambdas extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorFunctionLambda02() {
+    public void testVectorFunctionLambda02() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
         DoubleArray b = new DoubleArray(numElements);
@@ -100,8 +102,9 @@ public class TestLambdas extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) * b.get(i), c.get(i), 0.001);
@@ -109,7 +112,7 @@ public class TestLambdas extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorFunctionLambda03() {
+    public void testVectorFunctionLambda03() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         DoubleArray a = new DoubleArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -133,8 +136,9 @@ public class TestLambdas extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) * b.get(i), c.get(i), 0.001);
