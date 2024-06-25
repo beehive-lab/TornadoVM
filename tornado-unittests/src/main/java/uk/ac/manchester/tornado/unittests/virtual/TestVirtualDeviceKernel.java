@@ -82,7 +82,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.execute();
         }
-        ;
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedCodeFile;
