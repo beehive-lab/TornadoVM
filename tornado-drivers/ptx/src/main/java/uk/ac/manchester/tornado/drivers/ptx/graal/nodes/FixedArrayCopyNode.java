@@ -100,7 +100,7 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
         // the kind of the fixed array
         PTXKind ptxKind = PTXKind.fromResolvedJavaType(elementType);
         LIRKind lirKind = LIRKind.value(ptxKind);
-        // the kind
+        // the kind of the variables that will store the base index and address
         LIRKind indexKind = LIRKind.value(PTXKind.S32);
         LIRKind addressBaseKind = LIRKind.value(PTXKind.U32);
 
