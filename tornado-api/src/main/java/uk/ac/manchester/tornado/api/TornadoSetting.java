@@ -17,9 +17,14 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+public interface TornadoSetting {
 
-public interface AbstractFactoryDevice {
+    void setTornadoProperty(String key, String value);
 
-    TornadoDevice createDevice(int platform, int device);
+    String getTornadoProperty(String key);
+
+    String getTornadoProperty(String key, String defaultValue);
+
+    void loadTornadoProperty(String filename);
+
 }

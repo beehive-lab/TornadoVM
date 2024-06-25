@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.multithreaded;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -209,13 +209,13 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
             try {
                 t1.join();
             } catch (InterruptedException e) {
-                assertTrue("Error", false);
+                fail("Error");
             }
 
             try {
                 t2.join();
             } catch (InterruptedException e) {
-                assertTrue("Error", false);
+                fail("Error");
             }
 
         }
@@ -246,13 +246,13 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
             try {
                 t1.join();
             } catch (InterruptedException e) {
-                assertTrue("Error", false);
+                fail("Error");
             }
 
             try {
                 t2.join();
             } catch (InterruptedException e) {
-                assertTrue("Error", false);
+                fail("Error");
             }
 
         }

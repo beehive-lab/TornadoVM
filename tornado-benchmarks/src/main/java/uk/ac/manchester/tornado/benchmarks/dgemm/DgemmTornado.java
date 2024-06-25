@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -44,7 +44,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
+    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntimeProvider.getProperty("usePrebuilt", "False"));
     private DoubleArray a;
     private DoubleArray b;
     private DoubleArray c;
@@ -85,9 +85,9 @@ public class DgemmTornado extends BenchmarkDriver {
         } else {
             String filePath = "/tmp/mxmDouble.spv";
             TornadoDevice device = null;
-            int maxDevices = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
+            int maxDevices = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices();
             for (int i = 0; i < maxDevices; i++) {
-                device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i);
+                device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i);
                 if (device.isSPIRVSupported()) {
                     break;
                 }

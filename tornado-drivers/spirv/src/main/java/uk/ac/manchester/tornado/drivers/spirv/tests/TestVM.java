@@ -26,11 +26,11 @@ package uk.ac.manchester.tornado.drivers.spirv.tests;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeType;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 
@@ -47,7 +47,7 @@ public class TestVM {
 
     public TornadoDevice invokeSPIRVBackend(SPIRVRuntimeType spirvRuntime) {
         // Get the backend from TornadoVM
-        SPIRVBackend spirvBackend = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getBackend(spirvRuntime);
+        SPIRVBackend spirvBackend = TornadoRuntimeProvider.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getBackend(spirvRuntime);
         System.out.println("Query SPIR_V Runtime: " + spirvBackend);
         return spirvBackend.getDeviceContext().asMapping();
     }

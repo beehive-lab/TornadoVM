@@ -28,7 +28,8 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
@@ -95,7 +96,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     @Test
-    public void testTwoBackendsSerial() {
+    public void testTwoBackendsSerial() throws TornadoExecutionPlanException {
         assertAvailableDrivers(2);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -105,8 +106,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((30L + i) * i, a.get(i));
@@ -115,7 +117,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     @Test
-    public void testTwoBackendsConcurrent() {
+    public void testTwoBackendsConcurrent() throws TornadoExecutionPlanException {
         assertAvailableDrivers(2);
 
         System.setProperty("tornado.concurrent.devices", "True");
@@ -127,8 +129,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((30L + i) * i, a.get(i));
@@ -137,7 +140,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     @Test
-    public void testThreeBackendsConcurrent() {
+    public void testThreeBackendsConcurrent() throws TornadoExecutionPlanException {
         assertAvailableDrivers(3);
 
         System.setProperty("tornado.concurrent.devices", "True");
@@ -150,8 +153,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b, d); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((30L + i) * i, a.get(i));
@@ -161,7 +165,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     @Test
-    public void testThreeBackendsSerial() {
+    public void testThreeBackendsSerial() throws TornadoExecutionPlanException {
         assertAvailableDrivers(3);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
@@ -172,8 +176,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b, d); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((30L + i) * i, a.get(i));
@@ -183,7 +188,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     }
 
     private void assertAvailableDrivers(int limit) {
-        if (TornadoRuntime.getTornadoRuntime().getNumBackends() < limit) {
+        if (TornadoRuntimeProvider.getTornadoRuntime().getNumBackends() < limit) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + limit + "backends with at least 1 device enabled");
         }
     }

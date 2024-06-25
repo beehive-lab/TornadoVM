@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
@@ -62,8 +62,8 @@ public class MatrixAddition2D {
     }
 
     private static void reset() {
-        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumBackends(); i++) {
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(i);
+        for (int i = 0; i < TornadoRuntimeProvider.getTornadoRuntime().getNumBackends(); i++) {
+            final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(i);
             driver.getDefaultDevice().clean();
         }
     }

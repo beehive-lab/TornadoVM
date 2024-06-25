@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 /**
  * Data structure to query and filter the TornadoVM Drivers and TornadoVM Devices that the TornadoVM Runtime can access.
  */
 public class TornadoDeviceMap {
 
-    private final TornadoRuntimeInterface coreRuntime = TornadoRuntime.getTornadoRuntime();
+    private final TornadoRuntime coreRuntime = TornadoRuntimeProvider.getTornadoRuntime();
 
     private final int numBackends;
 

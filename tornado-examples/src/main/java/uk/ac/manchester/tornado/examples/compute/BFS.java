@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
@@ -201,7 +201,7 @@ public class BFS {
         currentDepth = new IntArray(1);
         currentDepth.init(0);
 
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
         TaskGraph taskGraph1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth) //
                 .task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth) //

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,8 +28,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -37,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.logic.TestLogic
+ * tornado-test -V uk.ac.manchester.tornado.unittests.logic.TestLogic
  * </code>
  */
 public class TestLogic extends TornadoTestBase {
@@ -77,7 +78,7 @@ public class TestLogic extends TornadoTestBase {
     }
 
     @Test
-    public void testLogic01() {
+    public void testLogic01() throws TornadoExecutionPlanException {
         final int N = 1024;
         IntArray data = new IntArray(N);
         IntArray output = new IntArray(N);
@@ -91,9 +92,9 @@ public class TestLogic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         logic01(data, sequential);
 
         for (int i = 0; i < data.getSize(); i++) {
@@ -103,7 +104,7 @@ public class TestLogic extends TornadoTestBase {
     }
 
     @Test
-    public void testLogic02() {
+    public void testLogic02() throws TornadoExecutionPlanException {
         final int N = 1024;
         IntArray data = new IntArray(N);
         IntArray output = new IntArray(N);
@@ -117,8 +118,9 @@ public class TestLogic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         logic02(data, sequential);
 
@@ -128,7 +130,7 @@ public class TestLogic extends TornadoTestBase {
     }
 
     @Test
-    public void testLogic03() {
+    public void testLogic03() throws TornadoExecutionPlanException {
         final int N = 1024;
         IntArray data = new IntArray(N);
         IntArray output = new IntArray(N);
@@ -142,8 +144,9 @@ public class TestLogic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         logic03(data, sequential);
 
@@ -153,7 +156,7 @@ public class TestLogic extends TornadoTestBase {
     }
 
     @Ignore
-    public void testLogic04() {
+    public void testLogic04() throws TornadoExecutionPlanException {
         final int N = 1024;
         IntArray data = new IntArray(N);
         IntArray output = new IntArray(N);
@@ -167,8 +170,9 @@ public class TestLogic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         logic04(data, sequential);
 

@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -47,13 +47,13 @@ public class SgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
+    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntimeProvider.getProperty("usePrebuilt", "False"));
     private WorkerGrid worker;
     private FloatArray a;
     private FloatArray b;
     private FloatArray c;
     private GridScheduler grid;
-    private boolean USE_GRID = Boolean.parseBoolean(TornadoRuntime.getProperty("usegrid", "False"));
+    private boolean USE_GRID = Boolean.parseBoolean(TornadoRuntimeProvider.getProperty("usegrid", "False"));
 
     public SgemmTornado(int iterations, int m, int n) {
         super(iterations);
@@ -98,9 +98,9 @@ public class SgemmTornado extends BenchmarkDriver {
             String filePath = "/tmp/mxmFloat.spv";
 
             TornadoDevice device = null;
-            int maxDevices = TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter();
+            int maxDevices = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices();
             for (int i = 0; i < maxDevices; i++) {
-                device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i);
+                device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i);
                 if (device.isSPIRVSupported()) {
                     break;
                 }

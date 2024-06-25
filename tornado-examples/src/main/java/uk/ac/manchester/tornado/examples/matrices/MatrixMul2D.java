@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
@@ -110,7 +110,7 @@ public class MatrixMul2D {
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
         TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
 
-        TornadoBackend cudaDriver = TornadoRuntime.getTornadoRuntime().getBackend(0);
+        TornadoBackend cudaDriver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
         executorCUDA.withDevice(cudaDevice);
 
@@ -138,9 +138,9 @@ public class MatrixMul2D {
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutionPlan executorOCL = new TornadoExecutionPlan(immutableTaskGraph1);
 
-        TornadoBackend oclDriver = TornadoRuntime.getTornadoRuntime().getBackend(1);
+        TornadoBackend oclDriver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(1);
         TornadoDevice oclDevice = null;
-        for (int i = 0; i < oclDriver.getBackendCounter(); i++) {
+        for (int i = 0; i < oclDriver.getNumDevices(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);
             if (device.getPhysicalDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getPhysicalDevice().getDeviceName())) {
                 oclDevice = device;

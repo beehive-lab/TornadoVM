@@ -35,8 +35,9 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -56,14 +57,14 @@ public class PrebuiltTest extends TornadoTestBase {
 
     @BeforeClass
     public static void init() {
-        backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
+        backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
+        defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         String tornadoSDK = System.getenv(TORNADO_SDK);
         FILE_PATH = tornadoSDK + "/examples/generated/";
     }
 
     @Test
-    public void testPrebuilt01() {
+    public void testPrebuilt01() throws TornadoExecutionPlanException {
 
         final int numElements = 8;
         IntArray a = new IntArray(numElements);
@@ -99,8 +100,9 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i));
@@ -108,7 +110,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt02SPIRV() {
+    public void testPrebuilt02SPIRV() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
 
@@ -137,10 +139,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         float finalSum = 0;
@@ -155,16 +157,16 @@ public class PrebuiltTest extends TornadoTestBase {
     /**
      * It tests the functionality of the prebuilt03SPIRV method.
      *
-     * This test case verifies that the prebuilt03SPIRV runs correctly though a
-     * SPIRV or OpenCL runtime if the device supports SPIRV.
+     * <p>This test case verifies that the prebuilt03SPIRV runs correctly though a
+     * SPIR-V or OpenCL runtime if the device supports SPIRV.</p>
      *
-     * Expected outcome: - If the current backend type is PTX, the test should have
+     * <p>Expected outcome: - If the current backend type is PTX, the test should have
      * thrown unsupported exception. - The test should succeed if a SPIR-V supported
      * device is available, or should use OPENCL as the backend with a device that
-     * device supports SPIRV; otherwise, the test should fail.
+     * device supports SPIR-V; otherwise, the test should fail.</p>
      */
     @Test
-    public void testPrebuilt03SPIRV() {
+    public void testPrebuilt03SPIRV() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
 
@@ -193,9 +195,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         float finalSum = 0;
@@ -208,7 +211,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt04SPIRVThroughOpenCLRuntime() {
+    public void testPrebuilt04SPIRVThroughOpenCLRuntime() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = getSPIRVSupportedDevice();
@@ -242,10 +245,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         float finalSum = 0;

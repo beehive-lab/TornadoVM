@@ -153,7 +153,7 @@ public class ImmutableTaskGraph {
         taskGraph.withMemoryLimit(memoryLimit);
     }
 
-    public void withoutMemoryLimit() {
+    void withoutMemoryLimit() {
         taskGraph.withoutMemoryLimit();
     }
 

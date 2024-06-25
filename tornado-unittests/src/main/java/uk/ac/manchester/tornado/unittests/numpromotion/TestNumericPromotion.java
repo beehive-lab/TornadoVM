@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -144,7 +145,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testBitwiseOr() {
+    public void testBitwiseOr() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -157,8 +158,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         bitwiseOr(sequential, input, elements);
@@ -168,7 +170,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testBitwiseAnd() {
+    public void testBitwiseAnd() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -181,8 +183,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         bitwiseAnd(sequential, input, elements);
@@ -192,7 +195,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testBitwiseXor() {
+    public void testBitwiseXor() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -205,8 +208,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         bitwiseXor(sequential, input, elements);
@@ -216,7 +220,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testBitwiseNot() {
+    public void testBitwiseNot() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -229,8 +233,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(8);
         bitwiseNot(sequential, input);
@@ -240,7 +245,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testAddition() {
+    public void testAddition() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -253,8 +258,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         addition(sequential, input, elements);
@@ -264,7 +270,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testSubtraction() {
+    public void testSubtraction() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -277,8 +283,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         subtraction(sequential, input, elements);
@@ -288,7 +295,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testMultiplication() {
+    public void testMultiplication() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -302,8 +309,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         sequential.init((byte) 1);
@@ -314,7 +322,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testDivision() {
+    public void testDivision() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -328,8 +336,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         sequential.init((byte) 8);
@@ -340,7 +349,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testSignedLeftShift() {
+    public void testSignedLeftShift() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -354,8 +363,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         sequential.init((byte) 8);
@@ -366,7 +376,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testSignedRightShift() {
+    public void testSignedRightShift() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -380,8 +390,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         ByteArray sequential = new ByteArray(4);
         sequential.init((byte) 8);
@@ -392,7 +403,7 @@ public class TestNumericPromotion extends TornadoTestBase {
     }
 
     @Test
-    public void testUnsignedRightShift() {
+    public void testUnsignedRightShift() throws TornadoExecutionPlanException {
 
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
@@ -406,9 +417,9 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         ByteArray sequential = new ByteArray(4);
         sequential.init((byte) 8);
         unsignedRightShift(sequential, input, elements);

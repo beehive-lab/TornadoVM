@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
  * Data Range Class provides a set of utilities to perform partial copies between
  * the accelerator (e.g., a GPU) and the CPU.
  *
- * @since 1.0.1
+ * @since v1.0.1
  */
 public class DataRange {
 

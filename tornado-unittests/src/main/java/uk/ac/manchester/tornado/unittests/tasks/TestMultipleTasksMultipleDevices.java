@@ -30,7 +30,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
@@ -105,7 +106,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     private static void assertAvailableDevices() {
-        if (TornadoRuntime.getTornadoRuntime().getBackend(0).getBackendCounter() < 2) {
+        if (TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + 2 + " devices enabled");
         }
     }
@@ -125,7 +126,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     @Test
-    public void testTwoTasksTwoDevices() {
+    public void testTwoTasksTwoDevices() throws TornadoExecutionPlanException {
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .task("t0", TestMultipleTasksMultipleDevices::task0Initialization, b) //
                 .task("t1", TestMultipleTasksMultipleDevices::task1Multiplication, a, 12) //
@@ -133,9 +134,9 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((30L + i) * i, a.get(i));
@@ -144,7 +145,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     @Test
-    public void testThreeTasksTwoDevices() {
+    public void testThreeTasksTwoDevices() throws TornadoExecutionPlanException {
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
                 .task("t0", TestMultipleTasksMultipleDevices::task0Initialization, b) //
@@ -153,9 +154,9 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b, d); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((30L + i) * i, a.get(i));
             assertEquals(i, b.get(i));
@@ -164,7 +165,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     @Test
-    public void testTwoTasksTwoDevicesSharedReadOnlyRead() {
+    public void testTwoTasksTwoDevicesSharedReadOnlyRead() throws TornadoExecutionPlanException {
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, d, c) //
                 .task("t0", TestMultipleTasksMultipleDevices::taskMultiplication, a, b, 12) //
@@ -173,9 +174,9 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((b.get(i) * i), a.get(i));
