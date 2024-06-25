@@ -6,6 +6,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -90,7 +91,7 @@ public class TestArrayCopies extends TornadoTestBase {
     }
 
     @Test
-    public void testPrivateArrayCopyInt() {
+    public void testPrivateArrayCopyInt() throws TornadoExecutionPlanException {
         final int numElements = 16;
 
         IntArray a = new IntArray(numElements);
@@ -108,8 +109,9 @@ public class TestArrayCopies extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         intPrivateCopy(a, c);
 
@@ -120,7 +122,7 @@ public class TestArrayCopies extends TornadoTestBase {
     }
 
     @Test
-    public void testPrivateArrayCopyFloat() {
+    public void testPrivateArrayCopyFloat() throws TornadoExecutionPlanException {
         final int numElements = 16;
 
         FloatArray a = new FloatArray(numElements);
@@ -138,8 +140,9 @@ public class TestArrayCopies extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         floatPrivateCopy(a, c);
 
@@ -150,7 +153,7 @@ public class TestArrayCopies extends TornadoTestBase {
     }
 
     @Test
-    public void testPrivateArrayCopyDouble() {
+    public void testPrivateArrayCopyDouble() throws TornadoExecutionPlanException {
         final int numElements = 16;
 
         DoubleArray a = new DoubleArray(numElements);
@@ -168,8 +171,9 @@ public class TestArrayCopies extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         doublePrivateCopy(a, c);
 
@@ -180,7 +184,7 @@ public class TestArrayCopies extends TornadoTestBase {
     }
 
     @Test
-    public void testPrivateArrayCopyLong() {
+    public void testPrivateArrayCopyLong() throws TornadoExecutionPlanException {
         final int numElements = 16;
 
         LongArray a = new LongArray(numElements);
@@ -198,8 +202,9 @@ public class TestArrayCopies extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         longPrivateCopy(a, c);
 
