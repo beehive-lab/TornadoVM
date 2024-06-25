@@ -69,7 +69,8 @@ import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaConstant;
@@ -79,6 +80,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
@@ -98,7 +100,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final HotSpotMetaAccessProvider metaAccessProvider) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
@@ -119,7 +121,7 @@ public class OCLGraphBuilderPlugins {
 
         OCLHalfFloatPlugins.registerPlugins(ps, plugins);
 
-        registerMemoryAccessPlugins(plugins);
+        registerMemoryAccessPlugins(plugins, metaAccessProvider);
 
     }
 
@@ -401,24 +403,15 @@ public class OCLGraphBuilderPlugins {
         }
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, AbstractMemorySegmentImpl.class);
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+        Registration r = new Registration(plugins, FloatArray.class);
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                r.register(new InvocationPlugin("getAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
+                r.register(new InvocationPlugin("set", Receiver.class, int.class, float.class) {
                     @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                        b.addPush(kind, readNode);
-                        return true;
-                    }
-                });
-                r.register(new InvocationPlugin("setAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                        System.out.println("Try to apply YYYY");
                         MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
@@ -426,9 +419,92 @@ public class OCLGraphBuilderPlugins {
                         return true;
                     }
                 });
+                r.register(new InvocationPlugin("get", Receiver.class, int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                        System.out.println("Try to apply XXXX" + receiver.get().toString() + " " + targetMethod.getName());
+                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                        System.out.println("Try to apply XXXX 1111");
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+                        System.out.println("Try to apply XXXX 2222");
+
+                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        System.out.println("Try to apply XXXX 3333");
+                        b.addPush(kind, readNode);
+                        return true;
+                    }
+                });
             }
         }
     }
+
+    //    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+    //        //        public final ResolvedJavaType AbstractMemorySegmentImpl = lookupTypeOptional("jdk.internal.foreign.AbstractMemorySegmentImpl");
+    //        String AbstractMemorySegmentImpl = "jdk.internal.foreign.AbstractMemorySegmentImpl";
+    //
+    //        //        ResolvedJavaType memorySegmentImplType = types.AbstractMemorySegmentImpl;
+    //
+    //        System.out.println("XXXXXXX REGISTER MEMORY SEGMENT");
+    //
+    //        ResolvedJavaType resolvedType = null;
+    //        try {
+    //            // Class name you want to lookup
+    //            String className = "jdk.internal.foreign.AbstractMemorySegmentImpl";
+    //
+    //            // Lookup the class using reflection
+    //            Class<?> clazz = Class.forName(className);
+    //            resolvedType = metaAccessProvider.lookupJavaType(clazz);
+    //
+    //            // Use clazz as needed
+    //        } catch (ClassNotFoundException e) {
+    //            e.printStackTrace();
+    //        }
+    //        System.out.println("Resolved Class: " + resolvedType.getSourceFileName() + " " + resolvedType.toJavaName());
+    //
+    //        Registration r = new Registration(plugins, new InvocationPlugins.ResolvedJavaSymbol(resolvedType));
+    //
+    //        System.out.println("re " + r.toString());
+    //        r.register(new InvocationPlugin("setAtIndex", Receiver.class, ValueLayout.JAVA_FLOAT.getClass(), long.class, float.class) {
+    //
+    //            @Override
+    //            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
+    //                System.out.println("app XXX");
+    //
+    //                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(JavaKind.Float.getByteCount())));
+    //                AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+    //                JavaWriteNode writeNode = new JavaWriteNode(JavaKind.Float, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+    //                b.add(writeNode);
+    //                return true;
+    //            }
+    //        });
+    //        for (JavaKind kind : JavaKind.values()) {
+    //            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+    //                System.out.println("re " + kind.getJavaName());
+    //                r.register(new InvocationPlugin("getAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
+    //                    @Override
+    //                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
+    //                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+    //                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+    //                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+    //                        b.addPush(kind, readNode);
+    //                        return true;
+    //                    }
+    //                });
+    //                r.register(new InvocationPlugin("setAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
+    //
+    //                    @Override
+    //                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
+    //                        System.out.println("app XXX");
+    //                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+    //                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+    //                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+    //                        b.add(writeNode);
+    //                        return true;
+    //                    }
+    //                });
+    //            }
+    //        }
+    //    }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
         final InvocationPlugin tprintfPlugin2 = new InvocationPlugin("tprintf", String.class, Object[].class) {

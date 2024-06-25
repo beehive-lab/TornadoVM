@@ -183,9 +183,10 @@ public class TornadoSketcher {
 
         } catch (Throwable e) {
             TornadoLogger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
-            if (TornadoOptions.DEBUG) {
+//            if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
-            }
+                
+//            }
             throw new TornadoBailoutRuntimeException(STR."Unable to build sketch for method: \{resolvedMethod.getName()}(\{e.getMessage()})");
         }
     }
