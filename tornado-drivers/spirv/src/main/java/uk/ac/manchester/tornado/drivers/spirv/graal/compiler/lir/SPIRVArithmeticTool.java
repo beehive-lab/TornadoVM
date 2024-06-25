@@ -481,7 +481,6 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
                 SPIRVAddressCast cast = new SPIRVAddressCast(indexedAccess.getValue(), indexedAccess.getMemoryRegion(), LIRKind.value(spirvKind));
                 Value offset = getOffsetValue(spirvKind, indexedAccess);
-                //
                 Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreVectorCollectionStmt in address: " + address + "[ " + indexedAccess.getIndex() + "]");
                 getGen().append(new SPIRVLIRStmt.StoreVectorCollectionStmt(cast, indexedAccess, input, offset));
             } else {

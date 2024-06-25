@@ -379,7 +379,7 @@ public class SPIRVUnary {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\temit Private memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
-            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
             SPIRVId indexId;
             if (index instanceof ConstantValue) {
                 indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());

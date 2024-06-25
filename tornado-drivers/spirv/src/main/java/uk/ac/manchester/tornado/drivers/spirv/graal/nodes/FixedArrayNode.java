@@ -58,7 +58,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     protected ConstantNode length;
 
     protected SPIRVKind elementKind;
-    protected ResolvedJavaType elementType;
     protected SPIRVArchitecture.SPIRVMemoryBase memoryBase;
 
     public FixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
@@ -74,10 +73,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     public ConstantNode getLength() {
         return length;
-    }
-
-    public ResolvedJavaType getElementType() {
-        return elementType;
     }
 
     @Override
