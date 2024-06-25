@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -41,8 +42,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
- *     -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
+ * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
+ * -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
  * </code>
  */
 public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
@@ -86,7 +87,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         }
     }
 
-    private void testVirtuaLDeviceFeatureExtraction(String expectedFeaturesFile) {
+    private void testVirtuaLDeviceFeatureExtraction(String expectedFeaturesFile) throws TornadoExecutionPlanException {
         float[] input = new float[SIZE];
         float[] result = new float[1];
         IntStream.range(0, SIZE).forEach(idx -> {
@@ -101,8 +102,9 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedFeaturesFile;
@@ -115,7 +117,6 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
             inputBytes = Files.readAllBytes(fileLog.toPath());
             expectedBytes = Files.readAllBytes(expectedKernelFile.toPath());
         } catch (IOException e) {
-            e.printStackTrace();
             Assert.fail();
         }
 
@@ -124,7 +125,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceFeaturesGPU() {
+    public void testVirtualDeviceFeaturesGPU() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -132,7 +133,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceFeaturesCPU() {
+    public void testVirtualDeviceFeaturesCPU() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 

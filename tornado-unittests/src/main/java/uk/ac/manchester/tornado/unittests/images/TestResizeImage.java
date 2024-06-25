@@ -30,9 +30,10 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -62,7 +63,7 @@ public class TestResizeImage extends TornadoTestBase {
     }
 
     @Test
-    public void testResizeImage() {
+    public void testResizeImage() throws TornadoExecutionPlanException {
         final int numElementsX = 8;
         final int numElementsY = 8;
 
@@ -83,9 +84,10 @@ public class TestResizeImage extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, imageDst);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp() //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp() //
+                    .execute();
+        }
 
         final int scale = 2;
 

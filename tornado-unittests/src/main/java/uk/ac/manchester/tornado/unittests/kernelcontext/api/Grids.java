@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -48,7 +49,7 @@ public class Grids extends TornadoTestBase {
     private static void psKernel(KernelContext kc, FloatArray tArray, FloatArray vArray, FloatArray results) {
         int idx = kc.localIdx;
 
-        results.set(5 * idx + 0, kc.globalIdx);
+        results.set(5 * idx, kc.globalIdx);
         results.set(5 * idx + 1, kc.globalGroupSizeX);
         results.set(5 * idx + 2, kc.localGroupSizeX);
         results.set(5 * idx + 3, kc.localIdx);
@@ -56,7 +57,7 @@ public class Grids extends TornadoTestBase {
     }
 
     @Test
-    public void testWithCorrectNames() {
+    public void testWithCorrectNames() throws TornadoExecutionPlanException {
 
         FloatArray timesArray = new FloatArray(size);
         FloatArray obsArray = new FloatArray(size);
@@ -76,10 +77,10 @@ public class Grids extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, resArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
     }
 

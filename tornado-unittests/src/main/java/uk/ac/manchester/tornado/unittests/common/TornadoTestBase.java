@@ -129,8 +129,8 @@ public abstract class TornadoTestBase {
             return device;
         }
 
-        // Search for a device with SPIRV support. This method will return even an
-        // OpenCL device if SPIRV is supported.
+        // Search for a device with SPIR-V support. This method will return even an
+        // OpenCL device if SPIR-V is supported.
         int numDrivers = getTornadoRuntime().getNumBackends();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             TornadoBackend driver = getTornadoRuntime().getBackend(driverIndex);
@@ -145,7 +145,7 @@ public abstract class TornadoTestBase {
             }
         }
 
-        return null; // No device with SPIRV support found
+        return null; // No device with SPIR-V support found
     }
 
     protected static class Tuple2<T0, T1> {

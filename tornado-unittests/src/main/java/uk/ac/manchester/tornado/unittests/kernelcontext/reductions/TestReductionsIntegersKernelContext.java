@@ -31,9 +31,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -79,170 +80,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         int groupID = context.groupIdx;
         int idx = localGroupSize * groupID + localIdx;
         a.set(idx, idx);
-    }
-
-    // Copy from Global to Local and Global memory again
-    public static void basicAccessThreadIds02(KernelContext context, int[] a, int[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx;
-        int idx = localGroupSize * groupID + localIdx;
-
-        int[] localA = context.allocateIntLocalArray(256);
-        localA[localIdx] = a[idx];
-        b[idx] = localA[localIdx];
-    }
-
-    // Copy from Global to Local and Global memory again
-    public static void basicAccessThreadIds03(KernelContext context, int[] a, int[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx;
-        int idx = localGroupSize * groupID + localIdx;
-
-        int[] localA = context.allocateIntLocalArray(256);
-        localA[localIdx] = a[idx];
-        localA[localIdx] *= 2;
-        b[idx] = localA[localIdx];
-    }
-
-    // Copy from Global to Local and Global memory again
-    public static void basicAccessThreadIds04(KernelContext context, int[] a, int[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx;
-        int idx = localGroupSize * groupID + localIdx;
-
-        int[] localA = context.allocateIntLocalArray(1024);
-        for (int i = 0; i < 256; i++) {
-            localA[i] = 2;
-        }
-
-        b[idx] = localA[localIdx];
-    }
-
-    // Copy from Global to Local and Global memory again
-    public static void basicAccessThreadIds05(KernelContext context, int[] a, int[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx;
-        int idx = localGroupSize * groupID + localIdx;
-
-        int[] localA = context.allocateIntLocalArray(256);
-        for (int i = 0; i < localGroupSize; i++) {
-            localA[i] = 2;
-        }
-
-        b[idx] = localA[localIdx];
-    }
-
-    public static void intReductionAddLocalMemory(KernelContext context, int[] a, int[] b) {
-        int globalIdx = context.globalIdx;
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-
-        int[] localA = context.allocateIntLocalArray(256);
-        localA[localIdx] = a[globalIdx];
-        context.localBarrier();
-
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            if (localIdx < stride) {
-                localA[localIdx] += localA[localIdx + stride];
-            }
-            context.localBarrier();
-        }
-        if (localIdx == 0) {
-            b[groupID] = localA[localIdx];
-        }
-    }
-
-    public static int computeMaxSequential(int[] input) {
-        int acc = 0;
-        for (int v : input) {
-            acc = TornadoMath.max(acc, v);
-        }
-        return acc;
-    }
-
-    private static void intReductionMaxGlobalMemory(KernelContext context, int[] a, int[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
-
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                a[id] = TornadoMath.max(a[id], a[id + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = a[id];
-        }
-    }
-
-    public static void intReductionMaxLocalMemory(KernelContext context, int[] a, int[] b) {
-        int globalIdx = context.globalIdx;
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-
-        int[] localA = context.allocateIntLocalArray(256);
-        localA[localIdx] = a[globalIdx];
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                localA[localIdx] = TornadoMath.max(localA[localIdx], localA[localIdx + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = localA[0];
-        }
-    }
-
-    public static int computeMinSequential(int[] input) {
-        int acc = 0;
-        for (int v : input) {
-            acc = TornadoMath.min(acc, v);
-        }
-        return acc;
-    }
-
-    private static void intReductionMinGlobalMemory(KernelContext context, int[] a, int[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
-
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                a[id] = TornadoMath.min(a[id], a[id + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = a[id];
-        }
-    }
-
-    public static void intReductionMinLocalMemory(KernelContext context, int[] a, int[] b) {
-        int globalIdx = context.globalIdx;
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-
-        int[] localA = context.allocateIntLocalArray(256);
-        localA[localIdx] = a[globalIdx];
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                localA[localIdx] = TornadoMath.min(localA[localIdx], localA[localIdx + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = localA[0];
-        }
     }
 
     // Copy from Global to Local and Global memory again
@@ -410,7 +247,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void basic() {
+    public void basic() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -428,9 +265,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(i, input.get(i));
@@ -438,7 +276,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void basic02() {
+    public void basic02() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -459,9 +297,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(input.get(i), output.get(i));
@@ -469,7 +308,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void basic03() {
+    public void basic03() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -490,9 +329,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(input.get(i) * 2, output.get(i));
@@ -500,7 +340,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void basic04() {
+    public void basic04() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -521,9 +361,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(2, output.get(i), 0.0);
@@ -531,7 +372,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void basic05() {
+    public void basic05() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -552,9 +393,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(2, output.get(i), 0.0);
@@ -562,7 +404,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testIntReductionsAddGlobalMemory() {
+    public void testIntReductionsAddGlobalMemory() throws TornadoExecutionPlanException {
         final int size = 32;
         final int localSize = 1;
         IntArray input = new IntArray(size);
@@ -583,9 +425,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         int finalSum = 0;
@@ -597,7 +440,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testIntReductionsAddLocalMemory() {
+    public void testIntReductionsAddLocalMemory() throws TornadoExecutionPlanException {
         final int size = 256;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -619,9 +462,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         int finalSum = 0;
@@ -633,7 +477,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testIntReductionsMaxGlobalMemory() {
+    public void testIntReductionsMaxGlobalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -655,9 +499,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         int finalSum = 0;
@@ -669,7 +514,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testIntReductionsMaxLocalMemory() {
+    public void testIntReductionsMaxLocalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -691,9 +536,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         int finalSum = 0;
@@ -705,7 +551,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testIntReductionsMinGlobalMemory() {
+    public void testIntReductionsMinGlobalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -727,9 +573,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         int finalSum = 0;
@@ -741,7 +588,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testIntReductionsMinLocalMemory() {
+    public void testIntReductionsMinLocalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         IntArray input = new IntArray(size);
@@ -763,9 +610,10 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         int finalSum = 0;

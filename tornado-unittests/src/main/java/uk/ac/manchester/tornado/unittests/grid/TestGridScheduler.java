@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
@@ -70,7 +71,7 @@ public class TestGridScheduler {
     }
 
     @Test
-    public void testMultipleTasksWithinTaskGraph() {
+    public void testMultipleTasksWithinTaskGraph() throws TornadoExecutionPlanException {
         final int size = 1024;
         FloatArray a = new FloatArray(size);
         FloatArray b = new FloatArray(size);
@@ -94,9 +95,10 @@ public class TestGridScheduler {
         worker.setLocalWork(1, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         float finalSum = tornadoC.get(0);
@@ -104,7 +106,7 @@ public class TestGridScheduler {
     }
 
     @Test
-    public void testMultipleTasksSeparateTaskGraphs() {
+    public void testMultipleTasksSeparateTaskGraphs() throws TornadoExecutionPlanException {
         final int size = 1024;
         FloatArray a = new FloatArray(size);
         FloatArray b = new FloatArray(size);
@@ -127,9 +129,10 @@ public class TestGridScheduler {
         worker.setLocalWork(1, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = s0.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         TaskGraph s1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoC, size) //
@@ -137,8 +140,9 @@ public class TestGridScheduler {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoC);
 
         ImmutableTaskGraph immutableTaskGraph1 = s1.snapshot();
-        TornadoExecutionPlan executionPlan1 = new TornadoExecutionPlan(immutableTaskGraph1);
-        executionPlan1.execute();
+        try (TornadoExecutionPlan executionPlan1 = new TornadoExecutionPlan(immutableTaskGraph1)) {
+            executionPlan1.execute();
+        }
 
         // Final SUM
         float finalSum = tornadoC.get(0);
