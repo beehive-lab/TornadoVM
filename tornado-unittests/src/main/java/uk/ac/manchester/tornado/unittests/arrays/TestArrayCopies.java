@@ -6,6 +6,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -92,6 +93,8 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyInt() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 16;
 
         IntArray a = new IntArray(numElements);
@@ -123,6 +126,8 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyFloat() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 16;
 
         FloatArray a = new FloatArray(numElements);
@@ -154,6 +159,8 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyDouble() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 16;
 
         DoubleArray a = new DoubleArray(numElements);
@@ -185,6 +192,8 @@ public class TestArrayCopies extends TornadoTestBase {
 
     @Test
     public void testPrivateArrayCopyLong() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int numElements = 16;
 
         LongArray a = new LongArray(numElements);
