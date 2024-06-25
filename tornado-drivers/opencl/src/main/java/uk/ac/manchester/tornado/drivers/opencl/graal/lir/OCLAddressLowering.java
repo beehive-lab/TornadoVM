@@ -44,13 +44,13 @@ public class OCLAddressLowering extends AddressLoweringByNodePhase.AddressLoweri
     @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
         OCLMemoryBase memoryRegister = OCLArchitecture.globalSpace;
-        if (base instanceof FixedArrayNode fixedArrayNode ) {
+        if (base instanceof FixedArrayNode fixedArrayNode) {
             memoryRegister = fixedArrayNode.getMemoryRegister();
         } else if (base instanceof FixedArrayCopyNode fixedArrayCopyNode) {
             memoryRegister = fixedArrayCopyNode.getMemoryRegister();
         } else if (base instanceof LocalArrayNode localArrayNode) {
             memoryRegister = localArrayNode.getMemoryRegister();
-        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode) || (base instanceof FixedArrayCopyNode))) {
+        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 
