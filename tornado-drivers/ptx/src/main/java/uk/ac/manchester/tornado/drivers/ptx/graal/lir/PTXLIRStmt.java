@@ -416,7 +416,7 @@ public class PTXLIRStmt {
 
             } else {
                 asm.emitSymbol(TAB);
-                if (shouldEmitMove(lhsKind, rhsKind) /*|| arrayBaseConversion(lhsKind, rhsKind)*/) {
+                if (shouldEmitMove(lhsKind, rhsKind)) {
                     asm.emit(MOVE + DOT + lhsKind.toString());
                 } else {
                     asm.emit(CONVERT + DOT);
@@ -856,28 +856,29 @@ public class PTXLIRStmt {
         @Use
         protected Value arrayToBeCopied;
         @Use
-        protected Value multResult;
+        protected Value offsetedIndex;
         @Use
-        protected Value addResult;
+        protected Value baseAddress;
         @Use
         protected Value offset;
 
-        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value multResult, Value addResult, Value offset) {
+        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value offsetedIndex, Value addResult, Value offset) {
             super(TYPE);
             this.index = index;
             this.arrayToBeCopied = arrayToBeCopied;
-            this.multResult = multResult;
-            this.addResult = addResult;
+            this.offsetedIndex = offsetedIndex;
+            this.baseAddress = addResult;
             this.offset = offset;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             // mult index with offset
+            // since the index is always an int, s32 is hardcoded
             asm.emitSymbol(TAB);
             asm.emit(MUL_LO + DOT + "s32");
             asm.emitSymbol(SPACE);
-            asm.emitValue(multResult);
+            asm.emitValue(offsetedIndex);
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(index);
             asm.emitSymbol(COMMA + SPACE);
@@ -885,14 +886,15 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
             // add base with offset
+            // since local memory base is always, u32 is hardcoded
             asm.emitSymbol(TAB);
             asm.emit(ADD + DOT + "u32");
             asm.emitSymbol(SPACE);
-            asm.emitValue(addResult);
+            asm.emitValue(baseAddress);
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(arrayToBeCopied);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(multResult);
+            asm.emitValue(offsetedIndex);
             asm.delimiter();
             asm.eol();
         }

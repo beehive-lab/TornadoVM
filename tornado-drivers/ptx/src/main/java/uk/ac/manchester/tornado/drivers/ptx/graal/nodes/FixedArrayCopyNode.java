@@ -21,7 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
@@ -98,29 +97,32 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         final Value index = gen.operand(address);
         final Value arrayToBeCopied = gen.operand(conditionalPhiNode);
+        // the kind of the fixed array
         PTXKind ptxKind = PTXKind.fromResolvedJavaType(elementType);
         LIRKind lirKind = LIRKind.value(ptxKind);
-        LIRKind lirKindMult = LIRKind.value(PTXKind.S32);
-        LIRKind lirKindAdd = LIRKind.value(PTXKind.U32);
-        final Value multResult = tool.newVariable(lirKindMult);
-        final Value addResult = tool.newVariable(lirKindAdd);
+        // the kind
+        LIRKind indexKind = LIRKind.value(PTXKind.S32);
+        LIRKind addressBaseKind = LIRKind.value(PTXKind.U32);
+
+        final Value offsetedIndex = tool.newVariable(indexKind);
+        final Value baseAddress = tool.newVariable(addressBaseKind);
         int offset = getOffset();
         final Value offsetValue = tool.emitConstant(lirKind, new RawConstant(offset));
-        tool.append(new PTXLIRStmt.PrivateArrayCopyStmt(index, arrayToBeCopied, multResult, addResult, offsetValue));
+        tool.append(new PTXLIRStmt.PrivateArrayCopyStmt(index, arrayToBeCopied, offsetedIndex, baseAddress, offsetValue));
 
         final PTXBinary.Expr declarationPtr;
         final Value result;
         if (ptxKind.isF32() || ptxKind.isF64()) {
             result = tool.newVariable(lirKind);
-            tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE, lirKind, addResult)));
-            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, addResult);
+            tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE, lirKind, baseAddress)));
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, baseAddress);
         } else if (ptxKind.isS64()) {
             result = tool.newVariable(lirKind);
-            tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT, lirKind, addResult)));
-            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, addResult);
+            tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT, lirKind, baseAddress)));
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, baseAddress);
     } else {
-            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, multResult, addResult);
-            result = multResult;
+            declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, offsetedIndex, baseAddress);
+            result = offsetedIndex;
         }
 
         final PTXLIRStmt.ExprStmt ptrExpr = new PTXLIRStmt.ExprStmt(declarationPtr);
