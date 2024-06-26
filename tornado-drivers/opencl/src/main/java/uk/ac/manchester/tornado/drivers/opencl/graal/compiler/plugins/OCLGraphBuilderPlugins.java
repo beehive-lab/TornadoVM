@@ -382,7 +382,6 @@ public class OCLGraphBuilderPlugins {
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                System.out.println("KInd " + kind.getJavaName() + " " + kind.name());
                 r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {

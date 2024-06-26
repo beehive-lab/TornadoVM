@@ -222,7 +222,7 @@ public final class CharArray extends TornadoNativeArray {
      */
     public void init(char value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(baseIndex + i, value, baseIndex);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 

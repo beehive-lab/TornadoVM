@@ -222,7 +222,7 @@ public final class ByteArray extends TornadoNativeArray {
      */
     public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(baseIndex + i, value, baseIndex);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
