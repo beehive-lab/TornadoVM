@@ -95,7 +95,6 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
     private MemorySegment getSegmentWithHeader(final Object reference) {
         return switch (reference) {
-
             case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegmentWithHeader();
             case TornadoCollectionInterface<?> tornadoCollectionInterface -> tornadoCollectionInterface.getSegmentWithHeader();
             case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
@@ -168,7 +167,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
                     (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
-        return useDeps ? returnEvents : null;
+        return returnEvents;
     }
 
     @Override

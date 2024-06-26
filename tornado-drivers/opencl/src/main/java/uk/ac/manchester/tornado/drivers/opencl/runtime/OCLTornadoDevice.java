@@ -104,7 +104,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLTornadoDevice implements TornadoXPUDevice {
 
     private static OCLBackendImpl driver = null;
-    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static final Pattern NAME_PATTERN = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
     private final OCLTargetDevice device;
     private final int deviceIndex;
@@ -630,10 +629,11 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
-        if (!state.hasContent() || BENCHMARKING_MODE) {
+        if (!state.hasContent()) {
             state.setContents(true);
             return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
         }
+        // return a NULL list
         return null;
     }
 
