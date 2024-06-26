@@ -257,41 +257,29 @@ public enum OCLKind implements PlatformKind {
     }
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerTemplate(JavaKind type) {
-        if (type == JavaKind.Int) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR;
-        } else if (type == JavaKind.Double) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR;
-        } else if (type == JavaKind.Float) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR;
-        } else if (type == JavaKind.Short) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR;
-        } else if (type == JavaKind.Long) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR;
-        } else if (type == JavaKind.Char) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR;
-        } else if (type == JavaKind.Byte) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR;
-        }
-        return null;
+        return switch (type) {
+            case Int -> OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR;
+            case Double -> OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR;
+            case Float -> OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR;
+            case Short -> OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR;
+            case Long -> OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR;
+            case Char -> OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR;
+            case Byte -> OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR;
+            default -> null;
+        };
     }
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerCopyTemplate(JavaKind type) {
-        if (type == JavaKind.Int) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Double) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Float) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Short) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Long) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Char) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Byte) {
-            return OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR_COPY;
-        }
-        return null;
+        return switch (type) {
+            case Int -> OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR_COPY;
+            case Double -> OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR_COPY;
+            case Float -> OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR_COPY;
+            case Short -> OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR_COPY;
+            case Long -> OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR_COPY;
+            case Char -> OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR_COPY;
+            case Byte -> OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR_COPY;
+            default -> null;
+        };
     }
 
     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {

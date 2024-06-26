@@ -75,21 +75,13 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
 
     private int getOffset() {
         PTXKind kind = PTXKind.fromResolvedJavaType(elementType);
-        switch (kind) {
-            case F64:
-            case S64:
-                return 8;
-            case F32:
-            case S32:
-                return 4;
-            case S16:
-                return 2;
-            case U16:
-            case S8:
-                return 1;
-            default:
-                return -1;
-        }
+        return switch (kind) {
+            case F64, S64 -> 8;
+            case F32, S32 -> 4;
+            case S16 -> 2;
+            case U16, S8 -> 1;
+            default -> -1;
+        };
     }
 
     @Override

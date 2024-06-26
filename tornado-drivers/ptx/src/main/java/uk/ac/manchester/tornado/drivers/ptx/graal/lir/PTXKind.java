@@ -255,22 +255,16 @@ public enum PTXKind implements PlatformKind {
     }
 
     public static PTXAssembler.PTXBinaryTemplate resolvePrivatePointerCopyTemplate(JavaKind type) {
-        if (type == JavaKind.Int) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_INT_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Double) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_DOUBLE_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Float) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_FLOAT_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Short) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_SHORT_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Long) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_LONG_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Char) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_CHAR_ARRAY_PTR_COPY;
-        } else if (type == JavaKind.Byte) {
-            return PTXAssembler.PTXBinaryTemplate.LOCAL_BYTE_ARRAY_PTR_COPY;
-        }
-        return null;
+        return switch (type) {
+            case Int -> PTXAssembler.PTXBinaryTemplate.LOCAL_INT_ARRAY_PTR_COPY;
+            case Double -> PTXAssembler.PTXBinaryTemplate.LOCAL_DOUBLE_ARRAY_PTR_COPY;
+            case Float -> PTXAssembler.PTXBinaryTemplate.LOCAL_FLOAT_ARRAY_PTR_COPY;
+            case Short -> PTXAssembler.PTXBinaryTemplate.LOCAL_SHORT_ARRAY_PTR_COPY;
+            case Long -> PTXAssembler.PTXBinaryTemplate.LOCAL_LONG_ARRAY_PTR_COPY;
+            case Char -> PTXAssembler.PTXBinaryTemplate.LOCAL_CHAR_ARRAY_PTR_COPY;
+            case Byte -> PTXAssembler.PTXBinaryTemplate.LOCAL_BYTE_ARRAY_PTR_COPY;
+            default -> null;
+        };
     }
 
     public static PTXKind resolveToVectorKind(ResolvedJavaType type) {
