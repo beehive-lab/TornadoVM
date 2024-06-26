@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 
 public class PTXAddressLowering extends AddressLoweringByNodePhase.AddressLowering {
@@ -44,6 +45,8 @@ public class PTXAddressLowering extends AddressLoweringByNodePhase.AddressLoweri
         PTXMemoryBase memoryRegister = PTXArchitecture.globalSpace;
         if (base instanceof FixedArrayNode fixedArrayNode) {
             memoryRegister = fixedArrayNode.getMemoryRegister();
+        } else if (base instanceof FixedArrayCopyNode fixedArrayCopyNode) {
+            memoryRegister = fixedArrayCopyNode.getMemoryRegister();
         } else if (base instanceof LocalArrayNode localArrayNode) {
             memoryRegister = localArrayNode.getMemoryRegister();
         } else if (!((base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {

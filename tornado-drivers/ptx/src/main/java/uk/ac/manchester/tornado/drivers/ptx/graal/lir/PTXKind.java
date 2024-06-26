@@ -100,7 +100,7 @@ public enum PTXKind implements PlatformKind {
 
     S32(4, Integer.TYPE),
     F32(4, Float.TYPE),
-    U32(4, null),
+    U32(4, Integer.TYPE),
     B32(4, null),
 
     S64(8, Long.TYPE),
@@ -248,6 +248,23 @@ public enum PTXKind implements PlatformKind {
             return PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
         }
         return null;
+    }
+
+    public static PTXAssembler.PTXBinaryTemplate resolvePrivatePointerCopyTemplate(ResolvedJavaType type) {
+        return resolvePrivatePointerCopyTemplate(type.getJavaKind());
+    }
+
+    public static PTXAssembler.PTXBinaryTemplate resolvePrivatePointerCopyTemplate(JavaKind type) {
+        return switch (type) {
+            case Int -> PTXAssembler.PTXBinaryTemplate.LOCAL_INT_ARRAY_PTR_COPY;
+            case Double -> PTXAssembler.PTXBinaryTemplate.LOCAL_DOUBLE_ARRAY_PTR_COPY;
+            case Float -> PTXAssembler.PTXBinaryTemplate.LOCAL_FLOAT_ARRAY_PTR_COPY;
+            case Short -> PTXAssembler.PTXBinaryTemplate.LOCAL_SHORT_ARRAY_PTR_COPY;
+            case Long -> PTXAssembler.PTXBinaryTemplate.LOCAL_LONG_ARRAY_PTR_COPY;
+            case Char -> PTXAssembler.PTXBinaryTemplate.LOCAL_CHAR_ARRAY_PTR_COPY;
+            case Byte -> PTXAssembler.PTXBinaryTemplate.LOCAL_BYTE_ARRAY_PTR_COPY;
+            default -> null;
+        };
     }
 
     public static PTXKind resolveToVectorKind(ResolvedJavaType type) {
@@ -468,6 +485,10 @@ public enum PTXKind implements PlatformKind {
         return kind == F32;
     }
 
+    public boolean isU32() {
+        return kind == U32;
+    }
+
     public boolean isF16() {
         return kind == F16;
     }
@@ -482,6 +503,10 @@ public enum PTXKind implements PlatformKind {
 
     public boolean isS32() {
         return kind == S32;
+    }
+
+    public boolean isS64() {
+        return kind == S64;
     }
 
     public boolean is64Bit() {
