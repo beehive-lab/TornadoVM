@@ -120,7 +120,7 @@ public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
             result = tool.newVariable(lirKind);
             tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.CVT_FLOAT, lirKind, baseAddress)));
             declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, result, baseAddress);
-    } else {
+        } else {
             declarationPtr = new PTXBinary.Expr(pointerCopyTemplate, lirKind, offsetedIndex, baseAddress);
             result = offsetedIndex;
         }

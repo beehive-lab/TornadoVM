@@ -886,7 +886,7 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
             // add base with offset
-            // since local memory base is always, u32 is hardcoded
+            // since local memory base is always an unsigned int, u32 is hardcoded
             asm.emitSymbol(TAB);
             asm.emit(ADD + DOT + "u32");
             asm.emitSymbol(SPACE);

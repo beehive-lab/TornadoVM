@@ -29,6 +29,7 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
@@ -48,7 +49,7 @@ public class TornadoFixedArrayCopyPhase extends Phase {
 
     protected void run(StructuredGraph graph) {
         for (ValuePhiNode phiNode : graph.getNodes().filter(ValuePhiNode.class)) {
-            if (phiNode.usages().filter(OffsetAddressNode.class).isNotEmpty() && phiNode.values().filter(FixedArrayNode.class).isNotEmpty()) {
+            if (isFixedArrayCopied(phiNode)) {
                 FixedArrayNode fixedArrayNode = phiNode.values().filter(FixedArrayNode.class).first();
                 ResolvedJavaType resolvedJavaType = fixedArrayNode.getElementType();
                 OCLArchitecture.OCLMemoryBase oclMemoryBase = fixedArrayNode.getMemoryRegister();
@@ -58,12 +59,17 @@ public class TornadoFixedArrayCopyPhase extends Phase {
                 offsetAddressNode.replaceFirstInput(phiNode, fixedArrayCopyNode);
                 // finally, since we know that the data accessed is a fixed array, fix the offset
                 ValuePhiNode privateIndex = getPrivateArrayIndex(offsetAddressNode.getOffset());
+                if (privateIndex == null) {
+                    throw new TornadoCompilationException("Index of FixedArrayNode is null.");
+                }
                 offsetAddressNode.setOffset(privateIndex);
-                break;
             }
         }
     }
 
+    private static boolean isFixedArrayCopied(ValuePhiNode phiNode) {
+        return phiNode.usages().filter(OffsetAddressNode.class).isNotEmpty() && phiNode.values().filter(FixedArrayNode.class).isNotEmpty();
+    }
 
     private static ValuePhiNode getPrivateArrayIndex(Node node) {
         // identify the index
