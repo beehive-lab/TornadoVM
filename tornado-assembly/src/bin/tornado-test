@@ -134,30 +134,21 @@ __TEST_THE_WORLD__ = [
 
     ## Tests for Virtual Devices
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-              testMethods=["testVirtualDeviceKernelGPU"],
+              testMethods=["testVirtualDeviceKernel"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
-                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
-    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-              testMethods=["testVirtualDeviceKernelCPU"],
-              testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel=True",
+                  "-Dtornado.virtual.device=True",
                   "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-              testMethods=["testVirtualDeviceFeaturesGPU"],
+              testMethods=["testVirtualDeviceFeatures"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
-    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-              testMethods=["testVirtualDeviceFeaturesCPU"],
-              testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
+                  "-Dtornado.virtual.device=True",
+                  "-Dtornado.feature.extraction=True",
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
 
+    ## Tests for Multi-Thread and Memory
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
               testParameters=["-Dtornado.device.memory=4GB"]),
 

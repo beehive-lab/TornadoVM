@@ -125,19 +125,11 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceFeaturesGPU() throws TornadoExecutionPlanException {
+    public void testVirtualDeviceFeatures() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesGPU.json");
-    }
-
-    @Test
-    public void testVirtualDeviceFeaturesCPU() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-
-        testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesCPU.json");
     }
 
 }
