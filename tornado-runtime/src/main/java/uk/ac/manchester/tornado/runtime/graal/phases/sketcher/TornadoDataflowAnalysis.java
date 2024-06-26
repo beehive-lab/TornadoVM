@@ -79,7 +79,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             if (param != null && param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                 accesses[i] = processUsages(param, context.getMetaAccess());
             }
-            TornadoLogger.debug("access: parameter %d -> %s\n", i, accesses[i]);
+            new TornadoLogger().debug("access: parameter %d -> %s\n", i, accesses[i]);
         }
     }
 

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -37,7 +37,6 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOp
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 
@@ -65,7 +64,7 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
      * the result in the same path with the asm extension.
      *
      * @param pathToFile
-     *            Path of the input SPIR-V Binary code
+     *     Path of the input SPIR-V Binary code
      * @return String of the whole disassembled SPIR-V module
      * @throws IOException
      */
@@ -106,18 +105,11 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
      * @return String.
      */
     public String getGeneratedSourceCode() {
-        if (spirvModule instanceof SPIRVLevelZeroModule) {
-            SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
-            String spirvFile = module.getPathToSPIRVBinary();
-            try {
-                return getDisassembledCode(spirvFile);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            throw new TornadoRuntimeException("Not implemented yet");
+        String spirvFile = spirvModule.getPathToSPIRVBinary();
+        try {
+            return getDisassembledCode(spirvFile);
+        } catch (IOException e) {
+            throw new TornadoRuntimeException(e);
         }
     }
 }

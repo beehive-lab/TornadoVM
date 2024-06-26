@@ -46,7 +46,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      *     The number of arguments for the kernel call wrapper.
      * @return The created {@link KernelStackFrame} object.
      */
-    KernelStackFrame createKernelStackFrame(int numArgs);
+    KernelStackFrame createKernelStackFrame(long executionId, int numArgs);
 
     /**
      * It creates or reuses an atomic buffer for the specified integer array.
@@ -173,6 +173,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
 
     /**
      * It returns from the sketch of a task whether the loop index is written in the output buffer.
+     * 
      * @param task
      * @return
      */

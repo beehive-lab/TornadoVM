@@ -109,6 +109,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
 public class PTXNodeLIRBuilder extends NodeLIRBuilder {
@@ -566,7 +567,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new PTXLIRStmt.AssignStmt(result, operand(value)));
+                if (value instanceof FixedArrayNode) {
+                    // if a FixedArrayNode instance is assigned to a ValuePhiNode we have a conditional copy-by-reference
+                    append(new PTXLIRStmt.LocalMemoryAccessStmt(result, operand(value)));
+                } else {
+                    append(new PTXLIRStmt.AssignStmt(result, operand(value)));
+                }
             }
         }
 

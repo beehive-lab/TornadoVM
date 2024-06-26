@@ -95,13 +95,13 @@ public class OCLVectorWrapper implements XPUBuffer {
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+            new TornadoLogger().info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -109,7 +109,7 @@ public class OCLVectorWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+            new TornadoLogger().info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
     }
@@ -186,7 +186,7 @@ public class OCLVectorWrapper implements XPUBuffer {
         }
         final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), bufferOffset, bufferSize, array, hostOffset, (useDeps) ? events : null);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     private int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {
@@ -355,5 +355,10 @@ public class OCLVectorWrapper implements XPUBuffer {
     @Override
     public long getSizeSubRegionSize() {
         return setSubRegionSize;
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 }

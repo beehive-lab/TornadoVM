@@ -61,7 +61,7 @@ public class EulerJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         ComputeKernels.euler(size, input, outputA, outputB, outputC, outputD, outputE);
     }
 }

@@ -91,7 +91,7 @@ public class StencilTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -102,10 +102,7 @@ public class StencilTornado extends BenchmarkDriver {
         final FloatArray b1 = new FloatArray(ainit.getSize());
 
         copy(sz, ainit, b0);
-        for (int i = 0; i < iterations; i++) {
-            benchmarkMethod(device);
-        }
-        barrier();
+        runBenchmark(device);
         executionPlan.clearProfiles();
 
         for (int i = 0; i < iterations; i++) {
@@ -122,11 +119,4 @@ public class StencilTornado extends BenchmarkDriver {
         executionResult.transferToHost(a0);
     }
 
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
-        }
-    }
 }

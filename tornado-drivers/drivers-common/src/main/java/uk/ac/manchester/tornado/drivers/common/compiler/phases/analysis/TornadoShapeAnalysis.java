@@ -50,6 +50,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
  */
 public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
+
     private static int getIntegerValue(ValueNode value) {
         if (value instanceof ConstantNode) {
             return value.asJavaConstant().asInt();
@@ -98,15 +100,15 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
                 domainTree.set(index, new IntDomain(getIntegerValue(range.offset().value()), getIntegerValue(range.stride().value()), getIntegerValue(range.value())));
             } else {
                 valid = false;
-                TornadoLogger.info("unsupported multiple parallel loops");
+                logger.info("unsupported multiple parallel loops");
                 break;
             }
             lastIndex = index;
         }
 
         if (valid) {
-            TornadoLogger.trace("loop nest depth = %d\n", domainTree.getDepth());
-            TornadoLogger.debug("discovered parallel domain: %s\n", domainTree);
+            logger.trace("loop nest depth = %d\n", domainTree.getDepth());
+            logger.debug("discovered parallel domain: %s\n", domainTree);
             context.getMeta().setDomain(domainTree);
         }
     }

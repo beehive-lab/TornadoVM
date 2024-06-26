@@ -92,13 +92,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class PTXCompiler {
 
     private static final AtomicInteger compilationId = new AtomicInteger();
-
     private static final TimerKey CompilerTimer = DebugContext.timer("PTXGraalCompiler");
     private static final TimerKey FrontEnd = DebugContext.timer("PTXFrontend");
     private static final TimerKey BackEnd = DebugContext.timer("PTXBackend");
     private static final TimerKey EmitLIR = DebugContext.timer("PTXEmitLIR");
     private static final TimerKey EmitCode = DebugContext.timer("PTXEmitCode");
-
     private static final PTXLIRGenerationPhase LIR_GENERATION_PHASE = new PTXLIRGenerationPhase();
 
     private static PTXCompilationResult compile(PTXCompilationRequest r) {
@@ -253,7 +251,7 @@ public class PTXCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(TornadoCoreRuntime.getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
-        TornadoLogger.info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        new TornadoLogger().info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
@@ -361,8 +359,9 @@ public class PTXCompiler {
                 try {
                     Files.createDirectories(outDir);
                 } catch (IOException e) {
-                    TornadoLogger.error("unable to create cache dir: %s", outDir.toString());
-                    TornadoLogger.error(e.getMessage());
+                    TornadoLogger logger = new TornadoLogger();
+                    logger.error("unable to create cache dir: %s", outDir.toString());
+                    logger.error(e.getMessage());
                 }
             }
 
@@ -374,7 +373,7 @@ public class PTXCompiler {
                     pw.printf("%s,%s\n", m.getDeclaringClass().getName(), m.getName());
                 }
             } catch (IOException e) {
-                TornadoLogger.error("unable to dump source: ", e.getMessage());
+                new TornadoLogger().error("unable to dump source: ", e.getMessage());
             }
         }
 
@@ -383,7 +382,7 @@ public class PTXCompiler {
 
     public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend,
             BatchCompilationConfig batchCompilationConfig, TornadoProfiler profiler) {
-        TornadoLogger.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        new TornadoLogger().info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
         StructuredGraph.Builder builder = new StructuredGraph.Builder(TornadoCoreRuntime.getTornadoRuntime().getOptions(), TornadoCoreRuntime.getDebugContext(), StructuredGraph.AllowAssumptions.YES);

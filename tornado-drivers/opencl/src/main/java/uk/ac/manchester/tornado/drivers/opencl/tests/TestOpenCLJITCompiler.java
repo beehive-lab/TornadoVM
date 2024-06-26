@@ -130,15 +130,15 @@ public class TestOpenCLJITCompiler {
 
         tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 
-        long contextID = 0;
+        long executionPlanId = 0;
 
         // Copy-IN A
-        tornadoDevice.ensurePresent(contextID, a, objectStateA, null, 0, 0);
+        tornadoDevice.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
         // Copy-IN B
-        tornadoDevice.ensurePresent(contextID, b, objectStateB, null, 0, 0);
+        tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(3);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3);
 
         // Fill header of call callWrapper with empty values
         callWrapper.setKernelContext(new HashMap<>());
@@ -148,10 +148,10 @@ public class TestOpenCLJITCompiler {
         callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Run the code
-        openCLCode.launchWithoutDependencies(contextID, callWrapper, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
-        tornadoDevice.streamOutBlocking(contextID, c, 0, objectStateC, null);
+        tornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);
     }
 
     public void test() {

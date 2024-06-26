@@ -66,7 +66,7 @@ public class StencilJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         stencil3d(n, sz, a0, a1, FAC);
         copy(sz, a0, a1);
     }

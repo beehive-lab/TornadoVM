@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,27 +21,23 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLGPUScheduler extends OCLKernelScheduler {
-
-    private long maxComputeUnits;
-    private long[] maxWorkGroupSize;
+public class OCLGenericGPUScheduler extends OCLKernelScheduler {
 
     private static final int WARP_SIZE = 32;
     private boolean ADJUST_IRREGULAR = false;
 
     private final long[] maxWorkItemSizes;
 
-    public OCLGPUScheduler(final OCLDeviceContext context) {
+    public OCLGenericGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLTargetDevice device = context.getDevice();
-
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
-        maxComputeUnits = device.getDeviceMaxComputeUnits();
-        maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
     }
 
     @Override
@@ -77,6 +73,10 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
     }
 
     private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {

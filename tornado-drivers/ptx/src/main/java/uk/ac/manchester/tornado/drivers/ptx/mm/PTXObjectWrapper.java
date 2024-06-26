@@ -66,11 +66,12 @@ public class PTXObjectWrapper implements XPUBuffer {
     private int hubOffset;
     private int fieldsOffset;
     private long subRegionSize;
+    private final TornadoLogger logger;
 
     public PTXObjectWrapper(final PTXDeviceContext device, Object object) {
         this.type = object.getClass();
         this.deviceContext = device;
-
+        this.logger = new TornadoLogger(this.getClass());
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
 
@@ -87,7 +88,7 @@ public class PTXObjectWrapper implements XPUBuffer {
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
-                TornadoLogger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
+                logger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
             XPUBuffer wrappedField = null;
@@ -105,7 +106,7 @@ public class PTXObjectWrapper implements XPUBuffer {
                 } else if (type == byte[].class) {
                     wrappedField = new PTXByteArrayWrapper(deviceContext);
                 } else {
-                    TornadoLogger.warn("cannot wrap field: array type=%s", type.getName());
+                    logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
@@ -150,13 +151,13 @@ public class PTXObjectWrapper implements XPUBuffer {
     @Override
     public void allocate(Object reference, long batchSize) {
         if (DEBUG) {
-            TornadoLogger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+            logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
         this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize());
 
         if (DEBUG) {
-            TornadoLogger.debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
+            logger.debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
         }
         for (FieldBuffer buffer : wrappedFields) {
             if (buffer != null) {
@@ -170,7 +171,7 @@ public class PTXObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deviceContext.getBufferProvider().markBufferReleased(address);
         address = -1;
         for (FieldBuffer buffer : wrappedFields) {
@@ -260,7 +261,7 @@ public class PTXObjectWrapper implements XPUBuffer {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
                 if (DEBUG) {
-                    TornadoLogger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
 
                 buffer.position(field.getOffset());
@@ -280,7 +281,7 @@ public class PTXObjectWrapper implements XPUBuffer {
                 Field f = getField(type, field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
-                    TornadoLogger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
                 readFieldFromBuffer(i, f, object);
             }
@@ -442,6 +443,11 @@ public class PTXObjectWrapper implements XPUBuffer {
     @Override
     public void setIntBuffer(int[] arr) {
         XPUBuffer.super.setIntBuffer(arr);
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
 }

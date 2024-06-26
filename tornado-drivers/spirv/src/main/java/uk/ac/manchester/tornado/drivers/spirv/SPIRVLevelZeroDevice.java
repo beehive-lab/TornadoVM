@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -60,9 +60,9 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         initDriverVersion();
     }
 
-    private static void errorLog(String method, int result) {
+    private static void errorLog(String methodName, int result) {
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
-            System.out.println("Error " + method);
+            System.out.println("Error " + methodName);
         }
     }
 
@@ -133,7 +133,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
-    public LevelZeroDevice getDevice() {
+    public LevelZeroDevice getDeviceRuntime() {
         return device;
     }
 
@@ -233,14 +233,27 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     @Override
     public TornadoDeviceType getTornadoDeviceType() {
         ZeDeviceType type = deviceProperties.getType();
-        if (type == ZeDeviceType.ZE_DEVICE_TYPE_GPU) {
-            return TornadoDeviceType.GPU;
-        } else if (type == ZeDeviceType.ZE_DEVICE_TYPE_FPGA) {
-            return TornadoDeviceType.FPGA;
-        } else if (type == ZeDeviceType.ZE_DEVICE_TYPE_CPU) {
-            return TornadoDeviceType.CPU;
-        }
-        return null;
+        return switch (type) {
+            case ZE_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case ZE_DEVICE_TYPE_FPGA -> TornadoDeviceType.FPGA;
+            case ZE_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            // Memory Copy Accelerator
+            case ZE_DEVICE_TYPE_MCA -> TornadoDeviceType.ACCELERATOR;
+            // Vision Processing Unit
+            case ZE_DEVICE_TYPE_VPU -> TornadoDeviceType.CUSTOM;
+            default -> null;
+        };
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        // The Level-Zero backend supports SPIR-V
+        return true;
+    }
+
+    @Override
+    public SPIRVRuntimeType getSPIRVRuntime() {
+        return SPIRVRuntimeType.LEVEL_ZERO;
     }
 
     @Override

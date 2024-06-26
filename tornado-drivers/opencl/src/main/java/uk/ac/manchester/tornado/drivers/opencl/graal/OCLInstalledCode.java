@@ -37,14 +37,14 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
-import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
-import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLGenericGPUScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLKernelScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -67,13 +67,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private final long[] singleThreadLocalWorkSize = new long[] { 1 };
     private final boolean isSPIRVBinary;
     private boolean valid;
+    TornadoLogger logger = new TornadoLogger(this.getClass());
 
     public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel, boolean isSPIRVBinary) {
         super(entryPoint);
         this.code = code;
         this.deviceContext = deviceContext;
         this.scheduler = OCLScheduler.create(deviceContext);
-        this.DEFAULT_SCHEDULER = new OCLGPUScheduler(deviceContext);
+        this.DEFAULT_SCHEDULER = new OCLGenericGPUScheduler(deviceContext);
         this.kernel = kernel;
         this.program = program;
         valid = kernel != null;
@@ -112,13 +113,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     public void resolveEvent(long executionPlanId, final OCLByteBuffer stack, final TaskMetaData meta, int task) {
         Event event = deviceContext.resolveEvent(executionPlanId, task);
-        TornadoLogger.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+        logger.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         if (event != null) {
-            TornadoLogger.debug("\tstatus   : %s", event.getStatus());
+            logger.debug("\tstatus   : %s", event.getStatus());
 
             if (meta != null && meta.enableProfiling()) {
-                TornadoLogger.debug("\texecuting: %f seconds", event.getElapsedTimeInSeconds());
-                TornadoLogger.debug("\ttotal    : %f seconds", event.getTotalTimeInSeconds());
+                logger.debug("\texecuting: %f seconds", event.getElapsedTimeInSeconds());
+                logger.debug("\ttotal    : %f seconds", event.getTotalTimeInSeconds());
             }
         }
     }
@@ -190,7 +191,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // local memory buffers
         if (meta != null && meta.getLocalSize() > 0) {
-            TornadoLogger.info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
+            logger.info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
             kernel.setLocalRegion(index, meta.getLocalSize());
         } else {
             kernel.setArgUnused(index);
@@ -225,7 +226,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         guarantee(kernel != null, "kernel is null");
 
         if (DEBUG) {
-            TornadoLogger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
         /*
@@ -350,7 +351,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         checkKernelNotNull();
 
         if (DEBUG) {
-            TornadoLogger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
         setKernelArgs(oclKernelStackFrame, atomicSpace, meta);

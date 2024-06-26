@@ -49,9 +49,6 @@ __TORNADOVM_PROVIDERS__ = """\
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
 -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
--Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
--Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
--Dtornado.load.device.implementation.spirv=uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVDeviceFactory \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel """
 

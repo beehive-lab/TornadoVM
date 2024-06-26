@@ -58,8 +58,9 @@ public class PTXEventPool {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         if (eventWrapper == null) {
-            TornadoLogger.fatal("invalid event: description=%s\n", descriptorId.getNameDescription());
-            TornadoLogger.fatal("terminating application as system integrity has been compromised.");
+            TornadoLogger logger = new TornadoLogger();
+            logger.fatal("invalid event: description=%s\n", descriptorId.getNameDescription());
+            logger.fatal("terminating application as system integrity has been compromised.");
             throw new TornadoBailoutRuntimeException("[ERROR] NULL event received from the CUDA driver !");
         }
 

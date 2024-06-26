@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.api.runtime;
 
-import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
-import uk.ac.manchester.tornado.api.TornadoSettingInterface;
+import uk.ac.manchester.tornado.api.TornadoRuntime;
+import uk.ac.manchester.tornado.api.TornadoSetting;
 
-public class TornadoRuntime {
+public class TornadoRuntimeProvider {
 
-    private static TornadoRuntimeInterface runtimeImpl;
-    private static TornadoSettingInterface tornadoImpl;
+    private static TornadoRuntime runtimeImpl;
+    private static TornadoSetting tornadoImpl;
 
     static {
         init();
@@ -31,14 +31,14 @@ public class TornadoRuntime {
 
     private static void init() {
         if (runtimeImpl == null) {
-            runtimeImpl = TornadoAPIProvider.loadRuntime();
+            runtimeImpl = TornadoAPIProvider.loadTornadoRuntimeImpl();
         }
         if (tornadoImpl == null) {
-            tornadoImpl = TornadoAPIProvider.loadTornado();
+            tornadoImpl = TornadoAPIProvider.loadTornadoImpl();
         }
     }
 
-    public static TornadoRuntimeInterface getTornadoRuntime() {
+    public static TornadoRuntime getTornadoRuntime() {
         return runtimeImpl;
     }
 
@@ -59,7 +59,7 @@ public class TornadoRuntime {
     }
 
     public static void loadSettings(String property) {
-        tornadoImpl.loadTornadoSettings(property);
+        tornadoImpl.loadTornadoProperty(property);
     }
 
 }

@@ -50,10 +50,10 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * Tornado Task Graph API.
  * <p>
  * Task-based parallel API to express methods to be accelerated on any OpenCL,
- * PTX or SPIR-V compatible device.
+ * PTX and/or SPIR-V compatible device.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since v0.15
  */
 public class TaskGraph implements TaskGraphInterface {
 
@@ -68,13 +68,6 @@ public class TaskGraph implements TaskGraphInterface {
         this.taskGraphName = name;
         taskGraphImpl = TornadoAPIProvider.loadScheduleRuntime(name);
         taskNames = new HashSet<>();
-    }
-
-    private void checkTaskName(String id) {
-        if (taskNames.contains(id)) {
-            throw new TornadoTaskRuntimeException(ERROR_TASK_NAME_DUPLICATION);
-        }
-        taskNames.add(id);
     }
 
     /**
@@ -749,28 +742,31 @@ public class TaskGraph implements TaskGraphInterface {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    TaskGraph withDevice(TornadoDevice device) {
-        taskGraphImpl.setDevice(device);
-        return this;
-    }
-
-    TaskGraph withDevice(String taskName, TornadoDevice device) {
-        taskGraphImpl.setDevice(taskName, device);
-        return this;
-    }
-
-    TaskGraph batch(String batchSize) {
-        taskGraphImpl.withBatch(batchSize);
-        return this;
-    }
-
-    TaskGraph withMemoryLimit(String memoryLimit) {
-        taskGraphImpl.withMemoryLimit(memoryLimit);
-        return this;
-    }
-
-    public void withoutMemoryLimit() {
+    void withoutMemoryLimit() {
         taskGraphImpl.withoutMemoryLimit();
+    }
+
+    private void checkTaskName(String id) {
+        if (taskNames.contains(id)) {
+            throw new TornadoTaskRuntimeException(ERROR_TASK_NAME_DUPLICATION);
+        }
+        taskNames.add(id);
+    }
+
+    void withDevice(TornadoDevice device) {
+        taskGraphImpl.setDevice(device);
+    }
+
+    void withDevice(String taskName, TornadoDevice device) {
+        taskGraphImpl.setDevice(taskName, device);
+    }
+
+    void batch(String batchSize) {
+        taskGraphImpl.withBatch(batchSize);
+    }
+
+    void withMemoryLimit(String memoryLimit) {
+        taskGraphImpl.withMemoryLimit(memoryLimit);
     }
 
     void execute(ExecutorFrame executionPackage) {
@@ -781,14 +777,6 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.warmup();
     }
 
-    void dumpEvents() {
-        taskGraphImpl.dumpEvents();
-    }
-
-    void dumpTimes() {
-        taskGraphImpl.dumpTimes();
-    }
-
     void dumpProfiles() {
         taskGraphImpl.dumpProfiles();
     }
@@ -797,9 +785,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.clearProfiles();
     }
 
-    TaskGraph freeDeviceMemory() {
+    void freeDeviceMemory() {
         taskGraphImpl.freeDeviceMemory();
-        return this;
     }
 
     void syncRuntimeTransferToHost(Object... objects) {
@@ -814,9 +801,8 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getDevice();
     }
 
-    TaskGraph useDefaultThreadScheduler(boolean use) {
+    void useDefaultThreadScheduler(boolean use) {
         taskGraphImpl.useDefaultThreadScheduler(use);
-        return this;
     }
 
     boolean isFinished() {
@@ -870,6 +856,14 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getDeviceKernelTime();
     }
 
+    long getTotalBytesCopyIn() {
+        return taskGraphImpl.getTotalBytesCopyIn();
+    }
+
+    long getTotalBytesCopyOut() {
+        return taskGraphImpl.getTotalBytesCopyOut();
+    }
+
     protected String getProfileLog() {
         return taskGraphImpl.getProfileLog();
     }
@@ -914,4 +908,15 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withGridScheduler(gridScheduler);
     }
 
+    long getTotalBytesTransferred() {
+        return taskGraphImpl.getTotalBytesTransferred();
+    }
+
+    long getTotalDeviceMemoryUsage() {
+        return taskGraphImpl.getTotalDeviceMemoryUsage();
+    }
+
+    long getCurrentDeviceMemoryUsage() {
+        return taskGraphImpl.getCurrentDeviceMemoryUsage();
+    }
 }

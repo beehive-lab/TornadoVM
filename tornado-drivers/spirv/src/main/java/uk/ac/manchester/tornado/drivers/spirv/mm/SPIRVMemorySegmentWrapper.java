@@ -164,7 +164,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
         }
         returnEvents.add(internalEvent);
-        return useDeps ? returnEvents : null;
+        return returnEvents;
     }
 
     @Override
@@ -183,18 +183,18 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            new TornadoLogger().info("allocated: %s", toString());
         }
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
         spirvDeviceContext.getBufferProvider().markBufferReleased(bufferId);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            new TornadoLogger().info("allocated: %s", toString());
         }
     }
 
@@ -211,5 +211,10 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     @Override
     public long getSizeSubRegionSize() {
         return subregionSize;
+    }
+
+    @Override
+    public long deallocate() {
+        return spirvDeviceContext.getBufferProvider().deallocate();
     }
 }

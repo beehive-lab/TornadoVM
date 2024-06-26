@@ -47,13 +47,14 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeImpl;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
@@ -88,7 +89,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  */
 public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
-    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static SPIRVBackendImpl driver = null;
     private final SPIRVDevice device;
     private final int deviceIndex;
@@ -97,7 +97,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     public SPIRVTornadoDevice(int platformIndex, int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
-        device = SPIRVProxy.getPlatform(platformIndex).getDevice(deviceIndex);
+        device = SPIRVRuntimeImpl.getInstance().getPlatform(platformIndex).getDevice(deviceIndex);
     }
 
     public SPIRVTornadoDevice(SPIRVDevice lowLevelDevice) {
@@ -120,8 +120,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createKernelStackFrame(Thread.currentThread().threadId(), numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask((PrebuiltTask) task);
         } else {
-            throw new RuntimeException("SchedulableTask task not supported");
+            throw new RuntimeException("SchedulableTask type is not supported: " + task.getClass());
         }
     }
 
@@ -189,8 +189,9 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
         } catch (Exception e) {
-            TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            TornadoLogger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
+            TornadoLogger logger = new TornadoLogger(this.getClass());
+            logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            logger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException(STR."[Error During the Task Compilation]: \{e.getMessage()}");
             } else {
@@ -317,7 +318,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
                 return new SPIRVVectorWrapper(deviceContext, object, batchSize);
             } else if (object instanceof MemorySegment) {
                 return new SPIRVMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof TornadoNativeArray) {
+            } else if (object instanceof TornadoNativeArray && !(object instanceof Tensor)) {
+                // For Tensor objects, we use the SPIRVObjectWrapper
                 return new SPIRVMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 // Possible a vector type, we encapsulate in an object
@@ -328,15 +330,16 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state) {
@@ -349,7 +352,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
@@ -363,19 +366,23 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
-        if (state.isLockedBuffer()) {
-            return -1;
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long deallocatedSpace = 0;
+        if (deviceBufferState.isLockedBuffer()) {
+            return deallocatedSpace;
         }
 
-        state.getXPUBuffer().deallocate();
-        state.setContents(false);
-        state.setXPUBuffer(null);
-        return -1;
+        deviceBufferState.getXPUBuffer().markAsFreeBuffer();
+        if (!TornadoOptions.isReusedBuffersEnabled()) {
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
+        }
+        deviceBufferState.setContents(false);
+        deviceBufferState.setXPUBuffer(null);
+        return deallocatedSpace;
     }
 
     /**
@@ -398,7 +405,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
      */
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long offset) {
-        if (!objectState.hasContent() || BENCHMARKING_MODE) {
+        if (!objectState.hasContent()) {
             objectState.setContents(true);
             return objectState.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
         }

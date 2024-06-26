@@ -21,6 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import java.util.Optional;
+
 import jdk.graal.compiler.nodes.GraphState;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.memory.ReadNode;
@@ -29,8 +31,6 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLDevice;
-
-import java.util.Optional;
 
 /**
  * This compiler phase examines if the execution device supports half precision types
@@ -52,11 +52,11 @@ public class OCLFP16SupportPhase extends Phase {
     protected void run(StructuredGraph graph) {
         boolean fp16Support = false;
         String extensions = null;
-        if (deviceContext.getDevice() instanceof OCLDevice) {
-            OCLDevice oclDevice = (OCLDevice) deviceContext.getDevice();
+        if (deviceContext.getDevice() instanceof OCLDevice oclDeviceFromContext) {
+            OCLDevice oclDevice = oclDeviceFromContext;
             extensions = oclDevice.getDeviceExtensions();
-        } else if (deviceContext.getDevice() instanceof VirtualOCLDevice) {
-            VirtualOCLDevice oclDevice = (VirtualOCLDevice) deviceContext.getDevice();
+        } else if (deviceContext.getDevice() instanceof VirtualOCLDevice virtualOCLDeviceFromContext) {
+            VirtualOCLDevice oclDevice = virtualOCLDeviceFromContext;
             extensions = oclDevice.getDeviceExtensions();
         }
         if (extensions != null && extensions.contains("cl_khr_fp16")) {

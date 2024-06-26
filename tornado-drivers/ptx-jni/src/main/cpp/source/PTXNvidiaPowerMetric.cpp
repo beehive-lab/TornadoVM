@@ -23,8 +23,9 @@
  * SOFTWARE.
  */
 #include <jni.h>
+#ifdef NVML_IS_SUPPORTED
 #include <nvml.h>
-
+#endif
 #include <iostream>
 
 #include "PTXNvidiaPowerMetric.h"
@@ -37,10 +38,14 @@
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric_ptxNvmlInit
         (JNIEnv *env, jclass) {
+#ifdef NVML_IS_SUPPORTED
     nvmlReturn_t result = nvmlInit();
     LOG_NVML_AND_VALIDATE("nvmlInit", result);
 
     return (jlong) result;
+#else
+    return (jlong) -1;
+#endif
 }
 
 /*
@@ -50,6 +55,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidi
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric_ptxNvmlDeviceGetHandleByIndex
         (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
+#ifdef NVML_IS_SUPPORTED
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
     nvmlReturn_t result = nvmlDeviceGetHandleByIndex(deviceIndex, (nvmlDevice_t*) device);
@@ -60,6 +66,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidi
     }
 
     return (jlong) result;
+#else
+    return (jlong) -1;
+#endif
 }
 
 /*
@@ -69,6 +78,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidi
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric_ptxNvmlDeviceGetPowerUsage
         (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
+#ifdef NVML_IS_SUPPORTED
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
     jlong *powerUsage = static_cast<jlong *>((array2 != NULL) ? env->GetPrimitiveArrayCritical(array2, NULL)
@@ -86,4 +96,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidi
     }
 
     return (jlong) result;
+#else
+    return (jlong) -1;
+#endif
 }

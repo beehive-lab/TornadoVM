@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import static jdk.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
@@ -182,11 +182,10 @@ public class TornadoSketcher {
             return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex());
 
         } catch (Throwable e) {
-            TornadoLogger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
-//            if (TornadoOptions.DEBUG) {
+            logger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
+            if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
-                
-//            }
+            }
             throw new TornadoBailoutRuntimeException(STR."Unable to build sketch for method: \{resolvedMethod.getName()}(\{e.getMessage()})");
         }
     }

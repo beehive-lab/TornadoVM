@@ -21,9 +21,12 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLAMDScheduler extends OCLKernelScheduler {
@@ -70,7 +73,6 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
         final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
-                /// XXX: Support 3D
                 localWork[2] = calculateGroupSize(maxWorkItemSizes[2], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[2]);
             case 2:
                 localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
@@ -82,6 +84,10 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
     }
 
     private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {

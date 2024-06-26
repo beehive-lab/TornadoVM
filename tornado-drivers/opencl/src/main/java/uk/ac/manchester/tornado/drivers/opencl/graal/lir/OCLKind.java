@@ -256,6 +256,32 @@ public enum OCLKind implements PlatformKind {
         return null;
     }
 
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerTemplate(JavaKind type) {
+        return switch (type) {
+            case Int -> OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR;
+            case Double -> OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR;
+            case Float -> OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR;
+            case Short -> OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR;
+            case Long -> OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR;
+            case Char -> OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR;
+            case Byte -> OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR;
+            default -> null;
+        };
+    }
+
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerCopyTemplate(JavaKind type) {
+        return switch (type) {
+            case Int -> OCLAssembler.OCLBinaryTemplate.PRIVATE_INT_ARRAY_PTR_COPY;
+            case Double -> OCLAssembler.OCLBinaryTemplate.PRIVATE_DOUBLE_ARRAY_PTR_COPY;
+            case Float -> OCLAssembler.OCLBinaryTemplate.PRIVATE_FLOAT_ARRAY_PTR_COPY;
+            case Short -> OCLAssembler.OCLBinaryTemplate.PRIVATE_SHORT_ARRAY_PTR_COPY;
+            case Long -> OCLAssembler.OCLBinaryTemplate.PRIVATE_LONG_ARRAY_PTR_COPY;
+            case Char -> OCLAssembler.OCLBinaryTemplate.PRIVATE_CHAR_ARRAY_PTR_COPY;
+            case Byte -> OCLAssembler.OCLBinaryTemplate.PRIVATE_BYTE_ARRAY_PTR_COPY;
+            default -> null;
+        };
+    }
+
     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {
         if (type == JavaKind.Int) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
@@ -281,6 +307,14 @@ public enum OCLKind implements PlatformKind {
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivateTemplateType(ResolvedJavaType type) {
         return resolvePrivateTemplateType(type.getJavaKind());
+    }
+
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerTemplate(ResolvedJavaType type) {
+        return resolvePrivatePointerTemplate(type.getJavaKind());
+    }
+
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivatePointerCopyTemplate(ResolvedJavaType type) {
+        return resolvePrivatePointerCopyTemplate(type.getJavaKind());
     }
 
     public static OCLKind resolveToVectorKind(ResolvedJavaType type) {

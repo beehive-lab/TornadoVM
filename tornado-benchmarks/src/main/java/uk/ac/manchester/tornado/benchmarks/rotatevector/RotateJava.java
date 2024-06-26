@@ -19,10 +19,10 @@ package uk.ac.manchester.tornado.benchmarks.rotatevector;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class RotateJava extends BenchmarkDriver {
@@ -62,7 +62,7 @@ public class RotateJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         rotateVector(output, m, input);
     }
 

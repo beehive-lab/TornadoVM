@@ -50,6 +50,7 @@ __TEST_THE_WORLD__ = [
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies"),
     TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats"),
@@ -103,14 +104,14 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
-    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
+    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.ResizeTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
@@ -122,8 +123,10 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestDevices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"),
+    TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -132,30 +135,21 @@ __TEST_THE_WORLD__ = [
 
     ## Tests for Virtual Devices
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-              testMethods=["testVirtualDeviceKernelGPU"],
+              testMethods=["testVirtualDeviceKernel"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
-                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
-    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-              testMethods=["testVirtualDeviceKernelCPU"],
-              testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel=True",
+                  "-Dtornado.virtual.device=True",
                   "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-              testMethods=["testVirtualDeviceFeaturesGPU"],
+              testMethods=["testVirtualDeviceFeatures"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
-    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-              testMethods=["testVirtualDeviceFeaturesCPU"],
-              testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
+                  "-Dtornado.virtual.device=True",
+                  "-Dtornado.feature.extraction=True",
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
 
+    ## Tests for Multi-Thread and Memory
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
               testParameters=["-Dtornado.device.memory=4GB"]),
 
@@ -188,9 +182,13 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGen#test02",
+    "uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testComputePi",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm1DKernelContext",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
+
+    ## Inconsistent timing metrics for data Transfers, triggering difference in copy once vs copy always
+    "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
 
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel.

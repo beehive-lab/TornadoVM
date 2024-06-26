@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -21,15 +21,26 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.spirv.runtime;
+package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import java.util.List;
 
-public class SPIRVDeviceFactory implements AbstractFactoryDevice {
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 
-    @Override
-    public TornadoDevice createDevice(int platform, int device) {
-        return new SPIRVTornadoDevice(platform, device);
-    }
+public interface OCLContextInterface {
+
+    int getNumDevices();
+
+    List<OCLTargetDevice> devices();
+
+    long getContextId();
+
+    TornadoDeviceContext createDeviceContext(int deviceIndex);
+
+    TornadoPlatformInterface getPlatform();
+
+    void createCommandQueue(int index);
+
+    int getPlatformIndex();
+
 }

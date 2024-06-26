@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.function.Function;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -112,23 +113,21 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            TornadoLogger.fatal("OOM: multi-dim array: %s", e.getMessage());
+            new TornadoLogger().fatal("OOM: multi-dim array: %s", e.getMessage());
             System.exit(-1);
         }
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deallocateElements();
-        tableWrapper.deallocate();
+        tableWrapper.markAsFreeBuffer();
         wrappers = null;
         addresses = null;
     }
 
     private void deallocateElements() {
-        for (int i = 0; i < wrappers.length; i++) {
-            wrappers[i].deallocate();
-        }
+        Arrays.stream(wrappers).forEach(PTXArrayWrapper::markAsFreeBuffer);
     }
 
     private int writeElements(long executionPlanId, T values) {

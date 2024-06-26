@@ -50,7 +50,7 @@ public class SpmvJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y);
     }
 

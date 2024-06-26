@@ -61,7 +61,7 @@ public class ConvolveImageJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         convolveImage(input, filter, output);
     }
 

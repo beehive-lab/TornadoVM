@@ -70,10 +70,12 @@ public class OCLXPUBuffer implements XPUBuffer {
     private long bufferOffset;
     private ByteBuffer buffer;
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public OCLXPUBuffer(final OCLDeviceContext device, Object object) {
         this.objectType = object.getClass();
         this.deviceContext = device;
+        this.logger = new TornadoLogger(this.getClass());
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -90,7 +92,7 @@ public class OCLXPUBuffer implements XPUBuffer {
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
-                TornadoLogger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
+                logger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
             XPUBuffer wrappedField = null;
@@ -111,7 +113,7 @@ public class OCLXPUBuffer implements XPUBuffer {
                 } else if (type == byte[].class) {
                     wrappedField = new OCLByteArrayWrapper((byte[]) objectFromField, device, 0);
                 } else {
-                    TornadoLogger.warn("cannot wrap field: array type=%s", type.getName());
+                    logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
@@ -163,7 +165,7 @@ public class OCLXPUBuffer implements XPUBuffer {
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (DEBUG) {
-            TornadoLogger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+            logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
@@ -171,12 +173,12 @@ public class OCLXPUBuffer implements XPUBuffer {
         setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
         if (DEBUG) {
-            TornadoLogger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
+            logger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
         }
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deviceContext.getBufferProvider().markBufferReleased(this.bufferId);
         bufferId = -1;
     }
@@ -263,7 +265,7 @@ public class OCLXPUBuffer implements XPUBuffer {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(objectType, field.getName());
                 if (DEBUG) {
-                    TornadoLogger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
 
                 buffer.position(field.getOffset());
@@ -283,7 +285,7 @@ public class OCLXPUBuffer implements XPUBuffer {
                 Field f = getField(objectType, field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
-                    TornadoLogger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
                 readFieldFromBuffer(i, f, object);
             }
@@ -417,7 +419,7 @@ public class OCLXPUBuffer implements XPUBuffer {
                 eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
-        return useDeps ? eventList : null;
+        return eventList;
     }
 
     @Override
@@ -455,4 +457,8 @@ public class OCLXPUBuffer implements XPUBuffer {
         return setSubRegionSize;
     }
 
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
+    }
 }

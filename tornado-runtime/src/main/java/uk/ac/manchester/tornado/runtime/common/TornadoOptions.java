@@ -196,9 +196,9 @@ public class TornadoOptions {
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
     /**
-     * Use Level Zero as a dispatcher for SPIRV.
+     * Use Level Zero or OpenCL as the SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero". The default option is "opencl".
      */
-    public static final boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", TRUE);
+    public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "opencl");
     /**
      * Check I/O parameters for every task within a task-graph.
      */

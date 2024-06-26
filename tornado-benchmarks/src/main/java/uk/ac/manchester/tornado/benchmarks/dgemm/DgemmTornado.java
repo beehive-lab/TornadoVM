@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -44,7 +44,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
+    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntimeProvider.getProperty("usePrebuilt", "False"));
     private DoubleArray a;
     private DoubleArray b;
     private DoubleArray c;
@@ -85,9 +85,9 @@ public class DgemmTornado extends BenchmarkDriver {
         } else {
             String filePath = "/tmp/mxmDouble.spv";
             TornadoDevice device = null;
-            int maxDevices = TornadoRuntime.getTornadoRuntime().getBackend(0).getDeviceCount();
+            int maxDevices = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices();
             for (int i = 0; i < maxDevices; i++) {
-                device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(i);
+                device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i);
                 if (device.isSPIRVSupported()) {
                     break;
                 }
@@ -120,7 +120,7 @@ public class DgemmTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 
@@ -129,21 +129,13 @@ public class DgemmTornado extends BenchmarkDriver {
 
         final DoubleArray result = new DoubleArray(m * n);
 
-        benchmarkMethod(device);
+        runBenchmark(device);
         executionPlan.clearProfiles();
 
         dgemm(m, n, m, a, b, result);
 
         final double ulp = TornadoMath.findULPDistance(c, result);
         return ulp < MAX_ULP;
-    }
-
-    public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
-        }
     }
 
 }

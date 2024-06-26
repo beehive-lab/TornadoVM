@@ -63,6 +63,7 @@ public class PTXVectorWrapper implements XPUBuffer {
     private long buffer;
     private long bufferSize;
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public PTXVectorWrapper(final PTXDeviceContext device, final Object object, long batchSize) {
         TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
@@ -74,6 +75,7 @@ public class PTXVectorWrapper implements XPUBuffer {
         this.bufferSize = sizeOf(payload);
         this.arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         this.arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     public long getBatchSize() {
@@ -97,14 +99,14 @@ public class PTXVectorWrapper implements XPUBuffer {
         this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            TornadoLogger.info("allocated: %s", toString());
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("allocated: %s", toString());
         }
 
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(buffer != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(buffer);
@@ -112,10 +114,14 @@ public class PTXVectorWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
-                    arrayHeaderSize);
-            TornadoLogger.info("deallocated: %s", toString());
+            logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override
@@ -176,7 +182,7 @@ public class PTXVectorWrapper implements XPUBuffer {
         }
         final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), bufferSize, array, hostOffset, (useDeps) ? events : null);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     private int enqueueWriteArrayData(long executionPlanId, long address, long bytes, Object value, long hostOffset, int[] waitEvents) {
@@ -295,7 +301,7 @@ public class PTXVectorWrapper implements XPUBuffer {
             } else if (type == HalfFloat[].class) {
                 return JavaKind.Object;
             } else {
-                TornadoLogger.warn("cannot wrap field: array type=%s", type.getName());
+                logger.warn("cannot wrap field: array type=%s", type.getName());
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class) {
             return JavaKind.Object;

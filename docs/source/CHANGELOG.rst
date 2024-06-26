@@ -5,6 +5,52 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.5
+----------------
+26th May 2024
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- `#402 <https://github.com/beehive-lab/TornadoVM/pull/402>`_: Support for TornadoNativeArrays from FFI buffers.
+- `#403 <https://github.com/beehive-lab/TornadoVM/pull/403>`_: Clean-up and refactoring for the code analysis of the loop-interchange.
+- `#405 <https://github.com/beehive-lab/TornadoVM/pull/405>`_: Disable Loop-Interchange for CPU offloading..
+- `#407 <https://github.com/beehive-lab/TornadoVM/pull/407>`_: Debugging OpenCL Kernels builds improved. 
+- `#410 <https://github.com/beehive-lab/TornadoVM/pull/410>`_: CPU block scheduler disabled by default and option to switch between different thread-schedulers added.
+- `#418 <https://github.com/beehive-lab/TornadoVM/pull/418>`_: TornadoOptions and TornadoLogger improved.
+- `#423 <https://github.com/beehive-lab/TornadoVM/pull/423>`_: MxM using ns instead of ms to report performance.
+- `#425 <https://github.com/beehive-lab/TornadoVM/pull/425>`_: Vector types for ``Float<Width>`` and ``Int<Width>`` supported.
+- `#429 <https://github.com/beehive-lab/TornadoVM/pull/429>`_: Documentation of the installation process updated and improved.
+- `#432 <https://github.com/beehive-lab/TornadoVM/pull/432>`_: Support for SPIR-V code generation and dispatcher using the TornadoVM OpenCL runtime.
+
+
+Compatibility
+~~~~~~~~~~~~~~~~~~
+
+- `#409 <https://github.com/beehive-lab/TornadoVM/pull/409>`_: Guidelines to build the documentation. 
+- `#411 <https://github.com/beehive-lab/TornadoVM/pull/411>`_: Windows installer improved.
+- `#412 <https://github.com/beehive-lab/TornadoVM/pull/412>`_: Python installer improved to check download all Python dependencies before the main installer.
+- `#413 <https://github.com/beehive-lab/TornadoVM/pull/413>`_: Improved documentation for installing all configurations of backends and OS. 
+- `#424 <https://github.com/beehive-lab/TornadoVM/pull/424>`_: Use Generic GPU Scheduler for some older NVIDIA Drivers for the OpenCL runtime.
+- `#430 <https://github.com/beehive-lab/TornadoVM/pull/430>`_: Improved the installer by checking  that the TornadoVM environment is loaded upfront.
+
+Bug Fixes
+~~~~~~~~~~~~~~~~~~
+
+- `#400 <https://github.com/beehive-lab/TornadoVM/pull/400>`_: Fix batch computation when the global thread indexes are used to compute the outputs.
+- `#414 <https://github.com/beehive-lab/TornadoVM/pull/414>`_: Recover Test-Field unit-tests using Panama types.
+- `#415 <https://github.com/beehive-lab/TornadoVM/pull/415>`_: Check style errors fixed.
+- `#416 <https://github.com/beehive-lab/TornadoVM/pull/416>`_: FPGA execution with multiple tasks in a task-graph fixed. 
+- `#417 <https://github.com/beehive-lab/TornadoVM/pull/417>`_: Lazy-copy out fixed for Java fields.
+- `#420 <https://github.com/beehive-lab/TornadoVM/pull/420>`_: Fix Mandelbrot example.
+- `#421 <https://github.com/beehive-lab/TornadoVM/pull/421>`_: OpenCL 2D thread-scheduler fixed for NVIDIA GPUs.
+- `#422 <https://github.com/beehive-lab/TornadoVM/pull/422>`_: Compilation for NVIDIA Jetson Nano fixed.
+- `#426 <https://github.com/beehive-lab/TornadoVM/pull/426>`_: Fix Logger for all backends.
+- `#428 <https://github.com/beehive-lab/TornadoVM/pull/428>`_: Math cos/sin operations supported for vector types.
+- `#431 <https://github.com/beehive-lab/TornadoVM/pull/431>`_: Jenkins files fixed. 
+
+
+
 TornadoVM 1.0.4
 ----------------
 30th April 2024

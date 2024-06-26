@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURound
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.ADD;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.DIV_APPROX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.MUL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.MUL_LO;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.SUB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ASSIGN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
@@ -297,6 +298,61 @@ public class PTXLIRStmt {
             asm.eol();
         }
 
+    }
+
+    @Opcode("LOCAL_MEMORY_ACCESS")
+    public static class LocalMemoryAccessStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LocalMemoryAccessStmt> TYPE = LIRInstructionClass.create(LocalMemoryAccessStmt.class);
+        private final PTXKind lhsKind;
+        private final PTXKind rhsKind;
+        @Def
+        protected Value lhs;
+        @Use
+        protected Value rhs;
+
+        public LocalMemoryAccessStmt(Value lhs, Value rhs) {
+            this(lhs, (PTXKind) lhs.getPlatformKind(), rhs, (PTXKind) rhs.getPlatformKind());
+        }
+
+        public LocalMemoryAccessStmt(Value lhs, PTXKind lhsKind, Value rhs, PTXKind rhsKind) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+            this.lhsKind = lhsKind;
+            this.rhsKind = rhsKind;
+        }
+
+        // local memory base is always u32 regardless of the FixedArray type
+        public static boolean arrayBaseConversion(PTXKind lhsKind, PTXKind rhsKind) {
+            if ((rhsKind.isF32() || rhsKind.isS32() || rhsKind.isF64() || rhsKind.isS64()) && lhsKind.isU32()) {
+                return true;
+            }
+            return lhsKind == rhsKind && !lhsKind.is8Bit();
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            if (arrayBaseConversion(lhsKind, rhsKind)) {
+                asm.emit(MOVE + DOT + lhsKind.toString());
+            } else {
+                asm.emit(CONVERT + DOT);
+                if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                    asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                    asm.emitSymbol(DOT);
+                }
+                asm.emit(lhsKind.toString());
+                asm.emitSymbol(DOT);
+                asm.emit(rhsKind.toString());
+            }
+            asm.emitSymbol(TAB);
+            asm.emitValue(lhs);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(rhs);
+            asm.delimiter();
+            asm.eol();
+        }
     }
 
     @Opcode("ASSIGN")
@@ -789,5 +845,59 @@ public class PTXLIRStmt {
             asm.emitSymbol(STMT_DELIMITER);
             asm.eol();
         }
+    }
+
+    @Opcode("PRIVATE_ARRAY_COPY")
+    public static class PrivateArrayCopyStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<PrivateArrayCopyStmt> TYPE = LIRInstructionClass.create(PrivateArrayCopyStmt.class);
+        @Use
+        protected Value index;
+        @Use
+        protected Value arrayToBeCopied;
+        @Use
+        protected Value offsetedIndex;
+        @Use
+        protected Value baseAddress;
+        @Use
+        protected Value offset;
+
+        public PrivateArrayCopyStmt(Value index, Value arrayToBeCopied, Value offsetedIndex, Value addResult, Value offset) {
+            super(TYPE);
+            this.index = index;
+            this.arrayToBeCopied = arrayToBeCopied;
+            this.offsetedIndex = offsetedIndex;
+            this.baseAddress = addResult;
+            this.offset = offset;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // mult index with offset
+            // since the index is always an int, s32 is hardcoded
+            asm.emitSymbol(TAB);
+            asm.emit(MUL_LO + DOT + "s32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(offsetedIndex);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(index);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset);
+            asm.delimiter();
+            asm.eol();
+            // add base with offset
+            // since local memory base is always an unsigned int, u32 is hardcoded
+            asm.emitSymbol(TAB);
+            asm.emit(ADD + DOT + "u32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(baseAddress);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(arrayToBeCopied);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offsetedIndex);
+            asm.delimiter();
+            asm.eol();
+        }
+
     }
 }

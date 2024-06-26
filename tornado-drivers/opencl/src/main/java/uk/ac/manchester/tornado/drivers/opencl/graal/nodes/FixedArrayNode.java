@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -52,6 +52,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     protected OCLMemoryBase memoryRegister;
     protected ResolvedJavaType elementType;
     protected OCLBinaryTemplate arrayTemplate;
+    protected OCLBinaryTemplate pointerTemplate;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
@@ -60,6 +61,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         this.elementType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLKind.resolvePrivateTemplateType(elementType);
+        this.pointerTemplate = OCLKind.resolvePrivatePointerTemplate(elementType);
     }
 
     public OCLMemoryBase getMemoryRegister() {
@@ -70,16 +72,24 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         return length;
     }
 
+    public ResolvedJavaType getElementType() {
+        return elementType;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        // generate declaration of private array
         final Value lengthValue = gen.operand(length);
-
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
         final OCLBinary.Expr declaration = new OCLBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
-
-        final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
-        gen.getLIRGeneratorTool().append(expr);
-        gen.setResult(this, variable);
+        final OCLLIRStmt.ExprStmt arrayExpr = new OCLLIRStmt.ExprStmt(declaration);
+        gen.getLIRGeneratorTool().append(arrayExpr);
+        // generate pointer to private array
+        final Variable ptr = gen.getLIRGeneratorTool().newVariable(lirKind);
+        final OCLBinary.Expr declarationPtr = new OCLBinary.Expr(pointerTemplate, lirKind, ptr, variable);
+        final OCLLIRStmt.ExprStmt ptrExpr = new OCLLIRStmt.ExprStmt(declarationPtr);
+        gen.getLIRGeneratorTool().append(ptrExpr);
+        gen.setResult(this, ptr);
     }
 }

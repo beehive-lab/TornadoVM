@@ -91,6 +91,10 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         return length;
     }
 
+    public void setElementKind(PTXKind kind) {
+        this.elementKind = kind;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitFixedArray: elementKind=%s length=%s", elementKind, length);

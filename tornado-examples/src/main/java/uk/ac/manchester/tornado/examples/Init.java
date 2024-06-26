@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.examples.common.Messages;
 
@@ -61,7 +61,7 @@ public class Init {
         System.out.println("Input size: " + bytesToAllocate + " (MB)");
         FloatArray array = new FloatArray(size);
 
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
+        TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         long maxDeviceMemory = device.getMaxAllocMemory();
         double mb = maxDeviceMemory * 1E-6;
         System.out.println("Maximum alloc device memory: " + mb + " (MB)");

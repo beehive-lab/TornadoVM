@@ -58,7 +58,7 @@ public class JuliaSetJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         GraphicsKernels.juliaSetTornado(size, hue, brightness);
     }
 }

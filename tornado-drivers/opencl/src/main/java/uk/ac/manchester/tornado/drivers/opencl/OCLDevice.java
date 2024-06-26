@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
@@ -44,7 +45,7 @@ public class OCLDevice implements OCLTargetDevice {
     private static final int INIT_VALUE = -1;
     private static final int MAX_BUFFER_SIZE = 8192;
 
-    private final long id;
+    private final long devicePtr;
     private final int index;
 
     private final ByteBuffer buffer;
@@ -74,10 +75,15 @@ public class OCLDevice implements OCLTargetDevice {
     private OCLLocalMemType localMemoryType;
     private int deviceVendorID;
     private OCLDeviceContextInterface deviceContext;
+    private float spirvVersion = SPIRV_VERSION_INIT;
 
-    public OCLDevice(int index, long id) {
+    private static final int SPIRV_VERSION_INIT = -1;
+    private static final int SPIRV_NOT_SUPPORTED = -2;
+    private static final float SPIRV_SUPPPORTED = 1.2f;
+
+    public OCLDevice(int index, long devicePointer) {
         this.index = index;
-        this.id = id;
+        this.devicePtr = devicePointer;
         this.buffer = ByteBuffer.allocate(MAX_BUFFER_SIZE);
         this.buffer.order(OpenCL.BYTE_ORDER);
         initialValues();
@@ -127,7 +133,6 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceMaxWorkItemSizes();
         getDeviceMaxWorkGroupSize();
         getDeviceName();
-        getDeviceVersion();
         getDeviceType();
         getDeviceVendor();
         getDriverVersion();
@@ -141,8 +146,8 @@ public class OCLDevice implements OCLTargetDevice {
 
     static native void clGetDeviceInfo(long id, int info, byte[] buffer);
 
-    public long getId() {
-        return id;
+    public long getDevicePointer() {
+        return devicePtr;
     }
 
     public int getIndex() {
@@ -208,6 +213,7 @@ public class OCLDevice implements OCLTargetDevice {
         return deviceVendorName;
     }
 
+    @Override
     public String getDriverVersion() {
         if (driverVersion != null) {
             return driverVersion;
@@ -440,6 +446,42 @@ public class OCLDevice implements OCLTargetDevice {
         return Integer.parseInt(getVersion().split(" ")[1].replace(".", "")) * 10;
     }
 
+    @Override
+    public boolean isSPIRVSupported() {
+        if (spirvVersion == SPIRV_NOT_SUPPORTED) {
+            // We query the device properties and the current device does not support
+            // OpenCL 1.2 or higher. 
+            return false;
+        } else if (spirvVersion > 0) {
+            // We query the device properties and the device supports at least SPIR-V 1.2.
+            return spirvVersion >= SPIRV_SUPPPORTED;
+        } else {
+            // Query the device properties and parse the version
+            queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_IL_VERSION.getValue());
+            String versionQuery = new String(buffer.array(), StandardCharsets.US_ASCII);
+            if (versionQuery.isEmpty()) {
+                return false;
+            }
+            String[] spirvVersions = versionQuery.trim().split(" ");
+            // We iterate through all supported versions and check there
+            // is support for SPIR-V >= 1.2
+            for (String version : spirvVersions) {
+                if (!version.isEmpty()) {
+                    String v = version.split("_")[1];
+                    try {
+                        spirvVersion = Float.parseFloat(v);
+                        return spirvVersion >= 1.2;
+                    } catch (NumberFormatException e) {
+                    }
+                }
+            }
+            // if all versions have been visited and none of them is >= 1.2
+            // then, we return false;
+            spirvVersion = SPIRV_NOT_SUPPORTED;
+            return false;
+        }
+    }
+
     public int getWordSize() {
         return getDeviceAddressBits() >> 3;
     }
@@ -464,18 +506,18 @@ public class OCLDevice implements OCLTargetDevice {
     private void queryOpenCLAPI(int value) {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, value, buffer.array());
+        clGetDeviceInfo(devicePtr, value, buffer.array());
     }
 
     @Override
     public String toString() {
-        return String.format("id=0x%x, deviceName=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable());
+        return String.format("id=0x%x, deviceName=%s, type=%s, available=%s", devicePtr, getDeviceName(), getDeviceType().toString(), isDeviceAvailable());
     }
 
     @Override
     public String getDeviceInfo() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
+        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", devicePtr, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         sb.append(String.format("Freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
         sb.append(String.format("Global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getDeviceGlobalMemorySize(), false), humanReadableByteCount(
                 getDeviceLocalMemorySize(), false)));

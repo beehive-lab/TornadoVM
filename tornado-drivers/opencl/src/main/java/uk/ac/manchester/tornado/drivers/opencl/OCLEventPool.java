@@ -49,9 +49,9 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  * Relationship: one instance of the {@link OCLEventPool} per {@link OCLDeviceContext}.
  * </p>
  */
-class OCLEventPool {
+public class OCLEventPool {
 
-    protected final long[] waitEventsBuffer;
+    public final long[] waitEventsBuffer;
     private final long[] events;
     private final EventDescriptor[] descriptors;
     private final BitSet retain;
@@ -59,8 +59,9 @@ class OCLEventPool {
     private final OCLEvent internalEvent;
     private int eventIndex;
     private int eventPoolSize;
+    private final TornadoLogger logger;
 
-    protected OCLEventPool(int poolSize) {
+    public OCLEventPool(int poolSize) {
         this.eventPoolSize = poolSize;
         this.retain = new BitSet(eventPoolSize);
         this.retain.clear();
@@ -70,9 +71,10 @@ class OCLEventPool {
         this.eventIndex = 0;
         this.waitEventsBuffer = new long[TornadoOptions.MAX_WAIT_EVENTS];
         this.internalEvent = new OCLEvent();
+        this.logger = new TornadoLogger(this.getClass());
     }
 
-    protected int registerEvent(long oclEventId, EventDescriptor descriptorId, OCLCommandQueue queue) {
+    public int registerEvent(long oclEventId, EventDescriptor descriptorId, OCLCommandQueue queue) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -85,8 +87,8 @@ class OCLEventPool {
          * exit.
          */
         if (oclEventId == -1) {
-            TornadoLogger.fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
-            TornadoLogger.fatal("terminating application as system integrity has been compromised.");
+            logger.fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
+            logger.fatal("terminating application as system integrity has been compromised.");
             System.exit(-1);
         }
 
@@ -113,7 +115,7 @@ class OCLEventPool {
         guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), eventPoolSize);
     }
 
-    protected boolean serialiseEvents(int[] dependencies, OCLCommandQueue queue) {
+    public boolean serialiseEvents(int[] dependencies, OCLCommandQueue queue) {
         boolean outOfOrderQueue = (queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
         if (dependencies == null || dependencies.length == 0 || !outOfOrderQueue) {
             return false;
@@ -126,7 +128,7 @@ class OCLEventPool {
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
-                TornadoLogger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
+                logger.debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
 
             }
         }
@@ -166,11 +168,11 @@ class OCLEventPool {
         retain.clear(localEventID);
     }
 
-    protected long getOCLEvent(int localEventID) {
+    public long getOCLEvent(int localEventID) {
         return events[localEventID];
     }
 
-    protected EventDescriptor getDescriptor(int localEventID) {
+    public EventDescriptor getDescriptor(int localEventID) {
         return descriptors[localEventID];
     }
 

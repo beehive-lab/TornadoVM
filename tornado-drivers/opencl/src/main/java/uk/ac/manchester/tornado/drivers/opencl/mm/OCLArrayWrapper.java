@@ -54,6 +54,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
+    private TornadoLogger logger;
 
     protected OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize) {
         this.deviceContext = device;
@@ -65,6 +66,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        logger = new TornadoLogger(this.getClass());
     }
 
     protected OCLArrayWrapper(final T array, final OCLDeviceContext device, final JavaKind kind, long batchSize) {
@@ -102,14 +104,14 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            TornadoLogger.info("allocated: %s", toString());
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("allocated: %s", toString());
         }
 
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -117,10 +119,14 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
-                    arrayHeaderSize);
-            TornadoLogger.info("deallocated: %s", toString());
+            logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override
@@ -198,7 +204,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     /**
@@ -308,7 +314,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
-            TornadoLogger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            logger.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
             header.dump(8);
         }
         return valid;

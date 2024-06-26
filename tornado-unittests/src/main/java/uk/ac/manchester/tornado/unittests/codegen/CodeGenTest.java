@@ -32,18 +32,21 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * How to test?
  *
+ * <p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGen
+ * tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGenTest
  * </code>
+ * </p>
  */
-public class CodeGen extends TornadoTestBase {
+public class CodeGenTest extends TornadoTestBase {
 
     public static void cascadeKernel(IntArray grayIntegralImage, int imageWidth, int imageHeight, IntArray resultsXY) {
         for (@Parallel int y = 0; y < imageHeight; y++) {
@@ -103,7 +106,7 @@ public class CodeGen extends TornadoTestBase {
     }
 
     @Test
-    public void test01() {
+    public void test01() throws TornadoExecutionPlanException {
 
         TaskGraph taskGraph = new TaskGraph("foo");
 
@@ -115,60 +118,64 @@ public class CodeGen extends TornadoTestBase {
         IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage.set(x, x));
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, grayIntegralImage) //
-                .task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
+                .task("bar", CodeGenTest::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, resultsXY);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
     }
 
     private boolean isRunningOnCPU() {
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(0);
+        TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
         return device.getDeviceType() == TornadoDeviceType.CPU;
     }
 
     @Test
-    public void test02() {
+    public void test02() throws TornadoExecutionPlanException {
         if (isRunningOnCPU()) {
             return;
         }
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", CodeGen::badCascadeKernel2);
+                .task("t0", CodeGenTest::badCascadeKernel2);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp();
+        }
     }
 
     @Test
     @Ignore
-    public void test03() {
+    public void test03() throws TornadoExecutionPlanException {
         if (isRunningOnCPU()) {
             return;
         }
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", CodeGen::badCascadeKernel3);
+                .task("t0", CodeGenTest::badCascadeKernel3);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp();
+        }
     }
 
     @Test
-    public void test04() {
+    public void test04() throws TornadoExecutionPlanException {
         assertNotBackendOptimization(TornadoVMBackendType.SPIRV);
         if (isRunningOnCPU()) {
             return;
         }
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", CodeGen::badCascadeKernel4);
+                .task("t0", CodeGenTest::badCascadeKernel4);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp();
+        }
     }
 
     @Test
-    public void test05() {
+    public void test05() throws TornadoExecutionPlanException {
         final int size = 8192;
         IntArray a = new IntArray(size);
         a.init(10);
@@ -181,12 +188,13 @@ public class CodeGen extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("break") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .task("task", CodeGen::breakStatement, a) //
+                .task("task", CodeGenTest::breakStatement, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(serial.get(i), a.get(i));

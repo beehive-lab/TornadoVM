@@ -377,8 +377,24 @@ def parse_args():
     return args
 
 
+def check_tornadoSDK():
+    """
+    Check if TORNADO_SDK env variable is loaded. It exits the compilation if it is not
+    declared. 
+    """
+    print("Checking TORNADO_SDK env variable ................ ",  end='')
+    try:
+        os.environ['TORNADO_SDK']
+        print("[OK]")
+    except:
+        print("[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
+        sys.exit(-1)
+
+
 def main():
     args = parse_args()
+
+    check_tornadoSDK()
 
     graal_jars_status = should_handle_graal_jars(args.jdk)
 

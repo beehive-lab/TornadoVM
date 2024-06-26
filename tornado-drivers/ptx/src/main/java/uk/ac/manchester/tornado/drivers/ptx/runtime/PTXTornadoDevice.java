@@ -95,10 +95,10 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXTornadoDevice implements TornadoXPUDevice {
 
-    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static PTXBackendImpl driver = null;
     private final PTXDevice device;
     private final int deviceIndex;
+    private final TornadoLogger logger;
 
     public PTXTornadoDevice(final int deviceIndex) {
         this.deviceIndex = deviceIndex;
@@ -107,6 +107,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             throw new RuntimeException("TornadoVM PTX Driver not found");
         }
         device = PTX.getPlatform().getDevice(deviceIndex);
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     @Override
@@ -115,8 +116,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallWrapper(Thread.currentThread().threadId(), numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+        return getDeviceContext().getMemoryManager().createCallWrapper(executionPlanId, numArgs);
     }
 
     @Override
@@ -126,7 +127,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
-        TornadoLogger.debug("[PTX] Atomics not implemented ! Returning null");
+        logger.debug("[PTX] Atomics not implemented ! Returning null");
         return null;
     }
 
@@ -194,8 +195,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             if (TornadoOptions.DEBUG) {
                 System.err.println(e.getMessage());
             }
-            TornadoLogger.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            TornadoLogger.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            logger.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            logger.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }
@@ -285,19 +286,20 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
@@ -310,19 +312,23 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
-        if (state.isLockedBuffer()) {
-            return -1;
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long deallocatedSpace = 0;
+        if (deviceBufferState.isLockedBuffer()) {
+            return deallocatedSpace;
         }
 
-        state.getXPUBuffer().deallocate();
-        state.setContents(false);
-        state.setXPUBuffer(null);
-        return -1;
+        deviceBufferState.getXPUBuffer().markAsFreeBuffer();
+        if (!TornadoOptions.isReusedBuffersEnabled()) {
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
+        }
+        deviceBufferState.setContents(false);
+        deviceBufferState.setXPUBuffer(null);
+        return deallocatedSpace;
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {
@@ -391,7 +397,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      */
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.hasContent() || BENCHMARKING_MODE) {
+        if (!objectState.hasContent()) {
             objectState.setContents(true);
             return objectState.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
         }

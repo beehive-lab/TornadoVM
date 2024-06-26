@@ -42,14 +42,15 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class PTXMemorySegmentWrapper implements XPUBuffer {
+
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
-
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
@@ -57,6 +58,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        logger = new TornadoLogger(this.getClass());
     }
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize) {
@@ -65,6 +67,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        logger = new TornadoLogger(this.getClass());
     }
 
     @Override
@@ -92,7 +95,6 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
     private MemorySegment getSegmentWithHeader(final Object reference) {
         return switch (reference) {
-
             case TornadoNativeArray tornadoNativeArray -> tornadoNativeArray.getSegmentWithHeader();
             case TornadoCollectionInterface<?> tornadoCollectionInterface -> tornadoCollectionInterface.getSegmentWithHeader();
             case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
@@ -165,7 +167,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
                     (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
-        return useDeps ? returnEvents : null;
+        return returnEvents;
     }
 
     @Override
@@ -185,20 +187,25 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: %s", toString());
+            logger.info("allocated: %s", toString());
         }
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: %s", toString());
+            logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override

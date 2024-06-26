@@ -23,12 +23,14 @@
  * Authors: Michalis Papadimitriou
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
-
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
 import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
 
@@ -68,6 +70,10 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void checkAndAdaptLocalWork(TaskMetaData meta) {
     }
 
     @Override

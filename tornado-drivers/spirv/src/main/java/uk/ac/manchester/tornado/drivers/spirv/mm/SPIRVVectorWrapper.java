@@ -61,6 +61,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
+    private final TornadoLogger logger;
 
     public SPIRVVectorWrapper(final SPIRVDeviceContext device, final Object object, long batchSize) {
         TornadoInternalError.guarantee(object instanceof PrimitiveStorage, STR."Expecting a PrimitiveStorage type, but found: \{object.getClass()}");
@@ -71,6 +72,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         Object payload = TornadoUtils.getAnnotatedObjectFromField(object, Payload.class);
         this.kind = getJavaKind(payload.getClass());
         this.bufferSize = sizeOf(payload);
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     public long getBatchSize() {
@@ -94,14 +96,14 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+            logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
 
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -109,10 +111,15 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         bufferSize = INIT_VALUE;
 
         if (TornadoOptions.FULL_DEBUG) {
-            TornadoLogger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
+            logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
-            TornadoLogger.info("deallocated: %s", toString());
+            logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override
@@ -192,7 +199,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         }
         final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), bufferOffset, bufferSize, array, hostOffset, (useDeps) ? events : null);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     private int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {
@@ -350,7 +357,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             } else if (type == HalfFloat[].class) {
                 return JavaKind.Object;
             } else {
-                TornadoLogger.warn("cannot wrap field: array type=%s", type.getName());
+                logger.warn("cannot wrap field: array type=%s", type.getName());
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class) {
             return JavaKind.Object;

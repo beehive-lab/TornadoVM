@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,24 +17,26 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.stream.IntStream;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.MultipleReductions
+ * tornado-test -V uk.ac.manchester.tornado.unittests.reductions.MultipleReductions
  * </code>
  */
 public class MultipleReductions extends TornadoTestBase {
@@ -45,11 +47,11 @@ public class MultipleReductions extends TornadoTestBase {
      * phase when using reductions, even if it is not used.
      *
      * @param input
-     *            input data
+     *     input data
      * @param output1
-     *            reduce variable 1
+     *     reduce variable 1
      * @param output2
-     *            reduce variable 2
+     *     reduce variable 2
      */
     public static void test(IntArray input, @Reduce IntArray output1, @Reduce IntArray output2) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
@@ -62,7 +64,7 @@ public class MultipleReductions extends TornadoTestBase {
      * fusion of multiple reductions is not supported yet.
      */
     @Test
-    public void test() {
+    public void test() throws TornadoExecutionPlanException {
         final int size = 128;
         IntArray input = new IntArray(size);
         IntArray result1 = new IntArray(1);
@@ -81,7 +83,8 @@ public class MultipleReductions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result1, result2); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
     }
 }

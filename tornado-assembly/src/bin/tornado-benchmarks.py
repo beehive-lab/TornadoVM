@@ -96,6 +96,27 @@ __BENCHMARKS__ = [
 
 
 ## ========================================================================================
+## Dimensions
+## ========================================================================================
+__DIMENSIONS__ = {
+    "saxpy": "1",
+    "addImage": "2",
+    "stencil": "1",
+    "convolvearray": "2",
+    "convolveimage": "2",
+    "blackscholes": "1",
+    "montecarlo": "1",
+    "blurFilter": "2",
+    "renderTrack": "2",
+    "euler": "2",
+    "nbody": "1",
+    "sgemm": "2",
+    "dgemm": "2",
+    "mandelbrot": "2",
+    "dft": "1",
+    "juliaset": "2"
+}
+## ========================================================================================
 
 
 def getSize():
@@ -376,9 +397,23 @@ def parseArguments():
         default=False,
         help="Enable the SPIRV optimizer",
     )
+    parser.add_argument(
+        "--properties",
+        action="store_true",
+        dest="properties",
+        default=False,
+        help="Print dimensions and sizes for all benchmarks",
+    )
+    
     args = parser.parse_args()
     return args
 
+
+def printProperties():
+    for benchmark, sizes in allSizes.items():
+        dims = __DIMENSIONS__.get(benchmark, "-1")  # get dimension, -1 by default
+        for size in sizes[0]:
+            print(f"{benchmark}, dims={dims}, size={size}")
 
 def main():
     args = parseArguments()
@@ -396,6 +431,8 @@ def main():
     elif args.jmh:
         print("[INFO] Running default size with JMH")
         runWithJMH(args)
+    elif args.properties:
+        printProperties()
     else:
         print(Colors.BLUE + "Running TornadoVM Benchmarks" + Colors.RESET)
         print(

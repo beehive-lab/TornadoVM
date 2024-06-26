@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -214,7 +214,7 @@ class ReduceTaskGraph {
             int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(STR."\{idTaskGraph}.device"));
             int driverNumber = info[0];
             int deviceNumber = info[1];
-            TornadoRuntime.setProperty(STR."\{taskScheduleName}.\{taskName}.device", STR."\{driverNumber}:\{deviceNumber}");
+            TornadoRuntimeProvider.setProperty(STR."\{taskScheduleName}.\{taskName}.device", STR."\{driverNumber}:\{deviceNumber}");
             return info;
         }
         return null;
@@ -362,15 +362,15 @@ class ReduceTaskGraph {
     }
 
     private boolean isDeviceAnAccelerator(final int deviceToRun) {
-        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(deviceToRun).getDeviceType();
+        TornadoDeviceType deviceType = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceToRun).getDeviceType();
         return (deviceType == TornadoDeviceType.ACCELERATOR);
     }
 
     private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
         // Update GLOBAL and LOCAL workgroup size if device to run is the FPGA
         if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
-            TornadoRuntime.setProperty(STR."\{taskScheduleReduceName}.\{taskPackage.getId()}\{TaskMetaData.GLOBAL_WORKGROUP_SUFFIX}", Integer.toString(inputSize));
-            TornadoRuntime.setProperty(STR."\{taskScheduleReduceName}.\{taskPackage.getId()}\{TaskMetaData.LOCAL_WORKGROUP_SUFFIX}", "64");
+            TornadoRuntimeProvider.setProperty(STR."\{taskScheduleReduceName}.\{taskPackage.getId()}\{TaskMetaData.GLOBAL_WORKGROUP_SUFFIX}", Integer.toString(inputSize));
+            TornadoRuntimeProvider.setProperty(STR."\{taskScheduleReduceName}.\{taskPackage.getId()}\{TaskMetaData.LOCAL_WORKGROUP_SUFFIX}", "64");
         }
     }
 
@@ -569,7 +569,7 @@ class ReduceTaskGraph {
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = STR."\{rewrittenTaskGraph.getTaskGraphName()}.\{newTaskSequentialName}";
-                        TornadoRuntime.setProperty(STR."\{fullName}.device", driverToRun + ":" + deviceToRun);
+                        TornadoRuntimeProvider.setProperty(STR."\{fullName}.device", driverToRun + ":" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 
                         switch (operation) {

@@ -28,10 +28,13 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class PTXNvidiaPowerMetric implements PowerMetric {
+
     private final PTXDeviceContext deviceContext;
+    private final TornadoLogger logger;
 
     public PTXNvidiaPowerMetric(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
+        this.logger = new TornadoLogger(this.getClass());
         initializePowerLibrary();
     }
 
@@ -46,7 +49,7 @@ public class PTXNvidiaPowerMetric implements PowerMetric {
         try {
             ptxNvmlInit();
         } catch (RuntimeException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -55,7 +58,7 @@ public class PTXNvidiaPowerMetric implements PowerMetric {
         try {
             ptxNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getDeviceIndex(), device);
         } catch (RuntimeException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -64,7 +67,7 @@ public class PTXNvidiaPowerMetric implements PowerMetric {
         try {
             ptxNvmlDeviceGetPowerUsage(device, powerUsage);
         } catch (RuntimeException e) {
-            TornadoLogger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 }

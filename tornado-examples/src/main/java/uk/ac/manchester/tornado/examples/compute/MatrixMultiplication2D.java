@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
  * $ tornado --threadInfo --jvm="-Ds0.t0.device=0:0" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
  * </code>
  */
+
 public class MatrixMultiplication2D {
     // CHECKSTYLE:OFF
     private static final int WARMING_UP_ITERATIONS = 15;
@@ -105,9 +106,9 @@ public class MatrixMultiplication2D {
         }
 
         // 2. Run parallel on the GPU with Tornado
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         executor.execute();
-        long end = System.currentTimeMillis();
+        long end = System.nanoTime();
 
         // Run sequential
         // 1. Warm up sequential
@@ -116,9 +117,9 @@ public class MatrixMultiplication2D {
         }
 
         // 2. Run the sequential code
-        long startSequential = System.currentTimeMillis();
+        long startSequential = System.nanoTime();
         matrixMultiplication(matrixA, matrixB, resultSeq, size);
-        long endSequential = System.currentTimeMillis();
+        long endSequential = System.nanoTime();
 
         // Run multithread
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -126,19 +127,19 @@ public class MatrixMultiplication2D {
         }
 
         // 2. Run the sequential code
-        long startStream = System.currentTimeMillis();
+        long startStream = System.nanoTime();
         parallelStreamsMxM(matrixA, matrixB, resultSeq, size);
-        long endStream = System.currentTimeMillis();
+        long endStream = System.nanoTime();
 
         // Compute Gigaflops and performance
-        long msecGPUElapsedTime = (end - start);
-        long msecCPUElaptedTime = (endSequential - startSequential);
-        long msecStreamElaptedTime = (endStream - startStream);
+        long nanoSecGPUElapsedTime = (end - start);
+        long nanoSecCPUElaptedTime = (endSequential - startSequential);
+        long nanoSecStreamElaptedTime = (endStream - startStream);
 
         double flops = 2 * Math.pow(size, 3);
-        double gpuGigaFlops = (1.0E-9 * flops) / (msecGPUElapsedTime / 1000.0f);
-        double cpuGigaFlops = (1.0E-9 * flops) / (msecCPUElaptedTime / 1000.0f);
-        double streamGigaFlops = (1.0E-9 * flops) / (msecStreamElaptedTime / 1000.0f);
+        double gpuGigaFlops = (1.0E-9 * flops) / (nanoSecGPUElapsedTime / 1000000000.0f);
+        double cpuGigaFlops = (1.0E-9 * flops) / (nanoSecCPUElaptedTime / 1000000000.0f);
+        double streamGigaFlops = (1.0E-9 * flops) / (nanoSecStreamElaptedTime / 1000000000.0f);
         double speedup = (double) (endSequential - startSequential) / (double) (end - start);
 
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
@@ -146,9 +147,9 @@ public class MatrixMultiplication2D {
         String formatStreamFGlops = String.format("%.2f", streamGigaFlops);
 
         TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
-        System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
-        System.out.println("\tStreams Execution: " + formatStreamFGlops + " GFlops, Total time = " + (msecStreamElaptedTime) + " ms");
-        System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
+        System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ns");
+        System.out.println("\tStreams Execution: " + formatStreamFGlops + " GFlops, Total time = " + (nanoSecStreamElaptedTime) + " ns");
+        System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ns");
         System.out.println("\tSpeedup: " + speedup + "x");
         System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }

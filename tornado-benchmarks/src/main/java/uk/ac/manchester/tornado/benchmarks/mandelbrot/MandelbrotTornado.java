@@ -66,7 +66,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
         boolean val = true;
         ShortArray result = new ShortArray(size * size);
 
-        executionResult.transferToHost(output);
+        executionPlan.withDevice(device).execute();
         executionPlan.clearProfiles();
 
         ComputeKernels.mandelbrot(size, result);
@@ -84,7 +84,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 }

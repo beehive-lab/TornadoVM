@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 public interface OCLTargetDevice extends TornadoTargetDevice {
 
-    long getId();
+    long getDevicePointer();
 
     String getVersion();
 
@@ -48,6 +48,8 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
 
     String getDeviceVendor();
 
+    String getDriverVersion();
+
     boolean isDeviceAvailable();
 
     String getDeviceOpenCLCVersion();
@@ -59,4 +61,6 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
     void setDeviceContext(OCLDeviceContextInterface deviceContext);
 
     int deviceVersion();
+
+    boolean isSPIRVSupported();
 }

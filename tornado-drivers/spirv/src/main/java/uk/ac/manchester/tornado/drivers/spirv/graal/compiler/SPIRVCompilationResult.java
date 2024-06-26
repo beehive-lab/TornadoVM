@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -45,13 +45,13 @@ public class SPIRVCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private TaskMetaData taskMetaData;
-    private String id;
+    private String compilationId;
     private ByteBuffer spirvBinary;
     private SPIRVAssembler spirvAssembler;
 
-    public SPIRVCompilationResult(String id, String methodName, TaskMetaData taskMetaData) {
+    public SPIRVCompilationResult(String compilationId, String methodName, TaskMetaData taskMetaData) {
         super(methodName);
-        this.id = id;
+        this.compilationId = compilationId;
         this.taskMetaData = taskMetaData;
     }
 
@@ -63,7 +63,6 @@ public class SPIRVCompilationResult extends CompilationResult {
         nonInlinedMethods = value;
     }
 
-    // FIXME: <REFACTOR> Common in the three backends
     private byte[] prependToTargetCode(byte[] targetCode, byte[] codeToPrepend) {
         final int size = targetCode.length + codeToPrepend.length + 1;
 
@@ -91,7 +90,7 @@ public class SPIRVCompilationResult extends CompilationResult {
     }
 
     public String getId() {
-        return id;
+        return compilationId;
     }
 
     public byte[] getSPIRVBinary() {

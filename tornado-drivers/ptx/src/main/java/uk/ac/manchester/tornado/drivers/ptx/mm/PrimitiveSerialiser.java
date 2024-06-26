@@ -41,18 +41,13 @@ public class PrimitiveSerialiser {
     }
 
     public static void put(ByteBuffer buffer, Object value, int alignment) {
-        if (value instanceof Integer) {
-            buffer.putInt((int) value);
-        } else if (value instanceof Long) {
-            buffer.putLong((long) value);
-        } else if (value instanceof Short) {
-            buffer.putShort((short) value);
-        } else if (value instanceof Float) {
-            buffer.putFloat((float) value);
-        } else if (value instanceof Double) {
-            buffer.putDouble((double) value);
-        } else {
-            TornadoLogger.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
+        switch (value) {
+            case Integer i -> buffer.putInt((int) value);
+            case Long l -> buffer.putLong((long) value);
+            case Short i -> buffer.putShort((short) value);
+            case Float v -> buffer.putFloat((float) value);
+            case Double v -> buffer.putDouble((double) value);
+            case null, default -> new TornadoLogger().warn("unable to serialise: %s (%s)", value, value.getClass().getName());
         }
 
         if (alignment != 0) {

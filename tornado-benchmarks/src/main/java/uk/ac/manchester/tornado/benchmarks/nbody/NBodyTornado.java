@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.nbody;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
@@ -126,12 +127,12 @@ public class NBodyTornado extends BenchmarkDriver {
             velSeq.set(i, auxVelocityZero.get(i));
             velSeqSeq.set(i, auxVelocityZero.get(i));
         }
-        taskGraph = new TaskGraph("benchmark");
+        TaskGraph taskGraph = new TaskGraph("benchmark");
         taskGraph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
         taskGraph.transferToHost(DataTransferMode.UNDER_DEMAND, posSeq, velSeq);
 
-        immutableTaskGraph = taskGraph.snapshot();
-        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.withWarmUp();
 
         TornadoExecutionResult executionResult = executionPlan.withWarmUp() //
@@ -158,7 +159,7 @@ public class NBodyTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         executionResult = executionPlan.withDevice(device).execute();
     }
 }

@@ -28,12 +28,13 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -216,7 +217,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathCos() {
+    public void testTornadoMathCos() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -232,7 +233,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoCos(seq);
 
@@ -243,7 +246,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathCosPI() {
+    public void testTornadoMathCosPI() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -259,7 +262,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoCosPI(seq);
 
@@ -270,7 +275,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathCosPIDouble() {
+    public void testTornadoMathCosPIDouble() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -286,7 +291,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoCosPIDouble(seq);
 
@@ -297,7 +304,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSinPI() {
+    public void testTornadoMathSinPI() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -313,7 +320,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSinPI(seq);
 
@@ -323,7 +332,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSinPIDouble() {
+    public void testTornadoMathSinPIDouble() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -339,7 +348,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSinPIDouble(seq);
 
@@ -349,7 +360,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignumFloat() {
+    public void testTornadoMathSignumFloat() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -365,7 +376,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSignum(seq);
 
@@ -376,7 +389,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignumFloatNaN() {
+    public void testTornadoMathSignumFloatNaN() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -395,7 +408,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSignum(seq);
 
@@ -406,7 +421,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignumDouble() {
+    public void testTornadoMathSignumDouble() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -422,7 +437,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSignum(seq);
 
@@ -433,7 +450,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignumDoubleNaN() {
+    public void testTornadoMathSignumDoubleNaN() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -452,7 +469,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSignum(seq);
 
@@ -463,7 +482,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSin() {
+    public void testTornadoMathSin() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -479,7 +498,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSin(seq);
 
@@ -490,7 +511,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathAtan() {
+    public void testTornadoMathAtan() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
@@ -508,7 +529,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoAtan(seq);
 
@@ -519,7 +542,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathTan() {
+    public void testTornadoMathTan() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -535,7 +558,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoTan(seq);
 
@@ -546,7 +571,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathTanh() {
+    public void testTornadoMathTanh() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -562,7 +587,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoTanh(seq);
 
@@ -573,7 +600,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathMin() {
+    public void testTornadoMathMin() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -588,7 +615,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoMin, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoMin(seq);
 
@@ -599,7 +628,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathMax() {
+    public void testTornadoMathMax() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -614,7 +643,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoMax, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoMax(seq);
 
@@ -625,7 +656,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSqrt() {
+    public void testTornadoMathSqrt() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -640,7 +671,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoSqrt, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoSqrt(seq);
 
@@ -651,7 +684,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathExpDouble() {
+    public void testTornadoMathExpDouble() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -666,7 +699,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoExp, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoExp(seq);
 
@@ -677,7 +712,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathExpFloat() {
+    public void testTornadoMathExpFloat() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -692,7 +727,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoExp, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoExp(seq);
 
@@ -703,7 +740,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathClamp() {
+    public void testTornadoMathClamp() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -719,7 +756,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoClamp(seq);
 
@@ -730,7 +769,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathFract() {
+    public void testTornadoMathFract() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -745,7 +784,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoFract, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoFract(seq);
 
@@ -756,7 +797,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathLog2() {
+    public void testTornadoMathLog2() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -772,7 +813,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoLog2(seq);
 
@@ -783,7 +826,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathLogDouble() {
+    public void testTornadoMathLogDouble() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -798,7 +841,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoLog, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoLog(seq);
 
@@ -809,7 +854,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathLogFloat() {
+    public void testTornadoMathLogFloat() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -824,7 +869,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoLog, data) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoLog(seq);
 
@@ -835,7 +882,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathPI() {
+    public void testTornadoMathPI() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -851,7 +898,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoPI(seq);
 
@@ -862,7 +911,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathFloor() {
+    public void testMathFloor() throws TornadoExecutionPlanException {
         final int size = 128;
         DoubleArray data = new DoubleArray(size);
         DoubleArray seq = new DoubleArray(size);
@@ -878,7 +927,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testFloor(seq);
 
@@ -888,7 +939,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathClamp() {
+    public void testMathClamp() throws TornadoExecutionPlanException {
         Random r = new Random();
         final int size = 8192;
         LongArray a = new LongArray(size);
@@ -907,7 +958,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testClamp(a, seq);
         for (int i = 0; i < size; i++) {
@@ -916,7 +969,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathRadians() {
+    public void testTornadoMathRadians() throws TornadoExecutionPlanException {
         final int size = 128;
         FloatArray data = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
@@ -932,7 +985,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoRadians(seq);
 
@@ -943,7 +998,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathATan2() {
+    public void testMathATan2() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
@@ -965,7 +1020,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoAtan2(seqA, seqB);
 
@@ -975,7 +1032,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathAcos() {
+    public void testMathAcos() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
@@ -992,7 +1049,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoAcos, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testTornadoAcos(seqA);
 
@@ -1002,7 +1061,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathASin() {
+    public void testMathASin() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
@@ -1019,8 +1078,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
                 .task("t0", TestTornadoMathCollection::testTornadoAsin, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutionPlan(immutableTaskGraph).execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         testTornadoAsin(seqA);
 
         for (int i = 0; i < size; i++) {

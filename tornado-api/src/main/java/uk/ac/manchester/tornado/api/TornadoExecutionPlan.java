@@ -25,11 +25,10 @@ import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 /**
  * Object to create and optimize an execution plan for running a set of
@@ -45,7 +44,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * Method to obtain the default device in TornadoVM. The default one corresponds
      * to the device assigned to the driver (backend) with index 0 and device 0.
      */
-    public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+    public static TornadoDevice DEFAULT_DEVICE = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
     private final TornadoExecutor tornadoExecutor;
 
     private ProfilerMode profilerMode;
@@ -82,14 +81,9 @@ public class TornadoExecutionPlan implements AutoCloseable {
      *     used.
      * @return {@link TornadoDevice}
      *
-     * @throws {@link
-     *     uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound} if a device index is not found.
-     *
-     * @throws {@link
-     *     TornadoBackendNotFound} if a driver index is not found.
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-        return TornadoRuntime.getTornadoRuntime().getBackend(driverIndex).getDevice(deviceIndex);
+        return TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex).getDevice(deviceIndex);
     }
 
     public static int getTotalPlans() {
@@ -393,6 +387,16 @@ public class TornadoExecutionPlan implements AutoCloseable {
         tornadoExecutor.freeDeviceMemory();
     }
 
+    /**
+     * It returns the current memory usage on the device in bytes.
+     * 
+     * @return long
+     *     Number of bytes used.
+     */
+    public long getCurrentDeviceMemoryUsage() {
+        return tornadoExecutor.getCurrentDeviceMemoryUsage();
+    }
+
     static class TornadoExecutor {
 
         private final List<ImmutableTaskGraph> immutableTaskGraphList;
@@ -514,6 +518,14 @@ public class TornadoExecutionPlan implements AutoCloseable {
             return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceKernelTime).mapToLong(Long::longValue).sum();
         }
 
+        long getTotalBytesCopyIn() {
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyIn).mapToLong(Long::longValue).sum();
+        }
+
+        long getTotalBytesCopyOut() {
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyOut).mapToLong(Long::longValue).sum();
+        }
+
         String getProfileLog() {
             return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getProfileLog).collect(Collectors.joining());
         }
@@ -565,6 +577,18 @@ public class TornadoExecutionPlan implements AutoCloseable {
 
         void withoutPrintKernel() {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
+        }
+
+        long getTotalBytesTransferred() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalBytesTransferred).sum();
+        }
+
+        long getTotalDeviceMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalDeviceMemoryUsage).sum();
+        }
+
+        long getCurrentDeviceMemoryUsage() {
+            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
         }
     }
 }
