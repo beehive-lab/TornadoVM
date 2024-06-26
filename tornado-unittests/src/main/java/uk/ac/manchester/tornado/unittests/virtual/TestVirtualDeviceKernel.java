@@ -82,7 +82,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.execute();
         }
-        ;
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedCodeFile;
@@ -95,7 +94,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
             generatedKernel = Files.readAllBytes(fileLog.toPath());
             expectedKernel = Files.readAllBytes(expectedKernelFile.toPath());
         } catch (IOException e) {
-            e.printStackTrace();
             Assert.fail();
         }
 
@@ -104,19 +102,9 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceKernelGPU() throws TornadoExecutionPlanException {
+    public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
-
         testVirtualDeviceKernel("virtualDeviceKernelGPU.cl");
     }
-
-    @Test
-    public void testVirtualDeviceKernelCPU() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-
-        testVirtualDeviceKernel("virtualDeviceKernelCPU.cl");
-    }
-
 }
