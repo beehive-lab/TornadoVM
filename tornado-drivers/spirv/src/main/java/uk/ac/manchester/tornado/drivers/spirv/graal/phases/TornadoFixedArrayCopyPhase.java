@@ -30,6 +30,7 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
 

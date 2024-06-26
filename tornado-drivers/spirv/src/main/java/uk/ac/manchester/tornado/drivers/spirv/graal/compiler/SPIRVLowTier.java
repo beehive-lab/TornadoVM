@@ -43,10 +43,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoop
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoHalfFloatVectorOffset;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.*;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 
@@ -68,6 +65,8 @@ public class SPIRVLowTier extends TornadoLowTier {
         appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
         appendPhase(new UseTrappingNullChecksPhase());
+
+        appendPhase(new TornadoFixedArrayCopyPhase());
 
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
