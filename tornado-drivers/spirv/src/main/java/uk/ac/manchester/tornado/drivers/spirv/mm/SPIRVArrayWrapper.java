@@ -205,7 +205,6 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         return header;
     }
 
-    // FIXME <REFACTOR> <S>
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(reference);
@@ -227,20 +226,17 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
-    // FIXME <REFACTOR> <S>
     private long sizeOf(final T array) {
         return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
     }
 
-    // FIXME <REFACTOR> <S>
     private long sizeOfBatch(long batchSize) {
         return (long) arrayHeaderSize + batchSize;
     }
 
-    // FIXME <REFACTOR> <S>
     @Override
     public void allocate(Object objectReference, long batchSize) {
         final T hostArray = cast(objectReference);

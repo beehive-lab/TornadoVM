@@ -164,7 +164,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
         }
         returnEvents.add(internalEvent);
-        return useDeps ? returnEvents : null;
+        return returnEvents;
     }
 
     @Override

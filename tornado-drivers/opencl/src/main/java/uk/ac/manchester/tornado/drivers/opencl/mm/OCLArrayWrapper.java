@@ -204,7 +204,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     /**

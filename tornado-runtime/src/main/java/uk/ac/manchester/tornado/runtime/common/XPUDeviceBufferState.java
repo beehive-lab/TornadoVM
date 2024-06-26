@@ -33,7 +33,7 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     private XPUBuffer xpuBuffer;
     private boolean atomicRegionPresent;
 
-    private boolean contents;
+    private boolean bufferHasContent;
     private boolean lockBuffer;
     private long partialSize;
 
@@ -68,12 +68,12 @@ public class XPUDeviceBufferState implements DeviceBufferState {
 
     @Override
     public boolean hasContent() {
-        return contents;
+        return bufferHasContent;
     }
 
     @Override
-    public void setContents(boolean value) {
-        contents = value;
+    public void setContents(boolean content) {
+        bufferHasContent = content;
     }
 
     @Override

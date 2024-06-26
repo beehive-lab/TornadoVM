@@ -419,7 +419,7 @@ public class OCLXPUBuffer implements XPUBuffer {
                 eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
-        return useDeps ? eventList : null;
+        return eventList;
     }
 
     @Override
