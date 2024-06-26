@@ -30,9 +30,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -215,7 +216,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testReductionSimple() {
+    public void testReductionSimple() throws TornadoExecutionPlanException {
 
         IntArray input = new IntArray(SMALL_SIZE);
         IntArray result = new IntArray(1);
@@ -231,8 +232,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionAnnotation(input, sequential);
@@ -242,7 +244,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testReductionIntsLarge() {
+    public void testReductionIntsLarge() throws TornadoExecutionPlanException {
 
         IntArray input = new IntArray(LARGE_SIZE);
         IntArray result = new IntArray(256);
@@ -259,8 +261,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionAnnotationLarge(input, sequential);
@@ -270,7 +273,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testReductionAnnotation() {
+    public void testReductionAnnotation() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SIZE);
         IntArray result = new IntArray(1);
         result.init(0);
@@ -284,8 +287,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::reductionAnnotation2, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionAnnotation2(input, sequential);
@@ -295,7 +299,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testReductionConstant() {
+    public void testReductionConstant() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SMALL_SIZE);
         IntArray result = new IntArray(1);
         result.init(0);
@@ -309,8 +313,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::reductionAnnotationConstant, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionAnnotationConstant(input, sequential);
@@ -318,7 +323,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMultiplicationReduction() {
+    public void testMultiplicationReduction() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(64);
         IntArray result = new IntArray(1);
         result.init(0);
@@ -335,8 +340,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         sequential.init(0);
@@ -348,7 +354,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMaxReduction() {
+    public void testMaxReduction() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SIZE);
 
         Random r = new Random();
@@ -366,9 +372,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         IntArray sequential = new IntArray(1);
         maxReductionAnnotation(input, sequential, neutral);
 
@@ -376,7 +382,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMinReduction() {
+    public void testMinReduction() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SIZE);
         IntStream.range(0, SIZE).forEach(idx -> {
             input.set(idx, idx + 1);
@@ -390,8 +396,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         sequential.init(Integer.MAX_VALUE);
@@ -401,7 +408,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testSequentialReduction() {
+    public void testSequentialReduction() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SMALL_SIZE * 2);
         IntArray result = new IntArray(1);
         result.init(0);
@@ -416,8 +423,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionSequentialSmall(input, sequential);
@@ -426,7 +434,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testReduction01() {
+    public void testReduction01() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SMALL_SIZE);
         IntArray result = new IntArray(1);
         result.init(0);
@@ -441,8 +449,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::reduction01, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reduction01(input, sequential);
@@ -451,7 +460,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMapReduce() {
+    public void testMapReduce() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(BIG_SIZE);
         IntArray b = new IntArray(BIG_SIZE);
         IntArray c = new IntArray(BIG_SIZE);
@@ -469,8 +478,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t1", TestReductionsIntegers::reduce01, c, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(BIG_SIZE);
         mapReduce01(a, b, c, sequential);
@@ -479,7 +489,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMapReduce3() {
+    public void testMapReduce3() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(BIG_SIZE);
         IntArray b = new IntArray(BIG_SIZE);
         IntArray seq = new IntArray(BIG_SIZE);
@@ -497,8 +507,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t1", TestReductionsIntegers::reduce02, b, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(BIG_SIZE);
         map02(a, seq);
@@ -512,7 +523,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
      * the second part, unless an explicit barrier is used.
      */
     @Ignore
-    public void testMapReduceSameKernel() {
+    public void testMapReduceSameKernel() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(BIG_SIZE);
         IntArray b = new IntArray(BIG_SIZE);
         IntArray c = new IntArray(BIG_SIZE);
@@ -531,8 +542,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(BIG_SIZE);
         mapReduce01(a, b, c, sequential);
@@ -541,7 +553,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Ignore
-    public void testMapReduce2() {
+    public void testMapReduce2() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(BIG_SIZE);
         IntArray b = new IntArray(BIG_SIZE);
         IntArray result = new IntArray(1);
@@ -557,8 +569,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .task("t0", TestReductionsIntegers::mapReduce2, a, b, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(BIG_SIZE);
         mapReduce2(a, b, sequential);
@@ -567,7 +580,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testSumInts2() {
+    public void testSumInts2() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SMALL_SIZE);
         IntArray result = new IntArray(1);
 
@@ -581,8 +594,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionAddInts2(input, sequential);
@@ -591,7 +605,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testSumInts3() {
+    public void testSumInts3() throws TornadoExecutionPlanException {
         IntArray inputA = new IntArray(SIZE);
         IntArray inputB = new IntArray(SIZE);
         IntArray result = new IntArray(1);
@@ -608,8 +622,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         reductionAddInts3(inputA, inputB, sequential);
@@ -618,7 +633,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMaxReduction2() {
+    public void testMaxReduction2() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SIZE);
         IntArray result = new IntArray(1);
         IntStream.range(0, SIZE).forEach(idx -> {
@@ -634,8 +649,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         sequential.init(0);
@@ -645,7 +661,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testMinReduction2() {
+    public void testMinReduction2() throws TornadoExecutionPlanException {
         IntArray input = new IntArray(SIZE);
         IntArray result = new IntArray(1);
         result.init(0);
@@ -662,8 +678,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         minReductionAnnotation2(input, sequential, Integer.MAX_VALUE);

@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestExecutor extends TornadoTestBase {
     // CHECKSTYLE:OFF
     @Test
-    public void test01() {
+    public void test01() throws TornadoExecutionPlanException {
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -96,8 +96,6 @@ public class TestExecutor extends TornadoTestBase {
                 assertEquals(a.get(i) + b.get(i), c.get(i));
             }
 
-        } catch (TornadoExecutionPlanException e) {
-            e.printStackTrace();
         }
 
     }
@@ -106,7 +104,7 @@ public class TestExecutor extends TornadoTestBase {
      * Test to launch multiple times the same executor.
      */
     @Test
-    public void test02() {
+    public void test02() throws TornadoExecutionPlanException {
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -125,11 +123,12 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // 4. Execute all Immutable Task Graphs associated with an executor
-        for (int i = 0; i < 10; i++) {
-            executorPlan.execute();
+            // 4. Execute all Immutable Task Graphs associated with an executor
+            for (int i = 0; i < 10; i++) {
+                executorPlan.execute();
+            }
         }
 
         for (int i = 0; i < c.getSize(); i++) {
@@ -142,7 +141,7 @@ public class TestExecutor extends TornadoTestBase {
      * Test to try to break mutability.
      */
     @Test
-    public void test03() {
+    public void test03() throws TornadoExecutionPlanException {
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -164,24 +163,26 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // 4. Execute all Immutable Task Graphs associated with an executor
-        executorPlan.execute();
+            // 4. Execute all Immutable Task Graphs associated with an executor
+            executorPlan.execute();
 
-        // 5. We check for the result
-        for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(a.get(i) + b.get(i), c.get(i));
+            // 5. We check for the result
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+            // 6. We try to modify the mutable task-graph before execution
+            int[] d = new int[numElements];
+            Arrays.fill(d, 10);
+            tg.transferToDevice(DataTransferMode.EVERY_EXECUTION, d);
+
+            // 7. Run the executor but with the already declared immutable task-graph. It
+            // should not be any recompilation.
+            executorPlan.execute();
+
         }
-
-        // 6. We try to modify the mutable task-graph before execution
-        int[] d = new int[numElements];
-        Arrays.fill(d, 10);
-        tg.transferToDevice(DataTransferMode.EVERY_EXECUTION, d);
-
-        // 7. Run the executor but with the already declared immutable task-graph. It
-        // should not be any recompilation.
-        executorPlan.execute();
 
         // 8. We check for the result. It should be the same as in step 6.
         for (int i = 0; i < c.getSize(); i++) {
@@ -193,8 +194,10 @@ public class TestExecutor extends TornadoTestBase {
      * Test to show how to program states of data movement across different executors. A -> B -> A
      */
     @Test
-    public void test04() {
+    public void test04() throws TornadoExecutionPlanException {
         int numElements = 16;
+        final int ITERATIONS = 10;
+
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
 
@@ -212,24 +215,24 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // 4. Execute all Immutable Task Graphs associated with an executor
-        executorPlan.execute();
+            // 4. Execute all Immutable Task Graphs associated with an executor
+            executorPlan.execute();
 
-        // 5. Create a second task-graph with B->A
-        TaskGraph tg2 = new TaskGraph("graph2") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, b) //
-                .task("t0", TestHello::simple, b, a) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+            // 5. Create a second task-graph with B->A
+            TaskGraph tg2 = new TaskGraph("graph2") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, b) //
+                    .task("t0", TestHello::simple, b, a) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
-        ImmutableTaskGraph immutableTaskGraph2 = tg2.snapshot();
-        TornadoExecutionPlan executorPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
-
-        final int ITERATIONS = 10;
-        for (int i = 0; i < ITERATIONS; i++) {
-            executorPlan.execute(); // A -> B
-            executorPlan2.execute(); // B -> A
+            ImmutableTaskGraph immutableTaskGraph2 = tg2.snapshot();
+            try (TornadoExecutionPlan executorPlan2 = new TornadoExecutionPlan(immutableTaskGraph2)) {
+                for (int i = 0; i < ITERATIONS; i++) {
+                    executorPlan.execute(); // A -> B
+                    executorPlan2.execute(); // B -> A
+                }
+            }
         }
 
         // 8. We check for the result. It should be the same as in step 6.

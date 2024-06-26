@@ -17,12 +17,18 @@
  */
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorHalf;
@@ -37,10 +43,6 @@ import uk.ac.manchester.tornado.api.types.vectors.Half3;
 import uk.ac.manchester.tornado.api.types.vectors.Half4;
 import uk.ac.manchester.tornado.api.types.vectors.Half8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Random;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -247,7 +249,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testSimpleDotProductVectorHalf() {
+    public void testSimpleDotProductVectorHalf() throws TornadoExecutionPlanException {
         VectorHalf vectorHalfA = new VectorHalf(2);
         vectorHalfA.fill(new HalfFloat(2.0F));
         VectorHalf vectorHalfB = new VectorHalf(2);
@@ -259,14 +261,15 @@ public class TestHalfFloats extends TornadoTestBase {
                         DataTransferMode.EVERY_EXECUTION, vectorHalfC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(16.0, vectorHalfC.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void testSimpleDotProductHalf2() {
+    public void testSimpleDotProductHalf2() throws TornadoExecutionPlanException {
         Half2 a = new Half2(new HalfFloat(1f), new HalfFloat(2f));
         Half2 b = new Half2(new HalfFloat(3f), new HalfFloat(2f));
         VectorHalf output = new VectorHalf(1);
@@ -277,14 +280,15 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(7, output.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void testSimpleDotProductHalf3() {
+    public void testSimpleDotProductHalf3() throws TornadoExecutionPlanException {
         Half3 a = new Half3(new HalfFloat(1f), new HalfFloat(2f), new HalfFloat(3f));
         Half3 b = new Half3(new HalfFloat(3f), new HalfFloat(2f), new HalfFloat(1f));
         VectorHalf output = new VectorHalf(1);
@@ -295,14 +299,15 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(10, output.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void testSimpleDotProductHalf4() {
+    public void testSimpleDotProductHalf4() throws TornadoExecutionPlanException {
         Half4 a = new Half4(new HalfFloat(1f), new HalfFloat(2f), new HalfFloat(3f), new HalfFloat(4f));
         Half4 b = new Half4(new HalfFloat(4f), new HalfFloat(3f), new HalfFloat(2f), new HalfFloat(1f));
         VectorHalf output = new VectorHalf(1);
@@ -313,14 +318,15 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(20, output.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void testSimpleDotProductHalf8() {
+    public void testSimpleDotProductHalf8() throws TornadoExecutionPlanException {
         Half8 a = new Half8(new HalfFloat(1f), new HalfFloat(2f), new HalfFloat(3f), new HalfFloat(4f), new HalfFloat(5f), new HalfFloat(6f), new HalfFloat(7f), new HalfFloat(8f));
         Half8 b = new Half8(new HalfFloat(8f), new HalfFloat(7f), new HalfFloat(6f), new HalfFloat(5f), new HalfFloat(4f), new HalfFloat(3f), new HalfFloat(2f), new HalfFloat(1f));
         VectorHalf output = new VectorHalf(1);
@@ -331,14 +337,15 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(120, output.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void testSimpleDotProductHalf16() {
+    public void testSimpleDotProductHalf16() throws TornadoExecutionPlanException {
         Half16 a = new Half16(new HalfFloat(1f), new HalfFloat(2f), new HalfFloat(3f), new HalfFloat(4f), new HalfFloat(5f), new HalfFloat(6f), new HalfFloat(7f), new HalfFloat(8f), new HalfFloat(0f),
                 new HalfFloat(0f), new HalfFloat(0f), new HalfFloat(0f), new HalfFloat(0f), new HalfFloat(0f), new HalfFloat(0f), new HalfFloat(0f));
         Half16 b = new Half16(new HalfFloat(8f), new HalfFloat(7f), new HalfFloat(6f), new HalfFloat(5f), new HalfFloat(4f), new HalfFloat(3f), new HalfFloat(2f), new HalfFloat(1f), new HalfFloat(0f),
@@ -351,14 +358,15 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(120, output.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void testSimpleVectorAddition() {
+    public void testSimpleVectorAddition() throws TornadoExecutionPlanException {
         int size = 1;
         Half3 a = new Half3(new HalfFloat(1f), new HalfFloat(2f), new HalfFloat(3f));
         Half3 b = new Half3(new HalfFloat(3f), new HalfFloat(2f), new HalfFloat(1f));
@@ -370,8 +378,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(4, output.get(i).getX().getFloat32(), DELTA);
@@ -381,7 +390,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorHalf2() {
+    public void testVectorHalf2() throws TornadoExecutionPlanException {
         int size = 16;
 
         VectorHalf2 a = new VectorHalf2(size);
@@ -399,8 +408,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Half2 sequential = new Half2(new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)));
@@ -410,7 +420,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorHalf3() {
+    public void testVectorHalf3() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorHalf3 a = new VectorHalf3(size);
@@ -428,8 +438,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Half3 sequential = new Half3(new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)));
@@ -440,7 +451,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorFloat3toString() {
+    public void testVectorFloat3toString() throws TornadoExecutionPlanException {
         int size = 2;
 
         VectorHalf3 a = new VectorHalf3(size);
@@ -458,12 +469,13 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
     }
 
     @Test
-    public void testVectorHalf4() {
+    public void testVectorHalf4() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -482,8 +494,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Half4 sequential = new Half4(new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + size));
@@ -495,7 +508,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorHalf16() {
+    public void testVectorHalf16() throws TornadoExecutionPlanException {
         int size = 16;
 
         VectorHalf16 a = new VectorHalf16(size);
@@ -517,8 +530,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Half16 sequential = new Half16(new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + size), new HalfFloat(i + (size - i)),
@@ -544,7 +558,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorHalf8() {
+    public void testVectorHalf8() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorHalf8 a = new VectorHalf8(size);
@@ -563,8 +577,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Half8 sequential = new Half8(new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + (size - i)), new HalfFloat(i + size), new HalfFloat(i + (size - i)),
@@ -581,7 +596,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorHalf8_Storage() {
+    public void testVectorHalf8_Storage() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorHalf8 a = new VectorHalf8(size);
@@ -597,8 +612,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Half8 sequential = new Half8(new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i), new HalfFloat(i));
@@ -614,7 +630,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testDotProduct() {
+    public void testDotProduct() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -643,14 +659,15 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputReduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(seqReduce.get(0).getFloat32(), outputReduce.get(0).getFloat32(), DELTA);
     }
 
     @Test
-    public void vectorPhiTest() {
+    public void vectorPhiTest() throws TornadoExecutionPlanException {
 
         final VectorHalf3 input = new VectorHalf3(8);
         final VectorHalf3 output = new VectorHalf3(1);
@@ -663,8 +680,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(8.0f, output.get(0).getS0().getFloat32(), DELTA);
         assertEquals(8.0f, output.get(0).getS1().getFloat32(), DELTA);
@@ -673,7 +691,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void privateVectorHalf2() {
+    public void privateVectorHalf2() throws TornadoExecutionPlanException {
         int size = 16;
         VectorHalf2 sequentialOutput = new VectorHalf2(size);
         VectorHalf2 tornadoOutput = new VectorHalf2(size);
@@ -683,8 +701,9 @@ public class TestHalfFloats extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testPrivateVectorHalf2(sequentialOutput);
 
@@ -695,7 +714,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void privateVectorHalf4() {
+    public void privateVectorHalf4() throws TornadoExecutionPlanException {
         int size = 16;
         VectorHalf4 sequentialOutput = new VectorHalf4(size);
         VectorHalf4 tornadoOutput = new VectorHalf4(size);
@@ -705,8 +724,9 @@ public class TestHalfFloats extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testPrivateVectorHalf4(sequentialOutput);
 
@@ -719,7 +739,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void privateVectorHalf8() {
+    public void privateVectorHalf8() throws TornadoExecutionPlanException {
         int size = 16;
         VectorHalf8 sequentialOutput = new VectorHalf8(16);
         VectorHalf8 tornadoOutput = new VectorHalf8(16);
@@ -729,8 +749,9 @@ public class TestHalfFloats extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testPrivateVectorHalf8(sequentialOutput);
 
@@ -747,7 +768,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorHalf4_Unary() {
+    public void testVectorHalf4_Unary() throws TornadoExecutionPlanException {
         int size = 256;
         VectorHalf4 sequentialOutput = new VectorHalf4(size);
         VectorHalf4 output = new VectorHalf4(size);
@@ -757,8 +778,9 @@ public class TestHalfFloats extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorHalfUnary(sequentialOutput);
 
@@ -771,7 +793,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod01() {
+    public void testInternalSetMethod01() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorHalf2 tornadoInput = new VectorHalf2(size);
         VectorHalf2 sequentialInput = new VectorHalf2(size);
@@ -791,9 +813,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation01(sequentialInput, sequentialOutput);
 
@@ -804,7 +826,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod02() {
+    public void testInternalSetMethod02() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorHalf3 tornadoInput = new VectorHalf3(size);
         VectorHalf3 sequentialInput = new VectorHalf3(size);
@@ -824,21 +846,21 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation02(sequentialInput, sequentialOutput);
 
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialOutput.get(i).getX().getFloat32(), tornadoOutput.get(i).getX().getFloat32(), DELTA);
-            //            assertEquals(sequentialOutput.get(i).getY().getFloat32(), tornadoOutput.get(i).getY().getFloat32(), DELTA);
-            //            assertEquals(sequentialOutput.get(i).getZ().getFloat32(), tornadoOutput.get(i).getZ().getFloat32(), DELTA);
+            assertEquals(sequentialOutput.get(i).getY().getFloat32(), tornadoOutput.get(i).getY().getFloat32(), DELTA);
+            assertEquals(sequentialOutput.get(i).getZ().getFloat32(), tornadoOutput.get(i).getZ().getFloat32(), DELTA);
         }
     }
 
     @Test
-    public void testInternalSetMethod03() {
+    public void testInternalSetMethod03() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorHalf4 tornadoInput = new VectorHalf4(size);
         VectorHalf4 sequentialInput = new VectorHalf4(size);
@@ -858,9 +880,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation03(sequentialInput, sequentialOutput);
 
@@ -872,7 +894,7 @@ public class TestHalfFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod04() {
+    public void testInternalSetMethod04() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorHalf8 tornadoInput = new VectorHalf8(size);
         VectorHalf8 sequentialInput = new VectorHalf8(size);
@@ -893,9 +915,9 @@ public class TestHalfFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation04(sequentialInput, sequentialOutput);
 

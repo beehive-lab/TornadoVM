@@ -30,9 +30,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -217,7 +218,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsAddGlobalMemory() {
+    public void testDoubleReductionsAddGlobalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -242,9 +243,10 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final Reduction
         double finalSum = 0;
@@ -255,7 +257,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsAddLocalMemory() {
+    public void testDoubleReductionsAddLocalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -276,9 +278,10 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         double finalSum = 0;
@@ -290,7 +293,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsMaxGlobalMemory() {
+    public void testDoubleReductionsMaxGlobalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -311,9 +314,10 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         double finalSum = 0;
@@ -325,7 +329,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsMaxLocalMemory() {
+    public void testDoubleReductionsMaxLocalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -346,9 +350,10 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         double finalSum = 0;
@@ -360,7 +365,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsMinGlobalMemory() {
+    public void testDoubleReductionsMinGlobalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -381,9 +386,10 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         double finalSum = 0;
@@ -395,7 +401,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsMinLocalMemory() {
+    public void testDoubleReductionsMinLocalMemory() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -416,9 +422,10 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         // Final SUM
         double finalSum = 0;
