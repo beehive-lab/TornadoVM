@@ -35,11 +35,60 @@ public class TornadoMemorySegment {
         return segment;
     }
 
-    public void setSegmentAt(int index, float value, int baseIndex) {
+    public void setAtIndex(int index, float value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_FLOAT, baseIndex + index, value);
     }
 
-    public float getSegmentFrom(int index, int baseIndex) {
+    public float getFloatAtIndex(int index, int baseIndex) {
         return segment.getAtIndex(ValueLayout.JAVA_FLOAT, baseIndex + index);
     }
+
+    public void setAtIndex(int index, double value, int baseIndex) {
+        segment.setAtIndex(ValueLayout.JAVA_DOUBLE, baseIndex + index, value);
+    }
+
+    public double getDoubleAtIndex(int index, int baseIndex) {
+        return segment.getAtIndex(ValueLayout.JAVA_DOUBLE, baseIndex + index);
+    }
+
+    public void setAtIndex(int index, byte value, int baseIndex) {
+        segment.setAtIndex(ValueLayout.JAVA_BYTE, baseIndex + index, value);
+    }
+
+    public byte getByteAtIndex(int index, int baseIndex) {
+        return segment.getAtIndex(ValueLayout.JAVA_BYTE, baseIndex + index);
+    }
+
+    public void setAtIndex(int index, char value, int baseIndex) {
+        segment.setAtIndex(ValueLayout.JAVA_CHAR, baseIndex + index, value);
+    }
+
+    public char getCharAtIndex(int index, int baseIndex) {
+        return segment.getAtIndex(ValueLayout.JAVA_CHAR, baseIndex + index);
+    }
+
+    public void setAtIndex(int index, int value, int baseIndex) {
+        segment.setAtIndex(ValueLayout.JAVA_INT, baseIndex + index, value);
+    }
+
+    public int getIntAtIndex(int index, int baseIndex) {
+        return segment.getAtIndex(ValueLayout.JAVA_INT, baseIndex + index);
+    }
+
+    public void setAtIndex(int index, long value, int baseIndex) {
+        segment.setAtIndex(ValueLayout.JAVA_LONG, baseIndex + index, value);
+    }
+
+    public long getLongAtIndex(int index, int baseIndex) {
+        return segment.getAtIndex(ValueLayout.JAVA_LONG, baseIndex + index);
+    }
+
+    public void setAtIndex(int index, short value, int baseIndex) {
+        segment.setAtIndex(ValueLayout.JAVA_SHORT, baseIndex + index, value);
+    }
+
+    public short getShortAtIndex(int index, int baseIndex) {
+        return segment.getAtIndex(ValueLayout.JAVA_SHORT, baseIndex + index);
+    }
+
 }

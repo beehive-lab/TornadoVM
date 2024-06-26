@@ -17,10 +17,6 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.LongBuffer;
 import java.util.Arrays;
@@ -37,7 +33,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 @SegmentElementSize(size = 8)
 public final class LongArray extends TornadoNativeArray {
     private static final int LONG_BYTES = 8;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
@@ -55,10 +51,8 @@ public final class LongArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / LONG_BYTES;
-
         segmentByteSize = numberOfElements * LONG_BYTES + arrayHeaderSize;
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -119,7 +113,7 @@ public final class LongArray extends TornadoNativeArray {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / LONG_BYTES);
         LongArray longArray = new LongArray(numElements);
-        MemorySegment.copy(segment, 0, longArray.segment, longArray.baseIndex * LONG_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, longArray.segment.getSegment(), longArray.baseIndex * LONG_BYTES, byteSize);
         return longArray;
     }
 
@@ -135,119 +129,6 @@ public final class LongArray extends TornadoNativeArray {
         LongArray longArray = new LongArray(numElements);
         longArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return longArray;
-    }
-
-    /**
-     * Converts the long data from off-heap to on-heap, by copying the values of a {@link LongArray}
-     * instance into a new on-heap array.
-     *
-     * @return A new on-heap long array, initialized with the values stored in the {@link LongArray} instance.
-     */
-    public long[] toHeapArray() {
-        long[] outputArray = new long[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
-        return outputArray;
-    }
-
-    /**
-     * Sets the long value at a specified index of the {@link LongArray} instance.
-     *
-     * @param index
-     *     The index at which to set the long value.
-     * @param value
-     *     The long value to store at the specified index.
-     */
-    public void set(int index, long value) {
-        segment.setAtIndex(JAVA_LONG, baseIndex + index, value);
-    }
-
-    /**
-     * Gets the long value stored at the specified index of the {@link LongArray} instance.
-     *
-     * @param index
-     *     The index of which to retrieve the long value.
-     * @return
-     */
-    public long get(int index) {
-        return segment.getAtIndex(JAVA_LONG, baseIndex + index);
-    }
-
-    /**
-     * Sets all the values of the {@link LongArray} instance to zero.
-     */
-    @Override
-    public void clear() {
-        init(0);
-    }
-
-    @Override
-    public int getElementSize() {
-        return LONG_BYTES;
-    }
-
-    /**
-     * Initializes all the elements of the {@link LongArray} instance with a specified value.
-     *
-     * @param value
-     *     The long value to initialize the {@link LongArray} instance with.
-     */
-    public void init(long value) {
-        for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_LONG, baseIndex + i, value);
-        }
-    }
-
-    /**
-     * Returns the number of long elements stored in the {@link LongArray} instance.
-     *
-     * @return
-     */
-    @Override
-    public int getSize() {
-        return numberOfElements;
-    }
-
-    /**
-     * Returns the underlying {@link MemorySegment} of the {@link LongArray} instance.
-     *
-     * @return The {@link MemorySegment} associated with the {@link LongArray} instance.
-     */
-    @Override
-    public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
-    }
-
-    /**
-     * Returns the underlying {@link MemorySegment} of the {@link LongArray} instance, including the header.
-     *
-     * @return The {@link MemorySegment} associated with the {@link LongArray} instance.
-     */
-    @Override
-    public MemorySegment getSegmentWithHeader() {
-        return segment;
-    }
-
-    /**
-     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link LongArray} instance, occupies.
-     *
-     * @return The total number of bytes of the {@link MemorySegment}.
-     */
-    @Override
-    public long getNumBytesOfSegmentWithHeader() {
-        return segmentByteSize;
-    }
-
-    /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link LongArray} instance,
-     * excluding the header bytes.
-     *
-     * @return The number of bytes of the raw data in the {@link MemorySegment}.
-     */
-    @Override
-    public long getNumBytesOfSegment() {
-        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
     /**
@@ -284,6 +165,119 @@ public final class LongArray extends TornadoNativeArray {
     }
 
     /**
+     * Converts the long data from off-heap to on-heap, by copying the values of a {@link LongArray}
+     * instance into a new on-heap array.
+     *
+     * @return A new on-heap long array, initialized with the values stored in the {@link LongArray} instance.
+     */
+    public long[] toHeapArray() {
+        long[] outputArray = new long[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
+    }
+
+    /**
+     * Sets the long value at a specified index of the {@link LongArray} instance.
+     *
+     * @param index
+     *     The index at which to set the long value.
+     * @param value
+     *     The long value to store at the specified index.
+     */
+    public void set(int index, long value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
+     * Gets the long value stored at the specified index of the {@link LongArray} instance.
+     *
+     * @param index
+     *     The index of which to retrieve the long value.
+     * @return
+     */
+    public long get(int index) {
+        return segment.getLongAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Sets all the values of the {@link LongArray} instance to zero.
+     */
+    @Override
+    public void clear() {
+        init(0);
+    }
+
+    @Override
+    public int getElementSize() {
+        return LONG_BYTES;
+    }
+
+    /**
+     * Initializes all the elements of the {@link LongArray} instance with a specified value.
+     *
+     * @param value
+     *     The long value to initialize the {@link LongArray} instance with.
+     */
+    public void init(long value) {
+        for (int i = 0; i < getSize(); i++) {
+            segment.setAtIndex(i, value, baseIndex);
+        }
+    }
+
+    /**
+     * Returns the number of long elements stored in the {@link LongArray} instance.
+     *
+     * @return
+     */
+    @Override
+    public int getSize() {
+        return numberOfElements;
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link LongArray} instance.
+     *
+     * @return The {@link MemorySegment} associated with the {@link LongArray} instance.
+     */
+    @Override
+    public MemorySegment getSegment() {
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link LongArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link LongArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return segment.getSegment();
+    }
+
+    /**
+     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link LongArray} instance, occupies.
+     *
+     * @return The total number of bytes of the {@link MemorySegment}.
+     */
+    @Override
+    public long getNumBytesOfSegmentWithHeader() {
+        return segmentByteSize;
+    }
+
+    /**
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link LongArray} instance,
+     * excluding the header bytes.
+     *
+     * @return The number of bytes of the raw data in the {@link MemorySegment}.
+     */
+    @Override
+    public long getNumBytesOfSegment() {
+        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
      * Extracts a slice of elements from a given {@link LongArray}, creating a new {@link LongArray} instance.
      *
      *
@@ -302,7 +296,7 @@ public final class LongArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * LONG_BYTES;
         long sliceByteLength = length * LONG_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         LongArray slice = fromSegment(sliceSegment);
         return slice;
     }

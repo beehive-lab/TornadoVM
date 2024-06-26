@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-
 import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
@@ -191,7 +189,7 @@ public final class FloatArray extends TornadoNativeArray {
      *     The float value to store at the specified index.
      */
     public void set(int index, float value) {
-        segment.setSegmentAt(index, value, baseIndex);
+        segment.setAtIndex(index, value, baseIndex);
     }
 
     /**
@@ -202,7 +200,7 @@ public final class FloatArray extends TornadoNativeArray {
      * @return
      */
     public float get(int index) {
-        return segment.getSegmentFrom(index, baseIndex);
+        return segment.getFloatAtIndex(index, baseIndex);
     }
 
     /**
@@ -226,7 +224,7 @@ public final class FloatArray extends TornadoNativeArray {
      */
     public void init(float value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.getSegment().setAtIndex(JAVA_FLOAT, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 

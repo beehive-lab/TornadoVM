@@ -17,10 +17,6 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
@@ -37,7 +33,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 @SegmentElementSize(size = 8)
 public final class DoubleArray extends TornadoNativeArray {
     private static final int DOUBLE_BYTES = 8;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int numberOfElements;
 
     private int arrayHeaderSize;
@@ -58,9 +54,7 @@ public final class DoubleArray extends TornadoNativeArray {
         assert arrayHeaderSize >= 8;
         baseIndex = arrayHeaderSize / DOUBLE_BYTES;
         segmentByteSize = numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -121,7 +115,7 @@ public final class DoubleArray extends TornadoNativeArray {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / DOUBLE_BYTES);
         DoubleArray doubleArray = new DoubleArray(numElements);
-        MemorySegment.copy(segment, 0, doubleArray.segment, doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, doubleArray.segment.getSegment(), doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
         return doubleArray;
     }
 
@@ -137,119 +131,6 @@ public final class DoubleArray extends TornadoNativeArray {
         DoubleArray doubleArray = new DoubleArray(numElements);
         doubleArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return doubleArray;
-    }
-
-    /**
-     * Converts the double data from off-heap to on-heap, by copying the values of a {@link DoubleArray}
-     * instance into a new on-heap array.
-     *
-     * @return A new on-heap double array, initialized with the values stored in the {@link DoubleArray} instance.
-     */
-    public double[] toHeapArray() {
-        double[] outputArray = new double[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
-        return outputArray;
-    }
-
-    /**
-     * Sets the double value at a specified index of the {@link DoubleArray} instance.
-     *
-     * @param index
-     *     The index at which to set the double value.
-     * @param value
-     *     The double value to store at the specified index.
-     */
-    public void set(int index, double value) {
-        segment.setAtIndex(JAVA_DOUBLE, baseIndex + index, value);
-    }
-
-    /**
-     * Gets the double value stored at the specified index of the {@link DoubleArray} instance.
-     *
-     * @param index
-     *     The index of which to retrieve the double value.
-     * @return
-     */
-    public double get(int index) {
-        return segment.getAtIndex(JAVA_DOUBLE, baseIndex + index);
-    }
-
-    /**
-     * Sets all the values of the {@link DoubleArray} instance to zero.
-     */
-    @Override
-    public void clear() {
-        init(0.0);
-    }
-
-    @Override
-    public int getElementSize() {
-        return DOUBLE_BYTES;
-    }
-
-    /**
-     * Initializes all the elements of the {@link DoubleArray} instance with a specified value.
-     *
-     * @param value
-     *     The double value to initialize the {@link DoubleArray} instance with.
-     */
-    public void init(double value) {
-        for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_DOUBLE, baseIndex + i, value);
-        }
-    }
-
-    /**
-     * Returns the number of double elements stored in the {@link DoubleArray} instance.
-     *
-     * @return
-     */
-    @Override
-    public int getSize() {
-        return numberOfElements;
-    }
-
-    /**
-     * Returns the underlying {@link MemorySegment} of the {@link DoubleArray} instance.
-     *
-     * @return The {@link MemorySegment} associated with the {@link DoubleArray} instance.
-     */
-    @Override
-    public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
-    }
-
-    /**
-     * Returns the underlying {@link MemorySegment} of the {@link DoubleArray} instance, including the header.
-     *
-     * @return The {@link MemorySegment} associated with the {@link DoubleArray} instance.
-     */
-    @Override
-    public MemorySegment getSegmentWithHeader() {
-        return segment;
-    }
-
-    /**
-     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link DoubleArray} instance, occupies.
-     *
-     * @return The total number of bytes of the {@link MemorySegment}.
-     */
-    @Override
-    public long getNumBytesOfSegmentWithHeader() {
-        return segmentByteSize;
-    }
-
-    /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link DoubleArray} instance,
-     * excluding the header bytes.
-     *
-     * @return The number of bytes of the raw data in the {@link MemorySegment}.
-     */
-    @Override
-    public long getNumBytesOfSegment() {
-        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
     /**
@@ -286,6 +167,119 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
+     * Converts the double data from off-heap to on-heap, by copying the values of a {@link DoubleArray}
+     * instance into a new on-heap array.
+     *
+     * @return A new on-heap double array, initialized with the values stored in the {@link DoubleArray} instance.
+     */
+    public double[] toHeapArray() {
+        double[] outputArray = new double[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
+    }
+
+    /**
+     * Sets the double value at a specified index of the {@link DoubleArray} instance.
+     *
+     * @param index
+     *     The index at which to set the double value.
+     * @param value
+     *     The double value to store at the specified index.
+     */
+    public void set(int index, double value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
+     * Gets the double value stored at the specified index of the {@link DoubleArray} instance.
+     *
+     * @param index
+     *     The index of which to retrieve the double value.
+     * @return
+     */
+    public double get(int index) {
+        return segment.getDoubleAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Sets all the values of the {@link DoubleArray} instance to zero.
+     */
+    @Override
+    public void clear() {
+        init(0.0);
+    }
+
+    @Override
+    public int getElementSize() {
+        return DOUBLE_BYTES;
+    }
+
+    /**
+     * Initializes all the elements of the {@link DoubleArray} instance with a specified value.
+     *
+     * @param value
+     *     The double value to initialize the {@link DoubleArray} instance with.
+     */
+    public void init(double value) {
+        for (int i = 0; i < getSize(); i++) {
+            segment.setAtIndex(i, value, baseIndex);
+        }
+    }
+
+    /**
+     * Returns the number of double elements stored in the {@link DoubleArray} instance.
+     *
+     * @return
+     */
+    @Override
+    public int getSize() {
+        return numberOfElements;
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link DoubleArray} instance.
+     *
+     * @return The {@link MemorySegment} associated with the {@link DoubleArray} instance.
+     */
+    @Override
+    public MemorySegment getSegment() {
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link DoubleArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link DoubleArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return segment.getSegment();
+    }
+
+    /**
+     * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@link DoubleArray} instance, occupies.
+     *
+     * @return The total number of bytes of the {@link MemorySegment}.
+     */
+    @Override
+    public long getNumBytesOfSegmentWithHeader() {
+        return segmentByteSize;
+    }
+
+    /**
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link DoubleArray} instance,
+     * excluding the header bytes.
+     *
+     * @return The number of bytes of the raw data in the {@link MemorySegment}.
+     */
+    @Override
+    public long getNumBytesOfSegment() {
+        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
      * Extracts a slice of elements from a given {@link DoubleArray}, creating a new {@link DoubleArray} instance.
      *
      *
@@ -304,7 +298,7 @@ public final class DoubleArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * DOUBLE_BYTES;
         long sliceByteLength = length * DOUBLE_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         DoubleArray slice = fromSegment(sliceSegment);
         return slice;
     }

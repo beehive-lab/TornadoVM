@@ -41,8 +41,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
-import java.lang.foreign.ValueLayout;
-
 import org.graalvm.word.LocationIdentity;
 
 import jdk.graal.compiler.core.common.memory.BarrierType;
@@ -78,7 +76,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -339,11 +336,11 @@ public class OCLGraphBuilderPlugins {
 
         int argIndex = 0;
         for (Node n : newArrayNode.usages()) {
-            if (n instanceof StoreIndexedNode) {
-                StoreIndexedNode storeNode = (StoreIndexedNode) n;
+            if (n instanceof StoreIndexedNode storeIndexedNode) {
+                StoreIndexedNode storeNode = storeIndexedNode;
                 ValueNode value = storeNode.value();
-                if (value instanceof BoxNode) {
-                    BoxNode box = (BoxNode) value;
+                if (value instanceof BoxNode boxNodeValue) {
+                    BoxNode box = boxNodeValue;
                     value = box.getValue();
                     GraphUtil.unlinkFixedNode(box);
                     box.safeDelete();
@@ -366,8 +363,8 @@ public class OCLGraphBuilderPlugins {
             // unbuilt part of the graph. We also need to ensure that we
             // do not leave any
             // gaps inbetween fixed nodes
-            if (n instanceof FixedWithNextNode) {
-                GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
+            if (n instanceof FixedWithNextNode fixedWithNextNode) {
+                GraphUtil.unlinkFixedNode(fixedWithNextNode);
             }
             n.clearInputs();
             n.safeDelete();
@@ -380,51 +377,30 @@ public class OCLGraphBuilderPlugins {
         return true;
     }
 
-    public static Class getValueLayoutClass(Class k) {
-        if (k == int.class) {
-            return ValueLayout.OfInt.class;
-        } else if (k == double.class) {
-            return ValueLayout.OfDouble.class;
-        } else if (k == float.class) {
-            return ValueLayout.OfFloat.class;
-        } else if (k == long.class) {
-            return ValueLayout.OfLong.class;
-        } else if (k == boolean.class) {
-            return ValueLayout.OfBoolean.class;
-        } else if (k == byte.class) {
-            return ValueLayout.OfByte.class;
-        } else if (k == char.class) {
-            return ValueLayout.OfChar.class;
-        } else if (k == short.class) {
-            return ValueLayout.OfShort.class;
-        } else {
-            throw new TornadoRuntimeException("Class type " + k + " not supported.");
-        }
-    }
-
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                r.register(new InvocationPlugin("setSegmentAt", Receiver.class, int.class, float.class, int.class) {
+                System.out.println("KInd " + kind.getJavaName() + " " + kind.name());
+                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
                         AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(4)));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                        JavaWriteNode writeNode = new JavaWriteNode(JavaKind.Float, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
                         return true;
                     }
                 });
-                r.register(new InvocationPlugin("getSegmentFrom", Receiver.class, int.class, int.class) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
                         AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(4)));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                        JavaReadNode readNode = new JavaReadNode(JavaKind.Float, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(JavaKind.Float, readNode);
                         return true;
                     }
