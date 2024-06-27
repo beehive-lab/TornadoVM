@@ -121,7 +121,7 @@ public class TornadoVMInterpreter {
         assert device != null;
         this.deviceForInterpreter = device;
 
-        useDependencies = executionContext.meta().enableOooExecution() || VM_USE_DEPS;
+        useDependencies = VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
 
@@ -787,7 +787,7 @@ public class TornadoVMInterpreter {
         // We attach the profiler information
         metadata.attachProfiler(timeProfiler);
         metadata.setGridScheduler(gridScheduler);
-        metadata.setThreadInfo(executionContext.meta().isThreadInfoEnabled());
+        metadata.setThreadInfoEnabled(executionContext.meta().isThreadInfoEnabled());
 
         try {
             int lastEvent = useDependencies
