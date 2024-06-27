@@ -5,6 +5,42 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.6
+----------------
+27th June 2024
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- `#442 <https://github.com/beehive-lab/TornadoVM/pull/442>`_: Support for multiple SPIR-V device versions (>= 1.2).
+- `#444 <https://github.com/beehive-lab/TornadoVM/pull/444>`_: Enabling automatic device memory clean-up after each run from the execution plan.
+- `#448 <https://github.com/beehive-lab/TornadoVM/pull/448>`_: API extension to query device memory consumption at the TaskGraph granularity.
+- `#451 <https://github.com/beehive-lab/TornadoVM/pull/451>`_: Option to select the default SPIR-V runtime.
+- `#455 <https://github.com/beehive-lab/TornadoVM/pull/455>`_: Refactoring the API and documentation updated.
+- `#460 <https://github.com/beehive-lab/TornadoVM/pull/460>`_: Refactoring all examples to use try-with-resources execution plans by default.
+- `#462 <https://github.com/beehive-lab/TornadoVM/pull/462>`_: Support for copy array references from private to private memory on the hardware accelerator.
+
+
+Compatibility
+~~~~~~~~~~~~~~~~~~
+
+- `#438 <https://github.com/beehive-lab/TornadoVM/pull/438>`_: No writes for intermediate files to avoid permissions issues with Jenkins.
+- `#440 <https://github.com/beehive-lab/TornadoVM/pull/440>`_: Update Jenkinsfile  for CI/CD testing.
+- `#443 <https://github.com/beehive-lab/TornadoVM/pull/443>`_: Level Zero and OpenCL runtimes for SPIR-V included in the Jenkins CI/CD.
+- `#450 <https://github.com/beehive-lab/TornadoVM/pull/450>`_: TornadoVM benchmark script improved to report dimensions and sizes.
+- `#453 <https://github.com/beehive-lab/TornadoVM/pull/453>`_: Update Jenkinsfile with regards to the runtime for SPIR-V.
+
+
+Bug Fixes
+~~~~~~~~~~~~~~~~~~
+
+- `#434 <https://github.com/beehive-lab/TornadoVM/pull/434>`_: Fix for building TornadoVM on OSx after integration with SPIR-V binaries for OpenCL.
+- `#441 <https://github.com/beehive-lab/TornadoVM/pull/441>`_: Fix PTX unit-tests.
+- `#446 <https://github.com/beehive-lab/TornadoVM/pull/446>`_: Fix NVIDIA thread-block scheduler for new GPU drivers.
+- `#447 <https://github.com/beehive-lab/TornadoVM/pull/447>`_: Fix recompilation when batch processing is not triggered.
+- `#463 <https://github.com/beehive-lab/TornadoVM/pull/463>`_: Fix unit-tests for CPU virtual devices.
+
+
 TornadoVM 1.0.5
 ----------------
 26th May 2024
