@@ -30,6 +30,8 @@ public interface TornadoDeviceContext {
 
     boolean wasReset();
 
+    void reset(long executionPlanId);
+
     void setResetToFalse();
 
     boolean isPlatformFPGA();

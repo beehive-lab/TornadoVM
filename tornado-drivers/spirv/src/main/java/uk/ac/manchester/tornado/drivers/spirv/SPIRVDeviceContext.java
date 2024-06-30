@@ -153,6 +153,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return tornadoDevice;
     }
 
+    @Override
     public void reset(long executionPlanId) {
         spirvEventPool.put(executionPlanId, new SPIRVEventPool(TornadoOptions.EVENT_WINDOW));
         codeCache.reset();

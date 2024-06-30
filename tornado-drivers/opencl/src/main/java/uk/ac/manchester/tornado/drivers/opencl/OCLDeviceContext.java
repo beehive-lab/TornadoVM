@@ -513,6 +513,17 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     public void reset(long executionPlanId) {
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
         eventPool.reset();
+        oclEventPool.remove(executionPlanId);
+        OCLCommandQueueTable table = commandQueueTable.get(executionPlanId);
+        if (table != null) {
+            OCLTargetDevice device = context.devices().get(getDeviceIndex());
+            table.cleanup(device);
+            if (table.size() == 0) {
+                commandQueueTable.remove(executionPlanId);
+            }
+            executionIDs.remove(executionPlanId);
+        }
+        getMemoryManager().releaseKernelStackFrame(executionPlanId);
         codeCache.reset();
         wasReset = true;
     }

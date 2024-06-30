@@ -57,4 +57,8 @@ public interface KernelStackFrame {
     void addCallArgument(Object value, boolean isReferenceType);
 
     void setKernelContext(HashMap<Integer, Integer> map);
+
+    boolean isValid();
+
+    void invalidate();
 }

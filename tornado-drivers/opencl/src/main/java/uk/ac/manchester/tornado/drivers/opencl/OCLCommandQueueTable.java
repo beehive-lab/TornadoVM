@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -44,6 +45,19 @@ public class OCLCommandQueueTable {
             deviceCommandMap.put(device, table);
         }
         return deviceCommandMap.get(device).get(Thread.currentThread().threadId(), device, context);
+    }
+
+    public void cleanup(OCLTargetDevice device) {
+        if (deviceCommandMap.containsKey(device)) {
+            deviceCommandMap.get(device).cleanup(Thread.currentThread().threadId());
+        }
+        if (deviceCommandMap.get(device).size() == 0) {
+            deviceCommandMap.remove(device);
+        }
+    }
+
+    public int size() {
+        return deviceCommandMap.size();
     }
 
     private static class ThreadCommandQueueTable {
@@ -67,6 +81,17 @@ public class OCLCommandQueueTable {
                 commandQueueMap.put(threadId, commandQueue);
             }
             return commandQueueMap.get(threadId);
+        }
+
+        public void cleanup(long threadId) {
+            if (commandQueueMap.containsKey(threadId)) {
+                OCLCommandQueue queue = commandQueueMap.remove(threadId);
+                queue.cleanup();
+            }
+        }
+
+        public int size() {
+            return commandQueueMap.size();
         }
     }
 }
