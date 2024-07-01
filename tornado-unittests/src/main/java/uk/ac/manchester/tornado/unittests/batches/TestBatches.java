@@ -937,6 +937,7 @@ public class TestBatches extends TornadoTestBase {
 
     private long checkMaxHeapAllocationOnDevice(int size, MemoryUnit memoryUnit) throws UnsupportedConfigurationException {
         long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
+
         long memThreshold = switch (memoryUnit) {
             case GB -> (long) size * 1024 * 1024 * 1024;
             case MB -> (long) size * 1024 * 1024;

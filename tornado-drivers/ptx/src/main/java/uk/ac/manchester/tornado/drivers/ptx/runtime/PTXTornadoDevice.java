@@ -49,14 +49,7 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.*;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXBackendImpl;
@@ -67,26 +60,9 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCharArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemorySegmentWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMultiDimArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXVectorWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.*;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -288,7 +264,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.checkBufferAvailability(objects.length)) {
+        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
             bufferProvider.resetBuffers();
         }
         long allocatedSpace = 0;
@@ -672,18 +648,6 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
-    }
-
-    @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
     }
 
     @Override

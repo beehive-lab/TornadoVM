@@ -50,34 +50,13 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeImpl;
+import uk.ac.manchester.tornado.drivers.spirv.*;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCharArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemorySegmentWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.*;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -245,18 +224,6 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         throw new RuntimeException("Unsupported");
     }
 
-    @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
-    }
-
     private XPUBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
         if (klass == int[].class) {
             return new SPIRVIntArrayWrapper(device, batchSize);
@@ -332,7 +299,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.checkBufferAvailability(objects.length)) {
+        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
             bufferProvider.resetBuffers();
         }
         long allocatedSpace = 0;
