@@ -9,7 +9,7 @@ then
 	exit 0
 fi
 
-VERSION=1.0.6
+VERSION=1.0.7-dev
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 
@@ -23,6 +23,7 @@ do
 		-DartifactId=${artifact} \
 		-Dversion=$VERSION \
 		-Dfile=${API_PATH}/$artifact-${VERSION}.jar \
+		-Dsources=${API_PATH}/$artifact-${VERSION}.jar \
 		-Dpackaging=jar \
 		-DgeneratePom=true \
 		-DlocalRepositoryPath=. \
@@ -35,6 +36,7 @@ mvn install:install-file \
 	-DartifactId=tornado-drivers-opencl-jni \
 	-Dversion=$VERSION \
 	-Dfile=${API_PATH}/tornado-drivers-opencl-jni-${VERSION}-libs.jar \
+	-Dsources=${API_PATH}/tornado-drivers-opencl-jni-${VERSION}-libs.jar \
 	-Dpackaging=jar \
 	-DgeneratePom=true \
 	-DlocalRepositoryPath=. \
@@ -47,6 +49,7 @@ mvn install:install-file \
 	-DartifactId=tornado-drivers-ptx-jni \
 	-Dversion=$VERSION \
 	-Dfile=${API_PATH}/tornado-drivers-ptx-jni-${VERSION}-libs.jar \
+	-Dsources=${API_PATH}/tornado-drivers-ptx-jni-${VERSION}-libs.jar \
 	-Dpackaging=jar \
 	-DgeneratePom=true \
 	-DlocalRepositoryPath=. \
