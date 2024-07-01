@@ -175,17 +175,16 @@ public class Compute {
     }
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        
-        TaskGraph taskGraph = new TaskGraph("myCompute")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
-                .task("mxm", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
-
         // When using the kernel-parallel API, we need to create a Grid and a Worker
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create a 2D Worker
         GridScheduler gridScheduler = new GridScheduler("myCompute.mxm", workerGrid);  // Attach the worker to the Grid
         KernelContext context = new KernelContext();             // Create a context
         workerGrid.setLocalWork(16, 16, 1);                      // Set the local-group size
+  
+        TaskGraph taskGraph = new TaskGraph("myCompute")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
+                .task("mxm", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
 
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
