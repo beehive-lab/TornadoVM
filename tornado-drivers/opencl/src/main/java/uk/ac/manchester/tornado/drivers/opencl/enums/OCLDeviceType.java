@@ -32,7 +32,7 @@ public enum OCLDeviceType {
 	CL_DEVICE_TYPE_GPU(1 << 2),
 	CL_DEVICE_TYPE_ACCELERATOR(1 << 3),
 	CL_DEVICE_TYPE_CUSTOM(1 << 4),
-	CL_DEVICE_TYPE_ALL(0xFFFFFFFF);
+	CL_DEVICE_TYPE_ALL(0xFFFFFFFFL);
     // @formatter:on
 
     private final long value;
