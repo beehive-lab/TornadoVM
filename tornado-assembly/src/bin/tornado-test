@@ -181,7 +181,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
-    "uk.ac.manchester.tornado.unittests.codegen.CodeGen#test02",
+    "uk.ac.manchester.tornado.unittests.codegen.CodeGenTest#test02",
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testComputePi",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm1DKernelContext",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
