@@ -20,12 +20,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.BarrierSetLIRGenerator;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGenerator;
 
 import jdk.vm.ci.meta.Value;
 

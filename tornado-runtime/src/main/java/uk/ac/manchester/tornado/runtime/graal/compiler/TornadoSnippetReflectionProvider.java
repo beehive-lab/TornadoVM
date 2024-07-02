@@ -28,7 +28,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import jdk.graal.compiler.api.replacements.SnippetReflectionProvider;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;

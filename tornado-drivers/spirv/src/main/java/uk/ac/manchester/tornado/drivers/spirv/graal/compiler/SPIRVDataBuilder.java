@@ -24,8 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import org.graalvm.compiler.code.DataSection;
-import org.graalvm.compiler.lir.asm.DataBuilder;
+import jdk.graal.compiler.code.DataSection;
+import jdk.graal.compiler.lir.asm.DataBuilder;
 
 import jdk.vm.ci.meta.Constant;
 

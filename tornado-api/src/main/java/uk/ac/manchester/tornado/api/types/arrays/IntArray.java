@@ -17,9 +17,6 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.IntBuffer;
 import java.util.Arrays;
@@ -37,7 +34,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 public final class IntArray extends TornadoNativeArray {
     private static final int INT_BYTES = 4;
     private int numberOfElements;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int arrayHeaderSize;
 
     private int baseIndex;
@@ -55,9 +52,7 @@ public final class IntArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT_BYTES;
         segmentByteSize = numberOfElements * INT_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -118,7 +113,7 @@ public final class IntArray extends TornadoNativeArray {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / INT_BYTES);
         IntArray intArray = new IntArray(numElements);
-        MemorySegment.copy(segment, 0, intArray.segment, intArray.baseIndex * INT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, intArray.segment.getSegment(), intArray.baseIndex * INT_BYTES, byteSize);
         return intArray;
     }
 
@@ -134,6 +129,39 @@ public final class IntArray extends TornadoNativeArray {
         IntArray intArray = new IntArray(numElements);
         intArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return intArray;
+    }
+
+    /**
+     * Factory method to initialize a {@link IntArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *     Input Array.
+     * @param value
+     *     The float value to initialize the {@code IntArray} instance with.
+     */
+    public static void initialize(IntArray array, int value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link IntArray} instances into a single {@link IntArray}.
+     *
+     * @param arrays
+     *     Variable number of {@link IntArray} objects to be concatenated.
+     * @return A new {@link IntArray} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static IntArray concat(IntArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(IntArray::getSize).sum();
+        IntArray concatArray = new IntArray(newSize);
+        long currentPositionBytes = 0;
+        for (IntArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 
     /**
@@ -159,7 +187,7 @@ public final class IntArray extends TornadoNativeArray {
      *     The int value to store at the specified index.
      */
     public void set(int index, int value) {
-        segment.setAtIndex(JAVA_INT, baseIndex + index, value);
+        segment.setAtIndex(index, value, baseIndex);
     }
 
     /**
@@ -170,7 +198,7 @@ public final class IntArray extends TornadoNativeArray {
      * @return
      */
     public int get(int index) {
-        return segment.getAtIndex(JAVA_INT, baseIndex + index);
+        return segment.getIntAtIndex(index, baseIndex);
     }
 
     /**
@@ -194,7 +222,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     public void init(int value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_INT, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -236,7 +264,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -246,40 +274,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
-    }
-
-    /**
-     * Factory method to initialize a {@link IntArray}. This method can be invoked from a Task-Graph.
-     *
-     * @param array
-     *     Input Array.
-     * @param value
-     *     The float value to initialize the {@code IntArray} instance with.
-     */
-    public static void initialize(IntArray array, int value) {
-        for (@Parallel int i = 0; i < array.getSize(); i++) {
-            array.set(i, value);
-        }
-    }
-
-    /**
-     * Concatenates multiple {@link IntArray} instances into a single {@link IntArray}.
-     *
-     * @param arrays
-     *     Variable number of {@link IntArray} objects to be concatenated.
-     * @return A new {@link IntArray} instance containing all the elements of the input arrays,
-     *     concatenated in the order they were provided.
-     */
-    public static IntArray concat(IntArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(IntArray::getSize).sum();
-        IntArray concatArray = new IntArray(newSize);
-        long currentPositionBytes = 0;
-        for (IntArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
+        return segment.getSegment();
     }
 
     /**
@@ -301,7 +296,7 @@ public final class IntArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * INT_BYTES;
         long sliceByteLength = length * INT_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         IntArray slice = fromSegment(sliceSegment);
         return slice;
     }

@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.runtime.graal;
 
-import org.graalvm.compiler.replacements.SnippetCounter;
-import org.graalvm.compiler.replacements.SnippetCounter.Group;
+import jdk.graal.compiler.replacements.SnippetCounter;
+import jdk.graal.compiler.replacements.SnippetCounter.Group;
 
 /*
  * * @author James Clarkson

@@ -49,13 +49,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.asm.AbstractAddress;
+import jdk.graal.compiler.asm.Assembler;
+import jdk.graal.compiler.asm.Label;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;

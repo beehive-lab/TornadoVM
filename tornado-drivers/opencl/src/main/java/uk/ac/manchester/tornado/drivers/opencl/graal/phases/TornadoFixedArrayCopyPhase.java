@@ -21,26 +21,41 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.Phase;
+import java.util.Optional;
 
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValuePhiNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.phases.Phase;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayCopyNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-
-import java.util.Optional;
 
 /**
  * This phase examines if a copy takes place between two arrays in private memory based on
  * an if condition and, if so, inserts a {@link FixedArrayCopyNode} to generate an update in the references.
  */
 public class TornadoFixedArrayCopyPhase extends Phase {
+
+    private static boolean isFixedArrayCopied(ValuePhiNode phiNode) {
+        return phiNode.usages().filter(OffsetAddressNode.class).isNotEmpty() && phiNode.values().filter(FixedArrayNode.class).isNotEmpty();
+    }
+
+    private static ValuePhiNode getPrivateArrayIndex(Node node) {
+        // identify the index
+        for (Node input : node.inputs()) {
+            if (input instanceof ValuePhiNode phiNode) {
+                return phiNode;
+            } else {
+                return getPrivateArrayIndex(input);
+            }
+        }
+        return null;
+    }
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -65,22 +80,6 @@ public class TornadoFixedArrayCopyPhase extends Phase {
                 offsetAddressNode.setOffset(privateIndex);
             }
         }
-    }
-
-    private static boolean isFixedArrayCopied(ValuePhiNode phiNode) {
-        return phiNode.usages().filter(OffsetAddressNode.class).isNotEmpty() && phiNode.values().filter(FixedArrayNode.class).isNotEmpty();
-    }
-
-    private static ValuePhiNode getPrivateArrayIndex(Node node) {
-        // identify the index
-        for (Node input : node.inputs()) {
-            if (input instanceof ValuePhiNode phiNode) {
-                return phiNode;
-            } else {
-                return getPrivateArrayIndex(input);
-            }
-        }
-        return null;
     }
 
 }
