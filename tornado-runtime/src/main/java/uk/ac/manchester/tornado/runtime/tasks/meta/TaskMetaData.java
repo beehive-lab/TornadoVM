@@ -151,38 +151,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean enableExceptions() {
-        return super.enableExceptions() || scheduleMetaData.enableExceptions();
-    }
-
-    @Override
-    public boolean enableMemChecks() {
-        return super.enableMemChecks() || scheduleMetaData.enableMemChecks();
-    }
-
-    @Override
-    public boolean enableOooExecution() {
-        return super.enableOooExecution() || scheduleMetaData.enableOooExecution();
-    }
-
-    @Override
-    public boolean enableOpenCLBifs() {
-        return super.enableOpenCLBifs() || scheduleMetaData.enableOpenCLBifs();
-    }
-
-    @Override
     public boolean enableParallelization() {
         return scheduleMetaData.isEnableParallelizationDefined() && !isEnableParallelizationDefined() ? scheduleMetaData.enableParallelization() : super.enableParallelization();
-    }
-
-    @Override
-    public boolean enableProfiling() {
-        return super.enableProfiling() || scheduleMetaData.enableProfiling();
-    }
-
-    @Override
-    public boolean enableVectors() {
-        return super.enableVectors() || scheduleMetaData.enableVectors();
     }
 
     @Override
@@ -364,11 +334,6 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean shouldDebugKernelArgs() {
-        return super.shouldDebugKernelArgs() || scheduleMetaData.shouldDebugKernelArgs();
-    }
-
-    @Override
     public boolean shouldDumpProfiles() {
         return super.shouldDumpProfiles() || scheduleMetaData.shouldDumpProfiles();
     }
@@ -379,48 +344,13 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean shouldPrintCompileTimes() {
-        return super.shouldPrintCompileTimes() || scheduleMetaData.shouldPrintCompileTimes();
-    }
-
-    @Override
-    public boolean shouldPrintKernelExecutionTime() {
-        return super.shouldPrintKernelExecutionTime() || scheduleMetaData.shouldPrintKernelExecutionTime();
-    }
-
-    @Override
-    public boolean shouldUseOpenCLBlockingApiCalls() {
-        return super.shouldUseOpenCLBlockingApiCalls() || scheduleMetaData.shouldUseOpenCLBlockingApiCalls();
-    }
-
-    @Override
-    public boolean shouldUseOpenCLRelativeAddresses() {
-        return super.shouldUseOpenCLRelativeAddresses() || scheduleMetaData.shouldUseOpenCLRelativeAddresses();
-    }
-
-    @Override
     public boolean shouldUseOpenCLDriverScheduling() {
         return super.shouldUseOpenCLDriverScheduling() || scheduleMetaData.shouldUseOpenCLDriverScheduling();
     }
 
     @Override
-    public boolean shouldUseOpenCLWaitActive() {
-        return super.shouldUseOpenCLWaitActive() || scheduleMetaData.shouldUseOpenCLWaitActive();
-    }
-
-    @Override
-    public boolean shouldUseVmWaitEvent() {
-        return super.shouldUseVmWaitEvent() || scheduleMetaData.shouldUseVmWaitEvent();
-    }
-
-    @Override
     public boolean enableThreadCoarsener() {
         return super.enableThreadCoarsener() || scheduleMetaData.enableThreadCoarsener();
-    }
-
-    @Override
-    public boolean shouldCoarsenWithCpuConfig() {
-        return super.shouldCoarsenWithCpuConfig() || scheduleMetaData.shouldCoarsenWithCpuConfig();
     }
 
     @Override
