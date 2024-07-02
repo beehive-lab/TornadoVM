@@ -146,7 +146,10 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
         switch (Objects.requireNonNull(device.getDeviceType())) {
-            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
+            case CL_DEVICE_TYPE_GPU, //
+                    CL_DEVICE_TYPE_ACCELERATOR,//
+                    CL_DEVICE_TYPE_CUSTOM,//
+                    CL_DEVICE_TYPE_ALL -> {//
                 return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
@@ -447,18 +450,6 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
-    }
-
-    @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
     }
 
     @Override

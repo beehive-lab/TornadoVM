@@ -22,9 +22,14 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 /**
  * A Tornado accelerator device extending the {@link TornadoDevice} interface.
@@ -177,6 +182,14 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * @param task
      * @return
      */
-    boolean loopIndexInWrite(SchedulableTask task);
+    default boolean loopIndexInWrite(SchedulableTask task) {
+        if (task instanceof CompilableTask executable) {
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
+            return sketch.getBatchWriteThreadIndex();
+        } else {
+            return false;
+        }
+    }
 
 }

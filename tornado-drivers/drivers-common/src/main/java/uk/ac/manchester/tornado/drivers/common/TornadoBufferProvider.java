@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.common;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -43,17 +44,14 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public abstract class TornadoBufferProvider {
 
     protected final TornadoDeviceContext deviceContext;
-    protected final ArrayList<BufferContainer> freeBuffers;
-    protected final ArrayList<BufferContainer> usedBuffers;
+    protected final List<BufferContainer> freeBuffers;
+    protected final List<BufferContainer> usedBuffers;
     protected long currentMemoryAvailable;
 
     protected TornadoBufferProvider(TornadoDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         this.usedBuffers = new ArrayList<>();
         this.freeBuffers = new ArrayList<>();
-
-        // There is no way of querying the available memory on the device.
-        // Instead, use a flag similar to -Xmx.
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
@@ -191,8 +189,15 @@ public abstract class TornadoBufferProvider {
         }
     }
 
-    public boolean checkBufferAvailability(int numBuffersRequired) {
-        return freeBuffers.size() >= numBuffersRequired;
+    /**
+     * Function that returns true if the there are, at least numBuffers available in the free list.
+     * 
+     * @param numBuffers
+     *     Number of free buffers.
+     * @return boolean.
+     */
+    public boolean isNumFreeBuffersAvailable(int numBuffers) {
+        return freeBuffers.size() >= numBuffers;
     }
 
     public synchronized void resetBuffers() {
