@@ -321,8 +321,13 @@ public class TaskUtils {
                 taskPackage.getAccesses(), //
                 taskPackage.getDevice(), //
                 domain);
+        // Attach atomics
         if (taskPackage.getAtomics() != null) {
             prebuiltTask.withAtomics(taskPackage.getAtomics());
+        }
+        // Attach class if in a JAR file
+        if (taskPackage.getKlassJar() != null) {
+            prebuiltTask.withKlass(taskPackage.getKlassJar());
         }
         return prebuiltTask;
     }

@@ -630,6 +630,15 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    @Override
+    public TaskGraph prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+        checkTaskName(id);
+        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, resource, args, accesses, device, dimensions);
+        prebuiltTask.withClass(klass);
+        taskGraphImpl.addPrebuiltTask(prebuiltTask);
+        return this;
+    }
+
     /**
      * Add a pre-built OpenCL task into a task-schedule with atomics region.
      *
@@ -868,7 +877,7 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getProfileLog();
     }
 
-    public Collection<?> getOutputs() {
+    Collection<?> getOutputs() {
         return taskGraphImpl.getOutputs();
     }
 

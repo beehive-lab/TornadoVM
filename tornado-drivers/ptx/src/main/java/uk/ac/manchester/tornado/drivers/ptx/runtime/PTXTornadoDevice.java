@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.ptx.runtime;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -203,22 +204,33 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
         final PTXDeviceContext deviceContext = getDeviceContext();
-        final PrebuiltTask executable = (PrebuiltTask) task;
-        String functionName = buildKernelName(executable.getEntryPoint(), executable);
-        if (deviceContext.isCached(executable.getEntryPoint(), executable)) {
+        final PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+        String functionName = buildKernelName(prebuiltTask.getEntryPoint(), prebuiltTask);
+        if (deviceContext.isCached(prebuiltTask.getEntryPoint(), prebuiltTask)) {
             return deviceContext.getInstalledCode(functionName);
         }
 
-        final Path path = Paths.get(executable.getFilename());
-        TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
-        try {
-            byte[] source = Files.readAllBytes(path);
-            source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
-        } catch (IOException e) {
-            e.printStackTrace();
+        Class<?> klass = prebuiltTask.getPackageClass();
+        byte[] source;
+        if (klass != null) {
+            try {
+                InputStream inputStream = klass.getClassLoader().getResourceAsStream(prebuiltTask.getFilename());
+                TornadoInternalError.guarantee(inputStream != null, "file does not exist: %s", prebuiltTask.getFilename());
+                source = inputStream.readAllBytes();
+            } catch (IOException e) {
+                throw new TornadoBailoutRuntimeException("[Error] I/O Exception in readAllBytes", e);
+            }
+        } else {
+            final Path path = Paths.get(prebuiltTask.getFilename());
+            TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", prebuiltTask.getFilename());
+            try {
+                source = Files.readAllBytes(path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
-        return null;
+        source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
+        return deviceContext.installCode(functionName, source, prebuiltTask.getEntryPoint(), task.meta().isPrintKernelEnabled());
     }
 
     @Override

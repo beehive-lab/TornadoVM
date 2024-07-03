@@ -26,6 +26,7 @@ public class PrebuiltTaskPackage extends TaskPackage {
     private final TornadoDevice device;
     private final int[] dimensions;
     private int[] atomics;
+    private Class<?> klass;
 
     public PrebuiltTaskPackage(String id, String entryPoint, String fileName, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         super(id, null);
@@ -39,6 +40,11 @@ public class PrebuiltTaskPackage extends TaskPackage {
 
     public PrebuiltTaskPackage withAtomics(int[] atomics) {
         this.atomics = atomics;
+        return this;
+    }
+
+    public PrebuiltTaskPackage withClass(Class<?> klass) {
+        this.klass = klass;
         return this;
     }
 
@@ -73,5 +79,9 @@ public class PrebuiltTaskPackage extends TaskPackage {
 
     public int[] getAtomics() {
         return atomics;
+    }
+
+    public Class<?> getKlassJar() {
+        return this.klass;
     }
 }

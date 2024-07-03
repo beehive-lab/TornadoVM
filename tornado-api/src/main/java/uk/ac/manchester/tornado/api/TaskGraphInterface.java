@@ -518,6 +518,8 @@ public interface TaskGraphInterface {
      */
     TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
 
+    TaskGraph prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+
     /**
      * Obtains the task-schedule name that was assigned.
      *

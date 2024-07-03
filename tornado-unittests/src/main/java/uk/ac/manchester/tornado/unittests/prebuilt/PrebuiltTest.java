@@ -88,16 +88,19 @@ public class PrebuiltTest extends TornadoTestBase {
                 throw new TornadoRuntimeException("Backend not supported");
         }
 
+        // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .prebuiltTask("t0", //
-                        "add", //
-                        FILE_PATH, //
-                        new Object[] { a, b, c }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { numElements })//
+                .prebuiltTask("t0", //  task-name
+                        "add",         //   method name (entry point  in the prebuilt source, e.g., the OpenCL kernel name).
+                        FILE_PATH,     // Path to the file
+                        new Object[] { a, b, c }, //  Parameters to the function
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, // Data access to the function
+                        defaultDevice, //  Device in which the application will be executed. This is at the task graph
+                                       // level because TornadoVM performs code specialization per device.
+                        new int[] { numElements }) // Number of threads to deploy
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        // @formatter:on
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
