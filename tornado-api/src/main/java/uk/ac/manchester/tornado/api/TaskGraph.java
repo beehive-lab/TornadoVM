@@ -603,7 +603,8 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
-     * Add a pre-built OpenCL task into a task-schedule.
+     * Add a pre-built kernel (OpenCL, PTX or SPIR-V) task into a task-graph. The access to the pre-built file is provided
+     * as a String with the name of the file (path).
      *
      * @param id
      *     Task-Id
@@ -630,8 +631,33 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    /**
+     * Add a pre-built kernel (OpenCL, PTX or SPIR-V) task into a task-graph. The kernel is stored in a JAR file accessible
+     * from the CLASSPATH. The access to the pre-built file is provided as a combination of the klass (Class) with the
+     * JAR File, and the name of the file that contains the prebuilt kernel.
+     *
+     * @param id
+     *     Task-Id
+     * @param entryPoint
+     *     Name of the method to be executed on the target device
+     * @param klass
+     *     Klass that can access the resource within the JAR File
+     * @param resource
+     *     Input file with the source kernel
+     * @param args
+     *     Arguments to the kernel
+     * @param accesses
+     *     Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
+     *     each input parameter to the method
+     * @param device
+     *     Device to be executed
+     * @param dimensions
+     *     Select number of dimensions of the kernel (1D, 2D or 3D)
+     * @return {@link TaskGraph}
+     */
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+        System.out.println("[Warning] This API call is experimental and it may be removed in future versions");
         checkTaskName(id);
         PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, resource, args, accesses, device, dimensions);
         prebuiltTask.withClass(klass);

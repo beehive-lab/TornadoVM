@@ -50,14 +50,8 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXBackendImpl;
@@ -202,19 +196,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         }
     }
 
-    private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
-        final PTXDeviceContext deviceContext = getDeviceContext();
-        final PrebuiltTask prebuiltTask = (PrebuiltTask) task;
-        String functionName = buildKernelName(prebuiltTask.getEntryPoint(), prebuiltTask);
-        if (deviceContext.isCached(prebuiltTask.getEntryPoint(), prebuiltTask)) {
-            return deviceContext.getInstalledCode(functionName);
-        }
-
-        Class<?> klass = prebuiltTask.getPackageClass();
+    private byte[] getSource(PrebuiltTask prebuiltTask) {
         byte[] source;
+        Class<?> klass = prebuiltTask.getPackageClass();
         if (klass != null) {
-            try {
-                InputStream inputStream = klass.getClassLoader().getResourceAsStream(prebuiltTask.getFilename());
+            try (InputStream inputStream = klass.getClassLoader().getResourceAsStream(prebuiltTask.getFilename())) {
                 TornadoInternalError.guarantee(inputStream != null, "file does not exist: %s", prebuiltTask.getFilename());
                 source = inputStream.readAllBytes();
             } catch (IOException e) {
@@ -229,8 +215,21 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 throw new RuntimeException(e);
             }
         }
-        source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-        return deviceContext.installCode(functionName, source, prebuiltTask.getEntryPoint(), task.meta().isPrintKernelEnabled());
+        return source;
+    }
+
+    private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
+        final PTXDeviceContext deviceContext = getDeviceContext();
+        final PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+        String functionName = buildKernelName(prebuiltTask.getEntryPoint(), prebuiltTask);
+
+        if (deviceContext.isCached(prebuiltTask.getEntryPoint(), prebuiltTask)) {
+            return deviceContext.getInstalledCode(functionName);
+        }
+
+        byte[] source = getSource(prebuiltTask);
+        byte[] binary = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
+        return deviceContext.installCode(functionName, binary, prebuiltTask.getEntryPoint(), task.meta().isPrintKernelEnabled());
     }
 
     @Override
@@ -241,8 +240,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
         String methodName;
-        if (task instanceof PrebuiltTask) {
-            PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+        if (task instanceof PrebuiltTask prebuiltTask) {
             methodName = prebuiltTask.getEntryPoint();
         } else {
             CompilableTask compilableTask = (CompilableTask) task;
@@ -272,21 +270,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 result = new PTXVectorWrapper(getDeviceContext(), object, batchSize);
             } else if (object instanceof MemorySegment) {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof IntArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof FloatArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof DoubleArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof LongArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof ShortArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof ByteArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof CharArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
-            } else if (object instanceof HalfFloatArray) {
+            } else if (object instanceof TornadoNativeArray && !(object instanceof Tensor)) {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
             } else {
                 result = new PTXObjectWrapper(getDeviceContext(), object);
@@ -539,8 +523,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof PTXTornadoDevice) {
-            final PTXTornadoDevice other = (PTXTornadoDevice) obj;
+        if (obj instanceof PTXTornadoDevice other) {
             return (other.deviceIndex == deviceIndex);
         }
         return false;

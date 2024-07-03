@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
 import java.lang.foreign.MemorySegment;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -140,14 +141,28 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         }
     }
 
-    private TornadoInstalledCode compilePreBuiltTask(PrebuiltTask task) {
-        final SPIRVDeviceContext deviceContext = getDeviceContext();
-        if (deviceContext.isCached(task.getId(), task.getEntryPoint())) {
-            return deviceContext.getInstalledCode(task.getId(), task.getEntryPoint());
+    private Path getSource(PrebuiltTask prebuiltTask) {
+        Class<?> klass = prebuiltTask.getPackageClass();
+        if (klass != null) {
+            URL url = klass.getClassLoader().getResource(prebuiltTask.getFilename());
+            if (url != null) {
+                return Paths.get(url.getPath());
+            } else {
+                throw new TornadoRuntimeException("Prebuilt file path file not found: " + url.getPath());
+            }
+        } else {
+            return Paths.get(prebuiltTask.getFilename());
         }
-        final Path pathToSPIRVBin = Paths.get(task.getFilename());
-        TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", task.getFilename());
-        return deviceContext.installBinary(task.meta(), task.getId(), task.getEntryPoint(), task.getFilename());
+    }
+
+    private TornadoInstalledCode compilePreBuiltTask(PrebuiltTask prebuiltTask) {
+        final SPIRVDeviceContext deviceContext = getDeviceContext();
+        if (deviceContext.isCached(prebuiltTask.getId(), prebuiltTask.getEntryPoint())) {
+            return deviceContext.getInstalledCode(prebuiltTask.getId(), prebuiltTask.getEntryPoint());
+        }
+        final Path pathToSPIRVBin = getSource(prebuiltTask);
+        TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", prebuiltTask.getFilename());
+        return deviceContext.installBinary(prebuiltTask.meta(), prebuiltTask.getId(), prebuiltTask.getEntryPoint(), prebuiltTask.getFilename());
     }
 
     public SPIRVBackend getBackend() {
