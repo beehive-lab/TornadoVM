@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,6 +47,10 @@ public abstract class TornadoBufferProvider {
     protected final List<BufferContainer> freeBuffers;
     protected final List<BufferContainer> usedBuffers;
     protected long currentMemoryAvailable;
+
+    private static final String RESET = "\u001B[0m";
+    public static final String YELLOW = "\u001B[33m";
+    private static final String OUT_OF_MEMORY_MESSAGE = YELLOW + "\n\tTo increase the maximum device memory, use -Dtornado.device.memory=<X>GB\n" + RESET;
 
     protected TornadoBufferProvider(TornadoDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -134,7 +138,7 @@ public abstract class TornadoBufferProvider {
         if (sizeInBytes <= currentMemoryAvailable) {
             return allocate(sizeInBytes);
         } else {
-            throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory.");
+            throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
         }
     }
 
@@ -164,7 +168,7 @@ public abstract class TornadoBufferProvider {
                 return freeUnusedNativeBufferAndAssignRegion(sizeInBytes);
             }
         } else {
-            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory.");
+            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
         }
     }
 
