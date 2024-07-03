@@ -223,7 +223,7 @@ public final class ShortArray extends TornadoNativeArray {
      */
     public void init(short value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(baseIndex + i, value, baseIndex);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
