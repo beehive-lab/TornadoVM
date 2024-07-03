@@ -47,6 +47,10 @@ public abstract class TornadoBufferProvider {
     protected final ArrayList<BufferContainer> usedBuffers;
     protected long currentMemoryAvailable;
 
+    private static final String RESET = "\u001B[0m";
+    public static final String YELLOW = "\u001B[33m";
+    private static final String OUT_OF_MEMORY_MESSAGE = YELLOW + "\n\tTo increase the maximum device memory, use -Dtornado.device.memory=<X>GB\n" + RESET;
+
     protected TornadoBufferProvider(TornadoDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         this.usedBuffers = new ArrayList<>();
@@ -136,7 +140,7 @@ public abstract class TornadoBufferProvider {
         if (sizeInBytes <= currentMemoryAvailable) {
             return allocate(sizeInBytes);
         } else {
-            throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory.");
+            throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
         }
     }
 
@@ -166,7 +170,7 @@ public abstract class TornadoBufferProvider {
                 return freeUnusedNativeBufferAndAssignRegion(sizeInBytes);
             }
         } else {
-            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory.");
+            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
         }
     }
 
