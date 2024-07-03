@@ -245,18 +245,6 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         throw new RuntimeException("Unsupported");
     }
 
-    @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
-    }
-
     private XPUBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
         if (klass == int[].class) {
             return new SPIRVIntArrayWrapper(device, batchSize);
@@ -332,7 +320,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.checkBufferAvailability(objects.length)) {
+        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
             bufferProvider.resetBuffers();
         }
         long allocatedSpace = 0;
