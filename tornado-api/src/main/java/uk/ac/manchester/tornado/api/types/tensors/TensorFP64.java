@@ -17,16 +17,15 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-
 import java.lang.foreign.MemorySegment;
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.tensors.Shape;
 
 @SegmentElementSize(size = 8)
 public final class TensorFP64 extends Tensor {
@@ -57,14 +56,39 @@ public final class TensorFP64 extends Tensor {
         this.tensorStorage = new DoubleArray(numberOfElements);
     }
 
+    public static void initialize(TensorFP64 tensor, short value) {
+        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
+            tensor.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link TensorFP64} instances into a single {@link TensorFP64}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorFP64} objects to be concatenated.
+     * @return A new {@link TensorFP64} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorFP64 concat(TensorFP64... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorFP64::getSize).sum();
+        TensorFP64 concatArray = new TensorFP64(new Shape(newSize));
+        long currentPositionBytes = 0;
+        for (TensorFP64 array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
+
     public void init(double value) {
         for (int i = 0; i < getSize(); i++) {
-            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_DOUBLE, getBaseIndex() + i, value);
+            tensorStorage.set(i, value);
         }
     }
 
     public void set(int index, double value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_DOUBLE, getBaseIndex() + index, value);
+        tensorStorage.set(index, value);
     }
 
     private long getBaseIndex() {
@@ -79,7 +103,7 @@ public final class TensorFP64 extends Tensor {
      * @return
      */
     public double get(int index) {
-        return tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_DOUBLE, getBaseIndex() + index);
+        return tensorStorage.get(index);
     }
 
     @Override
@@ -134,30 +158,5 @@ public final class TensorFP64 extends Tensor {
 
     public DoubleBuffer getDoubleBuffer() {
         return getSegment().asByteBuffer().asDoubleBuffer();
-    }
-
-    public static void initialize(TensorFP64 tensor, short value) {
-        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
-            tensor.set(i, value);
-        }
-    }
-
-    /**
-     * Concatenates multiple {@link TensorFP64} instances into a single {@link TensorFP64}.
-     *
-     * @param arrays
-     *     Variable number of {@link TensorFP64} objects to be concatenated.
-     * @return A new {@link TensorFP64} instance containing all the elements of the input arrays,
-     *     concatenated in the order they were provided.
-     */
-    public static TensorFP64 concat(TensorFP64... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(TensorFP64::getSize).sum();
-        TensorFP64 concatArray = new TensorFP64(new Shape(newSize));
-        long currentPositionBytes = 0;
-        for (TensorFP64 array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
     }
 }

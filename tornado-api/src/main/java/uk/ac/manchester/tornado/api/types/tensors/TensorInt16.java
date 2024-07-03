@@ -17,17 +17,16 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
+import java.lang.foreign.MemorySegment;
+import java.nio.ShortBuffer;
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-
-import java.lang.foreign.MemorySegment;
-import java.nio.ShortBuffer;
-import java.util.Arrays;
-
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import uk.ac.manchester.tornado.api.types.tensors.Shape;
 
 @SegmentElementSize(size = 2)
 public final class TensorInt16 extends Tensor {
@@ -58,14 +57,39 @@ public final class TensorInt16 extends Tensor {
         this.tensorStorage = new ShortArray(numberOfElements);
     }
 
+    public static void initialize(TensorInt16 tensor, short value) {
+        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
+            tensor.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link TensorInt16} instances into a single {@link TensorInt16}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorInt16} objects to be concatenated.
+     * @return A new {@link TensorInt16} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorInt16 concat(TensorInt16... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorInt16::getSize).sum();
+        TensorInt16 concatArray = new TensorInt16(new Shape(newSize));
+        long currentPositionBytes = 0;
+        for (TensorInt16 array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
+
     public void init(short value) {
         for (int i = 0; i < getSize(); i++) {
-            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_SHORT, getBaseIndex() + i, value);
+            tensorStorage.set(i, value);
         }
     }
 
     public void set(int index, short value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_SHORT, getBaseIndex() + index, value);
+        tensorStorage.set(index, value);
     }
 
     private long getBaseIndex() {
@@ -80,7 +104,7 @@ public final class TensorInt16 extends Tensor {
      * @return
      */
     public short get(int index) {
-        return tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_SHORT, getBaseIndex() + index);
+        return tensorStorage.get(index);
     }
 
     @Override
@@ -135,30 +159,5 @@ public final class TensorInt16 extends Tensor {
 
     public ShortBuffer getShortBuffer() {
         return getSegment().asByteBuffer().asShortBuffer();
-    }
-
-    public static void initialize(TensorInt16 tensor, short value) {
-        for (@Parallel int i = 0; i < tensor.getSize(); i++) {
-            tensor.set(i, value);
-        }
-    }
-
-    /**
-     * Concatenates multiple {@link TensorInt16} instances into a single {@link TensorInt16}.
-     *
-     * @param arrays
-     *     Variable number of {@link TensorInt16} objects to be concatenated.
-     * @return A new {@link TensorInt16} instance containing all the elements of the input arrays,
-     *     concatenated in the order they were provided.
-     */
-    public static TensorInt16 concat(TensorInt16... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(TensorInt16::getSize).sum();
-        TensorInt16 concatArray = new TensorInt16(new Shape(newSize));
-        long currentPositionBytes = 0;
-        for (TensorInt16 array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
     }
 }
