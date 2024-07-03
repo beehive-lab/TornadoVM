@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -31,7 +31,6 @@ import jdk.graal.compiler.nodes.ParameterNode;
 import jdk.graal.compiler.nodes.StartNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.phases.Phase;
-
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NodeAtomic;
@@ -59,11 +58,12 @@ public class TornadoAtomicsParametersPhase extends Phase {
 
         if (!filter.isEmpty()) {
             for (NodeAtomic atomic : filter) {
-                if (atomic.getAtomicNode() instanceof ParameterNode) {
+                if (atomic.getAtomicNode() instanceof ParameterNode parameterNodeAsAtomic) {
 
-                    ParameterNode atomicArgument = (ParameterNode) atomic.getAtomicNode();
+                    ParameterNode atomicArgument = parameterNodeAsAtomic;
                     int indexNode = atomicArgument.index();
 
+                    System.out.println("Index: " + indexNode);
                     TornadoAtomicIntegerNode newNode = new TornadoAtomicIntegerNode(OCLKind.INTEGER_ATOMIC_JAVA);
                     graph.addOrUnique(newNode);
                     newNode.assignIndexFromParameter(indexNode);
@@ -78,7 +78,7 @@ public class TornadoAtomicsParametersPhase extends Phase {
                     newNode.setNext(first);
 
                     // Replace usages for this new node
-                    ParameterNode parameter = (ParameterNode) atomic.getAtomicNode();
+                    ParameterNode parameter = parameterNodeAsAtomic;
                     newNode.replaceAtMatchingUsages(atomic, node -> !node.equals(atomic));
                     parameter.replaceAtMatchingUsages(newNode, node -> node.equals(atomic));
 

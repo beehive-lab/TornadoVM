@@ -42,7 +42,6 @@ import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.graal.compiler.nodes.java.StoreIndexedNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
-
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -241,9 +240,10 @@ public final class OCLVectorPlugins {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
 
-        final Registration r = new Registration(plugins, declaringClass);
+        final Registration r = new Registration(plugins, declaringClass).setAllowOverwrite(true);
         r.register(new InvocationPlugin("loadFromArray", Receiver.class, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
+                receiver.get(true);
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
@@ -256,6 +256,7 @@ public final class OCLVectorPlugins {
 
         r.register(new InvocationPlugin("storeToArray", Receiver.class, vectorClass, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value, ValueNode array, ValueNode index) {
+                receiver.get(true);
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();

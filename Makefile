@@ -42,7 +42,7 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose
+	tornado-test --verbose
 	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
