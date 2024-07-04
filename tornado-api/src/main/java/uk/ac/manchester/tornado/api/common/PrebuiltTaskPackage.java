@@ -25,19 +25,7 @@ public class PrebuiltTaskPackage extends TaskPackage {
     private final String filename;
     private final Object[] args;
     private final Access[] accesses;
-    private final TornadoDevice device;
-    private final int[] dimensions;
     private int[] atomics;
-
-    PrebuiltTaskPackage(String id, String entryPoint, String fileName, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
-        super(id, null);
-        this.entryPoint = entryPoint;
-        this.filename = fileName;
-        this.args = args;
-        this.accesses = accesses;
-        this.device = device;
-        this.dimensions = dimensions;
-    }
 
     PrebuiltTaskPackage(String id, String entryPoint, String fileName, AccessorParameters accessorParameters) {
         super(id, null);
@@ -51,8 +39,6 @@ public class PrebuiltTaskPackage extends TaskPackage {
         for (int i = 0; i < accessorParameters.numAccessors(); i++) {
             this.accesses[i] = accessorParameters.getAccessor(i).access();
         }
-        this.device = null;
-        this.dimensions = null;
     }
 
     public PrebuiltTaskPackage withAtomics(int[] atomics) {
@@ -74,14 +60,6 @@ public class PrebuiltTaskPackage extends TaskPackage {
 
     public Access[] getAccesses() {
         return accesses;
-    }
-
-    public TornadoDevice getDevice() {
-        return device;
-    }
-
-    public int[] getDimensions() {
-        return dimensions;
     }
 
     @Override

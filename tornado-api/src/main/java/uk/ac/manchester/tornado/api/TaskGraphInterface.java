@@ -17,9 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
@@ -483,20 +481,12 @@ public interface TaskGraphInterface {
      *     Kernel's name of the entry point
      * @param filename
      *     Input OpenCL C Kernel
-     * @param args
-     *     Arguments to the method that the kernel represents.
-     * @param accesses
-     *     Array of access of each parameter to the kernel
-     * @param device
-     *     Device in which the OpenCL C code will be executed.
-     * @param dimensions
-     *     Select the dimension of the OpenCL kernel (1D, 2D or 3D)
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraphInterface}
      *
      */
-    TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
+    TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters, int[] atomics);
 
     /**
      * Obtains the task-schedule name that was assigned.

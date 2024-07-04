@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -631,22 +630,16 @@ public class TaskGraph implements TaskGraphInterface {
      *     Kernel's name of the entry point
      * @param filename
      *     Input OpenCL C Kernel
-     * @param args
-     *     Arguments to the method that the kernel represents.
-     * @param accesses
-     *     Array of access of each parameter to the kernel
-     * @param device
-     *     Device in which the OpenCL C code will be executed.
-     * @param dimensions
-     *     Select the dimension of the OpenCL kernel (1D, 2D or 3D)
+     * @param accessorParameters
+     *     {@link AccessorParameters} with the type of accessor for each of the input parameters to the low-level kernel.
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraph}
      */
     @Override
-    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters, int[] atomics) {
         checkTaskName(id);
-        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, accessorParameters);
         prebuiltTask.withAtomics(atomics);
         taskGraphImpl.addPrebuiltTask(prebuiltTask);
         return this;
