@@ -21,6 +21,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import static jdk.graal.compiler.graph.Graph.NodeEvent.NODE_ADDED;
+import static jdk.graal.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
+import static org.graalvm.word.LocationIdentity.any;
+import static org.graalvm.word.LocationIdentity.init;
+
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -29,6 +34,8 @@ import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
 import org.graalvm.collections.Equivalence;
 import org.graalvm.collections.UnmodifiableMapCursor;
+import org.graalvm.word.LocationIdentity;
+
 import jdk.graal.compiler.core.common.cfg.Loop;
 import jdk.graal.compiler.debug.DebugCloseable;
 import jdk.graal.compiler.debug.GraalError;
@@ -73,16 +80,9 @@ import jdk.graal.compiler.phases.common.FloatingReadPhase;
 import jdk.graal.compiler.phases.common.PostRunCanonicalizationPhase;
 import jdk.graal.compiler.phases.common.util.EconomicSetNodeEventListener;
 import jdk.graal.compiler.phases.graph.ReentrantNodeIterator;
-import org.graalvm.word.LocationIdentity;
-
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
-
-import static jdk.graal.compiler.graph.Graph.NodeEvent.NODE_ADDED;
-import static jdk.graal.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
-import static org.graalvm.word.LocationIdentity.any;
-import static org.graalvm.word.LocationIdentity.init;
 
 /**
  * This phase modifies the functionality of the originally FloatingRead Phase
@@ -246,7 +246,6 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops = null;
         if (graph.hasLoops()) {
             modifiedInLoops = EconomicMap.create(Equivalence.IDENTITY);
-            //            ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, false, false);
             ControlFlowGraph cfg = ControlFlowGraph.newBuilder(graph).connectBlocks(true).computeLoops(true).computeFrequency(true).build();
 
             for (Loop<?> l : cfg.getLoops()) {

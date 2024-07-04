@@ -1730,8 +1730,7 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.spirv</arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.spirv
-                                </arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.spirv</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.spirv</arg>
                                 <arg>--add-exports</arg>

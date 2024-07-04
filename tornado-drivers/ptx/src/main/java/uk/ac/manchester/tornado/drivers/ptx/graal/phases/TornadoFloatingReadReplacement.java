@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -21,8 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 
-import static org.graalvm.compiler.graph.Graph.NodeEvent.NODE_ADDED;
-import static org.graalvm.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
 import static org.graalvm.word.LocationIdentity.any;
 import static org.graalvm.word.LocationIdentity.init;
 
@@ -34,6 +32,8 @@ import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
 import org.graalvm.collections.Equivalence;
 import org.graalvm.collections.UnmodifiableMapCursor;
+import org.graalvm.word.LocationIdentity;
+
 import jdk.graal.compiler.core.common.cfg.Loop;
 import jdk.graal.compiler.debug.DebugCloseable;
 import jdk.graal.compiler.debug.GraalError;
@@ -78,8 +78,6 @@ import jdk.graal.compiler.phases.common.FloatingReadPhase;
 import jdk.graal.compiler.phases.common.PostRunCanonicalizationPhase;
 import jdk.graal.compiler.phases.common.util.EconomicSetNodeEventListener;
 import jdk.graal.compiler.phases.graph.ReentrantNodeIterator;
-import org.graalvm.word.LocationIdentity;
-
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorLoadElementNode;
@@ -107,7 +105,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
     /**
      * @param createMemoryMapNodes
-     *            a {@link MemoryMapNode} will be created for each return if this
+     *     a {@link MemoryMapNode} will be created for each return if this
      * @param canonicalizer
      */
     public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {
@@ -247,17 +245,17 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops = null;
         if (graph.hasLoops()) {
             modifiedInLoops = EconomicMap.create(Equivalence.IDENTITY);
-            ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, false, false);
+            ControlFlowGraph cfg = ControlFlowGraph.newBuilder(graph).connectBlocks(true).computeLoops(true).computeFrequency(true).build();
             for (Loop<?> l : cfg.getLoops()) {
                 HIRLoop loop = (HIRLoop) l;
                 processLoop(loop, modifiedInLoops);
             }
         }
 
-        EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener(EnumSet.of(NODE_ADDED, ZERO_USAGES));
+        EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener(EnumSet.of(Graph.NodeEvent.NODE_ADDED, Graph.NodeEvent.ZERO_USAGES));
         try (Graph.NodeEventScope nes = graph.trackNodeEvents(listener)) {
-            ReentrantNodeIterator.apply(new FloatingReadPhase.FloatingReadClosure(modifiedInLoops, true, createMemoryMapNodes, initMemory), graph.start(),
-                    new FloatingReadPhase.MemoryMapImpl(graph.start()));
+            ReentrantNodeIterator.apply(new FloatingReadPhase.FloatingReadClosure(modifiedInLoops, true, createMemoryMapNodes, initMemory), graph.start(), new FloatingReadPhase.MemoryMapImpl(graph
+                    .start()));
         }
 
         for (Node n : removeExternallyUsedNodes(listener.getNodes())) {
@@ -362,9 +360,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         /**
          * @param accessNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method checks if the node that is going
-         *            to be replaced has an {@link PTXBarrierNode} as next.
+         *     is a {@link FixedNode} that will be replaced by a
+         *     {@link FloatingNode}. This method checks if the node that is going
+         *     to be replaced has an {@link PTXBarrierNode} as next.
          */
         private static boolean isNextNodeBarrierNode(FloatableAccessNode accessNode) {
             return (accessNode.next() instanceof PTXBarrierNode);
@@ -372,9 +370,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         /**
          * @param nextNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method removes the redundant
-         *            {@link PTXBarrierNode}.
+         *     is a {@link FixedNode} that will be replaced by a
+         *     {@link FloatingNode}. This method removes the redundant
+         *     {@link PTXBarrierNode}.
          */
         private static void replaceRedundantBarrierNode(Node nextNode) {
             nextNode.replaceAtUsages(nextNode.successors().first());
@@ -416,8 +414,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                 final LoopExitNode loopExitNode = (LoopExitNode) node;
                 final EconomicSet<LocationIdentity> modifiedInLoop = modifiedInLoops.get(loopExitNode.loopBegin());
                 final boolean anyModified = modifiedInLoop.contains(LocationIdentity.any());
-                state.getMap().replaceAll(
-                        (locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity)) ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity) : memoryNode);
+                state.getMap().replaceAll((locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity))
+                        ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity)
+                        : memoryNode);
             }
 
             if (node instanceof MemoryAnchorNode) {
