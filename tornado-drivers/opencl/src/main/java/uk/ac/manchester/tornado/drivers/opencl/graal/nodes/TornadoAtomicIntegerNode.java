@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,7 +34,6 @@ import jdk.graal.compiler.nodes.FixedWithNextNode;
 import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.spi.LIRLowerable;
 import jdk.graal.compiler.nodes.spi.NodeLIRBuilderTool;
-
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
@@ -47,35 +46,24 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<TornadoAtomicIntegerNode> TYPE = NodeClass.create(TornadoAtomicIntegerNode.class);
-
-    private final OCLKind kind;
-
-    private boolean ATOMIC_2_0 = false;
-
+    private static final int DEFAULT_VALUE = -1;
     // How many atomics integers per graph
     public static HashMap<ResolvedJavaMethod, ArrayList<Integer>> globalAtomics = new HashMap<>();
-
     // Mapping between:
     // Java Method: -> { ParamIndex -> Position in the Atomic Buffer }
     public static HashMap<ResolvedJavaMethod, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
-
-    private static final int DEFAULT_VALUE = -1;
-
+    private final OCLKind kind;
     @Input
-    ValueNode initialValue;
-
+    protected ConstantNode initialValue;
+    private boolean ATOMIC_2_0 = false;
     private int indexFromGlobalMemory;
 
     private boolean atomicsByParameter = false;
 
-    public TornadoAtomicIntegerNode(OCLKind kind) {
+    public TornadoAtomicIntegerNode(OCLKind kind, ConstantNode initialValue) {
         super(TYPE, OCLStampFactory.getStampFor(kind));
         this.kind = kind;
-        this.initialValue = ConstantNode.forInt(0);
-    }
-
-    public void setInitialValue(ValueNode valueNode) {
-        initialValue = valueNode;
+        this.initialValue = initialValue;
     }
 
     public void setInitialValueAtUsages(ValueNode valueNode) {
@@ -84,6 +72,10 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     public ValueNode getInitialValue() {
         return this.initialValue;
+    }
+
+    public void setInitialValue(ConstantNode valueNode) {
+        initialValue = valueNode;
     }
 
     private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool gen) {
@@ -104,8 +96,8 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     }
 
     private int getIntFromValueNode() {
-        if (initialValue instanceof ConstantNode) {
-            ConstantNode c = (ConstantNode) initialValue;
+        if (initialValue instanceof ConstantNode initFromValueNode) {
+            ConstantNode c = initFromValueNode;
             return Integer.parseInt(c.getValue().toValueString());
         } else {
             throw new TornadoRuntimeException("Value node not implemented for Atomics");
@@ -124,8 +116,8 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
      * buffer.
      *
      * @param paramIndex
-     *            Object parameter index taken from
-     *            {@link org.graalvm.compiler.nodes.ParameterNode}.
+     *     Object parameter index taken from
+     *     {@link org.graalvm.compiler.nodes.ParameterNode}.
      */
     public synchronized void assignIndexFromParameter(int paramIndex) {
         if (!globalAtomics.containsKey(this.graph().method())) {

@@ -21,10 +21,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
-
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -45,7 +47,8 @@ public class OCLAtomicIntegerPlugin implements NodePlugin {
         OCLKind kind = resolveOCLKind(type);
         if (kind != OCLKind.ILLEGAL) {
             if (kind == OCLKind.INTEGER_ATOMIC_JAVA) {
-                b.push(JavaKind.Object, b.append(new TornadoAtomicIntegerNode(kind)));
+                ConstantNode initialValue = new ConstantNode(JavaConstant.forInt(0), StampFactory.forConstant(JavaConstant.forInt(0)));
+                b.push(JavaKind.Object, b.append(new TornadoAtomicIntegerNode(kind, initialValue)));
                 return true;
             }
         }
