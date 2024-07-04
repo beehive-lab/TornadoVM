@@ -147,8 +147,9 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("incrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get())));
+                IncAtomicNode atomicNode = new IncAtomicNode(receiver.get(true));
+                b.getGraph().addOrUnique(atomicNode);
+                b.addPush(returnedJavaKind, atomicNode);
                 return true;
             }
         });
@@ -189,7 +190,7 @@ public class OCLGraphBuilderPlugins {
                         if (initialValue instanceof ConstantNode constantNode) {
                             int value = Integer.parseInt(constantNode.getValue().toValueString());
                             if (value == 0) {
-                                atomic.setInitialValue(initialValue);
+                                atomic.setInitialValue(constantNode);
                             } else {
                                 atomic.setInitialValueAtUsages(initialValue);
                             }
@@ -219,7 +220,7 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerLocalBarrier(Registration r) {
-        r.register(new InvocationPlugin("localBarrier") {
+        r.register(new InvocationPlugin("localBarrier", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
@@ -231,7 +232,7 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerGlobalBarrier(Registration r) {
-        r.register(new InvocationPlugin("globalBarrier") {
+        r.register(new InvocationPlugin("globalBarrier", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
@@ -243,12 +244,14 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register(new InvocationPlugin("allocateIntLocalArray", int.class) {
+        r.register(new InvocationPlugin("allocateIntLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -256,12 +259,14 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerLongLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register(new InvocationPlugin("allocateLongLocalArray", int.class) {
+        r.register(new InvocationPlugin("allocateLongLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -269,12 +274,14 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerFloatLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register(new InvocationPlugin("allocateFloatLocalArray", int.class) {
+        r.register(new InvocationPlugin("allocateFloatLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -282,12 +289,14 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerDoubleLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register(new InvocationPlugin("allocateDoubleLocalArray", int.class) {
+        r.register(new InvocationPlugin("allocateDoubleLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }

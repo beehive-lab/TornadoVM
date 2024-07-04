@@ -23,7 +23,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import java.util.Optional;
 
-import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.graph.iterators.NodeIterable;
 import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.FixedNode;
@@ -32,7 +31,6 @@ import jdk.graal.compiler.nodes.ParameterNode;
 import jdk.graal.compiler.nodes.StartNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.phases.Phase;
-import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NodeAtomic;
@@ -65,7 +63,9 @@ public class TornadoAtomicsParametersPhase extends Phase {
                     ParameterNode atomicArgument = parameterNodeAsAtomic;
                     int indexNode = atomicArgument.index();
 
-                    ConstantNode initialValue = new ConstantNode(JavaConstant.forInt(-1), StampFactory.forConstant(JavaConstant.forInt(-1)));
+                    //                    ConstantNode initialValue = new ConstantNode(JavaConstant.forInt(-1), StampFactory.forConstant(JavaConstant.forInt(-1)));
+                    final ConstantNode initialValue = graph.addOrUnique(ConstantNode.forInt(0));
+
                     graph.addOrUnique(initialValue);
                     TornadoAtomicIntegerNode newNode = new TornadoAtomicIntegerNode(OCLKind.INTEGER_ATOMIC_JAVA, initialValue);
                     graph.addOrUnique(newNode);
