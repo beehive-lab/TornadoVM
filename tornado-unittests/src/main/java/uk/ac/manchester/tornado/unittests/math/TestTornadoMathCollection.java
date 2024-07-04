@@ -579,7 +579,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         DoubleArray seq = new DoubleArray(size);
 
         IntStream.range(0, size).parallel().forEach(i -> {
-            data.set(i, (float) Math.random());
+            data.set(i, Math.random());
             seq.set(i, data.get(i));
         });
 
