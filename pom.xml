@@ -700,8 +700,7 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx
-                                </arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
@@ -1542,28 +1541,20 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.ptx
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.ptx</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.ptx
                                 </arg>
                                 <arg>--add-exports</arg>
-                                <arg>
-                                    jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.ptx
-                                </arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
-                                <arg>
-                                    jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.ptx
-                                </arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
-                                <arg>
-                                    jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.ptx
-                                </arg>
-                                <arg>--add-exports</arg>
-                                <arg>jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.ptx
-                                </arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx
-                                </arg>
+                                <arg>jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx</arg>
                                 <arg>--add-exports</arg>

@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -45,7 +45,6 @@ import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
 import jdk.graal.compiler.lir.gen.LIRGenerator;
 import jdk.graal.compiler.phases.util.Providers;
-
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -98,14 +97,11 @@ public class PTXLIRGenerator extends LIRGenerator {
             case AT:
             case GT:
                 return PTXBinaryOp.SETP_GT;
-
             case EQ:
                 return PTXBinaryOp.SETP_EQ;
-
             case BE:
             case LE:
                 return PTXBinaryOp.SETP_LE;
-
             case BT:
             case LT:
                 return PTXBinaryOp.SETP_LT;
@@ -114,7 +110,6 @@ public class PTXLIRGenerator extends LIRGenerator {
             default:
                 shouldNotReachHere();
                 break;
-
         }
         return null;
     }
@@ -299,6 +294,16 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitConditionalMove");
 
@@ -317,13 +322,13 @@ public class PTXLIRGenerator extends LIRGenerator {
      * based on a bitwise and operation between two values.
      *
      * @param leftVal
-     *            the left value of a condition
+     *     the left value of a condition
      * @param right
-     *            the right value of a condition
+     *     the right value of a condition
      * @param trueValue
-     *            the true value to move in the result
+     *     the true value to move in the result
      * @param falseValue
-     *            the false value to move in the result
+     *     the false value to move in the result
      * @return Variable: reference to the variable that contains the result
      */
     @Override
@@ -344,6 +349,16 @@ public class PTXLIRGenerator extends LIRGenerator {
         append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind, trueValue, falseValue, predicate)));
 
         return result;
+    }
+
+    @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
     }
 
     @Override

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,7 +24,6 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import static org.graalvm.compiler.lir.LIRInstruction.Use;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.paramSpace;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryOp;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
@@ -35,9 +34,9 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 
 import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.Opcode;
 import jdk.graal.compiler.lir.Variable;
-
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
@@ -50,7 +49,7 @@ public class PTXUnary {
      * Abstract operation which consumes one input
      */
     protected static class UnaryConsumer extends PTXLIROp {
-        @Use
+        @LIRInstruction.Use
         protected Value value;
 
         @Opcode

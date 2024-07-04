@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,12 +24,10 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import static org.graalvm.compiler.lir.LIRInstruction.Use;
-
 import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.Opcode;
 import jdk.graal.compiler.lir.Variable;
-
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXTernaryOp;
@@ -44,11 +42,11 @@ public class PTXTernary {
         @Opcode
         protected final PTXTernaryOp opcode;
 
-        @Use
+        @LIRInstruction.Use
         protected Value x;
-        @Use
+        @LIRInstruction.Use
         protected Value y;
-        @Use
+        @LIRInstruction.Use
         protected Value z;
 
         protected TernaryConsumer(PTXTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {

@@ -24,11 +24,11 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.OptConvertDeoptsToGuards;
-import static org.graalvm.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
-import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static jdk.graal.compiler.core.common.GraalOptions.ConditionalElimination;
+import static jdk.graal.compiler.core.common.GraalOptions.OptConvertDeoptsToGuards;
+import static jdk.graal.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
+import static jdk.graal.compiler.core.phases.HighTier.Options.Inline;
+import static jdk.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 import jdk.graal.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import jdk.graal.compiler.loop.phases.LoopFullUnrollPhase;
@@ -43,7 +43,6 @@ import jdk.graal.compiler.phases.common.RemoveValueProxyPhase;
 import jdk.graal.compiler.phases.common.inlining.InliningPhase;
 import jdk.graal.compiler.phases.schedule.SchedulePhase;
 import jdk.graal.compiler.virtual.phases.ea.PartialEscapePhase;
-
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionSuppression;
