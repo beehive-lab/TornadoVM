@@ -40,19 +40,19 @@ import uk.ac.manchester.tornado.api.types.vectors.Float8;
 public class TornadoMath {
 
     public static float min(float a, float b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static double min(double a, double b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static long min(long a, long b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static int min(int a, int b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static short min(short a, short b) {
@@ -64,19 +64,19 @@ public class TornadoMath {
     }
 
     public static double max(double a, double b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static float max(float a, float b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static long max(long a, long b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static int max(int a, int b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static short max(short a, short b) {
@@ -384,13 +384,24 @@ public class TornadoMath {
         return (float) Math.atan(value);
     }
 
+    public static double atan(double value) {
+        return Math.atan(value);
+    }
+
     public static float tan(float value) {
         return (float) Math.tan(value);
+    }
 
+    public static double tan(double value) {
+        return Math.tan(value);
     }
 
     public static float tanh(float value) {
         return (float) Math.tanh(value);
+    }
+
+    public static double tanh(double value) {
+        return Math.tanh(value);
     }
 
     public static float floatPI() {
@@ -411,6 +422,10 @@ public class TornadoMath {
 
     public static float atan2(float a, float b) {
         return (float) Math.atan2(a, b);
+    }
+
+    public static double atan2(double a, double b) {
+        return Math.atan2(a, b);
     }
 
     public static float acos(float a) {
@@ -463,6 +478,10 @@ public class TornadoMath {
 
     public static float toRadians(float angdeg) {
         return (float) Math.toRadians(angdeg);
+    }
+
+    public static double toRadians(double angdeg) {
+        return Math.toRadians(angdeg);
     }
 
     public static float sinpi(float angle) {
