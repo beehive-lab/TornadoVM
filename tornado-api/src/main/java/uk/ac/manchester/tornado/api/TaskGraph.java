@@ -603,29 +603,21 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
-     * Add a pre-built OpenCL task into a task-schedule.
      *
      * @param id
-     *     Task-Id
+     *     String that represents the task-id.
      * @param entryPoint
-     *     Name of the method to be executed on the target device
+     *     Name of the kernel to be launched on the target device.
      * @param filename
-     *     Input file with the source kernel
-     * @param args
-     *     Arguments to the kernel
-     * @param accesses
-     *     Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
-     *     each input parameter to the method
-     * @param device
-     *     Device to be executed
-     * @param dimensions
-     *     Select number of dimensions of the kernel (1D, 2D or 3D)
+     *     String that represents the path to the native source (e.g., the OpenCL C kernel).
+     * @param accessorParameters
+     *     {@link AccessorParameters} with the type of accessor for each of the input parameters to the low-level kernel.
      * @return {@link TaskGraph}
      */
     @Override
-    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters) {
         checkTaskName(id);
-        TaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        TaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, accessorParameters);
         taskGraphImpl.addPrebuiltTask(prebuiltTask);
         return this;
     }

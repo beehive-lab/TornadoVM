@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import uk.ac.manchester.tornado.api.AccessorParameters;
+
 public class PrebuiltTaskPackage extends TaskPackage {
 
     private final String entryPoint;
@@ -27,7 +29,7 @@ public class PrebuiltTaskPackage extends TaskPackage {
     private final int[] dimensions;
     private int[] atomics;
 
-    public PrebuiltTaskPackage(String id, String entryPoint, String fileName, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    PrebuiltTaskPackage(String id, String entryPoint, String fileName, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         super(id, null);
         this.entryPoint = entryPoint;
         this.filename = fileName;
@@ -35,6 +37,22 @@ public class PrebuiltTaskPackage extends TaskPackage {
         this.accesses = accesses;
         this.device = device;
         this.dimensions = dimensions;
+    }
+
+    PrebuiltTaskPackage(String id, String entryPoint, String fileName, AccessorParameters accessorParameters) {
+        super(id, null);
+        this.entryPoint = entryPoint;
+        this.filename = fileName;
+        this.args = new Object[accessorParameters.numAccessors()];
+        for (int i = 0; i < accessorParameters.numAccessors(); i++) {
+            this.args[i] = accessorParameters.getAccessor(i).object();
+        }
+        this.accesses = new Access[accessorParameters.numAccessors()];
+        for (int i = 0; i < accessorParameters.numAccessors(); i++) {
+            this.accesses[i] = accessorParameters.getAccessor(i).access();
+        }
+        this.device = null;
+        this.dimensions = null;
     }
 
     public PrebuiltTaskPackage withAtomics(int[] atomics) {

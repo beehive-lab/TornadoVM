@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import uk.ac.manchester.tornado.api.AccessorParameters;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
@@ -221,6 +222,10 @@ public class TaskPackage {
 
     public static PrebuiltTaskPackage createPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         return new PrebuiltTaskPackage(id, entryPoint, filename, args, accesses, device, dimensions);
+    }
+
+    public static PrebuiltTaskPackage createPrebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters) {
+        return new PrebuiltTaskPackage(id, entryPoint, filename, accessorParameters);
     }
 
     public String getId() {

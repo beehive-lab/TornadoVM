@@ -24,6 +24,7 @@ import java.util.stream.IntStream;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.AccessorParameters;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -88,20 +89,31 @@ public class PrebuiltTest extends TornadoTestBase {
                 throw new TornadoRuntimeException("Backend not supported");
         }
 
+        // Define accessors for each parameter
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, a, Access.READ_ONLY);
+        accessorParameters.set(1, b, Access.READ_ONLY);
+        accessorParameters.set(2, c, Access.WRITE_ONLY);
+
+        // Define the Task-Graph
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .prebuiltTask("t0", //
-                        "add", //
-                        FILE_PATH, //
-                        new Object[] { a, b, c }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { numElements })//
+                .prebuiltTask("t0",      //task name
+                        "add",              // name of the low-level kernel to invoke
+                        FILE_PATH,          // file name
+                        accessorParameters) // accessors
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
+        // When using the prebuilt API, we need to define the WorkerGrid, otherwise it will launch 1 thread
+        // on the target device
+        WorkerGrid workerGrid = new WorkerGrid1D(numElements);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+
+        // Launch the application on the target device
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
+                    .execute();
         }
 
         for (int i = 0; i < c.getSize(); i++) {
@@ -127,20 +139,23 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, context, Access.READ_ONLY);
+        accessorParameters.set(1, input, Access.READ_ONLY);
+        accessorParameters.set(2, reduce, Access.WRITE_ONLY);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
-                .prebuiltTask("t0", //
+                .prebuiltTask("t0",         //
                         "floatReductionAddLocalMemory", //
-                        FILE_PATH, //
-                        new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { size })//
+                        FILE_PATH,          //
+                        accessorParameters) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
                     .execute();
         }
 
@@ -155,10 +170,8 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     /**
-     * It tests the functionality of the prebuilt03SPIRV method.
-     *
-     * <p>This test case verifies that the prebuilt03SPIRV runs correctly though a
-     * SPIR-V or OpenCL runtime if the device supports SPIRV.</p>
+     * This test case verifies that the {@link PrebuiltTest#testPrebuilt03SPIRV} runs correctly though a
+     * SPIR-V or OpenCL runtime if the device supports SPIR-V.
      *
      * <p>Expected outcome: - If the current backend type is PTX, the test should have
      * thrown unsupported exception. - The test should succeed if a SPIR-V supported
@@ -175,7 +188,7 @@ public class PrebuiltTest extends TornadoTestBase {
         final int size = 32;
         final int localSize = 32;
         int[] input = new int[size];
-        int[] reduce = new int[size / localSize];
+        int[] output = new int[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -183,26 +196,29 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("a.b", worker);
         KernelContext context = new KernelContext();
 
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, context, Access.READ_ONLY);
+        accessorParameters.set(1, input, Access.READ_ONLY);
+        accessorParameters.set(2, output, Access.WRITE_ONLY);
+
         TaskGraph taskGraph = new TaskGraph("a") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("b", //
                         "intReductionAddGlobalMemory", //
                         FILE_PATH, //
-                        new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { size })//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+                        accessorParameters) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
                     .execute();
         }
 
         // Final SUM
         float finalSum = 0;
-        for (int v : reduce) {
+        for (int v : output) {
             finalSum += v;
         }
 
@@ -225,7 +241,7 @@ public class PrebuiltTest extends TornadoTestBase {
         final int size = 512;
         final int localSize = 256;
         float[] input = new float[size];
-        float[] reduce = new float[size / localSize];
+        float[] output = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -233,26 +249,29 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, context, Access.READ_ONLY);
+        accessorParameters.set(1, input, Access.READ_ONLY);
+        accessorParameters.set(2, output, Access.WRITE_ONLY);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
                         FILE_PATH, //
-                        new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        device, //
-                        new int[] { size })//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+                        accessorParameters) // 
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(device) // 
                     .execute();
         }
 
         // Final SUM
         float finalSum = 0;
-        for (float v : reduce) {
+        for (float v : output) {
             finalSum += v;
         }
 

@@ -312,15 +312,14 @@ public class TaskUtils {
     }
 
     public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage taskPackage) {
-        DomainTree domain = buildDomainTree(taskPackage.getDimensions());
+        //DomainTree domain = buildDomainTree(taskPackage.getDimensions());
+        DomainTree domain = null;
         PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
                 taskPackage.getId(), //
                 taskPackage.getEntryPoint(), //
                 taskPackage.getFilename(), //
                 taskPackage.getArgs(),  //
-                taskPackage.getAccesses(), //
-                taskPackage.getDevice(), //
-                domain);
+                taskPackage.getAccesses());
         if (taskPackage.getAtomics() != null) {
             prebuiltTask.withAtomics(taskPackage.getAtomics());
         }
