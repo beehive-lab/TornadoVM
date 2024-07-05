@@ -27,16 +27,15 @@ import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
-
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.MultHalfFloatNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.SubHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
+import uk.ac.manchester.tornado.runtime.graal.nodes.MultHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewHalfFloatInstance;
+import uk.ac.manchester.tornado.runtime.graal.nodes.SubHalfFloatNode;
 
 public class OCLHalfFloatPlugins {
 
@@ -99,7 +98,7 @@ public class OCLHalfFloatPlugins {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get())));
+                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get(true))));
                 return true;
             }
         });
