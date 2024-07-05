@@ -30,9 +30,7 @@ import jdk.graal.compiler.nodes.GuardNode;
 import jdk.graal.compiler.nodes.LogicNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.extended.GuardedNode;
-import jdk.graal.compiler.nodes.extended.ValueAnchorNode;
 import jdk.graal.compiler.phases.BasePhase;
-
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
@@ -58,14 +56,6 @@ public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
 
             }
         });
-
-        //        graph.getNodes().filter(ValueAnchorNode.class).forEach(anchor -> {
-        ////            if (anchor. instanceof GuardNode guard) {
-        ////                guards.add(guard);
-        ////                conditions.add(guard.getCondition());
-        ////                //                anchor.removeAnchoredNode();
-        ////            }
-        //        });
 
         guards.forEach(guard -> {
             guard.clearInputs();
