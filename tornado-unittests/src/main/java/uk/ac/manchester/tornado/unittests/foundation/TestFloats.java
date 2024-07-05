@@ -45,7 +45,7 @@ public class TestFloats extends TornadoTestBase {
         FloatArray a = new FloatArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", TestKernels::testFloatCopy222, a) //
+                .task("t0", TestKernels::testFloatCopy, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

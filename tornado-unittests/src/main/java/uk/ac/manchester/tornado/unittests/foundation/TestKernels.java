@@ -156,22 +156,6 @@ public class TestKernels {
         }
     }
 
-    public static void testFloatCopy222(FloatArray a) {
-        for (@Parallel int i = 0; i < a.getSize(); i++) {
-            float x = a.get(i);
-            x = x + i;
-        }
-    }
-
-    public static FloatArray testFloatCopy2(FloatArray a) {
-        FloatArray temp = new FloatArray(a.getSize());
-        for (int i = 0; i < a.getSize(); i++) {
-            temp.set(i, 50.0f + a.get(i));
-        }
-
-        return temp;
-    }
-
     public static void testDoublesCopy(DoubleArray a) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
             a.set(i, 50);
