@@ -359,6 +359,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         ConstantValue constantValue = null;
         if (((PTXKind) x.getPlatformKind()).isF32()) {
             constantValue = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(PTXAssemblerConstants.DEGREES_TO_RADIANS));
+        } else if (((PTXKind) x.getPlatformKind()).isF64()) {
+            constantValue = new ConstantValue(LIRKind.value(PTXKind.F64), JavaConstant.forDouble(PTXAssemblerConstants.DEGREES_TO_RADIANS));
         } else {
             shouldNotReachHere("The kind of the input parameter in the radian method is not float.");
         }
