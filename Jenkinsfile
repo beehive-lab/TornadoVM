@@ -25,11 +25,6 @@ pipeline {
         JAVAFX_SDK="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-21.0.3/"
     }
     stages {
-        stage('Clean Workspace') {
-            steps {
-                step([$class: 'WsCleanup'])
-            }
-        }
         stage('Prepare build') {
             steps {
                 script {
@@ -66,7 +61,11 @@ pipeline {
                 }
             }
         }
-
+        stage('Clean Workspace') {
+            steps {
+                step([$class: 'WsCleanup'])
+            }
+        }
     }
     post {
         success {
