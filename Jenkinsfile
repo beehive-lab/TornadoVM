@@ -27,7 +27,7 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                cleanWs()
+                step([$class: 'WsCleanup'])
             }
         }
         stage('Prepare build') {
