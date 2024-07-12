@@ -307,6 +307,44 @@ public class TimeProfiler implements TornadoProfiler {
         }
     }
 
+
+    @Override
+    public void setSystemPowerConsumption(ProfilerType systemPowerConsumptionType, String taskID, long powerConsumption) {
+        if (!taskPowerMetrics.containsKey(taskID)) {
+            taskPowerMetrics.put(taskID, new HashMap<>());
+        }
+        if (powerConsumption > 0) {
+            taskPowerMetrics.get(taskID).put(systemPowerConsumptionType, Long.toString(powerConsumption));
+        } else {
+            taskPowerMetrics.get(taskID).put(systemPowerConsumptionType, "n/a");
+        }
+    }
+
+    @Override
+    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskID, float voltage) {
+        if (!taskPowerMetrics.containsKey(taskID)) {
+            taskPowerMetrics.put(taskID, new HashMap<>());
+        }
+        if (voltage > 0) {
+            taskPowerMetrics.get(taskID).put(systemPowerVoltageType, Float.toString(voltage));
+        } else {
+            taskPowerMetrics.get(taskID).put(systemPowerVoltageType, "n/a");
+        }
+    }
+
+    @Override
+    public void setSystemCurrent(ProfilerType systemPowerCurrentType, String taskID, float current) {
+        if (!taskPowerMetrics.containsKey(taskID)) {
+            taskPowerMetrics.put(taskID, new HashMap<>());
+        }
+        if (current > 0) {
+            taskPowerMetrics.get(taskID).put(systemPowerCurrentType, Float.toString(current));
+        } else {
+            taskPowerMetrics.get(taskID).put(systemPowerCurrentType, "n/a");
+        }
+    }
+
+
     @Override
     public synchronized void sum(ProfilerType acc, long value) {
         long sum = getTimer(acc) + value;

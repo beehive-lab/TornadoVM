@@ -57,6 +57,12 @@ public interface TornadoProfiler {
 
     void setTaskPowerUsage(ProfilerType powerUsageType, String taskId, long power);
 
+    void setSystemPowerConsumption(ProfilerType systemPowerConsumptionType, String taskId, long powerConsumption);
+
+    void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskId, float voltage);
+
+    void setSystemCurrent(ProfilerType systemPowerCurrentType, String taskId, float current);
+
     void sum(ProfilerType type, long timer);
 
 }
