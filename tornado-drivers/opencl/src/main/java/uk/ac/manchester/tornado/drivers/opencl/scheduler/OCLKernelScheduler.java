@@ -78,6 +78,9 @@ public abstract class OCLKernelScheduler {
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), 50);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), 236.6f);
+            meta.getProfiler().setSystemCurrent(ProfilerType.SYSTEM_CURRENT, meta.getId(), 0.5f);
         }
     }
 
@@ -101,8 +104,7 @@ public abstract class OCLKernelScheduler {
      * default value. In this case, the threads configured in the local work sizes
      * depends on each OpenCL driver.
      *
-     * @param meta
-     *     TaskMetaData.
+     * @param meta TaskMetaData.
      */
     private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());

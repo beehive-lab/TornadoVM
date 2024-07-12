@@ -190,7 +190,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * Sync the CUDA Stream only if the Stream Exists
-     * 
+     *
      * @param executionPlanId
      */
     public void flushEventsIfNeeded(long executionPlanId) {
@@ -228,7 +228,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * Sync the CUDA Stream only if the Stream Exists
-     * 
+     *
      * @param executionPlanId
      */
     public void syncIfNeeded(long executionPlanId) {
@@ -251,8 +251,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public int enqueueKernelLaunch(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs, TaskMetaData taskMeta, long batchThreads) {
-        int[] blockDimension = { 1, 1, 1 };
-        int[] gridDimension = { 1, 1, 1 };
+        int[] blockDimension = {1, 1, 1};
+        int[] gridDimension = {1, 1, 1};
         if (taskMeta.isWorkerGridAvailable()) {
             WorkerGrid grid = taskMeta.getWorkerGrid(taskMeta.getId());
             int[] global = Arrays.stream(grid.getGlobalWork()).mapToInt(l -> (int) l).toArray();
@@ -349,6 +349,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), getPowerUsage());
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), 50);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), 236.6f);
+            meta.getProfiler().setSystemCurrent(ProfilerType.SYSTEM_CURRENT, meta.getId(), 0.5f);
         }
     }
 

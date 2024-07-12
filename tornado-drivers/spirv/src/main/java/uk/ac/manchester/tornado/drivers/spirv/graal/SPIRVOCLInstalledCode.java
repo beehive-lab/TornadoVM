@@ -130,7 +130,8 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         if (status != OCLErrorCode.CL_SUCCESS) {
             switch (status) {
                 case OCLErrorCode.CL_INVALID_KERNEL_ARGS -> System.err.println("[OCL Error] Invalid Kernel Args");
-                case OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE -> System.err.println("[OCL Error] Invalid Work Group Size");
+                case OCLErrorCode.CL_INVALID_WORK_GROUP_SIZE ->
+                        System.err.println("[OCL Error] Invalid Work Group Size");
             }
         }
 
@@ -177,12 +178,15 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             // TODO: Add Power User Metric
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), 50);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), 236.6f);
+            meta.getProfiler().setSystemCurrent(ProfilerType.SYSTEM_CURRENT, meta.getId(), 0.5f);
         }
     }
 
     private void calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
-        long[] gwg = new long[] { 1, 1, 1 };
-        long[] lwg = new long[] { 1, 1, 1 };
+        long[] gwg = new long[]{1, 1, 1};
+        long[] lwg = new long[]{1, 1, 1};
 
         if (!meta.isGridSchedulerEnabled()) {
             int dims = meta.getDims();
@@ -241,7 +245,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
     }
 
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
-        long[] intermediates = new long[] { 1, 1, 1 };
+        long[] intermediates = new long[]{1, 1, 1};
 
         long[] maxWorkItemSizes = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
 
