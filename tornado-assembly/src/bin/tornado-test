@@ -167,6 +167,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## PTX Backend does not support mathTahn
     "uk.ac.manchester.tornado.unittests.math.TestMath#testMathTanh",
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanh",
+    "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanhDouble",
 
     ## Virtual devices are only available for OpenCL.
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
