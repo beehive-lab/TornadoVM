@@ -59,7 +59,7 @@ public class OCLHalfFloatPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("add", HalfFloat.class, HalfFloat.class) {
+        r.register(new InvocationPlugin("add", InvocationPlugin.Receiver.class, HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
                 AddHalfFloatNode addNode = b.append(new AddHalfFloatNode(halfFloat1, halfFloat2));
@@ -68,7 +68,7 @@ public class OCLHalfFloatPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("sub", HalfFloat.class, HalfFloat.class) {
+        r.register(new InvocationPlugin("sub", InvocationPlugin.Receiver.class, HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
                 SubHalfFloatNode subNode = b.append(new SubHalfFloatNode(halfFloat1, halfFloat2));
@@ -77,7 +77,7 @@ public class OCLHalfFloatPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("mult", HalfFloat.class, HalfFloat.class) {
+        r.register(new InvocationPlugin("mult", InvocationPlugin.Receiver.class, HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
                 MultHalfFloatNode multNode = b.append(new MultHalfFloatNode(halfFloat1, halfFloat2));
@@ -86,7 +86,7 @@ public class OCLHalfFloatPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("div", HalfFloat.class, HalfFloat.class) {
+        r.register(new InvocationPlugin("div", InvocationPlugin.Receiver.class, HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
                 DivHalfFloatNode divNode = b.append(new DivHalfFloatNode(halfFloat1, halfFloat2));
