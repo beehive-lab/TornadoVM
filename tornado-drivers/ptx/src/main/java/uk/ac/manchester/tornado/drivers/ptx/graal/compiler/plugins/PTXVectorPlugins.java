@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-
 import jdk.graal.compiler.core.common.type.ObjectStamp;
 import jdk.graal.compiler.core.common.type.StampPair;
 import jdk.graal.compiler.nodes.ParameterNode;
@@ -41,7 +39,6 @@ import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.graal.compiler.nodes.java.StoreIndexedNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
-
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -90,6 +87,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorStoreGlobal
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public final class PTXVectorPlugins {
 
@@ -231,6 +230,7 @@ public final class PTXVectorPlugins {
         final Registration r = new Registration(plugins, declaringClass);
         r.register(new InvocationPlugin("loadFromArray", Receiver.class, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
+                receiver.get(true);
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
@@ -243,6 +243,7 @@ public final class PTXVectorPlugins {
 
         r.register(new InvocationPlugin("storeToArray", Receiver.class, vectorClass, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value, ValueNode array, ValueNode index) {
+                receiver.get(true);
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
@@ -264,8 +265,8 @@ public final class PTXVectorPlugins {
         ps.appendNodePlugin(new NodePlugin() {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
-                        "IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
+                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString()
+                        .contains("IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
                     Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;

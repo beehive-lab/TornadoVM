@@ -23,24 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIGN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
-
-import org.graalvm.word.LocationIdentity;
-
 import jdk.graal.compiler.core.common.memory.BarrierType;
 import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
 import jdk.graal.compiler.core.common.type.StampFactory;
@@ -48,7 +30,9 @@ import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.FixedWithNextNode;
 import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
 import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
 import jdk.graal.compiler.nodes.extended.BoxNode;
 import jdk.graal.compiler.nodes.extended.JavaReadNode;
 import jdk.graal.compiler.nodes.extended.JavaWriteNode;
@@ -66,6 +50,7 @@ import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
@@ -79,6 +64,22 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNod
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIGN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 public class PTXGraphBuilderPlugins {
 
@@ -198,6 +199,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("globalBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 PTXBarrierNode localBarrierNode = new PTXBarrierNode(1, -1);
                 b.add(localBarrierNode);
                 return true;
@@ -209,8 +211,11 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -221,8 +226,11 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateLongLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -233,8 +241,11 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -245,8 +256,11 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateDoubleLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -404,7 +418,9 @@ public class PTXGraphBuilderPlugins {
                 r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", InvocationPlugin.Receiver.class, int.class, int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                        System.out.println("APPLY -> " + kind.name());
+                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
@@ -414,7 +430,12 @@ public class PTXGraphBuilderPlugins {
                 r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, int.class, kind.toJavaClass(), int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                        System.out.println("APPLY set-> " + kind.name());
+
+                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        SignExtendNode signExtend = new SignExtendNode(absoluteIndexNode.asNode(), 64);
+                        b.getGraph().addOrUnique(signExtend);
+                        MulNode mulNode = b.append(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
@@ -426,33 +447,86 @@ public class PTXGraphBuilderPlugins {
     }
 
     //    private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
-    //        Registration r = new Registration(plugins, MemorySegment.class);
+    //        Registration r = new Registration(plugins, TornadoMemorySegment.class);
     //
     //        for (JavaKind kind : JavaKind.values()) {
     //            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-    //                r.register(new InvocationPlugin("getAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
+    //                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", InvocationPlugin.Receiver.class, int.class, int.class) {
     //                    @Override
-    //                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
-    //                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+    //                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+    //                        //                        Constant kindBytes = new RawConstant(kind.getByteCount());
+    //                        //                        ConstantNode constantNode = new ConstantNode(kindBytes, StampFactory.forKind(JavaKind.Int));
+    //                        //                        b.getGraph().addOrUnique(constantNode);
+    //                        //                        AddNode addNode = new AddNode(index, baseIndex);
+    //                        //                        b.getGraph().addOrUnique(addNode);
+    //                        //                        MulNode mulNode = new MulNode(addNode, constantNode);
+    //                        //                        b.getGraph().addOrUnique(mulNode);
+    //                        //                        AddressNode addressNode = new OffsetAddressNode(receiver.get(), mulNode);
+    //                        //                        b.getGraph().addOrUnique(addressNode);
+    //                        //                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+    //                        //                        b.addPush(kind, readNode);
+    //                        //                        return true;
+    //                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+    //                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
     //                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
     //                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
     //                        b.addPush(kind, readNode);
     //                        return true;
     //                    }
     //                });
-    //                r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
+    //                r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, int.class, kind.toJavaClass(), int.class) {
     //                    @Override
-    //                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
-    //                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+    //                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+    //                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+    //                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
     //                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
     //                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
     //                        b.add(writeNode);
     //                        return true;
+    //                        //                        Constant kindBytes = new RawConstant(kind.getByteCount());
+    //                        //                        ConstantNode constantNode = new ConstantNode(kindBytes, StampFactory.forKind(JavaKind.Int));
+    //                        //                        b.getGraph().addOrUnique(constantNode);
+    //                        //                        MulNode mulNode = new MulNode(index, constantNode);
+    //                        //                        b.getGraph().addOrUnique(mulNode);
+    //                        //                        AddressNode addressNode = new OffsetAddressNode(receiver.get(), mulNode);
+    //                        //                        b.getGraph().addOrUnique(addressNode);
+    //                        //                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+    //                        //                        b.add(writeNode);
+    //                        //                        return true;
     //                    }
     //                });
     //            }
     //        }
     //    }
+
+    //        private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
+    //            Registration r = new Registration(plugins, MemorySegment.class);
+    //
+    //            for (JavaKind kind : JavaKind.values()) {
+    //                if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+    //                    r.register(new InvocationPlugin("getAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
+    //                        @Override
+    //                        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
+    //                            MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+    //                            AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+    //                            JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+    //                            b.addPush(kind, readNode);
+    //                            return true;
+    //                        }
+    //                    });
+    //                    r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
+    //                        @Override
+    //                        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
+    //                            MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+    //                            AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+    //                            JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+    //                            b.add(writeNode);
+    //                            return true;
+    //                        }
+    //                    });
+    //                }
+    //            }
+    //        }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
         plugins.appendNodePlugin(new PTXVectorNodePlugin());
