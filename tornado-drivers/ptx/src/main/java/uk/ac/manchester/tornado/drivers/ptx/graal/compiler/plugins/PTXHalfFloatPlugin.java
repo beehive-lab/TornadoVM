@@ -29,7 +29,6 @@ import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
-
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
@@ -101,7 +100,8 @@ public class PTXHalfFloatPlugin {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get())));
+                receiver.get(true);
+                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get(true))));
                 return true;
             }
         });

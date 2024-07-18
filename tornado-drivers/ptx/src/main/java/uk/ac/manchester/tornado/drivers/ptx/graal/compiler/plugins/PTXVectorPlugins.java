@@ -277,6 +277,7 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
+                receiver.get(true);
                 final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
@@ -286,6 +287,7 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, vectorKind.getJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                receiver.get(true);
                 if (receiver.get() instanceof ParameterNode) {
                     final AddressNode address = new OffsetAddressNode(receiver.get(), null);
                     final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(vectorKind, address, value);
@@ -299,6 +301,7 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                receiver.get(true);
                 final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
                 b.add(b.append(store));
                 return true;
@@ -308,6 +311,7 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                receiver.get(true);
                 final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
                 b.add(b.append(store));
                 return true;

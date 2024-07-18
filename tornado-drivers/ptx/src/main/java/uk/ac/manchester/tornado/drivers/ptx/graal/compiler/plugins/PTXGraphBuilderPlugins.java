@@ -188,6 +188,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("localBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 PTXBarrierNode localBarrierNode = new PTXBarrierNode(0, -1);
                 b.add(localBarrierNode);
                 return true;
@@ -444,7 +445,7 @@ public class PTXGraphBuilderPlugins {
             }
         }
     }
-    
+
     public static void registerNewInstancePlugins(Plugins plugins) {
         plugins.appendNodePlugin(new PTXVectorNodePlugin());
     }
