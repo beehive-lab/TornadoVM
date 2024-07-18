@@ -630,9 +630,6 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
         if (status == CL_BUILD_SUCCESS) {
             logger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
-            if (meta.shouldPrintCompileTimes()) {
-                logger.debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
-            }
             installCodeInCodeCache(program, meta, id, entryPoint, code);
         } else {
             logger.warn("\tunable to compile %s", entryPoint);

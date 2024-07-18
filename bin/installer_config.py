@@ -163,7 +163,7 @@ JDK = {
             __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.1_12.tar.gz",
         },
         __WINDOWS__: {
-            __X86_64__: None,
+            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.3_9.zip",
             __ARM__: None,
         },
     },

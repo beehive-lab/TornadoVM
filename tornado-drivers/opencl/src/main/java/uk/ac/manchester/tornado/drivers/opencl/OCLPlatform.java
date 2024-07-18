@@ -64,7 +64,7 @@ public class OCLPlatform implements TornadoPlatformInterface {
 
         final int deviceCount;
 
-        if (isVendor(Vendor.XILINX) || isVendor(Vendor.CODEPLAY)) {
+        if (isVendor(Vendor.XILINX)) {
             deviceCount = clGetDeviceCount(platformPointers, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
         } else if (isVendor(Vendor.MESA)) {
             deviceCount = clGetDeviceCount(platformPointers, OCLDeviceType.CL_DEVICE_TYPE_GPU.getValue());
@@ -73,7 +73,7 @@ public class OCLPlatform implements TornadoPlatformInterface {
         }
 
         final long[] ids = new long[deviceCount];
-        if (isVendor(Vendor.XILINX) || isVendor(Vendor.CODEPLAY)) {
+        if (isVendor(Vendor.XILINX)) {
             clGetDeviceIDs(platformPointers, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
         } else if (isVendor(Vendor.MESA)) {
             clGetDeviceIDs(platformPointers, OCLDeviceType.CL_DEVICE_TYPE_GPU.getValue(), ids);

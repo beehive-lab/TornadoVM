@@ -103,27 +103,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return kernel;
     }
 
-    /**
-     * stack needs to be read so that the return value is transferred back to the
-     * host.- As this is blocking then no clFinish() is needed
-     */
-    public void readValue(long executionPlanId, final OCLByteBuffer stack, final TaskMetaData meta, int task) {
-        stack.read(executionPlanId);
-    }
-
-    public void resolveEvent(long executionPlanId, final OCLByteBuffer stack, final TaskMetaData meta, int task) {
-        Event event = deviceContext.resolveEvent(executionPlanId, task);
-        logger.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
-        if (event != null) {
-            logger.debug("\tstatus   : %s", event.getStatus());
-
-            if (meta != null && meta.enableProfiling()) {
-                logger.debug("\texecuting: %f seconds", event.getElapsedTimeInSeconds());
-                logger.debug("\ttotal    : %f seconds", event.getTotalTimeInSeconds());
-            }
-        }
-    }
-
     @Override
     public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
         return null;
@@ -267,11 +246,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 deviceContext.retainEvent(executionPlanId, task);
                 meta.addProfile(task);
             }
-
-            if (meta.enableExceptions()) {
-                internalEvents[0] = task;
-                task = kernelArgs.enqueueRead(executionPlanId, internalEvents);
-            }
         }
 
         return task;
@@ -333,11 +307,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             deviceContext.retainEvent(executionPlanId, task);
             meta.addProfile(task);
         }
-
-        // read the stack
-        if (meta.enableExceptions()) {
-            callWrapper.enqueueRead(executionPlanId, null);
-        }
     }
 
     private void checkKernelNotNull() {
@@ -347,9 +316,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     private void submitWithoutEvents(long executionPlanId, final OCLKernelStackFrame oclKernelStackFrame, final XPUBuffer atomicSpace, final TaskMetaData meta, long batchThreads) {
-
         checkKernelNotNull();
-
         if (DEBUG) {
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
@@ -391,5 +358,4 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         submitWithoutEvents(executionPlanId, (OCLKernelStackFrame) callWrapper, atomicSpace, meta, batchThreads);
         return -1;
     }
-
 }
