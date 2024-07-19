@@ -227,7 +227,7 @@ public final class PTXVectorPlugins {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
 
-        final Registration r = new Registration(plugins, declaringClass);
+        final Registration r = new Registration(plugins, declaringClass).setAllowOverwrite(true);
         r.register(new InvocationPlugin("loadFromArray", Receiver.class, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 receiver.get(true);
