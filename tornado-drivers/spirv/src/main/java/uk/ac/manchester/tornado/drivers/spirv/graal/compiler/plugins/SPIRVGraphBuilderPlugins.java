@@ -51,7 +51,9 @@ import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
 import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
 import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
 import jdk.graal.compiler.nodes.extended.JavaReadNode;
 import jdk.graal.compiler.nodes.extended.JavaWriteNode;
 import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
@@ -68,6 +70,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -84,11 +87,11 @@ import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 public class SPIRVGraphBuilderPlugins {
 
     public static void registerParametersPlugins(Plugins plugins) {
-        SPIRVVectorPlugins.registerParameterPlugins(plugins);
+        uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVVectorPlugins.registerParameterPlugins(plugins);
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
-        plugins.appendNodePlugin(new SPIRVVectorNodePlugin());
+        plugins.appendNodePlugin(new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVVectorNodePlugin());
         // FIXME: Atomics for SPIRV Backend not implemented.
     }
 
@@ -105,10 +108,10 @@ public class SPIRVGraphBuilderPlugins {
         // Register plugins for the new API
         registerKernelContextPlugins(invocationPlugins);
 
-        SPIRVMathPlugins.registerTornadoMathPlugins(invocationPlugins);
-        SPIRVVectorPlugins.registerPlugins(plugins, invocationPlugins);
+        uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVMathPlugins.registerTornadoMathPlugins(invocationPlugins);
+        uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVVectorPlugins.registerPlugins(plugins, invocationPlugins);
 
-        SPIRVHalfFloatPlugins.registerPlugins(plugins, invocationPlugins);
+        uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVHalfFloatPlugins.registerPlugins(plugins, invocationPlugins);
         // Register plugins for Off-Heap Arrays with Panama
         registerMemoryAccessPlugins(invocationPlugins);
     }
@@ -154,6 +157,7 @@ public class SPIRVGraphBuilderPlugins {
         r.register(new InvocationPlugin("localBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 SPIRVBarrierNode localBarrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.LOCAL);
                 b.append(localBarrierNode);
                 return true;
@@ -165,6 +169,7 @@ public class SPIRVGraphBuilderPlugins {
         r.register(new InvocationPlugin("globalBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 SPIRVBarrierNode barrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL);
                 b.append(barrierNode);
                 return true;
@@ -185,8 +190,11 @@ public class SPIRVGraphBuilderPlugins {
         r.register(new InvocationPlugin(method, InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                b.getGraph().addOrUnique(constantNode);
                 LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, constantNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -367,47 +375,32 @@ public class SPIRVGraphBuilderPlugins {
         }
     }
 
-    public static Class<?> getValueLayoutClass(Class k) {
-        if (k == int.class) {
-            return ValueLayout.OfInt.class;
-        } else if (k == double.class) {
-            return ValueLayout.OfDouble.class;
-        } else if (k == float.class) {
-            return ValueLayout.OfFloat.class;
-        } else if (k == long.class) {
-            return ValueLayout.OfLong.class;
-        } else if (k == boolean.class) {
-            return ValueLayout.OfBoolean.class;
-        } else if (k == byte.class) {
-            return ValueLayout.OfByte.class;
-        } else if (k == char.class) {
-            return ValueLayout.OfChar.class;
-        } else if (k == short.class) {
-            return ValueLayout.OfShort.class;
-        } else {
-            throw new TornadoRuntimeException("Class type " + k + " not supported.");
-        }
-    }
 
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, MemorySegment.class);
+        Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                r.register(new InvocationPlugin("getAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", InvocationPlugin.Receiver.class, int.class, int.class) {
                     @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        SignExtendNode signExtend = new SignExtendNode(absoluteIndexNode.asNode(), 64);
+                        b.getGraph().addOrUnique(signExtend);
+                        MulNode mulNode = b.append(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
                         return true;
                     }
                 });
-                r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
+                r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, int.class, kind.toJavaClass(), int.class) {
                     @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        SignExtendNode signExtend = new SignExtendNode(absoluteIndexNode.asNode(), 64);
+                        b.getGraph().addOrUnique(signExtend);
+                        MulNode mulNode = b.append(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
