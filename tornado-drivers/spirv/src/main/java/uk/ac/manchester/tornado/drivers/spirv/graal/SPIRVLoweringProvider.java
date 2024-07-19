@@ -24,7 +24,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static jdk.graal.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
@@ -273,14 +273,14 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
-        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(SPIRVArchitecture.localSpace, newArray.elementType(), newLengthNode));
+        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.localSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(localArrayNode);
     }
 
     private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNonVirtualizableNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(SPIRVArchitecture.privateSpace, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.privateSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
@@ -359,7 +359,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
                 ResolvedJavaType type = os.javaType(tool.getMetaAccess());
                 SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(type);
                 if (kind != SPIRVKind.ILLEGAL) {
-                    returnStampPair = StampPair.createSingle(SPIRVStampFactory.getStampFor(kind));
+                    returnStampPair = StampPair.createSingle(uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory.getStampFor(kind));
                 }
             }
 
@@ -493,7 +493,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         AddressNode address;
 
         Stamp loadStamp = loadIndexed.stamp(NodeView.DEFAULT);
-        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof SPIRVStamp)) {
+        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp)) {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
@@ -532,7 +532,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         }
         ValueNode storeConvertValue = value;
         Stamp valueStamp = value.stamp(NodeView.DEFAULT);
-        if (!(valueStamp instanceof SPIRVStamp) || !((SPIRVStamp) valueStamp).getSPIRVKind().isVector()) {
+        if (!(valueStamp instanceof uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp) || !((uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp) valueStamp).getSPIRVKind().isVector()) {
             storeConvertValue = implicitStoreConvert(graph, elementKind, value);
         }
         memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));

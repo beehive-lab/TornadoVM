@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static jdk.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_COMPILED_METHODS;
@@ -113,9 +113,9 @@ public class SPIRVCompiler {
     private static final TimerKey EmitLIR = DebugContext.timer("SPIRVEmitLIR");
     private static final TimerKey EmitCode = DebugContext.timer("SPIRVEmitCode");
 
-    private static final SPIRVIRGenerationPhase LIR_GENERATION_PHASE = new SPIRVIRGenerationPhase();
+    private static final uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVIRGenerationPhase LIR_GENERATION_PHASE = new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVIRGenerationPhase();
 
-    private synchronized static SPIRVCompilationResult compile(SPIRVCompilationRequest r) {
+    private synchronized static uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compile(SPIRVCompilationRequest r) {
         assert !r.graph.isFrozen();
         try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
             emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
@@ -149,7 +149,7 @@ public class SPIRVCompiler {
             /*
              * Register metadata with all tornado phases
              */
-            ((SPIRVCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), installedCodeOwner, args, meta);
+            ((uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), installedCodeOwner, args, meta);
 
             final TornadoHighTierContext highTierContext = new TornadoHighTierContext(providers, graphBuilderSuite, optimisticOpts, installedCodeOwner, args, meta, isKernel, batchCompilationConfig);
             if (buildGraph) {
@@ -178,7 +178,7 @@ public class SPIRVCompiler {
         }
     }
 
-    private static void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, SPIRVBackend backend, SPIRVCompilationResult compilationResult,
+    private static void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, SPIRVBackend backend, uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compilationResult,
             RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel, TornadoProfiler profiler) {
         try (DebugContext.Scope s = getDebugContext().scope("SPIRVBackend", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
             LIRGenerationResult lirGen = null;
@@ -196,7 +196,7 @@ public class SPIRVCompiler {
     }
 
     private static LIRGenerationResult emitLIR(SPIRVBackend backend, StructuredGraph graph, Object stub, RegisterConfig registerConfig, TornadoLIRSuites lirSuites,
-            SPIRVCompilationResult compilationResult, boolean isKernel) {
+            uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compilationResult, boolean isKernel) {
         try {
             return emitLIR0(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
         } catch (Throwable e) {
@@ -224,13 +224,13 @@ public class SPIRVCompiler {
             }
             RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
-            SPIRVLIRGenerationResult lirGenRes = (SPIRVLIRGenerationResult) backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
+            uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult lirGenRes = (uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult) backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
             lirGenRes.setMethodIndex(backend.getMethodIndex());
             LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
 
             // LIR generation
-            SPIRVIRGenerationPhase.LIRGenerationContext context = new SPIRVIRGenerationPhase.LIRGenerationContext(lirGen, nodeLirGen, graph, schedule, isKernel);
+            uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVIRGenerationPhase.LIRGenerationContext context = new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVIRGenerationPhase.LIRGenerationContext(lirGen, nodeLirGen, graph, schedule, isKernel);
             LIR_GENERATION_PHASE.apply(backend.getTarget(), lirGenRes, context);
 
             try (DebugContext.Scope s = getDebugContext().scope("LIRStages", nodeLirGen, lir)) {
@@ -256,10 +256,10 @@ public class SPIRVCompiler {
     }
 
     private static void emitCode(SPIRVBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> methods, int bytecodeSize, LIRGenerationResult lirGen,
-            SPIRVCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, boolean isKernel, boolean isParallel, TornadoProfiler profiler) {
+            uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, boolean isKernel, boolean isParallel, TornadoProfiler profiler) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGen.getFrameMap();
-            final SPIRVCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, isKernel, isParallel, lirGen.getLIR());
+            final uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, isKernel, isParallel, lirGen.getLIR());
             backend.emitCode(crb, lirGen.getLIR(), installedCodeOwner, profiler);
 
             if (assumptions != null && !assumptions.isEmpty()) {
@@ -317,7 +317,7 @@ public class SPIRVCompiler {
         return sb.toString();
     }
 
-    public static SPIRVCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, SPIRVProviders providers, SPIRVBackend backend, TornadoProfiler profiler) {
+    public static uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, SPIRVProviders providers, SPIRVBackend backend, TornadoProfiler profiler) {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedJavaMethod = kernelGraph.method();
 
@@ -333,7 +333,7 @@ public class SPIRVCompiler {
         OptimisticOptimizations optimisticOptimizations = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedJavaMethod.getProfilingInfo();
 
-        SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(task.getId(), buildKernelName(resolvedJavaMethod.getName()), taskMeta);
+        uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult kernelCompilationResult = new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult(task.getId(), buildKernelName(resolvedJavaMethod.getName()), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -375,7 +375,7 @@ public class SPIRVCompiler {
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getBackendIndex(), taskMeta.getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
-            final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(task.getId(), currentMethod.getName(), taskMeta);
+            final uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compilationResult = new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult(task.getId(), currentMethod.getName(), taskMeta);
 
             // Share assembler across compilation results
             compilationResult.setAssembler(kernelCompilationRequest.compilationResult.getAssembler());
@@ -474,7 +474,7 @@ public class SPIRVCompiler {
         public final ProfilingInfo profilingInfo;
         public final TornadoSuites suites;
         public final TornadoLIRSuites lirSuites;
-        public final SPIRVCompilationResult compilationResult;
+        public final uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compilationResult;
         public final CompilationResultBuilderFactory factory;
         public final boolean isKernel;
         public final boolean buildGraph;
@@ -483,7 +483,7 @@ public class SPIRVCompiler {
 
         public SPIRVCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, SPIRVBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig,
+                uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig,
                 TornadoProfiler profiler) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
@@ -504,7 +504,7 @@ public class SPIRVCompiler {
             this.profiler = profiler;
         }
 
-        public SPIRVCompilationResult execute() {
+        public uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult execute() {
             return SPIRVCompiler.compile(this);
         }
     }

@@ -24,11 +24,11 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 
 import jdk.graal.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
 import jdk.graal.compiler.hotspot.meta.HotSpotStampProvider;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import jdk.graal.compiler.nodes.loop.LoopsDataProviderImpl;
 import jdk.graal.compiler.nodes.spi.LoopsDataProvider;
@@ -85,23 +85,23 @@ public class SPIRVHotSpotBackendFactory {
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
         // We specify an architecture of 64 bits
-        SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_INT_64, device.getByteOrder(), spirvRuntime);
+        uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture architecture = new uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture(SPIRVKind.OP_TYPE_INT_64, device.getByteOrder(), spirvRuntime);
         SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT, device
                 .isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
         SPIRVDeviceContext deviceContext = context.getDeviceContext(device.getDeviceIndex());
 
-        SPIRVCodeProvider codeProvider = new SPIRVCodeProvider(targetDescription);
+        uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider codeProvider = new uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider(targetDescription);
 
-        SPIRVProviders providers;
-        SPIRVSuitesProvider suites;
-        SPIRVLoweringProvider lowerer;
-        Plugins plugins;
+        uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders providers;
+        uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider suites;
+        uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLoweringProvider lowerer;
+        GraphBuilderConfiguration.Plugins plugins;
 
         try (InitTimer t = timer("create providers")) {
             TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
-            lowerer = new SPIRVLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, vmConfig, targetDescription, false);
+            lowerer = new uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, vmConfig, targetDescription, false);
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
@@ -115,9 +115,9 @@ public class SPIRVHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new SPIRVSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
+            providers = new uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
             lowerer.initialize(options, new DummySnippetFactory(), providers);
@@ -137,10 +137,10 @@ public class SPIRVHotSpotBackendFactory {
      *     {@link TornadoReplacements}
      * @return Plugins for SPIRV
      */
-    private static Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements, SnippetReflectionProvider snippetReflectionProvider,
+    private static GraphBuilderConfiguration.Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements, SnippetReflectionProvider snippetReflectionProvider,
             LoweringProvider loweringProvider) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
-        Plugins plugins = new Plugins(invocationPlugins);
+        GraphBuilderConfiguration.Plugins plugins = new GraphBuilderConfiguration.Plugins(invocationPlugins);
 
         SPIRVGraphBuilderPlugins.registerParametersPlugins(plugins);
         SPIRVGraphBuilderPlugins.registerNewInstancePlugins(plugins);
