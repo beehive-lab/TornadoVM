@@ -36,10 +36,13 @@ public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStac
 
     private final ArrayList<CallArgument> callArguments;
 
+    private boolean isValid;
+
     public SPIRVKernelStackFrame(long bufferId, int numArgs, SPIRVDeviceContext device) {
         super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
         buffer.clear();
+        this.isValid = true;
     }
 
     @Override
@@ -50,6 +53,17 @@ public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStac
     @Override
     public void reset() {
         callArguments.clear();
+    }
+
+    @Override
+    public boolean isValid() {
+        return isValid;
+    }
+
+    @Override
+    public void invalidate() {
+        isValid = false;
+        deviceContext.getSpirvContext().freeMemory(toBuffer(), deviceContext.getDeviceIndex());
     }
 
     @Override

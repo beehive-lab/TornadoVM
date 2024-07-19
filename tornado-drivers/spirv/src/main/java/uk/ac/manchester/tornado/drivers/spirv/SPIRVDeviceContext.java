@@ -155,7 +155,9 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     @Override
     public void reset(long executionPlanId) {
-        spirvEventPool.put(executionPlanId, new SPIRVEventPool(TornadoOptions.EVENT_WINDOW));
+        spirvContext.reset(executionPlanId, getDeviceIndex());
+        spirvEventPool.remove(executionPlanId);
+        getMemoryManager().releaseKernelStackFrame(executionPlanId);
         codeCache.reset();
         wasReset = true;
     }
