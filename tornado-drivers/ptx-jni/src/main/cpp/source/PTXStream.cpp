@@ -34,35 +34,27 @@
 #include "ptx_log.h"
 
 /*
-    A singly linked list (with elements of type StagingAreaList) is used to keep all the allocated pinned memory through cuMemAllocHost.
     A queue (with elements of type QueueNode) is used to hold all the free (no longer used) pinned memory regions.
 
-    On a new read/write we call get_first_free_staging_area which will try to dequeue a pinned memory region to use it.
+    On a new read/write we call get_first_free_staging_block which will try to dequeue a pinned memory region to use it.
 */
 
 /*
-    Linked list which holds information regarding the pinned memory allocated.
+    Holds information regarding the pinned memory allocated.
 
-    next            -- next element of the list
     staging_area    -- pointer to the pinned memory region
     length          -- length in bytes of the memory region referenced by staging_area
 */
 typedef struct area_list {
-    struct area_list *next;
     void *staging_area;
     size_t length;
-} StagingAreaList;
-
-/*
-    Head of the allocated pinned memory list
- */
-static StagingAreaList *head = NULL;
+} StagingBlock;
 
 /*
     Linked list used to implement a queue which holds the free (no longer used) pinned memory regions.
 */
 typedef struct queue_list {
-    StagingAreaList* element;
+    StagingBlock* element;
     struct queue_list *next;
 } QueueNode;
 
@@ -75,7 +67,7 @@ static QueueNode *rear = NULL;
 /*
     Adds a free pinned memory region to the queue.
 */
-static void enqueue(StagingAreaList *region) {
+static void enqueue(StagingBlock *region) {
     if (front == NULL) {
         front = static_cast<QueueNode *>(malloc(sizeof(QueueNode)));
         front->next = NULL;
@@ -95,17 +87,19 @@ static void enqueue(StagingAreaList *region) {
 /*
     Returns the first element (free pinned memory region) of the queue.
 */
-static StagingAreaList* dequeue() {
+static StagingBlock* dequeue() {
     if (front == NULL) {
         return NULL;
     }
-    StagingAreaList* region = front->element;
+    StagingBlock* region = front->element;
     QueueNode *oldFront = front;
     front = front->next;
     free(oldFront);
 
     return region;
 }
+
+static CUresult free_staging_block(StagingBlock *block);
 
 /*
     Free the queue.
@@ -116,6 +110,7 @@ static void free_queue() {
     QueueNode *node;
     while(front != NULL) {
         node = front;
+        free_staging_block(node->element);
         front = front->next;
         free(node);
     }
@@ -124,75 +119,69 @@ static void free_queue() {
 /*
     Checks if the given staging region can fit into the required size. If not, it allocates the required pinned memory.
 */
-static StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) {
+static StagingBlock *check_or_init_staging_block(size_t size, StagingBlock *block) {
     // Create
-    if (list == NULL) {
-        list = static_cast<StagingAreaList *>(malloc(sizeof(StagingAreaList)));
-        CUresult result = cuMemAllocHost(&(list->staging_area), size);
+    if (block == NULL) {
+        block = static_cast<StagingBlock *>(malloc(sizeof(StagingBlock)));
+        CUresult result = cuMemAllocHost(&(block->staging_area), size);
         if (result != CUDA_SUCCESS) {
             std::cout << "\t[JNI] " << __FILE__ << ":" << __LINE__ << " in function: " << __FUNCTION__ << " result = " << result << std::endl;
             std::flush(std::cout);
             return NULL;
         }
-        list->length = size;
-        list->next = NULL;
+        block->length = size;
     }
 
     // Update
-    else if (list->length < size) {
-        CUresult result = cuMemFreeHost(list->staging_area);
+    else if (block->length < size) {
+        CUresult result = cuMemFreeHost(block->staging_area);
         if (result != CUDA_SUCCESS) {
             std::cout << "\t[JNI] " << __FILE__ << ":" << __LINE__ << " in function: " << __FUNCTION__ << " result = " << result << std::endl;
             std::flush(std::cout);
             return NULL;
         }
-        result = cuMemAllocHost(&(list->staging_area), size);
+        result = cuMemAllocHost(&(block->staging_area), size);
         if (result != CUDA_SUCCESS) {
             std::cout << "\t[JNI] " << __FILE__ << ":" << __LINE__ << " in function: " << __FUNCTION__ << " result = " << result << std::endl;
             std::flush(std::cout);
             return NULL;
         }
-        list->length = size;
+        block->length = size;
     }
-    return list;
+    return block;
 }
 
 /*
-    Returns a StagingAreaList with pinned memory of given size.
+    Returns a StagingBlock with pinned memory of given size.
 */
-static StagingAreaList *get_first_free_staging_area(size_t size) {
+static StagingBlock *get_first_free_staging_block(size_t size) {
     // Dequeue the first free staging area
-    StagingAreaList *list = dequeue();
+    StagingBlock *block = dequeue();
 
-    list = check_or_init_staging_area(size, list);
-    if (head == NULL) head = list;
+    block = check_or_init_staging_block(size, block);
 
-    return list;
+    return block;
 }
 
 /*
-    Called by cuStreamAddCallback, enqueues a StagingAreaList to the free queue for memory reuse.
+    Called by cuStreamAddCallback, enqueues a StagingBlock to the free queue for memory reuse.
 */
-static void set_to_unused(CUstream hStream,  CUresult status, void *list) {
-    StagingAreaList *stagingList = (StagingAreaList *) list;
-    enqueue(stagingList);
+static void set_to_unused(CUstream hStream,  CUresult status, void *block) {
+    StagingBlock *stagingBlock = (StagingBlock *) block;
+    enqueue(stagingBlock);
 }
 
 /*
     Free all the allocated pinned memory.
 */
-static CUresult free_staging_area_list() {
+static CUresult free_staging_block(StagingBlock *block) {
     CUresult result;
-    while (head != NULL) {
-        result = cuMemFreeHost(head->staging_area);
-        if (result != CUDA_SUCCESS) {
-            std::cout << "\t[JNI] " << __FILE__ << ":" << __LINE__ << " in function: " << __FUNCTION__ << " result = " << result << std::endl;
-            std::flush(std::cout);
-        }
-        StagingAreaList *list = head;
-        head = head->next;
-        free(list);
+    result = cuMemFreeHost(block->staging_area);
+    if (result != CUDA_SUCCESS) {
+        std::cout << "\t[JNI] " << __FILE__ << ":" << __LINE__ << " in function: " << __FUNCTION__ << " result = " << result << std::endl;
+        std::flush(std::cout);
     }
+    free(block);
     return result;
 }
 
@@ -210,18 +199,18 @@ static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
     CUevent beforeEvent, afterEvent;                        \
     CUstream stream;                                        \
     stream_from_array(env, &stream, stream_wrapper);        \
-    StagingAreaList *staging_list = get_first_free_staging_area(length);\
+    StagingBlock *staging_block = get_first_free_staging_block(length);\
     record_events_create(&beforeEvent, &afterEvent);        \
     record_event(&beforeEvent, &stream);                    \
-    CUresult result = cuMemcpyDtoHAsync(staging_list->staging_area, device_ptr, (size_t) length, stream); \
+    CUresult result = cuMemcpyDtoHAsync(staging_block->staging_area, device_ptr, (size_t) length, stream); \
     LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsync", result);               \
     record_event(&afterEvent, &stream);                     \
     if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {         \
         cuEventSynchronize(afterEvent);                     \
     }                                                       \
     env->Set ## TYPE ## ArrayRegion(array, host_offset / sizeof(JAVATYPE),                      \
-            length / sizeof(JAVATYPE), static_cast<const JAVATYPE *>(staging_list->staging_area)); \
-    set_to_unused(stream, result, staging_list);            \
+            length / sizeof(JAVATYPE), static_cast<const JAVATYPE *>(staging_block->staging_area)); \
+    set_to_unused(stream, result, staging_block);            \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
 
@@ -384,30 +373,30 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUevent beforeEvent, afterEvent;                                    \
     CUstream stream;                                                    \
     stream_from_array(env, &stream, stream_wrapper);                    \
-    StagingAreaList *staging_list = get_first_free_staging_area(length);\
-    env->Get## TYPE ##ArrayRegion(array, host_offset / sizeof(JAVATYPE), length / sizeof(JAVATYPE), static_cast<JAVATYPE *>(staging_list->staging_area)); \
+    StagingBlock *staging_block = get_first_free_staging_block(length);\
+    env->Get## TYPE ##ArrayRegion(array, host_offset / sizeof(JAVATYPE), length / sizeof(JAVATYPE), static_cast<JAVATYPE *>(staging_block->staging_area)); \
     record_events_create(&beforeEvent, &afterEvent);                    \
     record_event(&beforeEvent, &stream);                                \
-    CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream);\
+    CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_block->staging_area, (size_t) length, stream);\
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsync", result);                           \
     record_event(&afterEvent, &stream);                                 \
-    result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0);\
+    result = cuStreamAddCallback(stream, set_to_unused, staging_block, 0);\
     LOG_PTX_AND_VALIDATE("cuStreamAddCallback", result);                         \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
 
 #define TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(TYPE, JAVATYPE)              \
     CUevent beforeEvent, afterEvent;                                    \
-    StagingAreaList *staging_list = get_first_free_staging_area(length);\
-    env->Get## TYPE ##ArrayRegion(array, host_offset / sizeof(JAVATYPE), length / sizeof(JAVATYPE), static_cast<JAVATYPE *>(staging_list->staging_area));\
+    StagingBlock *staging_block = get_first_free_staging_block(length);\
+    env->Get## TYPE ##ArrayRegion(array, host_offset / sizeof(JAVATYPE), length / sizeof(JAVATYPE), static_cast<JAVATYPE *>(staging_block->staging_area));\
     CUstream stream;                                                    \
     stream_from_array(env, &stream, stream_wrapper);                    \
     record_events_create(&beforeEvent, &afterEvent);                    \
     record_event(&beforeEvent, &stream);                                \
-    CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream);\
+    CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_block->staging_area, (size_t) length, stream);\
     LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsync", result);                           \
     record_event(&afterEvent, &stream);                                 \
-    result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0);\
+    result = cuStreamAddCallback(stream, set_to_unused, staging_block, 0);\
     LOG_PTX_AND_VALIDATE("cuStreamAddCallback", result);                         \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
@@ -644,8 +633,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDe
     LOG_PTX_AND_VALIDATE("cuStreamDestroy", result);
 
     free_queue();
-    CUresult stagingAreaResult = free_staging_area_list();
-    return (jlong) result & stagingAreaResult;
+    return (jlong) result;
 }
 
 /*

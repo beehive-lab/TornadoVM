@@ -516,7 +516,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         oclEventPool.remove(executionPlanId);
         OCLCommandQueueTable table = commandQueueTable.get(executionPlanId);
         if (table != null) {
-            OCLTargetDevice device = context.devices().get(getDeviceIndex());
             table.cleanup(device);
             if (table.size() == 0) {
                 commandQueueTable.remove(executionPlanId);
