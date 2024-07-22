@@ -24,8 +24,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -44,15 +44,14 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public class TestMemorySegmentsAsType extends TornadoTestBase {
     private final int numElements = 256;
 
-
     private static void getMemorySegment(MemorySegment a) {
         float test = a.getAtIndex(ValueLayout.JAVA_FLOAT, 5);
     }
 
-    @Test
+    @Test(expected = TornadoRuntimeException.class)
     public void testMemorySegmentAsInput() throws TornadoExecutionPlanException {
         MemorySegment segment;
-       long segmentByteSize = numElements * ValueLayout.JAVA_FLOAT.byteSize();
+        long segmentByteSize = numElements * ValueLayout.JAVA_FLOAT.byteSize();
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numElements);
