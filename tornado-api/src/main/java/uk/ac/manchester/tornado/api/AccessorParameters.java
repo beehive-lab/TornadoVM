@@ -21,7 +21,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 
 /**
  * Definition of accessor for the Prebuilt-Task API.
- * It defines for all input parameter to the task, the accessor of each object.*
+ * It defines the accessor of each object for all input parameter to the task.
  */
 public class AccessorParameters {
 
