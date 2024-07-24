@@ -281,6 +281,15 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             deleteFixed(valueAnchorNode);
         }
 
+        // cleaup the reminder Pi nodes introduced since Graal 24.0.1
+        for (PiNode piNode : graph.getNodes().filter(PiNode.class)) {
+            for (Node piNodeUsages : piNode.usages()) {
+                if (piNodeUsages instanceof SPIRVVectorValueNode) {
+                    piNode.replaceAtUsages(piNode.object());
+                    piNode.safeDelete();
+                }
+            }
+        }
         // replace reads with halfFloat reads
         for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
             if (javaRead.successors().first() instanceof NewInstanceNode) {
