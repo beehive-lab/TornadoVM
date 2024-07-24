@@ -129,18 +129,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         return subNode;
     }
 
-    private static ValueNode nodeToBeReplaced(ValueNode valueNode) {
-        PiNode piNode = null;
-        if (valueNode.usages().filter(PiNode.class).isNotEmpty()) {
-            piNode = valueNode.usages().filter(PiNode.class).first();
-        }
-        if (piNode != null) {
-            return piNode;
-        } else {
-            return valueNode;
-        }
-    }
-
     private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
         for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
             replaceSub(subHalfFloatNode, graph);
@@ -410,5 +398,10 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
         }
 
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+            ValueNode input = placeholder.getInput();
+            placeholder.replaceAtUsages(input);
+            placeholder.safeDelete();
+        }
     }
 }

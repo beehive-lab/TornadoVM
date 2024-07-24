@@ -24,12 +24,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.RawConstant;
 import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.ConstantNode;
@@ -47,7 +41,9 @@ import jdk.graal.compiler.nodes.extended.ValueAnchorNode;
 import jdk.graal.compiler.nodes.java.NewInstanceNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.phases.BasePhase;
-
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.RawConstant;
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ReadHalfFloatNode;
@@ -67,7 +63,201 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.SubHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
+import java.util.ArrayList;
+import java.util.Optional;
+
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
+
+    private static ValueNode replaceAdd(AddHalfFloatNode addHalfFloatNode, StructuredGraph graph) {
+        boolean isVectorOperation = isVectorOp(addHalfFloatNode.getX(), addHalfFloatNode.getY());
+        ValueNode addNode;
+        ValueNode addX = getHalfOperand(addHalfFloatNode.getX(), graph, isVectorOperation);
+        ValueNode addY = getHalfOperand(addHalfFloatNode.getY(), graph, isVectorOperation);
+        if (addX instanceof VectorLoadElementNode || addY instanceof VectorLoadElementNode || addX instanceof VectorAddHalfNode || addY instanceof VectorAddHalfNode) {
+            addNode = new VectorAddHalfNode(addX, addY);
+            graph.addWithoutUnique(addNode);
+        } else {
+            addNode = new AddNode(addX, addY);
+            graph.addWithoutUnique(addNode);
+        }
+
+        if (addHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            PiNode piNode = addHalfFloatNode.usages().filter(PiNode.class).first();
+            if (piNode.inputs().filter(ValueAnchorNode.class).isNotEmpty()) {
+                ValueAnchorNode anchorNode = piNode.inputs().filter(ValueAnchorNode.class).first();
+                deleteFixed(anchorNode);
+                piNode.replaceAtUsages(addNode);
+                piNode.safeDelete();
+            } else {
+                piNode.replaceAtUsages(addNode);
+                piNode.safeDelete();
+            }
+        } else {
+            addHalfFloatNode.replaceAtUsages(addNode);
+        }
+        addHalfFloatNode.safeDelete();
+        return addNode;
+    }
+
+    private static void replaceAddHalfFloatNodes(StructuredGraph graph) {
+        for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
+            replaceAdd(addHalfFloatNode, graph);
+        }
+    }
+
+    private static ValueNode replaceSub(SubHalfFloatNode subHalfFloatNode, StructuredGraph graph) {
+        boolean isVectorOperation = isVectorOp(subHalfFloatNode.getX(), subHalfFloatNode.getY());
+        ValueNode subNode;
+        ValueNode subX = getHalfOperand(subHalfFloatNode.getX(), graph, isVectorOperation);
+        ValueNode subY = getHalfOperand(subHalfFloatNode.getY(), graph, isVectorOperation);
+
+        if (subX instanceof VectorLoadElementNode || subY instanceof VectorLoadElementNode || subX instanceof VectorSubHalfNode || subY instanceof VectorSubHalfNode) {
+            subNode = new VectorSubHalfNode(subX, subY);
+            graph.addWithoutUnique(subNode);
+        } else {
+            subNode = new SubNode(subX, subY);
+            graph.addWithoutUnique(subNode);
+        }
+        subHalfFloatNode.replaceAtUsages(subNode);
+        subHalfFloatNode.safeDelete();
+        return subNode;
+    }
+
+    private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
+        for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
+            replaceSub(subHalfFloatNode, graph);
+        }
+    }
+
+    private static boolean isVectorOp(Node x, Node y) {
+        if (x instanceof VectorLoadElementNode || y instanceof VectorLoadElementNode || x instanceof VectorMultHalfNode || y instanceof VectorMultHalfNode) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static ValueNode replaceMult(MultHalfFloatNode multHalfFloatNode, StructuredGraph graph) {
+        boolean isVectorOperation = isVectorOp(multHalfFloatNode.getX(), multHalfFloatNode.getY());
+        ValueNode multNode;
+        ValueNode multX = getHalfOperand(multHalfFloatNode.getX(), graph, isVectorOperation);
+        ValueNode multY = getHalfOperand(multHalfFloatNode.getY(), graph, isVectorOperation);
+
+        if (multX instanceof VectorLoadElementNode || multY instanceof VectorLoadElementNode || multX instanceof VectorMultHalfNode || multY instanceof VectorMultHalfNode) {
+            multNode = new VectorMultHalfNode(multX, multY);
+            graph.addWithoutUnique(multNode);
+        } else {
+            multNode = new MulNode(multX, multY);
+            graph.addWithoutUnique(multNode);
+        }
+        multHalfFloatNode.replaceAtUsages(multNode);
+        multHalfFloatNode.safeDelete();
+        return multNode;
+    }
+
+    private static void replaceMultHalfFloatNodes(StructuredGraph graph) {
+        for (MultHalfFloatNode multHalfFloatNode : graph.getNodes().filter(MultHalfFloatNode.class)) {
+            replaceMult(multHalfFloatNode, graph);
+        }
+    }
+
+    private static ValueNode replaceDiv(DivHalfFloatNode divHalfFloatNode, StructuredGraph graph) {
+        boolean isVectorOperation = isVectorOp(divHalfFloatNode.getX(), divHalfFloatNode.getY());
+        ValueNode divX = getHalfOperand(divHalfFloatNode.getX(), graph, isVectorOperation);
+        ValueNode divY = getHalfOperand(divHalfFloatNode.getY(), graph, isVectorOperation);
+
+        FloatDivNode divNode = new FloatDivNode(divX, divY);
+        graph.addWithoutUnique(divNode);
+
+        PiNode piNode = null;
+        if (divHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = divHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(divNode);
+            piNode.safeDelete();
+        } else {
+            divHalfFloatNode.replaceAtUsages(divNode);
+        }
+
+        divHalfFloatNode.safeDelete();
+        return divNode;
+    }
+
+    private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
+        for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
+            replaceDiv(divHalfFloatNode, graph);
+        }
+    }
+
+    private static ValueNode getHalfOperand(ValueNode operand, StructuredGraph graph, boolean isVectorOperation) {
+        ValueNode halfOperand;
+        if (operand instanceof VectorLoadElementNode) {
+            VectorLoadElementNode loadElementNodeX = (VectorLoadElementNode) operand;
+            halfOperand = new VectorLoadElementNode(SPIRVKind.OP_TYPE_INT_16, loadElementNodeX.getVector(), loadElementNodeX.getLaneId());
+            graph.addWithoutUnique(halfOperand);
+        } else if (operand instanceof ConstantNode) {
+            ConstantNode c = (ConstantNode) operand;
+            if (isVectorOperation) {
+                halfOperand = new ConstantNode(c.getValue(), StampFactory.forKind(JavaKind.Float));
+            } else {
+                halfOperand = new ConstantNode(c.getValue(), StampFactory.forKind(JavaKind.Short));
+            }
+            graph.addWithoutUnique(halfOperand);
+        } else if (operand instanceof MultHalfFloatNode) { // if operand is another half operator, replace this first to avoid issues with the Stamp
+            halfOperand = replaceMult((MultHalfFloatNode) operand, graph);
+        } else if (operand instanceof AddHalfFloatNode) {
+            halfOperand = replaceAdd((AddHalfFloatNode) operand, graph);
+        } else if (operand instanceof SubHalfFloatNode) {
+            halfOperand = replaceSub((SubHalfFloatNode) operand, graph);
+        } else if (operand instanceof DivHalfFloatNode) {
+            halfOperand = replaceDiv((DivHalfFloatNode) operand, graph);
+        } else {
+            halfOperand = operand;
+        }
+        return halfOperand;
+    }
+
+    private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
+        if (javaWrite.value() instanceof HalfFloatPlaceholder) {
+            return true;
+        }
+        return false;
+    }
+
+    private static void replaceFixed(Node n, Node other) {
+        Node pred = n.predecessor();
+        Node suc = n.successors().first();
+
+        n.replaceFirstSuccessor(suc, null);
+        n.replaceAtPredecessor(other);
+        pred.replaceFirstSuccessor(n, other);
+        other.replaceFirstSuccessor(null, suc);
+
+        for (Node us : n.usages()) {
+            n.removeUsage(us);
+        }
+        n.clearInputs();
+        n.safeDelete();
+
+    }
+
+    private static void deleteFixed(Node node) {
+        if (!node.isDeleted()) {
+            Node predecessor = node.predecessor();
+            Node successor = node.successors().first();
+
+            node.replaceFirstSuccessor(successor, null);
+            node.replaceAtPredecessor(successor);
+            predecessor.replaceFirstSuccessor(node, successor);
+
+            for (Node us : node.usages()) {
+                node.removeUsage(us);
+            }
+            node.clearInputs();
+            node.safeDelete();
+        }
+    }
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -195,187 +385,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
         }
 
-    }
-
-    private static ValueNode replaceAdd(AddHalfFloatNode addHalfFloatNode, StructuredGraph graph) {
-        boolean isVectorOperation = isVectorOp(addHalfFloatNode.getX(), addHalfFloatNode.getY());
-        ValueNode addNode;
-        ValueNode addX = getHalfOperand(addHalfFloatNode.getX(), graph, isVectorOperation);
-        ValueNode addY = getHalfOperand(addHalfFloatNode.getY(), graph, isVectorOperation);
-        if (addX instanceof VectorLoadElementNode || addY instanceof VectorLoadElementNode || addX instanceof VectorAddHalfNode || addY instanceof VectorAddHalfNode) {
-            addNode = new VectorAddHalfNode(addX, addY);
-            graph.addWithoutUnique(addNode);
-        } else {
-            addNode = new AddNode(addX, addY);
-            graph.addWithoutUnique(addNode);
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+            ValueNode input = placeholder.getInput();
+            placeholder.replaceAtUsages(input);
+            placeholder.safeDelete();
         }
 
-        if (addHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
-            PiNode piNode = addHalfFloatNode.usages().filter(PiNode.class).first();
-            if (piNode.inputs().filter(ValueAnchorNode.class).isNotEmpty()) {
-                ValueAnchorNode anchorNode = piNode.inputs().filter(ValueAnchorNode.class).first();
-                deleteFixed(anchorNode);
-                piNode.replaceAtUsages(addNode);
-                piNode.safeDelete();
-            } else {
-                piNode.replaceAtUsages(addNode);
-                piNode.safeDelete();
-            }
-        } else {
-            addHalfFloatNode.replaceAtUsages(addNode);
-        }
-        addHalfFloatNode.safeDelete();
-        return addNode;
-    }
-
-    private static void replaceAddHalfFloatNodes(StructuredGraph graph) {
-        for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
-            replaceAdd(addHalfFloatNode, graph);
-        }
-    }
-
-    private static ValueNode replaceSub(SubHalfFloatNode subHalfFloatNode, StructuredGraph graph) {
-        boolean isVectorOperation = isVectorOp(subHalfFloatNode.getX(), subHalfFloatNode.getY());
-        ValueNode subNode;
-        ValueNode subX = getHalfOperand(subHalfFloatNode.getX(), graph, isVectorOperation);
-        ValueNode subY = getHalfOperand(subHalfFloatNode.getY(), graph, isVectorOperation);
-
-        if (subX instanceof VectorLoadElementNode || subY instanceof VectorLoadElementNode || subX instanceof VectorSubHalfNode || subY instanceof VectorSubHalfNode) {
-            subNode = new VectorSubHalfNode(subX, subY);
-            graph.addWithoutUnique(subNode);
-        } else {
-            subNode = new SubNode(subX, subY);
-            graph.addWithoutUnique(subNode);
-        }
-        subHalfFloatNode.replaceAtUsages(subNode);
-        subHalfFloatNode.safeDelete();
-        return subNode;
-    }
-
-    private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
-        for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
-            replaceSub(subHalfFloatNode, graph);
-        }
-    }
-
-    private static boolean isVectorOp(Node x, Node y) {
-        if (x instanceof VectorLoadElementNode || y instanceof VectorLoadElementNode || x instanceof VectorMultHalfNode || y instanceof VectorMultHalfNode) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static ValueNode replaceMult(MultHalfFloatNode multHalfFloatNode, StructuredGraph graph) {
-        boolean isVectorOperation = isVectorOp(multHalfFloatNode.getX(), multHalfFloatNode.getY());
-        ValueNode multNode;
-        ValueNode multX = getHalfOperand(multHalfFloatNode.getX(), graph, isVectorOperation);
-        ValueNode multY = getHalfOperand(multHalfFloatNode.getY(), graph, isVectorOperation);
-
-        if (multX instanceof VectorLoadElementNode || multY instanceof VectorLoadElementNode || multX instanceof VectorMultHalfNode || multY instanceof VectorMultHalfNode) {
-            multNode = new VectorMultHalfNode(multX, multY);
-            graph.addWithoutUnique(multNode);
-        } else {
-            multNode = new MulNode(multX, multY);
-            graph.addWithoutUnique(multNode);
-        }
-        multHalfFloatNode.replaceAtUsages(multNode);
-        multHalfFloatNode.safeDelete();
-        return multNode;
-    }
-
-    private static void replaceMultHalfFloatNodes(StructuredGraph graph) {
-        for (MultHalfFloatNode multHalfFloatNode : graph.getNodes().filter(MultHalfFloatNode.class)) {
-            replaceMult(multHalfFloatNode, graph);
-        }
-    }
-
-    private static ValueNode replaceDiv(DivHalfFloatNode divHalfFloatNode, StructuredGraph graph) {
-        boolean isVectorOperation = isVectorOp(divHalfFloatNode.getX(), divHalfFloatNode.getY());
-        ValueNode divX = getHalfOperand(divHalfFloatNode.getX(), graph, isVectorOperation);
-        ValueNode divY = getHalfOperand(divHalfFloatNode.getY(), graph, isVectorOperation);
-
-        FloatDivNode divNode = new FloatDivNode(divX, divY);
-        graph.addWithoutUnique(divNode);
-
-        divHalfFloatNode.replaceAtUsages(divNode);
-        divHalfFloatNode.safeDelete();
-        return divNode;
-    }
-
-    private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
-        for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
-            replaceDiv(divHalfFloatNode, graph);
-        }
-    }
-
-    private static ValueNode getHalfOperand(ValueNode operand, StructuredGraph graph, boolean isVectorOperation) {
-        ValueNode halfOperand;
-        if (operand instanceof VectorLoadElementNode) {
-            VectorLoadElementNode loadElementNodeX = (VectorLoadElementNode) operand;
-            halfOperand = new VectorLoadElementNode(SPIRVKind.OP_TYPE_INT_16, loadElementNodeX.getVector(), loadElementNodeX.getLaneId());
-            graph.addWithoutUnique(halfOperand);
-        } else if (operand instanceof ConstantNode) {
-            ConstantNode c = (ConstantNode) operand;
-            if (isVectorOperation) {
-                halfOperand = new ConstantNode(c.getValue(), StampFactory.forKind(JavaKind.Float));
-            } else {
-                halfOperand = new ConstantNode(c.getValue(), StampFactory.forKind(JavaKind.Short));
-            }
-            graph.addWithoutUnique(halfOperand);
-        } else if (operand instanceof MultHalfFloatNode) { // if operand is another half operator, replace this first to avoid issues with the Stamp
-            halfOperand = replaceMult((MultHalfFloatNode) operand, graph);
-        } else if (operand instanceof AddHalfFloatNode) {
-            halfOperand = replaceAdd((AddHalfFloatNode) operand, graph);
-        } else if (operand instanceof SubHalfFloatNode) {
-            halfOperand = replaceSub((SubHalfFloatNode) operand, graph);
-        } else if (operand instanceof DivHalfFloatNode) {
-            halfOperand = replaceDiv((DivHalfFloatNode) operand, graph);
-        } else {
-            halfOperand = operand;
-        }
-        return halfOperand;
-    }
-
-    private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
-        if (javaWrite.value() instanceof HalfFloatPlaceholder) {
-            return true;
-        }
-        return false;
-    }
-
-    private static void replaceFixed(Node n, Node other) {
-        Node pred = n.predecessor();
-        Node suc = n.successors().first();
-
-        n.replaceFirstSuccessor(suc, null);
-        n.replaceAtPredecessor(other);
-        pred.replaceFirstSuccessor(n, other);
-        other.replaceFirstSuccessor(null, suc);
-
-        for (Node us : n.usages()) {
-            n.removeUsage(us);
-        }
-        n.clearInputs();
-        n.safeDelete();
-
-    }
-
-    private static void deleteFixed(Node node) {
-        if (!node.isDeleted()) {
-            Node predecessor = node.predecessor();
-            Node successor = node.successors().first();
-
-            node.replaceFirstSuccessor(successor, null);
-            node.replaceAtPredecessor(successor);
-            predecessor.replaceFirstSuccessor(node, successor);
-
-            for (Node us : node.usages()) {
-                node.removeUsage(us);
-            }
-            node.clearInputs();
-            node.safeDelete();
-        }
     }
 
 }
