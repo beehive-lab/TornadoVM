@@ -21,9 +21,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.FixedGuardNode;
 import jdk.graal.compiler.nodes.GraphState;
@@ -33,6 +30,9 @@ import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.calc.IsNullNode;
 import jdk.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
+
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSketchTierContext> {
 
@@ -61,20 +61,24 @@ public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSket
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
         for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
-            if (placeholderNode.getInput() instanceof PiNode placeholderInput) {
-                ValueNode halfFloatValue = placeholderInput.object();
-                if (halfFloatValue instanceof PiNode) {
-                    nodesToBeDeleted.add(halfFloatValue);
-                    halfFloatValue = (ValueNode) halfFloatValue.inputs().first();
+            if (placeholderNode.getInput() instanceof PiNode placeholderPi) {
+                if (placeholderPi.object() instanceof ValueNode valueNodeToKeep) {
+                    if (valueNodeToKeep.usages().filter(IsNullNode.class).isNotEmpty()) {
+                        IsNullNode isNullNode = valueNodeToKeep.usages().filter(IsNullNode.class).first();
+
+                        if (isNullNode.usages().first() instanceof FixedGuardNode) {
+                            nodesToBeDeleted.add(placeholderPi);
+                        }
+                    }
+
+                    FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderPi.getGuard();
+                    if (placeholderGuard.inputs().filter(IsNullNode.class).isNotEmpty()) {
+                        IsNullNode isNullNode = placeholderGuard.inputs().filter(IsNullNode.class).first();
+                        nodesToBeDeleted.add(isNullNode);
+                    }
+                    deleteFixed(placeholderGuard);
+                    placeholderNode.setInput(valueNodeToKeep);
                 }
-                FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderInput.getGuard();
-                if (placeholderGuard.inputs().filter(IsNullNode.class).isNotEmpty()) {
-                    IsNullNode isNullNode = placeholderGuard.inputs().filter(IsNullNode.class).first();
-                    nodesToBeDeleted.add(isNullNode);
-                }
-                deleteFixed(placeholderGuard);
-                placeholderNode.setInput(halfFloatValue);
-                nodesToBeDeleted.add(placeholderInput);
             }
         }
 

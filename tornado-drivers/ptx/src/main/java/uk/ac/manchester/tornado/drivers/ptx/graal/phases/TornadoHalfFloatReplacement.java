@@ -113,9 +113,32 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             subNode = new SubNode(subX, subY);
             graph.addWithoutUnique(subNode);
         }
-        subHalfFloatNode.replaceAtUsages(subNode);
+
+        PiNode piNode = null;
+        if (subHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = subHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(subNode);
+            piNode.safeDelete();
+        } else {
+            subHalfFloatNode.replaceAtUsages(subNode);
+        }
         subHalfFloatNode.safeDelete();
+
         return subNode;
+    }
+
+    private static ValueNode nodeToBeReplaced(ValueNode valueNode) {
+        PiNode piNode = null;
+        if (valueNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = valueNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            return piNode;
+        } else {
+            return valueNode;
+        }
     }
 
     private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
@@ -136,7 +159,18 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             multNode = new MulNode(multX, multY);
             graph.addWithoutUnique(multNode);
         }
-        multHalfFloatNode.replaceAtUsages(multNode);
+
+        PiNode piNode = null;
+        if (multHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = multHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(multNode);
+            piNode.safeDelete();
+        } else {
+            multHalfFloatNode.replaceAtUsages(multNode);
+        }
+
         multHalfFloatNode.safeDelete();
         return multNode;
     }
@@ -154,7 +188,17 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         PTXHalfFloatDivisionNode divNode = new PTXHalfFloatDivisionNode(divX, divY);
         graph.addWithoutUnique(divNode);
 
-        divHalfFloatNode.replaceAtUsages(divNode);
+        PiNode piNode = null;
+        if (divHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = divHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(divNode);
+            piNode.safeDelete();
+        } else {
+            divHalfFloatNode.replaceAtUsages(divNode);
+        }
+
         divHalfFloatNode.safeDelete();
         return divNode;
     }
