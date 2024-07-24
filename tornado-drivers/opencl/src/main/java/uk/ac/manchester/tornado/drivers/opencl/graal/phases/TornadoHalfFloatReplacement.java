@@ -21,9 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
 import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.ConstantNode;
@@ -62,6 +59,9 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.NewHalfFloatInstance;
 import uk.ac.manchester.tornado.runtime.graal.nodes.SubHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
 
@@ -114,8 +114,18 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             graph.addWithoutUnique(subNode);
         }
 
-        subHalfFloatNode.replaceAtUsages(subNode);
+        PiNode piNode = null;
+        if (subHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = subHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(subNode);
+            piNode.safeDelete();
+        } else {
+            subHalfFloatNode.replaceAtUsages(subNode);
+        }
         subHalfFloatNode.safeDelete();
+
         return subNode;
     }
 
@@ -153,7 +163,17 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             multHalfFloatNode.replaceAtUsages(multNode);
         }
 
-        multHalfFloatNode.replaceAtUsages(multNode);
+        PiNode piNode = null;
+        if (multHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = multHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(multNode);
+            piNode.safeDelete();
+        } else {
+            multHalfFloatNode.replaceAtUsages(multNode);
+        }
+
         multHalfFloatNode.safeDelete();
         return multNode;
     }
@@ -171,7 +191,17 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         FloatDivNode divNode = new FloatDivNode(divX, divY);
         graph.addWithoutUnique(divNode);
 
-        divHalfFloatNode.replaceAtUsages(divNode);
+        PiNode piNode = null;
+        if (divHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = divHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(divNode);
+            piNode.safeDelete();
+        } else {
+            divHalfFloatNode.replaceAtUsages(divNode);
+        }
+
         divHalfFloatNode.safeDelete();
         return divNode;
     }
@@ -321,7 +351,6 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     // if the result of an operation or a stored value is written
                     writingValue = placeholder.getInput();
                 }
-                System.out.println("Ewring " + placeholder.toString() + " " + placeholder.inputs().first().toString());
                 placeholder.replaceAtUsages(writingValue);
                 placeholder.safeDelete();
                 AddressNode writingAddress = javaWrite.getAddress();
@@ -372,6 +401,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     }
                 }
             }
+        }
+
+        for (HalfFloatPlaceholder placeholder : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
+            ValueNode input = placeholder.getInput();
+            placeholder.replaceAtUsages(input);
+            placeholder.safeDelete();
         }
 
     }

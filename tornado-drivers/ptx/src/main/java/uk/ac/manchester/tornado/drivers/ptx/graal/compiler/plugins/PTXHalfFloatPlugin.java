@@ -101,6 +101,8 @@ public class PTXHalfFloatPlugin {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
+                //                PiNode piNode = new PiNode(receiver.get(), StampFactory.forKind(JavaKind.Short));
+                //                b.getGraph().addOrUnique(piNode);
                 b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get(true))));
                 return true;
             }
