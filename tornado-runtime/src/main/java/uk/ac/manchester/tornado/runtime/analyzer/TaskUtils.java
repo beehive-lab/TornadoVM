@@ -312,8 +312,6 @@ public class TaskUtils {
     }
 
     public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage taskPackage) {
-        //DomainTree domain = buildDomainTree(taskPackage.getDimensions());
-        DomainTree domain = null;
         PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
                 taskPackage.getId(), //
                 taskPackage.getEntryPoint(), //

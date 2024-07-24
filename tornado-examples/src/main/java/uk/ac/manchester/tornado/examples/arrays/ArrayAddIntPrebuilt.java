@@ -87,14 +87,8 @@ public class ArrayAddIntPrebuilt {
             executor.withDevice(device) //
                     .withGridScheduler(gridScheduler) //
                     .execute();
-
         } catch (TornadoExecutionPlanException e) {
             e.printStackTrace();
         }
-
-        System.out.println("a: " + a);
-        System.out.println("b: " + b);
-        System.out.println("c: " + c);
     }
-
 }
