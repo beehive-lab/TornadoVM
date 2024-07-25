@@ -47,7 +47,7 @@ Run and Debug TornadoVM with Intellij
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Normal maven lifecycle goals like *package* and *install* will not
-result a successful build for TornadoVM.
+result in a successful build for TornadoVM.
 
 Two different configurations are needed for **Build** and **Debug**.
 
