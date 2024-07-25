@@ -217,7 +217,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 ]
 
-## List of tests to be excluded when running with te quick pass argument as they cause delays
+## List of tests to be excluded when running with the quick pass argument as they cause delays
 __TORNADO_HEAVY_TESTS__ = [
     "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
     "uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
