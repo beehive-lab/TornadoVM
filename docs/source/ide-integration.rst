@@ -161,7 +161,7 @@ Output should be something similar to this:
    /PATH_TO_JDK/java/current/bin/java
     -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=...
 
-You need to copy from ``-server`` to end.
+Copy from ``-server`` option to end.
 
 **Now, introduce a new Run Configuration within IntelliJ**
 
