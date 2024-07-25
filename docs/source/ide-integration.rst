@@ -165,7 +165,7 @@ You need to copy from ``-server`` to end.
 
 **Now, introduce a new Run Configuration within IntelliJ**
 
-Again, **Run > Edit Configurations > Application > Add new (e.g. plus
+Select **Run > Edit Configurations > Application > Add new (e.g. plus
 sign)**
 
 Then, add your own parameters similar to the following:
