@@ -645,6 +645,15 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    @Override
+    public TaskGraph prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, AccessorParameters accessorParameters) {
+        checkTaskName(id);
+        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, resource, accessorParameters);
+        prebuiltTask.withClass(klass);
+        taskGraphImpl.addPrebuiltTask(prebuiltTask);
+        return this;
+    }
+
     /**
      * Obtains the task-schedule name that was assigned.
      *
@@ -849,11 +858,11 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getTotalBytesCopyOut();
     }
 
-    protected String getProfileLog() {
+    String getProfileLog() {
         return taskGraphImpl.getProfileLog();
     }
 
-    public Collection<?> getOutputs() {
+    Collection<?> getOutputs() {
         return taskGraphImpl.getOutputs();
     }
 

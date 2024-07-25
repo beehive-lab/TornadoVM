@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,14 +54,8 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
@@ -309,31 +304,39 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         }
     }
 
+    private byte[] getSource(PrebuiltTask prebuiltTask) {
+        byte[] source;
+        Class<?> klass = prebuiltTask.getClassJAR();
+        if (klass != null) {
+            try (InputStream inputStream = klass.getClassLoader().getResourceAsStream(prebuiltTask.getFilename())) {
+                TornadoInternalError.guarantee(inputStream != null, "file does not exist: %s", prebuiltTask.getFilename());
+                source = inputStream.readAllBytes();
+            } catch (IOException e) {
+                throw new TornadoBailoutRuntimeException("[Error] I/O Exception in reallAllBytes", e);
+            }
+        } else {
+            final Path path = Paths.get(prebuiltTask.getFilename());
+            TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", prebuiltTask.getFilename());
+            try {
+                source = Files.readAllBytes(path);
+            } catch (IOException e) {
+                throw new TornadoBailoutRuntimeException("[Error] I/O Exception in reallAllBytes", e);
+            }
+        }
+        return source;
+    }
+
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
-        final PrebuiltTask executable = (PrebuiltTask) task;
-        if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
-            return deviceContext.getInstalledCode(task.getId(), executable.getEntryPoint());
-        }
+        final PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+        if (deviceContext.isCached(task.getId(), prebuiltTask.getEntryPoint()))
+            return deviceContext.getInstalledCode(task.getId(), prebuiltTask.getEntryPoint());
 
-        final Path path = Paths.get(executable.getFilename());
-        TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
-        try {
-            final byte[] source = Files.readAllBytes(path);
-
-            OCLInstalledCode installedCode;
-            if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
-                // A) for FPGA
-                installedCode = deviceContext.installCode(task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
-            } else {
-                // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
-            }
-            return installedCode;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        byte[] source = getSource(prebuiltTask);
+        if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext))
+            return deviceContext.installCode(task.getId(), prebuiltTask.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
+        else
+            return deviceContext.installCode(prebuiltTask.meta(), task.getId(), prebuiltTask.getEntryPoint(), source);
     }
 
     private TornadoInstalledCode compileJavaToAccelerator(SchedulableTask task) {
@@ -404,8 +407,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
-        if (value instanceof AtomicInteger) {
-            AtomicInteger ai = (AtomicInteger) value;
+        if (value instanceof AtomicInteger ai) {
             if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
                 HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledResolvedJavaMethod());
                 int index = values.get(paramIndex);
@@ -535,21 +537,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
             } else if (object instanceof MemorySegment) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof IntArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof FloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof DoubleArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof LongArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof ShortArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof ByteArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof CharArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
-            } else if (object instanceof HalfFloatArray) {
+            } else if (object instanceof TornadoNativeArray && !(object instanceof Tensor)) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLXPUBuffer(deviceContext, object);

@@ -49,6 +49,7 @@ public class PrebuiltTask implements SchedulableTask {
     private TornadoProfiler profiler;
     private boolean forceCompiler;
     private int[] atomics;
+    private Class<?> klass;
 
     public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
         this.entryPoint = entryPoint;
@@ -246,4 +247,11 @@ public class PrebuiltTask implements SchedulableTask {
         return atomics;
     }
 
+    public Class<?> getClassJAR() {
+        return klass;
+    }
+
+    public void withKlassJAR(Class<?> classJar) {
+        this.klass = classJar;
+    }
 }

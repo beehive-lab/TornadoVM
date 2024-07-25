@@ -481,12 +481,30 @@ public interface TaskGraphInterface {
      *     Kernel's name of the entry point
      * @param filename
      *     Input OpenCL C Kernel
+     * @param accessorParameters
+     *     {@link AccessorParameters} that contains the accessor for each input and output parameter to the kernel.
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraphInterface}
      *
      */
     TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters, int[] atomics);
+
+    /**
+     * 
+     * @param id
+     *     Task-id
+     * @param entryPoint
+     *     Kernel's name of the entry point
+     * @param klass
+     *     Class that can access the resource within the JAR file.
+     * @param resource
+     *     Input file that represents the kernel source. It could be either SPIR-V, OpenCL C, or PTX code.
+     * @param accessorParameters
+     *     {@link AccessorParameters} that contains the accessor for each input and output parameter to the kernel.
+     * @return {@link TaskGraphInterface}
+     */
+    TaskGraphInterface prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, AccessorParameters accessorParameters);
 
     /**
      * Obtains the task-schedule name that was assigned.
