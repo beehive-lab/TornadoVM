@@ -32,6 +32,7 @@ import jdk.graal.compiler.phases.common.AddressLoweringByNodePhase;
 import jdk.graal.compiler.phases.common.CanonicalizerPhase;
 import jdk.graal.compiler.phases.common.DeadCodeEliminationPhase;
 import jdk.graal.compiler.phases.common.FixReadsPhase;
+import jdk.graal.compiler.phases.common.RemoveValueProxyPhase;
 import jdk.graal.compiler.phases.common.UseTrappingNullChecksPhase;
 import jdk.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
 import jdk.graal.compiler.phases.common.LowTierLoweringPhase;
@@ -86,6 +87,7 @@ public class SPIRVLowTier extends TornadoLowTier {
         if (TornadoOptions.MATH_OPTIMIZATIONS) {
             appendPhase(new InverseSquareRootPhase());
         }
+
 
         // TODO Atomics Phase for SPIRV (this is the last thing to support)
 
