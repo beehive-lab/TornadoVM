@@ -386,8 +386,8 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return codeCache.installSPIRVBinary(meta, id, entryPoint, code);
     }
 
-    public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
-        return codeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile);
+    public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile, Class<?> klassJar) {
+        return codeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile, klassJar);
     }
 
     public boolean isCached(String id, String entryPoint) {

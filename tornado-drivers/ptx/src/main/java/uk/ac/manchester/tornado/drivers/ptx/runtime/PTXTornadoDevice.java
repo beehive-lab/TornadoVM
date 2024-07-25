@@ -198,7 +198,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     private byte[] getSource(PrebuiltTask prebuiltTask) {
         byte[] source;
-        Class<?> klass = prebuiltTask.getClassJAR();
+        Class<?> klass = prebuiltTask.getKlassJar();
         if (klass != null) {
             try (InputStream inputStream = klass.getClassLoader().getResourceAsStream(prebuiltTask.getFilename())) {
                 TornadoInternalError.guarantee(inputStream != null, "file does not exist: %s", prebuiltTask.getFilename());

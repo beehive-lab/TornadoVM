@@ -66,7 +66,7 @@ public class TestSPIRVTornadoCompiler {
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String pathToSPIRVBinaryFile = tornadoSDK + "/examples/generated/add.spv";
 
-        SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "add", "add", pathToSPIRVBinaryFile);
+        SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "add", "add", pathToSPIRVBinaryFile, null);
         String generatedCode = code.getGeneratedSourceCode();
 
         if (scheduleMetaData.isPrintKernelEnabled()) {

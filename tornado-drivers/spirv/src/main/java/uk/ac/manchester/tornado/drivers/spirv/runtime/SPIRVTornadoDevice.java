@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
 import java.lang.foreign.MemorySegment;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -141,17 +140,12 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         }
     }
 
-    private Path getSource(PrebuiltTask prebuiltTask) {
-        Class<?> klass = prebuiltTask.getClassJAR();
-        if (klass != null) {
-            URL url = klass.getClassLoader().getResource(prebuiltTask.getFilename());
-            if (url != null) {
-                return Paths.get(url.getPath());
-            } else {
-                throw new TornadoRuntimeException("[ERROR] Prebuilt file path not found: " + url.getPath());
+    private void checkSourceInFS(PrebuiltTask prebuiltTask) {
+        if (prebuiltTask.getKlassJar() == null) {
+            Path pathtoSPIRVBin = Paths.get(prebuiltTask.getFilename());
+            if (!pathtoSPIRVBin.toFile().exists()) {
+                throw new RuntimeException("SPIRV file does not exist: " + prebuiltTask.getFilename());
             }
-        } else {
-            return Paths.get(prebuiltTask.getFilename());
         }
     }
 
@@ -160,9 +154,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         if (deviceContext.isCached(prebuiltTask.getId(), prebuiltTask.getEntryPoint())) {
             return deviceContext.getInstalledCode(prebuiltTask.getId(), prebuiltTask.getEntryPoint());
         }
-        final Path pathToSPIRVBin = getSource(prebuiltTask);
-        TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", prebuiltTask.getFilename());
-        return deviceContext.installBinary(prebuiltTask.meta(), prebuiltTask.getId(), prebuiltTask.getEntryPoint(), prebuiltTask.getFilename());
+        checkSourceInFS(prebuiltTask);
+        return deviceContext.installBinary(prebuiltTask.meta(), prebuiltTask.getId(), prebuiltTask.getEntryPoint(), prebuiltTask.getFilename(), prebuiltTask.getKlassJar());
     }
 
     public SPIRVBackend getBackend() {

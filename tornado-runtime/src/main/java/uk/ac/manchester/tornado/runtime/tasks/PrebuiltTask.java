@@ -247,7 +247,7 @@ public class PrebuiltTask implements SchedulableTask {
         return atomics;
     }
 
-    public Class<?> getClassJAR() {
+    public Class<?> getKlassJar() {
         return klass;
     }
 

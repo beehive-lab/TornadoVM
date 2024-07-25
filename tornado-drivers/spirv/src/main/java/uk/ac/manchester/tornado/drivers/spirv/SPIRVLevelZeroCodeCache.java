@@ -24,12 +24,18 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
@@ -55,14 +61,28 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
     }
 
     @Override
-    public synchronized SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
+    public synchronized SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile, Class<?> klassJar) {
         ZeModuleHandle module = new ZeModuleHandle();
         ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("-ze-opt-level 2 -ze-opt-large-register-file");
 
-        checkBinaryFileExists(pathToFile);
+        if (klassJar == null) {
+            checkBinaryFileExists(pathToFile);
+        } else {
+            try (InputStream inputStream = klassJar.getClassLoader().getResourceAsStream(pathToFile)) {
+                TornadoInternalError.guarantee(inputStream != null, "file does not exist: %s", pathToFile);
+                byte[] source = inputStream.readAllBytes();
+                String tempFileName = createSPIRVTempDirectoryName() + "temp.spv";
+                OutputStream stream = new FileOutputStream(tempFileName);
+                stream.write(source);
+                stream.close();
+                pathToFile = tempFileName;
+            } catch (IOException e) {
+                throw new TornadoRuntimeException(e);
+            }
+        }
 
         SPIRVContext spirvContext = deviceContext.getSpirvContext();
         SPIRVLevelZeroContext levelZeroContext = (SPIRVLevelZeroContext) spirvContext;
