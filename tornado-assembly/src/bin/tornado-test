@@ -217,6 +217,13 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 ]
 
+## List of tests to be excluded when running with the quick pass argument as they cause delays
+__TORNADO_HEAVY_TESTS__ = [
+    "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
+    "uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
+    "uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx",
+]
+
 # ################################################################################################################
 ## Default options and flags
 # ################################################################################################################
@@ -248,7 +255,6 @@ ENABLE_ASSERTIONS = "-ea "
 
 __VERSION__ = "0.16_10032024"
 
-JDK_8_VERSION = "1.8"
 try:
     javaHome = os.environ["JAVA_HOME"]
 except:
@@ -413,10 +419,8 @@ def appendTestRunnerClassToCmd(cmd, args):
         testRunner = __MAIN_TORNADO_JUNIT__
         module = __MAIN_TORNADO_JUNIT_MODULE__
 
-    if (javaVersion != JDK_8_VERSION):
-        cmd += " -m " + module + testRunner
-    else:
-        cmd += " " + testRunner
+    cmd += " -m " + module + testRunner
+
     return cmd
 
 
@@ -465,6 +469,8 @@ def runTestTheWorld(options, args):
     stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
 
     for t in __TEST_THE_WORLD__:
+        if args.quickPass and t.testName in __TORNADO_HEAVY_TESTS__:
+            continue
         command = options
         if t.testParameters:
             for testParam in t.testParameters:
@@ -548,6 +554,8 @@ def parseArguments():
     parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False,
                         help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
+    parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
+                        help="Quick pass without stress memory and output for logs in a file.")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,
                         help="Print OpenCL Kernel Execution Time")
