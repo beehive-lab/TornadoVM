@@ -482,7 +482,7 @@ public interface TaskGraphInterface {
      * @param filename
      *     Input OpenCL C Kernel
      * @param accessorParameters
-     *     {@link AccessorParameters} that contains the accessor for each input and output parameter to the kernel.
+     *     {@link AccessorParameters} that contains the accessor for each input and output parameter of the kernel.
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraphInterface}
