@@ -118,8 +118,18 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             subNode = new SubNode(subX, subY);
             graph.addWithoutUnique(subNode);
         }
-        subHalfFloatNode.replaceAtUsages(subNode);
+        PiNode piNode = null;
+        if (subHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = subHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(subNode);
+            piNode.safeDelete();
+        } else {
+            subHalfFloatNode.replaceAtUsages(subNode);
+        }
         subHalfFloatNode.safeDelete();
+
         return subNode;
     }
 
@@ -150,7 +160,17 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             multNode = new MulNode(multX, multY);
             graph.addWithoutUnique(multNode);
         }
-        multHalfFloatNode.replaceAtUsages(multNode);
+        PiNode piNode = null;
+        if (multHalfFloatNode.usages().filter(PiNode.class).isNotEmpty()) {
+            piNode = multHalfFloatNode.usages().filter(PiNode.class).first();
+        }
+        if (piNode != null) {
+            piNode.replaceAtUsages(multNode);
+            piNode.safeDelete();
+        } else {
+            multHalfFloatNode.replaceAtUsages(multNode);
+        }
+
         multHalfFloatNode.safeDelete();
         return multNode;
     }
