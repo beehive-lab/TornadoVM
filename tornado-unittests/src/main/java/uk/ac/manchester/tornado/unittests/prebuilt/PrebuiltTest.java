@@ -315,7 +315,7 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0",     // task-name (up to the developer to set it up)
                         "add",              // name of the low-level kernel to invoke (as it appears in the kernel file)
-                        PrebuiltTest.class, // Access class
+                        PrebuiltTest.class, // use a .class that it is contained in the JAR file of the
                         resource,           // resource file
                         accessorParameters) // accessors
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);

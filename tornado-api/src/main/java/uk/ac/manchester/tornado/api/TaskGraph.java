@@ -645,6 +645,20 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    /**
+     *
+     * @param id
+     *     Task-id
+     * @param entryPoint
+     *     Kernel's name of the entry point
+     * @param klass
+     *     Class that can access the resource within the JAR file.
+     * @param resource
+     *     Input file that represents the kernel source. It could be either SPIR-V, OpenCL C, or PTX code.
+     * @param accessorParameters
+     *     {@link AccessorParameters} that contains the accessor for each input and output parameter to the kernel.
+     * @return {@link TaskGraph}.
+     */
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, AccessorParameters accessorParameters) {
         checkTaskName(id);
