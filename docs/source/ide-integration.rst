@@ -163,7 +163,7 @@ Output should be something similar to this:
 
 You need to copy from ``-server`` to end.
 
-**Now, introduce a new Run Configuration**
+**Now, introduce a new Run Configuration within IntelliJ**
 
 Again, **Run > Edit Configurations > Application > Add new (e.g. plus
 sign)**
