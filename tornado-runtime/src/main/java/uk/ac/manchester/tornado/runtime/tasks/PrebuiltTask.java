@@ -70,6 +70,18 @@ public class PrebuiltTask implements SchedulableTask {
 
     }
 
+    public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access) {
+        this.entryPoint = entryPoint;
+        this.filename = filename;
+        this.args = args;
+        this.argumentsAccess = access;
+        meta = new TaskMetaData(scheduleMeta, id, access.length);
+        for (int i = 0; i < access.length; i++) {
+            meta.getArgumentsAccess()[i] = access[i];
+        }
+
+    }
+
     public PrebuiltTask withAtomics(int[] atomics) {
         this.atomics = atomics;
         return this;

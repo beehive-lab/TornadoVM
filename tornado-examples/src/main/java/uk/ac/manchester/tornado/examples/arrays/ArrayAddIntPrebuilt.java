@@ -18,20 +18,28 @@
 
 package uk.ac.manchester.tornado.examples.arrays;
 
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.AccessorParameters;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * Example using the Prebuilt API of TornadoVM. <code>
- * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAddIntPrebuilt
+ * Example using the Prebuilt API of TornadoVM.
+ *
+ * <p>
+ * <code>
+ * $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAddIntPrebuilt
  * </code>
+ * </p>
  */
 public class ArrayAddIntPrebuilt {
 
@@ -62,22 +70,25 @@ public class ArrayAddIntPrebuilt {
         String filePath = tornadoSDK + "/examples/generated/";
         filePath += device.getPlatformName().contains("PTX") ? "add.ptx" : "add.cl";
 
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, a, Access.READ_ONLY);
+        accessorParameters.set(1, b, Access.READ_ONLY);
+        accessorParameters.set(2, c, Access.WRITE_ONLY);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .prebuiltTask("t0", "add", filePath, //
-                        new Object[] { a, b, c }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        device, //
-                        new int[] { numElements }) //
+                .prebuiltTask("t0", "add", filePath, accessorParameters) // 
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        WorkerGrid workerGrid = new WorkerGrid1D(numElements);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
-        System.out.println("a: " + a);
-        System.out.println("b: " + b);
-        System.out.println("c: " + c);
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executor.withDevice(device) //
+                    .withGridScheduler(gridScheduler) //
+                    .execute();
+        } catch (TornadoExecutionPlanException e) {
+            e.printStackTrace();
+        }
     }
-
 }
