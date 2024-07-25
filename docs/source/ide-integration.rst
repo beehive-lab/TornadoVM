@@ -145,7 +145,7 @@ Debug/Run Configuration with a Unit-test
 In case you need to rerun a unit test previously executed via the terminal using the `tornado-test` utility, you will need the following configuration.
 
 To run and debug Java code through TornadoVM, a custom configuration is required.
-This configuration must include the TornadoVM `JAVA_FLAGS` and `CLASSPATHS`.
+This configuration must include the TornadoVM `JAVA_FLAGS` and `CLASSPATH`.
 
 Firstly, obtain the JAVA_FLAGS used by TornadoVM by executing the following commands:
 
