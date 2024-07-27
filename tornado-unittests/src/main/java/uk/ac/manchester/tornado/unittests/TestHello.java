@@ -50,6 +50,14 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    private static void printIntArray(IntArray a) {
+        int firstValue = a.get(0);
+
+        if (a.getSize() > 1) {
+            Debug.printf("First value %d\n", firstValue);
+        }
+    }
+
     public static void add(IntArray a, IntArray b, IntArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
             c.set(i, a.get(i) + b.get(i));
@@ -86,6 +94,24 @@ public class TestHello extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestHello::printHello, 8);
+        assertNotNull(taskGraph);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+    }
+
+    @Test
+    public void testPrintIntArray() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.FIRST_EXECUTION, a)
+            .task("t0", TestHello::printIntArray, a);
         assertNotNull(taskGraph);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

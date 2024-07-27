@@ -2088,6 +2088,14 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.graalvm.compiler</groupId>
+            <artifactId>compiler</artifactId>
+            <version>23.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
     <modules>
         <module>tornado-runtime</module>
