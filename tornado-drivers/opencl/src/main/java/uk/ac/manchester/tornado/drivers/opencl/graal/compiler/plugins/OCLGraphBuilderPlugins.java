@@ -48,6 +48,8 @@ import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.PiNode;
@@ -79,10 +81,14 @@ import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
@@ -369,8 +375,12 @@ public class OCLGraphBuilderPlugins {
                 ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
                 int length = ((JavaConstant) lengthNode.getValue()).asInt();
 
-                ValueNode[] actualArgs = new ValueNode[length + 1];
+                ValueNode[] actualArgs = new ValueNode[length + 4];
                 actualArgs[0] = args[0];
+
+                actualArgs[1] = b.append(new GlobalThreadIdNode(ConstantNode.forInt(0)));
+                actualArgs[2] = b.append(new GlobalThreadIdNode(ConstantNode.forInt(1)));
+                actualArgs[3] = b.append(new GlobalThreadIdNode(ConstantNode.forInt(2)));
 
                 int argIndex = 0;
                 for (Node n : newArrayNode.usages()) {
@@ -383,11 +393,12 @@ public class OCLGraphBuilderPlugins {
                             GraphUtil.unlinkFixedNode(box);
                             box.safeDelete();
                         }
-                        actualArgs[argIndex + 1] = value;
+                        actualArgs[argIndex + 4] = value;
                         argIndex++;
                     }
 
                 }
+
 
                 PrintfNode printfNode = new PrintfNode(actualArgs);
                 b.append(printfNode);

@@ -52,9 +52,10 @@ public class TestHello extends TornadoTestBase {
 
     private static void printIntArray(IntArray a) {
         int firstValue = a.get(0);
+        int secondValue = a.get(1);
 
         if (a.getSize() > 1) {
-            Debug.printf("First value %d\n", firstValue);
+            Debug.printf("First value %d, second value %d\n", firstValue, secondValue);
         }
     }
 
@@ -108,6 +109,8 @@ public class TestHello extends TornadoTestBase {
 
         int numElements = 16;
         IntArray a = new IntArray(numElements);
+        a.set(0, 1);
+        a.set(1, 2);
 
         TaskGraph taskGraph = new TaskGraph("s0")
             .transferToDevice(DataTransferMode.FIRST_EXECUTION, a)
