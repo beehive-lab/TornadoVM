@@ -27,7 +27,7 @@ __APPLE__ = "darwin"
 __WINDOWS__ = "windows"
 
 __JDK21__ = "jdk21"
-__GRAALVM21__ = "graalvm-jdk-21"
+__GRAALVM21__ = "graal-jdk-21"
 __MANDREL21__ = "mandrel-jdk-21"
 __CORRETTO21__ = "corretto-jdk-21"
 __MICROSOFT21__ = "microsoft-jdk-21"
