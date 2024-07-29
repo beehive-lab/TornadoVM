@@ -22,11 +22,11 @@
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.NodeClass;
+import jdk.graal.compiler.nodeinfo.NodeInfo;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.FloatingNode;
 
 @NodeInfo
 public abstract class AbstractParallelNode extends FloatingNode implements Comparable<AbstractParallelNode> {

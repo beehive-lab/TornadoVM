@@ -1,8 +1,9 @@
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 module tornado.drivers.ptx {
+    requires java.base;
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+    requires transitive jdk.graal.compiler;
     requires transitive org.graalvm.collections;
     requires transitive org.graalvm.word;
     requires transitive tornado.api;
@@ -25,6 +26,5 @@ module tornado.drivers.ptx {
     exports uk.ac.manchester.tornado.drivers.ptx.runtime;
     exports uk.ac.manchester.tornado.drivers.ptx.power;
 
-    provides TornadoBackendProvider with
-            uk.ac.manchester.tornado.drivers.ptx.PTXTornadoDriverProvider;
+    provides TornadoBackendProvider with uk.ac.manchester.tornado.drivers.ptx.PTXTornadoDriverProvider;
 }

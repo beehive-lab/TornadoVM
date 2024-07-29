@@ -24,8 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.gen.MoveFactory;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.gen.MoveFactory;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;

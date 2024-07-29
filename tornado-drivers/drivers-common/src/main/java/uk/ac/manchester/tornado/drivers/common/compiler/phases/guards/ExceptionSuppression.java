@@ -25,14 +25,12 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.GuardNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.extended.GuardedNode;
-import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
-import org.graalvm.compiler.phases.BasePhase;
-
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.GuardNode;
+import jdk.graal.compiler.nodes.LogicNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.extended.GuardedNode;
+import jdk.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
@@ -56,14 +54,6 @@ public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
                 guards.add(guard);
                 guardedNode.setGuard(null);
 
-            }
-        });
-
-        graph.getNodes().filter(ValueAnchorNode.class).forEach(anchor -> {
-            if (anchor.getAnchoredNode() instanceof GuardNode guard) {
-                guards.add(guard);
-                conditions.add(guard.getCondition());
-                anchor.removeAnchoredNode();
             }
         });
 

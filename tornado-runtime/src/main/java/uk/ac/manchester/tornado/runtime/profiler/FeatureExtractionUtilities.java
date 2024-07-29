@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;

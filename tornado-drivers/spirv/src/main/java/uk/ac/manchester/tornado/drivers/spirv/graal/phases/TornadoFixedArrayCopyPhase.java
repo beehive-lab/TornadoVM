@@ -24,17 +24,18 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.BasePhase;
-
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValuePhiNode;
+import jdk.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
 
 import java.util.Optional;
+
+import static jdk.graal.compiler.phases.BasePhase.ALWAYS_APPLICABLE;
 
 public class TornadoFixedArrayCopyPhase extends BasePhase<TornadoLowTierContext> {
 

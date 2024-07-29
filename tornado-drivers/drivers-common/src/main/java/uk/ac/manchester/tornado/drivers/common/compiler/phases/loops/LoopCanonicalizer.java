@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.EndNode;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.LoopEndNode;
+import jdk.graal.compiler.nodes.MergeNode;
+import jdk.graal.compiler.nodes.PhiNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
 
 /*
  * * @author James Clarkson

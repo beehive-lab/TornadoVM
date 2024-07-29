@@ -33,31 +33,32 @@ import java.util.stream.IntStream;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.DataBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
-import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.nodes.AbstractBeginNode;
-import org.graalvm.compiler.nodes.AbstractEndNode;
-import org.graalvm.compiler.nodes.ControlSplitNode;
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
-import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.options.OptionValues;
 
+import jdk.graal.compiler.asm.Assembler;
+import jdk.graal.compiler.code.CompilationResult;
+import jdk.graal.compiler.debug.DebugContext;
+import jdk.graal.compiler.lir.LIR;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+import jdk.graal.compiler.lir.asm.DataBuilder;
+import jdk.graal.compiler.lir.asm.FrameContext;
+import jdk.graal.compiler.lir.framemap.FrameMap;
+import jdk.graal.compiler.nodes.AbstractBeginNode;
+import jdk.graal.compiler.nodes.AbstractEndNode;
+import jdk.graal.compiler.nodes.ControlSplitNode;
+import jdk.graal.compiler.nodes.EndNode;
+import jdk.graal.compiler.nodes.FixedNode;
+import jdk.graal.compiler.nodes.IfNode;
+import jdk.graal.compiler.nodes.LoopEndNode;
+import jdk.graal.compiler.nodes.LoopExitNode;
+import jdk.graal.compiler.nodes.MergeNode;
+import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
+import jdk.graal.compiler.options.OptionValues;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBlockVisitor;
@@ -75,9 +76,9 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
 
-    public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+    public SPIRVCompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult,   Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
 
         nonInlinedMethods = new HashSet<>();
     }
@@ -148,7 +149,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
-        traverseControlFlowGraph(cfg, new SPIRVBlockVisitor(this));
+        traverseControlFlowGraph(cfg, new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBlockVisitor(this));
 
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Finished traversing CFG");
         this.lir = null;
@@ -156,14 +157,14 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
-    private void traverseControlFlowGraph(ControlFlowGraph cfg, SPIRVBlockVisitor visitor) {
+    private void traverseControlFlowGraph(ControlFlowGraph cfg, uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBlockVisitor visitor) {
         traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
         if (rescheduledBasicBlocks != null) {
             rescheduledBasicBlocks.clear();
         }
     }
 
-    private void rescheduleBasicBlock(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+    private void rescheduleBasicBlock(HIRBlock basicBlock, uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         HIRBlock block = pending.get(basicBlock);
         visitor.enter(block);
         visitor.exit(block);
@@ -217,7 +218,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * @param pending
      *            {@link HashMap}
      */
-    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
             IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
             HIRBlock blockTrueBranch = getBlockTrueBranch(basicBlock);
@@ -236,7 +237,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private void traverseControlFlowGraph(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+    private void traverseControlFlowGraph(HIRBlock basicBlock, uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
 
         if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
             rescheduleBasicBlock(basicBlock, visitor, visited, pending);
@@ -357,7 +358,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public TaskMetaData getTaskMetaData() {
-        return ((SPIRVCompilationResult) compilationResult).getMeta();
+        return ((uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult) compilationResult).getMeta();
     }
 
 }

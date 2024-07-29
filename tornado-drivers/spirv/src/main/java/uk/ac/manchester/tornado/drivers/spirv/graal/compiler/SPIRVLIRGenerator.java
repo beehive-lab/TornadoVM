@@ -27,22 +27,22 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.CompressEncoding;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.cfg.BasicBlock;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.SwitchStrategy;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGenerator;
+import jdk.graal.compiler.core.common.CompressEncoding;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.Condition;
+import jdk.graal.compiler.core.common.cfg.BasicBlock;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
+import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
+import jdk.graal.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.SwitchStrategy;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.LIRGenerationResult;
+import jdk.graal.compiler.lir.gen.LIRGenerator;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
@@ -77,8 +77,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     private SPIRVGenTool spirvGenTool;
     private SPIRVBuiltinTool spirvBuiltinTool;
 
-    public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
-        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVBarrierSetLIRGenerator(), new SPIRVMoveFactory(), providers,
+    public SPIRVLIRGenerator(CoreProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
+        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBarrierSetLIRGenerator(), new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVMoveFactory(), providers,
                 lirGenRes);
         spirvGenTool = new SPIRVGenTool(this);
         spirvBuiltinTool = new SPIRVBuiltinTool();
@@ -216,6 +216,16 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value leftVal, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
         final Variable resultConditionalMove = newVariable(LIRKind.combine(trueValue, falseValue));
@@ -253,6 +263,16 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         append(new SPIRVLIRStmt.AssignStmt(result, moveNode));
 
         return result;
+    }
+
+    @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
     }
 
     @Override
@@ -355,7 +375,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         // Format of the variable "<type>_<number>"
         // variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index
         // + "F" + methodIndex);
-        SPIRVLIRGenerationResult res = (SPIRVLIRGenerationResult) getResult();
+        uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult res = (uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult) getResult();
         res.insertVariable(variable);
         return variable;
     }
