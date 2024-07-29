@@ -123,9 +123,14 @@ public class OCLStamp extends ObjectStamp {
 
     @Override
     public boolean isCompatible(Stamp stamp) {
-        if (stamp instanceof OCLStamp && ((OCLStamp) stamp).oclKind == oclKind) {
-            return true;
-        }
+            if (stamp instanceof OCLStamp) {
+                return true;
+            } else if (stamp instanceof ObjectStamp) {
+                OCLKind stampKind = OCLKind.fromResolvedJavaType(((ObjectStamp) stamp).type());
+                if (stampKind == oclKind) {
+                    return true;
+                }
+            }
 
         unimplemented("stamp iscompat: %s + %s", this, stamp);
         return false;
