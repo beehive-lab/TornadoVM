@@ -50,6 +50,21 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    private static void printIntArray(IntArray a) {
+        int firstValue = a.get(0);
+        int secondValue = a.get(1);
+
+        if (a.getSize() > 1) {
+            Debug.printf("First value %d, second value %d\n", firstValue, secondValue);
+        }
+    }
+
+    private static void printIntArray2(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            Debug.printf("value a[%d] = %d\n", i, a.get(i));
+        }
+    }
+
     public static void add(IntArray a, IntArray b, IntArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
             c.set(i, a.get(i) + b.get(i));
@@ -86,6 +101,49 @@ public class TestHello extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestHello::printHello, 8);
+        assertNotNull(taskGraph);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+    }
+
+    @Test
+    public void testPrintIntArray() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        a.set(0, 1);
+        a.set(1, 2);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.FIRST_EXECUTION, a)
+            .task("t0", TestHello::printIntArray, a);
+        assertNotNull(taskGraph);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+    }
+
+    @Test
+    public void testPrintIntArray2() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        for (int i = 0; i < numElements; i++) {
+            a.set(i, i + 1);
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.FIRST_EXECUTION, a)
+            .task("t0", TestHello::printIntArray2, a);
         assertNotNull(taskGraph);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
