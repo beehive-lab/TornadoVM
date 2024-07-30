@@ -135,7 +135,7 @@ public class SPIRVStamp extends ObjectStamp {
         if (stamp instanceof SPIRVStamp) {
             return true;
         } else if (stamp instanceof ObjectStamp) {
-            SPIRVKind stampKind = SPIRVKind.fromResolvedJavaType(((ObjectStamp) stamp).type());
+            SPIRVKind stampKind = SPIRVKind.fromJavaKind(((ObjectStamp) stamp).type());
             if (stampKind == spirvKind) {
                 return true;
             }
