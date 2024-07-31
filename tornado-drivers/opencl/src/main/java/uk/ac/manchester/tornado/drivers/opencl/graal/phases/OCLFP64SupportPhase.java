@@ -75,7 +75,7 @@ public class OCLFP64SupportPhase extends Phase {
     private void checkStampForFP64Support(Stamp stamp) {
         boolean isStampFP64Type = isStampFP64Type(stamp);
         if (isStampFP64Type && !deviceContext.isFP64Supported()) {
-            throw new TornadoDeviceFP64NotSupported(STR."The current OpenCL device (\{deviceContext.getDeviceName()}) does not support FP64");
+            throw new TornadoDeviceFP64NotSupported("The current OpenCL device (" + deviceContext.getDeviceName() + ") does not support FP64");
         }
     }
 

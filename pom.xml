@@ -226,8 +226,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>22</source>
-                            <target>22</target>
+                            <source>23</source>
+                            <target>23</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1073,8 +1073,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>22</source>
-                            <target>22</target>
+                            <source>23</source>
+                            <target>23</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>

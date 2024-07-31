@@ -544,8 +544,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
 
         TornadoDevice getDevice(int immutableTaskGraphIndex) {
             if (immutableTaskGraphList.size() < immutableTaskGraphIndex) {
-                throw new TornadoRuntimeException(STR."TaskGraph index #\{immutableTaskGraphIndex} does not exist in current executor");
-            }
+                throw new TornadoRuntimeException("TaskGraph index #" + immutableTaskGraphIndex + " does not exist in current executor");            }
             return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
         }
 

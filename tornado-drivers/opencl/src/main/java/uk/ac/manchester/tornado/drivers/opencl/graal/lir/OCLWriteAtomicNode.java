@@ -101,7 +101,7 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         return switch (operation) {
             case ADD -> new OCLStamp(OCLKind.ATOMIC_ADD_INT);
             case MUL -> new OCLStamp(OCLKind.ATOMIC_MUL_INT);
-            default -> throw new RuntimeException(STR."Operation for reduction not supported yet: \{operation}");
+            default -> throw new RuntimeException("Operation for reduction not supported yet: " + operation);
         };
     }
 
@@ -112,7 +112,7 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_FLOAT);
                 break;
             default:
-                throw new RuntimeException(STR."Operation for reduction not supported yet: \{operation}");
+                throw new RuntimeException("Operation for reduction not supported yet: " + operation);
         }
         return oclStamp;
     }
@@ -127,7 +127,7 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 // DUE TO UNSUPPORTED FEATURE IN INTEL OpenCL PLATFORM
                 new OCLStamp(OCLKind.ATOMIC_ADD_INT);
             case Float -> getStampFloat();
-            default -> throw new RuntimeException(STR."Data type for reduction not supported yet: \{elementKind}");
+            default -> throw new RuntimeException("Data type for reduction not supported yet: " + elementKind);
         };
 
         LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(oclStamp);

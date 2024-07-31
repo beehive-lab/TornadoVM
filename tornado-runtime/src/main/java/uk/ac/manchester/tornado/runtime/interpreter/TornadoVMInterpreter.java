@@ -249,7 +249,7 @@ public class TornadoVMInterpreter {
         interpreterDevice.enableThreadSharing();
 
         if (isMemoryLimitEnabled() && executionContext.doesExceedExecutionPlanLimit()) {
-            throw new TornadoMemoryException(STR."OutofMemoryException due to executionPlan.withMemoryLimit of \{executionContext.getExecutionPlanMemoryLimit()}");
+            throw new TornadoMemoryException("OutofMemoryException due to executionPlan.withMemoryLimit of " + executionContext.getExecutionPlanMemoryLimit());
         }
 
         final long t0 = System.nanoTime();
@@ -404,8 +404,7 @@ public class TornadoVMInterpreter {
             objectStates[i] = resolveObjectState(args[i]);
 
             if (TornadoOptions.PRINT_BYTECODES) {
-                String verbose = String.format(STR."bc: \{InterpreterUtilities.debugHighLightBC("ALLOC")}%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice),
-                        sizeBatch);
+                String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
                 tornadoVMBytecodeList.append(verbose).append("\n");
             }
         }
@@ -428,8 +427,7 @@ public class TornadoVMInterpreter {
         Object object = objects.get(objectIndex);
 
         if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
-            String verbose = String.format(STR."bc: \{InterpreterUtilities.debugHighLightBC("DEALLOC")}[0x%x] %s on %s", object.hashCode(), object, InterpreterUtilities.debugDeviceBC(
-                    interpreterDevice));
+            String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("DEALLOC"), object.hashCode(), object, InterpreterUtilities.debugDeviceBC(interpreterDevice));
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -939,13 +937,14 @@ public class TornadoVMInterpreter {
 
         static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList,
                                               StringBuilder tornadoVMBytecodeList) {
-            String verbose = String.format(STR."bc: \{InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS")} [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", //
-                    object.hashCode(), //
-                    object, //
-                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), //
-                    sizeBatch, //
-                    offset, //
-                    eventList); //
+            String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS"),
+                    object.hashCode(),
+                    object,
+                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
+                    sizeBatch,
+                    offset,
+                    eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
     }

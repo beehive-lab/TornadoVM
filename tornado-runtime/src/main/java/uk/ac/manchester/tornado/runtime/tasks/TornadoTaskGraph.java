@@ -318,7 +318,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                         inputObjects.get(14));
                 break;
             default:
-                System.out.println(STR."COPY-IN Not supported yet: \{numObjectsCopyIn}");
+                System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
                 break;
         }
     }
@@ -386,7 +386,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13), outputArrays.get(14));
                 break;
             default:
-                System.out.println(STR."COPY-OUT Not supported yet: \{numObjectsCopyOut}");
+                System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
                 break;
         }
     }
@@ -701,7 +701,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if ((task.getTaskName() != null) && (task.getId() != null)) {
             String methodName = (task instanceof PrebuiltTask prebuiltTask)
                     ? prebuiltTask.getFilename()
-                    : STR."\{((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName()}.\{task.getTaskName()}";
+                    :  ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + task.getTaskName();
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
         }
 
@@ -880,11 +880,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void dumpDeoptimisationReason(TornadoBailoutRuntimeException e) {
         if (!TornadoOptions.DEBUG) {
-            System.err.println(STR."\{RED}[Bailout] Running the sequential implementation. Enable --debug to see the reason.\{RESET}");
+            System.err.println(RED + "[Bailout] Running the sequential implementation. Enable --debug to see the reason." + RESET);
         } else {
             System.err.println(e.getMessage());
             for (StackTraceElement s : e.getStackTrace()) {
-                System.err.println(STR."\t\{s}");
+                System.err.println("\t" + s);
             }
         }
     }
@@ -913,7 +913,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 if (TornadoOptions.DEBUG) {
                     e.printStackTrace();
                 }
-                throw new TornadoBailoutRuntimeException(STR."Bailout is disabled. \nReason: \{e.getMessage()}");
+                throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.getMessage());
             }
         }
 
@@ -966,7 +966,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void transferToDevice(final int mode, Object... objects) {
         for (Object parameter : objects) {
             if (parameter == null) {
-                throw new TornadoRuntimeException(STR."[ERROR] null object passed into streamIn() in schedule \{executionContext.getId()}");
+                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
             }
 
             if (parameter instanceof Number) {
@@ -1338,7 +1338,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     continue;
                 }
                 if (!argumentsLookUp.contains(parameter)) {
-                    throw new TornadoTaskRuntimeException(STR."Parameter #\{i} <\{parameter}> from task <\{task.getId()}> not specified either in transferToDevice or transferToHost functions");
+                    throw new TornadoTaskRuntimeException("Parameter #" + i + " <" + parameter + "> from task <" + task.getId() + "> not specified either in transferToDevice or transferToHost functions");
                 }
             }
         }
@@ -1452,7 +1452,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private boolean isTaskNamePresent(String taskName) {
         for (TaskPackage taskPackage : taskPackages) {
-            if (taskName.equals(STR."\{taskGraphName}.\{taskPackage.getId()}")) {
+            if (taskName.equals(taskGraphName + "." + taskPackage.getId())) {
                 return true;
             }
         }
@@ -1463,7 +1463,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         Set<String> gridTaskNames = gridScheduler.keySet();
         for (String gridName : gridTaskNames) {
             if (!isTaskNamePresent(gridName)) {
-                throw new TornadoRuntimeException(STR."[ERROR] Grid scheduler with name \{gridName} not found in the Task-Graph");
+                throw new TornadoRuntimeException("[ERROR] Grid scheduler with name " + gridName + " not found in the Task-Graph");
             }
         }
 
@@ -1559,7 +1559,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                         taskPackage.getTaskParameters()[13], taskPackage.getTaskParameters()[14], taskPackage.getTaskParameters()[15]);
                 break;
             default:
-                throw new TornadoRuntimeException(STR."Sequential Runner not supported yet. Number of parameters: \{type}");
+                throw new TornadoRuntimeException("Sequential Runner not supported yet. Number of parameters: " + type);
         }
     }
 
@@ -1585,7 +1585,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 deviceWinnerIndex = position;
                 break;
             default:
-                throw new TornadoDynamicReconfigurationException(STR."Policy \{policy} not defined yet");
+                throw new TornadoDynamicReconfigurationException("Policy " + policy + " not defined yet");
         }
 
         return deviceWinnerIndex;
@@ -1603,7 +1603,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 isAlive = threads[i].isAlive();
                 if (!isAlive) {
                     if (TornadoOptions.DEBUG) {
-                        System.out.println(STR."SELECTED Thread-Device: \{threads[i].getName()} ");
+                        System.out.println("SELECTED Thread-Device: " + threads[i].getName() + " ");
                     }
                     winner = i;
                     join = new Thread(() -> {
@@ -1645,7 +1645,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             runAllTasksJavaSequential();
             final long endSequentialCode = timer.time();
             if (TornadoOptions.DEBUG) {
-                System.out.println(STR."Seq finished: \{Thread.currentThread().getName()}");
+                System.out.println("Seq finished: " + Thread.currentThread().getName());
             }
 
             totalTimers[indexSequential] = (endSequentialCode - start);
@@ -1659,7 +1659,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 String newTaskScheduleName = TASK_GRAPH_PREFIX + taskScheduleNumber;
                 TaskGraph task = new TaskGraph(newTaskScheduleName);
 
-                Thread.currentThread().setName(STR."Thread-DEV: \{TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName()}");
+                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
 
                 for (StreamingObject streamingObject : inputModesObjects) {
                     performStreamInObject(task, streamingObject.object, streamingObject.mode);
@@ -1667,12 +1667,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
                 for (TaskPackage taskPackage : taskPackages) {
                     String taskID = taskPackage.getId();
-                    TornadoRuntimeProvider.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", STR."0:\{taskScheduleNumber}");
+                    TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
+
                     if (TornadoOptions.DEBUG) {
-                        System.out.println(STR."SET DEVICE: \{newTaskScheduleName}.\{taskID}.device=0:\{taskScheduleNumber}");
+                        System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
                     }
+
                     task.addTask(taskPackage);
                 }
+
 
                 for (StreamingObject streamingObject : outputModeObjects) {
                     performStreamOutThreads(streamingObject.mode, task, streamingObject.object);
@@ -1751,7 +1754,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (TornadoOptions.DEBUG) {
                 System.out.println(getListDevices());
-                System.out.println(STR."BEST Position: #\{deviceWinnerIndex} \{Arrays.toString(totalTimers)}");
+                System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
     }
@@ -1769,7 +1772,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         performStreamInObject(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
         for (TaskPackage taskPackage : taskPackages) {
             String taskID = taskPackage.getId();
-            TornadoRuntimeProvider.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", STR."0:\{deviceWinnerIndex}");
+            TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
             taskToCompile.addTask(taskPackage);
         }
         performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, taskToCompile, streamOutObjects);
@@ -1778,10 +1781,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void runTaskGraphParallelSelected(int deviceWinnerIndex) {
         for (TaskPackage taskPackage : taskPackages) {
-            TornadoRuntimeProvider.setProperty(STR."\{this.getTaskGraphName()}.\{taskPackage.getId()}.device", STR."0:\{deviceWinnerIndex}");
+            TornadoRuntimeProvider.setProperty(this.getTaskGraphName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
         if (TornadoOptions.DEBUG) {
-            System.out.println(STR."Running in parallel device: \{deviceWinnerIndex}");
+            System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
         TaskGraph task = taskGraphIndex.get(deviceWinnerIndex);
         if (task == null) {
@@ -1884,7 +1887,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             for (TaskPackage taskPackage : taskPackages) {
                 String taskID = taskPackage.getId();
 
-                String name = STR."\{newTaskScheduleName}.\{taskID}";
+                String name = newTaskScheduleName + "." + taskID;
                 for (String s : ignoreTaskNames) {
                     if (s.equals(name)) {
                         totalTimers[taskNumber] = Long.MAX_VALUE;
@@ -1893,10 +1896,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     }
                 }
 
-                TornadoRuntimeProvider.setProperty(STR."\{newTaskScheduleName}.\{taskID}.device", "0:" + taskNumber);
+                TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
                 if (TornadoOptions.DEBUG) {
-                    System.out.println(STR."SET DEVICE: \{newTaskScheduleName}.\{taskID}.device=0:\{taskNumber}");
+                    System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskNumber);
                 }
+
                 task.addTask(taskPackage);
             }
 
@@ -2009,7 +2013,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             if (TornadoOptions.DEBUG) {
                 System.out.println(getListDevices());
-                System.out.println(STR."BEST Position: #\{deviceWinnerIndex} \{Arrays.toString(totalTimers)}");
+                System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
     }
@@ -2157,7 +2161,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                                 parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
-                throw new TornadoRuntimeException(STR."Task not supported yet. Type: \{type}");
+                throw new TornadoRuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
@@ -2221,7 +2225,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
-                throw new TornadoRuntimeException(STR."Task not supported yet. Type: \{type}");
+                throw new TornadoRuntimeException("Task not supported yet. Type: " + type);
+
         }
     }
 
@@ -2315,7 +2320,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return switch (Objects.requireNonNull(units)) {
             case "MB" -> value * 1_000_000;
             case "GB" -> value * 1_000_000_000;
-            default -> throw new TornadoRuntimeException(STR + "Units not supported: " + units);
+            default -> throw new TornadoRuntimeException("Units not supported: " + units);
         };
     }
 

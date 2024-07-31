@@ -177,7 +177,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
                 return backendIndex;
             }
         }
-        throw shouldNotReachHere(STR."Could not find index for backend: \{backendClass}");
+        throw shouldNotReachHere("Could not find index for backend: " + backendClass);
     }
 
     @Override
