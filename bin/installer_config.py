@@ -33,7 +33,7 @@ __CORRETTO22__ = "corretto-jdk-22"
 __MICROSOFT22__ = "microsoft-jdk-22"
 __ZULU22__ = "zulu-jdk-22"
 __TEMURIN22__ = "temurin-jdk-22"
-__SAPMACHINE21__ = "sapmachine-jdk-22"
+__SAPMACHINE22__ = "sapmachine-jdk-22"
 
 ## cmake
 CMAKE = {
