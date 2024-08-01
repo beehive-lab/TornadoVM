@@ -42,9 +42,30 @@ example:
 tests:
 	del /f tornado_unittests.log
 	python %TORNADO_SDK%\bin\tornado --devices
-	python %TORNADO_SDK%\bin\tornado-test --ea --verbose
-	python %TORNADO_SDK%\bin\tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	python %TORNADO_SDK%\bin\tornado-test --verbose
+	python %TORNADO_SDK%\bin\tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADO_SDK%\bin\test-native.cmd
+
+fast-tests:
+	del /f tornado_unittests.log
+	python %TORNADO_SDK%\bin\tornado --devices
+	python %TORNADO_SDK%\bin\tornado-test --verbose --quickPass
+	python %TORNADO_SDK%\bin\tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
+tests-spirv-levelzero:
+	del /f tornado_unittests.log
+	python %TORNADO_SDK%\bin\tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
+	python %TORNADO_SDK%\bin\tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea --verbose
+	python %TORNADO_SDK%\bin\tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
+tests-spirv-opencl:
+	del /f tornado_unittests.log
+	python %TORNADO_SDK%\bin\tornado --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
+	python %TORNADO_SDK%\bin\tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
+	python %TORNADO_SDK%\bin\tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
 
 tests-opt:
 	python %TORNADO_SDK%\bin\tornado --devices
