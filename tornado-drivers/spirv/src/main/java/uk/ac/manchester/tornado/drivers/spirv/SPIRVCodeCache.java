@@ -114,8 +114,8 @@ public abstract class SPIRVCodeCache {
         }
 
         writeBufferToFile(buffer, spirvFile);
-        return installSPIRVBinary(meta, id, entryPoint, spirvFile);
+        return installSPIRVBinary(meta, id, entryPoint, spirvFile, null);
     }
 
-    public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile);
+    public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile, Class<?> klassJar);
 }

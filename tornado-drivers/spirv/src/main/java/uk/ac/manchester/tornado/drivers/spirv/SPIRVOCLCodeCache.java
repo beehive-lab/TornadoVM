@@ -26,13 +26,17 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
@@ -66,14 +70,28 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
     }
 
     @Override
-    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
-
-        checkBinaryFileExists(pathToFile);
+    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String fileName, Class<?> klassJar) {
+        
+        if (klassJar == null) {
+            checkBinaryFileExists(fileName);
+        } else {
+            try (InputStream inputStream = klassJar.getClassLoader().getResourceAsStream(fileName)) {
+                TornadoInternalError.guarantee(inputStream != null, "file does not exist: %s", fileName);
+                byte[] source = inputStream.readAllBytes();
+                String tempFileName = createSPIRVTempDirectoryName() + "temp.spv";
+                OutputStream stream = new FileOutputStream(tempFileName);
+                stream.write(source);
+                stream.close();
+                fileName = tempFileName;
+            } catch (IOException e) {
+                throw new TornadoRuntimeException(e);
+            }
+        }
 
         if (meta.isPrintKernelEnabled()) {
             SPVFileReader reader;
             try {
-                reader = new SPVFileReader(pathToFile);
+                reader = new SPVFileReader(fileName);
             } catch (FileNotFoundException e) {
                 throw new TornadoBailoutRuntimeException(e.getMessage());
             }
@@ -86,36 +104,34 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
             }
         }
 
-        byte[] binary = readFile(pathToFile);
-
-        long contextId = deviceContext.getSpirvContext().getOpenCLLayer().getContextId();
-        long programPointer;
-
-        SPIRVOCLNativeDispatcher spirvoclNativeCompiler = new SPIRVOCLNativeDispatcher();
-        int[] errorCode = new int[1];
-        programPointer = spirvoclNativeCompiler.clCreateProgramWithIL(contextId, binary, new long[] { binary.length }, errorCode);
-        if (errorCode[0] != OCLErrorCode.CL_SUCCESS) {
-            throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
-        }
-
-        OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getDevice().getDeviceRuntime();
-        int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getDevicePointer() }, "");
-        if (status != OCLErrorCode.CL_SUCCESS) {
-            String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getDevicePointer());
-            System.out.println(log);
-            throw new TornadoRuntimeException("[ERROR] - clBuildProgram failed");
-        }
-
-        long kernelPointer = spirvoclNativeCompiler.clCreateKernel(programPointer, entryPoint, errorCode);
-        if (errorCode[0] != OCLErrorCode.CL_SUCCESS) {
-            throw new TornadoRuntimeException("[ERROR] - clCreateKernel failed");
-        }
-
-        SPIRVOCLModule module = new SPIRVOCLModule(kernelPointer, entryPoint, pathToFile);
-        final SPIRVOCLInstalledCode installedCode = new SPIRVOCLInstalledCode(entryPoint, module, deviceContext);
+        byte[] binary = readFile(fileName);
         
-        // Install code in the code cache
-        cache.put(STR."\{id}-\{entryPoint}", installedCode);
-        return installedCode;
+    long contextId = deviceContext.getSpirvContext().getOpenCLLayer().getContextId();
+    long programPointer;
+
+    SPIRVOCLNativeDispatcher spirvoclNativeCompiler = new SPIRVOCLNativeDispatcher();
+    int[] errorCode = new int[1];programPointer=spirvoclNativeCompiler.clCreateProgramWithIL(contextId,binary,new long[]{binary.length},errorCode);if(errorCode[0]!=OCLErrorCode.CL_SUCCESS)
+    {
+        throw new TornadoRuntimeException("[ERROR] - clCreateProgramWithIL failed");
     }
+
+    OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getDevice().getDeviceRuntime();
+    int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getDevicePointer() }, "");if(status!=OCLErrorCode.CL_SUCCESS)
+    {
+        String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getDevicePointer());
+        System.out.println(log);
+        throw new TornadoRuntimeException("[ERROR] - clBuildProgram failed");
+    }
+
+    long kernelPointer = spirvoclNativeCompiler.clCreateKernel(programPointer, entryPoint, errorCode);if(errorCode[0]!=OCLErrorCode.CL_SUCCESS)
+    {
+        throw new TornadoRuntimeException("[ERROR] - clCreateKernel failed");
+    }
+
+    SPIRVOCLModule module = new SPIRVOCLModule(kernelPointer, entryPoint, fileName);
+    final SPIRVOCLInstalledCode installedCode = new SPIRVOCLInstalledCode(entryPoint, module, deviceContext);
+
+    // Install code in the code cache
+    cache.put(STR."\{id}-\{entryPoint}",installedCode);return installedCode;
+}
 }

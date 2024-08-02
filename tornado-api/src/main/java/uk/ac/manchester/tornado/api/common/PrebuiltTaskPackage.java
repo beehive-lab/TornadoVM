@@ -26,6 +26,7 @@ public class PrebuiltTaskPackage extends TaskPackage {
     private final Object[] args;
     private final Access[] accesses;
     private int[] atomics;
+    private Class<?> klass;
 
     PrebuiltTaskPackage(String id, String entryPoint, String fileName, AccessorParameters accessorParameters) {
         super(id, null);
@@ -69,5 +70,13 @@ public class PrebuiltTaskPackage extends TaskPackage {
 
     public int[] getAtomics() {
         return atomics;
+    }
+
+    public void withClass(Class<?> klass) {
+        this.klass = klass;
+    }
+
+    public Class<?> getClassJar() {
+        return klass;
     }
 }

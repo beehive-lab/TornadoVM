@@ -646,6 +646,29 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
+     *
+     * @param id
+     *     Task-id
+     * @param entryPoint
+     *     Kernel's name of the entry point
+     * @param klass
+     *     Class that can access the resource within the JAR file.
+     * @param resource
+     *     Input file that represents the kernel source. It could be either SPIR-V, OpenCL C, or PTX code.
+     * @param accessorParameters
+     *     {@link AccessorParameters} that contains the accessor for each input and output parameter to the kernel.
+     * @return {@link TaskGraph}.
+     */
+    @Override
+    public TaskGraph prebuiltTask(String id, String entryPoint, Class<?> klass, String resource, AccessorParameters accessorParameters) {
+        checkTaskName(id);
+        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, resource, accessorParameters);
+        prebuiltTask.withClass(klass);
+        taskGraphImpl.addPrebuiltTask(prebuiltTask);
+        return this;
+    }
+
+    /**
      * Obtains the task-schedule name that was assigned.
      *
      * @return {@link String}
@@ -849,11 +872,11 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getTotalBytesCopyOut();
     }
 
-    protected String getProfileLog() {
+    String getProfileLog() {
         return taskGraphImpl.getProfileLog();
     }
 
-    public Collection<?> getOutputs() {
+    Collection<?> getOutputs() {
         return taskGraphImpl.getOutputs();
     }
 

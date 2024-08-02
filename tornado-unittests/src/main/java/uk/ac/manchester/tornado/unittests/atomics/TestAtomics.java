@@ -285,12 +285,13 @@ public class TestAtomics extends TornadoTestBase {
         accessorParameters.set(0, a, Access.WRITE_ONLY);
         accessorParameters.set(1, b, Access.WRITE_ONLY);
 
+        int[] atomics = new int[] { 155 };
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .prebuiltTask("t0", //
                         "add", //
                         tornadoSDK + "/examples/generated/atomics.cl", //
                         accessorParameters, //
-                        new int[] { 155 }   // Array for AtomicsInteger - Initial int value
+                        atomics   // Array for AtomicsInteger - Initial int value
                 ).transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         WorkerGrid workerGrid = new WorkerGrid1D(32);

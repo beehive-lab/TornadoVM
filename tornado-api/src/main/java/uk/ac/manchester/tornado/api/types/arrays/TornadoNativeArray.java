@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.types.tensors.Tensor;
  * </p>
  *
  * <p>
- * The constant {@link ARRAY_HEADER} represents the size of the header in bytes.
+ * The constant {@link TornadoNativeArray#ARRAY_HEADER} represents the size of the header in bytes.
  * </p>
  */
 public abstract sealed class TornadoNativeArray //

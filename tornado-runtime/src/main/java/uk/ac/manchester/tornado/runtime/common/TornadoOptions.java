@@ -198,7 +198,7 @@ public class TornadoOptions {
     /**
      * Use Level Zero or OpenCL as the SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero". The default option is "opencl".
      */
-    public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "opencl");
+    public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "levelzero");
     /**
      * Check I/O parameters for every task within a task-graph.
      */

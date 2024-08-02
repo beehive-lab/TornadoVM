@@ -55,8 +55,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -302,15 +300,6 @@ public class TaskUtils {
         return cvs;
     }
 
-    private static DomainTree buildDomainTree(int[] dims) {
-        final DomainTree domain = new DomainTree(dims.length);
-        for (int i = 0; i < dims.length; i++) {
-            domain.set(i, new IntDomain(0, 1, dims[i]));
-        }
-        return domain;
-
-    }
-
     public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage taskPackage) {
         PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
                 taskPackage.getId(), //
@@ -318,8 +307,15 @@ public class TaskUtils {
                 taskPackage.getFilename(), //
                 taskPackage.getArgs(),  //
                 taskPackage.getAccesses());
+
+        // Attach atomics
         if (taskPackage.getAtomics() != null) {
             prebuiltTask.withAtomics(taskPackage.getAtomics());
+        }
+
+        // Attach Class if JAR file configuration is present
+        if (taskPackage.getClassJar() != null) {
+            prebuiltTask.withKlassJAR(taskPackage.getClassJar());
         }
         return prebuiltTask;
     }
