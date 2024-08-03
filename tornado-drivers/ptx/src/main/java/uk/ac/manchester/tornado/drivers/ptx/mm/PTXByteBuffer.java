@@ -33,7 +33,7 @@ public class PTXByteBuffer {
     private final long address;
     private final long bytes;
     private final long offset;
-    private final PTXDeviceContext deviceContext;
+    protected final PTXDeviceContext deviceContext;
 
     public PTXByteBuffer(long address, long bytes, long offset, PTXDeviceContext deviceContext) {
         this.address = address;
@@ -93,7 +93,7 @@ public class PTXByteBuffer {
         deviceContext.writeBuffer(executionPlanId, getAddress() + offset, bytes, buffer.array(), 0, events);
     }
 
-    private long getAddress() {
+    protected long getAddress() {
         return address;
     }
 

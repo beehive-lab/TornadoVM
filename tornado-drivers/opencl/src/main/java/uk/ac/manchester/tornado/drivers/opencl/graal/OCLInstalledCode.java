@@ -85,7 +85,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     @Override
     public void invalidate() {
         if (valid) {
-            kernel.cleanup();
+            program.cleanup();
             valid = false;
         }
     }

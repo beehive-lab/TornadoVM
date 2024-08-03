@@ -579,4 +579,15 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
     }
 
+    @Override
+    public void reset(long executionPlanId, int deviceIndex) {
+        SPIRVLevelZeroCommandQueueTable table = commmandQueueTable.get(executionPlanId);
+        if (table != null) {
+            SPIRVDevice device = devices.get(deviceIndex);
+            table.cleanup(device, levelZeroContext);
+            if (table.size() == 0) {
+                commmandQueueTable.remove(executionPlanId);
+            }
+        }
+    }
 }

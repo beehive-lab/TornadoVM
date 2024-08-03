@@ -26,6 +26,8 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -56,6 +58,19 @@ public class SPIRVLevelZeroCommandQueueTable {
             deviceCommandMap.put(device, table);
         }
         return deviceCommandMap.get(device).get(Thread.currentThread().threadId(), device, levelZeroContext);
+    }
+
+    public void cleanup(SPIRVDevice device, LevelZeroContext levelZeroContext) {
+        if (deviceCommandMap.containsKey(device)) {
+            deviceCommandMap.get(device).cleanup(Thread.currentThread().threadId(), levelZeroContext);
+        }
+        if (deviceCommandMap.get(device).size() == 0) {
+            deviceCommandMap.remove(device);
+        }
+    }
+
+    public int size() {
+        return deviceCommandMap.size();
     }
 
     private static class ThreadCommandQueueTable {
@@ -128,6 +143,18 @@ public class SPIRVLevelZeroCommandQueueTable {
                 }
             }
             return ordinal;
+        }
+
+        public void cleanup(long threadId, LevelZeroContext levelZeroContext) {
+            if (commandQueueMap.containsKey(threadId)) {
+                SPIRVLevelZeroCommandQueue queue = commandQueueMap.remove(threadId);
+                levelZeroContext.zeCommandQueueDestroy(queue.getCommandQueue().getCommandQueueHandle());
+                levelZeroContext.zeCommandListDestroy(queue.getCommandList().getCommandListHandler());
+            }
+        }
+
+        public int size() {
+            return commandQueueMap.size();
         }
     }
 

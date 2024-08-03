@@ -148,7 +148,7 @@ public class OCLEventPool {
         return result;
     }
 
-    protected void reset() {
+    public void reset() {
         for (int index = 0; index < events.length; index++) {
             if (events[index] > 0) {
                 internalEvent.setEventId(index, events[index]);

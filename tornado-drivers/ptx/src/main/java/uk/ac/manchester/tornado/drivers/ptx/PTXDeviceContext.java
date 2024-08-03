@@ -243,9 +243,17 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         sync(executionPlanId);
     }
 
+    @Override
     public void reset(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.reset();
+        PTXStreamTable table = streamTable.get(executionPlanId);
+        if (table != null) {
+            table.cleanup(device);
+            if (table.size() == 0) {
+                streamTable.remove(executionPlanId);
+            }
+            executionIDs.remove(executionPlanId);
+        }
+        getMemoryManager().releaseKernelStackFrame(executionPlanId);
         codeCache.reset();
         wasReset = true;
     }

@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoBackend;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
@@ -1078,6 +1079,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
         inputModesObjects.forEach(inputStreamObject -> freeDeviceMemoryObject(inputStreamObject.getObject()));
         outputModeObjects.forEach(outputStreamObject -> freeDeviceMemoryObject(outputStreamObject.getObject()));
+        meta().getLogicDevice().getDeviceContext().reset(executionPlanId);
     }
 
     private void freeDeviceMemoryObject(Object object) {
