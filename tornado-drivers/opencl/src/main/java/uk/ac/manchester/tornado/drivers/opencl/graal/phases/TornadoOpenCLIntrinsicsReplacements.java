@@ -191,7 +191,7 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
             case "Class:double", "Class:uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 return JavaKind.Double;
             default:
-                unimplemented(STR."Other types not supported yet: \{signatureNode.getValue().toValueString()}");
+                unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
         }
         return null;
     }

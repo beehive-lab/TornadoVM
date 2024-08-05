@@ -142,12 +142,12 @@ public class TornadoSketcher {
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
-        builder.name(STR."sketch-\{resolvedMethod.getName()}");
+        builder.name("sketch-" + resolvedMethod.getName());
         final StructuredGraph graph = builder.build();
 
         // Check legal Kernel Name
         if (OCLTokens.openCLTokens.contains(resolvedMethod.getName())) {
-            throw new TornadoRuntimeException(STR."[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: \{resolvedMethod.getName()}");
+            throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + resolvedMethod.getName());
         }
 
         try (DebugContext.Scope ignored = getDebugContext().scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(getDebugContext())) {
@@ -166,8 +166,7 @@ public class TornadoSketcher {
             graph.getInvokes() //
                     .forEach(invoke -> { //
                         if (OCLTokens.openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
-                            throw new TornadoRuntimeException(
-                                    STR."[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: \{invoke.callTarget().targetMethod().getName()}");
+                            throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
                         }
                         SketchRequest newRequest = new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, backendIndex, deviceIndex);
                         buildSketch(newRequest);
@@ -187,7 +186,7 @@ public class TornadoSketcher {
             if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
             }
-            throw new TornadoBailoutRuntimeException(STR."Unable to build sketch for method: \{resolvedMethod.getName()}(\{e.getMessage()})");
+            throw new TornadoBailoutRuntimeException("Unable to build sketch for method: " + resolvedMethod.getName() + " (" + e.getMessage() + ")");
         }
     }
 
