@@ -217,6 +217,11 @@ public class TornadoOptions {
      * generated SPIRV kernel.
      */
     public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", FALSE);
+
+    /**
+     * Set the SPIR-V Version Supported. It is set to 1.2 by default.
+     */
+    public static final float SPIRV_VERSION_SUPPORTED = getFloatValue("tornado.spirv.version", "1.2");
     /**
      * Trace code generation.
      */
@@ -403,6 +408,10 @@ public class TornadoOptions {
 
     private static int getIntValue(String property, String defaultValue) {
         return Integer.parseInt(System.getProperty(property, defaultValue));
+    }
+
+    private static float getFloatValue(String property, String defaultValue) {
+        return Float.parseFloat(System.getProperty(property, defaultValue));
     }
 
     private static boolean isFPGAEmulation() {

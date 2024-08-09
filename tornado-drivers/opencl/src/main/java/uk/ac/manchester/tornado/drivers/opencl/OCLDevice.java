@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLDevice implements OCLTargetDevice {
 
@@ -79,7 +80,7 @@ public class OCLDevice implements OCLTargetDevice {
 
     private static final int SPIRV_VERSION_INIT = -1;
     private static final int SPIRV_NOT_SUPPORTED = -2;
-    private static final float SPIRV_SUPPPORTED = 1.2f;
+    private static final float SPIRV_SUPPPORTED = TornadoOptions.SPIRV_VERSION_SUPPORTED;
 
     public OCLDevice(int index, long devicePointer) {
         this.index = index;
@@ -470,7 +471,7 @@ public class OCLDevice implements OCLTargetDevice {
                     String v = version.split("_")[1];
                     try {
                         spirvVersion = Float.parseFloat(v);
-                        return spirvVersion >= 1.2;
+                        return spirvVersion >= SPIRV_SUPPPORTED;
                     } catch (NumberFormatException e) {
                     }
                 }
