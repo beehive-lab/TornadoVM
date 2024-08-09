@@ -156,7 +156,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         return switch (task) {
             case CompilableTask _ -> compileTask(task);
             case PrebuiltTask _ -> compilePreBuiltTask(task);
-            default -> throw new TornadoInternalError(STR."task of unknown type: \{task.getClass().getSimpleName()}");
+            default -> throw new TornadoInternalError("task of unknown type: " + task.getClass().getSimpleName());
         };
     }
 
@@ -567,7 +567,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public String getDeviceName() {
-        return STR."cuda-\{device.getDeviceIndex()}";
+        return "cuda-" + device.getDeviceIndex();
     }
 
     @Override
@@ -676,7 +676,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public String toString() {
-        return STR."\{getPlatformName()} -- \{device.getDeviceName()}";
+        return getPlatformName() + " -- " + device.getDeviceName();
     }
 
 }

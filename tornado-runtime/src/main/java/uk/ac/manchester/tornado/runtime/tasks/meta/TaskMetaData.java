@@ -50,17 +50,17 @@ public class TaskMetaData extends AbstractMetaData {
     private final byte[] constantData;
     private final ScheduleMetaData scheduleMetaData;
     private final int constantSize;
+    private final int localSize;
     protected Access[] argumentsAccess;
     protected DomainTree domain;
     private long[] globalOffset;
     private long[] globalWork;
-    private final int localSize;
     private long[] localWork;
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
-        super(STR."\{scheduleMetaData.getId()}.\{taskID}", scheduleMetaData);
+        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.constantSize = 0;
         this.localSize = 0;
