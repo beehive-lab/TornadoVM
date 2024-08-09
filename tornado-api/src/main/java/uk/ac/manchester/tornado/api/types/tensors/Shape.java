@@ -65,7 +65,7 @@ public record Shape(long... dimensions) {
 
     @Override
     public String toString() {
-        return STR."Shape{dimensions=\{Arrays.toString(dimensions)}}";
+        return "Shape{dimensions=" + Arrays.toString(dimensions) + "}";
     }
 
     /**

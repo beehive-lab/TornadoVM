@@ -86,12 +86,12 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public String getFullName() {
-        return STR."task \{meta.getId()} - \{method.getName()}";
+        return "task " + meta.getId() + " - " + method.getName();
     }
 
     @Override
     public String getNormalizedName() {
-        return STR."\{meta.getId()}.\{method.getName()}";
+        return meta.getId() + "." + method.getName();
     }
 
     @Override

@@ -193,7 +193,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
             logger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
-                throw new TornadoBailoutRuntimeException(STR."[Error During the Task Compilation]: \{e.getMessage()}");
+                throw new TornadoBailoutRuntimeException("[Error During the Task Compilation]: " + e.getMessage());
             } else {
                 throw e;
             }
@@ -296,7 +296,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
                     return createMultiArrayWrapper(componentType, type, deviceContext, batchSize);
                 } else {
-                    throw new TornadoRuntimeException(STR."Multi-dimensional array of type \{type.getName()} not implemented.");
+                    throw new TornadoRuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented.");
                 }
             }
         } else if (!type.isPrimitive()) {

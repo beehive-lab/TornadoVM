@@ -100,7 +100,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
             case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegmentWithHeader();
             case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegmentWithHeader();
-            default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
+            default -> throw new TornadoMemoryException("Memory Segment not supported: " + reference.getClass());
         };
     }
 
@@ -188,7 +188,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
         if (TornadoOptions.FULL_DEBUG) {

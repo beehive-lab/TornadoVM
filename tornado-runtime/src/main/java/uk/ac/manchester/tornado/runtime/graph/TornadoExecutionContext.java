@@ -185,7 +185,7 @@ public class TornadoExecutionContext {
             } else if (parameter instanceof KernelContext || parameter instanceof AtomicInteger) {
                 // ignore
             } else {
-                throw new TornadoRuntimeException(STR."Unsupported type: \{parameter.getClass()}");
+                throw new TornadoRuntimeException("Unsupported type: " + parameter.getClass());
             }
         }
 
@@ -295,7 +295,7 @@ public class TornadoExecutionContext {
             apply(task -> task.mapTo(tornadoDevice));
             Arrays.fill(taskToDeviceMapTable, tornadoDevice);
         } else {
-            throw new TornadoRuntimeException(STR."Device \{tornadoDevice.getClass()} not supported yet");
+            throw new TornadoRuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
         }
     }
 
@@ -323,7 +323,7 @@ public class TornadoExecutionContext {
         if (target instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             accelerator = tornadoAcceleratorDevice;
         } else {
-            throw new TornadoRuntimeException(STR."Device \{target.getClass()} not supported yet");
+            throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
         setDevice(accelerator);
@@ -507,7 +507,7 @@ public class TornadoExecutionContext {
     }
 
     private String canonicalizeId(String id) {
-        return id.startsWith(getId()) ? id : STR."\{getId()}.\{id}";
+        return id.startsWith(getId()) ? id : getId() + "." + id;
     }
 
     public TornadoXPUDevice getDeviceForTask(String id) {
@@ -516,7 +516,7 @@ public class TornadoExecutionContext {
         if (device instanceof TornadoXPUDevice) {
             tornadoDevice = (TornadoXPUDevice) device;
         } else {
-            throw new RuntimeException(STR."Device \{device.getClass()} not supported yet");
+            throw new RuntimeException("Device " + device.getClass() + " not supported yet");
         }
         return getTask(id) == null ? null : tornadoDevice;
     }
@@ -610,27 +610,28 @@ public class TornadoExecutionContext {
         final String ansiPurple = "\u001B[35m";
         final String ansiGreen = "\u001B[32m";
         System.out.println("-----------------------------------");
-        System.out.println(STR."\{ansiCyan}Device Table:\{ansiReset}");
+        System.out.println(ansiCyan + "Device Table:" + ansiReset);
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
         }
 
-        System.out.println(STR."\{ansiYellow}Constant Table:\{ansiReset}");
+        System.out.println(ansiYellow + "Constant Table:" + ansiReset);
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
         }
 
-        System.out.println(STR."\{ansiPurple}Object Table:\{ansiReset}");
+        System.out.println(ansiPurple + "Object Table:" + ansiReset);
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj);
         }
 
-        System.out.println(STR."\{ansiGreen}Task Table:\{ansiReset}");
+        System.out.println(ansiGreen + "Task Table:" + ansiReset);
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());
         }
+
         System.out.println("-----------------------------------");
     }
 

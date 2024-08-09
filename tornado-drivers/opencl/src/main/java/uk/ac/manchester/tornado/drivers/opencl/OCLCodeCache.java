@@ -547,16 +547,16 @@ public class OCLCodeCache {
 
     private void dumpKernelSource(String id, String entryPoint, String log, byte[] source) {
         final Path outDir = resolveLogDirectory();
-        final String identifier = STR."\{id}-\{entryPoint}";
+        final String identifier = id + "-" + entryPoint;
         logger.error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
 
-        File file = new File(STR."\{outDir}/\{identifier}.log");
+        File file = new File(outDir + "/" + identifier + ".log");
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(log.getBytes());
         } catch (IOException e) {
             logger.error("unable to write error log: ", e.getMessage());
         }
-        file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
+        file = new File(outDir + "/" + identifier + OPENCL_SOURCE_SUFFIX);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(source);
         } catch (IOException e) {
@@ -567,13 +567,13 @@ public class OCLCodeCache {
 
     private void installCodeInCodeCache(OCLProgram program, TaskMetaData meta, String id, String entryPoint, OCLInstalledCode code) {
         
-        cache.put(STR."\{id}-\{entryPoint}", code);
+        cache.put(id + "-" + entryPoint, code);
 
         // BUG Apple does not seem to like implementing the OpenCL spec
         // properly, this causes a SIGFAULT.
         if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
             final Path outDir = resolveCacheDirectory();
-            program.dumpBinaries(STR."\{outDir.toAbsolutePath()}/\{entryPoint}");
+            program.dumpBinaries(outDir.toAbsolutePath() + "/" + entryPoint);
         }
     }
 
@@ -662,11 +662,11 @@ public class OCLCodeCache {
             long afterLoad = (TornadoOptions.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
 
             if (PRINT_LOAD_TIME) {
-                System.out.println(STR."Binary load time: \{afterLoad - beforeLoad}\{TornadoOptions.TIME_IN_NANOSECONDS ? " ns" : " ms"} \n");
+                System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoOptions.TIME_IN_NANOSECONDS ? " ns" : " ms") + "\n");
             }
 
             if (program == null) {
-                throw new OCLException(STR."unable to load binary for \{entryPoint}");
+                throw new OCLException("unable to load binary for " + entryPoint);
             }
 
             program.build("");

@@ -121,6 +121,6 @@ public class LocalObjectState {
 
     @Override
     public String toString() {
-        return STR."\{streamIn ? "SIN" : "--"}\{streamOut ? "SOUT" : "--"} \{dataObjectState} ";
+        return (streamIn ? "SIN" : "--") + (streamOut ? "SOUT" : "--") + " " + dataObjectState;
     }
 }

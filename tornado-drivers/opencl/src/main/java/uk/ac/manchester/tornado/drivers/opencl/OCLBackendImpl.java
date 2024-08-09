@@ -160,7 +160,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound(STR."[ERROR] device required not found: \{index} - Max: \{flatBackends.length}");
+            throw new TornadoDeviceNotFound("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
         }
     }
 

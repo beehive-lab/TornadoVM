@@ -643,13 +643,13 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public boolean isCached(String id, String entryPoint) {
         entryPoint = checkKernelName(entryPoint);
-        return codeCache.isCached(STR."\{id}-\{entryPoint}");
+        return codeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
     public boolean isCached(String methodName, SchedulableTask task) {
         methodName = checkKernelName(methodName);
-        return codeCache.isCached(STR."\{task.getId()}-\{methodName}");
+        return codeCache.isCached(task.getId() + "-" + methodName);
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

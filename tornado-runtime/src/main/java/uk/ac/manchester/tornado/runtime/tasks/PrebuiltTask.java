@@ -129,12 +129,12 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public String getFullName() {
-        return STR."task - \{meta.getId()}[\{entryPoint}]";
+        return "task - " + meta.getId() + "[" + entryPoint + "]";
     }
 
     @Override
     public String getNormalizedName() {
-        return STR."\{meta.getId()}.\{entryPoint}";
+        return meta.getId() + "." + entryPoint;
     }
 
     @Override

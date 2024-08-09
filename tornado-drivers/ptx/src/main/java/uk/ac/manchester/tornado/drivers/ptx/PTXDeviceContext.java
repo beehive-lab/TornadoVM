@@ -65,11 +65,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
     private final PowerMetric powerMetric;
-
     private final Map<Long, PTXStreamTable> streamTable;
-
+    private boolean wasReset;
     private Set<Long> executionIDs;
 
     public PTXDeviceContext(PTXDevice device) {
@@ -551,7 +549,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         PTXStream stream = getStream(executionPlanId);
         List<PTXEvent> events = stream.getEventPool().getEvents();
 
-        final String deviceName = STR."PTX-\{device.getDeviceName()}";
+        final String deviceName = "PTX-" + device.getDeviceName();
+
         System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
         if (events.isEmpty()) {
             return;
