@@ -101,7 +101,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
             case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
             case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegmentWithHeader();
             case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegmentWithHeader();
-            default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
+            default -> throw new TornadoMemoryException("Memory Segment not supported: " + reference.getClass());
         };
     }
 

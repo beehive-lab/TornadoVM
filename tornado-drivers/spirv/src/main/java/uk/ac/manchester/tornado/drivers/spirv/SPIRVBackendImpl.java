@@ -166,7 +166,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound(STR."[ERROR]-[SPIRV-DRIVER] Device required not found: \{index} - Max: \{spirvBackends.length}");
+            throw new TornadoDeviceNotFound("[ERROR]-[SPIRV-DRIVER] Device required not found: " + index + " - Max: " + spirvBackends.length);
         }
     }
 

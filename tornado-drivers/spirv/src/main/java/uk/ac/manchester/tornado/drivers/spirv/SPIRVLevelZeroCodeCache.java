@@ -85,7 +85,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
             System.out.println("SPIR-V Kernel Errors from LevelZero:");
             System.out.println(errorMessage[0]);
             System.out.println("----------------");
-            throw new TornadoBailoutRuntimeException(STR."[Build SPIR-V ERROR]\{errorMessage[0]}");
+            throw new TornadoBailoutRuntimeException("[Build SPIR-V ERROR]" + errorMessage[0]);
         }
 
         if (meta.isPrintKernelEnabled()) {
@@ -114,7 +114,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
         if (TornadoOptions.DEBUG) {
-            Logger.traceRuntime(Logger.BACKEND.SPIRV, STR."Set SPIR-V entry point: \{entryPoint}");
+            Logger.traceRuntime(Logger.BACKEND.SPIRV, "Set SPIR-V entry point: " + entryPoint);
         }
         kernelDesc.setKernelName(entryPoint);
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
@@ -127,7 +127,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         SPIRVInstalledCode installedCode = new SPIRVLevelZeroInstalledCode(id, spirvModule, deviceContext);
 
         // Install module in the code cache
-        cache.put(STR."\{id}-\{entryPoint}", installedCode);
+        cache.put(id + "-" + entryPoint, installedCode);
         return installedCode;
     }
 }

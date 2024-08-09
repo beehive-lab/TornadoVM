@@ -113,9 +113,9 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
 
         SPIRVOCLModule module = new SPIRVOCLModule(kernelPointer, entryPoint, pathToFile);
         final SPIRVOCLInstalledCode installedCode = new SPIRVOCLInstalledCode(entryPoint, module, deviceContext);
-        
+
         // Install code in the code cache
-        cache.put(STR."\{id}-\{entryPoint}", installedCode);
+        cache.put(id + "-" + entryPoint, installedCode);
         return installedCode;
     }
 }

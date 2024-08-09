@@ -395,12 +395,12 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     public boolean isCached(String id, String entryPoint) {
-        return codeCache.isCached(STR."\{id}-\{entryPoint}");
+        return codeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
     public boolean isCached(String methodName, SchedulableTask task) {
-        return codeCache.isCached(STR."\{task.getId()}-\{methodName}");
+        return codeCache.isCached(task.getId() + "-" + methodName);
     }
 
     public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
