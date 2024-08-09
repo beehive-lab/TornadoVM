@@ -23,7 +23,7 @@ To build the SPIR-V Backend, enable the backend as follows:
 .. code:: bash
 
    $ cd <tornadovm-directory>
-   $ ./scripts/tornadovm-installer --jdk jdk21 --backend=spirv
+   $ ./bin/tornadovm-installer --jdk jdk21 --backend=spirv
    $ . setvars.sh
 
 Running examples with the SPIR-V backend
