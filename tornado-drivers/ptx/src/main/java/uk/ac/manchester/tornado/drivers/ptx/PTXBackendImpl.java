@@ -47,8 +47,8 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 public final class PTXBackendImpl implements TornadoAcceleratorBackend {
 
     private final PTXBackend[] backends;
-    private List<TornadoDevice> devices;
     private final TornadoLogger logger;
+    private List<TornadoDevice> devices;
 
     public PTXBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
 
@@ -125,7 +125,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
         if (index < backends.length) {
             return backends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoDeviceNotFound(STR."[ERROR]-[PTX-DRIVER] Device required not found: \{index} - Max: \{backends.length}");
+            throw new TornadoDeviceNotFound("[ERROR]-[PTX-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
         }
     }
 
