@@ -146,6 +146,17 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     @Override
     public void setDefaultDevice(int index) {
+        swapDefaultDevice(index);
+    }
+
+    private void swapDefaultDevice(final int device) {
+        SPIRVBackend tmp = flatBackends[0];
+        flatBackends[0] = flatBackends[device];
+        flatBackends[device] = tmp;
+        SPIRVBackend backend = flatBackends[0];
+        if (!backend.isInitialised()) {
+            backend.init();
+        }
     }
 
     private int getNumDevicesForPlatform(int platform) {
