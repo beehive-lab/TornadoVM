@@ -33,8 +33,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
@@ -259,20 +257,22 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
     }
 
-    private ParameterNode createPrimitiveParameterFromObjectParameter(Object obj, int index, StructuredGraph graph) {
-        ParameterNode result = null;
-        switch (obj) {
-            case Byte objByte -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Byte)));
-            case Character objChar -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Char)));
-            case Short objShort -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Short)));
-            case HalfFloat objHalfFloat -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Float)));
-            case Integer objInteger -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Int)));
-            case Float objFloat -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Float)));
-            case Double objDouble -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Double)));
-            case Long objLong -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Long)));
-            case null, default -> unimplemented("createPrimitiveParameterFromObjectParameter: %s", obj);
-        }
-        return result;
+    private ConstantNode createPrimitiveConstantFromObjectParameter(Object obj, StructuredGraph graph) {
+        return switch (obj) {
+            case Boolean objBoolean -> ConstantNode.forBoolean(objBoolean, graph);
+            case Byte objByte -> ConstantNode.forByte(objByte, graph);
+            case Character objChar -> ConstantNode.forChar(objChar, graph);
+            case Short objShort -> ConstantNode.forShort(objShort, graph);
+            case HalfFloat objHalfFloat -> ConstantNode.forFloat(objHalfFloat.getFloat32(), graph);
+            case Integer objInteger -> ConstantNode.forInt(objInteger, graph);
+            case Float objFloat -> ConstantNode.forFloat(objFloat, graph);
+            case Double objDouble -> ConstantNode.forDouble(objDouble, graph);
+            case Long objLong -> ConstantNode.forLong(objLong, graph);
+            case Object object -> {
+                unimplemented("createPrimitiveConstantFromObjectParameter: %s", obj);
+                yield null;
+            }
+        };
     }
 
     private boolean isParameterInvolvedInParallelLoopBound(Node parameterNode) {
@@ -302,26 +302,27 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 parameterNode.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
-                ParameterNode primitiveParameter = createPrimitiveParameterFromObjectParameter(args[parameterNode.index()], parameterNode.index(), graph);
+                var value = args[parameterNode.index()];
+                ConstantNode primitiveConstant = createPrimitiveConstantFromObjectParameter(value, graph);
 
-                parameterNode.replaceAtAllUsages(primitiveParameter, true);
+                parameterNode.replaceAtAllUsages(primitiveConstant, true);
                 parameterNode.safeDelete();
 
                 //remove Unbox nodes, they are not needed for constant values and cause compilation errors
-                graph.getNodes().filter(n -> n instanceof PiNode piNode && piNode.object() == primitiveParameter).snapshot().forEach(node -> {
+                graph.getNodes().filter(n -> n instanceof PiNode piNode && piNode.object() == primitiveConstant).snapshot().forEach(node -> {
                     var usagesSnapshot = node.usages().snapshot();
-                    node.replaceAtAllUsages(primitiveParameter, true);
+                    node.replaceAtAllUsages(primitiveConstant, true);
                     node.safeDelete();
 
                     usagesSnapshot.forEach(n -> {
                         if (n instanceof UnboxNode unboxNode) {
                             var prev = n.predecessor();
 
-                            unboxNode.replaceAtAllUsages(primitiveParameter, true);
+                            unboxNode.replaceAtAllUsages(primitiveConstant, true);
                             graph.removeFixed(unboxNode);
 
                             if (prev instanceof FixedGuardNode fixedGuardNode) {
-                                if (fixedGuardNode.condition() instanceof IsNullNode isNullNode && isNullNode.getValue() == primitiveParameter) {
+                                if (fixedGuardNode.condition() instanceof IsNullNode isNullNode && isNullNode.getValue() == primitiveConstant) {
                                     fixedGuardNode.clearInputs();
                                     graph.removeFixed(fixedGuardNode);
                                 }
@@ -329,8 +330,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                         }
                     });
                 });
-
-                graph.addOrUnique(primitiveParameter);
             }
         } else {
             parameterNode.usages().snapshot().forEach(n -> {

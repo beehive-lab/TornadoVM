@@ -80,8 +80,6 @@ public class CodeUtil {
         LIRKind lirKind = LIRKind.value(target.arch.getPlatformKind(returnKind));
 
         Variable returnParameter = new Variable(lirKind, variableIndex);
-        variableIndex++;
-
         return new CallingConvention(0, returnParameter, inputParameters);
     }
 
