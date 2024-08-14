@@ -33,11 +33,14 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
@@ -47,6 +50,7 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
+import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -91,8 +95,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         for (LoadFieldNode loadField : graph.getNodes().filter(LoadFieldNode.class)) {
             final ResolvedJavaField field = loadField.field();
             if (field.getType().getJavaKind().isPrimitive()) {
-                if (loadField.toString().contains("numberOfElements"))
+                if (loadField.toString().contains("numberOfElements")) {
                     return true;
+                }
             }
         }
         return false;
@@ -254,18 +259,18 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
     }
 
-    private ConstantNode createConstantFromObject(Object obj, StructuredGraph graph) {
-        ConstantNode result = null;
+    private ParameterNode createPrimitiveParameterFromObjectParameter(Object obj, int index, StructuredGraph graph) {
+        ParameterNode result = null;
         switch (obj) {
-            case Byte objByte -> result = ConstantNode.forByte(objByte, graph);
-            case Character objChar -> result = ConstantNode.forChar(objChar, graph);
-            case Short objShort -> result = ConstantNode.forShort(objShort, graph);
-            case HalfFloat objHalfFloat -> result = ConstantNode.forFloat(objHalfFloat.getFloat32(), graph);
-            case Integer objInteger -> result = ConstantNode.forInt(objInteger, graph);
-            case Float objFloat -> result = ConstantNode.forFloat(objFloat, graph);
-            case Double objDouble -> result = ConstantNode.forDouble(objDouble, graph);
-            case Long objLong -> result = ConstantNode.forLong(objLong, graph);
-            case null, default -> unimplemented("createConstantFromObject: %s", obj);
+            case Byte objByte -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Byte)));
+            case Character objChar -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Char)));
+            case Short objShort -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Short)));
+            case HalfFloat objHalfFloat -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Float)));
+            case Integer objInteger -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Int)));
+            case Float objFloat -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Float)));
+            case Double objDouble -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Double)));
+            case Long objLong -> result = new ParameterNode(index, StampPair.createSingle(StampFactory.forKind(JavaKind.Long)));
+            case null, default -> unimplemented("createPrimitiveParameterFromObjectParameter: %s", obj);
         }
         return result;
     }
@@ -297,8 +302,35 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 parameterNode.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
-                ConstantNode constant = createConstantFromObject(args[parameterNode.index()], graph);
-                parameterNode.replaceAtUsages(constant);
+                ParameterNode primitiveParameter = createPrimitiveParameterFromObjectParameter(args[parameterNode.index()], parameterNode.index(), graph);
+
+                parameterNode.replaceAtAllUsages(primitiveParameter, true);
+                parameterNode.safeDelete();
+
+                //remove Unbox nodes, they are not needed for constant values and cause compilation errors
+                graph.getNodes().filter(n -> n instanceof PiNode piNode && piNode.object() == primitiveParameter).snapshot().forEach(node -> {
+                    var usagesSnapshot = node.usages().snapshot();
+                    node.replaceAtAllUsages(primitiveParameter, true);
+                    node.safeDelete();
+
+                    usagesSnapshot.forEach(n -> {
+                        if (n instanceof UnboxNode unboxNode) {
+                            var prev = n.predecessor();
+
+                            unboxNode.replaceAtAllUsages(primitiveParameter, true);
+                            graph.removeFixed(unboxNode);
+
+                            if (prev instanceof FixedGuardNode fixedGuardNode) {
+                                if (fixedGuardNode.condition() instanceof IsNullNode isNullNode && isNullNode.getValue() == primitiveParameter) {
+                                    fixedGuardNode.clearInputs();
+                                    graph.removeFixed(fixedGuardNode);
+                                }
+                            }
+                        }
+                    });
+                });
+
+                graph.addOrUnique(primitiveParameter);
             }
         } else {
             parameterNode.usages().snapshot().forEach(n -> {
@@ -319,7 +351,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             final Mark mark = graph.getMark();
             if (context.hasArgs()) {
                 getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "Before Phase Propagate Parameters");
-                for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE).snapshot()) {
                     propagateParameters(graph, param, context.getArgs());
                 }
                 getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
@@ -395,6 +427,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     @FunctionalInterface
     private interface FunctionThatThrows<T, R> {
+
         R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 }
