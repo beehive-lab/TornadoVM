@@ -304,7 +304,11 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
                 parameterNode.replaceAtAllUsages(primitiveConstant, true);
                 parameterNode.safeDelete();
 
-                //remove Unbox nodes, they are not needed for constant values and cause compilation errors
+                //remove Unbox nodes, they are not needed for constant values and cause compilation errors.
+                //Kernels work only with primitive type operands.
+                //So every primitive wrapper bound to have UnboxNode that can also be optionally protected by FixedGuardNode that checks that parameter is not null.
+                //This pair is removed for constant values.
+                //Otherwise there will be problems during Graph canonicalization.
                 graph.getNodes().filter(n -> n instanceof PiNode piNode && piNode.object() == primitiveConstant).snapshot().forEach(node -> {
                     var usagesSnapshot = node.usages().snapshot();
                     node.replaceAtAllUsages(primitiveConstant, true);

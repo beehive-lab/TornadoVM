@@ -148,7 +148,7 @@ public class TestLambdas extends TornadoTestBase {
     }
 
     @Test
-    public void testParameterUnboxing() throws Exception {
+    public void testParameterUnboxing() throws TornadoExecutionPlanException {
         var arrayToCopy = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
 
         var taskGraph = new TaskGraph("s0");
