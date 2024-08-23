@@ -48,11 +48,11 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -365,7 +365,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskMetaDataInterface meta = task.meta();
+        TaskContextInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
             TaskMetaData metaData = (TaskMetaData) task.meta();
             return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();

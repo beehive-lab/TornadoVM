@@ -33,6 +33,21 @@ public class TornadoOptions {
     private static final String TRUE = "TRUE";
 
     /**
+     * Default OpenCL Compiler Flags.
+     */
+    public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
+
+    /**
+     * Default PTX Compiler Flags.
+     */
+    public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "");
+
+    /**
+     * Default SPIR-V/LevelZero Flags.
+     */
+    public static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = getProperty("tornado.spirv.levelzero.flags", "-ze-opt-level 2 -ze-opt-large-register-file");
+
+    /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
      */
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));

@@ -32,12 +32,13 @@ import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 /**
- * Object to create and optimize an execution plan for running a set of
- * immutable tasks-graphs. An executor plan contains an executor object, which
- * in turn, contains a set of immutable task-graphs. All actions applied to the
- * execution plan affect to all the immutable graphs associated with it.
+ * Class to create and optimize execution plans for running a set of
+ * immutable tasks-graphs on modern hardware. An executor plan contains an
+ * executor object, which in turn, contains a set of immutable task-graphs.
+ * All actions applied to the execution plan affect to all the immutable
+ * graphs associated with it.
  *
- * @since TornadoVM-0.15
+ * @since v0.15
  */
 public class TornadoExecutionPlan implements AutoCloseable {
 
@@ -46,13 +47,11 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * to the device assigned to the driver (backend) with index 0 and device 0.
      */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
-    private final TornadoExecutor tornadoExecutor;
 
+    private final TornadoExecutor tornadoExecutor;
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
-
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
-
     private final ExecutorFrame executionPackage;
 
     /**
@@ -87,6 +86,13 @@ public class TornadoExecutionPlan implements AutoCloseable {
         return TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex).getDevice(deviceIndex);
     }
 
+    /**
+     * Method to return the total number of execution plans instantiated in a single JVM instance.
+     *
+     * @since 1.0.2
+     * 
+     * @return int
+     */
     public static int getTotalPlans() {
         return globalExecutionPlanCounter.intValue();
     }
@@ -363,31 +369,75 @@ public class TornadoExecutionPlan implements AutoCloseable {
         return this;
     }
 
+    /**
+     * Enable Printing of the Thread-Block Deployment for the generated kernels.
+     *
+     * @since 1.0.2
+     * 
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withThreadInfo() {
         tornadoExecutor.withThreadInfo();
         return this;
     }
 
+    /**
+     * Disable Printing of the Thread-Block Deployment for the generated kernels.
+     *
+     * @since 1.0.2
+     * 
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withoutThreadInfo() {
         tornadoExecutor.withoutThreadInfo();
         return this;
     }
+
+    /**
+     * Enable Printing of the generated kernels for each task in a task-graph.
+     *
+     * @since 1.0.2
+     * 
+     * @return {@link TornadoExecutionPlan}
+     */
 
     public TornadoExecutionPlan withPrintKernel() {
         tornadoExecutor.withPrintKernel();
         return this;
     }
 
+    /**
+     * Disable Printing of the generated kernels for each task in a task-graph.
+     * 
+     * @since 1.0.2
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withoutPrintKernel() {
         tornadoExecutor.withoutPrintKernel();
         return this;
     }
 
+    /**
+     * Set compiler flags for each backend.
+     * 
+     * @param backend
+     *     {@link TornadoVMBackendType}
+     * @param compilerFlags
+     *     {@link String}
+     * @since 1.0.7
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
         return this;
     }
 
+    /**
+     * @since 1.0.4
+     * 
+     * @throws TornadoExecutionPlanException
+     */
     @Override
     public void close() throws TornadoExecutionPlanException {
         tornadoExecutor.freeDeviceMemory();

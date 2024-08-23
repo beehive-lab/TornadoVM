@@ -39,16 +39,17 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -601,6 +602,13 @@ public class TornadoVMInterpreter {
         }
     }
 
+    private void updateMeta(TaskContextInterface meta) {
+        meta.setPrintKernelFlag(executionContext.meta().isPrintKernelEnabled());
+        meta.setCompilerFlags(TornadoVMBackendType.OPENCL, executionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
+        meta.setCompilerFlags(TornadoVMBackendType.PTX, executionContext.meta().getCompilerFlags(TornadoVMBackendType.PTX));
+        meta.setCompilerFlags(TornadoVMBackendType.SPIRV, executionContext.meta().getCompilerFlags(TornadoVMBackendType.SPIRV));
+    }
+
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
 
         if (interpreterDevice.getDeviceContext().wasReset() && finishedWarmup) {
@@ -614,8 +622,8 @@ public class TornadoVMInterpreter {
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
         int currentBatch = task.getBatchNumber();
-        TaskMetaDataInterface meta = task.meta();
-        meta.setPrintKernelFlag(executionContext.meta().isPrintKernelEnabled());
+        TaskContextInterface meta = task.meta();
+        updateMeta(meta);
 
         boolean indexInWrite = interpreterDevice.loopIndexInWrite(task);
         // Check if a different batch size was used for the same kernel or

@@ -601,7 +601,7 @@ public class OCLCodeCache {
         if (meta.isPrintKernelEnabled()) {
             RuntimeUtilities.dumpKernel(source);
         }
-
+        logger.debug("\tOpenCL compiler flags = %s", meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
         program.build(meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         logger.debug("\tOpenCL compilation status = %s", status.toString());

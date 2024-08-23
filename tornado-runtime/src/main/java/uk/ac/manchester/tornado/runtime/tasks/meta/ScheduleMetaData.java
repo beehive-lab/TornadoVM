@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-public class ScheduleMetaData extends AbstractMetaData {
+public class ScheduleMetaData extends AbstractRTContext {
 
     public ScheduleMetaData(String id) {
         super(id, null);

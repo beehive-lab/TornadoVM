@@ -36,8 +36,8 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -45,14 +45,19 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
 
-public abstract class AbstractMetaData implements TaskMetaDataInterface {
+/**
+ * Abstract Runtime (RT) Context: Class that maintains fields for deployment and compilation for the
+ * supported drivers (e.g., device indexes, drivers, thread-block etc.)
+ *
+ * <p>
+ * This class bridges the external (user requirements) from the internals (runtime and compiler parameters).
+ * </p>
+ */
+public abstract class AbstractRTContext implements TaskContextInterface {
 
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
     private static final String TRUE = "True";
     private static final String FALSE = "False";
-    private static final String DEFAULT_OPENCL_COMPILER_FLAGS = "-cl-mad-enable -cl-fast-relaxed-math -w";
-    private static final String DEFAULT_PTX_COMPILER_FLAGS = " ";
-    private static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = "-ze-opt-level 2 -ze-opt-large-register-file";
 
     private final boolean isDeviceDefined;
 
@@ -83,14 +88,13 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private long[] ptxGridDim;
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
-    private boolean isOpenclCompilerFlagsDefined;
     private ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
 
     private boolean openclUseDriverScheduling;
     private boolean printKernel;
     private boolean resetThreads;
 
-    AbstractMetaData(String id, AbstractMetaData parent) {
+    AbstractRTContext(String id, AbstractRTContext parent) {
         this.id = id;
 
         isDeviceDefined = getProperty(id + ".device") != null;
@@ -117,11 +121,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         // Compilation flags - > only for OpenCL
         compilerOptionsPerBackend = new ConcurrentHashMap<>();
-        compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, DEFAULT_OPENCL_COMPILER_FLAGS);
-        compilerOptionsPerBackend.put(TornadoVMBackendType.PTX, DEFAULT_PTX_COMPILER_FLAGS);
-        compilerOptionsPerBackend.put(TornadoVMBackendType.SPIRV, DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS);
-
-        isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
+        compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS);
+        compilerOptionsPerBackend.put(TornadoVMBackendType.PTX, TornadoOptions.DEFAULT_PTX_COMPILER_FLAGS);
+        compilerOptionsPerBackend.put(TornadoVMBackendType.SPIRV, TornadoOptions.DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS);
 
         // Thread Configurations
         openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
@@ -259,10 +261,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     boolean isEnableParallelizationDefined() {
         return isEnableParallelizationDefined;
-    }
-
-    public boolean isOpenclCompilerFlagsDefined() {
-        return isOpenclCompilerFlagsDefined;
     }
 
     public boolean isOpenclGpuBlockXDefined() {

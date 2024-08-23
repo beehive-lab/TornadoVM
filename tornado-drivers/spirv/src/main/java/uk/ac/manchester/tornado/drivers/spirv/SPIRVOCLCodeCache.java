@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVOCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLCodeCache extends SPIRVCodeCache {
@@ -101,6 +102,9 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
 
         OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getDevice().getDeviceRuntime();
         String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.OPENCL);
+        TornadoLogger logger = new TornadoLogger(this.getClass());
+        logger.debug("\tSPIR-V/OpenCL compiler flags = %s", meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
+
         int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getDevicePointer() }, compilerFlags);
         if (status != OCLErrorCode.CL_SUCCESS) {
             String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getDevicePointer());

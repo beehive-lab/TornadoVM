@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
-public class TaskMetaData extends AbstractMetaData {
+public class TaskMetaData extends AbstractRTContext {
 
     public static final String LOCAL_WORKGROUP_SUFFIX = ".local.workgroup.size";
     public static final String GLOBAL_WORKGROUP_SUFFIX = ".global.workgroup.size";
@@ -311,16 +311,16 @@ public class TaskMetaData extends AbstractMetaData {
             deviceDebug.append("\tGlobal work offset: " + formatWorkDimensionArray(go, "0") + "\n");
         }
 
-        long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
+        long[] workGroups = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
 
         if (deviceBelongsToPTX) {
-            deviceDebug.append("\tThread dimensions : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tThread dimensions : " + formatWorkDimensionArray(workGroups, "1") + "\n");
             deviceDebug.append("\tBlocks dimensions : " + formatWorkDimensionArray(getPTXBlockDim(), "1") + "\n");
             deviceDebug.append("\tGrids dimensions  : " + formatWorkDimensionArray(getPTXGridDim(), "1") + "\n");
         } else {
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
             long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
-            deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(workGroups, "1") + "\n");
             deviceDebug.append("\tLocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
             deviceDebug.append("\tNumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
         }

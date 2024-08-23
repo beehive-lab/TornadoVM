@@ -571,38 +571,6 @@ public class TornadoExecutionContext {
         return defaultScheduler;
     }
 
-    public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
-
-        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>(tasks);
-        executionContext.tasks = schedulableTasksCopy;
-
-        List<Object> constantCopy = new ArrayList<>(constants);
-        executionContext.constants = constantCopy;
-
-        Map<Integer, Integer> objectsMapCopy = new HashMap<>(objectMap);
-        executionContext.objectMap = objectsMapCopy;
-
-        List<Object> objectsCopy = new ArrayList<>(objects);
-        executionContext.objects = objectsCopy;
-
-        List<LocalObjectState> objectStateCopy = new ArrayList<>(objectState);
-        executionContext.objectState = objectStateCopy;
-
-        List<TornadoXPUDevice> devicesCopy = new ArrayList<>(devices);
-        executionContext.devices = devicesCopy;
-
-        executionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
-
-        Set<TornadoXPUDevice> lastDeviceCopy = new HashSet<>(lastDevices);
-        executionContext.lastDevices = lastDeviceCopy;
-
-        executionContext.meta = meta;
-        executionContext.isPrintKernel = this.isPrintKernel;
-
-        executionContext.profiler = this.profiler;
-        executionContext.nextTask = this.nextTask;
-    }
-
     public void dumpExecutionContextMeta() {
         final String ansiReset = "\u001B[0m";
         final String ansiCyan = "\u001B[36m";

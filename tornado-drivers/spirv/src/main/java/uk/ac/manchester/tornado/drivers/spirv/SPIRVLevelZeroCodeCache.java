@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -61,7 +62,8 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
-        moduleDesc.setBuildFlags(meta.getCompilerFlags(TornadoVMBackendType.SPIRV));
+        final String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.SPIRV);
+        moduleDesc.setBuildFlags(compilerFlags);
 
         checkBinaryFileExists(pathToFile);
 
@@ -72,6 +74,9 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         SPIRVDevice spirvDevice = deviceContext.getDevice();
         SPIRVLevelZeroDevice levelZeroDevice = (SPIRVLevelZeroDevice) spirvDevice;
         LevelZeroDevice device = levelZeroDevice.getDeviceRuntime();
+
+        TornadoLogger logger = new TornadoLogger(this.getClass());
+        logger.debug("\tSPIR-V/LeveZero compiler flags = %s", compilerFlags);
 
         int result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, pathToFile);
         LevelZeroUtils.errorLog("zeModuleCreate", result);
