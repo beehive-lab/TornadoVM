@@ -209,24 +209,25 @@ public class TornadoVMInterpreter {
         interpreterDevice.dumpEvents(executionContext.getExecutionPlanId());
     }
 
+    private void dumpEventProfiled(TornadoEvents eventSet, TaskMetaData meta) {
+        final BitSet profiles = eventSet.getProfiles();
+        for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
+            if (eventSet.getDevice() instanceof TornadoXPUDevice device) {
+                final Event profile = device.resolveEvent(executionContext.getExecutionPlanId(), i);
+                if (profile.getStatus() == COMPLETE) {
+                    System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(), profile
+                            .getStartTime(), profile.getEndTime());
+                }
+            } else {
+                throw new TornadoRuntimeException("TornadoDevice not found");
+            }
+        }
+    }
+
     public void dumpProfiles() {
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = (TaskMetaData) task.meta();
-            for (final TornadoEvents eventSet : meta.getProfiles(executionContext.getExecutionPlanId())) {
-                final BitSet profiles = eventSet.getProfiles();
-                for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
-
-                    if (eventSet.getDevice() instanceof TornadoXPUDevice device) {
-                        final Event profile = device.resolveEvent(executionContext.getExecutionPlanId(), i);
-                        if (profile.getStatus() == COMPLETE) {
-                            System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
-                                    profile.getStartTime(), profile.getEndTime());
-                        }
-                    } else {
-                        throw new TornadoRuntimeException("TornadoDevice not found");
-                    }
-                }
-            }
+            meta.getProfiles(executionContext.getExecutionPlanId()).forEach(eventSet -> dumpEventProfiled(eventSet, meta));
         }
     }
 
