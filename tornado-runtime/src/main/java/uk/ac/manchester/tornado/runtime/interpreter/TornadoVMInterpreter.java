@@ -779,22 +779,22 @@ public class TornadoVMInterpreter {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        TaskDataContext metadata;
+        TaskDataContext dataContext;
         try {
-            metadata = (TaskDataContext) task.meta();
+            dataContext = (TaskDataContext) task.meta();
         } catch (ClassCastException e) {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
         }
 
-        // We attach the profiler information
-        metadata.attachProfiler(timeProfiler);
-        metadata.setGridScheduler(gridScheduler);
-        metadata.setThreadInfoEnabled(executionContext.meta().isThreadInfoEnabled());
+        // We attach the profiler information, grid information and global threads
+        dataContext.attachProfiler(timeProfiler);
+        dataContext.setGridScheduler(gridScheduler);
+        dataContext.setThreadInfoEnabled(executionContext.meta().isThreadInfoEnabled());
 
         try {
             int lastEvent = useDependencies
-                    ? installedCode.launchWithDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, metadata, batchThreads, waitList)
-                    : installedCode.launchWithoutDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, metadata, batchThreads);
+                    ? installedCode.launchWithDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, dataContext, batchThreads, waitList)
+                    : installedCode.launchWithoutDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, dataContext, batchThreads);
 
             resetEventIndexes(eventList);
             return lastEvent;
