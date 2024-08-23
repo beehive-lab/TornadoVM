@@ -32,6 +32,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
@@ -99,7 +100,8 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
         }
 
         OCLTargetDevice oclDevice = (OCLTargetDevice) deviceContext.getDevice().getDeviceRuntime();
-        int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getDevicePointer() }, "");
+        String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.OPENCL);
+        int status = spirvoclNativeCompiler.clBuildProgram(programPointer, 1, new long[] { oclDevice.getDevicePointer() }, compilerFlags);
         if (status != OCLErrorCode.CL_SUCCESS) {
             String log = spirvoclNativeCompiler.clGetProgramBuildInfo(programPointer, oclDevice.getDevicePointer());
             System.out.println(log);

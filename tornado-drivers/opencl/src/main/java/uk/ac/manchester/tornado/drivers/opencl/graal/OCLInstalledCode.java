@@ -201,6 +201,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
+    private void printDebugLaunchInfo(final TaskMetaData meta) {
+        System.out.println("Running on: ");
+        System.out.println("\tPlatform: " + meta.getXPUDevice().getPlatformName());
+        if (meta.getXPUDevice() instanceof OCLTornadoDevice) {
+            System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getXPUDevice()).getPhysicalDevice().getDeviceName());
+        }
+    }
+
     public int submitWithEvents(long executionPlanId, final OCLKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, final TaskMetaData meta, final int[] events, long batchThreads) {
         guarantee(kernel != null, "kernel is null");
 
@@ -229,11 +237,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 }
             } else {
                 if (meta.isDebug()) {
-                    System.out.println("Running on: ");
-                    System.out.println("\tPlatform: " + meta.getLogicDevice().getPlatformName());
-                    if (meta.getLogicDevice() instanceof OCLTornadoDevice) {
-                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getLogicDevice()).getPhysicalDevice().getDeviceName());
-                    }
+                    printDebugLaunchInfo(meta);
                 }
                 if (meta.getGlobalWork() == null) {
                     task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
@@ -241,13 +245,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
                 }
             }
-
-            if (meta.shouldDumpProfiles()) {
-                deviceContext.retainEvent(executionPlanId, task);
-                meta.addProfile(task);
-            }
         }
-
         return task;
     }
 
@@ -296,16 +294,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     private void launchKernel(long executionPlanId, final OCLKernelStackFrame callWrapper, final TaskMetaData meta, long batchThreads) {
-        final int task;
         if (meta.isParallel() || meta.isWorkerGridAvailable()) {
-            task = submitParallel(executionPlanId, meta, batchThreads);
+            submitParallel(executionPlanId, meta, batchThreads);
         } else {
-            task = submitSequential(executionPlanId, meta);
-        }
-
-        if (meta.shouldDumpProfiles()) {
-            deviceContext.retainEvent(executionPlanId, task);
-            meta.addProfile(task);
+            submitSequential(executionPlanId, meta);
         }
     }
 

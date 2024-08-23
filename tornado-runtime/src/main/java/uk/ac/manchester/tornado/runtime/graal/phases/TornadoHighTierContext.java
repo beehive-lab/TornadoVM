@@ -74,7 +74,7 @@ public class TornadoHighTierContext extends HighTierContext {
     }
 
     public TornadoXPUDevice getDeviceMapping() {
-        return meta.getLogicDevice();
+        return meta.getXPUDevice();
     }
 
     public boolean hasMeta() {

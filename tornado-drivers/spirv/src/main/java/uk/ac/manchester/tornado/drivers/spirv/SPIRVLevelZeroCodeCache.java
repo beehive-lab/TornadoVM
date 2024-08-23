@@ -29,6 +29,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
 import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
@@ -60,7 +61,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
-        moduleDesc.setBuildFlags("-ze-opt-level 2 -ze-opt-large-register-file");
+        moduleDesc.setBuildFlags(meta.getCompilerFlags(TornadoVMBackendType.SPIRV));
 
         checkBinaryFileExists(pathToFile);
 

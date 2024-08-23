@@ -210,11 +210,6 @@ public class TornadoVMInterpreter {
     }
 
     public void dumpProfiles() {
-        if (!executionContext.meta().shouldDumpProfiles()) {
-            logger.info("profiling is not enabled");
-            return;
-        }
-
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = (TaskMetaData) task.meta();
             for (final TornadoEvents eventSet : meta.getProfiles(executionContext.getExecutionPlanId())) {
@@ -409,7 +404,7 @@ public class TornadoVMInterpreter {
             }
         }
 
-        long allocationsTotalSize =  interpreterDevice.allocateObjects(objects, sizeBatch, objectStates);
+        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates);
 
         executionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
@@ -419,7 +414,7 @@ public class TornadoVMInterpreter {
                 timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
             }
         }
-        
+
         return -1;
     }
 
@@ -433,7 +428,7 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        long spaceDeallocated =  interpreterDevice.deallocate(objectState);
+        long spaceDeallocated = interpreterDevice.deallocate(objectState);
         // Update current device area use 
         executionContext.setCurrentDeviceMemoryUsage(executionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
         return -1;
@@ -880,8 +875,8 @@ public class TornadoVMInterpreter {
 
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
         if (task instanceof PrebuiltTask prebuiltTask && timeProfiler instanceof TimeProfiler) {
-            timeProfiler.registerDeviceID(task.getId(), prebuiltTask.meta().getLogicDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
-            timeProfiler.registerDeviceName(task.getId(), prebuiltTask.meta().getLogicDevice().getPhysicalDevice().getDeviceName());
+            timeProfiler.registerDeviceID(task.getId(), prebuiltTask.meta().getXPUDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
+            timeProfiler.registerDeviceName(task.getId(), prebuiltTask.meta().getXPUDevice().getPhysicalDevice().getDeviceName());
         }
     }
 
@@ -935,10 +930,8 @@ public class TornadoVMInterpreter {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList,
-                                              StringBuilder tornadoVMBytecodeList) {
-            String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
-                    InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS"), //
+        static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList, StringBuilder tornadoVMBytecodeList) {
+            String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS"), //
                     object.hashCode(), //
                     object, //
                     InterpreterUtilities.debugDeviceBC(deviceForInterpreter), //

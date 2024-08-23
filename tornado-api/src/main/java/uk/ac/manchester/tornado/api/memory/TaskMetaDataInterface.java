@@ -21,14 +21,13 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
 public interface TaskMetaDataInterface {
 
     List<TornadoEvents> getProfiles(long executionPlanId);
 
-    String getCompilerFlags();
-
-    void setCompilerFlags(String flags);
+    void setCompilerFlags(TornadoVMBackendType backendType, String flags);
 
     void setGlobalWork(long[] global);
 

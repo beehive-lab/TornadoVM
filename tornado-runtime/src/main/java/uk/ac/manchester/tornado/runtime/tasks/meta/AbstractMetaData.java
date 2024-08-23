@@ -27,14 +27,15 @@ import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
@@ -42,32 +43,22 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
     private static final String TRUE = "True";
     private static final String FALSE = "False";
+    private static final String DEFAULT_OPENCL_COMPILER_FLAGS = "-cl-mad-enable -cl-fast-relaxed-math -w";
+    private static final String DEFAULT_PTX_COMPILER_FLAGS = " ";
+    private static final String DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS = "-ze-opt-level 2 -ze-opt-large-register-file";
+
     private final boolean isDeviceDefined;
 
-    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList(//
-            "-cl-single-precision-constant", //
-            "-cl-denorms-are-zero", //
-            "-cl-opt-disable", //
-            "-cl-strict-aliasing", //
-            "-cl-mad-enable", //
-            "-cl-no-signed-zeros", //
-            "-cl-unsafe-math-optimizations", //
-            "-cl-finite-math-only", //
-            "-cl-fast-relaxed-math", //
-            "-w", //
-            "-cl-std=CL2.0" //
-    ));
-
     private boolean threadInfoEnabled;
-    private final boolean debugMode;
     private final boolean dumpEvents;
-    private final boolean dumpProfiles;
+
     private final boolean isOpenclGpuBlockXDefined;
     private final int openclGpuBlockX;
     private final boolean isOpenclGpuBlock2DXDefined;
@@ -80,7 +71,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean isEnableParallelizationDefined;
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
-    private String id;
+    private final String id;
     private TornadoXPUDevice device;
     private int backendIndex;
     private int deviceIndex;
@@ -93,7 +84,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
     private boolean isOpenclCompilerFlagsDefined;
-    private String openclCompilerOptions;
+    private ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
 
     private boolean openclUseDriverScheduling;
     private boolean printKernel;
@@ -104,9 +95,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
-            int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
-            backendIndex = a[0];
-            deviceIndex = a[1];
+            BackendSelectionContainer backendSelection = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
+            backendIndex = backendSelection.backendIndex();
+            deviceIndex = backendSelection.deviceIndex();
         } else if (null != parent) {
             backendIndex = parent.getBackendIndex();
             deviceIndex = parent.getDeviceIndex();
@@ -120,13 +111,16 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         threadInfoEnabled = TornadoOptions.THREAD_INFO;
         printKernel = TornadoOptions.PRINT_KERNEL_SOURCE;
-        debugMode = parseBoolean(getDefault("debug", id, FALSE));
+
         dumpEvents = parseBoolean(getDefault("events.dump", id, TRUE));
-        dumpProfiles = parseBoolean(getDefault("profiles.print", id, FALSE));
         dumpTaskGraph = Boolean.parseBoolean(System.getProperty("dump.taskgraph", FALSE));
 
         // Compilation flags - > only for OpenCL
-        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
+        compilerOptionsPerBackend = new ConcurrentHashMap<>();
+        compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, DEFAULT_OPENCL_COMPILER_FLAGS);
+        compilerOptionsPerBackend.put(TornadoVMBackendType.PTX, DEFAULT_PTX_COMPILER_FLAGS);
+        compilerOptionsPerBackend.put(TornadoVMBackendType.SPIRV, DEFAULT_SPIRV_LEVEL_ZERO_COMPILER_FLAGS);
+
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
 
         // Thread Configurations
@@ -153,8 +147,11 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
     }
 
-    public TornadoXPUDevice getLogicDevice() {
-        return device != null ? device : (device = resolveDevice(Tornado.getProperty(id + ".device", backendIndex + ":" + deviceIndex)));
+    public TornadoXPUDevice getXPUDevice() {
+        if (device == null) {
+            device = resolveDevice(Tornado.getProperty(id + ".device", backendIndex + ":" + deviceIndex));
+        }
+        return device;
     }
 
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
@@ -212,29 +209,24 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     public boolean isDebug() {
-        return debugMode;
+        return TornadoOptions.DEBUG;
     }
 
     public boolean shouldDumpEvents() {
         return dumpEvents;
     }
 
-    public boolean shouldDumpProfiles() {
-        return dumpProfiles;
-    }
-
     public boolean shouldDumpTaskGraph() {
         return dumpTaskGraph;
     }
 
-    public String getCompilerFlags() {
-        return composeBuiltOptions(openclCompilerOptions);
+    public String getCompilerFlags(TornadoVMBackendType backendType) {
+        return compilerOptionsPerBackend.get(backendType);
     }
 
     @Override
-    public void setCompilerFlags(String value) {
-        openclCompilerOptions = value;
-        isOpenclCompilerFlagsDefined = true;
+    public void setCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
+        compilerOptionsPerBackend.put(backendType, compilerFlags);
     }
 
     public int getOpenCLGpuBlockX() {
@@ -271,17 +263,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public boolean isOpenclCompilerFlagsDefined() {
         return isOpenclCompilerFlagsDefined;
-    }
-
-    public String composeBuiltOptions(String rawFlags) {
-        rawFlags = rawFlags.replace(",", " ");
-        for (String str : rawFlags.split(" ")) {
-            if (!openCLBuiltOptions.contains(str)) {
-                rawFlags = " ";
-                break;
-            }
-        }
-        return rawFlags;
     }
 
     public boolean isOpenclGpuBlockXDefined() {

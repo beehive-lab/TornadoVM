@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
@@ -382,6 +383,11 @@ public class TornadoExecutionPlan implements AutoCloseable {
         return this;
     }
 
+    public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
+        tornadoExecutor.withCompilerFlags(backend, compilerFlags);
+        return this;
+    }
+
     @Override
     public void close() throws TornadoExecutionPlanException {
         tornadoExecutor.freeDeviceMemory();
@@ -577,6 +583,10 @@ public class TornadoExecutionPlan implements AutoCloseable {
 
         void withoutPrintKernel() {
             immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
+        }
+
+        void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withCompilerFlags(backendType, compilerFlags));
         }
 
         long getTotalBytesTransferred() {

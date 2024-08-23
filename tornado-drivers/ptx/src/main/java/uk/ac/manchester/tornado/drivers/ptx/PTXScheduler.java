@@ -60,7 +60,7 @@ public class PTXScheduler {
             return Arrays.stream(taskMeta.getLocalWork()).mapToInt(l -> (int) l).toArray();
         }
 
-        long maxThreadsPerBlock = taskMeta.getLogicDevice().getPhysicalDevice().getMaxThreadsPerBlock();
+        long maxThreadsPerBlock = taskMeta.getXPUDevice().getPhysicalDevice().getMaxThreadsPerBlock();
         if (taskMeta.getDims() > 1) {
             maxThreadsPerBlock = module.getPotentialBlockSizeMaxOccupancy();
         }

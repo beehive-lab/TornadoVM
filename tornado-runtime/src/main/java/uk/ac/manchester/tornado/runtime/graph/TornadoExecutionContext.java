@@ -465,7 +465,7 @@ public class TornadoExecutionContext {
 
     /**
      * It retrieves a list of tasks for a specific device and driver. Both
-     * deviceContext and driverIndex are checked to ensure the correct task
+     * deviceContext and backendIndex are checked to ensure the correct task
      * assignment.
      *
      * @param deviceContext
@@ -493,7 +493,7 @@ public class TornadoExecutionContext {
      */
     @Deprecated
     public TornadoXPUDevice getDefaultDevice() {
-        return meta.getLogicDevice();
+        return meta.getXPUDevice();
     }
 
     public SchedulableTask getTask(String id) {
@@ -534,13 +534,13 @@ public class TornadoExecutionContext {
             Object object = objects.get(i);
             if (object != null) {
                 final LocalObjectState localState = objectState.get(i);
-                Event event = localState.sync(executionPlanId, object, meta().getLogicDevice());
+                Event event = localState.sync(executionPlanId, object, meta().getXPUDevice());
 
                 if (TornadoOptions.isProfilerEnabled() && event != null) {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
                     value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
-                    XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getLogicDevice());
+                    XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
                     profiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().size());
                 }
             }

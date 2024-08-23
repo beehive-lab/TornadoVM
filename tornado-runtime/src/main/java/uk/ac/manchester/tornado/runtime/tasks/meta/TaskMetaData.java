@@ -143,7 +143,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void addProfile(int id) {
-        final TornadoXPUDevice device = getLogicDevice();
+        final TornadoXPUDevice device = getXPUDevice();
         BitSet events;
         profiles.computeIfAbsent(device, k -> new BitSet(EVENT_WINDOW));
         events = profiles.get(device);
@@ -179,11 +179,11 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public TornadoXPUDevice getLogicDevice() {
+    public TornadoXPUDevice getXPUDevice() {
         if (scheduleMetaData.isDeviceManuallySet() || (scheduleMetaData.isDeviceDefined() && !isDeviceDefined())) {
-            return scheduleMetaData.getLogicDevice();
+            return scheduleMetaData.getXPUDevice();
         }
-        return super.getLogicDevice();
+        return super.getXPUDevice();
     }
 
     public int getDims() {
@@ -252,11 +252,6 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public String getCompilerFlags() {
-        return isOpenclCompilerFlagsDefined() ? super.getCompilerFlags() : scheduleMetaData.getCompilerFlags();
-    }
-
-    @Override
     public int getOpenCLGpuBlock2DX() {
         return isOpenclGpuBlock2DXDefined() ? super.getOpenCLGpuBlock2DX() : scheduleMetaData.getOpenCLGpuBlock2DX();
     }
@@ -305,10 +300,10 @@ public class TaskMetaData extends AbstractMetaData {
 
     public void printThreadDims() {
         StringBuilder deviceDebug = new StringBuilder();
-        boolean deviceBelongsToPTX = isPTXDevice(getLogicDevice());
+        boolean deviceBelongsToPTX = isPTXDevice(getXPUDevice());
         deviceDebug.append("Task info: " + getId() + "\n");
-        deviceDebug.append("\tBackend           : " + getLogicDevice().getTornadoVMBackend().name() + "\n");
-        deviceDebug.append("\tDevice            : " + getLogicDevice().getDescription() + "\n");
+        deviceDebug.append("\tBackend           : " + getXPUDevice().getTornadoVMBackend().name() + "\n");
+        deviceDebug.append("\tDevice            : " + getXPUDevice().getDescription() + "\n");
         deviceDebug.append("\tDims              : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
 
         if (!deviceBelongsToPTX) {
@@ -334,11 +329,6 @@ public class TaskMetaData extends AbstractMetaData {
 
     public boolean isPTXDevice(TornadoXPUDevice device) {
         return device.getTornadoVMBackend().equals(TornadoVMBackendType.PTX);
-    }
-
-    @Override
-    public boolean shouldDumpProfiles() {
-        return super.shouldDumpProfiles() || scheduleMetaData.shouldDumpProfiles();
     }
 
     @Override
