@@ -711,7 +711,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // TornadoVM byte-code generation
         TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler);
 
-        if (meta().shouldDumpTaskGraph()) {
+        if (meta().isDebug()) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
         }

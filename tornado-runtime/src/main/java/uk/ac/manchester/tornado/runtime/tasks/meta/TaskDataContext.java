@@ -150,22 +150,6 @@ public class TaskDataContext extends AbstractRTContext {
         events.set(id);
     }
 
-    @Override
-    public boolean enableParallelization() {
-        return scheduleMetaData.isEnableParallelizationDefined() && !isEnableParallelizationDefined() ? scheduleMetaData.enableParallelization() : super.enableParallelization();
-    }
-
-    @Override
-    public String getCpuConfig() {
-        if (super.isCpuConfigDefined()) {
-            return super.getCpuConfig();
-        } else if (!super.isCpuConfigDefined() && scheduleMetaData.isCpuConfigDefined()) {
-            return scheduleMetaData.getCpuConfig();
-        } else {
-            return "";
-        }
-    }
-
     public Access[] getArgumentsAccess() {
         return argumentsAccess;
     }
@@ -285,7 +269,7 @@ public class TaskDataContext extends AbstractRTContext {
     }
 
     public boolean isParallel() {
-        return enableParallelization() && hasDomain() && domain.getDepth() > 0;
+        return hasDomain() && domain.getDepth() > 0;
     }
 
     private long[] calculateNumberOfWorkgroupsFromDomain(DomainTree domain) {
@@ -332,23 +316,8 @@ public class TaskDataContext extends AbstractRTContext {
     }
 
     @Override
-    public boolean shouldDumpEvents() {
-        return super.shouldDumpEvents() || scheduleMetaData.shouldDumpEvents();
-    }
-
-    @Override
     public boolean shouldUseOpenCLDriverScheduling() {
         return super.shouldUseOpenCLDriverScheduling() || scheduleMetaData.shouldUseOpenCLDriverScheduling();
-    }
-
-    @Override
-    public boolean enableThreadCoarsener() {
-        return super.enableThreadCoarsener() || scheduleMetaData.enableThreadCoarsener();
-    }
-
-    @Override
-    public boolean isCpuConfigDefined() {
-        return super.isCpuConfigDefined() || scheduleMetaData.isCpuConfigDefined();
     }
 
     @Override

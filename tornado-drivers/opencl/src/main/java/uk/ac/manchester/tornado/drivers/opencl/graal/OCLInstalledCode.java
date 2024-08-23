@@ -230,11 +230,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
         } else {
             if (meta.isParallel()) {
-                if (meta.enableThreadCoarsener()) {
-                    task = DEFAULT_SCHEDULER.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
-                } else {
-                    task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
-                }
+                task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
             } else {
                 if (meta.isDebug()) {
                     printDebugLaunchInfo(meta);
@@ -284,13 +280,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     private int submitParallel(long executionPlanId, final TaskDataContext meta, long batchThreads) {
-        final int task;
-        if (meta.enableThreadCoarsener()) {
-            task = DEFAULT_SCHEDULER.submit(executionPlanId, kernel, meta, batchThreads);
-        } else {
-            task = scheduler.submit(executionPlanId, kernel, meta, batchThreads);
-        }
-        return task;
+        return scheduler.submit(executionPlanId, kernel, meta, batchThreads);
     }
 
     private void launchKernel(long executionPlanId, final OCLKernelStackFrame callWrapper, final TaskDataContext meta, long batchThreads) {

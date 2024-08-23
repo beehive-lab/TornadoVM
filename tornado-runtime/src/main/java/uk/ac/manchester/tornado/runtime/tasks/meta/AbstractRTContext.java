@@ -22,7 +22,6 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
@@ -56,13 +55,17 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectio
 public abstract class AbstractRTContext implements TaskContextInterface {
 
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
-    private static final String TRUE = "True";
-    private static final String FALSE = "False";
 
+    private final String id;
     private final boolean isDeviceDefined;
+    private TornadoXPUDevice device;
+    private int backendIndex;
+    private int deviceIndex;
+    private boolean deviceManuallySet;
 
     private boolean threadInfoEnabled;
-    private final boolean dumpEvents;
+    private boolean printKernel;
+    private boolean resetThreads;
 
     private final boolean isOpenclGpuBlockXDefined;
     private final int openclGpuBlockX;
@@ -70,29 +73,19 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private final int openclGpuBlock2DX;
     private final boolean isOpenclGpuBlock2DYDefined;
     private final int openclGpuBlock2DY;
-    private final boolean enableParallelization;
-    private final boolean useThreadCoarsener;
-    private final boolean dumpTaskGraph;
-    private final boolean isEnableParallelizationDefined;
-    private final boolean isCpuConfigDefined;
-    private final String cpuConfig;
-    private final String id;
-    private TornadoXPUDevice device;
-    private int backendIndex;
-    private int deviceIndex;
-    private boolean deviceManuallySet;
     private long numThreads;
-    private TornadoProfiler profiler;
+
     private GridScheduler gridScheduler;
     private long[] ptxBlockDim;
     private long[] ptxGridDim;
+
+    private TornadoProfiler profiler;
+
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
-    private ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
+    private final ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
 
     private boolean openclUseDriverScheduling;
-    private boolean printKernel;
-    private boolean resetThreads;
 
     AbstractRTContext(String id, AbstractRTContext parent) {
         this.id = id;
@@ -110,16 +103,9 @@ public abstract class AbstractRTContext implements TaskContextInterface {
             deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
         }
 
-        enableParallelization = parseBoolean(getDefault("parallelise", id, TRUE));
-        isEnableParallelizationDefined = getProperty(id + ".parallelise") != null;
-
         threadInfoEnabled = TornadoOptions.THREAD_INFO;
         printKernel = TornadoOptions.PRINT_KERNEL_SOURCE;
 
-        dumpEvents = parseBoolean(getDefault("events.dump", id, TRUE));
-        dumpTaskGraph = Boolean.parseBoolean(System.getProperty("dump.taskgraph", FALSE));
-
-        // Compilation flags - > only for OpenCL
         compilerOptionsPerBackend = new ConcurrentHashMap<>();
         compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.PTX, TornadoOptions.DEFAULT_PTX_COMPILER_FLAGS);
@@ -134,10 +120,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
         openclGpuBlock2DY = parseInt(getDefault("opencl.gpu.block2d.y", id, "4"));
         isOpenclGpuBlock2DYDefined = getProperty(id + ".opencl.gpu.block2d.y") != null;
-
-        cpuConfig = getDefault("cpu.config", id, null);
-        isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
-        useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, FALSE));
     }
 
     private static String getProperty(String key) {
@@ -174,7 +156,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     }
 
     /**
-     * Set a device in the default driver.
+     * Select a device for the next execution.
      *
      * @param device
      *     {@link TornadoDevice}
@@ -198,10 +180,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         return deviceIndex;
     }
 
-    public String getCpuConfig() {
-        return cpuConfig;
-    }
-
     public String getId() {
         return id;
     }
@@ -212,14 +190,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public boolean isDebug() {
         return TornadoOptions.DEBUG;
-    }
-
-    public boolean shouldDumpEvents() {
-        return dumpEvents;
-    }
-
-    public boolean shouldDumpTaskGraph() {
-        return dumpTaskGraph;
     }
 
     public String getCompilerFlags(TornadoVMBackendType backendType) {
@@ -247,20 +217,8 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         return openclUseDriverScheduling;
     }
 
-    public boolean enableParallelization() {
-        return enableParallelization;
-    }
-
-    public boolean enableThreadCoarsener() {
-        return useThreadCoarsener;
-    }
-
     public boolean isDeviceDefined() {
         return isDeviceDefined;
-    }
-
-    boolean isEnableParallelizationDefined() {
-        return isEnableParallelizationDefined;
     }
 
     public boolean isOpenclGpuBlockXDefined() {
@@ -273,10 +231,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public boolean isOpenclGpuBlock2DYDefined() {
         return isOpenclGpuBlock2DYDefined;
-    }
-
-    public boolean isCpuConfigDefined() {
-        return isCpuConfigDefined;
     }
 
     @Override

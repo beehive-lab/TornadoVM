@@ -38,11 +38,7 @@ public class OCLCPUScheduler extends OCLKernelScheduler {
 
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
-            if (meta.enableThreadCoarsener()) {
-                globalWork[i] = maxItems[i] > 1 ? (long) (meta.getDomain().get(i).cardinality()) : 1;
-            } else {
-                globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits()) : 1;
-            }
+            globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits()) : 1;
         }
     }
 

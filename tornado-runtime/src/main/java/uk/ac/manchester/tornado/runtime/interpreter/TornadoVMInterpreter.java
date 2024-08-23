@@ -202,7 +202,7 @@ public class TornadoVMInterpreter {
     }
 
     public void dumpEvents() {
-        if (!TornadoOptions.TORNADO_PROFILER || !executionContext.meta().shouldDumpEvents()) {
+        if (!TornadoOptions.TORNADO_PROFILER) {
             logger.info("profiling and/or event dumping is not enabled");
             return;
         }
