@@ -66,7 +66,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERA
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 class ReduceTaskGraph {
 
@@ -371,8 +371,8 @@ class ReduceTaskGraph {
     private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
         // Update GLOBAL and LOCAL workgroup size if device to run is the FPGA
         if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
-            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskMetaData.GLOBAL_WORKGROUP_SUFFIX, Integer.toString(inputSize));
-            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskMetaData.LOCAL_WORKGROUP_SUFFIX, "64");
+            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskDataContext.GLOBAL_WORKGROUP_SUFFIX, Integer.toString(inputSize));
+            TornadoRuntimeProvider.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskDataContext.LOCAL_WORKGROUP_SUFFIX, "64");
         }
     }
 

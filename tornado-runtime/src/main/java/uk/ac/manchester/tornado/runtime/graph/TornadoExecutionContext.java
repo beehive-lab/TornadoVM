@@ -62,7 +62,7 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class TornadoExecutionContext {
 
@@ -70,7 +70,7 @@ public class TornadoExecutionContext {
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
-    private ScheduleMetaData meta;
+    private ScheduleContext meta;
     private KernelStackFrame[] kernelStackFrame;
     private List<SchedulableTask> tasks;
     private List<Object> constants;
@@ -94,7 +94,7 @@ public class TornadoExecutionContext {
 
     public TornadoExecutionContext(String id) {
         name = id;
-        meta = new ScheduleMetaData(name);
+        meta = new ScheduleContext(name);
         tasks = new ArrayList<>();
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
@@ -525,7 +525,7 @@ public class TornadoExecutionContext {
         return name;
     }
 
-    public ScheduleMetaData meta() {
+    public ScheduleContext meta() {
         return meta;
     }
 

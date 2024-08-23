@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVOCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class SPIRVOCLCodeCache extends SPIRVCodeCache {
 
@@ -68,7 +68,7 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
     }
 
     @Override
-    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
+    public SPIRVInstalledCode installSPIRVBinary(TaskDataContext meta, String id, String entryPoint, String pathToFile) {
 
         checkBinaryFileExists(pathToFile);
 

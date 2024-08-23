@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXStream {
 
@@ -171,7 +171,7 @@ public class PTXStream {
         PTXEvent.waitForEventArray((PTXEvent[]) events.toArray());
     }
 
-    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, TaskMetaData taskMeta, byte[] kernelParams, int[] gridDim, int[] blockDim) {
+    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, TaskDataContext taskMeta, byte[] kernelParams, int[] gridDim, int[] blockDim) {
         assert Arrays.stream(gridDim).filter(i -> i <= 0).count() == 0;
         assert Arrays.stream(blockDim).filter(i -> i <= 0).count() == 0;
 

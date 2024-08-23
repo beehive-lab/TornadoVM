@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
@@ -57,7 +57,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
     }
 
     @Override
-    public synchronized SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
+    public synchronized SPIRVInstalledCode installSPIRVBinary(TaskDataContext meta, String id, String entryPoint, String pathToFile) {
         ZeModuleHandle module = new ZeModuleHandle();
         ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();

@@ -42,13 +42,13 @@ import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
-public class TaskMetaData extends AbstractRTContext {
+public class TaskDataContext extends AbstractRTContext {
 
     public static final String LOCAL_WORKGROUP_SUFFIX = ".local.workgroup.size";
     public static final String GLOBAL_WORKGROUP_SUFFIX = ".global.workgroup.size";
     protected final Map<TornadoXPUDevice, BitSet> profiles;
     private final byte[] constantData;
-    private final ScheduleMetaData scheduleMetaData;
+    private final ScheduleContext scheduleMetaData;
     private final int constantSize;
     private final int localSize;
     protected Access[] argumentsAccess;
@@ -59,7 +59,7 @@ public class TaskMetaData extends AbstractRTContext {
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
+    public TaskDataContext(ScheduleContext scheduleMetaData, String taskID, int numParameters) {
         super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.constantSize = 0;
@@ -76,13 +76,13 @@ public class TaskMetaData extends AbstractRTContext {
         setNumThreads(scheduleMetaData.getNumThreads());
     }
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String id) {
+    public TaskDataContext(ScheduleContext scheduleMetaData, String id) {
         this(scheduleMetaData, id, 0);
     }
 
-    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method) {
+    public static TaskDataContext create(ScheduleContext scheduleMeta, String id, Method method) {
         int numParameters = Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1;
-        return new TaskMetaData(scheduleMeta, id, numParameters);
+        return new TaskDataContext(scheduleMeta, id, numParameters);
     }
 
     private static String formatWorkDimensionArray(final long[] array, final String defaults) {

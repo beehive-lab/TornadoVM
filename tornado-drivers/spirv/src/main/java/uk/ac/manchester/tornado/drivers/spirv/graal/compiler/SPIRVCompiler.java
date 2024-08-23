@@ -97,7 +97,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
@@ -140,7 +140,7 @@ public class SPIRVCompiler {
         return graph.start().next() == null;
     }
 
-    private static void emitFrontEnd(Providers providers, SPIRVBackend backend, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, StructuredGraph graph,
+    private static void emitFrontEnd(Providers providers, SPIRVBackend backend, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskDataContext meta, StructuredGraph graph,
             PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, boolean isKernel, boolean buildGraph,
             BatchCompilationConfig batchCompilationConfig) {
 
@@ -323,7 +323,7 @@ public class SPIRVCompiler {
 
         new TornadoLogger().info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
-        final TaskMetaData taskMeta = task.meta();
+        final TaskDataContext taskMeta = task.meta();
         final Object[] args = task.getArguments();
         final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();
         final int batchNumber = task.getBatchNumber();
@@ -466,7 +466,7 @@ public class SPIRVCompiler {
         public final StructuredGraph graph;
         public final ResolvedJavaMethod installedCodeOwner;
         public final Object[] args;
-        public final TaskMetaData meta;
+        public final TaskDataContext meta;
         public final Providers providers;
         public final SPIRVBackend backend;
         public final PhaseSuite<HighTierContext> graphBuilderSuite;
@@ -481,7 +481,7 @@ public class SPIRVCompiler {
         public final BatchCompilationConfig batchCompilationConfig;
         public TornadoProfiler profiler;
 
-        public SPIRVCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, SPIRVBackend backend,
+        public SPIRVCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskDataContext meta, Providers providers, SPIRVBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
                 SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig,
                 TornadoProfiler profiler) {

@@ -125,8 +125,8 @@ import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
@@ -623,7 +623,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         if (task instanceof CompilableTask compilableTask) {
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            final TaskMetaData taskMetaData = compilableTask.meta();
+            final TaskDataContext taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch sketchGraph = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex());
@@ -643,7 +643,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             checkForMemorySegmentAsTaskParameter(compilableTask);
 
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            final TaskMetaData taskMetaData = compilableTask.meta();
+            final TaskDataContext taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getBackendIndex(), compilableTask.meta().getDeviceIndex());
@@ -1256,7 +1256,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public ScheduleMetaData meta() {
+    public ScheduleContext meta() {
         return executionContext.meta();
     }
 
@@ -2067,7 +2067,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return this;
     }
 
-    private void addInner(int index, int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
+    private void addInner(int index, int type, Method method, ScheduleContext meta, String id, Object[] parameters) {
         switch (type) {
             case 0:
                 updateInner(index, TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
@@ -2132,7 +2132,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
+    private void addInner(int type, Method method, ScheduleContext meta, String id, Object[] parameters) {
         switch (type) {
             case 0:
                 addInner(TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
@@ -2201,7 +2201,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         Object[] parameters = taskPackage.getTaskParameters();
 
         Method method = TaskUtils.resolveMethodHandle(parameters[0]);
-        ScheduleMetaData meta = meta();
+        ScheduleContext meta = meta();
 
         // Set the number of threads to run. If 0, it will execute as many
         // threads as input size (after Tornado analyses the right block-size).
@@ -2229,7 +2229,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         Object[] parameters = taskPackage.getTaskParameters();
 
         Method method = TaskUtils.resolveMethodHandle(parameters[0]);
-        ScheduleMetaData meta = meta();
+        ScheduleContext meta = meta();
 
         // Set the number of threads to run. If 0, it will execute as many
         // threads as input size (after Tornado analyses the right block-size).

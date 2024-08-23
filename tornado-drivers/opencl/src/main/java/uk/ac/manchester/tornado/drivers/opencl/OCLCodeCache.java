@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLCodeCache {
 
@@ -572,7 +572,7 @@ public class OCLCodeCache {
         }
     }
 
-    public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
+    public OCLInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
 
         logger.info("Installing code for %s into code cache", entryPoint);
 

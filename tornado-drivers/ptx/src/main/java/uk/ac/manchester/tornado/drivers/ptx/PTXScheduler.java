@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXScheduler {
 
@@ -43,7 +43,7 @@ public class PTXScheduler {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
+    public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
         if (meta.isGlobalWorkDefined()) {
             return;
         }
@@ -55,7 +55,7 @@ public class PTXScheduler {
         }
     }
 
-    public int[] calculateBlockDimension(PTXModule module, TaskMetaData taskMeta) {
+    public int[] calculateBlockDimension(PTXModule module, TaskDataContext taskMeta) {
         if (taskMeta.isLocalWorkDefined()) {
             return Arrays.stream(taskMeta.getLocalWork()).mapToInt(l -> (int) l).toArray();
         }
@@ -107,7 +107,7 @@ public class PTXScheduler {
         return value;
     }
 
-    public int[] calculateGridDimension(PTXModule module, TaskMetaData taskMeta, int[] blockDimension) {
+    public int[] calculateGridDimension(PTXModule module, TaskDataContext taskMeta, int[] blockDimension) {
         int[] globalWork = Arrays.stream(taskMeta.getGlobalWork()).mapToInt(l -> (int) l).toArray();
         return calculateGridDimension(module.javaName, taskMeta.getDims(), globalWork, blockDimension);
     }

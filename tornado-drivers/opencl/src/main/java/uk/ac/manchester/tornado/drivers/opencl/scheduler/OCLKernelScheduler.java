@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGridInfo;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public abstract class OCLKernelScheduler {
 
@@ -50,21 +50,21 @@ public abstract class OCLKernelScheduler {
         deviceContext = context;
     }
 
-    public abstract void calculateGlobalWork(final TaskMetaData meta, long batchThreads);
+    public abstract void calculateGlobalWork(final TaskDataContext meta, long batchThreads);
 
-    public abstract void calculateLocalWork(final TaskMetaData meta);
+    public abstract void calculateLocalWork(final TaskDataContext meta);
 
-    public abstract void checkAndAdaptLocalWork(final TaskMetaData meta);
+    public abstract void checkAndAdaptLocalWork(final TaskDataContext meta);
 
     public long[] getDefaultLocalWorkGroup() {
         return null;
     }
 
-    public int submit(long executionPlanId, final OCLKernel kernel, final TaskMetaData meta, long batchThreads) {
+    public int submit(long executionPlanId, final OCLKernel kernel, final TaskDataContext meta, long batchThreads) {
         return submit(executionPlanId, kernel, meta, null, batchThreads);
     }
 
-    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);
@@ -81,7 +81,7 @@ public abstract class OCLKernelScheduler {
         }
     }
 
-    public int launch(long executionPlanId, final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+    public int launch(long executionPlanId, final OCLKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
         if (meta.isWorkerGridAvailable()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
             long[] global = grid.getGlobalWork();
@@ -104,7 +104,7 @@ public abstract class OCLKernelScheduler {
      * @param meta
      *     TaskMetaData.
      */
-    private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
+    private void checkLocalWorkGroupFitsOnDevice(final TaskDataContext meta) {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
@@ -124,7 +124,7 @@ public abstract class OCLKernelScheduler {
         }
     }
 
-    public int submit(long executionPlanId, final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+    public int submit(long executionPlanId, final OCLKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);

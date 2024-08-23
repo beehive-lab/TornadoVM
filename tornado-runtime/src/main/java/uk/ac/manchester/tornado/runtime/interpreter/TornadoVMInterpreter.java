@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * TornadoVMInterpreter: serves as a bytecode interpreter for TornadoVM
@@ -210,7 +210,7 @@ public class TornadoVMInterpreter {
         interpreterDevice.dumpEvents(executionContext.getExecutionPlanId());
     }
 
-    private void dumpEventProfiled(TornadoEvents eventSet, TaskMetaData meta) {
+    private void dumpEventProfiled(TornadoEvents eventSet, TaskDataContext meta) {
         final BitSet profiles = eventSet.getProfiles();
         for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
             if (eventSet.getDevice() instanceof TornadoXPUDevice device) {
@@ -227,7 +227,7 @@ public class TornadoVMInterpreter {
 
     public void dumpProfiles() {
         for (final SchedulableTask task : tasks) {
-            final TaskMetaData meta = (TaskMetaData) task.meta();
+            final TaskDataContext meta = (TaskDataContext) task.meta();
             meta.getProfiles(executionContext.getExecutionPlanId()).forEach(eventSet -> dumpEventProfiled(eventSet, meta));
         }
     }
@@ -779,9 +779,9 @@ public class TornadoVMInterpreter {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        TaskMetaData metadata;
+        TaskDataContext metadata;
         try {
-            metadata = (TaskMetaData) task.meta();
+            metadata = (TaskDataContext) task.meta();
         } catch (ClassCastException e) {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
         }

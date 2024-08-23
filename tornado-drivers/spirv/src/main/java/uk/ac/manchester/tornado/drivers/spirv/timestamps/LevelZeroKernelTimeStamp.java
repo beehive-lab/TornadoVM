@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class LevelZeroKernelTimeStamp {
 
@@ -93,7 +93,7 @@ public class LevelZeroKernelTimeStamp {
         LevelZeroUtils.errorLog("zeEventCreate", result);
     }
 
-    public void solveEvent(long executionPlanId, TaskMetaData meta) {
+    public void solveEvent(long executionPlanId, TaskDataContext meta) {
         timeStampBuffer = new LevelZeroByteBuffer();
         ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
         LevelZeroContext context = commandList.getContext();
@@ -121,7 +121,7 @@ public class LevelZeroKernelTimeStamp {
         }
     }
 
-    private void updateProfiler(ZeKernelTimeStampResult resultKernel, final TaskMetaData meta) {
+    private void updateProfiler(ZeKernelTimeStampResult resultKernel, final TaskDataContext meta) {
         long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
         long kernelElapsedTime = (long) resultKernel.getKernelElapsedTime();
         // Register globalTime

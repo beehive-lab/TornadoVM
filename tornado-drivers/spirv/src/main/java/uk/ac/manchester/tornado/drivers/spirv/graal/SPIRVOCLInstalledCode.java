@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
 
@@ -59,12 +59,12 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Not implemented yet");
     }
 
     @Override
-    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads) {
 
         // Set kernel args
         setKernelArgs(executionPlanId, (SPIRVKernelStackFrame) callWrapper);
@@ -121,7 +121,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    public void submit(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents) {
+    public void submit(long executionPlanId, long kernelPointer, final TaskDataContext meta, long[] waitEvents) {
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
@@ -140,7 +140,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         updateProfiler(executionPlanId, value, meta);
     }
 
-    public int launch(long executionPlanId, long kernelPointer, final TaskMetaData meta, long[] waitEvents, long[] kernelEvent) {
+    public int launch(long executionPlanId, long kernelPointer, final TaskDataContext meta, long[] waitEvents, long[] kernelEvent) {
         SPIRVOCLNativeDispatcher dispatcher = new SPIRVOCLNativeDispatcher();
         OCLCommandQueue commandQueue = (OCLCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(executionPlanId, deviceContext.getDeviceIndex());
         long queuePointer = commandQueue.getCommandQueuePtr();
@@ -162,7 +162,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);
@@ -180,7 +180,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    private void calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
+    private void calculateGlobalAndLocalBlockOfThreads(TaskDataContext meta, long batchThreads) {
         long[] gwg = new long[] { 1, 1, 1 };
         long[] lwg = new long[] { 1, 1, 1 };
 
@@ -204,7 +204,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    public void calculateLocalWork(final TaskMetaData meta) {
+    public void calculateLocalWork(final TaskDataContext meta) {
         final long[] localWork = meta.initLocalWork();
 
         switch (meta.getDims()) {
@@ -240,7 +240,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         return value;
     }
 
-    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskDataContext metaData) {
         long[] intermediates = new long[] { 1, 1, 1 };
 
         long[] maxWorkItemSizes = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
@@ -265,7 +265,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         return intermediates;
     }
 
-    private void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
+    private void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
@@ -276,7 +276,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
+    private void checkLocalWorkGroupFitsOnDevice(final TaskDataContext meta) {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
