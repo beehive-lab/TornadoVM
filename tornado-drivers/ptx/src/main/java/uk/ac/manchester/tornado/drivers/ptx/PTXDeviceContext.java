@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXDeviceContext implements TornadoDeviceContext {
 
@@ -256,7 +256,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs, TaskMetaData taskMeta, long batchThreads) {
+    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs, TaskDataContext taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
         if (taskMeta.isWorkerGridAvailable()) {
@@ -289,7 +289,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskMetaData meta) {
+    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
         int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
@@ -325,7 +325,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return args.array();
     }
 
-    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskMetaData meta, PTXKernelStackFrame callWrapper) {
+    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, PTXKernelStackFrame callWrapper) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = resolveEvent(executionPlanId, kernelContextWriteEventId);
@@ -341,7 +341,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
     }
 
-    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);

@@ -18,8 +18,8 @@
 package uk.ac.manchester.tornado.api.common;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 
 public interface SchedulableTask {
 
@@ -27,7 +27,7 @@ public interface SchedulableTask {
 
     Access[] getArgumentsAccess();
 
-    TaskMetaDataInterface meta();
+    TaskContextInterface meta();
 
     SchedulableTask mapTo(TornadoDevice mapping);
 

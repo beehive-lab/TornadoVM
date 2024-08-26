@@ -29,16 +29,16 @@ import org.graalvm.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
-    private TaskMetaData meta;
+    private TaskDataContext meta;
     private OCLBackend backend;
     private String id;
 
-    public OCLCompilationResult(String id, String name, TaskMetaData meta, OCLBackend backend) {
+    public OCLCompilationResult(String id, String name, TaskDataContext meta, OCLBackend backend) {
         super(name);
         this.id = id;
         this.meta = meta;
@@ -67,7 +67,7 @@ public class OCLCompilationResult extends CompilationResult {
         setTargetCode(newCode, size);
     }
 
-    public TaskMetaData getMeta() {
+    public TaskDataContext getMeta() {
         return meta;
     }
 

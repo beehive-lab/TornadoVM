@@ -25,18 +25,19 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
+
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TornadoMidTierContext extends MidTierContext {
 
     protected final ResolvedJavaMethod method;
     protected final Object[] args;
-    protected final TaskMetaData meta;
+    protected final TaskDataContext meta;
 
     public TornadoMidTierContext(Providers copyFrom, TargetProvider target, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, ResolvedJavaMethod method, Object[] args,
-            TaskMetaData meta) {
+            TaskDataContext meta) {
         super(copyFrom, target, optimisticOpts, profilingInfo);
         this.method = method;
         this.args = args;
@@ -63,7 +64,7 @@ public class TornadoMidTierContext extends MidTierContext {
         return (hasArgs()) ? args.length : 0;
     }
 
-    public TaskMetaData getMeta() {
+    public TaskDataContext getMeta() {
         return meta;
     }
 

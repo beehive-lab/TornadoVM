@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -62,7 +62,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
@@ -74,7 +74,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private PTXDeviceContext deviceContext;
     private boolean includePrintf;
     private PTXLIRGenerationResult lirGenRes;
-    private TaskMetaData meta;
+    private TaskDataContext meta;
 
     public PTXCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
@@ -294,13 +294,13 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
      * control Split (due to nested control-flow).
      *
      * @param HIRBlock
-     *            {@link HIRBlock}
+     *     {@link HIRBlock}
      * @param visitor
-     *            {@link PTXBlockVisitor}
+     *     {@link PTXBlockVisitor}
      * @param visited
-     *            {@link HashSet}
+     *     {@link HashSet}
      * @param pending
-     *            {@link HashMap}
+     *     {@link HashMap}
      */
     private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
@@ -399,11 +399,11 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         this.deviceContext = deviceContext;
     }
 
-    public TaskMetaData getTaskMetaData() {
+    public TaskDataContext getTaskMetaData() {
         return meta;
     }
 
-    public void setTaskMetaData(TaskMetaData metaData) {
+    public void setTaskMetaData(TaskDataContext metaData) {
         this.meta = metaData;
     }
 }

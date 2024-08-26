@@ -42,18 +42,18 @@
 package uk.ac.manchester.tornado.drivers.common;
 
 import jdk.vm.ci.code.InstalledCode;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetaCompilation {
-    TaskMetaData taskMeta;
+    TaskDataContext taskMeta;
     InstalledCode installedCode;
 
-    public MetaCompilation(TaskMetaData taskMeta, InstalledCode installedCode) {
+    public MetaCompilation(TaskDataContext taskMeta, InstalledCode installedCode) {
         this.taskMeta = taskMeta;
         this.installedCode = installedCode;
     }
 
-    public TaskMetaData getTaskMeta() {
+    public TaskDataContext getTaskMeta() {
         return taskMeta;
     }
 

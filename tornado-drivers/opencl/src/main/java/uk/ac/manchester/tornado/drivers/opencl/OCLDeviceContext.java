@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLDeviceContext implements OCLDeviceContextInterface {
 
@@ -630,7 +630,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+    public OCLInstalledCode installCode(TaskDataContext meta, String id, String entryPoint, byte[] code) {
         entryPoint = checkKernelName(entryPoint);
         return codeCache.installSource(meta, id, entryPoint, code);
     }
