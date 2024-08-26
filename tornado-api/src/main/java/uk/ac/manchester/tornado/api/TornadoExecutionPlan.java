@@ -382,7 +382,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
     }
 
     /**
-     * Disable Printing of the Thread-Block Deployment for the generated kernels.
+     * Disable printing of the Thread-Block Deployment for the generated kernels.
      *
      * @since 1.0.2
      * 
