@@ -407,7 +407,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
     }
 
     /**
-     * Disable Printing of the generated kernels for each task in a task-graph.
+     * Disable printing of the generated kernels for each task in a task-graph.
      * 
      * @since 1.0.2
      *
