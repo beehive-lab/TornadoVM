@@ -82,7 +82,7 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * This is the core class for the actual runtime.
@@ -162,7 +162,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData taskMeta = task.meta();
+        final TaskDataContext taskMeta = task.meta();
 
         // Return the code from the cache
         if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {

@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Class to map a SPIR-V device (Device represented either in LevelZero or an
@@ -386,11 +386,11 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return installBinary(result.getMeta(), result.getId(), result.getName(), result.getSPIRVBinary());
     }
 
-    public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+    public SPIRVInstalledCode installBinary(TaskDataContext meta, String id, String entryPoint, byte[] code) {
         return codeCache.installSPIRVBinary(meta, id, entryPoint, code);
     }
 
-    public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
+    public SPIRVInstalledCode installBinary(TaskDataContext meta, String id, String entryPoint, String pathToFile) {
         return codeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile);
     }
 

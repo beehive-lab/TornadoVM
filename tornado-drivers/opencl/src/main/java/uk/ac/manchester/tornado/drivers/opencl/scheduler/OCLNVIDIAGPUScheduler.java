@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 import java.util.Arrays;
 
@@ -44,7 +44,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
+    public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
@@ -56,7 +56,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateLocalWork(final TaskMetaData meta) {
+    public void calculateLocalWork(final TaskDataContext meta) {
         final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
@@ -84,7 +84,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
      *     TaskMetaData.
      */
     @Override
-    public void checkAndAdaptLocalWork(final TaskMetaData meta) {
+    public void checkAndAdaptLocalWork(final TaskDataContext meta) {
         final long[] localWork = meta.getLocalWork();
         if (localWork == null) {
             return;
@@ -158,7 +158,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
         return value;
     }
 
-    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskDataContext metaData) {
         long[] localWorkGroups = new long[] { 1, 1, 1 };
         if (metaData.getDims() == 1) {
             localWorkGroups[0] = maxWorkItemSizes[0];

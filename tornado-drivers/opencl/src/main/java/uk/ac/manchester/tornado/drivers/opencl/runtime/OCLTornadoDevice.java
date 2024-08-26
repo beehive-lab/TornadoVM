@@ -49,11 +49,11 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -100,7 +100,7 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLTornadoDevice implements TornadoXPUDevice {
 
@@ -255,7 +255,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         }
 
         // copy meta data into task
-        final TaskMetaData taskMeta = executable.meta();
+        final TaskDataContext taskMeta = executable.meta();
         final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
@@ -366,9 +366,9 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskMetaDataInterface meta = task.meta();
-        if (meta instanceof TaskMetaData) {
-            TaskMetaData metaData = (TaskMetaData) task.meta();
+        TaskContextInterface meta = task.meta();
+        if (meta instanceof TaskDataContext) {
+            TaskDataContext metaData = (TaskDataContext) task.meta();
             return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
         } else {
             throw new RuntimeException("[ERROR] TaskMetadata expected");

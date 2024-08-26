@@ -27,13 +27,13 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class OCLPrebuiltTask extends PrebuiltTask {
 
     private OCLInstalledCode code;
 
-    protected OCLPrebuiltTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] access, OCLTornadoDevice device, DomainTree domain) {
+    protected OCLPrebuiltTask(ScheduleContext meta, String id, String entryPoint, String filename, Object[] args, Access[] access, OCLTornadoDevice device, DomainTree domain) {
         super(meta, id, entryPoint, filename, args, access, device, domain);
     }
 

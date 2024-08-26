@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLFPGAThreadScheduler extends BasePhase<TornadoLowTierContext> {
 
@@ -60,7 +60,7 @@ public class OCLFPGAThreadScheduler extends BasePhase<TornadoLowTierContext> {
         if (graph.hasLoops()) {
             NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
             EndNode end = filter.first();
-            TaskMetaData metaData;
+            TaskDataContext metaData;
 
             metaData = lowTierContext.getMeta();
             if (metaData != null) {

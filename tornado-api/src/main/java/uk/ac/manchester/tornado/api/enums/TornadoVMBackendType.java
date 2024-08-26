@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,7 @@ public enum TornadoVMBackendType {
     JAVA("Java"), //
     VIRTUAL("Virtual");
 
-    String backendName;
+    final String backendName;
 
     TornadoVMBackendType(String backendName) {
         this.backendName = backendName;
