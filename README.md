@@ -369,7 +369,7 @@ Each Java TornadoVM module is licensed as follows:
 | Tornado-API                    | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
 | Tornado-Runtime                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
 | Tornado-Assembly               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Drivers                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
+| Tornado-Drivers                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
 | Tornado-Drivers-OpenCL-Headers | [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE)                   |
 | Tornado-scripts                | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
 | Tornado-Annotation             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
