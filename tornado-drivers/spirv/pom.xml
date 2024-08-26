@@ -23,7 +23,7 @@
         <dependency>
             <groupId>beehive-lab</groupId>
             <artifactId>beehive-levelzero-jni</artifactId>
-            <version>0.1.3</version>
+            <version>0.1.4</version>
         </dependency>
 
         <dependency>
