@@ -311,6 +311,15 @@ public class TaskUtils {
 
     }
 
+    /**
+     * Marshal object from {@link PrebuiltTaskPackage} to {@link PrebuiltTask}.
+     * 
+     * @param meta
+     *     {@link ScheduleContext}
+     * @param taskPackage
+     *     {@link PrebuiltTaskPackage}
+     * @return {@link PrebuiltTask}
+     */
     public static PrebuiltTask createTask(ScheduleContext meta, PrebuiltTaskPackage taskPackage) {
         PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
                 taskPackage.getId(), //
@@ -319,7 +328,7 @@ public class TaskUtils {
                 taskPackage.getArgs(),  //
                 taskPackage.getAccesses());
         if (taskPackage.getAtomics() != null) {
-            prebuiltTask.withAtomics(taskPackage.getAtomics());
+            prebuiltTask.setAtomics(taskPackage.getAtomics());
         }
         return prebuiltTask;
     }

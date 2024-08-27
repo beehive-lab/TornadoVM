@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -142,12 +141,8 @@ public class TaskDataContext extends AbstractRTContext {
         return localWork;
     }
 
-    public void addProfile(int id) {
-        final TornadoXPUDevice device = getXPUDevice();
-        BitSet events;
-        profiles.computeIfAbsent(device, k -> new BitSet(EVENT_WINDOW));
-        events = profiles.get(device);
-        events.set(id);
+    public void setArgumentsAccess(Access[] access) {
+        this.argumentsAccess = access;
     }
 
     public Access[] getArgumentsAccess() {
