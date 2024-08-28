@@ -527,7 +527,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         wasReset = true;
     }
 
-    public OCLTornadoDevice asMapping() {
+    public OCLTornadoDevice toDevice() {
         return new OCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
     }
 

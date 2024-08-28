@@ -29,7 +29,7 @@ public interface SchedulableTask {
 
     TaskContextInterface meta();
 
-    SchedulableTask mapTo(TornadoDevice mapping);
+    void setDevice(TornadoDevice device);
 
     TornadoDevice getDevice();
 
@@ -68,4 +68,5 @@ public interface SchedulableTask {
     void setGridScheduler(GridScheduler gridScheduler);
 
     boolean isGridSchedulerEnabled();
+
 }

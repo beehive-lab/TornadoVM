@@ -96,7 +96,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
 
     @Override
     public TornadoDevice getDefaultDevice() {
-        return getDefaultBackend().getDeviceContext().asMapping();
+        return getDefaultBackend().getDeviceContext().toDevice();
     }
 
     @Override
@@ -123,7 +123,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
     @Override
     public TornadoXPUDevice getDevice(int index) {
         if (index < backends.length) {
-            return backends[index].getDeviceContext().asMapping();
+            return backends[index].getDeviceContext().toDevice();
         } else {
             throw new TornadoDeviceNotFound("[ERROR]-[PTX-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
         }
@@ -134,7 +134,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
         if (devices == null) {
             devices = new ArrayList<>();
             for (int i = 0; i < getNumDevices(); i++) {
-                devices.add(backends[i].getDeviceContext().asMapping());
+                devices.add(backends[i].getDeviceContext().toDevice());
             }
         }
         return devices;

@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
@@ -59,8 +60,8 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private final String id;
     private final boolean isDeviceDefined;
     private TornadoXPUDevice device;
-    private int backendIndex;
-    private int deviceIndex;
+    protected int backendIndex;
+    protected int deviceIndex;
     private boolean deviceManuallySet;
 
     private boolean threadInfoEnabled;
@@ -138,17 +139,23 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         return device;
     }
 
+    private boolean hasSamePlatformName(TornadoAcceleratorBackend backend, TornadoDevice device, int index) {
+        return backend.getDevice(index).getPlatformName().equals(device.getPlatformName());
+    }
+
+    private boolean hasSameDeviceName(TornadoAcceleratorBackend backend, TornadoDevice device, int index) {
+        return backend.getDevice(index).getPhysicalDevice().getDeviceName().equals(device.getPhysicalDevice().getDeviceName());
+    }
+
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
-        TornadoAcceleratorBackend driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
-        int devs = driver.getNumDevices();
-        int index = 0;
-        for (int i = 0; i < devs; i++) {
-            if (driver.getDevice(i).getPlatformName().equals(device.getPlatformName()) && (driver.getDevice(i).getDeviceName().equals(device.getDeviceName()))) {
-                index = i;
-                break;
+        TornadoAcceleratorBackend backend = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
+        int totalNumDevices = backend.getNumDevices();
+        for (int deviceIndex = 0; deviceIndex < totalNumDevices; deviceIndex++) {
+            if (hasSamePlatformName(backend, device, deviceIndex) && hasSameDeviceName(backend, device, deviceIndex)) {
+                return deviceIndex;
             }
         }
-        return index;
+        throw new TornadoRuntimeException("[ERROR] Device not found: " + device.getPhysicalDevice().getDeviceName());
     }
 
     boolean isDeviceManuallySet() {
@@ -162,7 +169,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
      *     {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
-        this.backendIndex = device.getDriverIndex();
+        this.backendIndex = device.getBackendIndex();
         this.deviceIndex = getDeviceIndex(backendIndex, device);
         if (device instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
             this.device = tornadoAcceleratorDevice;

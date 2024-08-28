@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
@@ -41,7 +42,7 @@ public class ArrayAddInt {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws TornadoExecutionPlanException {
 
         final int numElements = 8;
         IntArray a = new IntArray(numElements);
@@ -58,8 +59,9 @@ public class ArrayAddInt {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executor.execute();
+        }
 
         System.out.println("a: " + a);
         System.out.println("b: " + b);

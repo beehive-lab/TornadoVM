@@ -276,7 +276,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int getDriverIndex() {
+    public int getBackendIndex() {
         return 0;
     }
 

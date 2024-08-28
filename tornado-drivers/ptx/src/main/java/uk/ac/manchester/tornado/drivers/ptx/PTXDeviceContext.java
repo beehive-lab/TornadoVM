@@ -116,7 +116,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return true;
     }
 
-    public PTXTornadoDevice asMapping() {
+    public PTXTornadoDevice toDevice() {
         return new PTXTornadoDevice(device.getDeviceIndex());
     }
 

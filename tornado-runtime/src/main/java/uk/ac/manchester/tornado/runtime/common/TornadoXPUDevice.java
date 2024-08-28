@@ -180,6 +180,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * It returns from the sketch of a task whether the loop index is written in the output buffer.
      * 
      * @param task
+     *     {@link SchedulableTask}
      * @return
      */
     default boolean loopIndexInWrite(SchedulableTask task) {

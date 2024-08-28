@@ -88,11 +88,11 @@ public class TornadoVMInterpreter {
     private final TornadoInstalledCode[] installedCodes;
 
     private final List<Object> constants;
-    private final List<SchedulableTask> tasks;
+    private final List<SchedulableTask> taskExecutionContexts;
     private final List<SchedulableTask> localTaskList;
 
     private TornadoProfiler timeProfiler;
-    private final TornadoExecutionContext executionContext;
+    private final TornadoExecutionContext graphExecutionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
     private double totalTime;
     private long invocations;
@@ -105,7 +105,7 @@ public class TornadoVMInterpreter {
     /**
      * It constructs a new TornadoVMInterpreter object.
      *
-     * @param executionContext
+     * @param graphExecutionContext
      *     The {@link TornadoExecutionContext}
      * @param bytecodeResult
      *     The {@link TornadoVMBytecodeResult}.
@@ -114,8 +114,8 @@ public class TornadoVMInterpreter {
      * @param device
      *     The {@link TornadoXPUDevice} device.
      */
-    public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoXPUDevice device) {
-        this.executionContext = executionContext;
+    public TornadoVMInterpreter(TornadoExecutionContext graphExecutionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoXPUDevice device) {
+        this.graphExecutionContext = graphExecutionContext;
         this.timeProfiler = timeProfiler;
         this.bytecodeResult = bytecodeResult;
 
@@ -130,11 +130,11 @@ public class TornadoVMInterpreter {
 
         this.bytecodeResult.getLong(); // Skips bytes not needed
 
-        kernelStackFrame = executionContext.getKernelStackFrame();
+        kernelStackFrame = graphExecutionContext.getKernelStackFrame();
         events = new int[this.bytecodeResult.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
 
-        localTaskList = executionContext.getTasksForDevice(interpreterDevice.getDeviceContext(), interpreterDevice.getDriverIndex());
+        localTaskList = graphExecutionContext.getTasksForDevice(interpreterDevice.getDeviceContext());
 
         installedCodes = new TornadoInstalledCode[localTaskList.size()];
 
@@ -146,14 +146,14 @@ public class TornadoVMInterpreter {
         logger.debug("created %d kernelStackFrame", kernelStackFrame.length);
         logger.debug("created %d event lists", events.length);
 
-        objects = executionContext.getObjects();
+        objects = graphExecutionContext.getObjects();
         dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 
         rewindBufferToBegin();
 
-        constants = executionContext.getConstants();
-        tasks = executionContext.getTasks();
+        constants = graphExecutionContext.getConstants();
+        taskExecutionContexts = graphExecutionContext.getTasks();
 
         logger.debug("interpreter for device %s is ready to go", device.toString());
 
@@ -168,7 +168,7 @@ public class TornadoVMInterpreter {
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
             TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
-            dataObjectStates[i] = executionContext.getLocalStateObject(object).getDataObjectState();
+            dataObjectStates[i] = graphExecutionContext.getLocalStateObject(object).getDataObjectState();
         }
     }
 
@@ -180,7 +180,7 @@ public class TornadoVMInterpreter {
             assert deviceIndex == interpreterDevice.getDeviceContext().getDeviceIndex();
             logger.debug("loading context %s", interpreterDevice.toString());
             final long t0 = System.nanoTime();
-            interpreterDevice.ensureLoaded(executionContext.getExecutionPlanId());
+            interpreterDevice.ensureLoaded(graphExecutionContext.getExecutionPlanId());
             final long t1 = System.nanoTime();
             logger.debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = bytecodeResult.get();
@@ -196,8 +196,8 @@ public class TornadoVMInterpreter {
     }
 
     public void clearProfiles() {
-        for (final SchedulableTask task : tasks) {
-            task.meta().getProfiles(executionContext.getExecutionPlanId()).clear();
+        for (final SchedulableTask task : taskExecutionContexts) {
+            task.meta().getProfiles(graphExecutionContext.getExecutionPlanId()).clear();
         }
     }
 
@@ -207,14 +207,14 @@ public class TornadoVMInterpreter {
             return;
         }
 
-        interpreterDevice.dumpEvents(executionContext.getExecutionPlanId());
+        interpreterDevice.dumpEvents(graphExecutionContext.getExecutionPlanId());
     }
 
     private void dumpEventProfiled(TornadoEvents eventSet, TaskDataContext meta) {
         final BitSet profiles = eventSet.getProfiles();
         for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
             if (eventSet.getDevice() instanceof TornadoXPUDevice device) {
-                final Event profile = device.resolveEvent(executionContext.getExecutionPlanId(), i);
+                final Event profile = device.resolveEvent(graphExecutionContext.getExecutionPlanId(), i);
                 if (profile.getStatus() == COMPLETE) {
                     System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(), profile
                             .getStartTime(), profile.getEndTime());
@@ -226,9 +226,9 @@ public class TornadoVMInterpreter {
     }
 
     public void dumpProfiles() {
-        for (final SchedulableTask task : tasks) {
+        for (final SchedulableTask task : taskExecutionContexts) {
             final TaskDataContext meta = (TaskDataContext) task.meta();
-            meta.getProfiles(executionContext.getExecutionPlanId()).forEach(eventSet -> dumpEventProfiled(eventSet, meta));
+            meta.getProfiles(graphExecutionContext.getExecutionPlanId()).forEach(eventSet -> dumpEventProfiled(eventSet, meta));
         }
     }
 
@@ -238,15 +238,15 @@ public class TornadoVMInterpreter {
     }
 
     private boolean isMemoryLimitEnabled() {
-        return executionContext.isMemoryLimited();
+        return graphExecutionContext.isMemoryLimited();
     }
 
     private Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         interpreterDevice.enableThreadSharing();
 
-        if (isMemoryLimitEnabled() && executionContext.doesExceedExecutionPlanLimit()) {
-            throw new TornadoMemoryException("OutofMemoryException due to executionPlan.withMemoryLimit of " + executionContext.getExecutionPlanMemoryLimit());
+        if (isMemoryLimitEnabled() && graphExecutionContext.doesExceedExecutionPlanLimit()) {
+            throw new TornadoMemoryException("OutofMemoryException due to executionPlan.withMemoryLimit of " + graphExecutionContext.getExecutionPlanMemoryLimit());
         }
 
         final long t0 = System.nanoTime();
@@ -358,12 +358,12 @@ public class TornadoVMInterpreter {
         Event barrier = EMPTY_EVENT;
         if (!isWarmup) {
             if (useDependencies) {
-                final int event = interpreterDevice.enqueueMarker(executionContext.getExecutionPlanId());
-                barrier = interpreterDevice.resolveEvent(executionContext.getExecutionPlanId(), event);
+                final int event = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId());
+                barrier = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), event);
             }
 
             if (TornadoOptions.USE_VM_FLUSH) {
-                interpreterDevice.flush(executionContext.getExecutionPlanId());
+                interpreterDevice.flush(graphExecutionContext.getExecutionPlanId());
             }
         }
 
@@ -374,7 +374,7 @@ public class TornadoVMInterpreter {
             invocations++;
         }
 
-        if (executionContext.meta().isDebug()) {
+        if (graphExecutionContext.meta().isDebug()) {
             logger.debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
         }
 
@@ -408,7 +408,7 @@ public class TornadoVMInterpreter {
 
         long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates);
 
-        executionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
+        graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
         if (TornadoOptions.isProfilerEnabled()) {
             // Register allocations in the profiler
@@ -432,7 +432,7 @@ public class TornadoVMInterpreter {
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         long spaceDeallocated = interpreterDevice.deallocate(objectState);
         // Update current device area use 
-        executionContext.setCurrentDeviceMemoryUsage(executionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
+        graphExecutionContext.setCurrentDeviceMemoryUsage(graphExecutionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
         return -1;
     }
 
@@ -448,9 +448,9 @@ public class TornadoVMInterpreter {
         // We need to stream-in when using batches, because the whole data is not copied
         List<Integer> allEvents;
         if (sizeBatch > 0) {
-            allEvents = interpreterDevice.streamIn(executionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList);
+            allEvents = interpreterDevice.streamIn(graphExecutionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList);
         } else {
-            allEvents = interpreterDevice.ensurePresent(executionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
+            allEvents = interpreterDevice.ensurePresent(graphExecutionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
         }
         resetEventIndexes(eventList);
 
@@ -460,8 +460,8 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
-                Event event = interpreterDevice.resolveEvent(executionContext.getExecutionPlanId(), e);
-                event.waitForEvents(executionContext.getExecutionPlanId());
+                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
+                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
@@ -487,14 +487,14 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        List<Integer> allEvents = interpreterDevice.streamIn(executionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList);
+        List<Integer> allEvents = interpreterDevice.streamIn(graphExecutionContext.getExecutionPlanId(), object, sizeBatch, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
-                Event event = interpreterDevice.resolveEvent(executionContext.getExecutionPlanId(), e);
-                event.waitForEvents(executionContext.getExecutionPlanId());
+                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
+                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
@@ -523,13 +523,13 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        int readEvent = interpreterDevice.streamOutBlocking(executionContext.getExecutionPlanId(), object, offset, objectState, waitList);
+        int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
 
         if (TornadoOptions.isProfilerEnabled() && readEvent != -1) {
-            Event event = interpreterDevice.resolveEvent(executionContext.getExecutionPlanId(), readEvent);
-            event.waitForEvents(executionContext.getExecutionPlanId());
+            Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
+            event.waitForEvents(graphExecutionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
@@ -560,11 +560,11 @@ public class TornadoVMInterpreter {
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
 
-        final int readEvent = interpreterDevice.streamOutBlocking(executionContext.getExecutionPlanId(), object, offset, objectState, waitList);
+        final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, waitList);
 
         if (TornadoOptions.isProfilerEnabled() && readEvent != -1) {
-            Event event = interpreterDevice.resolveEvent(executionContext.getExecutionPlanId(), readEvent);
-            event.waitForEvents(executionContext.getExecutionPlanId());
+            Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), readEvent);
+            event.waitForEvents(graphExecutionContext.getExecutionPlanId());
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
@@ -603,10 +603,10 @@ public class TornadoVMInterpreter {
     }
 
     private void updateMeta(TaskContextInterface meta) {
-        meta.setPrintKernelFlag(executionContext.meta().isPrintKernelEnabled());
-        meta.setCompilerFlags(TornadoVMBackendType.OPENCL, executionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
-        meta.setCompilerFlags(TornadoVMBackendType.PTX, executionContext.meta().getCompilerFlags(TornadoVMBackendType.PTX));
-        meta.setCompilerFlags(TornadoVMBackendType.SPIRV, executionContext.meta().getCompilerFlags(TornadoVMBackendType.SPIRV));
+        meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
+        meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
+        meta.setCompilerFlags(TornadoVMBackendType.PTX, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.PTX));
+        meta.setCompilerFlags(TornadoVMBackendType.SPIRV, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.SPIRV));
     }
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
@@ -615,12 +615,12 @@ public class TornadoVMInterpreter {
             throw new TornadoFailureException("[ERROR] reset() was called after warmup() on device: " + interpreterDevice + "!");
         }
 
-        boolean redeployOnDevice = executionContext.redeployOnDevice();
+        boolean redeployOnDevice = graphExecutionContext.redeployOnDevice();
 
         final KernelStackFrame callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, kernelStackFrame, interpreterDevice, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
-        final SchedulableTask task = tasks.get(taskIndex);
+        final SchedulableTask task = taskExecutionContexts.get(taskIndex);
         int currentBatch = task.getBatchNumber();
         TaskContextInterface meta = task.meta();
         updateMeta(meta);
@@ -636,7 +636,7 @@ public class TornadoVMInterpreter {
 
         updateBatchThreads(task, batchThreads, indexInWrite, currentBatch);
 
-        task.enableDefaultThreadScheduler(executionContext.useDefaultThreadScheduler());
+        task.enableDefaultThreadScheduler(graphExecutionContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             task.setUseGridScheduler(true);
@@ -651,10 +651,10 @@ public class TornadoVMInterpreter {
         }
 
         if (shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)])) {
-            task.mapTo(interpreterDevice);
+            task.setDevice(interpreterDevice);
             try {
                 task.attachProfiler(timeProfiler);
-                if (taskIndex == (tasks.size() - 1)) {
+                if (taskIndex == (taskExecutionContexts.size() - 1)) {
                     // If it is the last task within the task-schedule or doUpdate is true -> we
                     // force compilation. This is useful when compiling code for Xilinx/Altera
                     // FPGAs, that has to be a single source.
@@ -690,7 +690,7 @@ public class TornadoVMInterpreter {
     private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,
             XPUExecutionFrame executionFrame) {
 
-        final SchedulableTask task = tasks.get(taskIndex);
+        final SchedulableTask task = taskExecutionContexts.get(taskIndex);
         KernelStackFrame stackFrame = executionFrame.stackFrame;
         int[] waitList = executionFrame.waitList;
 
@@ -755,11 +755,11 @@ public class TornadoVMInterpreter {
 
         if (atomicsArray != null) {
             bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray);
-            List<Integer> allEvents = bufferAtomics.enqueueWrite(executionContext.getExecutionPlanId(), null, 0, 0, null, false);
+            List<Integer> allEvents = bufferAtomics.enqueueWrite(graphExecutionContext.getExecutionPlanId(), null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {
-                    Event event = interpreterDevice.resolveEvent(executionContext.getExecutionPlanId(), e);
-                    event.waitForEvents(executionContext.getExecutionPlanId());
+                    Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
+                    event.waitForEvents(graphExecutionContext.getExecutionPlanId());
                     long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                     value += event.getElapsedTime();
                     timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
@@ -779,30 +779,28 @@ public class TornadoVMInterpreter {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        TaskDataContext dataContext;
-        try {
-            dataContext = (TaskDataContext) task.meta();
-        } catch (ClassCastException e) {
-            throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
-        }
+        if (task.meta() instanceof TaskDataContext dataContext) {
+            // We attach the profiler information, grid information and global threads
+            dataContext.attachProfiler(timeProfiler);
+            dataContext.setGridScheduler(gridScheduler);
+            dataContext.setThreadInfoEnabled(graphExecutionContext.meta().isThreadInfoEnabled());
 
-        // We attach the profiler information, grid information and global threads
-        dataContext.attachProfiler(timeProfiler);
-        dataContext.setGridScheduler(gridScheduler);
-        dataContext.setThreadInfoEnabled(executionContext.meta().isThreadInfoEnabled());
+            try {
+                int lastEvent = useDependencies
+                        ? installedCode.launchWithDependencies(graphExecutionContext.getExecutionPlanId(), stackFrame, bufferAtomics, dataContext, batchThreads, waitList)
+                        : installedCode.launchWithoutDependencies(graphExecutionContext.getExecutionPlanId(), stackFrame, bufferAtomics, dataContext, batchThreads);
 
-        try {
-            int lastEvent = useDependencies
-                    ? installedCode.launchWithDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, dataContext, batchThreads, waitList)
-                    : installedCode.launchWithoutDependencies(executionContext.getExecutionPlanId(), stackFrame, bufferAtomics, dataContext, batchThreads);
+                resetEventIndexes(eventList);
+                return lastEvent;
 
-            resetEventIndexes(eventList);
-            return lastEvent;
-        } catch (Exception e) {
-            if (TornadoOptions.DEBUG) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                if (TornadoOptions.DEBUG) {
+                    e.printStackTrace();
+                }
+                throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + e, e);
             }
-            throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + e.toString(), e);
+        } else {
+            throw new TornadoRuntimeException("task.meta is not instanceof TaskDataContext");
         }
     }
 
@@ -824,14 +822,14 @@ public class TornadoVMInterpreter {
             tornadoVMBytecodeList.append(String.format("bc: " + InterpreterUtilities.debugHighLightBC("BARRIER") + " event-list %d%n", eventList));
         }
 
-        int lastEvent = interpreterDevice.enqueueMarker(executionContext.getExecutionPlanId(), waitList);
+        int lastEvent = interpreterDevice.enqueueMarker(graphExecutionContext.getExecutionPlanId(), waitList);
 
         resetEventIndexes(eventList);
         return lastEvent;
     }
 
     private void throwErrorInterpreter(byte op) {
-        if (executionContext.meta().isDebug()) {
+        if (graphExecutionContext.meta().isDebug()) {
             logger.debug("bc: invalid op 0x%x(%d)", op, op);
         }
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
@@ -856,11 +854,11 @@ public class TornadoVMInterpreter {
     }
 
     private KernelStackFrame resolveCallWrapper(int index, int numArgs, KernelStackFrame[] kernelStackFrame, TornadoXPUDevice device, boolean redeployOnDevice) {
-        if (executionContext.meta().isDebug() && redeployOnDevice) {
+        if (graphExecutionContext.meta().isDebug() && redeployOnDevice) {
             logger.debug("Recompiling task on device " + device);
         }
         if (kernelStackFrame[index] == null || !kernelStackFrame[index].isValid() || redeployOnDevice) {
-            kernelStackFrame[index] = device.createKernelStackFrame(executionContext.getExecutionPlanId(), numArgs);
+            kernelStackFrame[index] = device.createKernelStackFrame(graphExecutionContext.getExecutionPlanId(), numArgs);
         }
         return kernelStackFrame[index];
     }
@@ -879,12 +877,12 @@ public class TornadoVMInterpreter {
      *     the local task list.
      */
     private int globalToLocalTaskIndex(int taskIndex) {
-        return localTaskList.indexOf(tasks.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(tasks.get(taskIndex));
+        return localTaskList.indexOf(taskExecutionContexts.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(taskExecutionContexts.get(taskIndex));
     }
 
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
         if (task instanceof PrebuiltTask prebuiltTask && timeProfiler instanceof TimeProfiler) {
-            timeProfiler.registerDeviceID(task.getId(), prebuiltTask.meta().getXPUDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
+            timeProfiler.registerDeviceID(task.getId(), prebuiltTask.meta().getXPUDevice().getBackendIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
             timeProfiler.registerDeviceName(task.getId(), prebuiltTask.meta().getXPUDevice().getPhysicalDevice().getDeviceName());
         }
     }
