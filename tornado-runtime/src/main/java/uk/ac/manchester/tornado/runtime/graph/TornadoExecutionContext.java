@@ -62,7 +62,7 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class TornadoExecutionContext {
 
@@ -70,7 +70,7 @@ public class TornadoExecutionContext {
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
-    private ScheduleMetaData meta;
+    private ScheduleContext meta;
     private KernelStackFrame[] kernelStackFrame;
     private List<SchedulableTask> tasks;
     private List<Object> constants;
@@ -94,7 +94,7 @@ public class TornadoExecutionContext {
 
     public TornadoExecutionContext(String id) {
         name = id;
-        meta = new ScheduleMetaData(name);
+        meta = new ScheduleContext(name);
         tasks = new ArrayList<>();
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
@@ -465,7 +465,7 @@ public class TornadoExecutionContext {
 
     /**
      * It retrieves a list of tasks for a specific device and driver. Both
-     * deviceContext and driverIndex are checked to ensure the correct task
+     * deviceContext and backendIndex are checked to ensure the correct task
      * assignment.
      *
      * @param deviceContext
@@ -493,7 +493,7 @@ public class TornadoExecutionContext {
      */
     @Deprecated
     public TornadoXPUDevice getDefaultDevice() {
-        return meta.getLogicDevice();
+        return meta.getXPUDevice();
     }
 
     public SchedulableTask getTask(String id) {
@@ -525,7 +525,7 @@ public class TornadoExecutionContext {
         return name;
     }
 
-    public ScheduleMetaData meta() {
+    public ScheduleContext meta() {
         return meta;
     }
 
@@ -534,13 +534,13 @@ public class TornadoExecutionContext {
             Object object = objects.get(i);
             if (object != null) {
                 final LocalObjectState localState = objectState.get(i);
-                Event event = localState.sync(executionPlanId, object, meta().getLogicDevice());
+                Event event = localState.sync(executionPlanId, object, meta().getXPUDevice());
 
                 if (TornadoOptions.isProfilerEnabled() && event != null) {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
                     value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
-                    XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getLogicDevice());
+                    XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
                     profiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().size());
                 }
             }
@@ -569,38 +569,6 @@ public class TornadoExecutionContext {
 
     public boolean useDefaultThreadScheduler() {
         return defaultScheduler;
-    }
-
-    public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
-
-        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>(tasks);
-        executionContext.tasks = schedulableTasksCopy;
-
-        List<Object> constantCopy = new ArrayList<>(constants);
-        executionContext.constants = constantCopy;
-
-        Map<Integer, Integer> objectsMapCopy = new HashMap<>(objectMap);
-        executionContext.objectMap = objectsMapCopy;
-
-        List<Object> objectsCopy = new ArrayList<>(objects);
-        executionContext.objects = objectsCopy;
-
-        List<LocalObjectState> objectStateCopy = new ArrayList<>(objectState);
-        executionContext.objectState = objectStateCopy;
-
-        List<TornadoXPUDevice> devicesCopy = new ArrayList<>(devices);
-        executionContext.devices = devicesCopy;
-
-        executionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
-
-        Set<TornadoXPUDevice> lastDeviceCopy = new HashSet<>(lastDevices);
-        executionContext.lastDevices = lastDeviceCopy;
-
-        executionContext.meta = meta;
-        executionContext.isPrintKernel = this.isPrintKernel;
-
-        executionContext.profiler = this.profiler;
-        executionContext.nextTask = this.nextTask;
     }
 
     public void dumpExecutionContextMeta() {

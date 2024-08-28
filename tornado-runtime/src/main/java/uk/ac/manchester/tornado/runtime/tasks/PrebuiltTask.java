@@ -31,14 +31,13 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PrebuiltTask implements SchedulableTask {
 
     protected final Object[] args;
-    protected final TaskMetaData meta;
+    protected final TaskDataContext meta;
     private final String entryPoint;
     private final String filename;
     private final Access[] argumentsAccess;
@@ -50,41 +49,17 @@ public class PrebuiltTask implements SchedulableTask {
     private boolean forceCompiler;
     private int[] atomics;
 
-    public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
+    public PrebuiltTask(ScheduleContext scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access) {
         this.entryPoint = entryPoint;
         this.filename = filename;
         this.args = args;
         this.argumentsAccess = access;
-        meta = new TaskMetaData(scheduleMeta, id, access.length);
-        for (int i = 0; i < access.length; i++) {
-            meta.getArgumentsAccess()[i] = access[i];
-        }
-        meta.setDevice(device);
-        meta.setDomain(domain);
-
-        final long[] values = new long[domain.getDepth()];
-        for (int i = 0; i < domain.getDepth(); i++) {
-            values[i] = domain.get(i).cardinality();
-        }
-        meta.setGlobalWork(values);
-
+        meta = new TaskDataContext(scheduleMeta, id, access.length);
+        meta.setArgumentsAccess(access);
     }
 
-    public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access) {
-        this.entryPoint = entryPoint;
-        this.filename = filename;
-        this.args = args;
-        this.argumentsAccess = access;
-        meta = new TaskMetaData(scheduleMeta, id, access.length);
-        for (int i = 0; i < access.length; i++) {
-            meta.getArgumentsAccess()[i] = access[i];
-        }
-
-    }
-
-    public PrebuiltTask withAtomics(int[] atomics) {
+    public void setAtomics(int[] atomics) {
         this.atomics = atomics;
-        return this;
     }
 
     @Override
@@ -112,7 +87,7 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public TaskMetaData meta() {
+    public TaskDataContext meta() {
         return meta;
     }
 
@@ -124,7 +99,7 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public TornadoXPUDevice getDevice() {
-        return meta.getLogicDevice();
+        return meta.getXPUDevice();
     }
 
     @Override

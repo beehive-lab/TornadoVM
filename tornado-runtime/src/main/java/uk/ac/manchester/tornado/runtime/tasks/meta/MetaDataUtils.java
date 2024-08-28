@@ -42,9 +42,12 @@ public final class MetaDataUtils {
         return (TornadoXPUDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
 
-    public static int[] resolveDriverDeviceIndexes(String device) {
+    public record BackendSelectionContainer(int backendIndex, int deviceIndex) {
+    }
+
+    public static BackendSelectionContainer resolveDriverDeviceIndexes(String device) {
         final String[] ids = device.split(":");
-        return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };
+        return new BackendSelectionContainer(Integer.parseInt(ids[0]), Integer.parseInt(ids[1]));
     }
 
     public static String[] processPrecompiledBinariesFromFile(String fileName) {

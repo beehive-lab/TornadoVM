@@ -32,7 +32,7 @@ import org.graalvm.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Object that represents the result of a SPIRV compilation (from GraalIR to
@@ -44,12 +44,12 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class SPIRVCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
-    private TaskMetaData taskMetaData;
+    private TaskDataContext taskMetaData;
     private String compilationId;
     private ByteBuffer spirvBinary;
     private SPIRVAssembler spirvAssembler;
 
-    public SPIRVCompilationResult(String compilationId, String methodName, TaskMetaData taskMetaData) {
+    public SPIRVCompilationResult(String compilationId, String methodName, TaskDataContext taskMetaData) {
         super(methodName);
         this.compilationId = compilationId;
         this.taskMetaData = taskMetaData;
@@ -81,11 +81,11 @@ public class SPIRVCompilationResult extends CompilationResult {
         setTargetCode(newCode, newCode.length);
     }
 
-    public TaskMetaData getTaskMetaData() {
+    public TaskDataContext getTaskMetaData() {
         return this.taskMetaData;
     }
 
-    public TaskMetaData getMeta() {
+    public TaskDataContext getMeta() {
         return taskMetaData;
     }
 

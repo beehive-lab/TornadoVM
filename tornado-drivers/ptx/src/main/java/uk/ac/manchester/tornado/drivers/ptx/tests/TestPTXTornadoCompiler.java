@@ -31,8 +31,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TestPTXTornadoCompiler {
 
@@ -82,7 +82,7 @@ public class TestPTXTornadoCompiler {
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
         PTXBackend backend = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultBackend();
-        TaskMetaData meta = new TaskMetaData(new ScheduleMetaData("s0"), "add", 0);
+        TaskDataContext meta = new TaskDataContext(new ScheduleContext("s0"), "add", 0);
         new PTXCompilationResult("add", meta);
 
         byte[] source = PTX_KERNEL.getBytes();

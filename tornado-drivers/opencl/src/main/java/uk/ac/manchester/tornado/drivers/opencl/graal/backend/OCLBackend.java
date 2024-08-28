@@ -103,7 +103,7 @@ import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -202,7 +202,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
     }
 
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
-        TaskMetaData taskMetaData = crb.getTaskMetaData();
+        TaskDataContext taskMetaData = crb.getTaskMetaData();
         profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         final OCLAssembler asm = (OCLAssembler) crb.asm;

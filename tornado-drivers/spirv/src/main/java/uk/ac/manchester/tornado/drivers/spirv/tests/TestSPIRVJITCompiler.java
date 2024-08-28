@@ -51,8 +51,8 @@ import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Testing the SPIR-V JIT Compiler and integration with the TornadoVM SPIR-V Runtime.
@@ -94,10 +94,10 @@ public class TestSPIRVJITCompiler {
         TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
-        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        ScheduleContext scheduleMetaData = new ScheduleContext("s0");
         // Create a compilable task
         CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
-        TaskMetaData taskMeta = compilableTask.meta();
+        TaskDataContext taskMeta = compilableTask.meta();
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
@@ -116,7 +116,7 @@ public class TestSPIRVJITCompiler {
         return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
 
-    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(spirvTornadoDevice);

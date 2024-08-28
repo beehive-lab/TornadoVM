@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTX {
     public static final String PTX_JNI_LIBRARY = "tornado-ptx";
@@ -85,7 +85,7 @@ public class PTX {
         return new PTXTornadoDevice(deviceIndex);
     }
 
-    public static void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
+    public static void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode openCLCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }

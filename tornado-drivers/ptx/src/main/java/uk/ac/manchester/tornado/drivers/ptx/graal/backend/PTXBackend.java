@@ -90,7 +90,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
 import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -223,7 +223,7 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
 
         // Enable Profiler for code generation
         PTXCompilationResultBuilder builder = (PTXCompilationResultBuilder) resultBuilder;
-        TaskMetaData taskMetaData = builder.getTaskMetaData();
+        TaskDataContext taskMetaData = builder.getTaskMetaData();
         profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         PTXCompilationResultBuilder crb = (PTXCompilationResultBuilder) resultBuilder;

@@ -30,16 +30,16 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorElementOpNode;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLCanonicalizer implements CanonicalizerPhase.CustomSimplification {
 
     protected MetaAccessProvider metaAccess;
     protected ResolvedJavaMethod method;
-    protected TaskMetaData meta;
+    protected TaskDataContext meta;
     protected Object[] args;
 
-    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, TaskMetaData meta) {
+    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, TaskDataContext meta) {
         this.metaAccess = metaAccess;
         this.method = method;
         this.meta = meta;

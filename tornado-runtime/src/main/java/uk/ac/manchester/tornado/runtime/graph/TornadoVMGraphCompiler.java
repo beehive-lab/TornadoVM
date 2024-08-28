@@ -93,7 +93,7 @@ public class TornadoVMGraphCompiler {
 
         }
 
-        if (executionContext.meta().shouldDumpTaskGraph()) {
+        if (executionContext.meta().isDebug()) {
             intermediateTornadoGraph.printDependencyMatrix();
         }
 

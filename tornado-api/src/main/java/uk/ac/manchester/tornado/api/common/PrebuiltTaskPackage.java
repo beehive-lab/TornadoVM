@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.AccessorParameters;
 
 public class PrebuiltTaskPackage extends TaskPackage {
@@ -32,13 +34,11 @@ public class PrebuiltTaskPackage extends TaskPackage {
         this.entryPoint = entryPoint;
         this.filename = fileName;
         this.args = new Object[accessorParameters.numAccessors()];
-        for (int i = 0; i < accessorParameters.numAccessors(); i++) {
-            this.args[i] = accessorParameters.getAccessor(i).object();
-        }
         this.accesses = new Access[accessorParameters.numAccessors()];
-        for (int i = 0; i < accessorParameters.numAccessors(); i++) {
+        IntStream.range(0, accessorParameters.numAccessors()).forEach(i -> {
+            this.args[i] = accessorParameters.getAccessor(i).object();
             this.accesses[i] = accessorParameters.getAccessor(i).access();
-        }
+        });
     }
 
     public PrebuiltTaskPackage withAtomics(int[] atomics) {

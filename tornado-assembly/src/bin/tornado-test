@@ -123,6 +123,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestDevices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.compiler.TestCompilerFlagsAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestMemorySegmentsAsType"),
     TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorTypes"),

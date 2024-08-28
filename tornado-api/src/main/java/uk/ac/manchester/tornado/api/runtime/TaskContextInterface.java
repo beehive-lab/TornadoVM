@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.memory;
+package uk.ac.manchester.tornado.api.runtime;
 
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
-public interface TaskMetaDataInterface {
+public interface TaskContextInterface {
 
     List<TornadoEvents> getProfiles(long executionPlanId);
 
-    String getCompilerFlags();
-
-    void setCompilerFlags(String flags);
+    void setCompilerFlags(TornadoVMBackendType backendType, String flags);
 
     void setGlobalWork(long[] global);
 

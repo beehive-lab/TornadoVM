@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
@@ -214,7 +214,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+    public OCLInstalledCode installCode(TaskDataContext meta, String id, String entryPoint, byte[] code) {
         return null;
     }
 

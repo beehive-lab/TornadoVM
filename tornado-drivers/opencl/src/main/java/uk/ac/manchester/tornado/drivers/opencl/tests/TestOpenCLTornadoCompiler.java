@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TestOpenCLTornadoCompiler {
 
@@ -62,8 +62,8 @@ public class TestOpenCLTornadoCompiler {
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
         OCLBackend backend = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultBackend();
-        ScheduleMetaData scheduleMeta = new ScheduleMetaData("oclbackend");
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, "saxpy");
+        ScheduleContext scheduleMeta = new ScheduleContext("oclbackend");
+        TaskDataContext meta = new TaskDataContext(scheduleMeta, "saxpy");
         new OCLCompilationResult("internal", "saxpy", meta, backend);
 
         byte[] source = OPENCL_KERNEL.getBytes();
