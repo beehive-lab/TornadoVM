@@ -115,10 +115,74 @@ public class PrebuiltTest extends TornadoTestBase {
                     .withDevice(defaultDevice) //
                     .execute();
         }
-
-        for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(a.get(i) + b.get(i), c.get(i));
+        for (int j = 0; j < c.getSize(); j++) {
+            assertEquals(a.get(j) + b.get(j), c.get(j));
         }
+
+    }
+
+    @Test
+    public void testPrebuilt01Multi() throws TornadoExecutionPlanException {
+
+        final int numElements = 8;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        switch (backendType) {
+            case PTX:
+                FILE_PATH += "add.ptx";
+                break;
+            case OPENCL:
+                FILE_PATH += "add.cl";
+                break;
+            case SPIRV:
+                FILE_PATH += "add.spv";
+                break;
+            default:
+                throw new TornadoRuntimeException("Backend not supported");
+        }
+
+        // Define accessors for each parameter
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, a, Access.READ_WRITE);
+        accessorParameters.set(1, b, Access.READ_WRITE);
+        accessorParameters.set(2, c, Access.WRITE_ONLY);
+
+        // Define the Task-Graph
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .prebuiltTask("t0",      //task name
+                        "add",              // name of the low-level kernel to invoke
+                        FILE_PATH,          // file name
+                        accessorParameters) // accessors
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        // When using the prebuilt API, we need to define the WorkerGrid, otherwise it will launch 1 thread
+        // on the target device
+        WorkerGrid workerGrid = new WorkerGrid1D(numElements);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+
+        // Launch the application on the target device
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
+                    .execute();
+
+            // Run task multiple times
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+                for (int j = 0; j < c.getSize(); j++) {
+                    assertEquals(a.get(j) + b.get(j), c.get(j));
+                }
+                IntStream.range(0, numElements).forEach(k -> a.set(k, c.get(k)));
+            }
+        }
+
     }
 
     @Test
