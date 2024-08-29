@@ -30,6 +30,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -554,7 +555,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public void clean() {
         // Reset only the execution plans attached to the PTX backend.
-        Set<Long> ids = device.getPTXContext().getDeviceContext().getRegisteredPlanIds();
+        Set<Long> ids = new HashSet<>(device.getPTXContext().getDeviceContext().getRegisteredPlanIds());
         ids.forEach(id -> device.getPTXContext().getDeviceContext().reset(id));
         ids.clear();
         disableProfilerOptions();

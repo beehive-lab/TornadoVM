@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -131,7 +132,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void clean() {
-        Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
+        Set<Long> ids = new HashSet<>(device.getDeviceContext().getRegisteredPlanIds());
         if (!ids.isEmpty()) {
             ids.forEach(id -> device.getDeviceContext().reset(id));
             ids.clear();
