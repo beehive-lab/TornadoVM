@@ -18,6 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.functional;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
@@ -32,6 +33,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -143,6 +145,30 @@ public class TestLambdas extends TornadoTestBase {
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) * b.get(i), c.get(i), 0.001);
         }
+    }
+
+    @Test
+    public void testParameterUnboxing() throws TornadoExecutionPlanException {
+        var arrayToCopy = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
+
+        var taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayToCopy);
+
+        var resultArray = new FloatArray(arrayToCopy.length);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, resultArray);
+
+        taskGraph.task("t0", (source, sourceOffset, destination, destinationOffset, length) -> {
+            for (@Parallel int i = 0; i < length; i++) {
+                destination.set(destinationOffset + i, source[sourceOffset + i]);
+            }
+        }, arrayToCopy, 0, resultArray, 0, arrayToCopy.length);
+
+        var snapshot = taskGraph.snapshot();
+        try (var executionPlan = new TornadoExecutionPlan(snapshot)) {
+            executionPlan.execute();
+        }
+
+        assertArrayEquals(arrayToCopy, resultArray.toHeapArray(), 0.001f);
     }
 
 }
