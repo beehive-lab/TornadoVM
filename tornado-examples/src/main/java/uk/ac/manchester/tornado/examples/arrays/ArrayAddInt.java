@@ -26,6 +26,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
+import java.util.Arrays;
+
 /**
  * <p>
  * How to run?
@@ -63,9 +65,9 @@ public class ArrayAddInt {
             executor.execute();
         }
 
-        System.out.println("a: " + a);
-        System.out.println("b: " + b);
-        System.out.println("c: " + c);
+        System.out.println("a: " + Arrays.toString(a.toHeapArray()));
+        System.out.println("b: " + Arrays.toString(b.toHeapArray()));
+        System.out.println("c: " + Arrays.toString(c.toHeapArray()));
     }
 
 }
