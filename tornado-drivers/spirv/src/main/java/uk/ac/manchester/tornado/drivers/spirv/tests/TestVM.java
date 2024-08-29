@@ -49,7 +49,7 @@ public class TestVM {
         // Get the backend from TornadoVM
         SPIRVBackend spirvBackend = TornadoRuntimeProvider.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getBackend(spirvRuntime);
         System.out.println("Query SPIR_V Runtime: " + spirvBackend);
-        return spirvBackend.getDeviceContext().asMapping();
+        return spirvBackend.getDeviceContext().toDevice();
     }
 
     public void runWithTornadoVM(SPIRVTornadoDevice device, int[] a, int[] b, int[] c) {

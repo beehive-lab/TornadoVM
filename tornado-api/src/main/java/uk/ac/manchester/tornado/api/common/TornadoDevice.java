@@ -181,7 +181,7 @@ public interface TornadoDevice {
 
     Object getDeviceInfo();
 
-    int getDriverIndex();
+    int getBackendIndex();
 
     /**
      * Returns the number of processors available to the JVM. We need to overwrite

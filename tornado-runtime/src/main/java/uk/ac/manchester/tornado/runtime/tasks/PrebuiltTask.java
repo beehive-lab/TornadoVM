@@ -36,8 +36,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PrebuiltTask implements SchedulableTask {
 
-    protected final Object[] args;
-    protected final TaskDataContext meta;
+    private final Object[] args;
+    private TaskDataContext meta;
     private final String entryPoint;
     private final String filename;
     private final Access[] argumentsAccess;
@@ -92,9 +92,8 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public SchedulableTask mapTo(TornadoDevice mapping) {
-        meta.setDevice(mapping);
-        return this;
+    public void setDevice(TornadoDevice device) {
+        meta.setDevice(device);
     }
 
     @Override

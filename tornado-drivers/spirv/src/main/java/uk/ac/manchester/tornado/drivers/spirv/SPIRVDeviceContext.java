@@ -149,7 +149,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return TornadoRuntimeProvider.getTornadoRuntime().getBackendIndex(SPIRVBackendImpl.class);
     }
 
-    public SPIRVTornadoDevice asMapping() {
+    public SPIRVTornadoDevice toDevice() {
         return tornadoDevice;
     }
 

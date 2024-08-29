@@ -100,9 +100,8 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final TornadoDevice mapping) {
-        meta.setDevice(mapping);
-        return this;
+    public void setDevice(final TornadoDevice device) {
+        meta.setDevice(device);
     }
 
     @Override

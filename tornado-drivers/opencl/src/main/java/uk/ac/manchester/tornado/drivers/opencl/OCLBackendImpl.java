@@ -147,7 +147,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
 
     @Override
     public TornadoXPUDevice getDefaultDevice() {
-        return flatBackends[0].getDeviceContext().asMapping();
+        return flatBackends[0].getDeviceContext().toDevice();
     }
 
     @Override
@@ -158,7 +158,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     @Override
     public TornadoXPUDevice getDevice(int index) {
         if (index < flatBackends.length) {
-            return flatBackends[index].getDeviceContext().asMapping();
+            return flatBackends[index].getDeviceContext().toDevice();
         } else {
             throw new TornadoDeviceNotFound("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
         }
