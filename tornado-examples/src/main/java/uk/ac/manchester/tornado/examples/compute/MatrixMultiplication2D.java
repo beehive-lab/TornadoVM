@@ -183,7 +183,7 @@ public class MatrixMultiplication2D {
         }
 
         // Store the CSV Table for all metrics
-        PrintWriter fileWriter = new PrintWriter("stats-mxm.txt");
+        PrintWriter fileWriter = new PrintWriter("stats-mxm-" + size + ".txt");
         fileWriter.println("Java, Stream, TornadoVM");
         for (int i = 0; i < javaElapsedTime.size(); i++) {
             fileWriter.println(javaElapsedTime.get(i) + "," + streamsElapsedTime.get(i) + "," + tornadoElapsedTime.get(i));
