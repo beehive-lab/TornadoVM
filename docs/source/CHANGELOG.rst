@@ -5,6 +5,51 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.7
+----------------
+30th August 2024
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- `#468 <https://github.com/beehive-lab/TornadoVM/pull/468>`_: Cleanup Abstract Metadata Class.
+- `#473 <https://github.com/beehive-lab/TornadoVM/pull/473>`_: Add maven plugin to build TornadoVM source for the releases.
+- `#474 <https://github.com/beehive-lab/TornadoVM/pull/474>`_: Refactor <X>TornadoDevice to place common methods in the ``TornadoXPUInterface``.
+- `#482 <https://github.com/beehive-lab/TornadoVM/pull/482>`_: Help messages improved when an out-of-memory exception is raised.
+- `#484 <https://github.com/beehive-lab/TornadoVM/pull/484>`_: Double-type for the trigonometric functions added in the ``TornadoMath`` class.
+- `#487 <https://github.com/beehive-lab/TornadoVM/pull/487>`_: Prebuilt API simplified.
+- `#494 <https://github.com/beehive-lab/TornadoVM/pull/494>`_: Add test to trigger unsupported features related to direct use of Memory Segments.
+- `#509 <https://github.com/beehive-lab/TornadoVM/pull/509>`_: Add a quick pass configuration to skip the heavy tests during active development.
+- `#532 <https://github.com/beehive-lab/TornadoVM/pull/532>`_: Improve thread scheduler to support RISC-V Accelerators from Codeplay.
+- `#533 <https://github.com/beehive-lab/TornadoVM/pull/533>`_: Support for scalar values to be passed via lambda expressions as tasks.
+- `#538 <https://github.com/beehive-lab/TornadoVM/pull/538>`_: ``README`` file updated.
+- `#539 <https://github.com/beehive-lab/TornadoVM/pull/539>`_: Refactor core classes and add new API methods to pass compilation flags to the low-level driver compilers (OpenCL, PTX and Level Zero).
+- `#542 <https://github.com/beehive-lab/TornadoVM/pull/542>`_: Tagged LevelZero JNI and Beehive Toolkit dependencies added in the build and installer.
+
+Compatibility
+~~~~~~~~~~~~~~~~~~
+
+- `#465 <https://github.com/beehive-lab/TornadoVM/pull/465>`_: Support for JDK 22 and GraalVM 24.0.2.
+- `#486 <https://github.com/beehive-lab/TornadoVM/pull/486>`_: Temurin for Windows added in the list of supported JDKs.
+- `#525 <https://github.com/beehive-lab/TornadoVM/pull/525>`_: Revert usage of String Templates in preparation for JDK 23.
+- `#527 <https://github.com/beehive-lab/TornadoVM/pull/527>`_: SPIR-V version parameter added. TornadoVM may run previous SPIR-V versions (e.g., ComputeAorta from Codeplay).
+- `#513 <https://github.com/beehive-lab/TornadoVM/pull/531>`_: LevelZero JNI Library updated to v0.1.4.
+
+Bug Fixes
+~~~~~~~~~~~~~~~~~~
+
+- `#470 <https://github.com/beehive-lab/TornadoVM/pull/470>`_: README documentation fixed.
+- `#478 <https://github.com/beehive-lab/TornadoVM/pull/478>`_: Fix the test names that are present in the white list.
+- `#488 <https://github.com/beehive-lab/TornadoVM/pull/488>`_: FP64 Kind for radian operations and the PTX backend fixed.
+- `#493 <https://github.com/beehive-lab/TornadoVM/pull/493>`_: Tests Whitelist for PTX backend fixed.
+- `#502 <https://github.com/beehive-lab/TornadoVM/pull/502>`_: Fix barrier type in the documentation regarding programmability of reductions.
+- `#514 <https://github.com/beehive-lab/TornadoVM/pull/514>`_: Installer script fixed.
+- `#540 <https://github.com/beehive-lab/TornadoVM/pull/540>`_: Fix  issue with clean-up execution IDs function.
+- `#541 <https://github.com/beehive-lab/TornadoVM/pull/541>`_: Fix Data Accessors for the prebuilt API.
+- `#543 <https://github.com/beehive-lab/TornadoVM/pull/543>`_: Fix checkstyle condition and FP16 error message improved.
+
+
+
 TornadoVM 1.0.6
 ----------------
 27th June 2024
