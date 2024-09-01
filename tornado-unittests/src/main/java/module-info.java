@@ -37,4 +37,5 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.tools;
     exports uk.ac.manchester.tornado.unittests.vectortypes;
     exports uk.ac.manchester.tornado.unittests.virtualization;
+    exports uk.ac.manchester.tornado.unittests.memory.leak;
 }

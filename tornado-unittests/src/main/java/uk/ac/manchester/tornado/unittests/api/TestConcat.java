@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
  * How to run?
  *
  * <code>
- * $ tornado-test -V --fast uk.ac.manchester.tornado.unittests.api.TestConcat
+ * $ tornado-test -V uk.ac.manchester.tornado.unittests.api.TestConcat
  * </code>
  */
 public class TestConcat extends TornadoTestBase {

@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * $ tornado-test --jvm="-Dtornado.device.memory=2GB" -V --fast uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans
+ * $ tornado-test --jvm="-Dtornado.device.memory=2GB" -V uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans
  * </code>
  * </p>
  */

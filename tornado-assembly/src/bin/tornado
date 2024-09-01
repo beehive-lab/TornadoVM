@@ -426,7 +426,8 @@ class TornadoVMRunnerTool():
         else:
             command = javaFlags + " " + str(args.application) + " " + params
         ## Execute the command
-        os.system(command)
+        status = os.system(command)
+        sys.exit(status)
 
 
 def parseArguments():

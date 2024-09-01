@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ * tornado-test -V uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
  */
 public class TestMath extends TornadoTestBase {

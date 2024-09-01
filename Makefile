@@ -69,10 +69,10 @@ tests-spirv-opencl:
 
 tests-opt:
 	tornado --devices
-	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
+	tornado-test -V --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
 
 test-slam:
-	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+	tornado-test -V uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 
 docs:
 	sphinx-build -M html docs/source/ docs/build

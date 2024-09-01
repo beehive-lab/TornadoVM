@@ -48,7 +48,7 @@ tests:
 
 tests-opt:
 	python %TORNADO_SDK%\bin\tornado --devices
-	python %TORNADO_SDK%\bin\tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
+	python %TORNADO_SDK%\bin\tornado-test -V --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
 
 test-slam:
-	python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+	python %TORNADO_SDK%\bin\tornado-test -V uk.ac.manchester.tornado.unittests.slam.GraphicsTests

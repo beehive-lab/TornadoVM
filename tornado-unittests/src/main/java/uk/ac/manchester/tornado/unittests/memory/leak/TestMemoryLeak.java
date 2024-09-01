@@ -1,38 +1,26 @@
-package uk.ac.manchester.tornado.unittests.arrays;
+package uk.ac.manchester.tornado.unittests.memory.leak;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Random;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  */
 public class TestMemoryLeak extends TornadoTestBase {
     // CHECKSTYLE:OFF
+
+    public static final int TEST_TIME_MINUTES = 5;
 
     public static void vectorAddLong(LongArray a, LongArray b, LongArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
@@ -48,9 +36,9 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     @Test
     public void test_no_cached_hot_loop() {
-        final int numElements = 262144; // 2MB
-
-        while (true) {
+        Instant end = Instant.now().plus(Duration.ofMinutes(TEST_TIME_MINUTES));
+        final int numElements = 2097152; // 8MB
+        while (Instant.now().isBefore(end)) {
             LongArray a = new LongArray(numElements);
             LongArray b = new LongArray(numElements);
             LongArray c = new LongArray(numElements);
@@ -76,9 +64,10 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     @Test
     public void test_no_cached_hot_loop_primitive() {
-        final int numElements = 262144; // 2MB
+        Instant end = Instant.now().plus(Duration.ofMinutes(TEST_TIME_MINUTES));
+        final int numElements = 2097152; // 8MB
 
-        while (true) {
+        while (Instant.now().isBefore(end)) {
             long[] a = new long[numElements];
             long[] b = new long[numElements];
             long[] c = new long[numElements];
@@ -104,7 +93,8 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     @Test
     public void test_cached_task_graph_and_input_output_primitive() {
-        final int numElements = 262144; // 2MB
+        Instant end = Instant.now().plus(Duration.ofMinutes(TEST_TIME_MINUTES));
+        final int numElements = 2097152; // 8MB
         long[] a = new long[numElements];
         long[] b = new long[numElements];
         long[] c = new long[numElements];
@@ -120,7 +110,7 @@ public class TestMemoryLeak extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        while (true) {
+        while (Instant.now().isBefore(end)) {
             try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
                 executionPlan.execute();
             } catch (TornadoExecutionPlanException e) {
@@ -131,7 +121,8 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     @Test
     public void test_cached_task_graph_and_input_output() {
-        final int numElements = 262144; // 2MB
+        Instant end = Instant.now().plus(Duration.ofMinutes(TEST_TIME_MINUTES));
+        final int numElements = 2097152; // 8MB
         LongArray a = new LongArray(numElements);
         LongArray b = new LongArray(numElements);
         LongArray c = new LongArray(numElements);
@@ -147,7 +138,7 @@ public class TestMemoryLeak extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        while (true) {
+        while (Instant.now().isBefore(end)) {
             try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
                 executionPlan.execute();
             } catch (TornadoExecutionPlanException e) {
@@ -158,7 +149,8 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     @Test
     public void test_cached_everything_primitive() {
-        final int numElements = 262144; // 2MB
+        Instant end = Instant.now().plus(Duration.ofMinutes(TEST_TIME_MINUTES));
+        final int numElements = 2097152; // 8MB
         long[] a = new long[numElements];
         long[] b = new long[numElements];
         long[] c = new long[numElements];
@@ -175,7 +167,7 @@ public class TestMemoryLeak extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            while (true) {
+            while (Instant.now().isBefore(end)) {
                 executionPlan.execute();
             }
         } catch (TornadoExecutionPlanException e) {
@@ -185,7 +177,8 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     @Test
     public void test_cached_everything() {
-        final int numElements = 262144; // 2MB
+        Instant end = Instant.now().plus(Duration.ofMinutes(TEST_TIME_MINUTES));
+        final int numElements = 2097152; // 8MB
         LongArray a = new LongArray(numElements);
         LongArray b = new LongArray(numElements);
         LongArray c = new LongArray(numElements);
@@ -202,7 +195,7 @@ public class TestMemoryLeak extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            while (true) {
+            while (Instant.now().isBefore(end)) {
                 executionPlan.execute();
             }
         } catch (TornadoExecutionPlanException e) {
@@ -212,4 +205,3 @@ public class TestMemoryLeak extends TornadoTestBase {
 
     // CHECKSTYLE:ON
 }
-
