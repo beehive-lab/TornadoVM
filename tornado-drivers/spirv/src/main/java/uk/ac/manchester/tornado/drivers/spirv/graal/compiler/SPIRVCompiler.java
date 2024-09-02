@@ -43,7 +43,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.alloc.LinearScanOrder;
@@ -100,12 +99,10 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
- * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
- * generates SPIRV code.
+ * SPIR-V Compiler and Code Optimizer. It optimizes the Graal IR for SPIR-V devices, and it
+ * generates SPIR-V binary code.
  */
 public class SPIRVCompiler {
-
-    private static final AtomicInteger compilationId = new AtomicInteger();
 
     private static final TimerKey CompilerTimer = DebugContext.timer("SPIRVGraalCompiler");
     private static final TimerKey FrontEnd = DebugContext.timer("SPIRVFrontend");
