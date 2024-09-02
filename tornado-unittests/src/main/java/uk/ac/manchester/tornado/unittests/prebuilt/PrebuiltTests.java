@@ -47,10 +47,10 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests
  * </code>
  */
-public class PrebuiltTest extends TornadoTestBase {
+public class PrebuiltTests extends TornadoTestBase {
     private static final String TORNADO_SDK = "TORNADO_SDK";
     private static TornadoDevice defaultDevice;
     private static String FILE_PATH;
@@ -234,7 +234,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     /**
-     * This test case verifies that the {@link PrebuiltTest#testPrebuilt03SPIRV} runs correctly though a
+     * This test case verifies that the {@link PrebuiltTests#testPrebuilt03SPIRV} runs correctly though a
      * SPIR-V or OpenCL runtime if the device supports SPIR-V.
      *
      * <p>Expected outcome: - If the current backend type is PTX, the test should have
