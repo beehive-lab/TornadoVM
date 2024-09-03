@@ -43,7 +43,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.alloc.LinearScanOrder;
@@ -100,12 +99,10 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
- * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
- * generates SPIRV code.
+ * SPIR-V Compiler and Code Optimizer. It optimizes the Graal IR for SPIR-V devices, and it
+ * generates SPIR-V binary code.
  */
 public class SPIRVCompiler {
-
-    private static final AtomicInteger compilationId = new AtomicInteger();
 
     private static final TimerKey CompilerTimer = DebugContext.timer("SPIRVGraalCompiler");
     private static final TimerKey FrontEnd = DebugContext.timer("SPIRVFrontend");
@@ -120,15 +117,12 @@ public class SPIRVCompiler {
         try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
             emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
                     r.batchCompilationConfig);
-            boolean isParallel = false;
             /*
              * A task is determined as parallel if: (i) it has loops annotated with {@link
              * uk.ac.manchester.tornado.api.annotations.Parallel} which corresponds to use a
              * domain with depth greater than zero, or (ii) it uses the GridScheduler.
              */
-            if (r.meta != null && (r.meta.isParallel() || r.meta.isGridSchedulerEnabled())) {
-                isParallel = true;
-            }
+            boolean isParallel = r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()));
             emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, null, r.lirSuites, r.isKernel, isParallel, r.profiler);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);

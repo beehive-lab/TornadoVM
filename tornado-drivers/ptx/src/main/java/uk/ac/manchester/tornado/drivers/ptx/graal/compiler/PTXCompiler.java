@@ -104,10 +104,7 @@ public class PTXCompiler {
         try (DebugContext.Scope s0 = TornadoCoreRuntime.getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache());
                 DebugCloseable a = CompilerTimer.start(TornadoCoreRuntime.getDebugContext())) {
             emitFrontEnd(r);
-            boolean isParallel = false;
-            if (r.meta != null && r.meta.isParallel()) {
-                isParallel = true;
-            }
+            boolean isParallel = r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()));
             emitBackEnd(r, isParallel);
         } catch (Throwable e) {
             throw TornadoCoreRuntime.getDebugContext().handle(e);
