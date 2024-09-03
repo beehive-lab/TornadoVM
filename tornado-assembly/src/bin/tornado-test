@@ -431,6 +431,12 @@ def killAllProcesses(pid: int):
 
 
 def runMonitorClass(monitorClass: Optional[Union[str, MonitorClass]], cmd: str, pid: int):
+    """ Run the monitor class if specified.
+    :param monitorClass: Can be a string used to look up the monitor class in the MONITOR_REGISTRY or an instance of a MonitorClass.
+    :param cmd: The command that was used to spawn the process.
+    :param pid: The process ID of the spawned process.
+    :return: True if the monitor passed or the monitor class is None. False if the monitor failed.
+    """
     if monitorClass:
         if isinstance(monitorClass, str):
             assert monitorClass in MONITOR_REGISTRY, f"Monitor class {monitorClass} not found in registry. Options are {list(MONITOR_REGISTRY.keys())}"
