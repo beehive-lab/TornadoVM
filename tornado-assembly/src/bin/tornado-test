@@ -310,9 +310,13 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 ## List of tests to be excluded when running with the quick pass argument as they cause delays
 __TORNADO_HEAVY_TESTS__ = [
-    "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
     "uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
     "uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"
+]
+
+## List of tests that are memory intensive and potentially take a long time to run
+__TORNADO_MEMORY_TESTS__ = [
+    "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
     "uk.ac.manchester.tornado.unittests.memory.leak.TestMemoryLeak",
 ]
 
@@ -591,8 +595,10 @@ def runTests(args):
 def runTestTheWorld(options, args):
     stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
 
+    __TORNADO_QUICK_PASS_SKIP_TESTS__ = __TORNADO_HEAVY_TESTS__ + __TORNADO_MEMORY_TESTS__
+
     for t in __TEST_THE_WORLD__:
-        if args.quickPass and t.testName in __TORNADO_HEAVY_TESTS__:
+        if args.quickPass and t.testName in __TORNADO_QUICK_PASS_SKIP_TESTS__:
             continue
         command = options
         if t.testParameters:
