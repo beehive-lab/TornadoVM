@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,11 +28,10 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 
 public class SPIRVLevelZeroModule implements SPIRVModule {
 
-    private LevelZeroModule levelZeroModule;
-    private LevelZeroKernel kernel;
-    private String entryPoint;
-
-    private String pathToSPIRVBinary;
+    private final LevelZeroModule levelZeroModule;
+    private final LevelZeroKernel kernel;
+    private final String entryPoint;
+    private final String pathToSPIRVBinary;
 
     public SPIRVLevelZeroModule(LevelZeroModule levelZeroModule, LevelZeroKernel kernel, String entryPoint, String pathToSPIRVBinary) {
         this.levelZeroModule = levelZeroModule;
@@ -49,10 +48,12 @@ public class SPIRVLevelZeroModule implements SPIRVModule {
         return kernel;
     }
 
+    @Override
     public String getEntryPoint() {
         return entryPoint;
     }
 
+    @Override
     public String getPathToSPIRVBinary() {
         return pathToSPIRVBinary;
     }

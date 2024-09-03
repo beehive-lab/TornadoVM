@@ -52,7 +52,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoBackend;
-import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
+import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -60,7 +60,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
-public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
+public final class TornadoCoreRuntime implements TornadoRuntime {
 
     private static final ThreadFactory executorThreadFactory = new ThreadFactory() {
         private int threadId = 0;
@@ -177,7 +177,7 @@ public final class TornadoCoreRuntime implements TornadoRuntimeInterface {
                 return backendIndex;
             }
         }
-        throw shouldNotReachHere(STR."Could not find index for backend: \{backendClass}");
+        throw shouldNotReachHere("Could not find index for backend: " + backendClass);
     }
 
     @Override

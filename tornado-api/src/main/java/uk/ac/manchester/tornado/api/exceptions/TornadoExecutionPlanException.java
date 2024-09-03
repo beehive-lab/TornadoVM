@@ -19,11 +19,7 @@ package uk.ac.manchester.tornado.api.exceptions;
 
 public class TornadoExecutionPlanException extends Exception {
 
-    private String reason;
-
-    public TornadoExecutionPlanException() {
-
-    }
+    private final String reason;
 
     public TornadoExecutionPlanException(String reason) {
         this.reason = reason;

@@ -25,11 +25,12 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 
-public interface TornadoTaskGraphInterface extends ProfileInterface {
+public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     SchedulableTask getTask(String taskNameID);
 
@@ -83,7 +84,7 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     String getId();
 
-    TaskMetaDataInterface meta();
+    TaskContextInterface meta();
 
     TornadoTaskGraphInterface execute(ExecutorFrame executionPackage);
 
@@ -120,4 +121,8 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
     void withoutPrintKernel();
 
     void withGridScheduler(GridScheduler gridScheduler);
+
+    long getCurrentDeviceMemoryUsage();
+
+    void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags);
 }

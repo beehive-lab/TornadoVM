@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,10 @@ import config_utils as cutils
 
 import update_paths as updp
 import pull_graal_jars
+
+
+__LEVEL_ZERO_JNI_VERSION__ = "0.1.4"
+__BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.4"
 
 
 def check_java_version():
@@ -154,10 +158,21 @@ def build_levelzero_jni_lib(rebuild=False):
         build=True
 
     if (rebuild or build):
+
         os.chdir(levelzero_jni)
+        
+        ## Switch branch to the tagged version
+        subprocess.run(
+            [
+                "git",
+                "switch",
+                "-c",
+                __LEVEL_ZERO_JNI_VERSION__
+            ],
+        )
 
         ## Always pull for the latest changes
-        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["git", "pull", "origin", __LEVEL_ZERO_JNI_VERSION__])
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
@@ -196,6 +211,17 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
 
     if (rebuild or build):
         os.chdir(spirv_tool_kit)
+
+        ## Switch branch to the tagged version
+        subprocess.run(
+            [
+                "git",
+                "switch",
+                "-c",
+                __BEEHIVE_SPIRV_TOOLKIT_VERSION__
+            ],
+        )
+
         subprocess.run(["git", "pull", "origin", "master"])
         if os.name == 'nt':
             isWinCmdOrBat = True
@@ -377,8 +403,24 @@ def parse_args():
     return args
 
 
+def check_tornadoSDK():
+    """
+    Check if TORNADO_SDK env variable is loaded. It exits the compilation if it is not
+    declared. 
+    """
+    print("Checking TORNADO_SDK env variable ................ ",  end='')
+    try:
+        os.environ['TORNADO_SDK']
+        print("[OK]")
+    except:
+        print("[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
+        sys.exit(-1)
+
+
 def main():
     args = parse_args()
+
+    check_tornadoSDK()
 
     graal_jars_status = should_handle_graal_jars(args.jdk)
 

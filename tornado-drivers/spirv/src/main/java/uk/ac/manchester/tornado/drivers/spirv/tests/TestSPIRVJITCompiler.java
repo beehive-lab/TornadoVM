@@ -51,12 +51,11 @@ import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
- * Testing the SPIRV JIT Compiler and integration with the TornadoVM SPIRV
- * Runtime.
+ * Testing the SPIR-V JIT Compiler and integration with the TornadoVM SPIR-V Runtime.
  *
  * How to run?
  *
@@ -73,7 +72,7 @@ public class TestSPIRVJITCompiler {
     }
 
     public static void main(String[] args) {
-        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
+        System.out.println("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
         new TestSPIRVJITCompiler().test();
     }
 
@@ -95,10 +94,10 @@ public class TestSPIRVJITCompiler {
         TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
-        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        ScheduleContext scheduleMetaData = new ScheduleContext("s0");
         // Create a compilable task
         CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
-        TaskMetaData taskMeta = compilableTask.meta();
+        TaskDataContext taskMeta = compilableTask.meta();
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
@@ -117,7 +116,7 @@ public class TestSPIRVJITCompiler {
         return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
 
-    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(spirvTornadoDevice);
@@ -138,16 +137,16 @@ public class TestSPIRVJITCompiler {
         spirvTornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
-        KernelStackFrame callWrapper = spirvTornadoDevice.createKernelStackFrame(3);
-        callWrapper.setKernelContext(new HashMap<>());
+        KernelStackFrame stackFrame = spirvTornadoDevice.createKernelStackFrame(executionPlanId, 3);
+        stackFrame.setKernelContext(new HashMap<>());
 
-        // Add kernel arguments to the SPIR-V Call Stack
-        callWrapper.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
+        // Add kernel arguments to the SPIR-V Stack Frame
+        stackFrame.addCallArgument(objectStateA.getXPUBuffer().toBuffer(), true);
+        stackFrame.addCallArgument(objectStateB.getXPUBuffer().toBuffer(), true);
+        stackFrame.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Launch the generated kernel
-        installedCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
+        installedCode.launchWithoutDependencies(executionPlanId, stackFrame, null, taskMeta, 0);
 
         // Transfer the result from the device to the host (this is a blocking call)
         spirvTornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);

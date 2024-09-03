@@ -100,7 +100,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
             case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegmentWithHeader();
             case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegmentWithHeader();
-            default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
+            default -> throw new TornadoMemoryException("Memory Segment not supported: " + reference.getClass());
         };
     }
 
@@ -172,7 +172,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         }
         returnEvents.add(internalEvent);
         onDevice = true;
-        return useDeps ? returnEvents : null;
+        return returnEvents;
     }
 
     @Override
@@ -189,7 +189,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
         if (TornadoOptions.FULL_DEBUG) {
@@ -198,7 +198,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
         bufferId = INIT_VALUE;
@@ -207,6 +207,11 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         if (TornadoOptions.FULL_DEBUG) {
             new TornadoLogger().info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override

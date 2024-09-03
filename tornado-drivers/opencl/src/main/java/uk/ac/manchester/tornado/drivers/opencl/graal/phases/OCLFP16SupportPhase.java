@@ -21,16 +21,17 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.phases.Phase;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLDevice;
-
-import java.util.Optional;
 
 /**
  * This compiler phase examines if the execution device supports half precision types
@@ -65,7 +66,7 @@ public class OCLFP16SupportPhase extends Phase {
 
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {
             if (readNode.getLocationIdentity().toString().contains("VectorHalf") && !fp16Support) {
-                throw new TornadoDeviceFP16NotSupported(STR."The current OpenCL device (\{deviceContext.getDeviceName()}) does not support FP64");
+                throw new TornadoDeviceFP16NotSupported("The current OpenCL device (" + deviceContext.getDeviceName() + ") does not support FP16");
             }
         }
     }

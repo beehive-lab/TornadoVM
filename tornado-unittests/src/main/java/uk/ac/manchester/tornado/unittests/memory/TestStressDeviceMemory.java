@@ -97,7 +97,6 @@ public class TestStressDeviceMemory extends TornadoTestBase {
                     stressDataAllocationTest(size);
                     assertTrue(true);
                 } catch (TornadoExecutionPlanException e) {
-                    e.printStackTrace();
                     fail();
                 }
             }

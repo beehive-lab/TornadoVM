@@ -67,7 +67,7 @@ public class DgemmJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         dgemm(m, n, m, a, b, c);
     }
 

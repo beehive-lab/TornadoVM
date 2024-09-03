@@ -43,11 +43,11 @@ public interface TornadoDevice {
      *     {@link DeviceBufferState}
      * @return an event ID
      */
-    int allocate(Object object, long batchSize, DeviceBufferState state);
+    long allocate(Object object, long batchSize, DeviceBufferState state);
 
-    int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states);
+    long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states);
 
-    int deallocate(DeviceBufferState state);
+    long deallocate(DeviceBufferState state);
 
     /**
      * It allocates and copy in the content of the object to the target device.
@@ -181,7 +181,7 @@ public interface TornadoDevice {
 
     Object getDeviceInfo();
 
-    int getDriverIndex();
+    int getBackendIndex();
 
     /**
      * Returns the number of processors available to the JVM. We need to overwrite

@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -53,9 +53,9 @@ public class TestFails extends TornadoTestBase {
     }
 
     private void reset() {
-        for (int backendIndex = 0; backendIndex < TornadoRuntime.getTornadoRuntime().getNumBackends(); backendIndex++) {
-            final TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(backendIndex);
-            for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
+        for (int backendIndex = 0; backendIndex < TornadoRuntimeProvider.getTornadoRuntime().getNumBackends(); backendIndex++) {
+            final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex);
+            for (int deviceIndex = 0; deviceIndex < driver.getNumDevices(); deviceIndex++) {
                 driver.getDevice(deviceIndex).clean();
             }
         }

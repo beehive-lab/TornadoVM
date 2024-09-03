@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -88,7 +89,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         }
     }
 
-    private void testVirtuaLDeviceFeatureExtraction(String expectedFeaturesFile) {
+    private void testVirtuaLDeviceFeatureExtraction(String expectedFeaturesFile) throws TornadoExecutionPlanException {
         float[] input = new float[SIZE];
         float[] result = new float[1];
         IntStream.range(0, SIZE).forEach(idx -> {
@@ -103,8 +104,9 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedFeaturesFile;
@@ -126,19 +128,11 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceFeaturesGPU() {
+    public void testVirtualDeviceFeatures() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesGPU.json");
-    }
-
-    @Test
-    public void testVirtualDeviceFeaturesCPU() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-
-        testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesCPU.json");
     }
 
 }

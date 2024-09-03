@@ -25,7 +25,9 @@ package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+
+import java.util.Arrays;
 
 public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
 
@@ -42,7 +44,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
+    public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
@@ -54,7 +56,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateLocalWork(final TaskMetaData meta) {
+    public void calculateLocalWork(final TaskDataContext meta) {
         final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
@@ -72,6 +74,70 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
             default:
                 break;
         }
+    }
+
+    /**
+     * Checks if the selected local work group does not exceed the maximum work group size permitted by the driver.
+     * If it does, it uses a heuristic to set the local work group.
+     *
+     * @param meta
+     *     TaskMetaData.
+     */
+    @Override
+    public void checkAndAdaptLocalWork(final TaskDataContext meta) {
+        final long[] localWork = meta.getLocalWork();
+        if (localWork == null) {
+            return;
+        }
+        switch (meta.getDims()) {
+            case 3:
+                localWork[2] = checkAndAdaptLocalDimensions(localWork)[2];
+                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
+                break;
+            case 2:
+                localWork[1] = checkAndAdaptLocalDimensions(localWork)[1];
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
+                break;
+            case 1:
+                localWork[0] = checkAndAdaptLocalDimensions(localWork)[0];
+                break;
+            default:
+                break;
+        }
+    }
+
+    private long[] checkAndAdaptLocalDimensions(long[] localWorkGroups) {
+        long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
+        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
+        long totalThreads = Arrays.stream(localWorkGroups).reduce(1, (a, b) -> a * b);
+
+        if (totalThreads > maxWorkGroupSize) {
+            //Get the remaining valid number of local work-items
+            return adaptLocalDimensions(localWorkGroups, maxWorkGroupSize);
+        }
+
+        return localWorkGroups;
+    }
+
+    private long[] adaptLocalDimensions(long[] localWorkGroups, long maxWorkGroupSize) {
+        long[] newLocalWorkGroup = new long[localWorkGroups.length];
+        switch (localWorkGroups.length) {
+            case 3:
+                newLocalWorkGroup[0] = localWorkGroups[0];
+                newLocalWorkGroup[1] = localWorkGroups[1];
+                newLocalWorkGroup[2] = maxWorkGroupSize / (newLocalWorkGroup[0] * newLocalWorkGroup[1]);
+                break;
+            case 2:
+                newLocalWorkGroup[1] = maxWorkGroupSize / localWorkGroups[0];
+                break;
+            case 1:
+                newLocalWorkGroup[0] = maxWorkGroupSize;
+                break;
+            default:
+                break;
+        }
+        return newLocalWorkGroup;
     }
 
     private int calculateGroupSize(long maxBlockSize, long globalWorkSize, int dim) {
@@ -92,7 +158,7 @@ public class OCLNVIDIAGPUScheduler extends OCLKernelScheduler {
         return value;
     }
 
-    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskDataContext metaData) {
         long[] localWorkGroups = new long[] { 1, 1, 1 };
         if (metaData.getDims() == 1) {
             localWorkGroups[0] = maxWorkItemSizes[0];

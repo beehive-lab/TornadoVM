@@ -30,9 +30,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
-// FIXME <REFACTOR> This class can be almost common for all three backends
 public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     private SPIRVDeviceContext deviceContext;
@@ -54,6 +54,13 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
             spirvKernelStackFrame.put(threadId, new SPIRVKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
         return spirvKernelStackFrame.get(threadId);
+    }
+
+    public void releaseKernelStackFrame(long executionPlanId) {
+        SPIRVKernelStackFrame stackFrame = spirvKernelStackFrame.remove(executionPlanId);
+        if (stackFrame != null) {
+            stackFrame.invalidate();
+        }
     }
 
 }

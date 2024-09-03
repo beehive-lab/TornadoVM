@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -32,14 +32,14 @@ import org.graalvm.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
-    private TaskMetaData taskMetaData;
+    private TaskDataContext taskMetaData;
 
-    public PTXCompilationResult(String functionName, TaskMetaData meta) {
+    public PTXCompilationResult(String functionName, TaskDataContext meta) {
         super(functionName);
         this.taskMetaData = meta;
     }
@@ -62,7 +62,7 @@ public class PTXCompilationResult extends CompilationResult {
         setTargetCode(newCode, newCode.length);
     }
 
-    public TaskMetaData metaData() {
+    public TaskDataContext metaData() {
         return taskMetaData;
     }
 }

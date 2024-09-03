@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -40,11 +40,12 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeType;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
 
 /**
- * It represents a SPIRV Architecture.
+ * It represents a SPIR-V Architecture.
  *
  * <p>
  * It contains information such as byte ordering, platform king, memory
@@ -60,11 +61,9 @@ public class SPIRVArchitecture extends Architecture {
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
     public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
-    private SPIRVRegister[] abiRegisters;
 
-    public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
-        super(BACKEND_ARCHITECTURE, wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
-        abiRegisters = new SPIRVRegister[] {kernelContextSpace};
+    public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder, SPIRVRuntimeType runtime) {
+        super(BACKEND_ARCHITECTURE + "@" + runtime.name(), wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
     }
 
     @Override
@@ -79,32 +78,20 @@ public class SPIRVArchitecture extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        switch (javaKind) {
-            case Boolean:
-                return SPIRVKind.OP_TYPE_BOOL;
-            case Byte:
-                return SPIRVKind.OP_TYPE_INT_8;
-            case Short:
-                return SPIRVKind.OP_TYPE_FLOAT_16;
-            case Char:
-                return SPIRVKind.OP_TYPE_INT_8;
-            case Int:
-                return SPIRVKind.OP_TYPE_INT_32;
-            case Long:
-                return SPIRVKind.OP_TYPE_INT_64;
-            case Float:
-                return SPIRVKind.OP_TYPE_FLOAT_32;
-            case Double:
-                return SPIRVKind.OP_TYPE_FLOAT_64;
-            case Object:
-                return getWordKind();
-            case Void:
-                return SPIRVKind.OP_TYPE_VOID;
-            case Illegal:
-                return SPIRVKind.ILLEGAL;
-            default:
-                throw new RuntimeException("Java Type for SPIR-V not supported: " + javaKind.name());
-        }
+        return switch (javaKind) {
+            case Boolean -> SPIRVKind.OP_TYPE_BOOL;
+            case Byte -> SPIRVKind.OP_TYPE_INT_8;
+            case Short -> SPIRVKind.OP_TYPE_FLOAT_16;
+            case Char -> SPIRVKind.OP_TYPE_INT_8;
+            case Int -> SPIRVKind.OP_TYPE_INT_32;
+            case Long -> SPIRVKind.OP_TYPE_INT_64;
+            case Float -> SPIRVKind.OP_TYPE_FLOAT_32;
+            case Double -> SPIRVKind.OP_TYPE_FLOAT_64;
+            case Object -> getWordKind();
+            case Void -> SPIRVKind.OP_TYPE_VOID;
+            case Illegal -> SPIRVKind.ILLEGAL;
+            default -> throw new RuntimeException("Java Type for SPIR-V not supported: " + javaKind.name());
+        };
     }
 
     /*
@@ -150,5 +137,4 @@ public class SPIRVArchitecture extends Architecture {
             return String.format("%s %s *%s", memorySpace.getName(), lirKind.toString(), name);
         }
     }
-
 }

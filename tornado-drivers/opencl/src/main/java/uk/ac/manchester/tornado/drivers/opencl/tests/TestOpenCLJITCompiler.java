@@ -54,8 +54,8 @@ import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Test the OpenCL JIT Compiler and connection with the Tornado Runtime
@@ -93,10 +93,10 @@ public class TestOpenCLJITCompiler {
         TornadoDevice device = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
-        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        ScheduleContext scheduleMetaData = new ScheduleContext("s0");
         // Create a compilable task
         CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
-        TaskMetaData taskMeta = compilableTask.meta();
+        TaskDataContext taskMeta = compilableTask.meta();
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
@@ -113,11 +113,11 @@ public class TestOpenCLJITCompiler {
         return new MetaCompilation(taskMeta, openCLCode);
     }
 
-    public void runWithOpenCLAPI(Long executionPlanId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void runWithOpenCLAPI(Long executionPlanId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         OpenCL.run(executionPlanId, tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
     }
 
-    public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(tornadoDevice);
@@ -130,15 +130,15 @@ public class TestOpenCLJITCompiler {
 
         tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
 
-        long contextID = 0;
+        long executionPlanId = 0;
 
         // Copy-IN A
-        tornadoDevice.ensurePresent(contextID, a, objectStateA, null, 0, 0);
+        tornadoDevice.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
         // Copy-IN B
-        tornadoDevice.ensurePresent(contextID, b, objectStateB, null, 0, 0);
+        tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(3);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3);
 
         // Fill header of call callWrapper with empty values
         callWrapper.setKernelContext(new HashMap<>());
@@ -148,10 +148,10 @@ public class TestOpenCLJITCompiler {
         callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Run the code
-        openCLCode.launchWithoutDependencies(contextID, callWrapper, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
-        tornadoDevice.streamOutBlocking(contextID, c, 0, objectStateC, null);
+        tornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);
     }
 
     public void test() {

@@ -21,10 +21,10 @@ import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotImage;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class DotJava extends BenchmarkDriver {
@@ -66,7 +66,7 @@ public class DotJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod(TornadoDevice device) {
+    public void runBenchmark(TornadoDevice device) {
         dotImage(a, b, c);
     }
 

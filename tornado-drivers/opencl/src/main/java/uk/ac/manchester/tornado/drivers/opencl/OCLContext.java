@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
@@ -38,50 +37,48 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-public class OCLContext implements OCLExecutionEnvironment {
+public class OCLContext implements OCLContextInterface {
 
     private final long contextID;
     private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
 
-    private final List<OCLProgram> programs;
     private final OCLPlatform platform;
 
     private final TornadoLogger logger;
 
-    public OCLContext(OCLPlatform platform, long id, List<OCLTargetDevice> devices) {
+    public OCLContext(OCLPlatform platform, long contextPointer, List<OCLTargetDevice> devices) {
         this.platform = platform;
-        this.contextID = id;
+        this.contextID = contextPointer;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
-        this.programs = new ArrayList<>();
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    static native void clReleaseContext(long id) throws OCLException;
+    native void clReleaseContext(long id) throws OCLException;
 
-    static native void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException;
+    native void clGetContextInfo(long id, int info, byte[] buffer) throws OCLException;
 
-    static native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
+    public native long clCreateCommandQueue(long contextId, long deviceId, long properties) throws OCLException;
 
-    static native long allocateOffHeapMemory(long size, long alignment);
+    native long allocateOffHeapMemory(long size, long alignment);
 
-    static native void freeOffHeapMemory(long address);
+    native void freeOffHeapMemory(long address);
 
-    static native ByteBuffer asByteBuffer(long address, long size);
+    native ByteBuffer asByteBuffer(long address, long size);
 
     // creates an empty buffer on the device
-    static native OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
+    native OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
 
-    static native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
+    native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
 
-    static native void clReleaseMemObject(long memId) throws OCLException;
+    native void clReleaseMemObject(long memId) throws OCLException;
 
-    static native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws OCLException;
+    native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws OCLException;
 
-    static native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
+    native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws OCLException;
 
-    static native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
+    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws OCLException;
 
     public int getNumDevices() {
         return devices.size();
@@ -91,13 +88,13 @@ public class OCLContext implements OCLExecutionEnvironment {
         return devices;
     }
 
+    @Override
     public long getContextId() {
         return contextID;
     }
 
     private void createCommandQueue(int index, long properties) {
         OCLTargetDevice device = devices.get(index);
-        long commandQueuePtr;
         try {
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
@@ -106,7 +103,7 @@ public class OCLContext implements OCLExecutionEnvironment {
             logger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
             logger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
-            commandQueuePtr = clCreateCommandQueue(contextID, device.getId(), properties);
+            clCreateCommandQueue(contextID, device.getDevicePointer(), properties);
         } catch (OCLException e) {
             logger.error(e.getMessage());
             throw new TornadoRuntimeException("[ERROR] OpenCL Command Queue Initialization not valid");
@@ -136,7 +133,6 @@ public class OCLContext implements OCLExecutionEnvironment {
 
         try {
             program = new OCLProgram(clCreateProgramWithSource(contextID, source, lengths), deviceContext);
-            programs.add(program);
         } catch (OCLException e) {
             logger.error(e.getMessage());
         }
@@ -152,7 +148,6 @@ public class OCLContext implements OCLExecutionEnvironment {
                 throw new TornadoNoOpenCLPlatformException("OpenCL version <= 2.1. clCreateProgramWithIL is not supported");
             }
             program = new OCLProgram(programID, deviceContext);
-            programs.add(program);
         } catch (OCLException e) {
             throw new TornadoRuntimeException(e);
         }
@@ -181,18 +176,12 @@ public class OCLContext implements OCLExecutionEnvironment {
         }
 
         try {
-            long t0 = System.nanoTime();
-            for (OCLProgram program : programs) {
-                program.cleanup();
-            }
             long t1 = System.nanoTime();
             clReleaseContext(contextID);
             long t2 = System.nanoTime();
 
             if (TornadoOptions.FULL_DEBUG) {
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "programs", (t1 - t0) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t2 - t0) * 1e-9);
             }
         } catch (OCLException e) {
             logger.error(e.getMessage());
@@ -212,24 +201,6 @@ public class OCLContext implements OCLExecutionEnvironment {
         final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), this);
         deviceContexts.add(deviceContext);
         return deviceContext;
-    }
-
-    /**
-     * Allocates off-heap memory.
-     *
-     * @param bytes
-     *     to be allocated.
-     * @param alignment
-     *     alignment
-     *
-     * @return base address
-     */
-    public long allocate(long bytes, long alignment) {
-        final long address = allocateOffHeapMemory(bytes, alignment);
-        if (address == 0) {
-            throw new TornadoInternalError("Unable to allocate off-heap memory");
-        }
-        return address;
     }
 
     public OCLBufferResult createBuffer(long flags, long bytes) {

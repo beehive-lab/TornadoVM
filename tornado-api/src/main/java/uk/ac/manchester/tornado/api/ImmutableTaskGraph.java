@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
 /**
@@ -113,6 +114,14 @@ public class ImmutableTaskGraph {
         return taskGraph.getDeviceKernelTime();
     }
 
+    long getTotalBytesCopyIn() {
+        return taskGraph.getTotalBytesCopyIn();
+    }
+
+    long getTotalBytesCopyOut() {
+        return taskGraph.getTotalBytesCopyOut();
+    }
+
     String getProfileLog() {
         return taskGraph.getProfileLog();
     }
@@ -145,7 +154,7 @@ public class ImmutableTaskGraph {
         taskGraph.withMemoryLimit(memoryLimit);
     }
 
-    public void withoutMemoryLimit() {
+    void withoutMemoryLimit() {
         taskGraph.withoutMemoryLimit();
     }
 
@@ -189,7 +198,23 @@ public class ImmutableTaskGraph {
         taskGraph.withoutPrintKernel();
     }
 
+    void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
+        taskGraph.withCompilerFlags(backendType, compilerFlags);
+    }
+
     void withGridScheduler(GridScheduler gridScheduler) {
         taskGraph.withGridScheduler(gridScheduler);
+    }
+
+    long getTotalBytesTransferred() {
+        return taskGraph.getTotalBytesTransferred();
+    }
+
+    long getTotalDeviceMemoryUsage() {
+        return taskGraph.getTotalDeviceMemoryUsage();
+    }
+
+    long getCurrentDeviceMemoryUsage() {
+        return taskGraph.getCurrentDeviceMemoryUsage();
     }
 }

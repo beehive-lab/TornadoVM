@@ -51,7 +51,7 @@ public class FieldBuffer {
     }
 
     public void deallocate() {
-        objectBuffer.deallocate();
+        objectBuffer.markAsFreeBuffer();
     }
 
     public int enqueueRead(long executionPlanId, final Object ref, final int[] events, boolean useDeps) {

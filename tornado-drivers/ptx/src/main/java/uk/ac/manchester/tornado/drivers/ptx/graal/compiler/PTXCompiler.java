@@ -87,7 +87,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXCompiler {
 
@@ -104,10 +104,7 @@ public class PTXCompiler {
         try (DebugContext.Scope s0 = TornadoCoreRuntime.getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache());
                 DebugCloseable a = CompilerTimer.start(TornadoCoreRuntime.getDebugContext())) {
             emitFrontEnd(r);
-            boolean isParallel = false;
-            if (r.meta != null && r.meta.isParallel()) {
-                isParallel = true;
-            }
+            boolean isParallel = r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()));
             emitBackEnd(r, isParallel);
         } catch (Throwable e) {
             throw TornadoCoreRuntime.getDebugContext().handle(e);
@@ -253,7 +250,7 @@ public class PTXCompiler {
 
         new TornadoLogger().info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
-        final TaskMetaData taskMeta = task.meta();
+        final TaskDataContext taskMeta = task.meta();
         final Object[] args = task.getArguments();
         final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();
         final int batchNumber = task.getBatchNumber();
@@ -380,7 +377,7 @@ public class PTXCompiler {
         return kernelCompResult;
     }
 
-    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend,
+    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskDataContext meta, PTXProviders providers, PTXBackend backend,
             BatchCompilationConfig batchCompilationConfig, TornadoProfiler profiler) {
         new TornadoLogger().info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
@@ -472,7 +469,7 @@ public class PTXCompiler {
         public final StructuredGraph graph;
         public final ResolvedJavaMethod installedCodeOwner;
         public final Object[] args;
-        public final TaskMetaData meta;
+        public final TaskDataContext meta;
         public final Providers providers;
         public final PTXBackend backend;
         public final PhaseSuite<HighTierContext> graphBuilderSuite;
@@ -488,7 +485,7 @@ public class PTXCompiler {
         public final boolean includePrintf;
         private final TornadoProfiler profiler;
 
-        private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
+        private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskDataContext meta, Providers providers, PTXBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
                 PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, BatchCompilationConfig batchCompilationConfig,
                 boolean includePrintf, TornadoProfiler profiler) {
@@ -521,7 +518,7 @@ public class PTXCompiler {
             private StructuredGraph graph;
             private ResolvedJavaMethod codeOwner;
             private Object[] args;
-            private TaskMetaData meta;
+            private TaskDataContext meta;
             private Providers providers;
             private PTXBackend backend;
             private PhaseSuite<HighTierContext> graphBuilderSuite;
@@ -565,7 +562,7 @@ public class PTXCompiler {
                 return this;
             }
 
-            public PTXCompilationRequestBuilder withMetaData(TaskMetaData metaData) {
+            public PTXCompilationRequestBuilder withMetaData(TaskDataContext metaData) {
                 this.meta = metaData;
                 return this;
             }

@@ -28,10 +28,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * How to test?
@@ -42,17 +42,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  * </p>
  */
-public class TestMemoryLimit extends TornadoTestBase {
-
-    /**
-     * Set the number of elements to select ~300MB per array.
-     */
-    private static final int NUM_ELEMENTS = 78643200;   // 314MB for an array of Integers
-    private static IntArray a = new IntArray(NUM_ELEMENTS);
-    private static IntArray b = new IntArray(NUM_ELEMENTS);
-    private static IntArray c = new IntArray(NUM_ELEMENTS);
-
-    private static int value = 10000000;
+public class TestMemoryLimit extends TestMemoryCommon {
 
     @BeforeAll
     public static void setUpBeforeClass() {
@@ -70,7 +60,7 @@ public class TestMemoryLimit extends TornadoTestBase {
     }
 
     @Test
-    public void testWithMemoryLimitOver() {
+    public void testWithMemoryLimitOver() throws TornadoExecutionPlanException {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -78,15 +68,15 @@ public class TestMemoryLimit extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Limit the amount of memory to be used on the target accelerator.
-        executionPlan.withMemoryLimit("1GB").execute();
+            // Limit the amount of memory to be used on the target accelerator.
+            executionPlan.withMemoryLimit("1GB").execute();
 
-        for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(a.get(i) + b.get(i) + value, c.get(i), 0.001);
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i) + value, c.get(i), 0.001);
+            }
         }
-        executionPlan.freeDeviceMemory();
     }
 
     @Test

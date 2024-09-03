@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
@@ -269,7 +270,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testAddInt2() {
+    public void testAddInt2() throws TornadoExecutionPlanException {
         int size = 1;
         Int2 a = new Int2(1, 2);
         Int2 b = new Int2(3, 2);
@@ -281,8 +282,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(8, output.get(i));
@@ -290,7 +292,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testAddInt3() {
+    public void testAddInt3() throws TornadoExecutionPlanException {
         int size = 1;
         Int3 a = new Int3(1, 2, 3);
         Int3 b = new Int3(3, 2, 1);
@@ -302,8 +304,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(12, output.get(i));
@@ -311,7 +314,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testAddInt8() {
+    public void testAddInt8() throws TornadoExecutionPlanException {
         int size = 1;
         Int8 a = new Int8(1, 2, 3, 4, 1, 2, 3, 4);
         Int8 b = new Int8(4, 3, 2, 1, 1, 2, 3, 4);
@@ -323,8 +326,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(40, output.get(i));
@@ -332,7 +336,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testAddInt4() {
+    public void testAddInt4() throws TornadoExecutionPlanException {
         int size = 1;
         Int4 a = new Int4(1, 2, 3, 4);
         Int4 b = new Int4(4, 3, 2, 1);
@@ -344,8 +348,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(20, output.get(i));
@@ -353,7 +358,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testAddInt() {
+    public void testAddInt() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -372,8 +377,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(i + i, output.get(i));
@@ -381,7 +387,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testDotProductDouble() {
+    public void testDotProductDouble() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -410,14 +416,15 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputReduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         assertEquals(seqReduce.get(0), outputReduce.get(0));
     }
 
     @Test
-    public void testVectorAddInt2() {
+    public void testVectorAddInt2() throws TornadoExecutionPlanException {
         int size = 16;
 
         VectorInt2 a = new VectorInt2(size);
@@ -435,8 +442,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i + (size - i), i + (size - i));
@@ -446,7 +454,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorSubInt2() {
+    public void testVectorSubInt2() throws TornadoExecutionPlanException {
         int size = 16;
 
         VectorInt2 a = new VectorInt2(size);
@@ -464,8 +472,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i - (size - i), i - (size - i));
@@ -475,7 +484,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorDivInt2() {
+    public void testVectorDivInt2() throws TornadoExecutionPlanException {
         int size = 16;
 
         VectorInt2 a = new VectorInt2(size);
@@ -493,8 +502,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i / (size - i), i / (size - i));
@@ -504,7 +514,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAddInt3() {
+    public void testVectorAddInt3() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorInt3 a = new VectorInt3(size);
@@ -522,8 +532,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i + (size - i), i + (size - i), i + (size - i));
@@ -534,7 +545,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorSubInt3() {
+    public void testVectorSubInt3() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorInt3 a = new VectorInt3(size);
@@ -552,8 +563,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i - (size - i), i - (size - i), i - (size - i));
@@ -564,7 +576,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorDivInt3() {
+    public void testVectorDivInt3() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorInt3 a = new VectorInt3(size);
@@ -582,8 +594,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i / (size - i), i / (size - i), i / (size - i));
@@ -594,7 +607,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAddInt4() {
+    public void testVectorAddInt4() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorInt4 a = new VectorInt4(size);
@@ -612,8 +625,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i + (size - i), i + (size - i), i + (size - i), i + size);
@@ -625,7 +639,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorSubInt4() {
+    public void testVectorSubInt4() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorInt4 a = new VectorInt4(size);
@@ -643,8 +657,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i - (size - i), i - (size - i), i - (size - i), i - size);
@@ -656,7 +671,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorDivInt4() {
+    public void testVectorDivInt4() throws TornadoExecutionPlanException {
         int size = 8;
 
         VectorInt4 a = new VectorInt4(size);
@@ -674,8 +689,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i / (size - i), i / (size - i), i / (size - i), i / size);
@@ -687,7 +703,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAddInt8() {
+    public void testVectorAddInt8() throws TornadoExecutionPlanException {
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -705,8 +721,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
@@ -722,7 +739,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorAddInt16() {
+    public void testVectorAddInt16() throws TornadoExecutionPlanException {
         int size = 256;
 
         VectorInt16 a = new VectorInt16(size);
@@ -740,8 +757,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int16 sequential = new Int16(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i),
@@ -767,7 +785,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorSubInt8() {
+    public void testVectorSubInt8() throws TornadoExecutionPlanException {
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -785,8 +803,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i - (size - i), i - (size - i), i - (size - i), i - size, i - (size - i), i - (size - i), i - (size - i), i - size);
@@ -802,7 +821,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorDivInt8() {
+    public void testVectorDivInt8() throws TornadoExecutionPlanException {
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -820,8 +839,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i / (size - i), i / (size - i), i / (size - i), i / size, i / (size - i), i / (size - i), i / (size - i), i / size);
@@ -837,7 +857,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void privateVectorInt2() {
+    public void privateVectorInt2() throws TornadoExecutionPlanException {
         int size = 16;
         VectorInt2 sequentialOutput = new VectorInt2(size);
         VectorInt2 tornadoOutput = new VectorInt2(size);
@@ -847,8 +867,9 @@ public class TestInts extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testPrivateVectorInt2(sequentialOutput);
 
@@ -859,7 +880,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void privateVectorInt4() {
+    public void privateVectorInt4() throws TornadoExecutionPlanException {
         int size = 16;
         VectorInt4 sequentialOutput = new VectorInt4(size);
         VectorInt4 tornadoOutput = new VectorInt4(size);
@@ -869,8 +890,9 @@ public class TestInts extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testPrivateVectorInt4(sequentialOutput);
 
@@ -883,7 +905,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void privateVectorInt8() {
+    public void privateVectorInt8() throws TornadoExecutionPlanException {
         int size = 16;
         VectorInt8 sequentialOutput = new VectorInt8(16);
         VectorInt8 tornadoOutput = new VectorInt8(16);
@@ -893,8 +915,9 @@ public class TestInts extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         testPrivateVectorInt8(sequentialOutput);
 
@@ -911,15 +934,16 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod01() {
+    public void testInternalSetMethod01() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorInt2 tornadoInput = new VectorInt2(size);
         VectorInt2 sequentialInput = new VectorInt2(size);
         VectorInt2 tornadoOutput = new VectorInt2(size);
         VectorInt2 sequentialOutput = new VectorInt2(size);
 
+        Random r = new Random();
         for (int i = 0; i < size; i++) {
-            int value = (int) Math.random();
+            int value = r.nextInt();
             Int2 int2 = new Int2(value, value);
             tornadoInput.set(i, int2);
             sequentialInput.set(i, int2);
@@ -931,9 +955,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation01(sequentialInput, sequentialOutput);
 
@@ -944,15 +968,16 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod02() {
+    public void testInternalSetMethod02() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorInt3 tornadoInput = new VectorInt3(size);
         VectorInt3 sequentialInput = new VectorInt3(size);
         VectorInt3 tornadoOutput = new VectorInt3(size);
         VectorInt3 sequentialOutput = new VectorInt3(size);
 
+        Random r = new Random();
         for (int i = 0; i < size; i++) {
-            int value = (int) Math.random();
+            int value = r.nextInt();
             Int3 int3 = new Int3(value, value, value);
             tornadoInput.set(i, int3);
             sequentialInput.set(i, int3);
@@ -964,9 +989,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation02(sequentialInput, sequentialOutput);
 
@@ -978,15 +1003,16 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod03() {
+    public void testInternalSetMethod03() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorInt4 tornadoInput = new VectorInt4(size);
         VectorInt4 sequentialInput = new VectorInt4(size);
         VectorInt3 tornadoOutput = new VectorInt3(size);
         VectorInt3 sequentialOutput = new VectorInt3(size);
 
+        Random r = new Random();
         for (int i = 0; i < size; i++) {
-            int value = (int) Math.random();
+            int value = r.nextInt();
             Int4 int4 = new Int4(value, value, value, value);
             tornadoInput.set(i, int4);
             sequentialInput.set(i, int4);
@@ -998,9 +1024,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation03(sequentialInput, sequentialOutput);
 
@@ -1012,15 +1038,16 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testInternalSetMethod04() {
+    public void testInternalSetMethod04() throws TornadoExecutionPlanException {
         final int size = 16;
         VectorInt8 tornadoInput = new VectorInt8(size);
         VectorInt8 sequentialInput = new VectorInt8(size);
         VectorInt2 tornadoOutput = new VectorInt2(size);
         VectorInt2 sequentialOutput = new VectorInt2(size);
 
+        Random r = new Random();
         for (int i = 0; i < size; i++) {
-            int value = (int) Math.random();
+            int value = r.nextInt();
             Int8 int8 = new Int8(value, value, value, value, value, value, value, value);
             tornadoInput.set(i, int8);
             sequentialInput.set(i, int8);
@@ -1032,9 +1059,9 @@ public class TestInts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
 
         ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         vectorComputation04(sequentialInput, sequentialOutput);
 

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,8 +25,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -34,7 +35,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions
+ * tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions
  * </code>
  */
 public class TestParallelDimensions extends TornadoTestBase {
@@ -46,7 +47,7 @@ public class TestParallelDimensions extends TornadoTestBase {
     }
 
     @Test
-    public void test1DParallel() {
+    public void test1DParallel() throws TornadoExecutionPlanException {
         final int size = 128;
 
         IntArray a = new IntArray(size);
@@ -57,8 +58,9 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoopOneD, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals(10, a.get(i));
@@ -75,7 +77,7 @@ public class TestParallelDimensions extends TornadoTestBase {
     }
 
     @Test
-    public void test2DParallel() {
+    public void test2DParallel() throws TornadoExecutionPlanException {
         final int size = 128;
 
         IntArray a = new IntArray(size * size);
@@ -85,8 +87,9 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoop2D, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -106,7 +109,7 @@ public class TestParallelDimensions extends TornadoTestBase {
     }
 
     @Test
-    public void test3DParallel() {
+    public void test3DParallel() throws TornadoExecutionPlanException {
         final int size = 128;
 
         IntArray a = new IntArray(size * size * size);
@@ -116,8 +119,9 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoop3D, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -140,7 +144,7 @@ public class TestParallelDimensions extends TornadoTestBase {
     }
 
     @Test
-    public void test3DParallelMap() {
+    public void test3DParallelMap() throws TornadoExecutionPlanException {
         final int size = 128;
 
         IntArray a = new IntArray(size * size * size);
@@ -154,8 +158,9 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoop3DMap, a, b, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {

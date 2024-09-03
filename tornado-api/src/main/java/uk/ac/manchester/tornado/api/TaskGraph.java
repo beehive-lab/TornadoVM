@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -42,6 +41,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
@@ -50,10 +50,10 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * Tornado Task Graph API.
  * <p>
  * Task-based parallel API to express methods to be accelerated on any OpenCL,
- * PTX or SPIR-V compatible device.
+ * PTX and/or SPIR-V compatible device.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since v0.15
  */
 public class TaskGraph implements TaskGraphInterface {
 
@@ -68,13 +68,6 @@ public class TaskGraph implements TaskGraphInterface {
         this.taskGraphName = name;
         taskGraphImpl = TornadoAPIProvider.loadScheduleRuntime(name);
         taskNames = new HashSet<>();
-    }
-
-    private void checkTaskName(String id) {
-        if (taskNames.contains(id)) {
-            throw new TornadoTaskRuntimeException(ERROR_TASK_NAME_DUPLICATION);
-        }
-        taskNames.add(id);
     }
 
     /**
@@ -610,29 +603,21 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
-     * Add a pre-built OpenCL task into a task-schedule.
      *
      * @param id
-     *     Task-Id
+     *     String that represents the task-id.
      * @param entryPoint
-     *     Name of the method to be executed on the target device
+     *     Name of the kernel to be launched on the target device.
      * @param filename
-     *     Input file with the source kernel
-     * @param args
-     *     Arguments to the kernel
-     * @param accesses
-     *     Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
-     *     each input parameter to the method
-     * @param device
-     *     Device to be executed
-     * @param dimensions
-     *     Select number of dimensions of the kernel (1D, 2D or 3D)
+     *     String that represents the path to the native source (e.g., the OpenCL C kernel).
+     * @param accessorParameters
+     *     {@link AccessorParameters} with the type of accessor for each of the input parameters to the low-level kernel.
      * @return {@link TaskGraph}
      */
     @Override
-    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters) {
         checkTaskName(id);
-        TaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        TaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, accessorParameters);
         taskGraphImpl.addPrebuiltTask(prebuiltTask);
         return this;
     }
@@ -646,22 +631,16 @@ public class TaskGraph implements TaskGraphInterface {
      *     Kernel's name of the entry point
      * @param filename
      *     Input OpenCL C Kernel
-     * @param args
-     *     Arguments to the method that the kernel represents.
-     * @param accesses
-     *     Array of access of each parameter to the kernel
-     * @param device
-     *     Device in which the OpenCL C code will be executed.
-     * @param dimensions
-     *     Select the dimension of the OpenCL kernel (1D, 2D or 3D)
+     * @param accessorParameters
+     *     {@link AccessorParameters} with the type of accessor for each of the input parameters to the low-level kernel.
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraph}
      */
     @Override
-    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters, int[] atomics) {
         checkTaskName(id);
-        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        PrebuiltTaskPackage prebuiltTask = TaskPackage.createPrebuiltTask(id, entryPoint, filename, accessorParameters);
         prebuiltTask.withAtomics(atomics);
         taskGraphImpl.addPrebuiltTask(prebuiltTask);
         return this;
@@ -749,28 +728,31 @@ public class TaskGraph implements TaskGraphInterface {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    TaskGraph withDevice(TornadoDevice device) {
-        taskGraphImpl.setDevice(device);
-        return this;
-    }
-
-    TaskGraph withDevice(String taskName, TornadoDevice device) {
-        taskGraphImpl.setDevice(taskName, device);
-        return this;
-    }
-
-    TaskGraph batch(String batchSize) {
-        taskGraphImpl.withBatch(batchSize);
-        return this;
-    }
-
-    TaskGraph withMemoryLimit(String memoryLimit) {
-        taskGraphImpl.withMemoryLimit(memoryLimit);
-        return this;
-    }
-
-    public void withoutMemoryLimit() {
+    void withoutMemoryLimit() {
         taskGraphImpl.withoutMemoryLimit();
+    }
+
+    private void checkTaskName(String id) {
+        if (taskNames.contains(id)) {
+            throw new TornadoTaskRuntimeException(ERROR_TASK_NAME_DUPLICATION);
+        }
+        taskNames.add(id);
+    }
+
+    void withDevice(TornadoDevice device) {
+        taskGraphImpl.setDevice(device);
+    }
+
+    void withDevice(String taskName, TornadoDevice device) {
+        taskGraphImpl.setDevice(taskName, device);
+    }
+
+    void batch(String batchSize) {
+        taskGraphImpl.withBatch(batchSize);
+    }
+
+    void withMemoryLimit(String memoryLimit) {
+        taskGraphImpl.withMemoryLimit(memoryLimit);
     }
 
     void execute(ExecutorFrame executionPackage) {
@@ -781,14 +763,6 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.warmup();
     }
 
-    void dumpEvents() {
-        taskGraphImpl.dumpEvents();
-    }
-
-    void dumpTimes() {
-        taskGraphImpl.dumpTimes();
-    }
-
     void dumpProfiles() {
         taskGraphImpl.dumpProfiles();
     }
@@ -797,9 +771,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.clearProfiles();
     }
 
-    TaskGraph freeDeviceMemory() {
+    void freeDeviceMemory() {
         taskGraphImpl.freeDeviceMemory();
-        return this;
     }
 
     void syncRuntimeTransferToHost(Object... objects) {
@@ -814,9 +787,8 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getDevice();
     }
 
-    TaskGraph useDefaultThreadScheduler(boolean use) {
+    void useDefaultThreadScheduler(boolean use) {
         taskGraphImpl.useDefaultThreadScheduler(use);
-        return this;
     }
 
     boolean isFinished() {
@@ -870,6 +842,14 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getDeviceKernelTime();
     }
 
+    long getTotalBytesCopyIn() {
+        return taskGraphImpl.getTotalBytesCopyIn();
+    }
+
+    long getTotalBytesCopyOut() {
+        return taskGraphImpl.getTotalBytesCopyOut();
+    }
+
     protected String getProfileLog() {
         return taskGraphImpl.getProfileLog();
     }
@@ -910,8 +890,23 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withoutPrintKernel();
     }
 
+    void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
+        taskGraphImpl.withCompilerFlags(backendType, compilerFlags);
+    }
+
     void withGridScheduler(GridScheduler gridScheduler) {
         taskGraphImpl.withGridScheduler(gridScheduler);
     }
 
+    long getTotalBytesTransferred() {
+        return taskGraphImpl.getTotalBytesTransferred();
+    }
+
+    long getTotalDeviceMemoryUsage() {
+        return taskGraphImpl.getTotalDeviceMemoryUsage();
+    }
+
+    long getCurrentDeviceMemoryUsage() {
+        return taskGraphImpl.getCurrentDeviceMemoryUsage();
+    }
 }

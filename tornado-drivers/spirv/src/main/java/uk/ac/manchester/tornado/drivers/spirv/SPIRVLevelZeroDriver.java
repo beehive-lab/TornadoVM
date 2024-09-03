@@ -34,12 +34,11 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 
 public class SPIRVLevelZeroDriver implements SPIRVDispatcher {
 
-    private LevelZeroDriver driver;
-    private ZeDriverHandle driversHandler;
-    private List<SPIRVPlatform> spirvPlatforms;
+    private final ZeDriverHandle driversHandler;
+    private final List<SPIRVPlatform> spirvPlatforms;
 
     public SPIRVLevelZeroDriver() {
-        driver = new LevelZeroDriver();
+        LevelZeroDriver driver = new LevelZeroDriver();
         int errorCode = driver.zeInit(ZeInitFlag.ZE_INIT_FLAG_GPU_ONLY);
         if (errorCode != ZeResult.ZE_RESULT_SUCCESS) {
             throw new TornadoRuntimeException("[ERROR] Level Zero Driver Not Found");
@@ -55,7 +54,7 @@ public class SPIRVLevelZeroDriver implements SPIRVDispatcher {
         driversHandler = new ZeDriverHandle(numDrivers[0]);
         driver.zeDriverGet(numDrivers, driversHandler);
         for (int i = 0; i < numDrivers[0]; i++) {
-            SPIRVPlatform platform = new SPIRVLevelZeroPlatform(driver, driversHandler, i, driversHandler.getZe_driver_handle_t_ptr()[i]);
+            SPIRVPlatform platform = new SPIRVLevelZeroPlatform(driver, driversHandler, i);
             spirvPlatforms.add(platform);
         }
     }

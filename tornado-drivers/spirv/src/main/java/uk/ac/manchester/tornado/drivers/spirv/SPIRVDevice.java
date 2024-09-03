@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -63,7 +63,7 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
 
     public abstract String getName();
 
-    public abstract Object getDevice();
+    public abstract Object getDeviceRuntime();
 
     public abstract long getDeviceGlobalMemorySize();
 
@@ -79,4 +79,7 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
 
     public abstract String getPlatformName();
 
+    public abstract boolean isSPIRVSupported();
+
+    public abstract SPIRVRuntimeType getSPIRVRuntime();
 }

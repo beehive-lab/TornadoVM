@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
@@ -38,7 +38,7 @@ public class VirtualOCLPlatform implements TornadoPlatformInterface {
         this.device = new VirtualOCLDevice(info);
     }
 
-    public OCLExecutionEnvironment createContext() {
+    public OCLContextInterface createContext() {
         context = new VirtualOCLContext(this, device);
         return context;
     }
@@ -61,6 +61,11 @@ public class VirtualOCLPlatform implements TornadoPlatformInterface {
     @Override
     public String getVersion() {
         return null;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        return true;
     }
 
     @Override

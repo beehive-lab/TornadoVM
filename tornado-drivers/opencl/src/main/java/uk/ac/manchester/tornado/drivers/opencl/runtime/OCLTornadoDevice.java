@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -48,11 +49,11 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -99,12 +100,11 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLTornadoDevice implements TornadoXPUDevice {
 
     private static OCLBackendImpl driver = null;
-    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static final Pattern NAME_PATTERN = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
     private final OCLTargetDevice device;
     private final int deviceIndex;
@@ -185,7 +185,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void clean() {
-        Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
+        Set<Long> ids = new HashSet<>(device.getDeviceContext().getRegisteredPlanIds());
         ids.forEach(id -> device.getDeviceContext().reset(id));
         ids.clear();
         disableProfilerOptions();
@@ -225,8 +225,8 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createKernelStackFrame(Thread.currentThread().threadId(), numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
     }
 
     @Override
@@ -255,7 +255,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         }
 
         // copy meta data into task
-        final TaskMetaData taskMeta = executable.meta();
+        final TaskDataContext taskMeta = executable.meta();
         final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
@@ -366,9 +366,9 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskMetaDataInterface meta = task.meta();
-        if (meta instanceof TaskMetaData) {
-            TaskMetaData metaData = (TaskMetaData) task.meta();
+        TaskContextInterface meta = task.meta();
+        if (meta instanceof TaskDataContext) {
+            TaskDataContext metaData = (TaskDataContext) task.meta();
             return task.getId() + ".device=" + metaData.getBackendIndex() + ":" + metaData.getDeviceIndex();
         } else {
             throw new RuntimeException("[ERROR] TaskMetadata expected");
@@ -471,18 +471,6 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return loadPreCompiledBinaryForTask(task);
     }
 
-    @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
-    }
-
     private XPUBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize) {
         XPUBuffer result = null;
         if (type == float[].class) {
@@ -574,15 +562,16 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.checkBufferAvailability(objects.length)) {
+        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState) {
@@ -595,7 +584,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
@@ -609,26 +598,31 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState deviceBufferState) {
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long deallocatedSpace = 0;
         if (deviceBufferState.isLockedBuffer()) {
-            return -1;
+            return deallocatedSpace;
         }
-        deviceBufferState.getXPUBuffer().deallocate();
+        deviceBufferState.getXPUBuffer().markAsFreeBuffer();
+        if (!TornadoOptions.isReusedBuffersEnabled()) {
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
+        }
         deviceBufferState.setContents(false);
         deviceBufferState.setXPUBuffer(null);
-        return -1;
+        return deallocatedSpace;
     }
 
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
-        if (!state.hasContent() || BENCHMARKING_MODE) {
+        if (!state.hasContent()) {
             state.setContents(true);
             return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events == null);
         }
+        // return a NULL list
         return null;
     }
 
@@ -773,7 +767,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int getDriverIndex() {
+    public int getBackendIndex() {
         return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
     }
 

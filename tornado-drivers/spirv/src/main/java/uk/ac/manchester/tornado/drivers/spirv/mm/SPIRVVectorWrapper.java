@@ -57,14 +57,14 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     protected final SPIRVDeviceContext deviceContext;
     private final long batchSize;
     private final JavaKind kind;
+    private final TornadoLogger logger;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
-    private final TornadoLogger logger;
 
     public SPIRVVectorWrapper(final SPIRVDeviceContext device, final Object object, long batchSize) {
-        TornadoInternalError.guarantee(object instanceof PrimitiveStorage, STR."Expecting a PrimitiveStorage type, but found: \{object.getClass()}");
+        TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type, but found: " + object.getClass());
         this.deviceContext = device;
         this.batchSize = batchSize;
         this.bufferId = INIT_VALUE;
@@ -90,7 +90,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
@@ -103,7 +103,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -115,6 +115,11 @@ public class SPIRVVectorWrapper implements XPUBuffer {
                     TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
             logger.info("deallocated: %s", toString());
         }
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
     @Override
@@ -175,7 +180,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray tornadoNativeArray) {
                 return deviceContext.enqueueReadBuffer(executionPlanId, bufferId, offset, bytes, tornadoNativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -194,7 +199,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         }
         final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), bufferOffset, bufferSize, array, hostOffset, (useDeps) ? events : null);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     private int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {
@@ -214,7 +219,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -256,7 +261,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 return deviceContext.readBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -328,7 +333,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 deviceContext.writeBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Data type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Data type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");

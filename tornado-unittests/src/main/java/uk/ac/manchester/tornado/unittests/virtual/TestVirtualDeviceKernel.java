@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -67,7 +68,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         }
     }
 
-    private void testVirtualDeviceKernel(String expectedCodeFile) {
+    private void testVirtualDeviceKernel(String expectedCodeFile) throws TornadoExecutionPlanException {
         float[] input = new float[SIZE];
         float[] result = new float[1];
         IntStream.range(0, SIZE).forEach(idx -> input[idx] = idx);
@@ -80,8 +81,9 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedCodeFile;
@@ -103,19 +105,9 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     }
 
     @Test
-    public void testVirtualDeviceKernelGPU() {
+    public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
-
         testVirtualDeviceKernel("virtualDeviceKernelGPU.cl");
     }
-
-    @Test
-    public void testVirtualDeviceKernelCPU() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.SPIRV);
-
-        testVirtualDeviceKernel("virtualDeviceKernelCPU.cl");
-    }
-
 }

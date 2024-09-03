@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetric;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLDeviceContext implements OCLDeviceContextInterface {
 
@@ -70,7 +70,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private boolean wasReset;
     private Set<Long> executionIDs;
 
-    OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
+    public OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
         this.device = device;
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
@@ -105,7 +105,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public String toString() {
-        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
+        return String.format("[%d] %s", this.getDevice().getIndex(), this.getDevice().getDeviceName());
     }
 
     @Override
@@ -115,7 +115,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
+        return TornadoRuntimeProvider.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
     }
 
     @Override
@@ -149,7 +149,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public long getDeviceId() {
-        return device.getId();
+        return device.getDevicePointer();
     }
 
     @Override
@@ -175,7 +175,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
-        return context.createProgramWithBinary(device.getId(), binary, lengths, this);
+        return context.createProgramWithBinary(device.getDevicePointer(), binary, lengths, this);
     }
 
     @Override
@@ -270,7 +270,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
             oclCommandQueueTable.get(device, context);
             commandQueueTable.put(executionPlanId, oclCommandQueueTable);
         }
-        return commandQueueTable.get(executionPlanId).get(device, context);
+        return commandQueueTable.get(executionPlanId).get(context.devices().get(getDeviceIndex()), context);
     }
 
     private OCLEventPool getOCLEventPool(long executionPlanId) {
@@ -282,12 +282,12 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
-        // create command queue if needed
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
-        return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
+        long eventId = commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, deviceOffset, bytes, hostPointer, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
-                : null), EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
+                : null);
+        return eventPool.registerEvent(eventId, EventDescriptor.DESC_WRITE_SEGMENT, commandQueue);
     }
 
     /*
@@ -513,11 +513,21 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     public void reset(long executionPlanId) {
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
         eventPool.reset();
+        oclEventPool.remove(executionPlanId);
+        OCLCommandQueueTable table = commandQueueTable.get(executionPlanId);
+        if (table != null) {
+            table.cleanup(device);
+            if (table.size() == 0) {
+                commandQueueTable.remove(executionPlanId);
+            }
+            executionIDs.remove(executionPlanId);
+        }
+        getMemoryManager().releaseKernelStackFrame(executionPlanId);
         codeCache.reset();
         wasReset = true;
     }
 
-    public OCLTornadoDevice asMapping() {
+    public OCLTornadoDevice toDevice() {
         return new OCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
     }
 
@@ -555,7 +565,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+        return this.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
     }
 
     @Override
@@ -620,7 +630,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+    public OCLInstalledCode installCode(TaskDataContext meta, String id, String entryPoint, byte[] code) {
         entryPoint = checkKernelName(entryPoint);
         return codeCache.installSource(meta, id, entryPoint, code);
     }
@@ -633,13 +643,13 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public boolean isCached(String id, String entryPoint) {
         entryPoint = checkKernelName(entryPoint);
-        return codeCache.isCached(STR."\{id}-\{entryPoint}");
+        return codeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
     public boolean isCached(String methodName, SchedulableTask task) {
         methodName = checkKernelName(methodName);
-        return codeCache.isCached(STR."\{task.getId()}-\{methodName}");
+        return codeCache.isCached(task.getId() + "-" + methodName);
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

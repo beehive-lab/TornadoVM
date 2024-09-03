@@ -178,7 +178,7 @@ public class OCLXPUBuffer implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() throws TornadoMemoryException {
+    public void markAsFreeBuffer() throws TornadoMemoryException {
         deviceContext.getBufferProvider().markBufferReleased(this.bufferId);
         bufferId = -1;
     }
@@ -419,7 +419,7 @@ public class OCLXPUBuffer implements XPUBuffer {
                 eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
-        return useDeps ? eventList : null;
+        return eventList;
     }
 
     @Override
@@ -457,4 +457,8 @@ public class OCLXPUBuffer implements XPUBuffer {
         return setSubRegionSize;
     }
 
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
+    }
 }

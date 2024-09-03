@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -61,7 +62,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testFields01() {
+    public void testFields01() throws TornadoExecutionPlanException {
         final int N = 1024;
         Foo foo = new Foo(N);
 
@@ -69,12 +70,11 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", foo::computeInit);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        executionResult.transferToHost(foo.output);
-
-        executionPlan.freeDeviceMemory();
+            executionResult.transferToHost(foo.output);
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output.get(i));
@@ -82,7 +82,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testFields02() {
+    public void testFields02() throws TornadoExecutionPlanException {
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -91,20 +91,18 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", foo::computeAdd);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        executionPlan.freeDeviceMemory();
-
-        executionResult.transferToHost(foo.output);
-
+            executionResult.transferToHost(foo.output);
+        }
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
         }
     }
 
     @Test
-    public void testFields03() {
+    public void testFields03() throws TornadoExecutionPlanException {
         final int N = 1024;
         Bar bar = new Bar(N, 15);
 
@@ -112,12 +110,10 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("init", bar::computeInit);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
-
-        executionResult.transferToHost(bar.output);
-
-        executionPlan.freeDeviceMemory();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            executionResult.transferToHost(bar.output);
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output.get(i));
@@ -125,7 +121,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testFieldsPartialCopyout() {
+    public void testFieldsPartialCopyout() throws TornadoExecutionPlanException {
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -134,24 +130,19 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", foo::computeAdd);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
-
-        executionPlan.freeDeviceMemory();
-
-        DataRange dataRange = new DataRange(foo.output);
-
-        executionResult.transferToHost(dataRange.withSize(N / 2));
-
-        executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            DataRange dataRange = new DataRange(foo.output);
+            executionResult.transferToHost(dataRange.withSize(N / 2));
+            executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
+        }
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
         }
     }
 
     @Test
-    public void testFieldsLazyCopyout() {
+    public void testFieldsLazyCopyout() throws TornadoExecutionPlanException {
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -160,10 +151,10 @@ public class TestFields extends TornadoTestBase {
                 DataTransferMode.UNDER_DEMAND, foo.output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
-
-        executionResult.transferToHost(foo.output);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            executionResult.transferToHost(foo.output);
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
@@ -171,7 +162,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testFieldsPartialLazyCopyout() {
+    public void testFieldsPartialLazyCopyout() throws TornadoExecutionPlanException {
         final int N = 1024;
         Foo foo = new Foo(N);
         foo.initRandom();
@@ -180,14 +171,12 @@ public class TestFields extends TornadoTestBase {
                 DataTransferMode.UNDER_DEMAND, foo.output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
-
-        DataRange dataRange = new DataRange(foo.output);
-
-        executionResult.transferToHost(dataRange.withSize(N / 2));
-
-        executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            DataRange dataRange = new DataRange(foo.output);
+            executionResult.transferToHost(dataRange.withSize(N / 2));
+            executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
@@ -195,7 +184,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testSetField() {
+    public void testSetField() throws TornadoExecutionPlanException {
         // The reason this is not supported for SPIR-V is that the object fields are
         // deserialized
         // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
@@ -211,9 +200,9 @@ public class TestFields extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         assertEquals(77, a.someOtherField, 0.01f);
         assertEquals(-1, a.b.someField, 0.01f);
         for (int i = 0; i < b.someArray.getSize(); i++) {
@@ -222,7 +211,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testSetNestedField() {
+    public void testSetNestedField() throws TornadoExecutionPlanException {
         // The reason this is not supported for SPIR-V is that the object fields are
         // deserialized
         // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
@@ -238,9 +227,9 @@ public class TestFields extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         assertEquals(77, a.b.someField, 0.01f);
         assertEquals(-1, a.someOtherField, 0.01f);
         for (int i = 0; i < b.someArray.getSize(); i++) {
@@ -249,7 +238,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     @Test
-    public void testSetNestedArray() {
+    public void testSetNestedArray() throws TornadoExecutionPlanException {
         B b = new B();
         final A a = new A(b);
         final IntArray indexes = new IntArray(b.someArray.getSize());
@@ -262,8 +251,9 @@ public class TestFields extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < b.someArray.getSize(); i++) {
             assertEquals(6, a.b.someArray.get(i));

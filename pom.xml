@@ -5,7 +5,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>1.0.5-dev</version>
+    <version>1.0.8-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -1044,6 +1044,19 @@
                             </compilerArgs>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -1874,6 +1887,19 @@
                             </compilerArgs>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -2074,6 +2100,14 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.graalvm.compiler</groupId>
+            <artifactId>compiler</artifactId>
+            <version>23.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
     <modules>
         <module>tornado-runtime</module>

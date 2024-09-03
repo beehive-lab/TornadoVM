@@ -46,6 +46,19 @@ public class PTXStreamTable {
         return deviceStream.get(device).get(Thread.currentThread().threadId());
     }
 
+    public void cleanup(PTXDevice device) {
+        if (deviceStream.containsKey(device)) {
+            deviceStream.get(device).cleanup(Thread.currentThread().threadId());
+        }
+        if (deviceStream.get(device).size() == 0) {
+            deviceStream.remove(device);
+        }
+    }
+
+    public int size() {
+        return deviceStream.size();
+    }
+
     private static class ThreadStreamTable {
 
         private final Map<Long, PTXStream> streamTable;
@@ -60,6 +73,18 @@ public class PTXStreamTable {
                 streamTable.put(threadId, stream);
             }
             return streamTable.get(threadId);
+        }
+
+        public void cleanup(long threadId) {
+            if (streamTable.containsKey(threadId)) {
+                PTXStream queue = streamTable.remove(threadId);
+                queue.reset();
+                queue.cuDestroyStream();
+            }
+        }
+
+        public int size() {
+            return streamTable.size();
         }
 
     }

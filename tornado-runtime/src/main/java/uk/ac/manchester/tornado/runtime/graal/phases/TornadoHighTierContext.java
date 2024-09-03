@@ -29,18 +29,18 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.common.BatchCompilationConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TornadoHighTierContext extends HighTierContext {
 
     protected final ResolvedJavaMethod method;
     protected final Object[] args;
-    protected final TaskMetaData meta;
+    protected final TaskDataContext meta;
     protected final boolean isKernel;
     private BatchCompilationConfig batchCompilationConfig;
 
     public TornadoHighTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, Object[] args,
-            TaskMetaData meta, boolean isKernel, BatchCompilationConfig batchCompilationConfig) {
+            TaskDataContext meta, boolean isKernel, BatchCompilationConfig batchCompilationConfig) {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
         this.args = args;
@@ -69,12 +69,12 @@ public class TornadoHighTierContext extends HighTierContext {
         return (hasArgs()) ? args.length : 0;
     }
 
-    public TaskMetaData getMeta() {
+    public TaskDataContext getMeta() {
         return meta;
     }
 
     public TornadoXPUDevice getDeviceMapping() {
-        return meta.getLogicDevice();
+        return meta.getXPUDevice();
     }
 
     public boolean hasMeta() {

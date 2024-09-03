@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,13 +28,14 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -43,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.numpromotion.Types
+ * tornado-test -V uk.ac.manchester.tornado.unittests.numpromotion.Types
  * </code>
  */
 public class Types extends TornadoTestBase {
@@ -97,7 +98,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testByteToByte() {
+    public void testByteToByte() throws TornadoExecutionPlanException {
         int size = 512;
         ByteArray input = new ByteArray(size);
         ByteArray output = new ByteArray(size);
@@ -112,8 +113,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         b2b(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -122,7 +124,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testByteToByte2() {
+    public void testByteToByte2() throws TornadoExecutionPlanException {
         int size = 512;
         ByteArray input = new ByteArray(size);
         ByteArray output = new ByteArray(size);
@@ -137,8 +139,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         b2b(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -147,7 +150,7 @@ public class Types extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    public void testByteToInt() {
+    public void testByteToInt() throws TornadoExecutionPlanException {
         int size = 512;
         ByteArray input = new ByteArray(size);
         IntArray output = new IntArray(size);
@@ -162,8 +165,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         b2i(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -172,7 +176,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testByteToShort() {
+    public void testByteToShort() throws TornadoExecutionPlanException {
         int size = 512;
         ByteArray input = new ByteArray(size);
         ShortArray output = new ShortArray(size);
@@ -186,8 +190,9 @@ public class Types extends TornadoTestBase {
                 .task("t0", Types::b2s, input, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         b2s(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -196,7 +201,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testByteToLong() {
+    public void testByteToLong() throws TornadoExecutionPlanException {
         int size = 512;
         ByteArray input = new ByteArray(size);
         LongArray output = new LongArray(size);
@@ -211,8 +216,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         b2l(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -221,7 +227,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testIntToLong() {
+    public void testIntToLong() throws TornadoExecutionPlanException {
         int size = 512;
         IntArray input = new IntArray(size);
         LongArray output = new LongArray(size);
@@ -236,8 +242,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         i2l(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -246,7 +253,7 @@ public class Types extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    public void testShortToInt() {
+    public void testShortToInt() throws TornadoExecutionPlanException {
         int size = 512;
         ShortArray input = new ShortArray(size);
         IntArray output = new IntArray(size);
@@ -261,9 +268,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         s2i(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
             assertEquals(seq.get(i), output.get(i));
@@ -271,7 +278,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testFloatToDouble() {
+    public void testFloatToDouble() throws TornadoExecutionPlanException {
         int size = 512;
         FloatArray input = new FloatArray(size);
         DoubleArray output = new DoubleArray(size);
@@ -286,8 +293,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         f2d(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {
@@ -296,7 +304,7 @@ public class Types extends TornadoTestBase {
     }
 
     @Test
-    public void testIntToDouble() {
+    public void testIntToDouble() throws TornadoExecutionPlanException {
         int size = 512;
         IntArray input = new IntArray(size);
         DoubleArray output = new DoubleArray(size);
@@ -311,8 +319,9 @@ public class Types extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         i2d(input, seq);
         for (int i = 0; i < seq.getSize(); i++) {

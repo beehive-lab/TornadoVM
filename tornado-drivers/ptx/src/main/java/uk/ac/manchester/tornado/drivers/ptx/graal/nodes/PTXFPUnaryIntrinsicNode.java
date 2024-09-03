@@ -343,7 +343,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     private boolean shouldConvertInput(Value input) {
-        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP || operation() == Operation.LOG) && !((PTXKind) input
+        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS || operation() == Operation.COSPI || operation() == Operation.SIN || operation() == Operation.SINPI || operation() == Operation.EXP || operation() == Operation.LOG) && !((PTXKind) input
                 .getPlatformKind()).isF32();
     }
 
@@ -359,6 +359,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         ConstantValue constantValue = null;
         if (((PTXKind) x.getPlatformKind()).isF32()) {
             constantValue = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(PTXAssemblerConstants.DEGREES_TO_RADIANS));
+        } else if (((PTXKind) x.getPlatformKind()).isF64()) {
+            constantValue = new ConstantValue(LIRKind.value(PTXKind.F64), JavaConstant.forDouble(PTXAssemblerConstants.DEGREES_TO_RADIANS));
         } else {
             shouldNotReachHere("The kind of the input parameter in the radian method is not float.");
         }

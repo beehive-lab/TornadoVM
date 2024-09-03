@@ -205,7 +205,6 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         return header;
     }
 
-    // FIXME <REFACTOR> <S>
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(reference);
@@ -227,20 +226,17 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
-    // FIXME <REFACTOR> <S>
     private long sizeOf(final T array) {
         return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
     }
 
-    // FIXME <REFACTOR> <S>
     private long sizeOfBatch(long batchSize) {
         return (long) arrayHeaderSize + batchSize;
     }
 
-    // FIXME <REFACTOR> <S>
     @Override
     public void allocate(Object objectReference, long batchSize) {
         final T hostArray = cast(objectReference);
@@ -264,7 +260,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void deallocate() {
+    public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId);
@@ -290,6 +286,11 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     @Override
     public void setSizeSubRegion(long batchSize) {
         this.setSubRegionSize = batchSize;
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate();
     }
 
 }

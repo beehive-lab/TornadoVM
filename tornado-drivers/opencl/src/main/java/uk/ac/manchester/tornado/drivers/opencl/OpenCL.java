@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OpenCL {
 
@@ -59,8 +59,9 @@ public class OpenCL {
 
     static {
         if (VIRTUAL_DEVICE_ENABLED) {
-            initializeVirtual();
+            initializeVirtualPlatform();
         } else {
+            // Initialize physical platform
             try {
                 // Loading JNI OpenCL library
                 System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
@@ -90,9 +91,7 @@ public class OpenCL {
 
     public static void cleanup() {
         if (initialised) {
-            for (final TornadoPlatformInterface platform : platforms) {
-                platform.cleanup();
-            }
+            platforms.forEach(TornadoPlatformInterface::cleanup);
         }
     }
 
@@ -104,7 +103,7 @@ public class OpenCL {
         return platforms.size();
     }
 
-    private static void initializeVirtual() {
+    private static void initializeVirtualPlatform() {
         if (!initialised) {
             VirtualDeviceDescriptor info = VirtualJSONParser.getDeviceDescriptor();
 
@@ -119,22 +118,18 @@ public class OpenCL {
         if (!initialised) {
             try {
                 int numPlatforms = clGetPlatformCount();
-                long[] ids = new long[numPlatforms];
-                clGetPlatformIDs(ids);
+                long[] platformPointers = new long[numPlatforms];
+                clGetPlatformIDs(platformPointers);
 
-                for (int i = 0; i < ids.length; i++) {
-                    OCLPlatform platform = new OCLPlatform(i, ids[i]);
+                for (int i = 0; i < platformPointers.length; i++) {
+                    OCLPlatform platform = new OCLPlatform(i, platformPointers[i]);
                     platforms.add(platform);
                 }
 
-            } catch (final Exception exc) {
-                exc.printStackTrace();
-                throw new TornadoRuntimeException("Problem with OpenCL bindings");
-            } catch (final Error err) {
-                err.printStackTrace();
-                throw new TornadoRuntimeException("Error with OpenCL bindings");
+                initialised = true;
+            } catch (final Exception e) {
+                throw new TornadoRuntimeException("[ERROR] Problem with OpenCL bindings");
             }
-            initialised = true;
         }
     }
 
@@ -159,7 +154,7 @@ public class OpenCL {
      *     List of parameters.
      *
      */
-    public static void run(Long executionContextId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
+    public static void run(Long executionContextId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
@@ -190,7 +185,7 @@ public class OpenCL {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionContextId, numArgs);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values
@@ -228,7 +223,7 @@ public class OpenCL {
         for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
             final TornadoPlatformInterface platform = platforms.get(platformIndex);
             System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
-            final OCLExecutionEnvironment context = platform.createContext();
+            final OCLContextInterface context = platform.createContext();
             for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
                 OCLDeviceContext deviceContext = (OCLDeviceContext) context.createDeviceContext(deviceIndex);
                 System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, deviceContext.getDeviceName());

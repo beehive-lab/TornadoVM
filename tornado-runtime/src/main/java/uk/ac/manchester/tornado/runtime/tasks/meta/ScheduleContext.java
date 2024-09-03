@@ -2,8 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import java.util.List;
+public class ScheduleContext extends AbstractRTContext implements Cloneable {
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+    public ScheduleContext(String id) {
+        super(id, null);
+    }
 
-public interface OCLExecutionEnvironment {
-
-    int getNumDevices();
-
-    List<OCLTargetDevice> devices();
-
-    TornadoDeviceContext createDeviceContext(int deviceIndex);
-
-    TornadoPlatformInterface getPlatform();
-
-    void createCommandQueue(int index);
-
-    int getPlatformIndex();
+    @Override
+    public ScheduleContext clone() {
+        try {
+            return (ScheduleContext) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }

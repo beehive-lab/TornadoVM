@@ -23,10 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -42,11 +43,11 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
-public class SPIRVCommandQueueTable {
+public class SPIRVLevelZeroCommandQueueTable {
 
     private final Map<SPIRVDevice, ThreadCommandQueueTable> deviceCommandMap;
 
-    public SPIRVCommandQueueTable() {
+    public SPIRVLevelZeroCommandQueueTable() {
         deviceCommandMap = new ConcurrentHashMap<>();
     }
 
@@ -57,6 +58,19 @@ public class SPIRVCommandQueueTable {
             deviceCommandMap.put(device, table);
         }
         return deviceCommandMap.get(device).get(Thread.currentThread().threadId(), device, levelZeroContext);
+    }
+
+    public void cleanup(SPIRVDevice device, LevelZeroContext levelZeroContext) {
+        if (deviceCommandMap.containsKey(device)) {
+            deviceCommandMap.get(device).cleanup(Thread.currentThread().threadId(), levelZeroContext);
+        }
+        if (deviceCommandMap.get(device).size() == 0) {
+            deviceCommandMap.remove(device);
+        }
+    }
+
+    public int size() {
+        return deviceCommandMap.size();
     }
 
     private static class ThreadCommandQueueTable {
@@ -72,14 +86,14 @@ public class SPIRVCommandQueueTable {
                 // Create Command Queue and Command List
                 LevelZeroCommandQueue commandQueue = createCommandQueue(levelZeroContext, device);
                 LevelZeroCommandList commandList = createCommandList(levelZeroContext, device);
-                SPIRVLevelZeroCommandQueue spirvLevelZeroCommandQueue = new SPIRVLevelZeroCommandQueue(commandQueue, commandList, (LevelZeroDevice) device.getDevice());
+                SPIRVLevelZeroCommandQueue spirvLevelZeroCommandQueue = new SPIRVLevelZeroCommandQueue(commandQueue, commandList, (LevelZeroDevice) device.getDeviceRuntime());
                 commandQueueMap.put(threadId, spirvLevelZeroCommandQueue);
             }
             return commandQueueMap.get(threadId);
         }
 
         private LevelZeroCommandQueue createCommandQueue(LevelZeroContext context, SPIRVDevice spirvDevice) {
-            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
+            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDeviceRuntime();
             // Create Command Queue
             ZeCommandQueueDescriptor cmdDescriptor = new ZeCommandQueueDescriptor();
             cmdDescriptor.setFlags(0);
@@ -95,7 +109,7 @@ public class SPIRVCommandQueueTable {
         }
 
         private LevelZeroCommandList createCommandList(LevelZeroContext context, SPIRVDevice spirvDevice) {
-            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
+            LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDeviceRuntime();
             ZeCommandListDescriptor cmdListDescriptor = new ZeCommandListDescriptor();
             cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
             cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
@@ -129,6 +143,18 @@ public class SPIRVCommandQueueTable {
                 }
             }
             return ordinal;
+        }
+
+        public void cleanup(long threadId, LevelZeroContext levelZeroContext) {
+            if (commandQueueMap.containsKey(threadId)) {
+                SPIRVLevelZeroCommandQueue queue = commandQueueMap.remove(threadId);
+                levelZeroContext.zeCommandQueueDestroy(queue.getCommandQueue().getCommandQueueHandle());
+                levelZeroContext.zeCommandListDestroy(queue.getCommandList().getCommandListHandler());
+            }
+        }
+
+        public int size() {
+            return commandQueueMap.size();
         }
     }
 

@@ -17,10 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.multithreaded;
 
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 import org.junit.jupiter.api.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -210,12 +211,14 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
                 t1.join();
             } catch (InterruptedException e) {
                 assertTrue(false, "Error");
+                fail("Error");
             }
 
             try {
                 t2.join();
             } catch (InterruptedException e) {
                 assertTrue(false, "Error");
+                fail("Error");
             }
 
         }
@@ -247,12 +250,14 @@ public class TestMultiThreadedExecutionPlans extends TornadoTestBase {
                 t1.join();
             } catch (InterruptedException e) {
                 assertTrue(false, "Error");
+                fail("Error");
             }
 
             try {
                 t2.join();
             } catch (InterruptedException e) {
                 assertTrue(false, "Error");
+                fail("Error");
             }
 
         }

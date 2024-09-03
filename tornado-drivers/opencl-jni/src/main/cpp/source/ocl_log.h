@@ -45,15 +45,15 @@
         << std::endl;                                          \
     }
 
-#define LOG_NVML_AND_VALIDATE(name, result)                     \
-    if (LOG_JNI == 1)  {                                       \
+#define LOG_NVML_AND_VALIDATE(name, result)                         \
+    if (LOG_JNI == 1)  {                                            \
         std::cout << "[TornadoVM-OCL-NVML-JNI] Calling : " << name  \
-        << " -> Status: " << result                            \
-        << std::endl;                                          \
-    }                                                          \
-    if (result != NVML_SUCCESS)  {                               \
+        << " -> Status: " << result                                 \
+        << std::endl;                                               \
+    }                                                               \
+    if (result != NVML_SUCCESS)  {                                  \
         std::cout << "[TornadoVM-OCL-NVML-JNI] ERROR : " << name    \
-        << " -> Returned: " << result                          \
-        << std::endl;                                          \
+        << " -> Returned: " << result                               \
+        << std::endl;                                               \
     }
 #endif

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,8 +28,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -37,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap
+ * tornado-test -V uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap
  * </code>
  */
 public class TestFlatMap extends TornadoTestBase {
@@ -55,11 +56,7 @@ public class TestFlatMap extends TornadoTestBase {
     }
 
     @Test
-    public void testFlatMap() {
-
-//        float[] input = new float[SIZE * SIZE];
-//        float[] output = new float[SIZE * SIZE];
-//        float[] seq = new float[SIZE * SIZE];
+    public void testFlatMap() throws TornadoExecutionPlanException {
         FloatArray input = new FloatArray(SIZE * SIZE);
         FloatArray output = new FloatArray(SIZE * SIZE);
         FloatArray seq = new FloatArray(SIZE * SIZE);
@@ -75,8 +72,9 @@ public class TestFlatMap extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
         computeFlatMap(input, seq, SIZE);
 
         for (int i = 0; i < input.getSize(); i++) {

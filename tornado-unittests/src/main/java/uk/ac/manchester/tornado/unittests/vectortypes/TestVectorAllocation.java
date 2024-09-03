@@ -26,13 +26,14 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -85,7 +86,7 @@ public class TestVectorAllocation extends TornadoTestBase {
     }
 
     @Test
-    public void testAllocation1() {
+    public void testAllocation1() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -102,8 +103,9 @@ public class TestVectorAllocation extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             assertEquals(a.get(i) + (10), output.get(i), 0.001);
@@ -111,7 +113,7 @@ public class TestVectorAllocation extends TornadoTestBase {
     }
 
     @Test
-    public void testAllocation2() {
+    public void testAllocation2() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -128,8 +130,9 @@ public class TestVectorAllocation extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Float4 sequential = new Float4(a.getSize(), 10, a.get(i), a.get(i) * 10);
@@ -141,7 +144,7 @@ public class TestVectorAllocation extends TornadoTestBase {
     }
 
     @Test
-    public void testAllocation3() {
+    public void testAllocation3() throws TornadoExecutionPlanException {
 
         int size = 8;
 
@@ -158,8 +161,9 @@ public class TestVectorAllocation extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < size; i++) {
             Float3 sequential = new Float3(a.getSize(), 10, a.get(i));

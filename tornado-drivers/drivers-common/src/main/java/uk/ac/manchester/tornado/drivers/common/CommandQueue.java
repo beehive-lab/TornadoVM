@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -21,15 +21,8 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.spirv.runtime;
+package uk.ac.manchester.tornado.drivers.common;
 
-import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+public class CommandQueue {
 
-public class SPIRVDeviceFactory implements AbstractFactoryDevice {
-
-    @Override
-    public TornadoDevice createDevice(int platform, int device) {
-        return new SPIRVTornadoDevice(platform, device);
-    }
 }

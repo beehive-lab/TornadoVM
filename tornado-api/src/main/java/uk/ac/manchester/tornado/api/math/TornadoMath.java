@@ -40,19 +40,19 @@ import uk.ac.manchester.tornado.api.types.vectors.Float8;
 public class TornadoMath {
 
     public static float min(float a, float b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static double min(double a, double b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static long min(long a, long b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static int min(int a, int b) {
-        return (a > b) ? b : a;
+        return Math.min(a, b);
     }
 
     public static short min(short a, short b) {
@@ -64,19 +64,19 @@ public class TornadoMath {
     }
 
     public static double max(double a, double b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static float max(float a, float b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static long max(long a, long b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static int max(int a, int b) {
-        return (a > b) ? a : b;
+        return Math.max(a, b);
     }
 
     public static short max(short a, short b) {
@@ -115,6 +115,10 @@ public class TornadoMath {
         return (float) Math.exp(value);
     }
 
+    /**
+     * In PTX, the exp operation that accepts a double input is narrowed to f32,
+     * since the PTX instruction does not support f64 operands.
+     */
     public static double exp(double value) {
         return Math.exp(value);
     }
@@ -356,6 +360,10 @@ public class TornadoMath {
         return (float) Math.log(value);
     }
 
+    /**
+     * In PTX, the log operation that accepts a double input is narrowed to f32,
+     * since the PTX instruction does not support f64 operands.
+     */
     public static double log(double value) {
         return Math.log(value);
     }
@@ -364,6 +372,10 @@ public class TornadoMath {
         return log(value) / log(2);
     }
 
+    /**
+     * In PTX, the log2 operation that accepts a double input is narrowed to f32,
+     * since the PTX instruction does not support f64 operands.
+     */
     public static double log2(double value) {
         return Math.log(value) / Math.log(2);
     }
@@ -372,13 +384,24 @@ public class TornadoMath {
         return (float) Math.atan(value);
     }
 
+    public static double atan(double value) {
+        return Math.atan(value);
+    }
+
     public static float tan(float value) {
         return (float) Math.tan(value);
+    }
 
+    public static double tan(double value) {
+        return Math.tan(value);
     }
 
     public static float tanh(float value) {
         return (float) Math.tanh(value);
+    }
+
+    public static double tanh(double value) {
+        return Math.tanh(value);
     }
 
     public static float floatPI() {
@@ -401,6 +424,10 @@ public class TornadoMath {
         return (float) Math.atan2(a, b);
     }
 
+    public static double atan2(double a, double b) {
+        return Math.atan2(a, b);
+    }
+
     public static float acos(float a) {
         return (float) Math.acos(a);
     }
@@ -421,6 +448,10 @@ public class TornadoMath {
         return (float) Math.cos(angle);
     }
 
+    /**
+     * In PTX, the cos operation that accepts a double input is narrowed to f32,
+     * since the PTX instruction does not support f64 operands.
+     */
     public static double cos(double angle) {
         return Math.cos(angle);
     }
@@ -429,6 +460,10 @@ public class TornadoMath {
         return (float) Math.sin(angle);
     }
 
+    /**
+     * In PTX, the sin operation that accepts a double input is narrowed to f32,
+     * since the PTX instruction does not support f64 operands.
+     */
     public static double sin(double angle) {
         return Math.sin(angle);
     }
@@ -445,10 +480,18 @@ public class TornadoMath {
         return (float) Math.toRadians(angdeg);
     }
 
+    public static double toRadians(double angdeg) {
+        return Math.toRadians(angdeg);
+    }
+
     public static float sinpi(float angle) {
         return (float) Math.sin(angle * Math.PI);
     }
 
+    /**
+     * In PTX, the sinpi operation that accepts a double input is narrowed to f32,
+     * since the PTX sin instruction does not support f64 operands.
+     */
     public static double sinpi(double angle) {
         return Math.sin(angle * Math.PI);
     }
@@ -457,6 +500,10 @@ public class TornadoMath {
         return (float) Math.cos(angle * Math.PI);
     }
 
+    /**
+     * In PTX, the cospi operation that accepts a double input is narrowed to f32,
+     * since the PTX cos instruction does not support f64 operands.
+     */
     public static double cospi(double angle) {
         return Math.cos(angle * Math.PI);
     }

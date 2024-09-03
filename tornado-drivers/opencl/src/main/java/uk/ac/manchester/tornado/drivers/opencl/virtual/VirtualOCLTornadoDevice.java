@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -68,7 +69,7 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
@@ -131,7 +132,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void clean() {
-        Set<Long> ids = device.getDeviceContext().getRegisteredPlanIds();
+        Set<Long> ids = new HashSet<>(device.getDeviceContext().getRegisteredPlanIds());
         if (!ids.isEmpty()) {
             ids.forEach(id -> device.getDeviceContext().reset(id));
             ids.clear();
@@ -146,7 +147,10 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
         switch (Objects.requireNonNull(device.getDeviceType())) {
-            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
+            case CL_DEVICE_TYPE_GPU, //
+                    CL_DEVICE_TYPE_ACCELERATOR,//
+                    CL_DEVICE_TYPE_CUSTOM,//
+                    CL_DEVICE_TYPE_ALL -> {//
                 return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
@@ -172,7 +176,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
         return null;
     }
 
@@ -187,7 +191,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData taskMeta = executable.meta();
+        final TaskDataContext taskMeta = executable.meta();
         final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
@@ -280,19 +284,19 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
+    public synchronized long deallocate(DeviceBufferState state) {
         unimplemented();
         return -1;
     }
@@ -435,7 +439,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int getDriverIndex() {
+    public int getBackendIndex() {
         return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(OCLBackendImpl.class);
     }
 
@@ -447,18 +451,6 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public void setAtomicRegion(XPUBuffer bufferAtomics) {
 
-    }
-
-    @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
     }
 
     @Override

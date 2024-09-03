@@ -19,7 +19,8 @@
 package uk.ac.manchester.tornado.unittests.atomics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,17 +28,22 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.AccessorParameters;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -45,9 +51,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * How to test?
  *
+ * <p>
  * <code>
  * tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
  * </code>
+ * </p>
  */
 public class TestAtomics extends TornadoTestBase {
 
@@ -165,7 +173,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    public void testAtomic03() {
+    public void testAtomic03() throws TornadoExecutionPlanException {
         final int size = 1024;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -178,8 +186,9 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic03, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         atomic03(b);
         for (int i = 0; i < a.getSize(); i++) {
@@ -188,7 +197,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic04() {
+    public void testAtomic04() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -201,11 +210,12 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!executionResult.isReady()) {
-            assertTrue(false);
+            if (!executionResult.isReady()) {
+                fail();
+            }
         }
 
         // On GPUs and FPGAs, threads within the same work-group run in parallel.
@@ -213,11 +223,11 @@ public class TestAtomics extends TornadoTestBase {
         // However, the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.
         boolean repeated = isValueRepeated(a);
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     @Test
-    public void testAtomic04Get() {
+    public void testAtomic04Get() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -230,11 +240,12 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!executionResult.isReady()) {
-            assertTrue(false);
+            if (!executionResult.isReady()) {
+                fail();
+            }
         }
 
         // On GPUs and FPGAs, threads within the same work-group run in parallel.
@@ -242,18 +253,20 @@ public class TestAtomics extends TornadoTestBase {
         // However, the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.
         boolean repeated = isValueRepeated(a);
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     /**
      * How to test?
      *
+     * <p>
      * <code>
      * $ tornado-test -V -pk --debug -J"-Ddevice=0" uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
      * </code>
+     * </p>
      */
     @Test
-    public void testAtomic05_precompiled() {
+    public void testAtomic05_precompiled() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -265,30 +278,35 @@ public class TestAtomics extends TornadoTestBase {
         String deviceToRun = System.getProperties().getProperty("device", "0");
         int deviceNumber = Integer.parseInt(deviceToRun);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
+        TornadoDevice defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
         String tornadoSDK = System.getenv("TORNADO_SDK");
+
+        AccessorParameters accessorParameters = new AccessorParameters(2);
+        accessorParameters.set(0, a, Access.WRITE_ONLY);
+        accessorParameters.set(1, b, Access.WRITE_ONLY);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .prebuiltTask("t0", //
                         "add", //
                         tornadoSDK + "/examples/generated/atomics.cl", //
-                        new Object[] { a, b }, //
-                        new Access[] { Access.WRITE_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { 32 }, //
-                        new int[] { 155 } // Atomics - Initial Value
-                )//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+                        accessorParameters, //
+                        new int[] { 155 }   // Array for AtomicsInteger - Initial int value
+                ).transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(32);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
+                    .execute();
+        }
 
         boolean repeated = isValueRepeated(a);
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     @Test
-    public void testAtomic06() {
+    public void testAtomic06() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -305,21 +323,21 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
-
-        if (!executionResult.isReady()) {
-            assertTrue(false);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            if (!executionResult.isReady()) {
+                fail();
+            }
         }
 
         boolean repeated = isValueRepeated(a);
         repeated &= isValueRepeated(a);
 
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     @Test
-    public void testAtomic07() {
+    public void testAtomic07() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -333,18 +351,19 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!executionResult.isReady()) {
-            assertTrue(false);
+            if (!executionResult.isReady()) {
+                fail();
+            }
         }
         boolean repeated = isValueRepeated(a);
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     @Test
-    public void testAtomic08() {
+    public void testAtomic08() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -358,14 +377,14 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
-
-        if (!executionResult.isReady()) {
-            assertTrue(false);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            if (!executionResult.isReady()) {
+                fail();
+            }
         }
         boolean repeated = isValueRepeated(a);
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     private boolean isValueRepeated(IntArray array) {
@@ -383,7 +402,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic09() {
+    public void testAtomic09() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -401,18 +420,19 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, ai);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        assertTrue(!repeated);
+        assertFalse(repeated);
         assertEquals(initialValue + size, lastValue);
     }
 
     @Test
-    public void testAtomic10() {
+    public void testAtomic10() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -430,18 +450,19 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, ai);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        assertTrue(!repeated);
+        assertFalse(repeated);
         assertEquals(initialValue + size, lastValue);
     }
 
     @Test
-    public void testAtomic11() {
+    public void testAtomic11() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -459,18 +480,19 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        assertTrue(!repeated);
+        assertFalse(repeated);
         assertEquals(initialValue + size, lastValue);
     }
 
     @Test
-    public void testAtomic12() {
+    public void testAtomic12() throws TornadoExecutionPlanException {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -490,13 +512,14 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a, bi);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        assertTrue(!repeated);
+        assertFalse(repeated);
         assertEquals(initialValueA + size, lastValue);
 
         lastValue = bi.get();
@@ -505,7 +528,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic13() {
+    public void testAtomic13() throws TornadoExecutionPlanException {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -522,18 +545,19 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic13, a, ai) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        assertTrue(!repeated);
+        assertFalse(repeated);
         assertEquals(initialValueA - size, lastValue);
     }
 
     @Test
-    public void testAtomic14() {
+    public void testAtomic14() throws TornadoExecutionPlanException {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -553,8 +577,9 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a, bi);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
@@ -564,7 +589,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic15() {
+    public void testAtomic15() throws TornadoExecutionPlanException {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -581,18 +606,19 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic15, a, ai) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
 
         boolean repeated = isValueRepeated(a);
-        assertTrue(!repeated);
+        assertFalse(repeated);
     }
 
     @Test
-    public void testAtomic16() {
+    public void testAtomic16() throws TornadoExecutionPlanException {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -610,12 +636,10 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
         final int iterations = 50;
-        IntStream.range(0, iterations).forEach(i -> {
-            executionPlan.execute();
-        });
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            IntStream.range(0, iterations).forEach(_ -> executionPlan.execute());
+        }
 
         int lastValue = ai.get();
         assertEquals(initialValueA + (iterations * size), lastValue);

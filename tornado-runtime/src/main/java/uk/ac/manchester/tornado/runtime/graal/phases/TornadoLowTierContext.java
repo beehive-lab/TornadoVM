@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,18 +24,19 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class TornadoLowTierContext extends LowTierContext {
 
-    protected final TaskMetaData meta;
+    protected final TaskDataContext meta;
 
-    public TornadoLowTierContext(Providers copyFrom, TargetProvider target, TaskMetaData meta) {
+    public TornadoLowTierContext(Providers copyFrom, TargetProvider target, TaskDataContext meta) {
         super(copyFrom, target);
         this.meta = meta;
     }
 
-    public TaskMetaData getMeta() {
+    public TaskDataContext getMeta() {
         return meta;
     }
 

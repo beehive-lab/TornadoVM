@@ -30,17 +30,19 @@ import java.util.List;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
-// FIXME <REFACTOR> THis class has similarities with the rest of the backends
 public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStackFrame {
 
     public static final int RESERVED_SLOTS = 3;
 
     private final ArrayList<CallArgument> callArguments;
 
+    private boolean isValid;
+
     public SPIRVKernelStackFrame(long bufferId, int numArgs, SPIRVDeviceContext device) {
         super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
         buffer.clear();
+        this.isValid = true;
     }
 
     @Override
@@ -51,6 +53,17 @@ public class SPIRVKernelStackFrame extends SPIRVByteBuffer implements KernelStac
     @Override
     public void reset() {
         callArguments.clear();
+    }
+
+    @Override
+    public boolean isValid() {
+        return isValid;
+    }
+
+    @Override
+    public void invalidate() {
+        isValid = false;
+        deviceContext.getSpirvContext().freeMemory(toBuffer(), deviceContext.getDeviceIndex());
     }
 
     @Override

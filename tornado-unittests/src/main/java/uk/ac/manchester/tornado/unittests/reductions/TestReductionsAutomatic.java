@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,10 +29,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -40,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic
+ * tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic
  * </code>
  */
 public class TestReductionsAutomatic extends TornadoTestBase {
@@ -60,7 +61,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     }
 
     @Test
-    public void testIrregularSize01() {
+    public void testIrregularSize01() throws TornadoExecutionPlanException {
 
         final int size = 33554432 + 15;
         IntArray input = new IntArray(size);
@@ -75,8 +76,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         IntArray sequential = new IntArray(1);
         sequential.init(0);
@@ -86,7 +88,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0));
     }
 
-    private void testIrregular(final int inputSize) {
+    private void testIrregular(final int inputSize) throws TornadoExecutionPlanException {
 
         FloatArray input = new FloatArray(inputSize);
         FloatArray result = new FloatArray(1);
@@ -103,8 +105,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         FloatArray sequential = new FloatArray(1);
         testFloat(input, sequential);
@@ -114,13 +117,13 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     }
 
     @Test
-    public void testIrregularSize02() {
+    public void testIrregularSize02() throws TornadoExecutionPlanException {
         testIrregular(2130);
         testIrregular(18);
     }
 
     @Test
-    public void testIrregularSize03() {
+    public void testIrregularSize03() throws TornadoExecutionPlanException {
         int[] dataSizes = new int[11];
         Random r = new Random();
         IntStream.range(0, dataSizes.length).forEach(idx -> dataSizes[idx] = r.nextInt(1000));
@@ -139,7 +142,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     }
 
     @Test
-    public void testIrregularSize04() {
+    public void testIrregularSize04() throws TornadoExecutionPlanException {
         final int size = 17;
         DoubleArray input = new DoubleArray(size);
         DoubleArray result = new DoubleArray(1);
@@ -155,8 +158,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         DoubleArray sequential = new DoubleArray(1);
         testDouble(input, sequential);

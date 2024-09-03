@@ -29,7 +29,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
 
 public class TornadoSketchTierContext extends HighTierContext {
@@ -51,7 +51,7 @@ public class TornadoSketchTierContext extends HighTierContext {
         this.method = method;
         int parameterCount = method.getParameters().length;
         this.argumentAccess = new Access[method.isStatic() ? parameterCount : parameterCount + 1];
-        device = TornadoRuntime.getTornadoRuntime().getBackend(backendIndex).getDevice(deviceIndex);
+        device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex).getDevice(deviceIndex);
     }
 
     public TornadoDevice getDevice() {

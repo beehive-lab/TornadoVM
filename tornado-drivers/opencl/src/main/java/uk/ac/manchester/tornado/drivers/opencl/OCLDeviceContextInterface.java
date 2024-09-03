@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
@@ -46,13 +46,13 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLInstalledCode installCode(OCLCompilationResult result);
 
-    OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code);
+    OCLInstalledCode installCode(TaskDataContext meta, String id, String entryPoint, byte[] code);
 
     boolean isKernelAvailable();
 
     void reset(long executionPlanId);
 
-    TornadoXPUDevice asMapping();
+    TornadoXPUDevice toDevice();
 
     void dumpEvents();
 
@@ -76,7 +76,7 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     void flushEvents(long executionPlanId);
 
-    OCLExecutionEnvironment getPlatformContext();
+    OCLContextInterface getPlatformContext();
 
     long getDeviceId();
 

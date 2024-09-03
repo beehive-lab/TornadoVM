@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
@@ -214,7 +215,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testLazyCopyOut() {
+    public void testLazyCopyOut() throws TornadoExecutionPlanException {
         final int N = 1024;
         int size = 20;
         IntArray data = new IntArray(N);
@@ -229,15 +230,13 @@ public class TestAPI extends TornadoTestBase {
                 .transferToHost(DataTransferMode.UNDER_DEMAND, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Force data transfers from D->H after the execution of a task-graph
-        executionResult.transferToHost(data);
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
-        // device buffers for other execution plans.
-        executionPlan.freeDeviceMemory();
+            // Force data transfers from D->H after the execution of a task-graph
+            executionResult.transferToHost(data);
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));
@@ -249,7 +248,7 @@ public class TestAPI extends TornadoTestBase {
      * In this test, input and output use the same array.
      */
     @Test
-    public void testLazyCopyOut2() {
+    public void testLazyCopyOut2() throws TornadoExecutionPlanException {
         final int N = 128;
         int size = 20;
 
@@ -265,13 +264,12 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.UNDER_DEMAND, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        TornadoExecutionResult executionResult = executionPlanPlan.execute();
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        executionResult.transferToHost(data);
-
-        executionPlanPlan.freeDeviceMemory();
+            executionResult.transferToHost(data);
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));
@@ -282,7 +280,7 @@ public class TestAPI extends TornadoTestBase {
      * Perform the copy out under demand. It performs a copy of a subset of the output array.
      */
     @Test
-    public void testLazyPartialCopyOut() {
+    public void testLazyPartialCopyOut() throws TornadoExecutionPlanException {
         final int N = 1024;
         int size = 20;
         IntArray data = new IntArray(N);
@@ -297,18 +295,15 @@ public class TestAPI extends TornadoTestBase {
                 .transferToHost(DataTransferMode.UNDER_DEMAND, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
 
-        DataRange dataRange = new DataRange(data);
+            DataRange dataRange = new DataRange(data);
 
-        executionResult.transferToHost(dataRange.withSize(N / 2));
+            executionResult.transferToHost(dataRange.withSize(N / 2));
 
-        executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
-
-        // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
-        // device buffers for other execution plans.
-        executionPlan.freeDeviceMemory();
+            executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));
@@ -316,7 +311,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testWarmUp() {
+    public void testWarmUp() throws TornadoExecutionPlanException {
         final int N = 128;
         int size = 20;
 
@@ -332,11 +327,10 @@ public class TestAPI extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp() //
-                .execute();
-
-        executionPlan.freeDeviceMemory();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp() //
+                    .execute();
+        }
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));

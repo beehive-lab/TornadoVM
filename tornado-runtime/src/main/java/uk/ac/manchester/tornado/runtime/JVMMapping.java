@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -41,9 +41,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
-import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 public class JVMMapping implements TornadoXPUDevice {
 
@@ -124,7 +121,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
         return null;
     }
 
@@ -139,17 +136,17 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         return -1;
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         return -1;
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
+    public synchronized long deallocate(DeviceBufferState state) {
         return 0;
     }
 
@@ -249,18 +246,6 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, executable.meta().getBackendIndex(), executable.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public long getMaxAllocMemory() {
         return Runtime.getRuntime().maxMemory();
     }
@@ -291,7 +276,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int getDriverIndex() {
+    public int getBackendIndex() {
         return 0;
     }
 

@@ -30,6 +30,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,11 +92,10 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXTornadoDevice implements TornadoXPUDevice {
 
-    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static PTXBackendImpl driver = null;
     private final PTXDevice device;
     private final int deviceIndex;
@@ -117,8 +117,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallWrapper(Thread.currentThread().threadId(), numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+        return getDeviceContext().getMemoryManager().createCallWrapper(executionPlanId, numArgs);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         return switch (task) {
             case CompilableTask _ -> compileTask(task);
             case PrebuiltTask _ -> compilePreBuiltTask(task);
-            default -> throw new TornadoInternalError(STR."task of unknown type: \{task.getClass().getSimpleName()}");
+            default -> throw new TornadoInternalError("task of unknown type: " + task.getClass().getSimpleName());
         };
     }
 
@@ -170,7 +170,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData taskMeta = executable.meta();
+        final TaskDataContext taskMeta = executable.meta();
         final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
@@ -287,19 +287,20 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized int allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.checkBufferAvailability(objects.length)) {
+        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
             bufferProvider.resetBuffers();
         }
+        long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i]);
         }
-        return -1;
+        return allocatedSpace;
     }
 
     @Override
-    public int allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
@@ -312,19 +313,23 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         }
-        return -1;
+        return state.getXPUBuffer().size();
     }
 
     @Override
-    public synchronized int deallocate(DeviceBufferState state) {
-        if (state.isLockedBuffer()) {
-            return -1;
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long deallocatedSpace = 0;
+        if (deviceBufferState.isLockedBuffer()) {
+            return deallocatedSpace;
         }
 
-        state.getXPUBuffer().deallocate();
-        state.setContents(false);
-        state.setXPUBuffer(null);
-        return -1;
+        deviceBufferState.getXPUBuffer().markAsFreeBuffer();
+        if (!TornadoOptions.isReusedBuffersEnabled()) {
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
+        }
+        deviceBufferState.setContents(false);
+        deviceBufferState.setXPUBuffer(null);
+        return deallocatedSpace;
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {
@@ -393,7 +398,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
      */
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.hasContent() || BENCHMARKING_MODE) {
+        if (!objectState.hasContent()) {
             objectState.setContents(true);
             return objectState.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, hostOffset, events, events != null);
         }
@@ -550,7 +555,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public void clean() {
         // Reset only the execution plans attached to the PTX backend.
-        Set<Long> ids = device.getPTXContext().getDeviceContext().getRegisteredPlanIds();
+        Set<Long> ids = new HashSet<>(device.getPTXContext().getDeviceContext().getRegisteredPlanIds());
         ids.forEach(id -> device.getPTXContext().getDeviceContext().reset(id));
         ids.clear();
         disableProfilerOptions();
@@ -563,7 +568,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public String getDeviceName() {
-        return STR."cuda-\{device.getDeviceIndex()}";
+        return "cuda-" + device.getDeviceIndex();
     }
 
     @Override
@@ -631,7 +636,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public int getDriverIndex() {
+    public int getBackendIndex() {
         return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
     }
 
@@ -671,20 +676,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean loopIndexInWrite(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
-        } else {
-            return false;
-        }
-    }
-
-    @Override
     public String toString() {
-        return STR."\{getPlatformName()} -- \{device.getDeviceName()}";
+        return getPlatformName() + " -- " + device.getDeviceName();
     }
 
 }

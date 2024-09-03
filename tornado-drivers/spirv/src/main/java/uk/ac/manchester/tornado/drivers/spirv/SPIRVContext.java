@@ -25,6 +25,10 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.List;
 
+import uk.ac.manchester.tornado.drivers.common.CommandQueue;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
+
 public abstract class SPIRVContext {
 
     SPIRVPlatform platform;
@@ -37,7 +41,11 @@ public abstract class SPIRVContext {
 
     public abstract SPIRVDeviceContext getDeviceContext(int deviceIndex);
 
-    public abstract SPIRVCommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex);
+    public abstract CommandQueue getCommandQueueForDevice(long executionPlanId, int deviceIndex);
+
+    public abstract OCLContextInterface getOpenCLLayer();
+
+    public abstract OCLEventPool getOCLEventPool(long executionPlanId);
 
     public abstract long allocateMemory(int deviceIndex, long numBytes);
 
@@ -87,4 +95,6 @@ public abstract class SPIRVContext {
 
     public abstract void readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents,
             ProfilerTransfer profilerTransfer);
+
+    public abstract void reset(long executionPlanId, int deviceIndex);
 }

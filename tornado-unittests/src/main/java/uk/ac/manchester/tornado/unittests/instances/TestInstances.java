@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -41,7 +42,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestInstances extends TornadoTestBase {
 
     @Test
-    public void testInit() {
+    public void testInit() throws TornadoExecutionPlanException {
         Foo f = new Foo();
         DoubleArray array = new DoubleArray(1000);
 
@@ -50,8 +51,9 @@ public class TestInstances extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < array.getSize(); i++) {
             assertEquals(2.1, array.get(i), 0.001);
@@ -65,15 +67,16 @@ public class TestInstances extends TornadoTestBase {
     }
 
     @Test
-    public void testThis() {
+    public void testThis() throws TornadoExecutionPlanException {
         DoubleArray array = new DoubleArray(1000);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", this::compute, array, 2.1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < array.getSize(); i++) {
             assertEquals(2.1, array.get(i), 0.001);

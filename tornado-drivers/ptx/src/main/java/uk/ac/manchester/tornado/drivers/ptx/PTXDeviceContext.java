@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXDeviceContext implements TornadoDeviceContext {
 
@@ -65,11 +65,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
     private final PowerMetric powerMetric;
-
     private final Map<Long, PTXStreamTable> streamTable;
-
+    private boolean wasReset;
     private Set<Long> executionIDs;
 
     public PTXDeviceContext(PTXDevice device) {
@@ -118,7 +116,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return true;
     }
 
-    public PTXTornadoDevice asMapping() {
+    public PTXTornadoDevice toDevice() {
         return new PTXTornadoDevice(device.getDeviceIndex());
     }
 
@@ -154,7 +152,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     @Override
     public int getDriverIndex() {
-        return TornadoRuntime.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
+        return TornadoRuntimeProvider.getTornadoRuntime().getBackendIndex(PTXBackendImpl.class);
     }
 
     @Override
@@ -243,14 +241,22 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         sync(executionPlanId);
     }
 
+    @Override
     public void reset(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.reset();
+        PTXStreamTable table = streamTable.get(executionPlanId);
+        if (table != null) {
+            table.cleanup(device);
+            if (table.size() == 0) {
+                streamTable.remove(executionPlanId);
+            }
+            executionIDs.remove(executionPlanId);
+        }
+        getMemoryManager().releaseKernelStackFrame(executionPlanId);
         codeCache.reset();
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs, TaskMetaData taskMeta, long batchThreads) {
+    public int enqueueKernelLaunch(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs, TaskDataContext taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
         if (taskMeta.isWorkerGridAvailable()) {
@@ -283,7 +289,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskMetaData meta) {
+    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
         int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
@@ -319,7 +325,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return args.array();
     }
 
-    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskMetaData meta, PTXKernelStackFrame callWrapper) {
+    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, PTXKernelStackFrame callWrapper) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = resolveEvent(executionPlanId, kernelContextWriteEventId);
@@ -335,7 +341,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
     }
 
-    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskMetaData meta) {
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         if (TornadoOptions.isProfilerEnabled()) {
             Event tornadoKernelEvent = resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);
@@ -543,7 +549,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         PTXStream stream = getStream(executionPlanId);
         List<PTXEvent> events = stream.getEventPool().getEvents();
 
-        final String deviceName = STR."PTX-\{device.getDeviceName()}";
+        final String deviceName = "PTX-" + device.getDeviceName();
+
         System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
         if (events.isEmpty()) {
             return;

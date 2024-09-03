@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -66,7 +67,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void vectorAddKernelContext01() {
+    public void vectorAddKernelContext01() throws TornadoExecutionPlanException {
         final int size = 16;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -90,10 +91,10 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         worker.setLocalWorkToNull();
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         vectorAddJava(a, b, cJava);
 
@@ -103,7 +104,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void vectorAddKernelContext02() {
+    public void vectorAddKernelContext02() throws TornadoExecutionPlanException {
         final int size = 16;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -124,9 +125,10 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         vectorAddJava(a, b, cJava);
 
@@ -136,7 +138,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void vectorAddKernelContext03() {
+    public void vectorAddKernelContext03() throws TornadoExecutionPlanException {
         final int size = 16;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -157,9 +159,10 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         vectorAddJava(a, b, cJava);
 
@@ -169,7 +172,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void vectorAddKernelContext04() {
+    public void vectorAddKernelContext04() throws TornadoExecutionPlanException {
         final int size = 16;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -190,9 +193,10 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         vectorAddJava(a, b, cJava);
 
@@ -202,7 +206,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void vectorAddKernelContext05() {
+    public void vectorAddKernelContext05() throws TornadoExecutionPlanException {
         final int size = 16;
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
@@ -226,10 +230,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         worker.setLocalWorkToNull();
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp() //
-                .withGridScheduler(gridScheduler) //
-                .execute();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withWarmUp() //
+                    .withGridScheduler(gridScheduler) //
+                    .execute();
+        }
 
         vectorAddJava(a, b, cJava);
 

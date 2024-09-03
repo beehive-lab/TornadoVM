@@ -36,7 +36,7 @@ public class SPIRVByteBuffer {
     private final long bufferId;
     protected final long bytes;
     private final long offset;
-    private SPIRVDeviceContext deviceContext;
+    protected SPIRVDeviceContext deviceContext;
 
     public SPIRVByteBuffer(final SPIRVDeviceContext deviceContext, final long bufferId, final long offset, final long numBytes) {
         this.deviceContext = deviceContext;

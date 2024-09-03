@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,16 +27,17 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * How to run?
  * <p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.dynamic.TestDynamic
+ * tornado-test -V uk.ac.manchester.tornado.unittests.dynamic.TestDynamic
  * </code>
  * </p>
  */
@@ -91,7 +92,7 @@ public class TestDynamic extends TornadoTestBase {
     }
 
     @Test
-    public void testDynamicWithProfilerE2E() {
+    public void testDynamicWithProfilerE2E() throws TornadoExecutionPlanException {
         int numElements = 16000;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -104,15 +105,16 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Run first time to obtain the best performance device
-        executionPlan.withDynamicReconfiguration(Policy.END_2_END, DRMode.PARALLEL) //
-                .execute();
+            // Run first time to obtain the best performance device
+            executionPlan.withDynamicReconfiguration(Policy.END_2_END, DRMode.PARALLEL) //
+                    .execute();
 
-        // Run a few iterations to get the device.
-        for (int i = 0; i < 10; i++) {
-            executionPlan.execute();
+            // Run a few iterations to get the device.
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
         }
 
         for (int i = 0; i < b.getSize(); i++) {
@@ -121,7 +123,7 @@ public class TestDynamic extends TornadoTestBase {
     }
 
     @Test
-    public void testDynamicWithProfiler2() {
+    public void testDynamicWithProfiler2() throws TornadoExecutionPlanException {
         int numElements = 4194304;
         FloatArray a = new FloatArray(numElements);
         FloatArray b = new FloatArray(numElements);
@@ -135,11 +137,12 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Run first time to obtain the best performance device
-        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
-                .execute();
+            // Run first time to obtain the best performance device
+            executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+                    .execute();
+        }
 
         for (int i = 0; i < b.getSize(); i++) {
             assertEquals(a.get(i) * 2.0f, b.get(i), 0.01f);
@@ -147,7 +150,7 @@ public class TestDynamic extends TornadoTestBase {
     }
 
     @Test
-    public void testDynamicWithProfiler3() {
+    public void testDynamicWithProfiler3() throws TornadoExecutionPlanException {
         int numElements = 4096;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -163,15 +166,16 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Run first time to obtain the best performance device
-        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
-                .execute();
+            // Run first time to obtain the best performance device
+            executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+                    .execute();
 
-        // Run a few iterations to get the device.
-        for (int i = 0; i < 10; i++) {
-            executionPlan.execute();
+            // Run a few iterations to get the device.
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
         }
 
         for (int i = 0; i < b.getSize(); i++) {
@@ -180,7 +184,7 @@ public class TestDynamic extends TornadoTestBase {
     }
 
     @Test
-    public void testDynamicWithProfiler4() {
+    public void testDynamicWithProfiler4() throws TornadoExecutionPlanException {
         int numElements = 256;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -198,15 +202,16 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Run first time to obtain the best performance device
-        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
-                .execute();
+            // Run first time to obtain the best performance device
+            executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+                    .execute();
 
-        // Run a few iterations to get the device.
-        for (int i = 0; i < 10; i++) {
-            executionPlan.execute();
+            // Run a few iterations to get the device.
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
         }
 
         for (int i = 0; i < b.getSize(); i++) {
@@ -215,7 +220,7 @@ public class TestDynamic extends TornadoTestBase {
     }
 
     @Test
-    public void testDynamicWinner() {
+    public void testDynamicWinner() throws TornadoExecutionPlanException {
         int numElements = 16000;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -228,14 +233,15 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
 
-        // Run first time to obtain the best performance device
-        executionPlan.withDynamicReconfiguration(Policy.LATENCY, DRMode.PARALLEL) //
-                .execute();
-        // Run a few iterations to get the device.
-        for (int i = 0; i < 10; i++) {
-            executionPlan.execute();
+            // Run first time to obtain the best performance device
+            executionPlan.withDynamicReconfiguration(Policy.LATENCY, DRMode.PARALLEL) //
+                    .execute();
+            // Run a few iterations to get the device.
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+            }
         }
 
         for (int i = 0; i < b.getSize(); i++) {
