@@ -124,16 +124,13 @@ public class OCLCompiler {
         try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
             emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
                     r.batchCompilationConfig);
-            boolean isParallel = false;
-            /**
+            /*
              * A task is determined as parallel if: (i) it has loops annotated with
              * {@link uk.ac.manchester.tornado.api.annotations.Parallel} which corresponds
              * to use a domain with depth greater than zero, or (ii) it uses the
              * GridScheduler.
              */
-            if (r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()))) {
-                isParallel = true;
-            }
+            boolean isParallel = r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()));
             emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, null, r.lirSuites, r.isKernel, isParallel, r.profiler);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);

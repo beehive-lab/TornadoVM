@@ -171,7 +171,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * or different devices. Note that the TornadoVM runtime does not check for
      * data dependencies across tasks when using this API call. Thus, it is
      * the responsibility of the programmer to provide tasks with no data dependencies
-     * when invoking the method {@link TornadoExecutionPlan#withConcurrentDevices()}.
+     * when invoking the method {@link TornadoExecutionPlan#withConcurrentDevices}.
      *
      * @return {@link TornadoExecutionPlan}
      */

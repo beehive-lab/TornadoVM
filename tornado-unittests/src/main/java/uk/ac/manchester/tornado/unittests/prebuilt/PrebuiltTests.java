@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.prebuilt;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 import org.junit.BeforeClass;
@@ -29,6 +30,8 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoBackend;
+import uk.ac.manchester.tornado.api.TornadoDeviceMap;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
@@ -41,16 +44,18 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests
  * </code>
  */
-public class PrebuiltTest extends TornadoTestBase {
+public class PrebuiltTests extends TornadoTestBase {
     private static final String TORNADO_SDK = "TORNADO_SDK";
     private static TornadoDevice defaultDevice;
     private static String FILE_PATH;
@@ -122,7 +127,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt01Multi() throws TornadoExecutionPlanException {
+    public void testPrebuilt01MultiIterations() throws TornadoExecutionPlanException {
 
         final int numElements = 8;
         IntArray a = new IntArray(numElements);
@@ -234,7 +239,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     /**
-     * This test case verifies that the {@link PrebuiltTest#testPrebuilt03SPIRV} runs correctly though a
+     * This test case verifies that the {@link PrebuiltTests#testPrebuilt03SPIRV} runs correctly though a
      * SPIR-V or OpenCL runtime if the device supports SPIR-V.
      *
      * <p>Expected outcome: - If the current backend type is PTX, the test should have
@@ -342,4 +347,83 @@ public class PrebuiltTest extends TornadoTestBase {
         assertEquals(512, finalSum, 0.0f);
 
     }
+
+    /**
+     * This test is intended to be passed with multiple backends (e.g., OpenCL and PTX).
+     * The PTX backend needs to be installed. Otherwise, an exception is thrown.
+     *
+     * <p> How to run?
+     * <code>
+     * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests#testPrebuiltMutiBackend
+     * </code>
+     * </p>
+     * 
+     * @throws TornadoExecutionPlanException
+     */
+    @Test
+    public void testPrebuiltMutiBackend() throws TornadoExecutionPlanException {
+
+        final int numElements = 8;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        // Force to use the PTX Backend.
+        FILE_PATH += "add.ptx";
+
+        TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
+        if (tornadoDeviceMap.getNumBackends() < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("Test designed to run with multiple backends");
+        }
+
+        List<TornadoBackend> ptxBackend = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getBackendType() == TornadoVMBackendType.PTX);
+
+        if (ptxBackend == null || ptxBackend.isEmpty()) {
+            throw new TornadoVMPTXNotSupported("Test designed to run with multiple backends, including a PTX backend");
+        }
+
+        // Access the first device within the NVIDIA PTX Backend
+        TornadoDevice device = ptxBackend.getFirst().getDevice(0);
+
+        // Define accessors for each parameter
+        AccessorParameters accessorParameters = new AccessorParameters(3);
+        accessorParameters.set(0, a, Access.READ_WRITE);
+        accessorParameters.set(1, b, Access.READ_WRITE);
+        accessorParameters.set(2, c, Access.WRITE_ONLY);
+
+        // Define the Task-Graph
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .prebuiltTask("t0",      //task name
+                        "add",              // name of the low-level kernel to invoke
+                        FILE_PATH,          // file name
+                        accessorParameters) // accessors
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        // When using the prebuilt API, we need to define the WorkerGrid, otherwise it will launch 1 thread
+        // on the target device
+        WorkerGrid workerGrid = new WorkerGrid1D(numElements);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+
+        // Launch the application on the target device
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(device) //
+                    .execute();
+
+            // Run task multiple times
+            for (int i = 0; i < 10; i++) {
+                executionPlan.execute();
+                for (int j = 0; j < c.getSize(); j++) {
+                    assertEquals(a.get(j) + b.get(j), c.get(j));
+                }
+                IntStream.range(0, numElements).forEach(k -> a.set(k, c.get(k)));
+            }
+        }
+    }
+
 }
