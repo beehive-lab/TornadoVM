@@ -92,11 +92,9 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     private static SPIRVBackendImpl driver = null;
     private final SPIRVDevice device;
     private final int deviceIndex;
-    private final SPIRVDevice lowLevelDevice;
 
     public SPIRVTornadoDevice(SPIRVDevice lowLevelDevice) {
         this.deviceIndex = lowLevelDevice.getDeviceIndex();
-	    this.lowLevelDevice = lowLevelDevice;
         device = lowLevelDevice;
     }
 
@@ -145,7 +143,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     public SPIRVBackend getBackend() {
-        return findDriver().getBackendOfDevice(lowLevelDevice);
+        return findDriver().getBackendOfDevice(device);
     }
 
     private TornadoInstalledCode compileTask(CompilableTask task) {
