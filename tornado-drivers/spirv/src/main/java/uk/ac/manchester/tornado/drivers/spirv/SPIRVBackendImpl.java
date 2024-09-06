@@ -79,7 +79,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         }
         platforms = new ArrayList<>();
         spirvBackends = new SPIRVBackend[numPlatforms][];
-	backendPerDevice = new HashMap<>();
+	    backendPerDevice = new HashMap<>();
 
         discoverDevices(options, vmRuntime, vmConfigAccess, numPlatforms);
 
@@ -223,10 +223,6 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
             }
         }
         return null;
-    }
-
-    public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {
-        return checkAndInitBackend(platformIndex, deviceIndex);
     }
 
     public SPIRVBackend getBackendOfDevice(SPIRVDevice device) {
