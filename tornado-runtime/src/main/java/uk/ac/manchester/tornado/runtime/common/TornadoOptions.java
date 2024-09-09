@@ -35,7 +35,7 @@ public class TornadoOptions {
     /**
      * Default OpenCL Compiler Flags.
      */
-    public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
+    public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-opt-disable -cl-mad-enable -cl-fast-relaxed-math -w");
 
     /**
      * Default PTX Compiler Flags.
