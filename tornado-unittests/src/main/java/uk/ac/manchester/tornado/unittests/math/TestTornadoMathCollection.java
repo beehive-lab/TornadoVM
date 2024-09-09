@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -322,6 +322,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCompilerFlags(TornadoVMBackendType.OPENCL, "-cl-opt-disable");
             executionPlan.execute();
         }
 
@@ -379,6 +380,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCompilerFlags(TornadoVMBackendType.OPENCL, "-cl-opt-disable");
             executionPlan.execute();
         }
 
@@ -590,6 +592,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCompilerFlags(TornadoVMBackendType.OPENCL, "-cl-opt-disable");
             executionPlan.execute();
         }
 
