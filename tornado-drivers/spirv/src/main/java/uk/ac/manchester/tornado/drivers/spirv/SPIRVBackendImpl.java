@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.graalvm.compiler.options.OptionValues;
@@ -59,6 +60,8 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
 
     private final TornadoLogger logger;
 
+    private final HashMap<SPIRVDevice, SPIRVBackend> backendPerDevice;
+
     /**
      * Total number of devices available (include all backends platform and
      * devices).
@@ -76,6 +79,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         }
         platforms = new ArrayList<>();
         spirvBackends = new SPIRVBackend[numPlatforms][];
+        backendPerDevice = new HashMap<>();
 
         discoverDevices(options, vmRuntime, vmConfigAccess, numPlatforms);
 
@@ -102,7 +106,9 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
                 if (device.isSPIRVSupported()) {
-                    backendImplementations.add(createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context, device.getSPIRVRuntime()));
+                    SPIRVBackend backend = createSPIRVJITCompilerBackend(options, vmRuntime, vmCon, device, context, device.getSPIRVRuntime());
+                    backendPerDevice.put(device, backend);
+                    backendImplementations.add(backend);
                     backendCounter++;
                 }
             }
@@ -219,8 +225,8 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         return null;
     }
 
-    public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {
-        return checkAndInitBackend(platformIndex, deviceIndex);
+    public SPIRVBackend getBackendOfDevice(SPIRVDevice device) {
+        return backendPerDevice.get(device);
     }
 
     public List<SPIRVPlatform> getPlatforms() {
