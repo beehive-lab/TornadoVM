@@ -241,5 +241,35 @@ public class TestExecutor extends TornadoTestBase {
         }
 
     }
+
+    @Test
+    public void test05() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
+
+            TornadoDevice device  = TornadoExecutionPlan.getDevice(0, 0);
+
+            // 4. Add optimizations to the execution plan
+            TornadoExecutionPlan trace = executionPlan.withWarmUp() //
+                    .withDevice(device);
+
+            trace.printExecutionPlanLogic();
+        }
+
+    }
+
+
     // CHECKSTYLE:ON
 }

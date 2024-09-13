@@ -40,7 +40,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
  *
  * @since v0.15
  */
-public class TornadoExecutionPlan implements AutoCloseable {
+public sealed class TornadoExecutionPlan implements AutoCloseable //
+        permits WithDevicePlan, WarmUpPlan {
 
     /**
      * Method to obtain the default device in TornadoVM. The default one corresponds
@@ -53,6 +54,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
     private boolean disableProfiler;
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
     private final ExecutorFrame executionPackage;
+    protected TornadoExecutionPlan child;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -136,7 +138,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
     public TornadoExecutionPlan withWarmUp() {
         checkProfilerEnabled();
         tornadoExecutor.warmup();
-        return this;
+        return new WarmUpPlan(this);
     }
 
     /**
@@ -147,7 +149,16 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withDevice(TornadoDevice device) {
         tornadoExecutor.setDevice(device);
-        return this;
+        return new WithDevicePlan(this);
+    }
+
+    public void printExecutionPlanLogic() {
+        System.out.println(child);
+    }
+
+    @Override
+    public String toString() {
+        return "Root";
     }
 
     /**
