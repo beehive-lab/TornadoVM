@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
@@ -60,8 +59,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     /**
      * Table to represent {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan} -> {@link OCLCommandQueueTable}
      */
-    private Map<Long, OCLCommandQueueTable> commandQueueTable;
-
+    private final Map<Long, OCLCommandQueueTable> commandQueueTable;
     private final OCLContext context;
     private final PowerMetric powerMetric;
     private final OCLMemoryManager memoryManager;
