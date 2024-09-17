@@ -65,11 +65,16 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     protected SPIRVContext spirvContext;
     protected SPIRVTornadoDevice tornadoDevice;
     protected SPIRVMemoryManager memoryManager;
-    protected Map<Long, SPIRVCodeCache> codeCache;
     protected boolean wasReset;
     protected Map<Long, SPIRVEventPool> spirvEventPool;
     private TornadoBufferProvider bufferProvider;
     private final Set<Long> executionIds;
+
+    /**
+     * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
+     * code cache. The code cache manages the compilation and the cache for each task within an execution plan.
+     */
+    protected Map<Long, SPIRVCodeCache> codeCache;
 
     protected SPIRVDeviceContext(SPIRVDevice device, SPIRVContext context) {
         init(device);

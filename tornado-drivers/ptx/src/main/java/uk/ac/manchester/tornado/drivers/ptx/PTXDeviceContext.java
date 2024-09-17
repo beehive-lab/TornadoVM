@@ -57,13 +57,18 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     private final PTXDevice device;
     private final PTXMemoryManager memoryManager;
-    private final Map<Long, PTXCodeCache> codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
     private final PowerMetric powerMetric;
     private final Map<Long, PTXStreamTable> streamTable;
     private boolean wasReset;
     private final Set<Long> executionIDs;
+
+    /**
+     * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
+     * code cache. The code cache manages the compilation and the cache for each task within an execution plan.
+     */
+    private final Map<Long, PTXCodeCache> codeCache;
 
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;

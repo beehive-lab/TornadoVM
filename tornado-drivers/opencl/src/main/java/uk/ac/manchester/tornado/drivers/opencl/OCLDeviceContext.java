@@ -67,6 +67,11 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
     private final Set<Long> executionIDs;
+
+    /**
+     * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
+     * code cache. The code cache manages the compilation and the cache for each task within an execution plan.
+     */
     private final Map<Long, OCLCodeCache> codeCache;
 
     public OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
