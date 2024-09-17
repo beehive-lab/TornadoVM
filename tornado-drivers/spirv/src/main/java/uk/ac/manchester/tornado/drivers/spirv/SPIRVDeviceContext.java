@@ -457,7 +457,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
             OCLEventPool eventPool = context.getOCLEventPool(executionPlanId);
             return new OCLEvent(eventPool.getDescriptor(eventId).getNameDescription(), commandQueue, eventId, eventPool.getOCLEvent(eventId));
         } else {
-            throw new RuntimeException("Not implemented yet");
+            throw new TornadoRuntimeException("[Error] SPIR-V Device Context Class not implemented yet.");
         }
     }
 
