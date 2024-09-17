@@ -63,7 +63,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PowerMetric powerMetric;
     private final Map<Long, PTXStreamTable> streamTable;
     private boolean wasReset;
-    private Set<Long> executionIDs;
+    private final Set<Long> executionIDs;
 
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;

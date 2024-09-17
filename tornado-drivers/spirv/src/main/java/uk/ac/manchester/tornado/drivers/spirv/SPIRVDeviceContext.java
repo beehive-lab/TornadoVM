@@ -69,8 +69,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     protected boolean wasReset;
     protected Map<Long, SPIRVEventPool> spirvEventPool;
     private TornadoBufferProvider bufferProvider;
-
-    private Set<Long> executionIds;
+    private final Set<Long> executionIds;
 
     protected SPIRVDeviceContext(SPIRVDevice device, SPIRVContext context) {
         init(device);

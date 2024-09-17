@@ -68,7 +68,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final Map<Long, OCLEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
-    private Set<Long> executionIDs;
+    private final Set<Long> executionIDs;
     private final Map<Long, OCLCodeCache> codeCache;
 
     public OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
