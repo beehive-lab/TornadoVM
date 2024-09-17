@@ -509,7 +509,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public synchronized void reset(long executionPlanId) {
+    public void reset(long executionPlanId) {
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
         eventPool.reset();
         oclEventPool.remove(executionPlanId);

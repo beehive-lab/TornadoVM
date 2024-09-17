@@ -66,8 +66,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
-        final long id = globalExecutionPlanCounter.get();
-        globalExecutionPlanCounter.incrementAndGet();
+        final long id = globalExecutionPlanCounter.incrementAndGet();
         executionPackage = new ExecutorFrame(id);
     }
 
