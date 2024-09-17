@@ -238,20 +238,20 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return reuseBuffer;
     }
 
-    private boolean isOpenCLPreLoadBinary(OCLDeviceContextInterface deviceContext, String deviceInfo) {
-        OCLCodeCache installedCode = deviceContext.getCodeCache();
+    private boolean isOpenCLPreLoadBinary(long executionPlanId, OCLDeviceContextInterface deviceContext, String deviceInfo) {
+        OCLCodeCache installedCode = deviceContext.getCodeCache(executionPlanId);
         return (installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null));
     }
 
-    private TornadoInstalledCode compileTask(SchedulableTask task) {
+    private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // Return the code from the cache
-        if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-            return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
+        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), resolvedMethod.getName())) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), resolvedMethod.getName());
         }
 
         // copy meta data into task
@@ -289,10 +289,10 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             OCLInstalledCode installedCode;
             if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA
-                installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), task.meta().isPrintKernelEnabled());
+                installedCode = deviceContext.installCode(executionPlanId, result.getId(), result.getName(), result.getTargetCode(), task.meta().isPrintKernelEnabled());
             } else {
                 // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(result);
+                installedCode = deviceContext.installCode(executionPlanId, result);
             }
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
@@ -310,11 +310,11 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         }
     }
 
-    private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
+    private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
-        if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
-            return deviceContext.getInstalledCode(task.getId(), executable.getEntryPoint());
+        if (deviceContext.isCached(executionPlanId, task.getId(), executable.getEntryPoint())) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), executable.getEntryPoint());
         }
 
         final Path path = Paths.get(executable.getFilename());
@@ -325,10 +325,10 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             OCLInstalledCode installedCode;
             if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA
-                installedCode = deviceContext.installCode(task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
+                installedCode = deviceContext.installCode(executionPlanId, task.getId(), executable.getEntryPoint(), source, task.meta().isPrintKernelEnabled());
             } else {
                 // B) for CPU multi-core or GPU
-                installedCode = deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
+                installedCode = deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
             }
             return installedCode;
         } catch (IOException e) {
@@ -337,11 +337,11 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return null;
     }
 
-    private TornadoInstalledCode compileJavaToAccelerator(SchedulableTask task) {
+    private TornadoInstalledCode compileJavaToAccelerator(long executionPlanId, SchedulableTask task) {
         if (task instanceof CompilableTask) {
-            return compileTask(task);
+            return compileTask(executionPlanId, task);
         } else if (task instanceof PrebuiltTask) {
-            return compilePreBuiltTask(task);
+            return compilePreBuiltTask(executionPlanId, task);
         }
         TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
@@ -351,15 +351,15 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return task.getTaskName();
     }
 
-    private TornadoInstalledCode loadPreCompiledBinaryForTask(SchedulableTask task) {
+    private TornadoInstalledCode loadPreCompiledBinaryForTask(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
-        final OCLCodeCache codeCache = deviceContext.getCodeCache();
+        final OCLCodeCache codeCache = deviceContext.getCodeCache(executionPlanId);
         final String deviceFullName = getFullTaskIdDevice(task);
         final Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
         String entry = getTaskEntryName(task);
 
-        if (deviceContext.getInstalledCode(task.getId(), entry) != null) {
-            return deviceContext.getInstalledCode(task.getId(), entry);
+        if (deviceContext.getInstalledCode(executionPlanId, task.getId(), entry) != null) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), entry);
         } else {
             return codeCache.installEntryPointForBinaryForFPGAs(task.getId(), lookupPath, entry);
         }
@@ -376,16 +376,16 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean isFullJITMode(SchedulableTask task) {
+    public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
+        return (!isOpenCLPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
     }
 
     @Override
-    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+    public TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task) {
         String entry = getTaskEntryName(task);
-        return getDeviceContext().getInstalledCode(task.getId(), entry);
+        return getDeviceContext().getInstalledCode(executionPlanId, task.getId(), entry);
     }
 
     @Override
@@ -441,34 +441,34 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
-    private boolean isJITTaskForFGPA(SchedulableTask task) {
+    private boolean isJITTaskForFGPA(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
+        return !isOpenCLPreLoadBinary(executionPlanId, deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
     }
 
-    private boolean isJITTaskForGPUsAndCPUs(SchedulableTask task) {
+    private boolean isJITTaskForGPUsAndCPUs(long executionplanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
+        return !isOpenCLPreLoadBinary(executionplanId, deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
     }
 
-    private TornadoInstalledCode compileJavaForFPGAs(SchedulableTask task) {
-        TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(task);
+    private TornadoInstalledCode compileJavaForFPGAs(long executionPlanId, SchedulableTask task) {
+        TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(executionPlanId, task);
         if (tornadoInstalledCode != null) {
-            return loadPreCompiledBinaryForTask(task);
+            return loadPreCompiledBinaryForTask(executionPlanId, task);
         }
         return null;
     }
 
     @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
-        if (isJITTaskForFGPA(task)) {
-            return compileJavaForFPGAs(task);
-        } else if (isJITTaskForGPUsAndCPUs(task)) {
-            return compileJavaToAccelerator(task);
+    public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
+        if (isJITTaskForFGPA(executionPlanId, task)) {
+            return compileJavaForFPGAs(executionPlanId, task);
+        } else if (isJITTaskForGPUsAndCPUs(executionPlanId, task)) {
+            return compileJavaToAccelerator(executionPlanId, task);
         }
-        return loadPreCompiledBinaryForTask(task);
+        return loadPreCompiledBinaryForTask(executionPlanId, task);
     }
 
     private XPUBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize) {

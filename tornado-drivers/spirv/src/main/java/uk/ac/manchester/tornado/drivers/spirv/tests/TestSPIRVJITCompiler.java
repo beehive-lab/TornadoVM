@@ -76,7 +76,7 @@ public class TestSPIRVJITCompiler {
         new TestSPIRVJITCompiler().test();
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, Object... parameters) {
+    public MetaCompilation compileMethod(long executionPlanId, Class<?> klass, String methodName, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -111,7 +111,7 @@ public class TestSPIRVJITCompiler {
 
         // 3. Install the SPIR-V code into the VM
         SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getDevice();
-        SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(spirvCompilationResult);
+        SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(executionPlanId, spirvCompilationResult);
 
         return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
@@ -159,12 +159,13 @@ public class TestSPIRVJITCompiler {
         int[] a = new int[N];
         int[] b = new int[N];
         float[] c = new float[N];
+        final long executionPlanId = 0;
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
         // Obtain the SPIR-V binary from the Java method
-        MetaCompilation compileMethod = compileMethod(TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
+        MetaCompilation compileMethod = compileMethod(executionPlanId, TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
 
         TornadoDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 

@@ -65,7 +65,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     protected SPIRVContext spirvContext;
     protected SPIRVTornadoDevice tornadoDevice;
     protected SPIRVMemoryManager memoryManager;
-    protected SPIRVCodeCache codeCache;
+    protected Map<Long, SPIRVCodeCache> codeCache;
     protected boolean wasReset;
     protected Map<Long, SPIRVEventPool> spirvEventPool;
     private TornadoBufferProvider bufferProvider;
@@ -82,11 +82,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         this.device = device;
         this.tornadoDevice = new SPIRVTornadoDevice(device);
         this.memoryManager = new SPIRVMemoryManager(this);
-        if (this instanceof SPIRVLevelZeroDeviceContext) {
-            this.codeCache = new SPIRVLevelZeroCodeCache(this);
-        } else {
-            this.codeCache = new SPIRVOCLCodeCache(this);
-        }
+        this.codeCache = new ConcurrentHashMap<>();
         this.wasReset = false;
         this.spirvEventPool = new ConcurrentHashMap<>();
         this.bufferProvider = new SPIRVBufferProvider(this);
@@ -159,8 +155,23 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         spirvContext.reset(executionPlanId, getDeviceIndex());
         spirvEventPool.remove(executionPlanId);
         getMemoryManager().releaseKernelStackFrame(executionPlanId);
-        codeCache.reset();
+
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        spirvCodeCache.reset();
         wasReset = true;
+    }
+
+    private SPIRVCodeCache getSPIRVCodeCache(long executionPlanId) {
+        if (!codeCache.containsKey(executionPlanId)) {
+            SPIRVCodeCache spirvCodeCache;
+            if (this instanceof SPIRVLevelZeroDeviceContext) {
+                spirvCodeCache = new SPIRVLevelZeroCodeCache(this);
+            } else {
+                spirvCodeCache = new SPIRVOCLCodeCache(this);
+            }
+            codeCache.put(executionPlanId, spirvCodeCache);
+        }
+        return codeCache.get(executionPlanId);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
@@ -382,29 +393,34 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         spirvContext.flush(executionPlanId, deviceIndex);
     }
 
-    public TornadoInstalledCode installBinary(SPIRVCompilationResult result) {
-        return installBinary(result.getMeta(), result.getId(), result.getName(), result.getSPIRVBinary());
+    public TornadoInstalledCode installBinary(long executionPlanId, SPIRVCompilationResult result) {
+        return installBinary(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getSPIRVBinary());
     }
 
-    public SPIRVInstalledCode installBinary(TaskDataContext meta, String id, String entryPoint, byte[] code) {
-        return codeCache.installSPIRVBinary(meta, id, entryPoint, code);
+    public SPIRVInstalledCode installBinary(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.installSPIRVBinary(meta, id, entryPoint, code);
     }
 
-    public SPIRVInstalledCode installBinary(TaskDataContext meta, String id, String entryPoint, String pathToFile) {
-        return codeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile);
+    public SPIRVInstalledCode installBinary(long executionPlanId, TaskDataContext meta, String id, String entryPoint, String pathToFile) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile);
     }
 
-    public boolean isCached(String id, String entryPoint) {
-        return codeCache.isCached(id + "-" + entryPoint);
+    public boolean isCached(long executionPlanId, String id, String entryPoint) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
-    public boolean isCached(String methodName, SchedulableTask task) {
-        return codeCache.isCached(task.getId() + "-" + methodName);
+    public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.isCached(task.getId() + "-" + methodName);
     }
 
-    public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
-        return codeCache.getInstalledCode(id, entryPoint);
+    public SPIRVInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.getInstalledCode(id, entryPoint);
     }
 
     public int enqueueMarker(long executionPlanId) {

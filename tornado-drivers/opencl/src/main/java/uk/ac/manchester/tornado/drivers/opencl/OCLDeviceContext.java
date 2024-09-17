@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
@@ -64,17 +65,16 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final OCLContext context;
     private final PowerMetric powerMetric;
     private final OCLMemoryManager memoryManager;
-    private final OCLCodeCache codeCache;
     private final Map<Long, OCLEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
     private Set<Long> executionIDs;
+    private final Map<Long, OCLCodeCache> codeCache;
 
     public OCLDeviceContext(OCLTargetDevice device, OCLContext context) {
         this.device = device;
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
-        this.codeCache = new OCLCodeCache(this);
         this.oclEventPool = new ConcurrentHashMap<>();
         this.bufferProvider = new OCLBufferProvider(this);
         this.commandQueueTable = new ConcurrentHashMap<>();
@@ -85,6 +85,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         } else {
             this.powerMetric = new OCLEmptyPowerMetric();
         }
+        codeCache = new ConcurrentHashMap<>();
     }
 
     private boolean isDeviceContextOfNvidia() {
@@ -510,7 +511,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public void reset(long executionPlanId) {
+    public synchronized void reset(long executionPlanId) {
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
         eventPool.reset();
         oclEventPool.remove(executionPlanId);
@@ -523,7 +524,9 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
             executionIDs.remove(executionPlanId);
         }
         getMemoryManager().releaseKernelStackFrame(executionPlanId);
-        codeCache.reset();
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        oclCodeCache.reset();
+        codeCache.remove(executionPlanId);
         wasReset = true;
     }
 
@@ -588,11 +591,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         return context.getPlatformIndex();
     }
 
-    public void retainEvent(long executionPlanId, int localEventId) {
-        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
-        eventPool.retainEvent(localEventId);
-    }
-
     @Override
     public Event resolveEvent(long executionPlanId, int event) {
         if (event == -1) {
@@ -609,57 +607,66 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         commandQueue.flush();
     }
 
-    public void finish(long executionPlanId) {
-        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
-        commandQueue.finish();
-    }
-
     @Override
     public void flushEvents(long executionPlanId) {
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
         commandQueue.flushEvents();
     }
 
-    @Override
-    public boolean isKernelAvailable() {
-        return codeCache.isKernelAvailable();
-    }
-
-    public OCLInstalledCode installCode(OCLCompilationResult result) {
-        return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
+    private OCLCodeCache getOCLCodeCache(long executionPlanId) {
+        if (!codeCache.containsKey(executionPlanId)) {
+            codeCache.put(executionPlanId, new OCLCodeCache(this));
+        }
+        return codeCache.get(executionPlanId);
     }
 
     @Override
-    public OCLInstalledCode installCode(TaskDataContext meta, String id, String entryPoint, byte[] code) {
+    public boolean isKernelAvailable(long executionPlanId) {
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        return oclCodeCache.isKernelAvailable();
+    }
+
+    public OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result) {
+        return installCode(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
+    }
+
+    @Override
+    public OCLInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
         entryPoint = checkKernelName(entryPoint);
-        return codeCache.installSource(meta, id, entryPoint, code);
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        return oclCodeCache.installSource(meta, id, entryPoint, code);
     }
 
     @Override
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel) {
-        return codeCache.installFPGASource(id, entryPoint, code, printKernel);
+    public OCLInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        return oclCodeCache.installFPGASource(id, entryPoint, code, printKernel);
     }
 
     @Override
-    public boolean isCached(String id, String entryPoint) {
+    public boolean isCached(long executionPlanId, String id, String entryPoint) {
         entryPoint = checkKernelName(entryPoint);
-        return codeCache.isCached(id + "-" + entryPoint);
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        return oclCodeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
-    public boolean isCached(String methodName, SchedulableTask task) {
+    public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
         methodName = checkKernelName(methodName);
-        return codeCache.isCached(task.getId() + "-" + methodName);
-    }
-
-    public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
-        entryPoint = checkKernelName(entryPoint);
-        return codeCache.getInstalledCode(id, entryPoint);
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        return oclCodeCache.isCached(task.getId() + "-" + methodName);
     }
 
     @Override
-    public OCLCodeCache getCodeCache() {
-        return this.codeCache;
+    public OCLInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint) {
+        entryPoint = checkKernelName(entryPoint);
+        OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
+        return oclCodeCache.getInstalledCode(id, entryPoint);
+    }
+
+    @Override
+    public OCLCodeCache getCodeCache(long executionPlanId) {
+        return getOCLCodeCache(executionPlanId);
     }
 
 }
