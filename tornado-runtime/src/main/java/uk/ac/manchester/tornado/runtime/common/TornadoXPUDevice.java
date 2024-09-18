@@ -66,7 +66,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * It installs the Tornado code for the specified schedulable task.
      *
      * @param executionPlanId
-     *   ID number for the execution plan that the tasks belongs to.
+     *     ID number for the execution plan that the task belongs to.
      * @param task
      *     The {@link SchedulableTask} to install the code for.
      * @return The {@link TornadoInstalledCode} indicating the installation status.
@@ -78,7 +78,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * mode.
      *
      * @param executionPlanId
-     *  ID for the execution plan to be compiled.
+     *     ID for the execution plan to be compiled.
      * @param task
      *     The {@link SchedulableTask} to check for full JIT mode.
      * @return True if the task is in full JIT mode, false otherwise.
@@ -90,7 +90,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * schedulable task.
      *
      * @param executionPlanId
-     *  ID for the execution plan to be obtained from the code cache
+     *     ID for the execution plan to be obtained from the code cache
      * @param task
      *     The {@link SchedulableTask} to get the installed code from the
      *     cache.
