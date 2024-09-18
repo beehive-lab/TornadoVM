@@ -75,7 +75,7 @@ public class TestOpenCLJITCompiler {
         new TestOpenCLJITCompiler().test();
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, Object... parameters) {
+    public MetaCompilation compileMethod(long executionPlanId, Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -108,7 +108,7 @@ public class TestOpenCLJITCompiler {
         OCLCompilationResult compilationResult = OCLCompiler.compileSketchForDevice(sketch, compilableTask, (OCLProviders) providers, openCLBackend, new EmptyProfiler());
 
         // Install the OpenCL Code in the VM
-        OCLInstalledCode openCLCode = tornadoDevice.getDeviceContext().installCode(compilationResult);
+        OCLInstalledCode openCLCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, compilationResult);
 
         return new MetaCompilation(taskMeta, openCLCode);
     }
@@ -164,15 +164,16 @@ public class TestOpenCLJITCompiler {
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
+        long executionPlanId = 0;
 
         OCLTornadoDevice tornadoDevice = OpenCL.defaultDevice();
 
-        MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
+        MetaCompilation compileMethod = compileMethod(executionPlanId, TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
         // Check with all internal APIs
         run(tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
-        long executionPlanId = 0;
+
         // Check with OpenCL API
         runWithOpenCLAPI(executionPlanId, tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 

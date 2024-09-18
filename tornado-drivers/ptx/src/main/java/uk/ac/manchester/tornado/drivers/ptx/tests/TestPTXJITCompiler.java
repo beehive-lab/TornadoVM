@@ -74,7 +74,7 @@ public class TestPTXJITCompiler {
         new TestPTXJITCompiler().test();
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, Object... parameters) {
+    public MetaCompilation compileMethod(long executionPlanId, Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -107,7 +107,7 @@ public class TestPTXJITCompiler {
         PTXCompilationResult compilationResult = PTXCompiler.compileSketchForDevice(sketch, compilableTask, (PTXProviders) providers, ptxBackend, new EmptyProfiler());
 
         // Install the PTX Code in the VM
-        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(compilationResult, resolvedJavaMethod.getName());
+        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, compilationResult, resolvedJavaMethod.getName());
 
         return new MetaCompilation(taskMeta, (PTXInstalledCode) ptxCode);
     }
@@ -161,10 +161,11 @@ public class TestPTXJITCompiler {
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
+        final long executionPlanId = 0;
 
         PTXTornadoDevice tornadoDevice = PTX.defaultDevice();
 
-        MetaCompilation compileMethod = compileMethod(TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
+        MetaCompilation compileMethod = compileMethod(executionPlanId, TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
         // Check with all internal APIs
         run(tornadoDevice, (PTXInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);

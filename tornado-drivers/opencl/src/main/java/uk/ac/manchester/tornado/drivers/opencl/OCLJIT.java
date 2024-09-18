@@ -72,7 +72,9 @@ public class OCLJIT {
 
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[] {}, meta, (OCLProviders) backend.getProviders(), backend, new EmptyProfiler());
 
-            OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(result);
+            final long executionPlanId = 0;
+
+            OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(executionPlanId, result);
 
             for (byte b : code.getCode()) {
                 System.out.printf("%c", b);

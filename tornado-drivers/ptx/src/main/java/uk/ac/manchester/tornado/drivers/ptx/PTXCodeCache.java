@@ -34,7 +34,7 @@ public class PTXCodeCache {
     private final PTXDeviceContext deviceContext;
     private final ConcurrentHashMap<String, PTXInstalledCode> cache;
 
-    public PTXCodeCache(PTXDeviceContext deviceContext) {
+    PTXCodeCache(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
     }
@@ -60,15 +60,15 @@ public class PTXCodeCache {
         return cache.get(name);
     }
 
-    public PTXInstalledCode getCachedCode(String name) {
+    PTXInstalledCode getCachedCode(String name) {
         return cache.get(name);
     }
 
-    public boolean isCached(String name) {
+    boolean isCached(String name) {
         return cache.containsKey(name);
     }
 
-    public void reset() {
+    void reset() {
         for (PTXInstalledCode code : cache.values()) {
             code.invalidate();
         }
