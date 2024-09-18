@@ -27,7 +27,5 @@ public interface PowerMetric {
 
     void initializePowerLibrary();
 
-    void getHandleByIndex(long[] device);
-
-    void getPowerUsage(long[] device, long[] powerUsage);
+    void getPowerUsage(long[] powerUsage);
 }

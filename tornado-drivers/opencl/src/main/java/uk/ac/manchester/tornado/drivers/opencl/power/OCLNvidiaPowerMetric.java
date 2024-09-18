@@ -32,6 +32,7 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
 
     private final OCLDeviceContext deviceContext;
     private final TornadoLogger logger;
+    private long[] oclDevice = new long[1];
 
     public OCLNvidiaPowerMetric(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -49,24 +50,16 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
     public void initializePowerLibrary() {
         try {
             clNvmlInit();
+            clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), this.oclDevice);
         } catch (OCLException e) {
             logger.error(e.getMessage());
         }
     }
 
     @Override
-    public void getHandleByIndex(long[] device) {
+    public void getPowerUsage(long[] powerUsage) {
         try {
-            clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), device);
-        } catch (OCLException e) {
-            logger.error(e.getMessage());
-        }
-    }
-
-    @Override
-    public void getPowerUsage(long[] device, long[] powerUsage) {
-        try {
-            clNvmlDeviceGetPowerUsage(device, powerUsage);
+            clNvmlDeviceGetPowerUsage(this.oclDevice, powerUsage);
         } catch (OCLException e) {
             logger.error(e.getMessage());
         }
