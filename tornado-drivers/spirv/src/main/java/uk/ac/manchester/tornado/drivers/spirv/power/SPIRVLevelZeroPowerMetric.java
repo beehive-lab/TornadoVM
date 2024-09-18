@@ -39,13 +39,13 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     private final LevelZeroPowerMonitor levelZeroPowerMonitor;
     private List<ZesPowerEnergyCounter> initialEnergyCounters;
     private List<ZesPowerEnergyCounter> finalEnergyCounters;
-    private boolean isPowerFunctionsSupported = false;
+    private boolean arePowerFunctionsSupported = false;
 
     public SPIRVLevelZeroPowerMetric(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         levelZeroPowerMonitor = new LevelZeroPowerMonitor();
         initializePowerLibrary();
-        isPowerFunctionsSupported = isPowerFunctionsSupportedForDevice();
+        arePowerFunctionsSupported = arePowerFunctionsSupportedForDevice();
     }
 
     /*
@@ -58,41 +58,31 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     }
 
     /*
-     * This method is normally used to retrieve the device based on the device index from the device context.
-     * In LevelZero this functionality is not required since the device is being used for the LevelZero Power Library.
-     * The reason is that the LevelZero programming model does not obtain the handle based on an index.
-     */
-    //    @Override
-    //    public void getHandleByIndex(long[] devices) {
-    //
-    //    }
-
-    /*
      * The LevelZero Power Functions calculate and return the power consumption in double type.
      * A cast operator is applied to the power metric to convert it to a long value
      * to comply with the TornadoVM profiler field.
      */
     @Override
     public void getPowerUsage(long[] powerUsage) {
-        if (isPowerFunctionsSupported) {
+        if (arePowerFunctionsSupported) {
             System.out.println("[SPIRV] Level Zero calculateEnergyCounters= initial: " + initialEnergyCounters.getFirst().getEnergy() + " - final: " + finalEnergyCounters.getFirst().getEnergy());
             double result = calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
             powerUsage[0] = (long) result;
         }
     }
 
-    private boolean isPowerFunctionsSupportedForDevice() {
+    private boolean arePowerFunctionsSupportedForDevice() {
         return levelZeroPowerMonitor.getPowerSupportStatusForDevice(l0Device.getDeviceHandlerPtr());
     }
 
     public void readInitialCounters() {
-        if (isPowerFunctionsSupported) {
+        if (arePowerFunctionsSupported) {
             initialEnergyCounters = getEnergyCounters();
         }
     }
 
     public void readFinalCounters() {
-        if (isPowerFunctionsSupported) {
+        if (arePowerFunctionsSupported) {
             finalEnergyCounters = getEnergyCounters();
         }
     }
