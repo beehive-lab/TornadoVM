@@ -244,12 +244,12 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean isFullJITMode(SchedulableTask task) {
+    public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
         return true;
     }
 
     @Override
-    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+    public TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task) {
         return null;
     }
 
@@ -279,7 +279,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
+    public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
         return compileJavaToAccelerator(task);
     }
 
