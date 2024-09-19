@@ -251,9 +251,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         launchKernelWithLevelZero(executionPlanId, kernel, deviceThreadScheduling, threadBlockDispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
-            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
             kernelTimeStamp.solveEvent(executionPlanId, meta);
             ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readFinalCounters();
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
         }
 
         return 0;
