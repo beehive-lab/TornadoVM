@@ -74,7 +74,7 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void dump();
 
-    void warmup();
+    void warmup(ExecutorFrame executionPackage);
 
     void freeDeviceMemory();
 

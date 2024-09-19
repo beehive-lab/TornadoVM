@@ -1037,12 +1037,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void warmup() {
+    public void warmup(ExecutorFrame executionPackage) {
         setupProfiler();
         getDevice().getDeviceContext().setResetToFalse();
         timeProfiler.clean();
 
         compileComputeGraphToTornadoVMBytecode();
+        executionPlanId = executionPackage.getExecutionPlanId();
+        executionContext.setExecutionPlanId(executionPlanId);
         vm.warmup();
 
         if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
