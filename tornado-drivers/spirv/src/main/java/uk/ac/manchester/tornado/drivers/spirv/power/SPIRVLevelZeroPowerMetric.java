@@ -65,7 +65,6 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     @Override
     public void getPowerUsage(long[] powerUsage) {
         if (arePowerFunctionsSupported) {
-            System.out.println("[SPIRV] Level Zero calculateEnergyCounters= initial: " + initialEnergyCounters.getFirst().getEnergy() + " - final: " + finalEnergyCounters.getFirst().getEnergy());
             double result = calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
             powerUsage[0] = (long) result;
         }
