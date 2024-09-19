@@ -541,7 +541,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             task.meta().setDevice(device);
             if (task instanceof CompilableTask compilableTask) {
                 ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-                if (!meta().getXPUDevice().getDeviceContext().isCached(method.getName(), compilableTask)) {
+                if (!meta().getXPUDevice().getDeviceContext().isCached(executionPlanId, method.getName(), compilableTask)) {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
@@ -584,7 +584,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 task.meta().setDevice(device);
                 if (task instanceof CompilableTask) {
                     ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                    if (!task.getDevice().getDeviceContext().isCached(method.getName(), task)) {
+                    if (!task.getDevice().getDeviceContext().isCached(executionPlanId, method.getName(), task)) {
                         updateInner(i, task);
                     }
                 }
@@ -817,7 +817,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
         } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoXPUDevice tornadoAcceleratorDevice) {
-            if (tornadoAcceleratorDevice.isFullJITMode(executionContext.getTask(0))) {
+            if (tornadoAcceleratorDevice.isFullJITMode(executionPlanId, executionContext.getTask(0))) {
                 compile = true;
             }
         }
