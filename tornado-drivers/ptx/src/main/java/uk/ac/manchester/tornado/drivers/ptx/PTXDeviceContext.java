@@ -174,10 +174,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public long getPowerUsage() {
-        long[] device = new long[1];
         long[] powerUsage = new long[1];
-        powerMetric.getHandleByIndex(device);
-        powerMetric.getPowerUsage(device, powerUsage);
+        powerMetric.getPowerUsage(powerUsage);
         return powerUsage[0];
     }
 
