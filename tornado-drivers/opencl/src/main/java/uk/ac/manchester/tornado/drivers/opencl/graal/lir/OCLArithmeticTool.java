@@ -26,6 +26,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.RSQRT;
 
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
@@ -35,12 +41,7 @@ import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
@@ -284,16 +285,16 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         OCLKind kind = (OCLKind) value.getPlatformKind();
         LIRKind toKind;
         if (kind.isInteger()) {
-            toKind = kindTool.getIntegerKind(toBits);
+            toKind = kindTool.getUnsignedIntegerKind(toBits);
         } else if (kind.isFloating()) {
             toKind = kindTool.getFloatingKind(toBits);
         } else {
             throw shouldNotReachHere();
         }
 
-        Variable result = getGen().newVariable(toKind);
-
-        getGen().emitMove(result, value);
+        // Apply a bitwise mask in order to avoid sign extension and instead zero extend the value.
+        ConstantValue mask = new ConstantValue(toKind, JavaConstant.forIntegerKind(CodeUtil.javaKindFromBitSize(toBits, kind.isFloating()), (1L << fromBits) - 1));
+        Variable result = emitBinaryAssign(OCLBinaryOp.BITWISE_AND, toKind, value, mask);
         return result;
     }
 

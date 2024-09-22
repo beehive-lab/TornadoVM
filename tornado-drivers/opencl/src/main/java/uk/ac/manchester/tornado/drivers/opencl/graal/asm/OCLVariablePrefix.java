@@ -29,6 +29,9 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
 public enum OCLVariablePrefix {
     // @formatter:off
     ULONG("ulong", "ul_"),
+    UINT("uint", "ui_"),
+    USHORT("ushort", "us_"),
+    UCHAR("uchar", "uc_"),
     INT("int", "i_"),
     LONG("long", "l_"),
     BOOL("bool", "b_"),
