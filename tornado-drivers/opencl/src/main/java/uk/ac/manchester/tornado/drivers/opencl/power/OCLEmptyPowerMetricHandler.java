@@ -24,44 +24,18 @@
 package uk.ac.manchester.tornado.drivers.opencl.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLNvidiaPowerMetric implements PowerMetric {
+public class OCLEmptyPowerMetricHandler implements PowerMetric {
 
-    private final OCLDeviceContext deviceContext;
-    private final TornadoLogger logger;
-    private long[] oclDevice = new long[1];
-
-    public OCLNvidiaPowerMetric(OCLDeviceContext deviceContext) {
-        this.deviceContext = deviceContext;
-        this.logger = new TornadoLogger(this.getClass());
-        initializePowerLibrary();
+    public OCLEmptyPowerMetricHandler() {
     }
-
-    static native long clNvmlInit() throws OCLException;
-
-    static native long clNvmlDeviceGetHandleByIndex(long index, long[] device) throws OCLException;
-
-    static native long clNvmlDeviceGetPowerUsage(long[] device, long[] powerUsage) throws OCLException;
 
     @Override
     public void initializePowerLibrary() {
-        try {
-            clNvmlInit();
-            clNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getIndex(), this.oclDevice);
-        } catch (OCLException e) {
-            logger.error(e.getMessage());
-        }
     }
 
     @Override
     public void getPowerUsage(long[] powerUsage) {
-        try {
-            clNvmlDeviceGetPowerUsage(this.oclDevice, powerUsage);
-        } catch (OCLException e) {
-            logger.error(e.getMessage());
-        }
+
     }
 }

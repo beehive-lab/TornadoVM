@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
-import uk.ac.manchester.tornado.drivers.ptx.power.PTXNvidiaPowerMetric;
+import uk.ac.manchester.tornado.drivers.ptx.power.PTXNvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -64,7 +64,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final PTXMemoryManager memoryManager;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
-    private final PowerMetric powerMetric;
+    private final PowerMetric powerMetricHandler;
     private final Map<Long, PTXStreamTable> streamTable;
     private boolean wasReset;
     private final Set<Long> executionIDs;
@@ -79,7 +79,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         this.device = device;
         streamTable = new ConcurrentHashMap<>();
         this.scheduler = new PTXScheduler(device);
-        this.powerMetric = new PTXNvidiaPowerMetric(this);
+        this.powerMetricHandler = new PTXNvidiaPowerMetricHandler(this);
         codeCache = new ConcurrentHashMap<>();
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
@@ -175,7 +175,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public long getPowerUsage() {
         long[] powerUsage = new long[1];
-        powerMetric.getPowerUsage(powerUsage);
+        powerMetricHandler.getPowerUsage(powerUsage);
         return powerUsage[0];
     }
 
@@ -194,7 +194,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * Sync the CUDA Stream only if the Stream Exists
-     * 
+     *
      * @param executionPlanId
      */
     public void flushEventsIfNeeded(long executionPlanId) {
@@ -232,7 +232,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * Sync the CUDA Stream only if the Stream Exists
-     * 
+     *
      * @param executionPlanId
      */
     public void syncIfNeeded(long executionPlanId) {

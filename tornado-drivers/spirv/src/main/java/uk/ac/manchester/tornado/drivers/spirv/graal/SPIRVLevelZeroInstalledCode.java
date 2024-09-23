@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
-import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetric;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -196,7 +196,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp = new LevelZeroKernelTimeStamp(deviceContext, commandList, commandQueue);
             kernelTimeStamp.createEventTimer();
-            ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readInitialCounters();
+            ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readInitialCounters();
         }
 
         ZeEventHandle kernelEventTimer = kernelTimeStamp != null ? kernelTimeStamp.getKernelEventTimer() : null;
@@ -252,7 +252,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp.solveEvent(executionPlanId, meta);
-            ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readFinalCounters();
+            ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readFinalCounters();
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
         }
 

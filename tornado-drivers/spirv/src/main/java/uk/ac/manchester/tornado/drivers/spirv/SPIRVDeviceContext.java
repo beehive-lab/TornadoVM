@@ -45,8 +45,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
-import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetric;
-import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVOCLPowerMetric;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetricHandler;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVOCLPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVBufferProvider;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
@@ -85,9 +85,9 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         this.spirvContext = context;
         this.executionIds = Collections.synchronizedSet(new HashSet<>());
         if (isDeviceContextLevelZero()) {
-            this.powerMetricHandler = new SPIRVLevelZeroPowerMetric(this);
+            this.powerMetricHandler = new SPIRVLevelZeroPowerMetricHandler(this);
         } else {
-            this.powerMetricHandler = new SPIRVOCLPowerMetric();
+            this.powerMetricHandler = new SPIRVOCLPowerMetricHandler();
         }
     }
 

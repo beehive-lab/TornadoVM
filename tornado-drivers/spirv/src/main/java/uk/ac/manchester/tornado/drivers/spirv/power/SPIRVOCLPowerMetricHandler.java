@@ -21,13 +21,13 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.power;
+package uk.ac.manchester.tornado.drivers.spirv.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 
-public class OCLEmptyPowerMetric implements PowerMetric {
+public class SPIRVOCLPowerMetricHandler implements PowerMetric {
 
-    public OCLEmptyPowerMetric() {
+    public SPIRVOCLPowerMetricHandler() {
     }
 
     @Override

@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZesPowerEnergyCounter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SPIRVLevelZeroPowerMetric implements PowerMetric {
+public class SPIRVLevelZeroPowerMetricHandler implements PowerMetric {
     private final SPIRVDeviceContext deviceContext;
     private LevelZeroDevice l0Device;
     private final LevelZeroPowerMonitor levelZeroPowerMonitor;
@@ -41,7 +41,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     private List<ZesPowerEnergyCounter> finalEnergyCounters;
     private boolean arePowerFunctionsSupported = false;
 
-    public SPIRVLevelZeroPowerMetric(SPIRVDeviceContext deviceContext) {
+    public SPIRVLevelZeroPowerMetricHandler(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         levelZeroPowerMonitor = new LevelZeroPowerMonitor();
         initializePowerLibrary();
@@ -97,5 +97,9 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
 
     public double calculateEnergyCounters(List<ZesPowerEnergyCounter> initialEnergyCounters, List<ZesPowerEnergyCounter> finalEnergyCounters) {
         return levelZeroPowerMonitor.calculatePowerUsage_mW(initialEnergyCounters, finalEnergyCounters);
+    }
+
+    public boolean isDeviceContextLevelZero() {
+        return true;
     }
 }
