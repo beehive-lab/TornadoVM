@@ -109,7 +109,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return device;
     }
 
-    public PowerMetric getPowerMetric() {
+    public PowerMetricHandler getPowerMetric() {
         return this.powerMetric;
     }
 
