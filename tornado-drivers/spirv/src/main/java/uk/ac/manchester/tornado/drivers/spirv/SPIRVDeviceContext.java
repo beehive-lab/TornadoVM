@@ -85,7 +85,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         this.spirvContext = context;
         this.executionIds = Collections.synchronizedSet(new HashSet<>());
         if (isDeviceContextLevelZero()) {
-            this.powerMetric = new SPIRVLevelZeroPowerMetric(this);
+            this.powerMetricHandler = new SPIRVLevelZeroPowerMetric(this);
         } else {
             this.powerMetric = new SPIRVOCLPowerMetric();
         }
