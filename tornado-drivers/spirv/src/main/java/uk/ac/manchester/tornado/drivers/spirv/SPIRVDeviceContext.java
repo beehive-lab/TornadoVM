@@ -71,7 +71,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     protected boolean wasReset;
     protected Map<Long, SPIRVEventPool> spirvEventPool;
     private TornadoBufferProvider bufferProvider;
-    protected PowerMetric powerMetric;
+    protected PowerMetric powerMetricHandler;
     private final Set<Long> executionIds;
 
     /**
@@ -87,7 +87,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         if (isDeviceContextLevelZero()) {
             this.powerMetricHandler = new SPIRVLevelZeroPowerMetric(this);
         } else {
-            this.powerMetric = new SPIRVOCLPowerMetric();
+            this.powerMetricHandler = new SPIRVOCLPowerMetric();
         }
     }
 
@@ -109,8 +109,8 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return device;
     }
 
-    public PowerMetricHandler getPowerMetric() {
-        return this.powerMetric;
+    public PowerMetric getPowerMetric() {
+        return this.powerMetricHandler;
     }
 
     @Override
@@ -490,7 +490,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     public long getPowerUsage() {
         if (isDeviceContextLevelZero()) {
             long[] powerUsage = new long[1];
-            powerMetric.getPowerUsage(powerUsage);
+            powerMetricHandler.getPowerUsage(powerUsage);
             return powerUsage[0];
         }
         return 0;
