@@ -3,7 +3,7 @@
 TornadoVM Profiler
 ==================
 
-The TornadoVM profiler can be enabled either from the command line (via a flag from the ``tornado`` command), or via an ``ExecutionPlan`` in the source code. 
+The TornadoVM profiler can be enabled either from the command line (via a flag from the ``tornado`` command), or via an ``ExecutionPlan`` in the source code.
 
 1. Enable the Profiler from the Command Line
 ---------------------------------------------------------
@@ -39,6 +39,7 @@ Example:
                "TASK_COMPILE_GRAAL_TIME": "109520628",
                "TASK_CODE_GENERATION_TIME": "16564279",
                "TASK_COMPILE_DRIVER_TIME": "63298322",
+               "POWER_USAGE_mW": "n/a",
                "TASK_KERNEL_TIME": "47974"
            }
        }
@@ -47,14 +48,14 @@ Example:
 All timers are printed in nanoseconds.
 
 
-1. Enabling/Disabling the Profiler using the TornadoExecutionPlan 
+2. Enable/Disable the Profiler using the TornadoExecutionPlan
 ----------------------------------------------------------------------
 
-The profiler can be enable/disable using the `TornadoExecutionPlan` API:
+The profiler can be enabled/disabled using the `TornadoExecutionPlan` API:
 
 .. code:: bash
 
-    // Enable the profiler and print report in STDOUT 
+    // Enable the profiler and print report in STDOUT
     executionPlan.withProfiler(ProfilerMode.CONSOLE) //
         .withDevice(device) //
         .withDefaultScheduler()
@@ -76,9 +77,42 @@ It is also possible to enable the profiler without live reporting in STDOUT and 
     // Print Kernel Time
     System.out.println(profilerResult.getDeviceKernelTime() + " (ns)");
 
+3. Configure and Enable/Disable the Power Usage of Compute Functions via the Profiler
+-------------------------------------------------------------------------------------
 
+The profiler can query low-level system management API implementations to obtain the power usage of an executed TornadoVM task.
+More specifically, TornadoVM is integrated with the `NVIDIA NVML API <https://docs.nvidia.com/deploy/nvml-api/index.html>`__ to support power usage for NVIDIA GPUs that operate with the ``OpenCL`` or ``PTX`` backend (:ref:`NVIDIA NVML Configuration <nvidia_nvml_configuration>`).
+Additionally, it is integrated with the `oneAPI Level Zero SYSMAN API <https://spec.oneapi.io/level-zero/latest/sysman/api.html>`__) to support power usage for Intel GPUs that operate with the ``SPIRV`` backend (:ref:`oneAPI Level Zero SYSMAN Configuration <oneapi_sysman_configuration>`).
 
-Explanation of all values
+.. _nvidia_nvml_configuration:
+
+A) NVIDIA NVML Configuration for the OpenCL and PTX backends
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TornadoVM can leverage the NVIDIA NVML (NVIDIA Management Library) to monitor and manage power metrics for supported NVIDIA GPUs. The NVML library allows TornadoVM to access the power consumption metric, which enhances its profiling capabilities.
+To enable NVML support in TornadoVM, ensure the following:
+
+i) The libnvidia-ml.so (Linux) or nvml.dll (Windows) library is accessible in your system's library path (default location: ``${CUDA_TOOLKIT_ROOT_DIR}/lib/x64``).
+ii) The nvml.h header file is accessible (default location: ``${CUDA_INCLUDE_DIRS}``).
+
+.. _oneapi_sysman_configuration:
+
+B) oneAPI Level Zero SYSMAN Configuration for the SPIRV backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To configure TornadoVM to utilize the oneAPI Level Zero SYSMAN API, the target device must comply with the Level Zero specification.
+Note that support is available for discrete Intel GPUs (e.g., Intel ARC A770), while integrated graphics are not supported.
+To enable the low-level system management API, users need to export the ``ZES_ENABLE_SYSNAM`` environment variable as per the level-zero specification.
+
+.. code:: bash
+
+    export ZES_ENABLE_SYSMAN=1
+
+The power metric is determined by reading energy counters at two timestamps: i) before the execution of a task, and ii) immediately after the execution. If the compute task is lightweight the energy counters may show no change, resulting in a reported power consumption close to zero. In such cases, the TornadoVM profiler will display "n/a".
+
+Note that when, dispatching occurs through the OpenCL runtime, power metrics are not supported, and the TornadoVM profiler will again report "n/a".
+
+4. Explanation of all values
 -------------------------------
 
 -  *COPY_IN_TIME*: OpenCL timers for copy in (host to device)
@@ -108,28 +142,29 @@ Then, for each task within a task-graph, there are usually three timers, one dev
    with Graal.
 -  *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task
    with the OpenCL/CUDA driver.
+-  *POWER_USAGE_mW*: power consumed to execute a given task, reported in milliwatts. This metric is collected using low-level APIs (e.g., NVIDIA NVML or oneAPI Level Zero SYSMAN).
 -  *TASK_KERNEL_TIME*: kernel execution for the given task (Java
    method).
 -  *TASK_CODE_GENERATION_TIME*: time that takes the code generation from
    the LIR to the target backend code (e.g., SPIR-V).
 
-When the task-graph is executed multiple times (through an execution plan), timers related to compilation will not appear in the Json time-report. 
+When the task-graph is executed multiple times (through an execution plan), timers related to compilation will not appear in the Json time-report.
 This is because the generated binary is cached and there is no compilation after the second iteration.
 
-Print timers at the end of the execution
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A) Print timers at the end of the execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The options ``--enableProfiler silent`` print a full report only when
 the method ``ts.getProfileLog()`` is called.
 
-Save profiler into a file
-~~~~~~~~~~~~~~~~~~~~~~~~~
+B) Save profiler into a file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use the option ``--dumpProfiler <FILENAME>`` to store the profiler
 output in a JSON file.
 
-Parsing Json files
-~~~~~~~~~~~~~~~~~~
+C) Parsing Json files
+~~~~~~~~~~~~~~~~~~~~~
 
 TornadoVM creates the ``profiler-app.json`` file with multiple entries
 for the application (one per task-graph invocation).
@@ -167,10 +202,10 @@ obtaining statistics:
        COPY_IN_TIME,74016.0
        COPY_OUT_TIME,32816.0
        DISPATCH_TIME,31008.0
-       
 
-Code feature extraction for the OpenCL/PTX generated code
----------------------------------------------------------
+
+5. Code feature extraction for the OpenCL/PTX generated code
+------------------------------------------------------------
 
 To enable TornadoVM’s code feature extraction, use the following flag:
 ``-Dtornado.feature.extraction=True``.
@@ -209,15 +244,15 @@ Example:
        }
    }
 
-Save features into a file
-~~~~~~~~~~~~~~~~~~~~~~~~~
+A) Save features into a file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use the option ``-Dtornado.feature.extraction=True``
 ``-Dtornado.features.dump.dir=FILENAME``. ``FILENAME`` can contain the
 filename and the full path (e.g. features.json).
 
-Send log over a socket.
-~~~~~~~~~~~~~~~~~~~~~~~
+B) Send log over a socket
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 | TornadoVM allows redirecting profiling and feature extraction logs to
   a specific port. This feature can be enabled with the option
