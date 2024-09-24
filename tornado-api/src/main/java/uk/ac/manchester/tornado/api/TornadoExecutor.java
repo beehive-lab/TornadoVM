@@ -27,8 +27,8 @@ public class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
     }
 
-    void warmup() {
-        immutableTaskGraphList.forEach(ImmutableTaskGraph::warmup);
+    void warmup(ExecutorFrame executorFrame) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.warmup(executorFrame));
     }
 
     void withBatch(String batchSize) {

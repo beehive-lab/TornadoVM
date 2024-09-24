@@ -155,7 +155,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withWarmUp() {
-        tornadoExecutor.warmup();
+        tornadoExecutor.warmup(executionFrame);
         return new WithWarmUp(this);
     }
 
