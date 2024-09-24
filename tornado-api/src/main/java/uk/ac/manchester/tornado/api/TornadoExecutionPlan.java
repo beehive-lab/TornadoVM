@@ -135,7 +135,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withWarmUp() {
         checkProfilerEnabled();
-        tornadoExecutor.warmup();
+        tornadoExecutor.warmup(executionPackage);
         return this;
     }
 
@@ -470,8 +470,8 @@ public class TornadoExecutionPlan implements AutoCloseable {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
         }
 
-        void warmup() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::warmup);
+        void warmup(ExecutorFrame executionPackage) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.warmup(executionPackage));
         }
 
         void withBatch(String batchSize) {

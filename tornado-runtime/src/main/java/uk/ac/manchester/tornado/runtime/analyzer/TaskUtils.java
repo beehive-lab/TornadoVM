@@ -302,15 +302,6 @@ public class TaskUtils {
         return cvs;
     }
 
-    private static DomainTree buildDomainTree(int[] dims) {
-        final DomainTree domain = new DomainTree(dims.length);
-        for (int i = 0; i < dims.length; i++) {
-            domain.set(i, new IntDomain(0, 1, dims[i]));
-        }
-        return domain;
-
-    }
-
     /**
      * Marshal object from {@link PrebuiltTaskPackage} to {@link PrebuiltTask}.
      * 

@@ -759,8 +759,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.execute(executionPackage).waitOn();
     }
 
-    void warmup() {
-        taskGraphImpl.warmup();
+    void warmup(ExecutorFrame executionPackage) {
+        taskGraphImpl.warmup(executionPackage);
     }
 
     void dumpProfiles() {
