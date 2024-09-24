@@ -10,6 +10,6 @@ public final class WithResetDevice extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withResetDevice ";
+        return parentLink.toString() + "\n -> withResetDevice ";
     }
 }

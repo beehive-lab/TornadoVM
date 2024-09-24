@@ -9,6 +9,6 @@ public final class WithThreadInfo extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withThreadInfo ";
+        return parentLink.toString() + "\n -> withThreadInfo ";
     }
 }

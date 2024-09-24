@@ -170,10 +170,6 @@ public class ImmutableTaskGraph {
         taskGraph.enableProfiler(profilerMode);
     }
 
-    void disableProfiler(ProfilerMode profilerMode) {
-        taskGraph.disableProfiler(profilerMode);
-    }
-
     void withConcurrentDevices() {
         taskGraph.withConcurrentDevices();
     }

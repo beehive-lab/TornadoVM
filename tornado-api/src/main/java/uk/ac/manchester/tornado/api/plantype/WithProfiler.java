@@ -10,6 +10,6 @@ public final class WithProfiler extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withProfiler ";
+        return parentLink.toString() + "\n -> withProfiler ";
     }
 }

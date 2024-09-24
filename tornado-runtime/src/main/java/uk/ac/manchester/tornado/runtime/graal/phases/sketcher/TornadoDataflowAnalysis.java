@@ -70,6 +70,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         Access[] accesses = context.getAccesses();
+        TornadoLogger logger = new TornadoLogger(this.getClass());
 
         for (int i = 0; i < accesses.length; i++) {
             accesses[i] = Access.NONE;
@@ -79,8 +80,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             if (param != null && param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                 accesses[i] = processUsages(param, context.getMetaAccess());
             }
-            new TornadoLogger().debug("access: parameter %d -> %s\n", i, accesses[i]);
+            logger.debug("access: parameter %d -> %s\n", i, accesses[i]);
         }
+        logger.debug("[Compiler Pass] TornadoVM DataFlow Analysis finished");
     }
 
     @Override

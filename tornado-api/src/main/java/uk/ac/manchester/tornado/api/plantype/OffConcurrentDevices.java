@@ -10,7 +10,7 @@ public final class OffConcurrentDevices extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withoutConcurrentDevices ";
+        return parentLink.toString() + "\n -> withoutConcurrentDevices ";
     }
 
 }

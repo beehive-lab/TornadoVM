@@ -10,7 +10,7 @@ public final class OffProfiler extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withoutProfiler ";
+        return parentLink.toString() + "\n -> withoutProfiler ";
     }
 
 }

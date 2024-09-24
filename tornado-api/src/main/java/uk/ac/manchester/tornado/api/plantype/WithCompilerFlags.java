@@ -9,6 +9,6 @@ public final class WithCompilerFlags extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withCompilerFlags ";
+        return parentLink.toString() + "\n -> withCompilerFlags ";
     }
 }

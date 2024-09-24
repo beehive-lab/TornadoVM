@@ -10,6 +10,6 @@ public final class WithDevicePlan extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withDevice ";
+        return parentLink.toString() + "\n -> withDevice ";
     }
 }

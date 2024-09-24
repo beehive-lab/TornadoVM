@@ -274,6 +274,9 @@ public class TestExecutor extends TornadoTestBase {
                     .withThreadInfo() //
                     .withProfiler(ProfilerMode.SILENT);
 
+            // When we call execute(), then it records the path 
+            trace.execute();
+
             // Print/dump the execution plan and see all optimizations that were enabled/disabled
             trace.printExecutionPlanLogic();
         }

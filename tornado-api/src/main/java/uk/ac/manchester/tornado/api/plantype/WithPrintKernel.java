@@ -9,6 +9,6 @@ public final class WithPrintKernel extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withPrintKernel ";
+        return parentLink.toString() + "\n -> withPrintKernel ";
     }
 }

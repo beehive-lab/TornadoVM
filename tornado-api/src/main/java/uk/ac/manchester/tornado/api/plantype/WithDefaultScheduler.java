@@ -10,6 +10,6 @@ public final class WithDefaultScheduler extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withDefaultGridScheduler ";
+        return parentLink.toString() + "\n -> withDefaultGridScheduler ";
     }
 }

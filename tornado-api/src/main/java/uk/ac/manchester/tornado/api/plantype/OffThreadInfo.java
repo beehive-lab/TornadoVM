@@ -9,6 +9,6 @@ public final class OffThreadInfo extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withoutThreadInfo ";
+        return parentLink.toString() + "\n -> withoutThreadInfo ";
     }
 }

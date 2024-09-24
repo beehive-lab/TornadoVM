@@ -10,6 +10,6 @@ public final class WithFreeDeviceMemory extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withFreeDeviceMemory ";
+        return parentLink.toString() + "\n -> withFreeDeviceMemory ";
     }
 }

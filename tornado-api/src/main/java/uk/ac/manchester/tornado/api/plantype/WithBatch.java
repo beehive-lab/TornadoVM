@@ -10,6 +10,6 @@ public final class WithBatch extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return super.toString() + "\n -> withBatch ";
+        return parentLink.toString() + "\n -> withBatch ";
     }
 }

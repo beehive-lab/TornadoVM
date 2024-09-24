@@ -9,6 +9,6 @@ public final class OffPrintKernel extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withoutPrintKernel ";
+        return parentLink.toString() + "\n -> withoutPrintKernel ";
     }
 }

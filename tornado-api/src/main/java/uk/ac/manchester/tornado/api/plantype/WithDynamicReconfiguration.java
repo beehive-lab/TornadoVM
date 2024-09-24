@@ -10,6 +10,6 @@ public final class WithDynamicReconfiguration extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withDynamicReconfiguration ";
+        return parentLink.toString() + "\n -> withDynamicReconfiguration ";
     }
 }

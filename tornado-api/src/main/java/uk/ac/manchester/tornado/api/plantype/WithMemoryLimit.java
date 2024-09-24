@@ -10,7 +10,7 @@ public final class WithMemoryLimit extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withMemoryLimit ";
+        return parentLink.toString() + "\n -> withMemoryLimit ";
     }
 
 }

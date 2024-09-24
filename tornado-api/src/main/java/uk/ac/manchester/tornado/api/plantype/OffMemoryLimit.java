@@ -10,7 +10,7 @@ public final class OffMemoryLimit extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withoutMemoryLimit ";
+        return parentLink.toString() + "\n -> withoutMemoryLimit ";
     }
 
 }

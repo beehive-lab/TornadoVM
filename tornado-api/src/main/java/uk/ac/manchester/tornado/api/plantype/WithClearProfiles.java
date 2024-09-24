@@ -9,6 +9,6 @@ public final class WithClearProfiles extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withClearProfiles ";
+        return parentLink.toString() + "\n -> withClearProfiles ";
     }
 }

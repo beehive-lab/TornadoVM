@@ -10,6 +10,6 @@ public final class WithGridScheduler extends ExecutionPlanType {
 
     @Override
     public String toString() {
-        return parent.toString() + "\n -> withGridScheduler ";
+        return parentLink.toString() + "\n -> withGridScheduler ";
     }
 }
