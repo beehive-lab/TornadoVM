@@ -28,6 +28,27 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.plantype.ExecutionPlanType;
+import uk.ac.manchester.tornado.api.plantype.OffConcurrentDevices;
+import uk.ac.manchester.tornado.api.plantype.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plantype.OffPrintKernel;
+import uk.ac.manchester.tornado.api.plantype.OffProfiler;
+import uk.ac.manchester.tornado.api.plantype.OffThreadInfo;
+import uk.ac.manchester.tornado.api.plantype.WithWarmUp;
+import uk.ac.manchester.tornado.api.plantype.WithBatch;
+import uk.ac.manchester.tornado.api.plantype.WithClearProfiles;
+import uk.ac.manchester.tornado.api.plantype.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plantype.WithConcurrentDevices;
+import uk.ac.manchester.tornado.api.plantype.WithDefaultScheduler;
+import uk.ac.manchester.tornado.api.plantype.WithDevicePlan;
+import uk.ac.manchester.tornado.api.plantype.WithDynamicReconfiguration;
+import uk.ac.manchester.tornado.api.plantype.WithFreeDeviceMemory;
+import uk.ac.manchester.tornado.api.plantype.WithGridScheduler;
+import uk.ac.manchester.tornado.api.plantype.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plantype.WithPrintKernel;
+import uk.ac.manchester.tornado.api.plantype.WithProfiler;
+import uk.ac.manchester.tornado.api.plantype.WithResetDevice;
+import uk.ac.manchester.tornado.api.plantype.WithThreadInfo;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
@@ -40,8 +61,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
  *
  * @since v0.15
  */
-public sealed class TornadoExecutionPlan implements AutoCloseable //
-        permits WithDevicePlan, WarmUpPlan {
+public sealed class TornadoExecutionPlan implements AutoCloseable permits ExecutionPlanType {
 
     /**
      * Method to obtain the default device in TornadoVM. The default one corresponds
@@ -138,7 +158,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
     public TornadoExecutionPlan withWarmUp() {
         checkProfilerEnabled();
         tornadoExecutor.warmup();
-        return new WarmUpPlan(this);
+        return new WithWarmUp(this);
     }
 
     /**
@@ -174,7 +194,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withDevice(String taskName, TornadoDevice device) {
         tornadoExecutor.setDevice(taskName, device);
-        return this;
+        return new WithDevicePlan(this);
     }
 
     /**
@@ -188,7 +208,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withConcurrentDevices() {
         tornadoExecutor.withConcurrentDevices();
-        return this;
+        return new WithConcurrentDevices(this);
     }
 
     /**
@@ -199,7 +219,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withoutConcurrentDevices() {
         tornadoExecutor.withoutConcurrentDevices();
-        return this;
+        return new OffConcurrentDevices(this);
     }
 
     /**
@@ -230,7 +250,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan freeDeviceMemory() {
         tornadoExecutor.freeDeviceMemory();
-        return this;
+        return new WithFreeDeviceMemory(this);
     }
 
     /**
@@ -244,7 +264,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         tornadoExecutor.withGridScheduler(gridScheduler);
-        return this;
+        return new WithGridScheduler(this);
     }
 
     /**
@@ -254,7 +274,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withDefaultScheduler() {
         tornadoExecutor.withDefaultScheduler();
-        return this;
+        return new WithDefaultScheduler(this);
     }
 
     /**
@@ -269,7 +289,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
         executionPackage.withPolicy(policy).withMode(mode);
-        return this;
+        return new WithDynamicReconfiguration(this);
     }
 
     /**
@@ -284,7 +304,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withBatch(String batchSize) {
         tornadoExecutor.withBatch(batchSize);
-        return this;
+        return new WithBatch(this);
     }
 
     /**
@@ -299,7 +319,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
         disableProfiler = false;
-        return this;
+        return new WithProfiler(this);
     }
 
     /**
@@ -309,7 +329,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withoutProfiler() {
         this.disableProfiler = true;
-        return this;
+        return new OffProfiler(this);
     }
 
     /**
@@ -325,7 +345,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
         tornadoExecutor.withMemoryLimit(memoryLimit);
-        return this;
+        return new WithMemoryLimit(this);
     }
 
     /**
@@ -340,7 +360,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withoutMemoryLimit() {
         tornadoExecutor.withoutMemoryLimit();
-        return this;
+        return new OffMemoryLimit(this);
     }
 
     /**
@@ -353,7 +373,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan resetDevice() {
         tornadoExecutor.resetDevice();
-        return this;
+        return new WithResetDevice(this);
     }
 
     /**
@@ -377,7 +397,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan clearProfiles() {
         tornadoExecutor.clearProfiles();
-        return this;
+        return new WithClearProfiles(this);
     }
 
     /**
@@ -389,7 +409,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withThreadInfo() {
         tornadoExecutor.withThreadInfo();
-        return this;
+        return new WithThreadInfo(this);
     }
 
     /**
@@ -401,7 +421,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withoutThreadInfo() {
         tornadoExecutor.withoutThreadInfo();
-        return this;
+        return new OffThreadInfo(this);
     }
 
     /**
@@ -414,7 +434,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
 
     public TornadoExecutionPlan withPrintKernel() {
         tornadoExecutor.withPrintKernel();
-        return this;
+        return new WithPrintKernel(this);
     }
 
     /**
@@ -426,7 +446,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withoutPrintKernel() {
         tornadoExecutor.withoutPrintKernel();
-        return this;
+        return new OffPrintKernel(this);
     }
 
     /**
@@ -441,7 +461,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable //
      */
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
-        return this;
+        return new WithCompilerFlags(this);
     }
 
     /**

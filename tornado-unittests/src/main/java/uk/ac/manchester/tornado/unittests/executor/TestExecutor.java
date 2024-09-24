@@ -24,11 +24,14 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
@@ -259,17 +262,23 @@ public class TestExecutor extends TornadoTestBase {
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
 
-            TornadoDevice device  = TornadoExecutionPlan.getDevice(0, 0);
+            TornadoDevice device = TornadoExecutionPlan.getDevice(0, 0);
 
-            // 4. Add optimizations to the execution plan
+            WorkerGrid workerGrid = new WorkerGrid1D(16);
+            GridScheduler grid = new GridScheduler("s0.t0", workerGrid);
+
+            // Testing multiple functions to invoke the print logic plan later
             TornadoExecutionPlan trace = executionPlan.withWarmUp() //
-                    .withDevice(device);
+                    .withDevice(device) //
+                    .withGridScheduler(grid) //
+                    .withThreadInfo() //
+                    .withProfiler(ProfilerMode.SILENT);
 
+            // Print/dump the execution plan and see all optimizations that were enabled/disabled
             trace.printExecutionPlanLogic();
         }
 
     }
-
 
     // CHECKSTYLE:ON
 }
