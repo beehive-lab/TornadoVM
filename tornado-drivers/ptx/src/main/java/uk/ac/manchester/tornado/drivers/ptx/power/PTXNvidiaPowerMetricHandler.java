@@ -27,13 +27,13 @@ import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXNvidiaPowerMetric implements PowerMetric {
+public class PTXNvidiaPowerMetricHandler implements PowerMetric {
 
     private final PTXDeviceContext deviceContext;
     private final TornadoLogger logger;
     private long[] ptxDevice = new long[1];
 
-    public PTXNvidiaPowerMetric(PTXDeviceContext deviceContext) {
+    public PTXNvidiaPowerMetricHandler(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         this.logger = new TornadoLogger(this.getClass());
         initializePowerLibrary();
