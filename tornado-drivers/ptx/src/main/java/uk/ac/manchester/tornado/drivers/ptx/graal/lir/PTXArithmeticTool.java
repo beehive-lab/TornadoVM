@@ -27,10 +27,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.RSQRT;
 
+import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
@@ -38,6 +40,7 @@ import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
@@ -198,12 +201,6 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitSignExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
-        return emitZeroExtend(inputVal, fromBits, toBits);
-    }
-
-    @Override
-    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitZeroExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
         PTXLIRKindTool kindTool = getGen().getLIRKindTool();
         PTXKind kind = (PTXKind) inputVal.getPlatformKind();
         LIRKind toKind;
@@ -218,6 +215,30 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = getGen().newVariable(toKind);
 
         getGen().emitMove(result, inputVal);
+        return result;
+
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitZeroExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
+        PTXLIRKindTool kindTool = getGen().getLIRKindTool();
+        PTXKind kind = (PTXKind) inputVal.getPlatformKind();
+        LIRKind toKind;
+        if (kind.isInteger()) {
+            toKind = kindTool.getUnsignedIntegerKind(toBits);
+        } else if (kind.isFloating()) {
+            toKind = kindTool.getFloatingKind(toBits);
+        } else {
+            throw shouldNotReachHere();
+        }
+
+        Variable signExtendedValue = getGen().newVariable(toKind);
+        getGen().emitMove(signExtendedValue, inputVal);
+
+        // Apply a bitwise mask in order to avoid sign extension and instead zero extend the value.
+        ConstantValue mask = new ConstantValue(toKind, JavaConstant.forIntegerKind(CodeUtil.javaKindFromBitSize(toBits, kind.isFloating()), (1L << fromBits) - 1));
+        Variable result = emitBinaryAssign(PTXBinaryOp.BITWISE_AND, toKind, signExtendedValue, mask);
         return result;
     }
 

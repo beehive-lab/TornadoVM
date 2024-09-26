@@ -107,4 +107,23 @@ public class CodeUtil {
         };
     }
 
+
+    public static JavaKind javaKindFromBitSize(int bitSize, boolean isFloat) {
+        if (isFloat) {
+            return switch (bitSize) {
+                case 32 -> JavaKind.Float;
+                case 64 -> JavaKind.Double;
+                default -> throw new IllegalArgumentException("Unsupported floating point bit size: " + bitSize);
+            };
+        } else {
+            return switch (bitSize) {
+                case 8 -> JavaKind.Byte;
+                case 16 -> JavaKind.Short;
+                case 32 -> JavaKind.Int;
+                case 64 -> JavaKind.Long;
+                default -> throw new IllegalArgumentException("Unsupported integer bit size: " + bitSize);
+            };
+        }
+    }
+
 }
