@@ -28,6 +28,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
@@ -41,6 +42,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -194,6 +196,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp = new LevelZeroKernelTimeStamp(deviceContext, commandList, commandQueue);
             kernelTimeStamp.createEventTimer();
+            ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readInitialCounters();
         }
 
         ZeEventHandle kernelEventTimer = kernelTimeStamp != null ? kernelTimeStamp.getKernelEventTimer() : null;
@@ -235,7 +238,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
                 // If the device was updated for the same ExecutionPlan and same TornadoVM instance,
                 // then, we disable the reset of the threads for the next execution.
                 // This will enable the thread-blocks not to be re-computed over and over again, but
-                // only when the device is changed. 
+                // only when the device is changed.
                 meta.disableResetThreadBlock();
                 meta.setLocalWorkToNotDefined();
             }
@@ -249,6 +252,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp.solveEvent(executionPlanId, meta);
+            ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readFinalCounters();
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
         }
 
         return 0;
