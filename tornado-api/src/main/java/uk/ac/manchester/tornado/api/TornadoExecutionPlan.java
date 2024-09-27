@@ -80,7 +80,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     protected ExecutorFrame executionFrame;
 
-    protected TornadoExecutionPlan child;
+    protected TornadoExecutionPlan childLink;
+    protected TornadoExecutionPlan parentLink;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -176,7 +177,11 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @since 1.0.8
      */
     public void printExecutionPlan() {
-        System.out.println(child);
+        System.out.println(childLink);
+    }
+
+    public String getExecutionPlanTrace() {
+        return childLink.toString();
     }
 
     @Override
@@ -495,5 +500,20 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     public List<TornadoProfilerResult> getExecutionList() {
         return executorList;
+    }
+
+    public void updateChildFromRoot(TornadoExecutionPlan childNode) {
+        assert childNode != null;
+        TornadoExecutionPlan rootNode = childNode;
+        TornadoExecutionPlan iterator = childNode;
+
+        // Traverse the list until we find the root node
+        while (iterator != null) {
+            rootNode = iterator;
+            iterator = iterator.parentLink;
+        }
+
+        // Set the child of the root node to the new node
+        rootNode.childLink = childNode;
     }
 }

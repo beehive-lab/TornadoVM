@@ -27,24 +27,23 @@ public sealed class ExecutionPlanType extends TornadoExecutionPlan //
         WithGridScheduler, WithMemoryLimit, WithPrintKernel, WithProfiler, //
         WithResetDevice, WithThreadInfo {
 
-    TornadoExecutionPlan parentLink;
-
-    public ExecutionPlanType(TornadoExecutionPlan parent) {
+    public ExecutionPlanType(TornadoExecutionPlan parentNode) {
 
         // Set link between the previous action (parent) and the new one
-        this.parentLink = parent;
+        this.parentLink = parentNode;
+        parentLink.updateChildFromRoot(this);
 
         // Copy the reference for the executor
-        this.tornadoExecutor = parent.getTornadoExecutor();
+        this.tornadoExecutor = parentNode.getTornadoExecutor();
 
         // Copy the reference for the execution frame
-        this.executionFrame = parent.getExecutionFrame();
+        this.executionFrame = parentNode.getExecutionFrame();
 
         // Copy the reference for the executor list
-        this.executorList = parent.getExecutionList();
+        this.executorList = parentNode.getExecutionList();
 
         // Set child reference to this instance
-        this.child = this;
+        this.childLink = this;
     }
 
 }

@@ -268,7 +268,7 @@ public class TestExecutor extends TornadoTestBase {
             GridScheduler grid = new GridScheduler("s0.t0", workerGrid);
 
             // Testing multiple functions to invoke the print logic plan later
-            executionPlan.withWarmUp() //
+            var trace = executionPlan.withWarmUp() //
                     .withDevice(device) //
                     .withGridScheduler(grid) //
                     .withThreadInfo() //
@@ -278,7 +278,14 @@ public class TestExecutor extends TornadoTestBase {
             executionPlan.execute();
 
             // Print/dump the execution plan and see all optimizations that were enabled/disabled
+            trace.printExecutionPlan();
+
+            // Print the plan. It must be the same as the trace variable
             executionPlan.printExecutionPlan();
+
+            String trace1 = trace.getExecutionPlanTrace();
+            String trace2 = executionPlan.getExecutionPlanTrace();
+            assertEquals(trace1, trace2);
         }
     }
 
