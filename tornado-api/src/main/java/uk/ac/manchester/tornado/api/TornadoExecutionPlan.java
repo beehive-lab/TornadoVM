@@ -23,7 +23,6 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.plan.types.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
@@ -481,10 +480,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor.freeDeviceMemory();
     }
 
-    public TornadoExecutor getTornadoExecutor() {
-        return this.tornadoExecutor;
-    }
-
     /**
      * It returns the current memory usage on the device in bytes.
      * 
@@ -495,22 +490,4 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return tornadoExecutor.getCurrentDeviceMemoryUsage();
     }
 
-    public ExecutorFrame getExecutionFrame() {
-        return executionFrame;
-    }
-
-    public void updateChildFromRoot(TornadoExecutionPlan childNode) {
-        assert childNode != null;
-        TornadoExecutionPlan rootNode = childNode;
-        TornadoExecutionPlan iterator = childNode;
-
-        // Traverse the list until we find the root node
-        while (iterator != null) {
-            rootNode = iterator;
-            iterator = iterator.parentLink;
-        }
-
-        // Set the child of the root node to the new node
-        rootNode.childLink = childNode;
-    }
 }

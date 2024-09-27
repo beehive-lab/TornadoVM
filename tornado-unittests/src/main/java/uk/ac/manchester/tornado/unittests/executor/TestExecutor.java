@@ -24,6 +24,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -286,6 +287,7 @@ public class TestExecutor extends TornadoTestBase {
             String trace1 = trace.getTraceExecutionPlan();
             String trace2 = executionPlan.getTraceExecutionPlan();
             assertEquals(trace1, trace2);
+
         }
     }
 
