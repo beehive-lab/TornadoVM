@@ -50,7 +50,12 @@ public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
 
         // Set link between the previous action (parent) and the new one
         this.parentLink = parentNode;
-        updateChildFromRoot(this);
+
+        // Propagate the root node of the current execution plan
+        this.rootNode = parentNode.rootNode;
+
+        // Set Link the root node to the leaf
+        this.rootNode.childLink = this;
 
         // Copy the reference for the executor
         this.tornadoExecutor = parentNode.tornadoExecutor;
@@ -61,20 +66,4 @@ public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
         // Set child reference to this instance
         this.childLink = this;
     }
-
-    private void updateChildFromRoot(TornadoExecutionPlan childNode) {
-        assert childNode != null;
-        TornadoExecutionPlan rootNode = childNode;
-        TornadoExecutionPlan iterator = childNode;
-
-        // Traverse the list until we find the root node
-        while (iterator != null) {
-            rootNode = iterator;
-            iterator = iterator.parentLink;
-        }
-
-        // Set the child of the root node to the new node
-        rootNode.childLink = childNode;
-    }
-
 }

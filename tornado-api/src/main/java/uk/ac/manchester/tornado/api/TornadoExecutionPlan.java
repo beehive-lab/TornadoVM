@@ -74,7 +74,20 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     protected ExecutorFrame executionFrame;
 
+    // Pointers
+    /**
+     * Pointer to the Root of the List
+     */
+    protected TornadoExecutionPlan rootNode;
+
+    /**
+     * Pointer to the next node in the list
+     */
     protected TornadoExecutionPlan childLink;
+
+    /**
+     * Pointer to the previous node in the list
+     */
     protected TornadoExecutionPlan parentLink;
 
     /**
@@ -88,9 +101,10 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *     {@link ImmutableTaskGraph}
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
-        this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
+        tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         final long id = globalExecutionPlanCounter.incrementAndGet();
         executionFrame = new ExecutorFrame(id);
+        rootNode = this;
     }
 
     /**
