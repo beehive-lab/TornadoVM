@@ -278,13 +278,13 @@ public class TestExecutor extends TornadoTestBase {
             executionPlan.execute();
 
             // Print/dump the execution plan and see all optimizations that were enabled/disabled
-            trace.printExecutionPlan();
+            trace.printTraceExecutionPlan();
 
             // Print the plan. It must be the same as the trace variable
-            executionPlan.printExecutionPlan();
+            executionPlan.printTraceExecutionPlan();
 
-            String trace1 = trace.getExecutionPlanTrace();
-            String trace2 = executionPlan.getExecutionPlanTrace();
+            String trace1 = trace.getTraceExecutionPlan();
+            String trace2 = executionPlan.getTraceExecutionPlan();
             assertEquals(trace1, trace2);
         }
     }

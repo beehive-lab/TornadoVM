@@ -176,11 +176,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * 
      * @since 1.0.8
      */
-    public void printExecutionPlan() {
+    public void printTraceExecutionPlan() {
         System.out.println(childLink);
     }
 
-    public String getExecutionPlanTrace() {
+    /**
+     * Returns a string with all the operations enabled/disabled from the
+     * Execution Plan.
+     *
+     * @since 1.0.8
+     */
+    public String getTraceExecutionPlan() {
         return childLink.toString();
     }
 
