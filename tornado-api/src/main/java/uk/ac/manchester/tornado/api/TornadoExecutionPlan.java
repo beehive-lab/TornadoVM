@@ -68,7 +68,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     /**
      * The TornadoVM executor is a list of chain of actions to be performed.
-     * Each action can enable/disable runtime features, influence in the compiler,
+     * Each action can enable/disable runtime features, influence the compiler,
      * influence the code optimization, adapt runtime parameters, etc.
      */
     protected TornadoExecutor tornadoExecutor;
