@@ -15,17 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
+import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithThreadInfo extends ExecutionPlanType {
-    public WithThreadInfo(TornadoExecutionPlan parent) {
+public final class WithDefaultScheduler extends ExecutionPlanType {
+
+    public WithDefaultScheduler(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withThreadInfo ";
+        return parentLink.toString() + "\n -> withDefaultGridScheduler ";
     }
 }

@@ -15,19 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
+import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class OffConcurrentDevices extends ExecutionPlanType {
+public final class WithWarmUp extends ExecutionPlanType {
 
-    public OffConcurrentDevices(TornadoExecutionPlan parent) {
+    public WithWarmUp(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withoutConcurrentDevices ";
+        return super.toString() + "\n -> withWarmUp ";
     }
-
 }

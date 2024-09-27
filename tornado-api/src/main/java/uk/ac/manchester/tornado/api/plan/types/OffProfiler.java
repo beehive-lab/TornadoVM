@@ -15,18 +15,20 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
+import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithFreeDeviceMemory extends ExecutionPlanType {
+public final class OffProfiler extends ExecutionPlanType {
 
-    public WithFreeDeviceMemory(TornadoExecutionPlan parent) {
+    public OffProfiler(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withFreeDeviceMemory ";
+        return parentLink.toString() + "\n -> withoutProfiler ";
     }
+
 }

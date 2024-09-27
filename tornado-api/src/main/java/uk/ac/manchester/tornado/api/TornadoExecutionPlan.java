@@ -26,27 +26,26 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.plantype.ExecutionPlanType;
-import uk.ac.manchester.tornado.api.plantype.OffConcurrentDevices;
-import uk.ac.manchester.tornado.api.plantype.OffMemoryLimit;
-import uk.ac.manchester.tornado.api.plantype.OffPrintKernel;
-import uk.ac.manchester.tornado.api.plantype.OffProfiler;
-import uk.ac.manchester.tornado.api.plantype.OffThreadInfo;
-import uk.ac.manchester.tornado.api.plantype.WithWarmUp;
-import uk.ac.manchester.tornado.api.plantype.WithBatch;
-import uk.ac.manchester.tornado.api.plantype.WithClearProfiles;
-import uk.ac.manchester.tornado.api.plantype.WithCompilerFlags;
-import uk.ac.manchester.tornado.api.plantype.WithConcurrentDevices;
-import uk.ac.manchester.tornado.api.plantype.WithDefaultScheduler;
-import uk.ac.manchester.tornado.api.plantype.WithDevicePlan;
-import uk.ac.manchester.tornado.api.plantype.WithDynamicReconfiguration;
-import uk.ac.manchester.tornado.api.plantype.WithFreeDeviceMemory;
-import uk.ac.manchester.tornado.api.plantype.WithGridScheduler;
-import uk.ac.manchester.tornado.api.plantype.WithMemoryLimit;
-import uk.ac.manchester.tornado.api.plantype.WithPrintKernel;
-import uk.ac.manchester.tornado.api.plantype.WithProfiler;
-import uk.ac.manchester.tornado.api.plantype.WithResetDevice;
-import uk.ac.manchester.tornado.api.plantype.WithThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
+import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
+import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
+import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
+import uk.ac.manchester.tornado.api.plan.types.WithBatch;
+import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
+import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
+import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithDevicePlan;
+import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
+import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
+import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
+import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
+import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
+import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
@@ -71,14 +70,27 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     /**
      * The TornadoVM executor is a list of chain of actions to be performed.
-     * Each action can enable/disable runtime features, influence in the compiler,
+     * Each action can enable/disable runtime features, influence the compiler,
      * influence the code optimization, adapt runtime parameters, etc.
      */
     protected TornadoExecutor tornadoExecutor;
 
     protected ExecutorFrame executionFrame;
 
+    // Pointers
+    /**
+     * Pointer to the Root of the List
+     */
+    protected TornadoExecutionPlan rootNode;
+
+    /**
+     * Pointer to the next node in the list
+     */
     protected TornadoExecutionPlan childLink;
+
+    /**
+     * Pointer to the previous node in the list
+     */
     protected TornadoExecutionPlan parentLink;
 
     protected List<TornadoExecutionResult> planResults;
@@ -94,9 +106,10 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *     {@link ImmutableTaskGraph}
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
-        this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
+        tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         final long id = globalExecutionPlanCounter.incrementAndGet();
         executionFrame = new ExecutorFrame(id);
+        rootNode = this;
         planResults = new ArrayList<>();
     }
 
@@ -489,10 +502,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor.freeDeviceMemory();
     }
 
-    public TornadoExecutor getTornadoExecutor() {
-        return this.tornadoExecutor;
-    }
-
     /**
      * It returns the current memory usage on the device in bytes.
      * 
@@ -503,33 +512,10 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return tornadoExecutor.getCurrentDeviceMemoryUsage();
     }
 
-    public ExecutorFrame getExecutionFrame() {
-        return executionFrame;
-    }
-
-    public List<TornadoExecutionResult> getPlanResults() {
-        return planResults;
-    }
-
     public TornadoExecutionResult getPlanResult(int index) {
         if (index >= planResults.size()) {
             throw new TornadoRuntimeException("[ERROR] Execution result not found");
         }
         return planResults.get(index);
-    }
-
-    public void updateChildFromRoot(TornadoExecutionPlan childNode) {
-        assert childNode != null;
-        TornadoExecutionPlan rootNode = childNode;
-        TornadoExecutionPlan iterator = childNode;
-
-        // Traverse the list until we find the root node
-        while (iterator != null) {
-            rootNode = iterator;
-            iterator = iterator.parentLink;
-        }
-
-        // Set the child of the root node to the new node
-        rootNode.childLink = childNode;
     }
 }

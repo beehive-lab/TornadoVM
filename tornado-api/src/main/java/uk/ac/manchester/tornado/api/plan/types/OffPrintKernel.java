@@ -15,17 +15,18 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
+import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithCompilerFlags extends ExecutionPlanType {
-    public WithCompilerFlags(TornadoExecutionPlan parent) {
+public final class OffPrintKernel extends ExecutionPlanType {
+    public OffPrintKernel(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withCompilerFlags ";
+        return parentLink.toString() + "\n -> withoutPrintKernel ";
     }
 }
