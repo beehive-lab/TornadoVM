@@ -268,19 +268,18 @@ public class TestExecutor extends TornadoTestBase {
             GridScheduler grid = new GridScheduler("s0.t0", workerGrid);
 
             // Testing multiple functions to invoke the print logic plan later
-            TornadoExecutionPlan trace = executionPlan.withWarmUp() //
+            executionPlan.withWarmUp() //
                     .withDevice(device) //
                     .withGridScheduler(grid) //
                     .withThreadInfo() //
                     .withProfiler(ProfilerMode.SILENT);
 
             // When we call execute(), then it records the path 
-            trace.execute();
+            executionPlan.execute();
 
             // Print/dump the execution plan and see all optimizations that were enabled/disabled
-            trace.printExecutionPlanLogic();
+            executionPlan.printExecutionPlan();
         }
-
     }
 
     // CHECKSTYLE:ON

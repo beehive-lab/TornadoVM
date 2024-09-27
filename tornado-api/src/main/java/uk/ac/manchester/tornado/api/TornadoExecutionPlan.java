@@ -170,7 +170,12 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithDevicePlan(this);
     }
 
-    public void printExecutionPlanLogic() {
+    /**
+     * Print all operations enabled/disabled from the Execution Plan.
+     * 
+     * @since 1.0.8
+     */
+    public void printExecutionPlan() {
         System.out.println(child);
     }
 
