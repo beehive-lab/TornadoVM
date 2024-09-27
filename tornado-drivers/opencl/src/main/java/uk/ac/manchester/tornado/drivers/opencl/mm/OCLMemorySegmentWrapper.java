@@ -67,7 +67,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
+            onDevice = false;
     }
 
     @Override
@@ -160,13 +160,14 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
             internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(),
                     hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
@@ -184,7 +185,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(batchSize + TornadoNativeArray.ARRAY_HEADER);
         }
 
         if (bufferSize <= 0) {

@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.logic;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -155,7 +155,7 @@ public class TestLogic extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testLogic04() throws TornadoExecutionPlanException {
         final int N = 1024;
         IntArray data = new IntArray(N);

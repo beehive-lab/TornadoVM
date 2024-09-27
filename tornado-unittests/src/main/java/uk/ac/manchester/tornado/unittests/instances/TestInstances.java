@@ -18,9 +18,9 @@
 
 package uk.ac.manchester.tornado.unittests.instances;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -40,15 +40,6 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  */
 public class TestInstances extends TornadoTestBase {
-
-    public static class Foo {
-        // Parallel initialisation
-        public void compute(DoubleArray array, double initValue) {
-            for (int i = 0; i < array.getSize(); i++) {
-                array.set(i, initValue);
-            }
-        }
-    }
 
     @Test
     public void testInit() throws TornadoExecutionPlanException {
@@ -89,6 +80,15 @@ public class TestInstances extends TornadoTestBase {
 
         for (int i = 0; i < array.getSize(); i++) {
             assertEquals(2.1, array.get(i), 0.001);
+        }
+    }
+
+    public static class Foo {
+        // Parallel initialisation
+        public void compute(DoubleArray array, double initValue) {
+            for (int i = 0; i < array.getSize(); i++) {
+                array.set(i, initValue);
+            }
         }
     }
 }

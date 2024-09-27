@@ -18,7 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.api;
 
-import org.junit.Test;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+
+import org.junit.jupiter.api.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -26,12 +34,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
-import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
  * <p>
@@ -48,23 +50,25 @@ public class TestMemorySegmentsAsType extends TornadoTestBase {
         float test = a.getAtIndex(ValueLayout.JAVA_FLOAT, 5);
     }
 
-    @Test(expected = TornadoRuntimeException.class)
+    @Test
     public void testMemorySegmentAsInput() throws TornadoExecutionPlanException {
-        MemorySegment segment;
-        long segmentByteSize = numElements * ValueLayout.JAVA_FLOAT.byteSize();
+        assertThrows(TornadoRuntimeException.class, () -> {
+            MemorySegment segment;
+            long segmentByteSize = numElements * ValueLayout.JAVA_FLOAT.byteSize();
 
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numElements);
+            segment = Arena.ofAuto().allocate(segmentByteSize, 1);
+            segment.setAtIndex(JAVA_INT, 0, numElements);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, segment) //
-                .task("t0", TestMemorySegmentsAsType::getMemorySegment, segment) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, segment);
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, segment) //
+                    .task("t0", TestMemorySegmentsAsType::getMemorySegment, segment) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, segment);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
-        }
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+                executionPlan.execute();
+            }
+        });
     }
 
 }

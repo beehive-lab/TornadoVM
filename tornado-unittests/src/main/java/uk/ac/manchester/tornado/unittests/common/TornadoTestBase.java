@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.common;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
@@ -37,7 +37,7 @@ public abstract class TornadoTestBase {
         return TornadoRuntimeProvider.getTornadoRuntime();
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         for (int backendIndex = 0; backendIndex < TornadoRuntimeProvider.getTornadoRuntime().getNumBackends(); backendIndex++) {
             final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex);

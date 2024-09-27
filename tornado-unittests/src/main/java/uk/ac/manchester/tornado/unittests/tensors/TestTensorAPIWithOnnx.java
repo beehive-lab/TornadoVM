@@ -17,6 +17,17 @@
  */
 package uk.ac.manchester.tornado.unittests.tensors;
 
+import ai.onnxruntime.OnnxTensor;
+import ai.onnxruntime.OnnxValue;
+import ai.onnxruntime.OrtEnvironment;
+import ai.onnxruntime.OrtException;
+import ai.onnxruntime.OrtSession;
+
+import org.junit.jupiter.api.Test;
+import uk.ac.manchester.tornado.api.types.tensors.Shape;
+import uk.ac.manchester.tornado.api.types.tensors.TensorFP32;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
 import java.io.BufferedInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -28,26 +39,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import ai.onnxruntime.OnnxTensor;
-import ai.onnxruntime.OnnxValue;
-import ai.onnxruntime.OrtEnvironment;
-import ai.onnxruntime.OrtException;
-import ai.onnxruntime.OrtSession;
-import uk.ac.manchester.tornado.api.types.tensors.Shape;
-import uk.ac.manchester.tornado.api.types.tensors.TensorFP32;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-/**
- * <p>
- * How to run?
- * </p>
- * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx
- * </code>
- */
 public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
     private final String INPUT_TENSOR_NAME = "data";
@@ -105,7 +98,7 @@ public class TestTensorAPIWithOnnx extends TornadoTestBase {
 
             }
         } finally {
-            Assert.assertNotNull(outputTensor);
+            assertNotNull(outputTensor);
         }
     }
 

@@ -41,7 +41,8 @@ public class PTXCodeCache {
 
     public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
-        if (!cache.containsKey(name)) {
+        PTXInstalledCode installedCode = cache.get(name);
+        if (installedCode == null || !installedCode.isValid()) {
             if (debugKernel) {
                 RuntimeUtilities.dumpKernel(targetCode);
             }

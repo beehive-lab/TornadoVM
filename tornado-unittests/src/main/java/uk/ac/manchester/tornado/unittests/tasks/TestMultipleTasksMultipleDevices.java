@@ -18,12 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -84,7 +84,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() {
         assertAvailableDevices();
         setDefaultDevices();

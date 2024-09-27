@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.loops;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -686,7 +686,7 @@ public class TestLoops extends TornadoTestBase {
      * 
      * @throws TornadoExecutionPlanException
      */
-    @Ignore
+    @Disabled
     public void testTwoDLoopTwoDArray() throws TornadoExecutionPlanException {
         final int size = 10;
 
@@ -729,7 +729,7 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testNestedForLoopTwoDArray() throws TornadoExecutionPlanException {
         final int size = 10;
 
@@ -882,7 +882,7 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testInnerDoWhileLoop() throws TornadoExecutionPlanException {
         final int size = 100;
 

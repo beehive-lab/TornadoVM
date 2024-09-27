@@ -18,13 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.batches;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -52,12 +52,6 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  * </p>
  */
 public class TestBatches extends TornadoTestBase {
-
-    @Override
-    public void before() {
-        super.before();
-        System.setProperty("tornado.reuse.device.buffers", "False");
-    }
 
     public static void compute(FloatArray array) {
         for (@Parallel int i = 0; i < array.getSize(); i++) {
@@ -167,6 +161,25 @@ public class TestBatches extends TornadoTestBase {
         for (@Parallel int i = 0; i < data.getSize(); i++) {
             data.set(i, i * 20 + beta);
         }
+    }
+
+    public static void parallelInitialization(FloatArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            data.set(i, i);
+        }
+    }
+
+    public static void compute2(FloatArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            float value = data.get(i);
+            data.set(i, value * 2);
+        }
+    }
+
+    @Override
+    public void before() {
+        super.before();
+        System.setProperty("tornado.reuse.device.buffers", "False");
     }
 
     @Test
@@ -813,19 +826,6 @@ public class TestBatches extends TornadoTestBase {
 
         for (int i = 0; i < a1.length; i++) {
             assertEquals(a0.get(i), a1[i]);
-        }
-    }
-
-    public static void parallelInitialization(FloatArray data) {
-        for (@Parallel int i = 0; i < data.getSize(); i++) {
-            data.set(i, i);
-        }
-    }
-
-    public static void compute2(FloatArray data) {
-        for (@Parallel int i = 0; i < data.getSize(); i++) {
-            float value = data.get(i);
-            data.set(i, value * 2);
         }
     }
 

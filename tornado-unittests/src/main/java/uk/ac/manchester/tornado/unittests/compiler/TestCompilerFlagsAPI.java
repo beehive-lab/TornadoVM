@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.compiler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;

@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -522,7 +522,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
      * Currently we cannot do this due to synchronisation between the first part and
      * the second part, unless an explicit barrier is used.
      */
-    @Ignore
+    @Disabled
     public void testMapReduceSameKernel() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(BIG_SIZE);
         IntArray b = new IntArray(BIG_SIZE);
@@ -552,7 +552,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential.get(0), result.get(0));
     }
 
-    @Ignore
+    @Disabled
     public void testMapReduce2() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(BIG_SIZE);
         IntArray b = new IntArray(BIG_SIZE);

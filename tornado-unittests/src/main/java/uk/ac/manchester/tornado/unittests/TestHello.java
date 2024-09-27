@@ -18,10 +18,11 @@
 
 package uk.ac.manchester.tornado.unittests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -106,6 +107,9 @@ public class TestHello extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.execute();
+            assertTrue(true, "Task was executed.");
+        } catch (Exception e) {
+            assertTrue(false, "Task was not executed.");
         }
     }
 
@@ -119,9 +123,7 @@ public class TestHello extends TornadoTestBase {
         a.set(0, 1);
         a.set(1, 2);
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.FIRST_EXECUTION, a)
-            .task("t0", TestHello::printIntArray, a);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a).task("t0", TestHello::printIntArray, a);
         assertNotNull(taskGraph);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -141,9 +143,7 @@ public class TestHello extends TornadoTestBase {
             a.set(i, i + 1);
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.FIRST_EXECUTION, a)
-            .task("t0", TestHello::printIntArray2, a);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a).task("t0", TestHello::printIntArray2, a);
         assertNotNull(taskGraph);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

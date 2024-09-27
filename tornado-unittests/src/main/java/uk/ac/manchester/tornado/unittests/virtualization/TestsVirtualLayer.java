@@ -18,15 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.stream.IntStream;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -79,7 +79,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     /**
      * Check if enough devices are available
      */
-    @Before
+    @BeforeEach
     public void enoughDevices() {
         super.before();
         TornadoBackend driver = getTornadoRuntime().getBackend(0);
@@ -191,7 +191,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testVirtualLayer01() throws TornadoExecutionPlanException {
 
         TornadoBackend driver = getTornadoRuntime().getBackend(0);
@@ -233,7 +233,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
      * This test is not legal in Tornado. This test executes everything on the same device, even if the user forces to change. A task schedule is always executed on the same device. Device can change
      * once the task is executed.
      */
-    @Ignore
+
+    @Disabled
     public void testVirtualLayer02() throws TornadoExecutionPlanException {
 
         TornadoBackend driver = getTornadoRuntime().getBackend(0);
