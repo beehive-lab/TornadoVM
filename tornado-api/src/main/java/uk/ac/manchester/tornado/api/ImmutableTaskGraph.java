@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
  * affecting the execution of graphs encapsulated in {@link ImmutableTaskGraph}.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since 0.15
  */
 public class ImmutableTaskGraph {
 
