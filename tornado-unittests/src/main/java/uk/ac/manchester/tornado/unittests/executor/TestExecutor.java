@@ -286,6 +286,7 @@ public class TestExecutor extends TornadoTestBase {
             String trace1 = trace.getTraceExecutionPlan();
             String trace2 = executionPlan.getTraceExecutionPlan();
             assertEquals(trace1, trace2);
+
         }
     }
 

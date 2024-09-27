@@ -17,9 +17,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -75,8 +72,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * influence the code optimization, adapt runtime parameters, etc.
      */
     protected TornadoExecutor tornadoExecutor;
-
-    protected List<TornadoProfilerResult> executorList = Collections.synchronizedList(new ArrayList<>());
 
     protected ExecutorFrame executionFrame;
 
@@ -145,7 +140,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionResult execute() {
         tornadoExecutor.execute(executionFrame);
         TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor);
-        executorList.add(profilerResult);
         return new TornadoExecutionResult(profilerResult);
     }
 
@@ -479,7 +473,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     /**
      * @since 1.0.4
      * 
-     * @throws TornadoExecutionPlanException
+     * @throws {@link
+     *     TornadoExecutionPlanException}
      */
     @Override
     public void close() throws TornadoExecutionPlanException {
@@ -502,10 +497,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     public ExecutorFrame getExecutionFrame() {
         return executionFrame;
-    }
-
-    public List<TornadoProfilerResult> getExecutionList() {
-        return executorList;
     }
 
     public void updateChildFromRoot(TornadoExecutionPlan childNode) {
