@@ -15,18 +15,18 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithResetDevice extends ExecutionPlanType {
+public final class WithDevicePlan extends ExecutionPlanType {
 
-    public WithResetDevice(TornadoExecutionPlan parent) {
+    public WithDevicePlan(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withResetDevice ";
+        return parentLink.toString() + "\n -> withDevice ";
     }
 }

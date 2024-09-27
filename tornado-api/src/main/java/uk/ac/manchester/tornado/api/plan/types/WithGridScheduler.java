@@ -15,19 +15,18 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class OffMemoryLimit extends ExecutionPlanType {
+public final class WithGridScheduler extends ExecutionPlanType {
 
-    public OffMemoryLimit(TornadoExecutionPlan parent) {
+    public WithGridScheduler(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withoutMemoryLimit ";
+        return parentLink.toString() + "\n -> withGridScheduler ";
     }
-
 }

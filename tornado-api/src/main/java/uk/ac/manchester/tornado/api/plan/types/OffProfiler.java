@@ -15,18 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithDefaultScheduler extends ExecutionPlanType {
+public final class OffProfiler extends ExecutionPlanType {
 
-    public WithDefaultScheduler(TornadoExecutionPlan parent) {
+    public OffProfiler(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withDefaultGridScheduler ";
+        return parentLink.toString() + "\n -> withoutProfiler ";
     }
+
 }

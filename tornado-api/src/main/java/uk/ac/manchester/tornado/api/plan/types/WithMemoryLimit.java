@@ -15,17 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithPrintKernel extends ExecutionPlanType {
-    public WithPrintKernel(TornadoExecutionPlan parent) {
+public final class WithMemoryLimit extends ExecutionPlanType {
+
+    public WithMemoryLimit(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withPrintKernel ";
+        return parentLink.toString() + "\n -> withMemoryLimit ";
     }
+
 }

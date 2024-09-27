@@ -15,18 +15,17 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithDynamicReconfiguration extends ExecutionPlanType {
-
-    public WithDynamicReconfiguration(TornadoExecutionPlan parent) {
+public final class OffThreadInfo extends ExecutionPlanType {
+    public OffThreadInfo(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withDynamicReconfiguration ";
+        return parentLink.toString() + "\n -> withoutThreadInfo ";
     }
 }

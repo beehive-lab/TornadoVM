@@ -15,18 +15,17 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.plantype;
+package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithBatch extends ExecutionPlanType {
-
-    public WithBatch(TornadoExecutionPlan parent) {
+public final class WithCompilerFlags extends ExecutionPlanType {
+    public WithCompilerFlags(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withBatch ";
+        return parentLink.toString() + "\n -> withCompilerFlags ";
     }
 }

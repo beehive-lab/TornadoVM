@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
  * {@link TornadoExecutionPlan#withProfiler(ProfilerMode)}.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since 0.15
  */
 public class TornadoProfilerResult implements ProfilerInterface {
 

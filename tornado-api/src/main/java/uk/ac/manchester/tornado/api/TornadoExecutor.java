@@ -27,7 +27,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TornadoExecutor {
+/**
+ * Executor Class to dispatch Tornado Task-Graphs. An executor plan
+ * {@link TornadoExecutionPlan} contains an executor object, which in turn,
+ * contains a set of immutable task-graphs. All actions applied to the
+ * execution plan affect to all the immutable graphs associated with it.
+ */
+class TornadoExecutor {
 
     private final List<ImmutableTaskGraph> immutableTaskGraphList;
 
