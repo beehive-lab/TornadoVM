@@ -39,6 +39,9 @@ public sealed class ExecutionPlanType extends TornadoExecutionPlan //
         // Copy the reference for the execution frame
         this.executionFrame = parentNode.getExecutionFrame();
 
+        // Pass the plan results down the tree
+        this.planResults = parentNode.getPlanResults();
+
         // Set child reference to this instance
         this.childLink = this;
     }

@@ -17,12 +17,15 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.plantype.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.plantype.OffConcurrentDevices;
 import uk.ac.manchester.tornado.api.plantype.OffMemoryLimit;
@@ -78,6 +81,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     protected TornadoExecutionPlan childLink;
     protected TornadoExecutionPlan parentLink;
 
+    protected List<TornadoExecutionResult> planResults;
+
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
      * running a set of immutable tasks-graphs. An executor plan contains an
@@ -92,6 +97,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         final long id = globalExecutionPlanCounter.incrementAndGet();
         executionFrame = new ExecutorFrame(id);
+        planResults = new ArrayList<>();
     }
 
     /**
@@ -139,8 +145,10 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionResult execute() {
         tornadoExecutor.execute(executionFrame);
-        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor);
-        return new TornadoExecutionResult(profilerResult);
+        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this.getTraceExecutionPlan());
+        TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
+        planResults.add(executionResult);
+        return executionResult;
     }
 
     /**
@@ -497,6 +505,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     public ExecutorFrame getExecutionFrame() {
         return executionFrame;
+    }
+
+    public List<TornadoExecutionResult> getPlanResults() {
+        return planResults;
+    }
+
+    public TornadoExecutionResult getPlanResult(int index) {
+        if (index >= planResults.size()) {
+            throw new TornadoRuntimeException("[ERROR] Execution result not found");
+        }
+        return planResults.get(index);
     }
 
     public void updateChildFromRoot(TornadoExecutionPlan childNode) {

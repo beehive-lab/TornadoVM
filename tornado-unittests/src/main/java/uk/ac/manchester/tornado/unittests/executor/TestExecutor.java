@@ -287,6 +287,10 @@ public class TestExecutor extends TornadoTestBase {
             String trace2 = executionPlan.getTraceExecutionPlan();
             assertEquals(trace1, trace2);
 
+            TornadoExecutionResult planResult = executionPlan.getPlanResult(0);
+            System.out.println("After the execution");
+            System.out.println(planResult.getProfilerResult().getTraceExecutionPlan());
+
         }
     }
 
