@@ -47,4 +47,4 @@ tests:
 	%TORNADO_SDK%\bin\test-native.cmd
 
 test-slam:
-	python %TORNADO_SDK%\bin\tornado-test -V uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+	python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests

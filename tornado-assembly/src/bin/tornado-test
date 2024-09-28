@@ -571,14 +571,17 @@ def runTests(args):
         command = appendTestRunnerClassToCmd(cmd, args)
         command = command + " --params \"" + args.testClass + "\""
         print(command)
-        runSingleCommand(command, args)
+        if (args.fast):
+            os.system(command)
+        else:
+            runSingleCommand(command, args)
     else:
         start = time.time()
         stats = runTestTheWorld(options, args)
         end = time.time()
         print(Colors.CYAN)
 
-        if args.verbose:
+        if not args.fast and args.verbose:
             print(Colors.GREEN)
             print("==================================================")
             print(Colors.BLUE + "              Unit tests report " + Colors.GREEN)
@@ -619,7 +622,13 @@ def runTestTheWorld(options, args):
             for testMethod in t.testMethods:
                 testMethodCmd = command + "#" + testMethod + "\""
                 print(testMethodCmd)
-                stats = runCommandWithStats(testMethodCmd, stats, t.monitorClass)
+                if (args.fast):
+                    os.system(testMethodCmd)
+                else:
+                    stats = runCommandWithStats(testMethodCmd, stats, t.monitorClass)
+        elif (args.fast):
+            command += "\""
+            os.system(command)
         else:
             command += "\""
             print(command)
@@ -686,6 +695,7 @@ def parseArguments():
                         help="Enable the Debug mode in Tornado")
     parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False,
                         help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
+    parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
     parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
                         help="Quick pass without stress memory and output for logs in a file.")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")

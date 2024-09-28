@@ -68,7 +68,7 @@ tests-spirv-opencl:
 	test-native.sh
 
 test-slam:
-	tornado-test -V uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 
 docs:
 	sphinx-build -M html docs/source/ docs/build
