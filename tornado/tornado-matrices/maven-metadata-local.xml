@@ -3,7 +3,7 @@
   <groupId>tornado</groupId>
   <artifactId>tornado-matrices</artifactId>
   <versioning>
-    <release>1.0.7</release>
+    <release>1.0.8</release>
     <versions>
       <version>0.1.0</version>
       <version>0.2</version>
@@ -31,7 +31,8 @@
       <version>1.0.5</version>
       <version>1.0.6</version>
       <version>1.0.7</version>
+      <version>1.0.8</version>
     </versions>
-    <lastUpdated>20240830060931</lastUpdated>
+    <lastUpdated>20240930152155</lastUpdated>
   </versioning>
 </metadata>

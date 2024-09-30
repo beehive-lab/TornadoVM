@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Mon Sep 30 17:21:56 CEST 2024
+tornado-runtime-1.0.8-sources.jar>=
+tornado-runtime-1.0.8.jar>=
+tornado-runtime-1.0.8.pom>=
