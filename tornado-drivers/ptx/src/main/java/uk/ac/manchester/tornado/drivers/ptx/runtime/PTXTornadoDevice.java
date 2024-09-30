@@ -153,15 +153,15 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
+    public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
         return switch (task) {
-            case CompilableTask _ -> compileTask(task);
-            case PrebuiltTask _ -> compilePreBuiltTask(task);
+            case CompilableTask _ -> compileTask(executionPlanId, task);
+            case PrebuiltTask _ -> compilePreBuiltTask(executionPlanId, task);
             default -> throw new TornadoInternalError("task of unknown type: " + task.getClass().getSimpleName());
         };
     }
 
-    private TornadoInstalledCode compileTask(SchedulableTask task) {
+    private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         TornadoProfiler profiler = task.getProfiler();
         final PTXDeviceContext deviceContext = getDeviceContext();
 
@@ -177,7 +177,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
         try {
             PTXCompilationResult result;
-            if (!deviceContext.isCached(resolvedMethod.getName(), executable)) {
+            if (!deviceContext.isCached(executionPlanId, resolvedMethod.getName(), executable)) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
@@ -188,7 +188,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            TornadoInstalledCode installedCode = deviceContext.installCode(result, resolvedMethod.getName());
+            TornadoInstalledCode installedCode = deviceContext.installCode(executionPlanId, result, resolvedMethod.getName());
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
@@ -202,12 +202,12 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         }
     }
 
-    private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
+    private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {
         final PTXDeviceContext deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
         String functionName = buildKernelName(executable.getEntryPoint(), executable);
-        if (deviceContext.isCached(executable.getEntryPoint(), executable)) {
-            return deviceContext.getInstalledCode(functionName);
+        if (deviceContext.isCached(executionPlanId, executable.getEntryPoint(), executable)) {
+            return deviceContext.getInstalledCode(executionPlanId, functionName);
         }
 
         final Path path = Paths.get(executable.getFilename());
@@ -215,7 +215,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         try {
             byte[] source = Files.readAllBytes(path);
             source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
+            return deviceContext.installCode(executionPlanId, functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -223,12 +223,12 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean isFullJITMode(SchedulableTask task) {
+    public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
         return true;
     }
 
     @Override
-    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+    public TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task) {
         String methodName;
         if (task instanceof PrebuiltTask) {
             PrebuiltTask prebuiltTask = (PrebuiltTask) task;
@@ -239,7 +239,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             methodName = resolvedMethod.getName();
         }
         String functionName = buildKernelName(methodName, task);
-        return getDeviceContext().getInstalledCode(functionName);
+        return getDeviceContext().getInstalledCode(executionPlanId, functionName);
     }
 
     private XPUBuffer createDeviceBuffer(Class<?> type, Object object, long batchSize) {

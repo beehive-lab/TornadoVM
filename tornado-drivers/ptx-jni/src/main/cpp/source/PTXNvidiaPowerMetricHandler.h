@@ -23,35 +23,35 @@
  * SOFTWARE.
  */
 #include <jni.h>
-/* Header for class uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric */
+/* Header for class uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler */
 
-#ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric
-#define _Included_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric
+#ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
+#define _Included_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
 #ifdef __cplusplus
 extern "C" {
 #endif
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
  * Method:    ptxNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric_ptxNvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler_ptxNvmlInit
         (JNIEnv *, jclass);
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
  * Method:    ptxNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric_ptxNvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler_ptxNvmlDeviceGetHandleByIndex
         (JNIEnv *, jclass, jlong, jlongArray);
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
  * Method:    ptxNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetric_ptxNvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler_ptxNvmlDeviceGetPowerUsage
         (JNIEnv *, jclass, jlongArray, jlongArray);
 
 

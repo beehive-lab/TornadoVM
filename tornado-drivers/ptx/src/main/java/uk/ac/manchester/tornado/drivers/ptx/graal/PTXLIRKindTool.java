@@ -37,6 +37,20 @@ public class PTXLIRKindTool implements LIRKindTool {
         this.target = target;
     }
 
+    public LIRKind getUnsignedIntegerKind(int numBits) {
+        if (numBits <= 8) {
+            return LIRKind.value(PTXKind.U8);
+        } else if (numBits <= 16) {
+            return LIRKind.value(PTXKind.U16);
+        } else if (numBits <= 32) {
+            return LIRKind.value(PTXKind.U32);
+        } else if (numBits <= 64) {
+            return LIRKind.value(PTXKind.U64);
+        } else {
+            throw shouldNotReachHere();
+        }
+    }
+
     @Override
     public LIRKind getIntegerKind(int bits) {
         if (bits <= 8) {

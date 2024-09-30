@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  *
  * <code>
- * $ tornado-test -V --fast uk.ac.manchester.tornado.unittests.api.TestInitDataTypes
+ * $ tornado-test -V uk.ac.manchester.tornado.unittests.api.TestInitDataTypes
  * </code>
  */
 public class TestInitDataTypes extends TornadoTestBase {

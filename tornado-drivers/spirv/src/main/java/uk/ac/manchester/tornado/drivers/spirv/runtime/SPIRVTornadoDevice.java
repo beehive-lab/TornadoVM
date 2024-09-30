@@ -122,31 +122,31 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
+    public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
         if (task instanceof CompilableTask) {
-            return compileTask((CompilableTask) task);
+            return compileTask(executionPlanId, (CompilableTask) task);
         } else if (task instanceof PrebuiltTask) {
-            return compilePreBuiltTask((PrebuiltTask) task);
+            return compilePreBuiltTask(executionPlanId, (PrebuiltTask) task);
         } else {
             throw new RuntimeException("SchedulableTask type is not supported: " + task.getClass());
         }
     }
 
-    private TornadoInstalledCode compilePreBuiltTask(PrebuiltTask task) {
+    private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, PrebuiltTask task) {
         final SPIRVDeviceContext deviceContext = getDeviceContext();
-        if (deviceContext.isCached(task.getId(), task.getEntryPoint())) {
-            return deviceContext.getInstalledCode(task.getId(), task.getEntryPoint());
+        if (deviceContext.isCached(executionPlanId, task.getId(), task.getEntryPoint())) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), task.getEntryPoint());
         }
         final Path pathToSPIRVBin = Paths.get(task.getFilename());
         TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", task.getFilename());
-        return deviceContext.installBinary(task.meta(), task.getId(), task.getEntryPoint(), task.getFilename());
+        return deviceContext.installBinary(executionPlanId, task.meta(), task.getId(), task.getEntryPoint(), task.getFilename());
     }
 
     public SPIRVBackend getBackend() {
         return findDriver().getBackendOfDevice(device);
     }
 
-    private TornadoInstalledCode compileTask(CompilableTask task) {
+    private TornadoInstalledCode compileTask(long executionPlanId, CompilableTask task) {
         TornadoProfiler profiler = task.getProfiler();
         final SPIRVDeviceContext deviceContext = getDeviceContext();
 
@@ -157,8 +157,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         final TaskDataContext taskMeta = task.meta();
 
         // Return the code from the cache
-        if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-            return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
+        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), resolvedMethod.getName())) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), resolvedMethod.getName());
         }
 
         final Access[] sketchAccess = sketch.getArgumentsAccess();
@@ -176,7 +176,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            TornadoInstalledCode installedCode = deviceContext.installBinary(result);
+            TornadoInstalledCode installedCode = deviceContext.installBinary(executionPlanId, result);
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
@@ -193,12 +193,12 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean isFullJITMode(SchedulableTask task) {
+    public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
         return false;
     }
 
     @Override
-    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+    public TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task) {
         return null;
     }
 

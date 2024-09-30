@@ -27,12 +27,13 @@ import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXNvidiaPowerMetric implements PowerMetric {
+public class PTXNvidiaPowerMetricHandler implements PowerMetric {
 
     private final PTXDeviceContext deviceContext;
     private final TornadoLogger logger;
+    private long[] ptxDevice = new long[1];
 
-    public PTXNvidiaPowerMetric(PTXDeviceContext deviceContext) {
+    public PTXNvidiaPowerMetricHandler(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         this.logger = new TornadoLogger(this.getClass());
         initializePowerLibrary();
@@ -48,24 +49,16 @@ public class PTXNvidiaPowerMetric implements PowerMetric {
     public void initializePowerLibrary() throws RuntimeException {
         try {
             ptxNvmlInit();
+            ptxNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getDeviceIndex(), this.ptxDevice);
         } catch (RuntimeException e) {
             logger.error(e.getMessage());
         }
     }
 
     @Override
-    public void getHandleByIndex(long[] device) {
+    public void getPowerUsage(long[] powerUsage) {
         try {
-            ptxNvmlDeviceGetHandleByIndex(this.deviceContext.getDevice().getDeviceIndex(), device);
-        } catch (RuntimeException e) {
-            logger.error(e.getMessage());
-        }
-    }
-
-    @Override
-    public void getPowerUsage(long[] device, long[] powerUsage) {
-        try {
-            ptxNvmlDeviceGetPowerUsage(device, powerUsage);
+            ptxNvmlDeviceGetPowerUsage(this.ptxDevice, powerUsage);
         } catch (RuntimeException e) {
             logger.error(e.getMessage());
         }

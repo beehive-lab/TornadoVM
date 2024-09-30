@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
-import uk.ac.manchester.tornado.drivers.ptx.power.PTXNvidiaPowerMetric;
+import uk.ac.manchester.tornado.drivers.ptx.power.PTXNvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -62,20 +62,25 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     private final PTXDevice device;
     private final PTXMemoryManager memoryManager;
-    private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
-    private final PowerMetric powerMetric;
+    private final PowerMetric powerMetricHandler;
     private final Map<Long, PTXStreamTable> streamTable;
     private boolean wasReset;
-    private Set<Long> executionIDs;
+    private final Set<Long> executionIDs;
+
+    /**
+     * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
+     * code cache. The code cache manages the compilation and the cache for each task within an execution plan.
+     */
+    private final Map<Long, PTXCodeCache> codeCache;
 
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
         streamTable = new ConcurrentHashMap<>();
         this.scheduler = new PTXScheduler(device);
-        this.powerMetric = new PTXNvidiaPowerMetric(this);
-        codeCache = new PTXCodeCache(this);
+        this.powerMetricHandler = new PTXNvidiaPowerMetricHandler(this);
+        codeCache = new ConcurrentHashMap<>();
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
         wasReset = false;
@@ -120,20 +125,23 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return new PTXTornadoDevice(device.getDeviceIndex());
     }
 
-    public TornadoInstalledCode installCode(PTXCompilationResult result, String resolvedMethodName) {
-        return codeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName, result.metaData().isPrintKernelEnabled());
+    public TornadoInstalledCode installCode(long executionPlanId, PTXCompilationResult result, String resolvedMethodName) {
+        PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
+        return ptxCodeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName, result.metaData().isPrintKernelEnabled());
     }
 
-    public TornadoInstalledCode installCode(String name, byte[] code, String resolvedMethodName, boolean printKernel) {
-        return codeCache.installSource(name, code, resolvedMethodName, printKernel);
+    public TornadoInstalledCode installCode(long executionPlanId, String name, byte[] code, String resolvedMethodName, boolean printKernel) {
+        PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
+        return ptxCodeCache.installSource(name, code, resolvedMethodName, printKernel);
     }
 
-    public TornadoInstalledCode getInstalledCode(String name) {
-        return codeCache.getCachedCode(name);
+    public TornadoInstalledCode getInstalledCode(long executionPlanId, String name) {
+        PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
+        return ptxCodeCache.getCachedCode(name);
     }
 
-    public PTXCodeCache getCodeCache() {
-        return codeCache;
+    public PTXCodeCache getCodeCache(long executionPlanId) {
+        return getPTXCodeCache(executionPlanId);
     }
 
     public PTXDevice getDevice() {
@@ -166,10 +174,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public long getPowerUsage() {
-        long[] device = new long[1];
         long[] powerUsage = new long[1];
-        powerMetric.getHandleByIndex(device);
-        powerMetric.getPowerUsage(device, powerUsage);
+        powerMetricHandler.getPowerUsage(powerUsage);
         return powerUsage[0];
     }
 
@@ -188,7 +194,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * Sync the CUDA Stream only if the Stream Exists
-     * 
+     *
      * @param executionPlanId
      */
     public void flushEventsIfNeeded(long executionPlanId) {
@@ -226,7 +232,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     /**
      * Sync the CUDA Stream only if the Stream Exists
-     * 
+     *
      * @param executionPlanId
      */
     public void syncIfNeeded(long executionPlanId) {
@@ -237,12 +243,12 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public void flush(long executionPlanId) {
-        // I don't think there is anything like this in CUDA so I am calling sync
+        // I don't think there is anything like this in CUDA, so I am calling sync
         sync(executionPlanId);
     }
 
     @Override
-    public void reset(long executionPlanId) {
+    public synchronized void reset(long executionPlanId) {
         PTXStreamTable table = streamTable.get(executionPlanId);
         if (table != null) {
             table.cleanup(device);
@@ -252,7 +258,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             executionIDs.remove(executionPlanId);
         }
         getMemoryManager().releaseKernelStackFrame(executionPlanId);
-        codeCache.reset();
+        PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
+        ptxCodeCache.reset();
         wasReset = true;
     }
 
@@ -359,8 +366,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     @Override
-    public boolean isCached(String methodName, SchedulableTask task) {
-        return codeCache.isCached(buildKernelName(methodName, task));
+    public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
+        PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
+        return ptxCodeCache.isCached(buildKernelName(methodName, task));
     }
 
     public void destroyStream(long executionPlanId) {
@@ -568,6 +576,13 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             streamTable.put(executionPlanId, ptxStreamTable);
         }
         return streamTable.get(executionPlanId).get(device);
+    }
+
+    private PTXCodeCache getPTXCodeCache(long executionPlanId) {
+        if (!codeCache.containsKey(executionPlanId)) {
+            codeCache.put(executionPlanId, new PTXCodeCache(this));
+        }
+        return codeCache.get(executionPlanId);
     }
 
     private PTXStream getStreamIfNeeded(long executionPlanId) {

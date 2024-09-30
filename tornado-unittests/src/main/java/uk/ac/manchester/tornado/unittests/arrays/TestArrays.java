@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestArrays
+ * tornado-test -V uk.ac.manchester.tornado.unittests.arrays.TestArrays
  * </code>
  * </p>
  */
@@ -648,7 +648,7 @@ public class TestArrays extends TornadoTestBase {
      *     How to run?
      *
      *     <code>
-     *     $ tornado-test -V --fast --debug --threadInfo uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage
+     *     $ tornado-test -V --debug --threadInfo uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage
      *     </code>
      */
     @Test
