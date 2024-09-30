@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
  * affecting the execution of graphs encapsulated in {@link ImmutableTaskGraph}.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since 0.15
  */
 public class ImmutableTaskGraph {
 
@@ -168,10 +168,6 @@ public class ImmutableTaskGraph {
 
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
-    }
-
-    void disableProfiler(ProfilerMode profilerMode) {
-        taskGraph.disableProfiler(profilerMode);
     }
 
     void withConcurrentDevices() {

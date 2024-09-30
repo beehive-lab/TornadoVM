@@ -24,11 +24,15 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ExecutionPlanType;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
@@ -241,5 +245,51 @@ public class TestExecutor extends TornadoTestBase {
         }
 
     }
+
+    @Test
+    public void test05() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
+
+            TornadoDevice device = TornadoExecutionPlan.getDevice(0, 0);
+
+            WorkerGrid workerGrid = new WorkerGrid1D(16);
+            GridScheduler grid = new GridScheduler("s0.t0", workerGrid);
+
+            // Testing multiple functions to invoke the print logic plan later
+            var trace = executionPlan.withWarmUp() //
+                    .withDevice(device) //
+                    .withGridScheduler(grid) //
+                    .withThreadInfo() //
+                    .withProfiler(ProfilerMode.SILENT);
+
+            // When we call execute(), then it records the path 
+            executionPlan.execute();
+
+            // Print/dump the execution plan and see all optimizations that were enabled/disabled
+            trace.printTraceExecutionPlan();
+
+            // Print the plan. It must be the same as the trace variable
+            executionPlan.printTraceExecutionPlan();
+
+            String trace1 = trace.getTraceExecutionPlan();
+            String trace2 = executionPlan.getTraceExecutionPlan();
+            assertEquals(trace1, trace2);
+
+        }
+    }
+
     // CHECKSTYLE:ON
 }

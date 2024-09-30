@@ -862,10 +862,6 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.enableProfiler(profilerMode);
     }
 
-    void disableProfiler(ProfilerMode profilerMode) {
-        taskGraphImpl.disableProfiler(profilerMode);
-    }
-
     void withConcurrentDevices() {
         taskGraphImpl.withConcurrentDevices();
     }

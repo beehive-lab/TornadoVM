@@ -106,7 +106,7 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void enableProfiler(ProfilerMode profilerMode);
 
-    void disableProfiler(ProfilerMode profilerMode);
+    void disableProfiler();
 
     void withConcurrentDevices();
 

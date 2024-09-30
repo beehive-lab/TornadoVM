@@ -170,8 +170,7 @@ public class TestIntegers extends TornadoTestBase {
                 .task("t0", TestKernels::init, a, b) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withPrintKernel().execute();
         }
 
@@ -206,7 +205,5 @@ public class TestIntegers extends TornadoTestBase {
             assertEquals(expectedResultA.get(i), a.get(i));
             assertEquals(expectedResultB.get(i), b.get(i));
         }
-
     }
-
 }

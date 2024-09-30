@@ -443,7 +443,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void disableProfiler(ProfilerMode profilerMode) {
+    public void disableProfiler() {
         TornadoOptions.TORNADO_PROFILER = false;
         TornadoOptions.TORNADO_PROFILER_LOG = false;
         this.timeProfiler = null;
@@ -1417,18 +1417,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return this;
     }
 
+    private void checkProfilerOn(ExecutorFrame executorFrame) {
+        if (executorFrame.getProfilerMode() != null) {
+            enableProfiler(executorFrame.getProfilerMode());
+        } else {
+            disableProfiler();
+        }
+    }
+
+    private TornadoTaskGraphInterface executeWithDynamicReconfiguration(ExecutorFrame executorFrame) {
+        return switch (executorFrame.getDRMode()) {
+            case SERIAL -> scheduleDynamicReconfigurationSequential(executorFrame.getDynamicReconfigurationPolicy());
+            case PARALLEL -> scheduleDynamicReconfigurationParallel(executorFrame.getDynamicReconfigurationPolicy());
+            case null, default -> throw new TornadoRuntimeException("[Error] Dynamic Reconfiguration Mode not Implemented: " + executorFrame.getDRMode());
+        };
+    }
+
     @Override
-    public TornadoTaskGraphInterface execute(ExecutorFrame executionPackage) {
-        executionPlanId = executionPackage.getExecutionPlanId();
-        if (executionPackage.getDynamicReconfigurationPolicy() == null) {
+    public TornadoTaskGraphInterface execute(ExecutorFrame executorFrame) {
+        executionPlanId = executorFrame.getExecutionPlanId();
+        checkProfilerOn(executorFrame);
+        if (executorFrame.getDynamicReconfigurationPolicy() == null) {
             return execute();
         } else {
-            if (executionPackage.getDRMode() == DRMode.SERIAL) {
-                return scheduleDynamicReconfigurationSequential(executionPackage.getDynamicReconfigurationPolicy());
-            } else if (executionPackage.getDRMode() == DRMode.PARALLEL) {
-                return scheduleDynamicReconfigurationParallel(executionPackage.getDynamicReconfigurationPolicy());
-            }
-            throw new TornadoRuntimeException("");
+            return executeWithDynamicReconfiguration(executorFrame);
         }
     }
 

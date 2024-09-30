@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api.runtime;
 import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 
 /**
  * Class to store all objects and parameters related to the dispatch of an execution plan.
@@ -30,6 +31,7 @@ public class ExecutorFrame {
     private DRMode dynamicReconfigurationMode;
     private Policy dynamicReconfigurationPolicy;
     private GridScheduler gridScheduler;
+    private ProfilerMode profilerMode;
 
     public ExecutorFrame(long id) {
         this.executionPlanId = id;
@@ -64,5 +66,17 @@ public class ExecutorFrame {
 
     public long getExecutionPlanId() {
         return this.executionPlanId;
+    }
+
+    public void withProfilerOn(ProfilerMode profilerMode) {
+        this.profilerMode = profilerMode;
+    }
+
+    public void withProfilerOff() {
+        this.profilerMode = null;
+    }
+
+    public ProfilerMode getProfilerMode() {
+        return profilerMode;
     }
 }
