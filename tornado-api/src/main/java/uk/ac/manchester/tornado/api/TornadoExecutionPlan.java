@@ -110,6 +110,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         final long id = globalExecutionPlanCounter.incrementAndGet();
         executionFrame = new ExecutorFrame(id);
         rootNode = this;
+        childLink = this;
         planResults = new ArrayList<>();
     }
 
