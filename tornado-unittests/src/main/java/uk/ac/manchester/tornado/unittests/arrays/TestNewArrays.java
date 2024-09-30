@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  *
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestNewArrays
+ * tornado-test -V uk.ac.manchester.tornado.unittests.arrays.TestNewArrays
  * </code>
  */
 public class TestNewArrays extends TornadoTestBase {

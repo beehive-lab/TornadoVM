@@ -25,13 +25,95 @@ import shlex
 import subprocess
 import sys
 import time
+import psutil
+from abc import abstractmethod
+from builtins import staticmethod, isinstance
+from typing import Union, Optional
 
+# ################################################################################################################
+## Monitor classes
+# ################################################################################################################
+
+class MonitorClass:
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def monitor(self, pid, cmd):
+        """Monitors the process with the given pid and command.
+        Returns False if the process failed the monitor, True otherwise.
+        """
+        pass
+
+
+class OutOfMemoryMonitorClass(MonitorClass):
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def _getMaxMemoryUsageMB(cmd):
+        """
+        Get the maximum memory usage in MB based on the set Xmx flag.
+        """
+        # The native memory usage of the JVM is always higher than the heap size.
+        # Use a hardcoded multiplier to account for this.
+        _HEAP_TO_RSS_MULTIPLIER = 2.0
+        _DEFAULT_HEAP_SIZE_MB = 6144
+
+        xmx_pattern = r'-Xmx(\d+)([gGmM])'
+        matches = list(re.finditer(xmx_pattern, cmd))
+        if matches:
+            last_match = matches[-1]
+            value = int(last_match.group(1))
+            unit = last_match.group(2).lower()
+
+            value *= _HEAP_TO_RSS_MULTIPLIER
+            if unit == 'g':
+                return value * 1024
+            elif unit == 'm':
+                return value
+            else:
+                raise ValueError(f"Invalid unit {unit} in -Xmx flag")
+
+        print(f"Warning: Could not find -Xmx flag in command {cmd}. Defaulting to {_DEFAULT_HEAP_SIZE_MB} MB.")
+        return _DEFAULT_HEAP_SIZE_MB
+
+    def monitor(self, pid, cmd):
+        """
+        Monitor the JVM process and check if it contains a memory leak. We do this in Python because the JVM
+        process could be leaking native memory.
+
+        Returns: False if the JVM process has been prematurely terminated, True otherwise.
+        """
+        max_memory_usage_mb = OutOfMemoryMonitorClass._getMaxMemoryUsageMB(cmd)
+        print(f"Monitoring JVM process {pid} for memory usage. Max memory usage is {max_memory_usage_mb} MB.")
+        process = psutil.Process(pid)
+        # The process becomes zombie when it is terminated, but the parent process has not yet read the exit status.
+        while process.is_running() and process.status() != psutil.STATUS_ZOMBIE:
+            # Compute the memory usage of the pid and all the child processes. This is because the JVM
+            # is spawned as a child process of the tornado script.
+            memory_usage = process.memory_info().rss
+            for child in process.children(recursive=True):
+                memory_usage += child.memory_info().rss
+            memory_usage /= 1024 ** 2  # Convert to MB
+            if memory_usage > max_memory_usage_mb:
+                print(f"JVM process exceeded {max_memory_usage_mb} MB of memory. Got {memory_usage} MB.")
+                return False
+            time.sleep(1)
+        return True
+
+MONITOR_REGISTRY = {
+    "outOfMemoryMonitor": OutOfMemoryMonitorClass,
+}
+
+# ################################################################################################################
 
 class TestEntry:
-    def __init__(self, testName, testMethods=None, testParameters=None):
+    def __init__(self, testName, testMethods=None, testParameters=None, monitorClass=None):
         self.testName = testName
         self.testMethods = testMethods
         self.testParameters = testParameters
+        self.monitorClass = monitorClass
 
 
 ## List of classes to be tested. Include new unittest classes here
@@ -159,7 +241,14 @@ __TEST_THE_WORLD__ = [
     TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
               testParameters=[
                   "-Dtornado.device.memory=4GB",
-                  "-Xmx14g"])
+                  "-Xmx14g"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.leak.TestMemoryLeak",
+              testMethods=["test_no_cached_hot_loop", "test_no_cached_hot_loop_primitive",
+                           "test_cached_task_graph_and_input_output_primitive",
+                           "test_cached_task_graph_and_input_output", "test_cached_everything_primitive",
+                           "test_cached_everything"],
+              testParameters=["-Xmx2g"],
+              monitorClass=OutOfMemoryMonitorClass),
 ]
 
 ## List of tests that can be ignored. The following either fail (we know it is a precision error), or they are not supported
@@ -221,9 +310,14 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 ## List of tests to be excluded when running with the quick pass argument as they cause delays
 __TORNADO_HEAVY_TESTS__ = [
-    "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
     "uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
-    "uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx",
+    "uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"
+]
+
+## List of tests that are memory intensive and potentially take a long time to run
+__TORNADO_MEMORY_TESTS__ = [
+    "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
+    "uk.ac.manchester.tornado.unittests.memory.leak.TestMemoryLeak",
 ]
 
 # ################################################################################################################
@@ -329,6 +423,32 @@ def composeAllOptions(args):
     return options
 
 
+def killAllProcesses(pid: int):
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.kill()
+    parent.kill()
+
+
+def runMonitorClass(monitorClass: Optional[Union[str, MonitorClass]], cmd: str, pid: int):
+    """ Run the monitor class if specified.
+    :param monitorClass: Can be a string used to look up the monitor class in the MONITOR_REGISTRY or an instance of a MonitorClass.
+    :param cmd: The command that was used to spawn the process.
+    :param pid: The process ID of the spawned process.
+    :return: True if the monitor passed or the monitor class is None. False if the monitor failed.
+    """
+    if monitorClass:
+        if isinstance(monitorClass, str):
+            assert monitorClass in MONITOR_REGISTRY, f"Monitor class {monitorClass} not found in registry. Options are {list(MONITOR_REGISTRY.keys())}"
+            monitor = MONITOR_REGISTRY[monitorClass]()
+        else:
+            monitor = monitorClass()
+        monitor_status = monitor.monitor(pid, cmd)
+        return monitor_status
+    # No monitor class specified, return True
+    return True
+
+
 def runSingleCommand(cmd, args):
     """ Run a command without processing the result of which tests
         are passed and failed. This method is used to pass a single
@@ -339,6 +459,10 @@ def runSingleCommand(cmd, args):
 
     start = time.time()
     p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    monitor_status = runMonitorClass(args.monitorClass, cmd, p.pid)
+    if not monitor_status:
+        print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
+        killAllProcesses(p.pid)
     out, err = p.communicate()
     end = time.time()
     out = out.decode('utf-8')
@@ -392,14 +516,24 @@ def processStats(out, stats):
     return stats
 
 
-def runCommandWithStats(command, stats):
+def runCommandWithStats(command, stats, monitorClass):
     """ Run a command and update the stats dictionary """
     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    monitor_status = runMonitorClass(monitorClass, command, p.pid)
+    monitor_failed_msg = ""
+    if not monitor_status:
+        print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
+        monitor_failed_msg = f"[FAILED] Test: class {command.split(' ')[-1]}"
+        killAllProcesses(p.pid)
     out, err = p.communicate()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
+    if not monitor_status:
+        out += monitor_failed_msg
 
-    if (err.rfind("Segmentation fault") > 0):
+    # Run the test again if the monitor passed but the test seg faulted.
+    # Otherwise, consider this test as not worth to try again.
+    if (err.rfind("Segmentation fault") > 0 and monitor_status):
         print(Colors.REVERSE)
         print("[!] RUNNING AGAIN BECAUSE OF A SEG FAULT")
         print(Colors.RESET)
@@ -436,8 +570,8 @@ def runTests(args):
         cmd = TORNADO_CMD + options
         command = appendTestRunnerClassToCmd(cmd, args)
         command = command + " --params \"" + args.testClass + "\""
+        print(command)
         if (args.fast):
-            print(command)
             os.system(command)
         else:
             runSingleCommand(command, args)
@@ -447,7 +581,7 @@ def runTests(args):
         end = time.time()
         print(Colors.CYAN)
 
-        if args.fast == False and args.verbose == True:
+        if not args.fast and args.verbose:
             print(Colors.GREEN)
             print("==================================================")
             print(Colors.BLUE + "              Unit tests report " + Colors.GREEN)
@@ -470,8 +604,10 @@ def runTests(args):
 def runTestTheWorld(options, args):
     stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
 
+    __TORNADO_QUICK_PASS_SKIP_TESTS__ = __TORNADO_HEAVY_TESTS__ + __TORNADO_MEMORY_TESTS__
+
     for t in __TEST_THE_WORLD__:
-        if args.quickPass and t.testName in __TORNADO_HEAVY_TESTS__:
+        if args.quickPass and t.testName in __TORNADO_QUICK_PASS_SKIP_TESTS__:
             continue
         command = options
         if t.testParameters:
@@ -485,24 +621,26 @@ def runTestTheWorld(options, args):
         if t.testMethods:
             for testMethod in t.testMethods:
                 testMethodCmd = command + "#" + testMethod + "\""
+                print(testMethodCmd)
                 if (args.fast):
                     os.system(testMethodCmd)
                 else:
-                    print(testMethodCmd)
-                    stats = runCommandWithStats(testMethodCmd, stats)
+                    stats = runCommandWithStats(testMethodCmd, stats, t.monitorClass)
         elif (args.fast):
             command += "\""
             os.system(command)
         else:
             command += "\""
             print(command)
-            stats = runCommandWithStats(command, stats)
+            stats = runCommandWithStats(command, stats, t.monitorClass)
 
     return stats
 
 
 def runWithJUnit(args):
     """ Run the tests using JUNIT """
+    if args.monitorClass:
+        print("[WARNING] Monitor class is not supported when running with JUnit.")
 
     if (args.testClass != None):
         command = appendTestRunnerClassToCmd(TORNADO_CMD, args)
@@ -523,6 +661,8 @@ def runTestTheWorldWithJunit(args):
 
         command = appendTestRunnerClassToCmd(command, args)
         command += " --params \"" + t.testName + "\""
+        if t.monitorClass:
+            print("[WARNING] Monitor class is not supported when running with JUnit.")
         if t.testMethods:
             for testMethod in t.testMethods:
                 print(
@@ -565,6 +705,8 @@ def parseArguments():
                         help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,
                         help="Enable the profiler {silent|console}")
+    parser.add_argument("--monitorClass", action="store", dest="monitorClass", default=None,
+                        help="Monitor class to monitor the JVM process. Options: outOfMemoryMonitor")
     args = parser.parse_args()
     return args
 
