@@ -6,3 +6,4 @@ black
 rstcheck
 pre-commit
 pyinstaller
+psutil

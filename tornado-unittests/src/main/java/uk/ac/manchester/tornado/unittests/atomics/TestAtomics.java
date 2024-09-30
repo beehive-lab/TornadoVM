@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
+ * tornado-test -V uk.ac.manchester.tornado.unittests.atomics.TestAtomics
  * </code>
  * </p>
  */

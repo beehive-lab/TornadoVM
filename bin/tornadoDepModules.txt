@@ -5,3 +5,4 @@ wget
 black
 sphinx_rtd_theme
 pyinstaller
+psutil
