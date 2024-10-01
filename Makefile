@@ -4,23 +4,23 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-build jdk22:
-	bin/compile --jdk jdk22 --backend $(BACKEND)
+build jdk23:
+	bin/compile --jdk jdk23 --backend $(BACKEND)
 
-rebuild-deps-jdk22:
-	bin/compile --jdk jdk22 --rebuild --backend $(BACKEND)
+rebuild-deps-jdk23:
+	bin/compile --jdk jdk23 --rebuild --backend $(BACKEND)
 
-graal-jdk-22:
-	bin/compile --jdk graal-jdk-22 --backend $(BACKEND)
+graal-jdk-23:
+	bin/compile --jdk graal-jdk-23 --backend $(BACKEND)
 
 polyglot:
-	bin/compile --jdk graal-jdk-22 --backend $(BACKEND) --polyglot
+	bin/compile --jdk graal-jdk-23 --backend $(BACKEND) --polyglot
 
 ptx:
-	bin/compile --jdk jdk22 --backend ptx,opencl
+	bin/compile --jdk jdk23 --backend ptx,opencl
 
 spirv:
-	bin/compile --jdk jdk22 --backend spirv,ptx,opencl
+	bin/compile --jdk jdk23 --backend spirv,ptx,opencl
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>

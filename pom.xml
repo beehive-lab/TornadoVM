@@ -201,7 +201,7 @@
         </profile>
 
         <profile>
-            <id>jdk22</id>
+            <id>jdk23</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -1061,7 +1061,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-22</id>
+            <id>graal-jdk-23</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -2111,11 +2111,6 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.graalvm.sdk</groupId>-->
-<!--            <artifactId>compiler</artifactId>-->
-<!--            <version>${graalvm.version}</version>-->
-<!--        </dependency>-->
     </dependencies>
     <modules>
         <module>tornado-runtime</module>
