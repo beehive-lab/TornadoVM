@@ -41,7 +41,7 @@ public abstract sealed class TornadoNativeArray //
         LongArray, ShortArray, Tensor {
 
     /**
-     * The size of the header in bytes. The default value is 24, but it can be configurable through
+     * The size of the header in bytes. The default value is 20, but it can be configurable through
      * the "tornado.panama.objectHeader" system property.
      */
     public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "20"));
