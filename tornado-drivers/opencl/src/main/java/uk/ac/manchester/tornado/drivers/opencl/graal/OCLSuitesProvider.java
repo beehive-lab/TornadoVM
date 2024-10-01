@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoInternalGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -62,7 +63,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         config.withEagerResolving(true);
 
         // config.setUseProfiling(false);
-        suite.appendPhase(new GraphBuilderPhase(config));
+        suite.appendPhase(new TornadoInternalGraphBuilder(config));
 
         return suite;
     }
