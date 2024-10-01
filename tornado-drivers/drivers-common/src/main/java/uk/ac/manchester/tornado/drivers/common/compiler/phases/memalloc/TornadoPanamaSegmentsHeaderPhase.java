@@ -31,6 +31,7 @@ import jdk.graal.compiler.nodes.memory.ReadNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.graal.compiler.phases.Phase;
+import org.graalvm.word.LocationIdentity;
 
 /**
  * Compiler phase to set the position in the Panama Object header in which the Array Size will be located.
@@ -46,8 +47,8 @@ public class TornadoPanamaSegmentsHeaderPhase extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {
-//            String methodName = readNode.getLocationIdentity().toString();
-            String methodName ="xx";
+            LocationIdentity locationIdentity = (LocationIdentity) readNode.getLocationIdentity();
+            String methodName = locationIdentity.toString();
             if (methodName.endsWith("numberOfElements")) {
                 AddressNode address = readNode.getAddress();
                 if (address instanceof OffsetAddressNode offsetAddressNode) {
