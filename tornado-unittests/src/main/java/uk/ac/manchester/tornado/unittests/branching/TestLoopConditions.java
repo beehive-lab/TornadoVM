@@ -39,11 +39,16 @@ import static org.junit.Assert.assertEquals;
  * <code>
  * tornado-test -V uk.ac.manchester.tornado.unittests.branching.TestLoopConditions
  * </code>
+ *
+ * [DISCLAIMER] These tests are legal in TornadoVM because in the if-conditions all threads are operating on the same data.
  */
 public class TestLoopConditions extends TornadoTestBase {
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionBeforeSingleLoopReturn(IntArray a, IntArray b, IntArray c) {
-        if (a.get(0) > b.get(0)) {
+        if (a.get(0) > b.get(0)) { // all threads examine the same values
             return;
         }
         for (@Parallel int i = 0; i < c.getSize(); i++) {
@@ -51,6 +56,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionBeforeSingleLoopComputation(IntArray a, IntArray b, IntArray c) {
         if (a.get(0) > b.get(0)) {
             b.set(0, a.get(0));
@@ -78,6 +86,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionBeforeOuterForLoopReturn(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         if (matrixA.get(0, 0) != matrixB.get(1, 1)) {
             return;
@@ -89,6 +100,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionBeforeOuterForLoopComputation(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         if (matrixA.get(0, 0) != matrixB.get(1, 1)) {
             result.set(0, 0, matrixA.get(0, 0) + matrixB.get(0, 0));
@@ -100,6 +114,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionBeforeInnerForLoopReturn(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         for (@Parallel int i = 0; i < result.getNumRows(); i++) {
             if (matrixA.get(0, 0) != matrixB.get(1, 1)) {
@@ -111,6 +128,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionBeforeInnerForLoopComputation(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         for (@Parallel int i = 0; i < result.getNumRows(); i++) {
             if (matrixA.get(0, 0) != matrixB.get(1, 1)) {
@@ -122,6 +142,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionInInnerForLoopReturn(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         for (@Parallel int i = 0; i < result.getNumRows(); i++) {
             for (@Parallel int j = 0; j < result.getNumColumns(); j++) {
@@ -133,6 +156,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionInInnerForLoopComputation(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         for (@Parallel int i = 0; i < result.getNumRows(); i++) {
             for (@Parallel int j = 0; j < result.getNumColumns(); j++) {
@@ -144,6 +170,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionAfterInnerForLoopComputation(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         for (@Parallel int i = 0; i < result.getNumRows(); i++) {
             for (@Parallel int j = 0; j < result.getNumColumns(); j++) {
@@ -155,6 +184,9 @@ public class TestLoopConditions extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
+     */
     public static void conditionAfterOuterForLoopComputation(Matrix2DDouble matrixA, Matrix2DDouble matrixB, Matrix2DDouble result) {
         for (@Parallel int i = 0; i < result.getNumRows(); i++) {
             for (@Parallel int j = 0; j < result.getNumColumns(); j++) {
