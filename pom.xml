@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graalvm.version>24.0.2</graalvm.version>
+        <graalvm.version>24.1.0</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <cmake.download>false</cmake.download>
@@ -2111,6 +2111,11 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.graalvm.sdk</groupId>-->
+<!--            <artifactId>compiler</artifactId>-->
+<!--            <version>${graalvm.version}</version>-->
+<!--        </dependency>-->
     </dependencies>
     <modules>
         <module>tornado-runtime</module>

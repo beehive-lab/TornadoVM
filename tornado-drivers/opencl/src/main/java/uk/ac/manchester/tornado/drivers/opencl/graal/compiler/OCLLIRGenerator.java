@@ -31,6 +31,7 @@ import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.core.common.calc.Condition;
 import jdk.graal.compiler.core.common.memory.BarrierType;
 import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 import jdk.graal.compiler.nodes.spi.CoreProviders;
 import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
 import jdk.graal.compiler.core.common.type.Stamp;
@@ -82,9 +83,8 @@ public class OCLLIRGenerator extends LIRGenerator {
     private final OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CoreProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLBarrierSetLIRGenerator() {
-
-        }, new OCLMoveFactory(), providers, res);
+        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool() {
+        }, new BarrierSetLIRGeneratorTool() {}, new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
     }

@@ -28,10 +28,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 
 import jdk.graal.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import jdk.graal.compiler.hotspot.meta.HotSpotIdentityHashCodeProvider;
 import jdk.graal.compiler.hotspot.meta.HotSpotStampProvider;
 import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import jdk.graal.compiler.nodes.loop.LoopsDataProviderImpl;
+import jdk.graal.compiler.nodes.spi.IdentityHashCodeProvider;
 import jdk.graal.compiler.nodes.spi.LoopsDataProvider;
 import jdk.graal.compiler.nodes.spi.LoweringProvider;
 import jdk.graal.compiler.nodes.spi.Replacements;
@@ -106,11 +108,15 @@ public class OCLHotSpotBackendFactory {
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
+            HotSpotIdentityHashCodeProvider hotSpotIdentityHashCodeProvider = new HotSpotIdentityHashCodeProvider();
+            Providers p = new Providers(metaAccess, //
+                                    codeCache, constantReflection, constantFieldProvider, //
+                                    foreignCalls, lowerer, lowerer.getReplacements(), stampProvider, //
+                                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, //
+                                    wordTypes, lpd , hotSpotIdentityHashCodeProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
-            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
+            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, bytecodeProvider, target);
             plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
             replacements.setGraphBuilderPlugins(plugins);
@@ -118,7 +124,7 @@ public class OCLHotSpotBackendFactory {
             suites = new OCLSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
-                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
+                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites, hotSpotIdentityHashCodeProvider);
 
             lowerer.initialize(options, new DummySnippetFactory(), providers);
         }

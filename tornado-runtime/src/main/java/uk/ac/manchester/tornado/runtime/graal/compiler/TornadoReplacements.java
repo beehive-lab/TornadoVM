@@ -38,10 +38,9 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class TornadoReplacements extends ReplacementsImpl {
 
-    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider,
+    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, BytecodeProvider bytecodeProvider,
             TargetDescription target) {
-        super(graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
-    }
+               super(graalDebugHandlersFactory, providers, bytecodeProvider, target);    }
 
     @Override
     protected GraphMaker createGraphMaker(ResolvedJavaMethod substitute, ResolvedJavaMethod original) {
@@ -50,7 +49,7 @@ public class TornadoReplacements extends ReplacementsImpl {
             @Override
             protected GraphBuilderPhase.Instance createGraphBuilder(Providers providers1, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
                     IntrinsicContext initialIntrinsicContext) {
-                return new GraphBuilderPhase.Instance(providers1, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
+                return new TornadoInternalGraphBuilder.Instance(providers1, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
             }
         };
     }

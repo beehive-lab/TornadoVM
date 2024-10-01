@@ -62,6 +62,7 @@ import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.runtime.JVMCI;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoInternalGraphBuilder;
 
 public class CodeAnalysis {
 
@@ -95,7 +96,7 @@ public class CodeAnalysis {
             StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod)
                     .compilationId(compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
-            graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
+            graphBuilderSuite.appendPhase(new TornadoInternalGraphBuilder(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
             return graph;

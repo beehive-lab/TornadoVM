@@ -139,19 +139,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
-        switch (floatConvert) {
-            case I2D:
-                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), input);
-            default:
-                unimplemented("float convert %s", floatConvert);
-        }
-        return null;
-
-    }
-
-    @Override
     public Value emitMul(Value x, Value y, boolean setFlags) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitMul: %s * %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.MUL, LIRKind.combine(x, y), x, y);
@@ -266,6 +253,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
+        return null;
+    }
+
+    @Override
     public Value emitXor(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitXor: %s ^ %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_XOR, LIRKind.combine(x, y), x, y);
@@ -295,6 +287,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
         getGen().emitMove(result, value);
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return null;
     }
 
     @Override

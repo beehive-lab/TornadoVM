@@ -158,7 +158,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(true))));
                 return true;
             }
         });
@@ -167,7 +167,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get())));
+                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get(true))));
                 return true;
             }
         });
@@ -403,7 +403,7 @@ public class OCLGraphBuilderPlugins {
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
                         AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
                         MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
                         return true;
@@ -414,7 +414,7 @@ public class OCLGraphBuilderPlugins {
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
                         AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
                         MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
                         return true;
