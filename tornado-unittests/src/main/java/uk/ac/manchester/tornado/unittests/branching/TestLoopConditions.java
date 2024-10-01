@@ -326,7 +326,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -356,7 +356,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -386,7 +386,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -416,7 +416,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -446,7 +446,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -476,7 +476,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -506,7 +506,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
@@ -536,7 +536,7 @@ public class TestLoopConditions extends TornadoTestBase {
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
-                assertEquals(matrixC.get(i, j), matrixSerial.get(i, j), 0.01);
+                assertEquals(matrixSerial.get(i, j), matrixC.get(i, j), 0.01);
             }
         }
     }
