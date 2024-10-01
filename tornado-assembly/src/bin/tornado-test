@@ -349,7 +349,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "1.0.8"
+__VERSION__ = "1.0.9-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]
