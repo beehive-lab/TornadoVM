@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.executor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 
@@ -261,6 +262,14 @@ public class TestExecutor extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg.snapshot())) {
+
+            executionPlan.execute();
+            executionPlan.printTraceExecutionPlan();
+            try {
+                String traceExecutionPlan = executionPlan.getTraceExecutionPlan();
+            } catch (NullPointerException e) {
+                fail();
+            }
 
             TornadoDevice device = TornadoExecutionPlan.getDevice(0, 0);
 
