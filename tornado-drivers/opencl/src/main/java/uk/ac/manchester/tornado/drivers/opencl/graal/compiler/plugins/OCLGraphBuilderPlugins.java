@@ -41,6 +41,10 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+
+
 import org.graalvm.word.LocationIdentity;
 
 import jdk.graal.compiler.core.common.memory.BarrierType;
@@ -78,10 +82,14 @@ import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
@@ -90,7 +98,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNo
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -327,72 +334,6 @@ public class OCLGraphBuilderPlugins {
         localArraysPlugins(r);
     }
 
-    private static boolean printfHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-        int idCount = 0;
-        int index = 0;
-        for (; index < 3; index++) {
-            ValueNode arg = args[index];
-            if (arg instanceof ConstantNode && arg.getStackKind().isObject()) {
-                break;
-            }
-            idCount++;
-        }
-
-        NewArrayNode newArrayNode = (NewArrayNode) args[index + 1];
-        ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
-        int length = ((JavaConstant) lengthNode.getValue()).asInt();
-
-        ValueNode[] actualArgs = new ValueNode[4 + length];
-        if (idCount >= 0) {
-            System.arraycopy(args, 0, actualArgs, 0, idCount);
-        }
-
-        for (int i = idCount; i < 3; i++) {
-            actualArgs[i] = ConstantNode.forInt(0);
-        }
-
-        actualArgs[3] = args[index];
-
-        int argIndex = 0;
-        for (Node n : newArrayNode.usages()) {
-            if (n instanceof StoreIndexedNode storeIndexedNode) {
-                StoreIndexedNode storeNode = storeIndexedNode;
-                ValueNode value = storeNode.value();
-                if (value instanceof BoxNode boxNodeValue) {
-                    BoxNode box = boxNodeValue;
-                    value = box.getValue();
-                    GraphUtil.unlinkFixedNode(box);
-                    box.safeDelete();
-                }
-                actualArgs[4 + argIndex] = value;
-                argIndex++;
-            }
-
-        }
-
-        TPrintfNode printfNode = new TPrintfNode(actualArgs);
-
-        b.add(b.append(printfNode));
-        while (newArrayNode.hasUsages()) {
-            Node n = newArrayNode.usages().first();
-            // We need to remove all nodes from the graph that operate on the new array.
-            // However, we cannot remove all inputs, as they may be used by the currently
-            // unbuilt parts of the graph. We must also ensure that no gaps are left
-            // between fixed nodes.
-            if (n instanceof FixedWithNextNode fixedWithNextNode) {
-                GraphUtil.unlinkFixedNode(fixedWithNextNode);
-            }
-            n.clearInputs();
-            n.safeDelete();
-        }
-
-        GraphUtil.unlinkFixedNode(newArrayNode);
-        newArrayNode.clearInputs();
-        newArrayNode.safeDelete();
-
-        return true;
-    }
-
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
@@ -425,39 +366,6 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
-        final InvocationPlugin tprintfPlugin2 = new InvocationPlugin("tprintf", String.class, Object[].class) {
-            @Override
-            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-                return printfHandler(b, targetMethod, receiver, args);
-            }
-        };
-
-        final InvocationPlugin tprintfPlugin3 = new InvocationPlugin("tprintf", int.class, String.class, Object[].class) {
-            @Override
-            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-                return printfHandler(b, targetMethod, receiver, args);
-            }
-        };
-
-        final InvocationPlugin tprintfPlugin4 = new InvocationPlugin("tprintf", int.class, int.class, String.class, Object[].class) {
-            @Override
-            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-                return printfHandler(b, targetMethod, receiver, args);
-            }
-        };
-
-        final InvocationPlugin tprintfPlugin5 = new InvocationPlugin("tprintf", int.class, int.class, int.class, String.class, Object[].class) {
-            @Override
-            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-                return printfHandler(b, targetMethod, receiver, args);
-            }
-        };
-
-        plugins.register(Debug.class, tprintfPlugin2);
-        plugins.register(Debug.class, tprintfPlugin3);
-        plugins.register(Debug.class, tprintfPlugin4);
-        plugins.register(Debug.class, tprintfPlugin5);
-
         final InvocationPlugin printfPlugin = new InvocationPlugin("printf", String.class, Object[].class) {
 
             @Override
@@ -467,8 +375,12 @@ public class OCLGraphBuilderPlugins {
                 ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
                 int length = ((JavaConstant) lengthNode.getValue()).asInt();
 
-                ValueNode[] actualArgs = new ValueNode[length + 1];
+                ValueNode[] actualArgs = new ValueNode[length + 4];
                 actualArgs[0] = args[0];
+
+                actualArgs[1] = b.append(new GlobalThreadIdNode(ConstantNode.forInt(0)));
+                actualArgs[2] = b.append(new GlobalThreadIdNode(ConstantNode.forInt(1)));
+                actualArgs[3] = b.append(new GlobalThreadIdNode(ConstantNode.forInt(2)));
 
                 int argIndex = 0;
                 for (Node n : newArrayNode.usages()) {
@@ -481,14 +393,15 @@ public class OCLGraphBuilderPlugins {
                             GraphUtil.unlinkFixedNode(box);
                             box.safeDelete();
                         }
-                        actualArgs[argIndex + 1] = value;
+                        actualArgs[argIndex + 4] = value;
                         argIndex++;
                     }
 
                 }
 
+
                 PrintfNode printfNode = new PrintfNode(actualArgs);
-                b.add(b.append(printfNode));
+                b.append(printfNode);
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.usages().first();

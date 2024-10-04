@@ -95,4 +95,6 @@ public abstract class SPIRVContext {
 
     public abstract void readBuffer(long executionPlanId, int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents,
             ProfilerTransfer profilerTransfer);
+
+    public abstract void reset(long executionPlanId, int deviceIndex);
 }

@@ -62,7 +62,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
@@ -74,7 +74,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private PTXDeviceContext deviceContext;
     private boolean includePrintf;
     private PTXLIRGenerationResult lirGenRes;
-    private TaskMetaData meta;
+    private TaskDataContext meta;
 
     public PTXCompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
@@ -399,11 +399,11 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         this.deviceContext = deviceContext;
     }
 
-    public TaskMetaData getTaskMetaData() {
+    public TaskDataContext getTaskMetaData() {
         return meta;
     }
 
-    public void setTaskMetaData(TaskMetaData metaData) {
+    public void setTaskMetaData(TaskDataContext metaData) {
         this.meta = metaData;
     }
 }

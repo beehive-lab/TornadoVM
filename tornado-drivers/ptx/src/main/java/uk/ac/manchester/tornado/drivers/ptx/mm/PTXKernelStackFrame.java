@@ -35,11 +35,14 @@ public class PTXKernelStackFrame extends PTXByteBuffer implements KernelStackFra
     public static final int RESERVED_SLOTS = 3;
     private final ArrayList<CallArgument> callArguments;
 
+    private boolean isValid;
+
     public PTXKernelStackFrame(long address, int numArgs, PTXDeviceContext deviceContext) {
         super(address, RESERVED_SLOTS << 3, 0, deviceContext);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();
+        this.isValid = true;
     }
 
     @Override
@@ -82,5 +85,16 @@ public class PTXKernelStackFrame extends PTXByteBuffer implements KernelStackFra
                 buffer.putLong(0);
             }
         }
+    }
+
+    @Override
+    public boolean isValid() {
+        return isValid;
+    }
+
+    @Override
+    public void invalidate() {
+        isValid = false;
+        deviceContext.getDevice().getPTXContext().freeMemory(getAddress());
     }
 }

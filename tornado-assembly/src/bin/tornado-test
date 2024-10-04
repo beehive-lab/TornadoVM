@@ -51,13 +51,12 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies"),
-    TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
-    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
@@ -95,6 +94,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
     TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
     TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
+    TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
@@ -123,6 +123,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestDevices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.compiler.TestCompilerFlagsAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestMemorySegmentsAsType"),
     TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorTypes"),
@@ -253,7 +254,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.16_10032024"
+__VERSION__ = "1.0.8-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

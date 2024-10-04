@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLJIT {
 
@@ -68,11 +68,13 @@ public class OCLJIT {
 
             final OCLBackend backend = getTornadoRuntime().getBackend(OCLBackendImpl.class).getDefaultBackend();
 
-            TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method);
+            TaskDataContext meta = TaskDataContext.create(new ScheduleContext("s0"), methodName, method);
 
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[] {}, meta, (OCLProviders) backend.getProviders(), backend, new EmptyProfiler());
 
-            OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(result);
+            final long executionPlanId = 0;
+
+            OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(executionPlanId, result);
 
             for (byte b : code.getCode()) {
                 System.out.printf("%c", b);

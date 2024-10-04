@@ -83,7 +83,7 @@ public abstract class TornadoTestBase {
     }
 
     public void assertNotBackend(TornadoVMBackendType backend, String customBackendAssertionMessage) {
-        int driverIndex = getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        int driverIndex = getTornadoRuntime().getDefaultDevice().getBackendIndex();
         if (getTornadoRuntime().getBackendType(driverIndex) == backend) {
             switch (backend) {
                 case PTX -> throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
@@ -98,7 +98,7 @@ public abstract class TornadoTestBase {
         if (!TornadoHelper.OPTIMIZE_LOAD_STORE_SPIRV) {
             return;
         }
-        int driverIndex = getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        int driverIndex = getTornadoRuntime().getDefaultDevice().getBackendIndex();
         if (getTornadoRuntime().getBackendType(driverIndex) == backend) {
             if (backend == TornadoVMBackendType.SPIRV) {
                 throw new SPIRVOptNotSupported("Test not supported for the optimized SPIR-V BACKEND");

@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLCPUScheduler extends OCLKernelScheduler {
 
@@ -33,26 +33,22 @@ public class OCLCPUScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
+    public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
         long[] maxItems = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
 
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
-            if (meta.enableThreadCoarsener()) {
-                globalWork[i] = maxItems[i] > 1 ? (long) (meta.getDomain().get(i).cardinality()) : 1;
-            } else {
-                globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits()) : 1;
-            }
+            globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits()) : 1;
         }
     }
 
     @Override
-    public void calculateLocalWork(final TaskMetaData meta) {
+    public void calculateLocalWork(final TaskDataContext meta) {
         meta.setLocalWorkToNull();
     }
 
     @Override
-    public void checkAndAdaptLocalWork(TaskMetaData meta) {
+    public void checkAndAdaptLocalWork(TaskDataContext meta) {
     }
 
 }

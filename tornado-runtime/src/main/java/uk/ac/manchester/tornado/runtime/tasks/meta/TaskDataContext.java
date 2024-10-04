@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -42,24 +41,24 @@ import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
-public class TaskMetaData extends AbstractMetaData {
+public class TaskDataContext extends AbstractRTContext {
 
     public static final String LOCAL_WORKGROUP_SUFFIX = ".local.workgroup.size";
     public static final String GLOBAL_WORKGROUP_SUFFIX = ".global.workgroup.size";
     protected final Map<TornadoXPUDevice, BitSet> profiles;
     private final byte[] constantData;
-    private final ScheduleMetaData scheduleMetaData;
+    private final ScheduleContext scheduleMetaData;
     private final int constantSize;
+    private final int localSize;
     protected Access[] argumentsAccess;
     protected DomainTree domain;
     private long[] globalOffset;
     private long[] globalWork;
-    private final int localSize;
     private long[] localWork;
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
+    public TaskDataContext(ScheduleContext scheduleMetaData, String taskID, int numParameters) {
         super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.constantSize = 0;
@@ -76,13 +75,13 @@ public class TaskMetaData extends AbstractMetaData {
         setNumThreads(scheduleMetaData.getNumThreads());
     }
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String id) {
+    public TaskDataContext(ScheduleContext scheduleMetaData, String id) {
         this(scheduleMetaData, id, 0);
     }
 
-    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method) {
+    public static TaskDataContext create(ScheduleContext scheduleMeta, String id, Method method) {
         int numParameters = Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1;
-        return new TaskMetaData(scheduleMeta, id, numParameters);
+        return new TaskDataContext(scheduleMeta, id, numParameters);
     }
 
     private static String formatWorkDimensionArray(final long[] array, final String defaults) {
@@ -142,28 +141,8 @@ public class TaskMetaData extends AbstractMetaData {
         return localWork;
     }
 
-    public void addProfile(int id) {
-        final TornadoXPUDevice device = getLogicDevice();
-        BitSet events;
-        profiles.computeIfAbsent(device, k -> new BitSet(EVENT_WINDOW));
-        events = profiles.get(device);
-        events.set(id);
-    }
-
-    @Override
-    public boolean enableParallelization() {
-        return scheduleMetaData.isEnableParallelizationDefined() && !isEnableParallelizationDefined() ? scheduleMetaData.enableParallelization() : super.enableParallelization();
-    }
-
-    @Override
-    public String getCpuConfig() {
-        if (super.isCpuConfigDefined()) {
-            return super.getCpuConfig();
-        } else if (!super.isCpuConfigDefined() && scheduleMetaData.isCpuConfigDefined()) {
-            return scheduleMetaData.getCpuConfig();
-        } else {
-            return "";
-        }
+    public void setArgumentsAccess(Access[] access) {
+        this.argumentsAccess = access;
     }
 
     public Access[] getArgumentsAccess() {
@@ -179,11 +158,11 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public TornadoXPUDevice getLogicDevice() {
+    public TornadoXPUDevice getXPUDevice() {
         if (scheduleMetaData.isDeviceManuallySet() || (scheduleMetaData.isDeviceDefined() && !isDeviceDefined())) {
-            return scheduleMetaData.getLogicDevice();
+            return scheduleMetaData.getXPUDevice();
         }
-        return super.getLogicDevice();
+        return super.getXPUDevice();
     }
 
     public int getDims() {
@@ -252,11 +231,6 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public String getCompilerFlags() {
-        return isOpenclCompilerFlagsDefined() ? super.getCompilerFlags() : scheduleMetaData.getCompilerFlags();
-    }
-
-    @Override
     public int getOpenCLGpuBlock2DX() {
         return isOpenclGpuBlock2DXDefined() ? super.getOpenCLGpuBlock2DX() : scheduleMetaData.getOpenCLGpuBlock2DX();
     }
@@ -290,7 +264,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public boolean isParallel() {
-        return enableParallelization() && hasDomain() && domain.getDepth() > 0;
+        return hasDomain() && domain.getDepth() > 0;
     }
 
     private long[] calculateNumberOfWorkgroupsFromDomain(DomainTree domain) {
@@ -305,10 +279,10 @@ public class TaskMetaData extends AbstractMetaData {
 
     public void printThreadDims() {
         StringBuilder deviceDebug = new StringBuilder();
-        boolean deviceBelongsToPTX = isPTXDevice(getLogicDevice());
+        boolean deviceBelongsToPTX = isPTXDevice(getXPUDevice());
         deviceDebug.append("Task info: " + getId() + "\n");
-        deviceDebug.append("\tBackend           : " + getLogicDevice().getTornadoVMBackend().name() + "\n");
-        deviceDebug.append("\tDevice            : " + getLogicDevice().getDescription() + "\n");
+        deviceDebug.append("\tBackend           : " + getXPUDevice().getTornadoVMBackend().name() + "\n");
+        deviceDebug.append("\tDevice            : " + getXPUDevice().getDescription() + "\n");
         deviceDebug.append("\tDims              : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
 
         if (!deviceBelongsToPTX) {
@@ -316,51 +290,29 @@ public class TaskMetaData extends AbstractMetaData {
             deviceDebug.append("\tGlobal work offset: " + formatWorkDimensionArray(go, "0") + "\n");
         }
 
-        long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
+        long[] workGroups = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
 
         if (deviceBelongsToPTX) {
-            deviceDebug.append("\tThread dimensions : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tThread dimensions : " + formatWorkDimensionArray(workGroups, "1") + "\n");
             deviceDebug.append("\tBlocks dimensions : " + formatWorkDimensionArray(getPTXBlockDim(), "1") + "\n");
             deviceDebug.append("\tGrids dimensions  : " + formatWorkDimensionArray(getPTXGridDim(), "1") + "\n");
         } else {
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
             long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
-            deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(workGroups, "1") + "\n");
             deviceDebug.append("\tLocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
             deviceDebug.append("\tNumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
         }
-
         System.out.println(deviceDebug);
     }
-
 
     public boolean isPTXDevice(TornadoXPUDevice device) {
         return device.getTornadoVMBackend().equals(TornadoVMBackendType.PTX);
     }
 
     @Override
-    public boolean shouldDumpProfiles() {
-        return super.shouldDumpProfiles() || scheduleMetaData.shouldDumpProfiles();
-    }
-
-    @Override
-    public boolean shouldDumpEvents() {
-        return super.shouldDumpEvents() || scheduleMetaData.shouldDumpEvents();
-    }
-
-    @Override
     public boolean shouldUseOpenCLDriverScheduling() {
         return super.shouldUseOpenCLDriverScheduling() || scheduleMetaData.shouldUseOpenCLDriverScheduling();
-    }
-
-    @Override
-    public boolean enableThreadCoarsener() {
-        return super.enableThreadCoarsener() || scheduleMetaData.enableThreadCoarsener();
-    }
-
-    @Override
-    public boolean isCpuConfigDefined() {
-        return super.isCpuConfigDefined() || scheduleMetaData.isCpuConfigDefined();
     }
 
     @Override

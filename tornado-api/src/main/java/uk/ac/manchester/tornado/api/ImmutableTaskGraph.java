@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
 /**
@@ -195,6 +196,10 @@ public class ImmutableTaskGraph {
 
     void withoutPrintKernel() {
         taskGraph.withoutPrintKernel();
+    }
+
+    void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
+        taskGraph.withCompilerFlags(backendType, compilerFlags);
     }
 
     void withGridScheduler(GridScheduler gridScheduler) {

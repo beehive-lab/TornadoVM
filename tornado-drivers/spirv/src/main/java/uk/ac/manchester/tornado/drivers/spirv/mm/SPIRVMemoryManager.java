@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVMemoryManager implements TornadoMemoryProvider {
@@ -53,6 +54,13 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
             spirvKernelStackFrame.put(threadId, new SPIRVKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
         return spirvKernelStackFrame.get(threadId);
+    }
+
+    public void releaseKernelStackFrame(long executionPlanId) {
+        SPIRVKernelStackFrame stackFrame = spirvKernelStackFrame.remove(executionPlanId);
+        if (stackFrame != null) {
+            stackFrame.invalidate();
+        }
     }
 
 }

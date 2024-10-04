@@ -318,7 +318,7 @@ public class OCLVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 deviceContext.writeBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
+                throw new TornadoRuntimeException("Data not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");

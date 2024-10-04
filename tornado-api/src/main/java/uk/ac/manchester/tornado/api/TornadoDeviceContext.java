@@ -30,6 +30,8 @@ public interface TornadoDeviceContext {
 
     boolean wasReset();
 
+    void reset(long executionPlanId);
+
     void setResetToFalse();
 
     boolean isPlatformFPGA();
@@ -38,7 +40,7 @@ public interface TornadoDeviceContext {
 
     boolean isFP64Supported();
 
-    boolean isCached(String methodName, SchedulableTask task);
+    boolean isCached(long executionPlanId, String methodName, SchedulableTask task);
 
     int getDeviceIndex();
 

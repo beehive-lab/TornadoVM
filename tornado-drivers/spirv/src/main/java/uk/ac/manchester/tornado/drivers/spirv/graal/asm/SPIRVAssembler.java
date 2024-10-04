@@ -553,7 +553,7 @@ public final class SPIRVAssembler extends Assembler {
             case OP_TYPE_FLOAT_16 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentHalfFloat(Float.floatToFloat16(Float.parseFloat(valueConstant)))));
             case OP_TYPE_FLOAT_32 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
             case OP_TYPE_FLOAT_64 -> module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentDouble(Double.parseDouble(valueConstant))));
-            default -> throw new TornadoRuntimeException(STR."Data type not supported yet: \{type}");
+            default -> throw new TornadoRuntimeException("Data type not supported yet: " + type);
         }
         return newConstantId;
     }

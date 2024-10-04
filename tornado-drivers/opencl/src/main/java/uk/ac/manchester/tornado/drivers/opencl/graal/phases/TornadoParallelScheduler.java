@@ -143,7 +143,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (context.getMeta() == null || context.getMeta().enableThreadCoarsener()) {
+        if (context.getMeta() == null) {
             return;
         }
         TornadoXPUDevice device = context.getDeviceMapping();
@@ -151,7 +151,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         long[] maxWorkItemSizes = device.getPhysicalDevice().getDeviceMaxWorkItemSizes();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(node -> {
-            if (context.getMeta().enableParallelization() && maxWorkItemSizes[node.index()] > 1) {
+            if (maxWorkItemSizes[node.index()] > 1) {
                 ParallelOffsetNode offset = node.offset();
                 ParallelStrideNode stride = node.stride();
                 ValueNode blockSize = replaceRangeNode(strategy, graph, node);

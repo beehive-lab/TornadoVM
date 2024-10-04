@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
 
@@ -152,7 +152,7 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public VirtualOCLTornadoDevice asMapping() {
+    public VirtualOCLTornadoDevice toDevice() {
         return new VirtualOCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
     }
 
@@ -204,42 +204,42 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean isKernelAvailable() {
+    public boolean isKernelAvailable(long executionPlanId) {
         return true;
     }
 
     @Override
-    public OCLInstalledCode installCode(OCLCompilationResult result) {
+    public OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result) {
         return null;
     }
 
     @Override
-    public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+    public OCLInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
         return null;
     }
 
     @Override
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel) {
+    public OCLInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
         return null;
     }
 
     @Override
-    public boolean isCached(String id, String entryPoint) {
+    public boolean isCached(long executionPlanId, String id, String entryPoint) {
         return false;
     }
 
     @Override
-    public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
+    public OCLInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint) {
         return null;
     }
 
     @Override
-    public OCLCodeCache getCodeCache() {
+    public OCLCodeCache getCodeCache(long executionPlanId) {
         return codeCache;
     }
 
     @Override
-    public boolean isCached(String methodName, SchedulableTask task) {
+    public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
         return false;
     }
 

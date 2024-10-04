@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CompilerUtil {
 
@@ -64,7 +64,7 @@ public class CompilerUtil {
         return method;
     }
 
-    public static Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskMetaData taskMetaData, Providers providers, TornadoSuitesProvider suites) {
+    public static Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskDataContext taskMetaData, Providers providers, TornadoSuitesProvider suites) {
         new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex())//
                 .run();
         return TornadoSketcher.lookup(resolvedJavaMethod, taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex());

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,7 @@ __LINUX__ = "linux"
 __APPLE__ = "darwin"
 __WINDOWS__ = "windows"
 
+<<<<<<< HEAD
 __JDK22__ = "jdk22"
 __GRAALVM22__ = "graal-jdk-22"
 __MANDREL22__ = "mandrel-jdk-22"
@@ -34,6 +35,16 @@ __MICROSOFT22__ = "microsoft-jdk-22"
 __ZULU22__ = "zulu-jdk-22"
 __TEMURIN22__ = "temurin-jdk-22"
 __SAPMACHINE22__ = "sapmachine-jdk-22"
+=======
+__JDK21__ = "jdk21"
+__GRAALVM21__ = "graal-jdk-21"
+__MANDREL21__ = "mandrel-jdk-21"
+__CORRETTO21__ = "corretto-jdk-21"
+__MICROSOFT21__ = "microsoft-jdk-21"
+__ZULU21__ = "zulu-jdk-21"
+__TEMURIN21__ = "temurin-jdk-21"
+__SAPMACHINE21__ = "sapmachine-jdk-21"
+>>>>>>> develop
 
 ## cmake
 CMAKE = {

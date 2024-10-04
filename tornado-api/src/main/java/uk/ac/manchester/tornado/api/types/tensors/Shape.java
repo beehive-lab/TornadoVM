@@ -50,13 +50,14 @@ public record Shape(long... dimensions) {
 
     @Override
     public boolean equals(Object o) {
-//        if (this == o)
-//            return true;
-//        if (o == null || getClass() != o.getClass())
-//            return false;
-//        java.awt.Shape shape = (java.awt.Shape) o;
-//        return Arrays.equals(dimensions, shape.dimensions);
-        return true;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Shape shape = (Shape) o;
+        return Arrays.equals(dimensions, shape.dimensions);
     }
 
     @Override

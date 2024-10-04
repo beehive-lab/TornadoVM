@@ -103,7 +103,7 @@ import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -144,8 +144,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
     }
 
     /**
-     * It allocated the extra internal buffers that are used by this backend
-     * (constant and atomic).
+     * It allocated the extra internal buffers that are used by this backend (constant and atomic).
      */
     @Override
     public void allocateTornadoVMBuffersOnDevice() {
@@ -202,7 +201,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
     }
 
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
-        TaskMetaData taskMetaData = crb.getTaskMetaData();
+        TaskDataContext taskMetaData = crb.getTaskMetaData();
         profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         final OCLAssembler asm = (OCLAssembler) crb.asm;
@@ -363,19 +362,21 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
         final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
 
         for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
+            var javaType = locals[i].getType();
+            var javaKind = CodeUtil.convertJavaKind(javaType);
             if (isKernel) {
-                if (locals[i].getType().getJavaKind().isPrimitive() || isHalfFloat(locals[i].getType())) {
+                if (javaKind.isPrimitive() || isHalfFloat(javaType)) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     OCLKind kind = (OCLKind) param.getPlatformKind();
                     asm.emit(", ");
                     asm.emit("__private %s %s", kind.toString(), locals[i].getName());
                 } else {
                     // Skip the kernel context object
-                    if (locals[i].getType().toJavaName().equals(KernelContext.class.getName())) {
+                    if (javaType.toJavaName().equals(KernelContext.class.getName())) {
                         continue;
                     }
                     // Skip atomic integers
-                    if (locals[i].getType().toJavaName().equals(AtomicInteger.class.getName())) {
+                    if (javaType.toJavaName().equals(AtomicInteger.class.getName())) {
                         continue;
                     }
                     asm.emit(", ");
@@ -385,8 +386,8 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
             } else {
                 final AllocatableValue param = incomingArguments.getArgument(i);
                 OCLKind oclKind = (OCLKind) param.getPlatformKind();
-                if (locals[i].getType().getJavaKind().isObject()) {
-                    OCLKind tmpKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+                if (javaKind.isObject()) {
+                    OCLKind tmpKind = OCLKind.resolveToVectorKind(javaType.resolve(method.getDeclaringClass()));
                     if (tmpKind != OCLKind.ILLEGAL) {
                         oclKind = tmpKind;
                     }

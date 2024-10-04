@@ -23,10 +23,18 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-public class ScheduleMetaData extends AbstractMetaData {
+public class ScheduleContext extends AbstractRTContext implements Cloneable {
 
-    public ScheduleMetaData(String id) {
+    public ScheduleContext(String id) {
         super(id, null);
     }
 
+    @Override
+    public ScheduleContext clone() {
+        try {
+            return (ScheduleContext) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }
