@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.api.types.matrix;
 
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.utils.ShortOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
 
 import java.lang.foreign.MemorySegment;
@@ -115,7 +115,7 @@ public final class Matrix3DShort extends Matrix3DType implements TornadoMatrixIn
     public String toString() {
         String result = String.format("Matrix3DShort <%d x %d x %d>", ROWS, COLUMNS, DEPTH);
         if (ROWS < 16 && COLUMNS < 16 && DEPTH < 16) {
-            result += "\n" + toString(FloatOps.FMT);
+            result += "\n" + toString(ShortOps.FMT);
         }
         return result;
     }

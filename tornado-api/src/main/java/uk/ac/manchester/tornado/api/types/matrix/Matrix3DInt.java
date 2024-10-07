@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.api.types.matrix;
 
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.utils.IntOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
 
 import java.lang.foreign.MemorySegment;
@@ -115,7 +115,7 @@ public final class Matrix3DInt extends Matrix3DType implements TornadoMatrixInte
     public String toString() {
         String result = String.format("Matrix3DInt <%d x %d x %d>", ROWS, COLUMNS, DEPTH);
         if (ROWS < 16 && COLUMNS < 16 && DEPTH < 16) {
-            result += "\n" + toString(FloatOps.FMT);
+            result += "\n" + toString(IntOps.FMT);
         }
         return result;
     }
