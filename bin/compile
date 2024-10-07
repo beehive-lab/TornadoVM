@@ -68,7 +68,7 @@ def pull_graal_jars_if_needed(graal_jars_status):
 
 def should_handle_graal_jars(jdk):
     java_version_output = check_java_version()
-    return jdk == "jdk22" and "GraalVM" not in java_version_output
+    return jdk == "jdk23" and "GraalVM" not in java_version_output
 
 
 def maven_cleanup():
