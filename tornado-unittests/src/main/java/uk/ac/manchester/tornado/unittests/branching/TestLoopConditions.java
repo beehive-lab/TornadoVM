@@ -43,6 +43,7 @@ import static org.junit.Assert.assertEquals;
  * [DISCLAIMER] These tests are legal in TornadoVM because in the if-conditions all threads are operating on the same data.
  */
 public class TestLoopConditions extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     /**
      * This test is valid for TornadoVM because in the if-condition all threads are examining the same data.
@@ -572,5 +573,6 @@ public class TestLoopConditions extends TornadoTestBase {
             }
         }
     }
+    // CHECKSTYLE:ON
 
 }
