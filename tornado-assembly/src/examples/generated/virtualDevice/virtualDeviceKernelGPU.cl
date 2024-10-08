@@ -24,7 +24,7 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     i_7  =  get_local_size(0);
     l_8  =  (long) i_5;
     l_9  =  l_8 << 2;
-    l_10  =  l_9 + 20L;
+    l_10  =  l_9 + 24L;
     ul_11  =  ul_0 + l_10;
     f_12  =  *((__global float *) ul_11);
     adf_2[i_6]  =  f_12;
@@ -94,7 +94,7 @@ __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_r
 
   // BLOCK 0
   ul_0  =  (ulong) array;
-  ul_1  =  ul_0 + 20L;
+  ul_1  =  ul_0 + 24L;
   f_2  =  *((__global float *) ul_1);
   ul_3  =  ul_0 + 28L;
   f_4  =  *((__global float *) ul_3);
