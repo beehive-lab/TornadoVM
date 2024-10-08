@@ -33,6 +33,7 @@ import jdk.graal.compiler.core.common.calc.Condition;
 import jdk.graal.compiler.core.common.cfg.BasicBlock;
 import jdk.graal.compiler.core.common.memory.BarrierType;
 import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 import jdk.graal.compiler.nodes.spi.CoreProviders;
 import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
 import jdk.graal.compiler.core.common.type.Stamp;
@@ -78,8 +79,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     private SPIRVBuiltinTool spirvBuiltinTool;
 
     public SPIRVLIRGenerator(CoreProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
-        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVBarrierSetLIRGenerator(), new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVMoveFactory(), providers,
-                lirGenRes);
+        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new BarrierSetLIRGeneratorTool() {}, new uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVMoveFactory(), providers, lirGenRes);
         spirvGenTool = new SPIRVGenTool(this);
         spirvBuiltinTool = new SPIRVBuiltinTool();
         this.methodIndex = methodIndex;

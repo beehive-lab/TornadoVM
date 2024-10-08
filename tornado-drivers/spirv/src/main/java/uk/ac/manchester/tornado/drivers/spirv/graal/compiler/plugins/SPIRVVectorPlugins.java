@@ -274,7 +274,7 @@ public class SPIRVVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
                 receiver.get(true);
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(spirvVectorKind.getElementKind(), receiver.get(), laneId);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(spirvVectorKind.getElementKind(), receiver.get(true), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
@@ -284,7 +284,7 @@ public class SPIRVVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
                 receiver.get(true);
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(spirvVectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(spirvVectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -294,8 +294,8 @@ public class SPIRVVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 receiver.get(true);
-                if (receiver.get() instanceof ParameterNode) {
-                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                if (receiver.get(true) instanceof ParameterNode) {
+                    final AddressNode address = new OffsetAddressNode(receiver.get(true), null);
                     final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(spirvVectorKind, address, value);
                     b.add(b.append(store));
                     return true;
@@ -308,7 +308,7 @@ public class SPIRVVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
                 receiver.get(true);
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(spirvVectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(spirvVectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -361,7 +361,7 @@ public class SPIRVVectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
-                ValueNode array = receiver.get();
+                ValueNode array = receiver.get(true);
                 GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
                 b.push(JavaKind.Object, b.append(getArrayNode));
                 return true;

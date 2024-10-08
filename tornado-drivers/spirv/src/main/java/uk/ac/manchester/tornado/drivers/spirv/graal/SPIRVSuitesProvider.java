@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCanonicalizer;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilerConfiguration;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoInternalGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -63,7 +64,7 @@ public class SPIRVSuitesProvider implements TornadoSuitesProvider {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);
-        suite.appendPhase(new GraphBuilderPhase(config));
+        suite.appendPhase(new TornadoInternalGraphBuilder(config));
         return suite;
     }
 

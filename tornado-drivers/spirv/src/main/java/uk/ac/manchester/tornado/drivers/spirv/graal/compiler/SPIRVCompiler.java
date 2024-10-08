@@ -216,7 +216,7 @@ public class SPIRVCompiler {
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
-            RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
+            RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {}, new Object());
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
             uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult lirGenRes = (uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult) backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
             lirGenRes.setMethodIndex(backend.getMethodIndex());

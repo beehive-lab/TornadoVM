@@ -212,6 +212,11 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
     }
 
     @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo, Object stub) {
+        return null;
+    }
+
+    @Override
     protected CompiledCode createCompiledCode(ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult, boolean isDefault, OptionValues options) {
         unimplemented("Create compiled code method in SPIRVBackend not implemented yet.");
         return null;

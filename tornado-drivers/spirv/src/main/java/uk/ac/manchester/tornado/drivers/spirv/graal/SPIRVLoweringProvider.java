@@ -55,10 +55,13 @@ import jdk.graal.compiler.nodes.PhiNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.UnwindNode;
 import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
 import jdk.graal.compiler.nodes.calc.BinaryArithmeticNode;
 import jdk.graal.compiler.nodes.calc.FloatConvertNode;
 import jdk.graal.compiler.nodes.calc.IntegerDivRemNode;
+import jdk.graal.compiler.nodes.calc.LeftShiftNode;
 import jdk.graal.compiler.nodes.calc.RemNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
 import jdk.graal.compiler.nodes.java.ArrayLengthNode;
 import jdk.graal.compiler.nodes.java.InstanceOfNode;
 import jdk.graal.compiler.nodes.java.LoadFieldNode;
@@ -80,6 +83,7 @@ import jdk.graal.compiler.options.OptionValues;
 import jdk.graal.compiler.phases.util.Providers;
 import jdk.graal.compiler.replacements.DefaultJavaLoweringProvider;
 import jdk.graal.compiler.replacements.SnippetCounter;
+import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
@@ -107,6 +111,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -481,7 +486,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+            address = createArrayAddressTornado(graph, loadIndexed.array(), elementKind, loadIndexed.index());
         }
         return address;
     }
@@ -546,10 +551,25 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode valueToStore = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         ValueNode index = storeIndexed.index();
-        AddressNode address = createArrayAddress(graph, array, elementKind, index);
+        AddressNode address = createArrayAddressTornado(graph, array, elementKind, index);
         AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, valueToStore, array, address, graph, storeIndexed);
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+    }
+
+    public AddressNode createArrayAddressTornado(StructuredGraph graph, ValueNode array, JavaKind elementKind, ValueNode index) {
+        int arrayBaseOffset = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+        ValueNode wordIndex;
+        if (target.wordSize > 4) {
+            wordIndex = graph.unique(new SignExtendNode(index, target.wordSize * 8));
+        } else {
+            assert target.wordSize == 4 : "unsupported word size";
+            wordIndex = index;
+        }
+        int shift = CodeUtil.log2(metaAccess.getArrayIndexScale(elementKind));
+        ValueNode scaledIndex = graph.unique(new LeftShiftNode(wordIndex, ConstantNode.forInt(shift, graph)));
+        ValueNode offset = graph.unique(new AddNode(scaledIndex, ConstantNode.forIntegerKind(target.wordJavaKind, arrayBaseOffset, graph)));
+        return graph.unique(new OffsetAddressNode(array, offset));
     }
 
     @Override

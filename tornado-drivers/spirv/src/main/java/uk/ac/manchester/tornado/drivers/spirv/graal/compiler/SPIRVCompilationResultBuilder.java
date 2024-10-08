@@ -78,8 +78,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     public SPIRVCompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult,   Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
-
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, NO_VERIFIERS, lir);
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -357,13 +356,9 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         nonInlinedMethods.add(targetMethod);
     }
 
-<<<<<<< HEAD
-    public TaskMetaData getTaskMetaData() {
-        return ((uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult) compilationResult).getMeta();
-=======
+
     public TaskDataContext getTaskMetaData() {
         return ((SPIRVCompilationResult) compilationResult).getMeta();
->>>>>>> develop
     }
 
 }
