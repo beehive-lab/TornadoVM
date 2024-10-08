@@ -474,7 +474,7 @@ def runSingleCommand(cmd, args):
     print("Total Time (s): " + str(end - start))
 
 
-def processStats(out, stats, failedTests):
+def processStats(out, stats, failedTests, segFaults, unittest):
     """ It updates the hash table `stats` for reporting the total number
         of methods that were failed and passed
     """
@@ -487,6 +487,9 @@ def processStats(out, stats, failedTests):
     statsProcessing = out.splitlines()
     className = ""
     for line in statsProcessing:
+        if "SIGSEGV" in line:
+            segFaults.append(unittest)
+
         match = regex.search(line)
         if match != None:
             className = match.groups(0)[0]
@@ -516,13 +519,15 @@ def processStats(out, stats, failedTests):
         elif (l.find("UNSUPPORTED") != -1):
             stats["[UNSUPPORTED]"] = stats["[UNSUPPORTED]"] + 1
 
-    return stats, failedTests
+    return stats, failedTests, segFaults
 
 
-def runCommandWithStats(command, stats, failedTests, monitorClass):
+def runCommandWithStats(command, stats, failedTests, segFaults, monitorClass):
     """ Run a command and update the stats dictionary """
     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     monitor_status = runMonitorClass(monitorClass, command, p.pid)
+    params = re.search(r'--params\s+"([^"]+)"', command)
+    unittest = params.group(1)
     monitor_failed_msg = ""
     if not monitor_status:
         print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
@@ -548,7 +553,7 @@ def runCommandWithStats(command, stats, failedTests, monitorClass):
     print(err)
     print(out)
 
-    return processStats(out, stats, failedTests)
+    return processStats(out, stats, failedTests, segFaults, unittest)
 
 
 def appendTestRunnerClassToCmd(cmd, args):
@@ -580,7 +585,7 @@ def runTests(args):
             runSingleCommand(command, args)
     else:
         start = time.time()
-        stats, failedTests = runTestTheWorld(options, args)
+        stats, failedTests, segFaults = runTestTheWorld(options, args)
         end = time.time()
         print(Colors.CYAN)
 
@@ -602,8 +607,14 @@ def runTests(args):
             print("==================================================")
             for test, whitelisted in failedTests.items():
                 print(f"{test} - [WHITELISTED]: {whitelisted}")
-
             print("==================================================")
+            if len(segFaults) != 0:
+                print("==================================================")
+                print("SEGFAULT TESTS")
+                print("==================================================")
+                for test in segFaults:
+                    print(test)
+                print("==================================================")
 
         print(Colors.CYAN + "Total Time(s): " + str(end - start))
         print(Colors.RESET)
@@ -612,6 +623,7 @@ def runTests(args):
 def runTestTheWorld(options, args):
     stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
     failedTests = {}
+    segFaults = []
 
     __TORNADO_QUICK_PASS_SKIP_TESTS__ = __TORNADO_HEAVY_TESTS__ + __TORNADO_MEMORY_TESTS__
 
@@ -634,16 +646,16 @@ def runTestTheWorld(options, args):
                 if (args.fast):
                     os.system(testMethodCmd)
                 else:
-                    stats, failedTests = runCommandWithStats(testMethodCmd, stats, failedTests, t.monitorClass)
+                    stats, failedTests, segFaults = runCommandWithStats(testMethodCmd, stats, failedTests, segFaults, t.monitorClass)
         elif (args.fast):
             command += "\""
             os.system(command)
         else:
             command += "\""
             print(command)
-            stats, failedTests = runCommandWithStats(command, stats, failedTests, t.monitorClass)
+            stats, failedTests, segFaults = runCommandWithStats(command, stats, failedTests, segFaults, t.monitorClass)
 
-    return stats, failedTests
+    return stats, failedTests, segFaults
 
 
 def runWithJUnit(args):
