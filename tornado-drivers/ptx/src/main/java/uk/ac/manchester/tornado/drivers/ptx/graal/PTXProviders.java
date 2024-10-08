@@ -25,6 +25,7 @@ import jdk.graal.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.graal.compiler.core.common.spi.ConstantFieldProvider;
 import jdk.graal.compiler.core.common.spi.ForeignCallsProvider;
 import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import jdk.graal.compiler.hotspot.meta.HotSpotIdentityHashCodeProvider;
 import jdk.graal.compiler.nodes.spi.LoopsDataProvider;
 import jdk.graal.compiler.nodes.spi.LoweringProvider;
 import jdk.graal.compiler.nodes.spi.PlatformConfigurationProvider;
@@ -54,9 +55,12 @@ public class PTXProviders extends Providers {
             SnippetReflectionProvider snippetReflection, //
             WordTypes wordTypes, //
             LoopsDataProvider loopsDataProvider, //
-            PTXSuitesProvider suitesProvider) {
+            PTXSuitesProvider suitesProvider, //
+            HotSpotIdentityHashCodeProvider hotSpotIdentityHashCodeProvider
+
+    ) {
         super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider,
-                snippetReflection, wordTypes, loopsDataProvider);
+                snippetReflection, wordTypes, loopsDataProvider, hotSpotIdentityHashCodeProvider);
         this.suites = suitesProvider;
     }
 

@@ -144,6 +144,11 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
     }
 
     @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo, Object stub) {
+        return null;
+    }
+
+    @Override
     public boolean isInitialised() {
         return isInitialised;
     }

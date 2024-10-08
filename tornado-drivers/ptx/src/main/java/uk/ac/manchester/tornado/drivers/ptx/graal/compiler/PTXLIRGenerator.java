@@ -42,6 +42,7 @@ import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.LabelRef;
 import jdk.graal.compiler.lir.SwitchStrategy;
 import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
 import jdk.graal.compiler.lir.gen.LIRGenerator;
 import jdk.graal.compiler.phases.util.Providers;
@@ -83,7 +84,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     private final Map<String, Variable> parameterAllocations;
 
     public PTXLIRGenerator(Providers providers, LIRGenerationResult lirGenRes) {
-        super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new PTXBarrierSetLIRGenerator(), new PTXMoveFactory(), providers, lirGenRes);
+        super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new BarrierSetLIRGeneratorTool() {}, new PTXMoveFactory(), providers, lirGenRes);
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
         ptxBuiltinTool = new PTXBuiltinTool();

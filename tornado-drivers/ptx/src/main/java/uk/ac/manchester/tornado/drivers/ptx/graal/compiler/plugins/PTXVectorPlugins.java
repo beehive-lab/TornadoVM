@@ -205,7 +205,7 @@ public final class PTXVectorPlugins {
     }
 
     private static VectorValueNode resolveReceiver(GraphBuilderContext b, PTXKind vectorKind, Receiver receiver) {
-        ValueNode thisObject = receiver.get();
+        ValueNode thisObject = receiver.get(true);
         return resolveReceiver(b, vectorKind, thisObject);
     }
 
@@ -278,7 +278,7 @@ public final class PTXVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
                 receiver.get(true);
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(true), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
@@ -288,8 +288,8 @@ public final class PTXVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 receiver.get(true);
-                if (receiver.get() instanceof ParameterNode) {
-                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                if (receiver.get(true) instanceof ParameterNode) {
+                    final AddressNode address = new OffsetAddressNode(receiver.get(true), null);
                     final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(vectorKind, address, value);
                     b.add(b.append(store));
                     return true;
@@ -302,7 +302,7 @@ public final class PTXVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
                 receiver.get(true);
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -312,7 +312,7 @@ public final class PTXVectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
                 receiver.get(true);
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -364,7 +364,7 @@ public final class PTXVectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
-                ValueNode array = receiver.get();
+                ValueNode array = receiver.get(true);
                 GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
                 b.push(JavaKind.Object, b.append(getArrayNode));
                 return true;

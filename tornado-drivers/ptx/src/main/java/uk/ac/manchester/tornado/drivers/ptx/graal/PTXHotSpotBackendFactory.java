@@ -27,6 +27,7 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import jdk.graal.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import jdk.graal.compiler.hotspot.meta.HotSpotIdentityHashCodeProvider;
 import jdk.graal.compiler.hotspot.meta.HotSpotStampProvider;
 import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -94,14 +95,19 @@ public class PTXHotSpotBackendFactory {
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, target, vmConfig);
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, JavaKind.Long);
-
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
+
+            HotSpotIdentityHashCodeProvider hotSpotIdentityHashCodeProvider = new HotSpotIdentityHashCodeProvider();
+
+            Providers p = new Providers(metaAccess, //
+                    codeCache, constantReflection, constantFieldProvider, //
+                    foreignCalls, lowerer, lowerer.getReplacements(), stampProvider, //
+                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, //
+                    wordTypes, lpd , hotSpotIdentityHashCodeProvider);
 
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
-            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
+            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, bytecodeProvider, target);
             plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
             replacements.setGraphBuilderPlugins(plugins);
@@ -109,7 +115,7 @@ public class PTXHotSpotBackendFactory {
             suites = new PTXSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
-                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
+                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites, hotSpotIdentityHashCodeProvider);
 
             lowerer.initialize(options, new DummySnippetFactory(), providers);
 

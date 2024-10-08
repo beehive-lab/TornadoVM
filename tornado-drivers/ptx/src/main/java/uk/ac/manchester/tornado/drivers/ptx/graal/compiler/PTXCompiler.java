@@ -174,7 +174,7 @@ public class PTXCompiler {
             } catch (Throwable e) {
                 throw TornadoCoreRuntime.getDebugContext().handle(e);
             }
-            RegisterAllocationConfig registerAllocationConfig = r.backend.newRegisterAllocationConfig(null, new String[] {});
+            RegisterAllocationConfig registerAllocationConfig = r.backend.newRegisterAllocationConfig(null, new String[] {}, new Object());
             FrameMapBuilder frameMapBuilder = r.backend.newFrameMapBuilder(null);
             LIRGenerationResult lirGenRes = r.backend.newLIRGenerationResult(r.graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
             LIRGeneratorTool lirGen = r.backend.newLIRGenerator(lirGenRes);

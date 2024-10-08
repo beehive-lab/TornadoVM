@@ -423,7 +423,7 @@ public class PTXGraphBuilderPlugins {
                         SignExtendNode signExtend = new SignExtendNode(absoluteIndexNode.asNode(), 64);
                         b.getGraph().addOrUnique(signExtend);
                         MulNode mulNode = b.append(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
                         return true;
@@ -436,7 +436,7 @@ public class PTXGraphBuilderPlugins {
                         SignExtendNode signExtend = new SignExtendNode(absoluteIndexNode.asNode(), 64);
                         b.getGraph().addOrUnique(signExtend);
                         MulNode mulNode = b.append(new MulNode(signExtend, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
                         return true;

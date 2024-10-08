@@ -26,6 +26,10 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.LeftShiftNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
+import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.graal.compiler.core.common.memory.BarrierType;
@@ -101,6 +105,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -468,7 +473,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        AddressNode address = createArrayAddressTornado(graph, array, elementKind, storeIndexed.index());
         ValueNode writeValue = value;
         Stamp valueStamp = value.stamp(NodeView.DEFAULT);
         if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
@@ -519,11 +524,25 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+            address = createArrayAddressTornado(graph, loadIndexed.array(), elementKind, loadIndexed.index());
         }
         return address;
     }
 
+    public AddressNode createArrayAddressTornado(StructuredGraph graph, ValueNode array, JavaKind elementKind, ValueNode index) {
+        int arrayBaseOffset = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+        ValueNode wordIndex;
+        if (target.wordSize > 4) {
+            wordIndex = graph.unique(new SignExtendNode(index, target.wordSize * 8));
+        } else {
+            assert target.wordSize == 4 : "unsupported word size";
+            wordIndex = index;
+        }
+        int shift = CodeUtil.log2(metaAccess.getArrayIndexScale(elementKind));
+        ValueNode scaledIndex = graph.unique(new LeftShiftNode(wordIndex, ConstantNode.forInt(shift, graph)));
+        ValueNode offset = graph.unique(new AddNode(scaledIndex, ConstantNode.forIntegerKind(target.wordJavaKind, arrayBaseOffset, graph)));
+        return graph.unique(new OffsetAddressNode(array, offset));
+    }
     private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
         return graph.unique(new OffsetAddressNode(array, index));
     }

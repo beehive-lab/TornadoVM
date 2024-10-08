@@ -164,8 +164,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert op, Value inputVal) {
-        unimplemented();
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
         return null;
     }
 
@@ -219,6 +218,11 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
         getGen().emitMove(result, inputVal);
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return null;
     }
 
     public PTXLIRGenerator getGen() {
