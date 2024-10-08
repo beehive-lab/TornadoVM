@@ -235,7 +235,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                                 if (e instanceof TornadoDeviceFP64NotSupported tornadoDeviceFP64NotSupportedException) {
                                     throw tornadoDeviceFP64NotSupportedException;
                                 } else {
-                                    System.out.print("Value " + valueNode.asNode().toString());
                                     throw new TornadoInternalError(e).addContext(valueNode.toString());
                                 }
                             }

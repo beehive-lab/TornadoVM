@@ -338,7 +338,6 @@ public class OCLGraphBuilderPlugins {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
-            System.out.print("kind " +  kind.name() + " \n");
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
                 r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
                     @Override
