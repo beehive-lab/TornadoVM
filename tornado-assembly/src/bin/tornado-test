@@ -369,6 +369,7 @@ class Colors:
     RESET = "\033[0;0m"
     BOLD = "\033[;1m"
     REVERSE = "\033[;7m"
+    ORANGE = "\033[38;5;214m"
 
 
 def composeAllOptions(args):
@@ -606,7 +607,11 @@ def runTests(args):
             print("FAILED TESTS")
             print("==================================================")
             for test, whitelisted in failedTests.items():
-                print(f"{test} - [WHITELISTED]: {whitelisted}")
+                if whitelisted == "YES":
+                    print(Colors.ORANGE + f"{test} - [WHITELISTED]: {whitelisted}")
+                else:
+                    print(Colors.RED + f"{test} - [WHITELISTED]: {whitelisted}")
+            print(Colors.RED)
             print("==================================================")
             if len(segFaults) != 0:
                 print("SEGFAULT TESTS")
