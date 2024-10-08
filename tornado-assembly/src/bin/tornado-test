@@ -609,7 +609,6 @@ def runTests(args):
                 print(f"{test} - [WHITELISTED]: {whitelisted}")
             print("==================================================")
             if len(segFaults) != 0:
-                print("==================================================")
                 print("SEGFAULT TESTS")
                 print("==================================================")
                 for test in segFaults:
