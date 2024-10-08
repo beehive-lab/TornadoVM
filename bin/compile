@@ -234,7 +234,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
         level_zero_lib = "level-zero"
 
         if not os.path.exists(level_zero_lib):
-            subprocess.run(["git", "clone", "https://github.com/oneapi-src/level-zero"])
+            subprocess.run(["git", "clone", "--branch", "v1.17.45", "https://github.com/oneapi-src/level-zero"])
             os.chdir(level_zero_lib)
             os.mkdir("build")
             os.chdir("build")
