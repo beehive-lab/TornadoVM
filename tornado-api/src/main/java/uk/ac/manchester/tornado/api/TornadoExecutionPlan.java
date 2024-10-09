@@ -80,17 +80,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     // Pointers
     /**
-     * Pointer to the Root of the List
+     * Pointer to the Root of the List.
      */
     protected TornadoExecutionPlan rootNode;
 
     /**
-     * Pointer to the next node in the list
+     * Pointer to the next node in the list.
      */
     protected TornadoExecutionPlan childLink;
 
     /**
-     * Pointer to the previous node in the list
+     * Pointer to the previous node in the list.
      */
     protected TornadoExecutionPlan parentLink;
 
