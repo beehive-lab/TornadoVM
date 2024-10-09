@@ -45,6 +45,7 @@ import static org.junit.Assert.assertEquals;
  */
 
 public class TestZeroExtend {
+    // CHECKSTYLE:OFF
 
     public static void narrowByte(ByteArray a, IntArray result, int size) {
         for(@Parallel int i = 0; i < size; i++) {
@@ -162,4 +163,5 @@ public class TestZeroExtend {
             assertEquals(expected.get(i), result.get(i));
         }
     }
+    // CHECKSTYLE:ON
 }
