@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
-import uk.ac.manchester.tornado.api.plan.types.WithDevicePlan;
+import uk.ac.manchester.tornado.api.plan.types.WithDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
@@ -184,7 +184,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withDevice(TornadoDevice device) {
         tornadoExecutor.setDevice(device);
-        return new WithDevicePlan(this);
+        return new WithDevice(this, device);
     }
 
     /**
@@ -227,7 +227,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withDevice(String taskName, TornadoDevice device) {
         tornadoExecutor.setDevice(taskName, device);
-        return new WithDevicePlan(this);
+        return new WithDevice(this, device);
     }
 
     /**
@@ -297,7 +297,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         tornadoExecutor.withGridScheduler(gridScheduler);
-        return new WithGridScheduler(this);
+        return new WithGridScheduler(this, gridScheduler);
     }
 
     /**
@@ -322,7 +322,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
         executionFrame.withPolicy(policy).withMode(mode);
-        return new WithDynamicReconfiguration(this);
+        return new WithDynamicReconfiguration(this, policy, mode);
     }
 
     /**
@@ -337,7 +337,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withBatch(String batchSize) {
         tornadoExecutor.withBatch(batchSize);
-        return new WithBatch(this);
+        return new WithBatch(this, batchSize);
     }
 
     /**
@@ -351,7 +351,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
         executionFrame.withProfilerOn(profilerMode);
-        return new WithProfiler(this);
+        return new WithProfiler(this, profilerMode);
     }
 
     /**
@@ -377,7 +377,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
         tornadoExecutor.withMemoryLimit(memoryLimit);
-        return new WithMemoryLimit(this);
+        return new WithMemoryLimit(this, memoryLimit);
     }
 
     /**
@@ -492,7 +492,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
-        return new WithCompilerFlags(this);
+        return new WithCompilerFlags(this, compilerFlags);
     }
 
     /**
