@@ -55,8 +55,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
@@ -300,15 +298,6 @@ public class TaskUtils {
             }
         }
         return cvs;
-    }
-
-    private static DomainTree buildDomainTree(int[] dims) {
-        final DomainTree domain = new DomainTree(dims.length);
-        for (int i = 0; i < dims.length; i++) {
-            domain.set(i, new IntDomain(0, 1, dims[i]));
-        }
-        return domain;
-
     }
 
     /**

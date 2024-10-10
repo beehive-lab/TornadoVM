@@ -17,17 +17,33 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
+import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
+import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
+import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithBatch;
+import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
+import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
+import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithDevicePlan;
+import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
+import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
+import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
+import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
+import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
+import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
@@ -40,7 +56,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
  *
  * @since v0.15
  */
-public class TornadoExecutionPlan implements AutoCloseable {
+public sealed class TornadoExecutionPlan implements AutoCloseable permits ExecutionPlanType {
 
     /**
      * Method to obtain the default device in TornadoVM. The default one corresponds
@@ -48,11 +64,32 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
 
-    private final TornadoExecutor tornadoExecutor;
-    private ProfilerMode profilerMode;
-    private boolean disableProfiler;
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
-    private final ExecutorFrame executionPackage;
+
+    /**
+     * The TornadoVM executor is a list of chain of actions to be performed.
+     * Each action can enable/disable runtime features, influence the compiler,
+     * influence the code optimization, adapt runtime parameters, etc.
+     */
+    protected TornadoExecutor tornadoExecutor;
+
+    protected ExecutorFrame executionFrame;
+
+    // Pointers
+    /**
+     * Pointer to the Root of the List.
+     */
+    protected TornadoExecutionPlan rootNode;
+
+    /**
+     * Pointer to the next node in the list.
+     */
+    protected TornadoExecutionPlan childLink;
+
+    /**
+     * Pointer to the previous node in the list.
+     */
+    protected TornadoExecutionPlan parentLink;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -65,9 +102,10 @@ public class TornadoExecutionPlan implements AutoCloseable {
      *     {@link ImmutableTaskGraph}
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
-        this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
+        tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         final long id = globalExecutionPlanCounter.incrementAndGet();
-        executionPackage = new ExecutorFrame(id);
+        executionFrame = new ExecutorFrame(id);
+        rootNode = this;
     }
 
     /**
@@ -114,17 +152,9 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionResult execute() {
-        checkProfilerEnabled();
-        tornadoExecutor.execute(executionPackage);
-        return new TornadoExecutionResult(new TornadoProfilerResult(tornadoExecutor));
-    }
-
-    private void checkProfilerEnabled() {
-        if (this.profilerMode != null && !this.disableProfiler) {
-            tornadoExecutor.enableProfiler(profilerMode);
-        } else if (this.profilerMode != null) {
-            tornadoExecutor.disableProfiler(profilerMode);
-        }
+        tornadoExecutor.execute(executionFrame);
+        TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor);
+        return new TornadoExecutionResult(profilerResult);
     }
 
     /**
@@ -134,9 +164,8 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withWarmUp() {
-        checkProfilerEnabled();
-        tornadoExecutor.warmup();
-        return this;
+        tornadoExecutor.warmup(executionFrame);
+        return new WithWarmUp(this);
     }
 
     /**
@@ -147,7 +176,34 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withDevice(TornadoDevice device) {
         tornadoExecutor.setDevice(device);
-        return this;
+        return new WithDevicePlan(this);
+    }
+
+    /**
+     * Print all operations enabled/disabled from the Execution Plan.
+     * 
+     * @since 1.0.8
+     */
+    public void printTraceExecutionPlan() {
+        System.out.println(Objects.requireNonNullElse(childLink, this));
+    }
+
+    /**
+     * Returns a string with all the operations enabled/disabled from the
+     * Execution Plan.
+     *
+     * @since 1.0.8
+     */
+    public String getTraceExecutionPlan() {
+        if (childLink != null) {
+            return childLink.toString();
+        }
+        return toString();
+    }
+
+    @Override
+    public String toString() {
+        return "Root";
     }
 
     /**
@@ -163,7 +219,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withDevice(String taskName, TornadoDevice device) {
         tornadoExecutor.setDevice(taskName, device);
-        return this;
+        return new WithDevicePlan(this);
     }
 
     /**
@@ -177,7 +233,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withConcurrentDevices() {
         tornadoExecutor.withConcurrentDevices();
-        return this;
+        return new WithConcurrentDevices(this);
     }
 
     /**
@@ -188,7 +244,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withoutConcurrentDevices() {
         tornadoExecutor.withoutConcurrentDevices();
-        return this;
+        return new OffConcurrentDevices(this);
     }
 
     /**
@@ -219,7 +275,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan freeDeviceMemory() {
         tornadoExecutor.freeDeviceMemory();
-        return this;
+        return new WithFreeDeviceMemory(this);
     }
 
     /**
@@ -233,7 +289,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         tornadoExecutor.withGridScheduler(gridScheduler);
-        return this;
+        return new WithGridScheduler(this);
     }
 
     /**
@@ -243,7 +299,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withDefaultScheduler() {
         tornadoExecutor.withDefaultScheduler();
-        return this;
+        return new WithDefaultScheduler(this);
     }
 
     /**
@@ -257,8 +313,8 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
-        executionPackage.withPolicy(policy).withMode(mode);
-        return this;
+        executionFrame.withPolicy(policy).withMode(mode);
+        return new WithDynamicReconfiguration(this);
     }
 
     /**
@@ -273,7 +329,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withBatch(String batchSize) {
         tornadoExecutor.withBatch(batchSize);
-        return this;
+        return new WithBatch(this);
     }
 
     /**
@@ -286,9 +342,8 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
-        this.profilerMode = profilerMode;
-        disableProfiler = false;
-        return this;
+        executionFrame.withProfilerOn(profilerMode);
+        return new WithProfiler(this);
     }
 
     /**
@@ -297,8 +352,8 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withoutProfiler() {
-        this.disableProfiler = true;
-        return this;
+        executionFrame.withProfilerOff();
+        return new OffProfiler(this);
     }
 
     /**
@@ -314,7 +369,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withMemoryLimit(String memoryLimit) {
         tornadoExecutor.withMemoryLimit(memoryLimit);
-        return this;
+        return new WithMemoryLimit(this);
     }
 
     /**
@@ -329,7 +384,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withoutMemoryLimit() {
         tornadoExecutor.withoutMemoryLimit();
-        return this;
+        return new OffMemoryLimit(this);
     }
 
     /**
@@ -342,14 +397,14 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan resetDevice() {
         tornadoExecutor.resetDevice();
-        return this;
+        return new WithResetDevice(this);
     }
 
     /**
      * Obtains the ID that was assigned to the execution plan.
      */
     public long getId() {
-        return executionPackage.getExecutionPlanId();
+        return executionFrame.getExecutionPlanId();
     }
 
     /**
@@ -366,7 +421,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan clearProfiles() {
         tornadoExecutor.clearProfiles();
-        return this;
+        return new WithClearProfiles(this);
     }
 
     /**
@@ -378,7 +433,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withThreadInfo() {
         tornadoExecutor.withThreadInfo();
-        return this;
+        return new WithThreadInfo(this);
     }
 
     /**
@@ -390,7 +445,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withoutThreadInfo() {
         tornadoExecutor.withoutThreadInfo();
-        return this;
+        return new OffThreadInfo(this);
     }
 
     /**
@@ -400,10 +455,9 @@ public class TornadoExecutionPlan implements AutoCloseable {
      * 
      * @return {@link TornadoExecutionPlan}
      */
-
     public TornadoExecutionPlan withPrintKernel() {
         tornadoExecutor.withPrintKernel();
-        return this;
+        return new WithPrintKernel(this);
     }
 
     /**
@@ -415,7 +469,7 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withoutPrintKernel() {
         tornadoExecutor.withoutPrintKernel();
-        return this;
+        return new OffPrintKernel(this);
     }
 
     /**
@@ -430,13 +484,14 @@ public class TornadoExecutionPlan implements AutoCloseable {
      */
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
-        return this;
+        return new WithCompilerFlags(this);
     }
 
     /**
      * @since 1.0.4
      * 
-     * @throws TornadoExecutionPlanException
+     * @throws {@link
+     *     TornadoExecutionPlanException}
      */
     @Override
     public void close() throws TornadoExecutionPlanException {
@@ -453,202 +508,4 @@ public class TornadoExecutionPlan implements AutoCloseable {
         return tornadoExecutor.getCurrentDeviceMemoryUsage();
     }
 
-    static class TornadoExecutor {
-
-        private final List<ImmutableTaskGraph> immutableTaskGraphList;
-
-        TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
-            immutableTaskGraphList = new ArrayList<>();
-            Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
-        }
-
-        void execute(ExecutorFrame executionPackage) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
-        }
-
-        void withGridScheduler(GridScheduler gridScheduler) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
-        }
-
-        void warmup() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::warmup);
-        }
-
-        void withBatch(String batchSize) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
-        }
-
-        void withMemoryLimit(String memoryLimit) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withMemoryLimit(memoryLimit));
-        }
-
-        public void withoutMemoryLimit() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutMemoryLimit);
-        }
-
-        /**
-         * For all task-graphs contained in an Executor, update the device.
-         *
-         * @param device
-         *     {@link TornadoDevice} object
-         */
-        void setDevice(TornadoDevice device) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withDevice(device));
-        }
-
-        void setDevice(String taskName, TornadoDevice device) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withDevice(taskName, device));
-        }
-
-        void withConcurrentDevices() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withConcurrentDevices);
-        }
-
-        void withoutConcurrentDevices() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutConcurrentDevices);
-        }
-
-        void freeDeviceMemory() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::freeDeviceMemory);
-        }
-
-        void transferToHost(Object... objects) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
-        }
-
-        void partialTransferToHost(DataRange dataRange) {
-            // At this point we compute the offsets and the total size in bytes.
-            dataRange.materialize();
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
-        }
-
-        boolean isFinished() {
-            boolean result = true;
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                result &= immutableTaskGraph.isFinished();
-            }
-            return result;
-        }
-
-        void resetDevice() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::resetDevice);
-        }
-
-        long getTotalTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getCompileTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getCompileTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getTornadoCompilerTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTornadoCompilerTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getDriverInstallTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDriverInstallTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getDataTransfersTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDataTransfersTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getDeviceWriteTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceWriteTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getDeviceReadTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceReadTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getDataTransferDispatchTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDataTransferDispatchTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getKernelDispatchTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getKernelDispatchTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getDeviceKernelTime() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceKernelTime).mapToLong(Long::longValue).sum();
-        }
-
-        long getTotalBytesCopyIn() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyIn).mapToLong(Long::longValue).sum();
-        }
-
-        long getTotalBytesCopyOut() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalBytesCopyOut).mapToLong(Long::longValue).sum();
-        }
-
-        String getProfileLog() {
-            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getProfileLog).collect(Collectors.joining());
-        }
-
-        void dumpProfiles() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::dumpProfiles);
-        }
-
-        void clearProfiles() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::clearProfiles);
-        }
-
-        void withDefaultScheduler() {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withDefaultScheduler(true));
-        }
-
-        TornadoDevice getDevice(int immutableTaskGraphIndex) {
-            if (immutableTaskGraphList.size() < immutableTaskGraphIndex) {
-                throw new TornadoRuntimeException("TaskGraph index #" + immutableTaskGraphIndex + " does not exist in current executor");
-            }
-            return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
-        }
-
-        List<Object> getOutputs() {
-            List<Object> outputs = new ArrayList<>();
-            immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
-            return outputs;
-        }
-
-        void enableProfiler(ProfilerMode profilerMode) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.enableProfiler(profilerMode));
-        }
-
-        void disableProfiler(ProfilerMode profilerMode) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.disableProfiler(profilerMode));
-        }
-
-        void withThreadInfo() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
-        }
-
-        void withoutThreadInfo() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutThreadInfo);
-        }
-
-        void withPrintKernel() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withPrintKernel);
-        }
-
-        void withoutPrintKernel() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutPrintKernel);
-        }
-
-        void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
-            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withCompilerFlags(backendType, compilerFlags));
-        }
-
-        long getTotalBytesTransferred() {
-            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalBytesTransferred).sum();
-        }
-
-        long getTotalDeviceMemoryUsage() {
-            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getTotalDeviceMemoryUsage).sum();
-        }
-
-        long getCurrentDeviceMemoryUsage() {
-            return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
-        }
-    }
 }

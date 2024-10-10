@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  *
  * <p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
+ * tornado-test -V uk.ac.manchester.tornado.unittests.batches.TestBatches
  * </code>
  * </p>
  */

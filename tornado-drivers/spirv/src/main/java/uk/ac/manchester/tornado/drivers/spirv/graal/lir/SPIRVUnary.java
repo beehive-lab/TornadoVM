@@ -782,6 +782,43 @@ public class SPIRVUnary {
         }
     }
 
+    public static class ZeroExtend extends AbstractExtend {
+
+        private int fromBits;
+        private int toBits;
+
+        public ZeroExtend(LIRKind lirKind, Variable result, Value inputVal, int fromBits, int toBits) {
+            super(null, result, lirKind, inputVal);
+            this.fromBits = fromBits;
+            this.toBits = toBits;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpUConvert : " + fromBits + " -> " + toBits);
+
+            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, type, spirvKind);
+
+            SPIRVId toTypeId = switch (toBits) {
+                case 64 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                case 32 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+                case 16 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_16);
+                case 8 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_8);
+                default -> throw new TornadoRuntimeException("to Type not supported: " + toBits);
+            };
+
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
+            asm.currentBlockScope().add(new SPIRVOpUConvert(toTypeId, result, loadConvert));
+
+            asm.registerLIRInstructionValue(this, result);
+
+        }
+    }
+
     public static class CastOperations extends UnaryConsumer {
 
         protected CastOperations(SPIRVUnaryOp opcode, Variable result, LIRKind valueKind, Value value) {

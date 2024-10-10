@@ -62,7 +62,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
         InliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoPartialInliningPolicy();
 
-        CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
@@ -87,7 +87,4 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         appendPhase(new TornadoBatchFunctionAnalysis());
     }
 
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        return CanonicalizerPhase.create();
-    }
 }

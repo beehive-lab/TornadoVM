@@ -398,8 +398,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = getGen().newVariable(toKind);
 
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
-        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, result, inputVal, fromBits, toBits);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
+        SPIRVUnary.ZeroExtend zeroExtend = new SPIRVUnary.ZeroExtend(lirKind, result, inputVal, fromBits, toBits);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, zeroExtend));
         return result;
     }
 

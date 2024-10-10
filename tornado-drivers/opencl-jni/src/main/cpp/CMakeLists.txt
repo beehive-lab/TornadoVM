@@ -43,6 +43,11 @@ if(MSVC)
 		string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 		string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 	endif()
+elseif(APPLE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+	add_definitions(${CMAKE_CXX_FLAGS})
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
@@ -75,7 +80,7 @@ add_library(tornado-opencl SHARED
 	source/OCLKernel.cpp
 	source/OCLPlatform.cpp
 	source/OCLProgram.cpp
-	source/OCLNvidiaPowerMetric.cpp
+	source/OCLNvidiaPowerMetricHandler.cpp
 	source/OpenCL.cpp
 	source/utils.cpp
 	source/opencl_time_utils.cpp

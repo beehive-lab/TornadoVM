@@ -34,13 +34,14 @@ import jdk.graal.compiler.lir.ConstantValue;
 import jdk.graal.compiler.lir.LIRFrameState;
 import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.gen.ArithmeticLIRGenerator;
-
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
@@ -193,20 +194,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     private OCLUnaryOp getSignExtendOp(int toBits) {
-        switch (toBits) {
-            case 8:
-                return OCLUnaryOp.CAST_TO_BYTE;
-            case 16:
-                return OCLUnaryOp.CAST_TO_SHORT;
-            case 32:
-                return OCLUnaryOp.CAST_TO_INT;
-            case 64:
-                return OCLUnaryOp.CAST_TO_LONG;
-            default:
-                unimplemented();
-        }
-        return null;
+        return switch (toBits) {
+            case 8 -> OCLUnaryOp.CAST_TO_BYTE;
+            case 16 -> OCLUnaryOp.CAST_TO_SHORT;
+            case 32 -> OCLUnaryOp.CAST_TO_INT;
+            case 64 -> OCLUnaryOp.CAST_TO_LONG;
+            default -> throw new UnsupportedOperationException("Unimplemented case for toBits: " + toBits);
+        };
     }
+
 
     @Override
     public Value emitNarrow(Value x, int toBits) {
@@ -276,16 +272,16 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         OCLKind kind = (OCLKind) value.getPlatformKind();
         LIRKind toKind;
         if (kind.isInteger()) {
-            toKind = kindTool.getIntegerKind(toBits);
+            toKind = kindTool.getUnsignedIntegerKind(toBits);
         } else if (kind.isFloating()) {
             toKind = kindTool.getFloatingKind(toBits);
         } else {
             throw shouldNotReachHere();
         }
 
-        Variable result = getGen().newVariable(toKind);
-
-        getGen().emitMove(result, value);
+        // Apply a bitwise mask in order to avoid sign extension and instead zero extend the value.
+        ConstantValue mask = new ConstantValue(toKind, JavaConstant.forIntegerKind(CodeUtil.javaKindFromBitSize(toBits, kind.isFloating()), (1L << fromBits) - 1));
+        Variable result = emitBinaryAssign(OCLBinaryOp.BITWISE_AND, toKind, value, mask);
         return result;
     }
 

@@ -759,8 +759,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.execute(executionPackage).waitOn();
     }
 
-    void warmup() {
-        taskGraphImpl.warmup();
+    void warmup(ExecutorFrame executionPackage) {
+        taskGraphImpl.warmup(executionPackage);
     }
 
     void dumpProfiles() {
@@ -860,10 +860,6 @@ public class TaskGraph implements TaskGraphInterface {
 
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraphImpl.enableProfiler(profilerMode);
-    }
-
-    void disableProfiler(ProfilerMode profilerMode) {
-        taskGraphImpl.disableProfiler(profilerMode);
     }
 
     void withConcurrentDevices() {

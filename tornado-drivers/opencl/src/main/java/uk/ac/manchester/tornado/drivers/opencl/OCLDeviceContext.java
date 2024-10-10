@@ -45,8 +45,8 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
-import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetric;
-import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetric;
+import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetricHandler;
+import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -61,7 +61,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
      */
     private final Map<Long, OCLCommandQueueTable> commandQueueTable;
     private final OCLContext context;
-    private final PowerMetric powerMetric;
+    private final PowerMetric powerMetricHandler;
     private final OCLMemoryManager memoryManager;
     private final Map<Long, OCLEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
@@ -84,9 +84,9 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         this.device.setDeviceContext(this);
         this.executionIDs = Collections.synchronizedSet(new HashSet<>());
         if (isDeviceContextOfNvidia()) {
-            this.powerMetric = new OCLNvidiaPowerMetric(this);
+            this.powerMetricHandler = new OCLNvidiaPowerMetricHandler(this);
         } else {
-            this.powerMetric = new OCLEmptyPowerMetric();
+            this.powerMetricHandler = new OCLEmptyPowerMetricHandler();
         }
         codeCache = new ConcurrentHashMap<>();
     }
@@ -196,10 +196,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     public long getPowerUsage() {
-        long[] device = new long[1];
         long[] powerUsage = new long[1];
-        powerMetric.getHandleByIndex(device);
-        powerMetric.getPowerUsage(device, powerUsage);
+        powerMetricHandler.getPowerUsage(powerUsage);
         return powerUsage[0];
     }
 

@@ -23,19 +23,20 @@
  * SOFTWARE.
  */
 #include <jni.h>
-#include <iostream>
 #ifdef NVML_IS_SUPPORTED
 #include <nvml.h>
 #endif
-#include "OCLNvidiaPowerMetric.h"
-#include "ocl_log.h"
+#include <iostream>
+
+#include "PTXNvidiaPowerMetricHandler.h"
+#include "ptx_log.h"
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
- * Method:    clNvmlInit
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
+ * Method:    ptxNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler_ptxNvmlInit
         (JNIEnv *env, jclass) {
 #ifdef NVML_IS_SUPPORTED
     nvmlReturn_t result = nvmlInit();
@@ -48,11 +49,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNv
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
- * Method:    clNvmlDeviceGetHandleByIndex
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
+ * Method:    ptxNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler_ptxNvmlDeviceGetHandleByIndex
         (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
 #ifdef NVML_IS_SUPPORTED
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
@@ -71,11 +72,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNv
 }
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
- * Method:    clNvmlDeviceGetPowerUsage
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler
+ * Method:    ptxNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_power_PTXNvidiaPowerMetricHandler_ptxNvmlDeviceGetPowerUsage
         (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
 #ifdef NVML_IS_SUPPORTED
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)

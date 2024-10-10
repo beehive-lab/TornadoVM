@@ -67,10 +67,6 @@ tests-spirv-opencl:
 	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
-tests-opt:
-	tornado --devices
-	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
-
 test-slam:
 	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 

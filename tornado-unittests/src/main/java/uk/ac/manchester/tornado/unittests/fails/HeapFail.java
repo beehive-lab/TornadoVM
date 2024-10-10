@@ -49,7 +49,7 @@ public class HeapFail {
      * How to run.
      *
      * <code>
-     * $ tornado-test -V --fast -J"-Dtornado.device.memory=1MB"
+     * $ tornado-test -V -J"-Dtornado.device.memory=1MB"
      * uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
      * </code>
      *
