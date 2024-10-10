@@ -40,8 +40,12 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix2DDouble;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DInt;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DDouble;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DInt;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DLong;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DShort;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -69,6 +73,46 @@ public class TestMatrixTypes extends TornadoTestBase {
             for (@Parallel int j = 0; j < N; j++) {
                 for (@Parallel int k = 0; k < N; k++) {
                     b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix3DInt a, Matrix3DInt b, final int N) {
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                for (@Parallel int k = 0; k < N; k++) {
+                    b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix3DDouble a, Matrix3DDouble b, final int N) {
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                for (@Parallel int k = 0; k < N; k++) {
+                    b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix3DLong a, Matrix3DLong b, final int N) {
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                for (@Parallel int k = 0; k < N; k++) {
+                    b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix3DShort a, Matrix3DShort b, final int N) {
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                for (@Parallel int k = 0; k < N; k++) {
+                    b.set(i, j, k, (short) (a.get(i, j, k) + a.get(i, j, k)));
                 }
             }
         }
@@ -839,6 +883,137 @@ public class TestMatrixTypes extends TornadoTestBase {
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
                 assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01f);
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix24() throws TornadoExecutionPlanException {
+        final int N = 256;
+        Matrix3DInt matrixA = new Matrix3DInt(N, N, N);
+        Matrix3DInt matrixB = new Matrix3DInt(N, N, N);
+        Random r = new Random();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    matrixA.set(i, j, k, r.nextInt());
+                }
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    assertEquals(matrixA.get(i, j, k) + matrixA.get(i, j, k), matrixB.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix25() throws TornadoExecutionPlanException {
+        final int N = 256;
+        Matrix3DDouble matrixA = new Matrix3DDouble(N, N, N);
+        Matrix3DDouble matrixB = new Matrix3DDouble(N, N, N);
+        Random r = new Random();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    matrixA.set(i, j, k, r.nextDouble());
+                }
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    assertEquals(matrixA.get(i, j, k) + matrixA.get(i, j, k), matrixB.get(i, j, k), 0.01);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix26() throws TornadoExecutionPlanException {
+        final int N = 256;
+        Matrix3DLong matrixA = new Matrix3DLong(N, N, N);
+        Matrix3DLong matrixB = new Matrix3DLong(N, N, N);
+        Random r = new Random();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    matrixA.set(i, j, k, r.nextLong());
+                }
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    assertEquals(matrixA.get(i, j, k) + matrixA.get(i, j, k), matrixB.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix27() throws TornadoExecutionPlanException {
+        final int N = 256;
+        Matrix3DShort matrixA = new Matrix3DShort(N, N, N);
+        Matrix3DShort matrixB = new Matrix3DShort(N, N, N);
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    matrixA.set(i, j, k, (short) i);
+                }
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                for (int k = 0; k < N; k++) {
+                    assertEquals(matrixA.get(i, j, k) + matrixA.get(i, j, k), matrixB.get(i, j, k));
+                }
             }
         }
     }
