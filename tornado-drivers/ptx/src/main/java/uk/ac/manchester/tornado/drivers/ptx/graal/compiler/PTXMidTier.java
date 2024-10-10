@@ -38,7 +38,6 @@ import org.graalvm.compiler.phases.common.ReassociationPhase;
 
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionCheckingElimination;
-import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPanamaSegmentsHeaderPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 
@@ -62,7 +61,6 @@ public class PTXMidTier extends TornadoMidTier {
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
-        appendPhase(new TornadoPanamaSegmentsHeaderPhase());
 
         appendPhase(new GuardLoweringPhase());
 
