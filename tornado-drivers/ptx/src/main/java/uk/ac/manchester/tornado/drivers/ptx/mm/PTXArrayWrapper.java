@@ -58,7 +58,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         this.buffer = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
 
-        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         logger = new TornadoLogger(this.getClass());
     }

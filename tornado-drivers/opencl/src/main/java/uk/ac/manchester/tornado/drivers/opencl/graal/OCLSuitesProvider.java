@@ -23,13 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import org.graalvm.compiler.java.GraphBuilderPhase;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
+import jdk.graal.compiler.java.GraphBuilderPhase;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.phases.PhaseSuite;
+import jdk.graal.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
+import jdk.graal.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoInternalGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -62,7 +63,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         config.withEagerResolving(true);
 
         // config.setUseProfiling(false);
-        suite.appendPhase(new GraphBuilderPhase(config));
+        suite.appendPhase(new TornadoInternalGraphBuilder(config));
 
         return suite;
     }

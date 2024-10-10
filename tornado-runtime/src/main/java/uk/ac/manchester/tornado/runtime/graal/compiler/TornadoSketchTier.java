@@ -23,17 +23,13 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
-import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.phases.PhaseSuite;
+import jdk.graal.compiler.phases.common.CanonicalizerPhase;
+import jdk.graal.compiler.phases.common.DeadCodeEliminationPhase;
+import jdk.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import jdk.graal.compiler.phases.common.inlining.InliningPhase;
+import jdk.graal.compiler.phases.common.inlining.policy.InliningPolicy;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatFixedGuardElimination;
@@ -50,6 +46,10 @@ import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPanamaPriva
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoStampResolver;
+
+import static jdk.graal.compiler.core.common.GraalOptions.ConditionalElimination;
+import static jdk.graal.compiler.core.phases.HighTier.Options.Inline;
+import static jdk.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 

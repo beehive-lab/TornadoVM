@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.graph.Graph;
+import jdk.graal.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -190,6 +190,7 @@ class ReduceTaskGraph {
             for (int i = 0; i < binaries.length; i += 2) {
                 String givenTaskName = binaries[i + 1].split(".device")[0];
                 if (givenTaskName.equals(idTaskGraph)) {
+
                     BackendSelectionContainer info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskGraph + ".device"));
                     int deviceNumber = info.deviceIndex();
 
@@ -208,6 +209,7 @@ class ReduceTaskGraph {
         return TornadoOptions.FPGA_BINARIES != null;
     }
 
+
     private BackendSelectionContainer changeDriverAndDeviceIfNeeded(String taskScheduleName, String graphName, String taskName) {
         String idTaskGraph = graphName + "." + taskName;
         boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskGraph + ".device") != null;
@@ -219,6 +221,7 @@ class ReduceTaskGraph {
             TornadoRuntimeProvider.setProperty(taskScheduleName + "." + taskName + ".device", backendIndex + ":" + deviceNumber);
             return info;
         }
+
         return null;
     }
 
@@ -571,6 +574,7 @@ class ReduceTaskGraph {
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = rewrittenTaskGraph.getTaskGraphName() + "." + newTaskSequentialName;
+
                         TornadoRuntimeProvider.setProperty(fullName + ".device", backendToRun + ":" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 

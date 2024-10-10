@@ -245,6 +245,7 @@ public class TornadoVMInterpreter {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         interpreterDevice.enableThreadSharing();
 
+
         if (isMemoryLimitEnabled() && graphExecutionContext.doesExceedExecutionPlanLimit()) {
             throw new TornadoMemoryException("OutofMemoryException due to executionPlan.withMemoryLimit of " + graphExecutionContext.getExecutionPlanMemoryLimit());
         }
@@ -936,6 +937,7 @@ public class TornadoVMInterpreter {
             // @formatter:on
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
+
 
         static void logTransferToDeviceAlways(Object object, TornadoXPUDevice deviceForInterpreter, long sizeBatch, long offset, final int eventList, StringBuilder tornadoVMBytecodeList) {
             String verbose = String.format("bc: %s [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS"), //

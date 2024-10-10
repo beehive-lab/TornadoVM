@@ -26,20 +26,20 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.RSQRT;
 
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.FloatConvert;
+import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.ArithmeticLIRGenerator;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.FloatConvert;
-import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -140,19 +140,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
-        switch (floatConvert) {
-            case I2D:
-                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), input);
-            default:
-                unimplemented("float convert %s", floatConvert);
-        }
-        return null;
-
-    }
-
-    @Override
     public Value emitMul(Value x, Value y, boolean setFlags) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitMul: %s * %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.MUL, LIRKind.combine(x, y), x, y);
@@ -207,20 +194,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     private OCLUnaryOp getSignExtendOp(int toBits) {
-        switch (toBits) {
-            case 8:
-                return OCLUnaryOp.CAST_TO_BYTE;
-            case 16:
-                return OCLUnaryOp.CAST_TO_SHORT;
-            case 32:
-                return OCLUnaryOp.CAST_TO_INT;
-            case 64:
-                return OCLUnaryOp.CAST_TO_LONG;
-            default:
-                unimplemented();
-        }
-        return null;
+        return switch (toBits) {
+            case 8 -> OCLUnaryOp.CAST_TO_BYTE;
+            case 16 -> OCLUnaryOp.CAST_TO_SHORT;
+            case 32 -> OCLUnaryOp.CAST_TO_INT;
+            case 64 -> OCLUnaryOp.CAST_TO_LONG;
+            default -> throw new UnsupportedOperationException("Unimplemented case for toBits: " + toBits);
+        };
     }
+
 
     @Override
     public Value emitNarrow(Value x, int toBits) {
@@ -267,6 +249,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
+        return null;
+    }
+
+    @Override
     public Value emitXor(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitXor: %s ^ %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_XOR, LIRKind.combine(x, y), x, y);
@@ -296,6 +283,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         ConstantValue mask = new ConstantValue(toKind, JavaConstant.forIntegerKind(CodeUtil.javaKindFromBitSize(toBits, kind.isFloating()), (1L << fromBits) - 1));
         Variable result = emitBinaryAssign(OCLBinaryOp.BITWISE_AND, toKind, value, mask);
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return null;
     }
 
     @Override

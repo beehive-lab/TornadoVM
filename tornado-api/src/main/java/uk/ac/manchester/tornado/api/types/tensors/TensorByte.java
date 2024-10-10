@@ -17,14 +17,13 @@
  */
 package uk.ac.manchester.tornado.api.types.tensors;
 
-import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.tensors.Shape;
 
 @SegmentElementSize(size = 1)
 public final class TensorByte extends Tensor {
@@ -55,14 +54,33 @@ public final class TensorByte extends Tensor {
         this.tensorStorage = new ByteArray(numberOfElements);
     }
 
+    /**
+     * Concatenates multiple {@link TensorByte} instances into a single {@link TensorByte}.
+     *
+     * @param arrays
+     *     Variable number of {@link TensorByte} objects to be concatenated.
+     * @return A new {@link TensorByte} instance containing all the elements of the input arrays,
+     *     concatenated in the order they were provided.
+     */
+    public static TensorByte concat(TensorByte... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(TensorByte::getSize).sum();
+        TensorByte concatArray = new TensorByte(new Shape(newSize));
+        long currentPositionBytes = 0;
+        for (TensorByte array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
+
     public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
-            tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_BYTE, getBaseIndex() + i, value);
+            tensorStorage.set(i, value);
         }
     }
 
     public void set(int index, byte value) {
-        tensorStorage.getSegmentWithHeader().setAtIndex(JAVA_BYTE, getBaseIndex() + index, value);
+        tensorStorage.set(index, value);
     }
 
     private long getBaseIndex() {
@@ -77,7 +95,7 @@ public final class TensorByte extends Tensor {
      * @return
      */
     public byte get(int index) {
-        return tensorStorage.getSegmentWithHeader().getAtIndex(JAVA_BYTE, getBaseIndex() + index);
+        return tensorStorage.get(index);
     }
 
     @Override
@@ -128,24 +146,5 @@ public final class TensorByte extends Tensor {
     @Override
     public DType getDType() {
         return dType;
-    }
-
-    /**
-     * Concatenates multiple {@link TensorByte} instances into a single {@link TensorByte}.
-     *
-     * @param arrays
-     *     Variable number of {@link TensorByte} objects to be concatenated.
-     * @return A new {@link TensorByte} instance containing all the elements of the input arrays,
-     *     concatenated in the order they were provided.
-     */
-    public static TensorByte concat(TensorByte... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(TensorByte::getSize).sum();
-        TensorByte concatArray = new TensorByte(new Shape(newSize));
-        long currentPositionBytes = 0;
-        for (TensorByte array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
     }
 }

@@ -509,14 +509,17 @@ public class TornadoExecutionContext {
 
     public TornadoXPUDevice getDeviceForTask(String id) {
         TornadoDevice device = getTask(id).getDevice();
+
         TornadoXPUDevice tornadoDevice;
         if (device instanceof TornadoXPUDevice) {
             tornadoDevice = (TornadoXPUDevice) device;
         } else {
             throw new RuntimeException("Device " + device.getClass() + " not supported yet");
         }
+
         return getTask(id) == null ? null : tornadoDevice;
     }
+
 
     public String getId() {
         return name;
@@ -574,6 +577,7 @@ public class TornadoExecutionContext {
         final String ansiYellow = "\u001B[33m";
         final String ansiPurple = "\u001B[35m";
         final String ansiGreen = "\u001B[32m";
+
         System.out.println("-----------------------------------");
         System.out.println(ansiCyan + "Device Table:" + ansiReset);
         for (int i = 0; i < devices.size(); i++) {

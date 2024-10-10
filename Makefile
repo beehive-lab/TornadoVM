@@ -4,23 +4,23 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-build jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND)
+build jdk23:
+	bin/compile --jdk jdk23 --backend $(BACKEND)
 
-rebuild-deps-jdk21:
-	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
+rebuild-deps-jdk23:
+	bin/compile --jdk jdk23 --rebuild --backend $(BACKEND)
 
-graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND)
+graal-jdk-23:
+	bin/compile --jdk graal-jdk-23 --backend $(BACKEND)
 
 polyglot:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --polyglot
+	bin/compile --jdk graal-jdk-23 --backend $(BACKEND) --polyglot
 
 ptx:
-	bin/compile --jdk jdk21 --backend ptx,opencl
+	bin/compile --jdk jdk23 --backend ptx,opencl
 
 spirv:
-	bin/compile --jdk jdk21 --backend spirv,ptx,opencl
+	bin/compile --jdk jdk23 --backend spirv,ptx,opencl
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
@@ -42,15 +42,15 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --quickPass
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --quickPass
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-spirv-levelzero:

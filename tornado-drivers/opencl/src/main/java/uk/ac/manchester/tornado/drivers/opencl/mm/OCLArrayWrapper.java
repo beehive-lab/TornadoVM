@@ -65,7 +65,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.bufferOffset = 0;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
         logger = new TornadoLogger(this.getClass());
     }
 

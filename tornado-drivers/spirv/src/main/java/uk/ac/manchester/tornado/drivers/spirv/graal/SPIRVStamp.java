@@ -27,10 +27,10 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.spi.LIRKindTool;
+import jdk.graal.compiler.core.common.type.ObjectStamp;
+import jdk.graal.compiler.core.common.type.Stamp;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
@@ -132,8 +132,13 @@ public class SPIRVStamp extends ObjectStamp {
 
     @Override
     public boolean isCompatible(Stamp stamp) {
-        if (stamp instanceof SPIRVStamp && ((SPIRVStamp) stamp).spirvKind == spirvKind) {
+        if (stamp instanceof SPIRVStamp) {
             return true;
+        } else if (stamp instanceof ObjectStamp) {
+            SPIRVKind stampKind = SPIRVKind.fromJavaKind(((ObjectStamp) stamp).type());
+            if (stampKind == spirvKind) {
+                return true;
+            }
         }
         unimplemented("stamp is compat: %s + %s", this, stamp);
         return false;

@@ -24,62 +24,66 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static jdk.graal.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
 import java.util.Iterator;
 
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
-import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
-import org.graalvm.compiler.nodes.CompressionNode;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FieldLocationIdentity;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.Invoke;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LoweredCallTargetNode;
-import org.graalvm.compiler.nodes.NamedLocationIdentity;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.UnwindNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.FloatConvertNode;
-import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
-import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.java.ArrayLengthNode;
-import org.graalvm.compiler.nodes.java.InstanceOfNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
-import org.graalvm.compiler.nodes.java.StoreFieldNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
-import org.graalvm.compiler.nodes.memory.ExtendableMemoryAccess;
-import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.nodes.memory.WriteNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
-import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
-import org.graalvm.compiler.replacements.SnippetCounter;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
+import jdk.graal.compiler.core.common.spi.ForeignCallsProvider;
+import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import jdk.graal.compiler.core.common.type.ObjectStamp;
+import jdk.graal.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.core.common.type.StampPair;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.graph.NodeInputList;
+import jdk.graal.compiler.nodes.AbstractDeoptimizeNode;
+import jdk.graal.compiler.nodes.CompressionNode;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FieldLocationIdentity;
+import jdk.graal.compiler.nodes.FixedNode;
+import jdk.graal.compiler.nodes.Invoke;
+import jdk.graal.compiler.nodes.InvokeNode;
+import jdk.graal.compiler.nodes.LoweredCallTargetNode;
+import jdk.graal.compiler.nodes.NamedLocationIdentity;
+import jdk.graal.compiler.nodes.NodeView;
+import jdk.graal.compiler.nodes.PhiNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.UnwindNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.BinaryArithmeticNode;
+import jdk.graal.compiler.nodes.calc.FloatConvertNode;
+import jdk.graal.compiler.nodes.calc.IntegerDivRemNode;
+import jdk.graal.compiler.nodes.calc.LeftShiftNode;
+import jdk.graal.compiler.nodes.calc.RemNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
+import jdk.graal.compiler.nodes.java.ArrayLengthNode;
+import jdk.graal.compiler.nodes.java.InstanceOfNode;
+import jdk.graal.compiler.nodes.java.LoadFieldNode;
+import jdk.graal.compiler.nodes.java.LoadIndexedNode;
+import jdk.graal.compiler.nodes.java.MethodCallTargetNode;
+import jdk.graal.compiler.nodes.java.StoreFieldNode;
+import jdk.graal.compiler.nodes.java.StoreIndexedNode;
+import jdk.graal.compiler.nodes.memory.AbstractWriteNode;
+import jdk.graal.compiler.nodes.memory.ExtendableMemoryAccess;
+import jdk.graal.compiler.nodes.memory.ReadNode;
+import jdk.graal.compiler.nodes.memory.WriteNode;
+import jdk.graal.compiler.nodes.memory.address.AddressNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.spi.LoweringTool;
+import jdk.graal.compiler.nodes.spi.PlatformConfigurationProvider;
+import jdk.graal.compiler.nodes.type.StampTool;
+import jdk.graal.compiler.nodes.util.GraphUtil;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.phases.util.Providers;
+import jdk.graal.compiler.replacements.DefaultJavaLoweringProvider;
+import jdk.graal.compiler.replacements.SnippetCounter;
+import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
@@ -107,6 +111,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -273,14 +278,14 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
-        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(SPIRVArchitecture.localSpace, newArray.elementType(), newLengthNode));
+        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.localSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(localArrayNode);
     }
 
     private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNonVirtualizableNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(SPIRVArchitecture.privateSpace, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.privateSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
@@ -359,7 +364,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
                 ResolvedJavaType type = os.javaType(tool.getMetaAccess());
                 SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(type);
                 if (kind != SPIRVKind.ILLEGAL) {
-                    returnStampPair = StampPair.createSingle(SPIRVStampFactory.getStampFor(kind));
+                    returnStampPair = StampPair.createSingle(uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory.getStampFor(kind));
                 }
             }
 
@@ -481,7 +486,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+            address = createArrayAddressTornado(graph, loadIndexed.array(), elementKind, loadIndexed.index());
         }
         return address;
     }
@@ -493,7 +498,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         AddressNode address;
 
         Stamp loadStamp = loadIndexed.stamp(NodeView.DEFAULT);
-        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof SPIRVStamp)) {
+        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp)) {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
@@ -532,7 +537,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         }
         ValueNode storeConvertValue = value;
         Stamp valueStamp = value.stamp(NodeView.DEFAULT);
-        if (!(valueStamp instanceof SPIRVStamp) || !((SPIRVStamp) valueStamp).getSPIRVKind().isVector()) {
+        if (!(valueStamp instanceof uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp) || !((uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp) valueStamp).getSPIRVKind().isVector()) {
             storeConvertValue = implicitStoreConvert(graph, elementKind, value);
         }
         memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
@@ -546,10 +551,25 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode valueToStore = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         ValueNode index = storeIndexed.index();
-        AddressNode address = createArrayAddress(graph, array, elementKind, index);
+        AddressNode address = createArrayAddressTornado(graph, array, elementKind, index);
         AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, valueToStore, array, address, graph, storeIndexed);
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+    }
+
+    public AddressNode createArrayAddressTornado(StructuredGraph graph, ValueNode array, JavaKind elementKind, ValueNode index) {
+        int arrayBaseOffset = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+        ValueNode wordIndex;
+        if (target.wordSize > 4) {
+            wordIndex = graph.unique(new SignExtendNode(index, target.wordSize * 8));
+        } else {
+            assert target.wordSize == 4 : "unsupported word size";
+            wordIndex = index;
+        }
+        int shift = CodeUtil.log2(metaAccess.getArrayIndexScale(elementKind));
+        ValueNode scaledIndex = graph.unique(new LeftShiftNode(wordIndex, ConstantNode.forInt(shift, graph)));
+        ValueNode offset = graph.unique(new AddNode(scaledIndex, ConstantNode.forIntegerKind(target.wordJavaKind, arrayBaseOffset, graph)));
+        return graph.unique(new OffsetAddressNode(array, offset));
     }
 
     @Override

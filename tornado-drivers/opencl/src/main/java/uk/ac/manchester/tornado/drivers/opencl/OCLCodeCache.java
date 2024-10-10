@@ -545,6 +545,7 @@ public class OCLCodeCache {
     private void dumpKernelSource(String id, String entryPoint, String log, byte[] source) {
         final Path outDir = resolveLogDirectory();
         final String identifier = id + "-" + entryPoint;
+
         logger.error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
 
         File file = new File(outDir + "/" + identifier + ".log");
@@ -553,14 +554,15 @@ public class OCLCodeCache {
         } catch (IOException e) {
             logger.error("unable to write error log: ", e.getMessage());
         }
+
         file = new File(outDir + "/" + identifier + OPENCL_SOURCE_SUFFIX);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(source);
         } catch (IOException e) {
             logger.error("unable to write error log: ", e.getMessage());
         }
-
     }
+
 
     private void installCodeInCodeCache(OCLProgram program, String id, String entryPoint, OCLInstalledCode code) {
         cache.put(id + "-" + entryPoint, code);

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import org.graalvm.compiler.options.OptionValues;
+import jdk.graal.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;

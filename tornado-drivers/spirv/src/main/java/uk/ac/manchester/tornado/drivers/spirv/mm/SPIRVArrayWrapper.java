@@ -63,7 +63,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         this.logger = new TornadoLogger(this.getClass());
 
         this.arrayLengthOffset = TornadoCoreRuntime.getVMConfig().arrayOopDescLengthOffset();
-        this.arrayHeaderSize = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(kind);
+        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
     }
 
     protected SPIRVArrayWrapper(final T array, final SPIRVDeviceContext device, final JavaKind kind, long batchSize) {

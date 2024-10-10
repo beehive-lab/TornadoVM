@@ -51,10 +51,12 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.phases.util.Providers;
-
+import jdk.graal.compiler.graph.Graph;
+import jdk.graal.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+
+import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -1659,11 +1661,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 for (TaskPackage taskPackage : taskPackages) {
                     String taskID = taskPackage.getId();
                     TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
+
                     if (TornadoOptions.DEBUG) {
                         System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
                     }
+
                     task.addTask(taskPackage);
                 }
+
 
                 for (StreamingObject streamingObject : outputModeObjects) {
                     performStreamOutThreads(streamingObject.mode, task, streamingObject.object);
@@ -1888,6 +1893,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 if (TornadoOptions.DEBUG) {
                     System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskNumber);
                 }
+
                 task.addTask(taskPackage);
             }
 

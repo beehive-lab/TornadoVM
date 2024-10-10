@@ -24,8 +24,8 @@ package uk.ac.manchester.tornado.drivers.ptx.graal;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.spi.LIRKindTool;
 
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;

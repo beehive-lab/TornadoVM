@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.core.common.CompilationIdentifier;
+import jdk.graal.compiler.core.common.CompilationIdentifier;
 
 public class TornadoCompilerIdentifier implements CompilationIdentifier {
 

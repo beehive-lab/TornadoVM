@@ -23,11 +23,10 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.phases.Phase;
-
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.memory.ReadNode;
+import jdk.graal.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
@@ -53,11 +52,11 @@ public class OCLFP16SupportPhase extends Phase {
     protected void run(StructuredGraph graph) {
         boolean fp16Support = false;
         String extensions = null;
-        if (deviceContext.getDevice() instanceof OCLDevice) {
-            OCLDevice oclDevice = (OCLDevice) deviceContext.getDevice();
+        if (deviceContext.getDevice() instanceof OCLDevice oclDeviceFromContext) {
+            OCLDevice oclDevice = oclDeviceFromContext;
             extensions = oclDevice.getDeviceExtensions();
-        } else if (deviceContext.getDevice() instanceof VirtualOCLDevice) {
-            VirtualOCLDevice oclDevice = (VirtualOCLDevice) deviceContext.getDevice();
+        } else if (deviceContext.getDevice() instanceof VirtualOCLDevice virtualOCLDeviceFromContext) {
+            VirtualOCLDevice oclDevice = virtualOCLDeviceFromContext;
             extensions = oclDevice.getDeviceExtensions();
         }
         if (extensions != null && extensions.contains("cl_khr_fp16")) {
