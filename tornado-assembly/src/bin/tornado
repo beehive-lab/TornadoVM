@@ -66,8 +66,7 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 # ########################################################
 # JAVA FLAGS
 # ########################################################
-__JAVA_GC_JDK11__ = "-XX:+UseParallelOldGC -XX:-UseBiasedLocking "
-__JAVA_GC_JDK16__ = "-XX:+UseParallelGC "
+__JAVA_GC__ = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview "
 __TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --vm.XX:-UseCompressedClassPointers --enable-preview "
 
@@ -160,12 +159,9 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def checkCompatibilityWithTornadoVM(self):
-        if (self.java_version == 9 or self.java_version == 10):
-            print("TornadoVM does not support Java 9 and 10")
+        if (self.java_version != 21):
+            print("TornadoVM supports only JDK version 21")
             sys.exit(0)
-
-        if (self.java_version == 8):
-            print("[WARNING] TornadoVM using Java 8 is deprecated.")
 
     def printRelease(self):
         f = open(self.sdk + "/etc/tornado.release")
@@ -307,42 +303,36 @@ class TornadoVMRunnerTool():
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
-        if (self.java_version == 8):
-            javaFlags = javaFlags + " -XX:-UseJVMCIClassLoader "
-        else:
-            upgradeModulePath = "--upgrade-module-path " + self.sdk + "/share/java/graalJars "
+        upgradeModulePath = "--upgrade-module-path " + self.sdk + "/share/java/graalJars "
 
-            if (self.isGraalVM == False):
-                javaFlags = javaFlags + upgradeModulePath
+        if (self.isGraalVM == False):
+            javaFlags = javaFlags + upgradeModulePath
 
-            if (self.java_version >= 16):
-                javaFlags = javaFlags + __JAVA_GC_JDK16__
-            else:
-                javaFlags = javaFlags + __JAVA_GC_JDK11__
+        javaFlags = javaFlags + __JAVA_GC__
 
-            common = self.sdk + __COMMON_EXPORTS__
-            opencl = self.sdk + __OPENCL_EXPORTS__
-            ptx = self.sdk + __PTX_EXPORTS__
-            spirv = self.sdk + __SPIRV_EXPORTS__
+        common = self.sdk + __COMMON_EXPORTS__
+        opencl = self.sdk + __OPENCL_EXPORTS__
+        ptx = self.sdk + __PTX_EXPORTS__
+        spirv = self.sdk + __SPIRV_EXPORTS__
 
-            if (self.isTruffleCommand):
-                common = self.truffleCompatibleExports(common)
-                opencl = self.truffleCompatibleExports(opencl)
-                ptx = self.truffleCompatibleExports(ptx)
-                spirv = self.truffleCompatibleExports(spirv)
+        if (self.isTruffleCommand):
+            common = self.truffleCompatibleExports(common)
+            opencl = self.truffleCompatibleExports(opencl)
+            ptx = self.truffleCompatibleExports(ptx)
+            spirv = self.truffleCompatibleExports(spirv)
 
-            javaFlags = javaFlags + " @" + common + " "
-            if ("opencl-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                javaFlags = javaFlags + "@" + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+        javaFlags = javaFlags + " @" + common + " "
+        if ("opencl-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + opencl + " "
+            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+        if ("spirv-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
+            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+        if ("ptx-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + ptx + " "
+            tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
 
-            javaFlags = javaFlags + tornadoAddModules + " "
+        javaFlags = javaFlags + tornadoAddModules + " "
 
         if (args.jvm_options != None):
             javaFlags = javaFlags + args.jvm_options + " "
