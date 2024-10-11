@@ -121,11 +121,7 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskId, float voltage) {
-    }
-
-    @Override
-    public void setSystemCurrent(ProfilerType systemPowerCurrentType, String taskId, float current) {
+    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskId, long voltage) {
     }
 
     @Override

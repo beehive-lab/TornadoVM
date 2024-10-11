@@ -307,7 +307,6 @@ public class TimeProfiler implements TornadoProfiler {
         }
     }
 
-
     @Override
     public void setSystemPowerConsumption(ProfilerType systemPowerConsumptionType, String taskID, long powerConsumption) {
         if (!taskPowerMetrics.containsKey(taskID)) {
@@ -321,7 +320,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskID, float voltage) {
+    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskID, long voltage) {
         if (!taskPowerMetrics.containsKey(taskID)) {
             taskPowerMetrics.put(taskID, new HashMap<>());
         }
@@ -331,19 +330,6 @@ public class TimeProfiler implements TornadoProfiler {
             taskPowerMetrics.get(taskID).put(systemPowerVoltageType, "n/a");
         }
     }
-
-    @Override
-    public void setSystemCurrent(ProfilerType systemPowerCurrentType, String taskID, float current) {
-        if (!taskPowerMetrics.containsKey(taskID)) {
-            taskPowerMetrics.put(taskID, new HashMap<>());
-        }
-        if (current > 0) {
-            taskPowerMetrics.get(taskID).put(systemPowerCurrentType, Float.toString(current));
-        } else {
-            taskPowerMetrics.get(taskID).put(systemPowerCurrentType, "n/a");
-        }
-    }
-
 
     @Override
     public synchronized void sum(ProfilerType acc, long value) {

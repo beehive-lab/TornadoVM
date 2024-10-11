@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.drivers.common.power.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
@@ -177,9 +178,8 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             // TODO: Add Power User Metric
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
-            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), 50);
-            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), 236.6f);
-            meta.getProfiler().setSystemCurrent(ProfilerType.SYSTEM_CURRENT, meta.getId(), 0.5f);
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), UpsMeterReader.getOutputPowerMetric());
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), UpsMeterReader.getInputVoltageMetric());
         }
     }
 

@@ -27,6 +27,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.drivers.common.power.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGridInfo;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
@@ -78,9 +79,8 @@ public abstract class OCLKernelScheduler {
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
-            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), 50);
-            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), 236.6f);
-            meta.getProfiler().setSystemCurrent(ProfilerType.SYSTEM_CURRENT, meta.getId(), 0.5f);
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), UpsMeterReader.getOutputPowerMetric());
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), UpsMeterReader.getInputVoltageMetric());
         }
     }
 
@@ -104,7 +104,8 @@ public abstract class OCLKernelScheduler {
      * default value. In this case, the threads configured in the local work sizes
      * depends on each OpenCL driver.
      *
-     * @param meta TaskMetaData.
+     * @param meta
+     *     TaskMetaData.
      */
     private void checkLocalWorkGroupFitsOnDevice(final TaskDataContext meta) {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());

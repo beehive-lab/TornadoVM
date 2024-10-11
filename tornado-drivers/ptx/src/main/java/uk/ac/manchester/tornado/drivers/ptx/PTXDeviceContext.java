@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
+import uk.ac.manchester.tornado.drivers.common.power.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
@@ -362,9 +363,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), getPowerUsage());
-            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), 50);
-            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), 236.6f);
-            meta.getProfiler().setSystemCurrent(ProfilerType.SYSTEM_CURRENT, meta.getId(), 0.5f);
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), UpsMeterReader.getOutputPowerMetric());
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), UpsMeterReader.getInputVoltageMetric());
         }
     }
 
