@@ -49,9 +49,9 @@ public enum ProfilerType {
     TOTAL_KERNEL_TIME("Kernel-Time"),
     TOTAL_TASK_GRAPH_TIME("TS-Total-Time"),
     POWER_USAGE_mW("Task-Power-Usage-(mW)"),
-    SYSTEM_POWER_CONSUMPTION("System-Power-Consumption-(W)"),
-    SYSTEM_VOLTAGE("System-Voltage-(V)"),
-    SYSTEM_CURRENT("System-Current-(A)"),
+    SYSTEM_POWER_CONSUMPTION_W("System-Power-Consumption-(W)"),
+    SYSTEM_VOLTAGE_V("System-Voltage-(V)"),
+    SYSTEM_CURRENT_A("System-Current-(A)"),
     BACKEND("Backend");
     // @formatter:on
 
