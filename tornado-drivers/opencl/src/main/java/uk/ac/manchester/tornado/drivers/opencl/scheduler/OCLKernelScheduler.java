@@ -79,8 +79,12 @@ public abstract class OCLKernelScheduler {
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
-            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), UpsMeterReader.getOutputPowerMetric());
-            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), UpsMeterReader.getInputVoltageMetric());
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
+                    : -1);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE, meta.getId(), (UpsMeterReader.getInputVoltageMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getInputVoltageMetric())
+                    : -1);
         }
     }
 

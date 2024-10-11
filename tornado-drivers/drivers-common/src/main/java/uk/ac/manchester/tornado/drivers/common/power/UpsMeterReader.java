@@ -18,7 +18,7 @@ public class UpsMeterReader {
     private static String INPUT_VOLTAGE_OID = "1.3.6.1.4.1.534.1.3.8.1.0";
     private static String OUTPUT_POWER_OID = "1.3.6.1.4.1.534.1.4.4.1.4.1";
     private static String COMMUNITY = "public";
-    private static String ADDRESS = "";
+    private static String ADDRESS = null;
     private static int SNMP_VERSION = SnmpConstants.version1;
 
     private static String getSnmpValue(String oid) {
@@ -29,6 +29,9 @@ public class UpsMeterReader {
             transport.listen();
 
             // Create the target
+            if (ADDRESS == null) {
+                return null;
+            }
             Address targetAddress = GenericAddress.parse("udp:" + ADDRESS + "/161");
             CommunityTarget target = new CommunityTarget();
             target.setCommunity(new OctetString(COMMUNITY));
@@ -59,12 +62,12 @@ public class UpsMeterReader {
         return result;
     }
 
-    public static long getOutputPowerMetric() {
-        return Long.parseLong(getSnmpValue(OUTPUT_POWER_OID));
+    public static String getOutputPowerMetric() {
+        return getSnmpValue(OUTPUT_POWER_OID);
     }
 
-    public static long getInputVoltageMetric() {
-        return Long.parseLong(getSnmpValue(INPUT_VOLTAGE_OID));
+    public static String getInputVoltageMetric() {
+        return getSnmpValue(INPUT_VOLTAGE_OID);
     }
 
 }
