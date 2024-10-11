@@ -56,9 +56,9 @@ public class GridScheduler {
         StringBuilder sb = new StringBuilder();
         for (String taskName : gridTaskMap.keySet()) {
             sb.append(taskName) //
-                    .append("::") //
+                    .append("::GlobalWorkGroup=") //
                     .append(Arrays.toString(gridTaskMap.get(taskName).getGlobalWork())) //
-                    .append("::") //
+                    .append("::LocalWorkGroup=") //
                     .append(Arrays.toString(gridTaskMap.get(taskName).getLocalWork()));
         }
         return sb.toString();
