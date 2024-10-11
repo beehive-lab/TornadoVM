@@ -36,9 +36,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueueTable;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCLBlocking;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
@@ -280,5 +282,21 @@ public class SPIRVOCLContext extends SPIRVContext {
         eventPool.registerEvent(commandQueue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, offHeapSegmentAddress, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_READ_BYTE, commandQueue);
+    }
+
+    @Override
+    public void reset(long executionPlanId, int deviceIndex) {
+        OCLEventPool eventPool = getOCLEventPool(executionPlanId);
+        eventPool.reset();
+        oclEventPool.remove(executionPlanId);
+        SPIRVOCLCommandQueueTable table = commmandQueueTable.get(executionPlanId);
+        if (table != null) {
+            SPIRVDevice device = devices.get(deviceIndex);
+            table.cleanup((SPIRVOCLDevice) device);
+            if (table.size() == 0) {
+                commmandQueueTable.remove(executionPlanId);
+            }
+            executionIDs.remove(executionPlanId);
+        }
     }
 }

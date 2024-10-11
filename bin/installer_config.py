@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,7 @@ __APPLE__ = "darwin"
 __WINDOWS__ = "windows"
 
 __JDK21__ = "jdk21"
-__GRAALVM21__ = "graalvm-jdk-21"
+__GRAALVM21__ = "graal-jdk-21"
 __MANDREL21__ = "mandrel-jdk-21"
 __CORRETTO21__ = "corretto-jdk-21"
 __MICROSOFT21__ = "microsoft-jdk-21"

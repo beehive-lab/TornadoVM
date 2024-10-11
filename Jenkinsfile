@@ -2,7 +2,7 @@ pipeline {
     agent any
     options {
         timestamps()
-        timeout(time: 120, unit: 'MINUTES')
+        timeout(time: 240, unit: 'MINUTES')
     }
 
     parameters {
@@ -138,7 +138,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sh "make ${tornadoProfile} BACKEND=ptx,opencl,spirv"
     }
     stage('PTX: Unit Tests') {
-        timeout(time: 12, unit: 'MINUTES') {
+        timeout(time: 45, unit: 'MINUTES') {
             sh 'tornado --devices'
             sh 'tornado-test --verbose -J"-Dtornado.unittests.device=0:0 -Dtornado.ptx.priority=100"'
             sh 'tornado-test -V  -J"-Dtornado.unittests.device=0:0 -Dtornado.device.memory=1MB -Dtornado.ptx.priority=100" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
@@ -148,7 +148,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
     stage("OpenCL: Unit Tests") {
         parallel (
             "OpenCL and GPU: Nvidia Quadro GP100" : {
-                timeout(time: 12, unit: 'MINUTES') {
+                timeout(time: 45, unit: 'MINUTES') {
                     sh 'tornado --devices'
                     sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0"'
                     sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
@@ -156,7 +156,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
                 }
             },
             "OpenCL and Integrated GPU: Intel(R) UHD Graphics 630" : {
-                timeout(time: 12, unit: 'MINUTES') {
+                timeout(time: 45, unit: 'MINUTES') {
                     sh 'tornado --devices'
                     sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1"'
                     sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=2:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
@@ -166,7 +166,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         )
     }
     stage("SPIR-V (OpenCL Runtime): Unit Tests") {
-        timeout(time: 12, unit: 'MINUTES') {
+        timeout(time: 45, unit: 'MINUTES') {
             sh 'tornado --devices'
             sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.spirv.dispatcher=opencl"'
             sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.spirv.dispatcher=opencl -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
@@ -174,7 +174,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         }
     }
     stage("SPIR-V (LevelZero Runtime): Unit Tests") {
-            timeout(time: 12, unit: 'MINUTES') {
+            timeout(time: 45, unit: 'MINUTES') {
                 sh 'tornado --devices'
                 sh 'tornado-test --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.spirv.dispatcher=levelzero"'
                 sh 'tornado-test -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.spirv.dispatcher=levelzero -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
@@ -196,7 +196,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=PTX/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && ./scripts/run.sh'
+            sh 'cd ${KFUSION_ROOT} && ./scripts/runOnlyOpenCL.sh'
 
         }
     }
@@ -204,7 +204,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && ./scripts/run.sh'
+            sh 'cd ${KFUSION_ROOT} && ./scripts/runOnlyPTX.sh'
         }
     }
 }

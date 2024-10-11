@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
  *
  * <p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies
+ * tornado-test -V uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies
  * </code>
  * </p>
  */

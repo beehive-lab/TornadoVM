@@ -17,7 +17,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 
@@ -37,7 +36,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
  * {@link TornadoExecutionPlan#withProfiler(ProfilerMode)}.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since 0.15
  */
 public class TornadoProfilerResult implements ProfilerInterface {
 

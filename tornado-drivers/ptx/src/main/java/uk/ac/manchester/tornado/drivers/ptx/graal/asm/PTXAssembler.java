@@ -579,7 +579,7 @@ public class PTXAssembler extends Assembler {
                 if (((PTXKind) x.getPlatformKind()).is64Bit()) {
                     instructionKind = PTXKind.B64;
                 }
-                asm.emit(STR.".\{instructionKind}" );
+                asm.emit("."+instructionKind );
 
                 asm.emitSymbol(TAB);
                 asm.emitValues(new Value[] { dest, x });

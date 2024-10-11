@@ -136,7 +136,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.XPUBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -295,7 +295,7 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
 
         // Enable Profiler for code generation
         SPIRVCompilationResultBuilder builder = (SPIRVCompilationResultBuilder) resultBuilder;
-        TaskMetaData taskMetaData = builder.getTaskMetaData();
+        TaskDataContext taskMetaData = builder.getTaskMetaData();
         profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         SPIRVCompilationResultBuilder crb = (SPIRVCompilationResultBuilder) resultBuilder;

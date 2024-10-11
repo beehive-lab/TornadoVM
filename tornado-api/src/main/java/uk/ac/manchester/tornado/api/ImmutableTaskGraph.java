@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
 /**
@@ -35,7 +36,7 @@ import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
  * affecting the execution of graphs encapsulated in {@link ImmutableTaskGraph}.
  * </p>
  *
- * @since TornadoVM-0.15
+ * @since 0.15
  */
 public class ImmutableTaskGraph {
 
@@ -49,8 +50,8 @@ public class ImmutableTaskGraph {
         this.taskGraph.execute(executionPackage);
     }
 
-    void warmup() {
-        taskGraph.warmup();
+    void warmup(ExecutorFrame executionPackage) {
+        taskGraph.warmup(executionPackage);
     }
 
     void withDevice(TornadoDevice device) {
@@ -169,10 +170,6 @@ public class ImmutableTaskGraph {
         taskGraph.enableProfiler(profilerMode);
     }
 
-    void disableProfiler(ProfilerMode profilerMode) {
-        taskGraph.disableProfiler(profilerMode);
-    }
-
     void withConcurrentDevices() {
         taskGraph.withConcurrentDevices();
     }
@@ -195,6 +192,10 @@ public class ImmutableTaskGraph {
 
     void withoutPrintKernel() {
         taskGraph.withoutPrintKernel();
+    }
+
+    void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
+        taskGraph.withCompilerFlags(backendType, compilerFlags);
     }
 
     void withGridScheduler(GridScheduler gridScheduler) {

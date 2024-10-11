@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,8 +32,11 @@ tornadoReq.check_python_dependencies()
 import wget
 import installer_config as config
 
+## ################################################################
+## Configuration
+## ################################################################
 __DIRECTORY_DEPENDENCIES__ = os.path.join("etc", "dependencies")
-__VERSION__ = "v1.0.5"
+__VERSION__ = "v1.0.7-dev"
 
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
@@ -47,9 +50,10 @@ __SUPPORTED_JDKS__ = [
 ]
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
-
+## ################################################################
 
 class TornadoInstaller:
+    
     def __init__(self):
         self.workDirName = ""
         self.osPlatform = self.getOSPlatform()
@@ -58,8 +62,10 @@ class TornadoInstaller:
         self.env["PATH"] = [os.path.join(self.getCurrentDirectory(), "bin", "bin")]
         self.env["TORNADO_SDK"] = os.path.join(self.getCurrentDirectory(), "bin", "sdk")
 
+
     def getOSPlatform(self):
         return platform.system().lower()
+
 
     def getMachineArc(self):
         compatibleMachineTypes = {
@@ -71,8 +77,10 @@ class TornadoInstaller:
         machine = platform.machine().lower()
         return compatibleMachineTypes[machine]
 
+
     def processFileName(self, url):
         return os.path.basename(url)
+
 
     def setWorkDir(self, jdk):
         tornadoDir = "TornadoVM-" + jdk
@@ -80,8 +88,10 @@ class TornadoInstaller:
         if not os.path.exists(self.workDirName):
             os.makedirs(self.workDirName)
 
+
     def getCurrentDirectory(self):
         return os.getcwd()
+
 
     def downloadCMake(self):
         url = config.CMAKE[self.osPlatform][self.hardware]
@@ -122,6 +132,7 @@ class TornadoInstaller:
         extraPath = os.path.join(extraPath, "bin")
         self.env["PATH"].append(os.path.join(cmakeTLD, extraPath))
 
+
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
         if url == None:
@@ -156,6 +167,7 @@ class TornadoInstaller:
         ## Update env-variables
         self.env["PATH"].append(os.path.join(mavenTLD, "bin"))
 
+
     def getTLDName(self, ar):
         if os.name == 'nt':
             extractedNames = ar.namelist()[1].split("/")
@@ -166,6 +178,7 @@ class TornadoInstaller:
         else:
             extractedDirectory = extractedNames[0]
         return extractedDirectory
+
 
     def downloadJDK(self, jdk):
         url = config.JDK[jdk][self.osPlatform][self.hardware]
@@ -212,6 +225,7 @@ class TornadoInstaller:
         ## Update env-variables
         self.env["JAVA_HOME"] = os.path.join(jdkTLD, extraPath)
 
+
     def setEnvironmentVariables(self):
         ## 1. PATH
         paths = self.env["PATH"]
@@ -227,12 +241,14 @@ class TornadoInstaller:
         ## 3. TORNADO_SDK
         os.environ["TORNADO_SDK"] = self.env["TORNADO_SDK"]
 
+
     def compileTornadoVM(self, makeJDK, backend, polyglotOption):
         if os.name == 'nt':
             command = "nmake /f Makefile.mak " + makeJDK + " " + backend + " " + polyglotOption
         else:
             command = "make " + makeJDK + " " + backend + " " + polyglotOption
         os.system(command)
+
 
     def createSourceFile(self):
         print(" ------------------------------------------")
@@ -289,6 +305,7 @@ class TornadoInstaller:
             for jdk in __SUPPORTED_JDKS__:
                 print("\t" + jdk)
             sys.exit(0)
+
 
     def composeBackendOption(sekf, args):
         backend = args.backend.replace(" ", "").lower()

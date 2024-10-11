@@ -44,7 +44,9 @@ import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
@@ -54,7 +56,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLCodeCache {
 
@@ -74,6 +76,7 @@ public class OCLCodeCache {
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
     private static final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private static final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
+
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      *
@@ -181,17 +184,13 @@ public class OCLCodeCache {
                     }
 
                     switch (token) {
-                        case "DEVICE_NAME":
-                            fpgaName = tokenizer.nextToken(" =");
-                            break;
-                        case "COMPILER":
-                            fpgaCompiler = tokenizer.nextToken(" =");
-                            break;
-                        case "DIRECTORY_BITSTREAM":
+                        case "DEVICE_NAME" -> fpgaName = tokenizer.nextToken(" =");
+                        case "COMPILER" -> fpgaCompiler = tokenizer.nextToken(" =");
+                        case "DIRECTORY_BITSTREAM" -> {
                             directoryBitstream = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
                             fpgaSourceDir = directoryBitstream;
-                            break;
-                        case "FLAGS":
+                        }
+                        case "FLAGS" -> {
                             StringBuilder buildFlags = new StringBuilder();
 
                             // Iterate over tokens that correspond to multiple flags
@@ -210,12 +209,10 @@ public class OCLCodeCache {
                                     }
                                 }
                             }
-                            break;
-                        case "AWS_ENV":
-                            isFPGAInAWS = tokenizer.nextToken(" =").toLowerCase().equals("yes");
-                            break;
-                        default:
-                            break;
+                        }
+                        case "AWS_ENV" -> isFPGAInAWS = tokenizer.nextToken(" =").toLowerCase().equals("yes");
+                        default -> {
+                        }
                     }
                     break;
                 }
@@ -281,12 +278,12 @@ public class OCLCodeCache {
         } catch (FileNotFoundException e) {
             throw new RuntimeException("File: " + fileName + " not found");
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new TornadoCompilationException(e.getMessage());
         } finally {
             try {
                 fileContent.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new TornadoCompilationException(e.getMessage());
             }
         }
         return listBinaries.toString().split(",");
@@ -547,16 +544,16 @@ public class OCLCodeCache {
 
     private void dumpKernelSource(String id, String entryPoint, String log, byte[] source) {
         final Path outDir = resolveLogDirectory();
-        final String identifier = STR."\{id}-\{entryPoint}";
+        final String identifier = id + "-" + entryPoint;
         logger.error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
 
-        File file = new File(STR."\{outDir}/\{identifier}.log");
+        File file = new File(outDir + "/" + identifier + ".log");
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(log.getBytes());
         } catch (IOException e) {
             logger.error("unable to write error log: ", e.getMessage());
         }
-        file = new File(STR."\{outDir}/\{identifier}\{OPENCL_SOURCE_SUFFIX}");
+        file = new File(outDir + "/" + identifier + OPENCL_SOURCE_SUFFIX);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(source);
         } catch (IOException e) {
@@ -565,19 +562,17 @@ public class OCLCodeCache {
 
     }
 
-    private void installCodeInCodeCache(OCLProgram program, TaskMetaData meta, String id, String entryPoint, OCLInstalledCode code) {
-        
-        cache.put(STR."\{id}-\{entryPoint}", code);
-
+    private void installCodeInCodeCache(OCLProgram program, String id, String entryPoint, OCLInstalledCode code) {
+        cache.put(id + "-" + entryPoint, code);
         // BUG Apple does not seem to like implementing the OpenCL spec
         // properly, this causes a SIGFAULT.
         if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
             final Path outDir = resolveCacheDirectory();
-            program.dumpBinaries(STR."\{outDir.toAbsolutePath()}/\{entryPoint}");
+            program.dumpBinaries(outDir.toAbsolutePath() + "/" + entryPoint);
         }
     }
 
-    public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
+    public OCLInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
 
         logger.info("Installing code for %s into code cache", entryPoint);
 
@@ -606,11 +601,8 @@ public class OCLCodeCache {
         if (meta.isPrintKernelEnabled()) {
             RuntimeUtilities.dumpKernel(source);
         }
-
-        final long t0 = System.nanoTime();
-        program.build(meta.getCompilerFlags());
-        final long t1 = System.nanoTime();
-
+        logger.debug("\tOpenCL compiler flags = %s", meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
+        program.build(meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         logger.debug("\tOpenCL compilation status = %s", status.toString());
 
@@ -630,7 +622,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
         if (status == CL_BUILD_SUCCESS) {
             logger.debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
-            installCodeInCodeCache(program, meta, id, entryPoint, code);
+            installCodeInCodeCache(program, id, entryPoint, code);
         } else {
             logger.warn("\tunable to compile %s", entryPoint);
             code.invalidate();
@@ -662,11 +654,11 @@ public class OCLCodeCache {
             long afterLoad = (TornadoOptions.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
 
             if (PRINT_LOAD_TIME) {
-                System.out.println(STR."Binary load time: \{afterLoad - beforeLoad}\{TornadoOptions.TIME_IN_NANOSECONDS ? " ns" : " ms"} \n");
+                System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoOptions.TIME_IN_NANOSECONDS ? " ns" : " ms") + "\n");
             }
 
             if (program == null) {
-                throw new OCLException(STR."unable to load binary for \{entryPoint}");
+                throw new OCLException("unable to load binary for " + entryPoint);
             }
 
             program.build("");

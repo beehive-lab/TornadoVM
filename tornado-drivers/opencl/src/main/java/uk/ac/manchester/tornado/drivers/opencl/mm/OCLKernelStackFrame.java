@@ -37,10 +37,13 @@ public class OCLKernelStackFrame extends OCLByteBuffer implements KernelStackFra
 
     private final ArrayList<CallArgument> callArguments;
 
+    private boolean isValid;
+
     OCLKernelStackFrame(long bufferId, int numArgs, OCLDeviceContext device) {
         super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
         buffer.clear();
+        this.isValid = true;
     }
 
     @Override
@@ -51,6 +54,17 @@ public class OCLKernelStackFrame extends OCLByteBuffer implements KernelStackFra
     @Override
     public void reset() {
         callArguments.clear();
+    }
+
+    @Override
+    public boolean isValid() {
+        return isValid;
+    }
+
+    @Override
+    public void invalidate() {
+        isValid = false;
+        deviceContext.getPlatformContext().releaseBuffer(toBuffer());
     }
 
     @Override

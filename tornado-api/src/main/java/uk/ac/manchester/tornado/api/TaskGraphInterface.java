@@ -17,9 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
@@ -472,27 +470,7 @@ public interface TaskGraphInterface {
     <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TaskGraphInterface task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
-    /**
-     * Add a pre-built OpenCL task into a task-schedule.
-     *
-     * @param id
-     *     Task-Id
-     * @param entryPoint
-     *     Name of the method to be executed on the target device
-     * @param filename
-     *     Input file with the source kernel
-     * @param args
-     *     Arguments to the kernel
-     * @param accesses
-     *     Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
-     *     each input parameter to the method
-     * @param device
-     *     Device to be executed
-     * @param dimensions
-     *     Select number of dimensions of the kernel (1D, 2D or 3D)
-     * @return {@link TaskGraphInterface}
-     */
-    TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+    TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters);
 
     /**
      * Add a pre-built OpenCL task into a task-schedule with atomics region.
@@ -503,20 +481,12 @@ public interface TaskGraphInterface {
      *     Kernel's name of the entry point
      * @param filename
      *     Input OpenCL C Kernel
-     * @param args
-     *     Arguments to the method that the kernel represents.
-     * @param accesses
-     *     Array of access of each parameter to the kernel
-     * @param device
-     *     Device in which the OpenCL C code will be executed.
-     * @param dimensions
-     *     Select the dimension of the OpenCL kernel (1D, 2D or 3D)
      * @param atomics
      *     Atomics region.
      * @return {@link TaskGraphInterface}
      *
      */
-    TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
+    TaskGraphInterface prebuiltTask(String id, String entryPoint, String filename, AccessorParameters accessorParameters, int[] atomics);
 
     /**
      * Obtains the task-schedule name that was assigned.

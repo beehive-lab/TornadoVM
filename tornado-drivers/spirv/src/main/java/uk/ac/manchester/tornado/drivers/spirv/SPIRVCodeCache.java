@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public abstract class SPIRVCodeCache {
 
@@ -92,7 +92,7 @@ public abstract class SPIRVCodeCache {
         return tempDirectory + pathSeparator + user + pathSeparator + "tornadoVM-spirv";
     }
 
-    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] binary) {
+    public SPIRVInstalledCode installSPIRVBinary(TaskDataContext meta, String id, String entryPoint, byte[] binary) {
         if (binary == null || binary.length == 0) {
             throw new RuntimeException("[ERROR] SPIR-V Binary Module is Empty");
         }
@@ -117,5 +117,5 @@ public abstract class SPIRVCodeCache {
         return installSPIRVBinary(meta, id, entryPoint, spirvFile);
     }
 
-    public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile);
+    public abstract SPIRVInstalledCode installSPIRVBinary(TaskDataContext meta, String id, String entryPoint, String pathToFile);
 }

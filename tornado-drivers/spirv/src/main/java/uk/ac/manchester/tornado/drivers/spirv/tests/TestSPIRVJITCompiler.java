@@ -51,8 +51,8 @@ import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Testing the SPIR-V JIT Compiler and integration with the TornadoVM SPIR-V Runtime.
@@ -76,7 +76,7 @@ public class TestSPIRVJITCompiler {
         new TestSPIRVJITCompiler().test();
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, Object... parameters) {
+    public MetaCompilation compileMethod(long executionPlanId, Class<?> klass, String methodName, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -94,10 +94,10 @@ public class TestSPIRVJITCompiler {
         TornadoDevice device = tornadoRuntime.getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
-        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        ScheduleContext scheduleMetaData = new ScheduleContext("s0");
         // Create a compilable task
         CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
-        TaskMetaData taskMeta = compilableTask.meta();
+        TaskDataContext taskMeta = compilableTask.meta();
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
@@ -111,12 +111,12 @@ public class TestSPIRVJITCompiler {
 
         // 3. Install the SPIR-V code into the VM
         SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getDevice();
-        SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(spirvCompilationResult);
+        SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(executionPlanId, spirvCompilationResult);
 
         return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
 
-    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(spirvTornadoDevice);
@@ -159,12 +159,13 @@ public class TestSPIRVJITCompiler {
         int[] a = new int[N];
         int[] b = new int[N];
         float[] c = new float[N];
+        final long executionPlanId = 0;
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
         // Obtain the SPIR-V binary from the Java method
-        MetaCompilation compileMethod = compileMethod(TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
+        MetaCompilation compileMethod = compileMethod(executionPlanId, TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
 
         TornadoDevice device = TornadoCoreRuntime.getTornadoRuntime().getBackend(SPIRVBackendImpl.class).getDefaultDevice();
 

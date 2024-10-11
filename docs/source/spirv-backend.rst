@@ -16,15 +16,15 @@ All drivers are available here: `https://github.com/intel/compute-runtime/releas
 Install TornadoVM for SPIR-V
 -----------------------------
 
-Install TornadoVM following the instructions in :ref:`installation`. 
+Install TornadoVM following the instructions in :ref:`installation`.
 
 To build the SPIR-V Backend, enable the backend as follows:
 
 .. code:: bash
 
    $ cd <tornadovm-directory>
-   $ ./scripts/tornadoVMInstaller.sh --jdk17 --spirv
-   $ . source.sh
+   $ ./bin/tornadovm-installer --jdk jdk21 --backend=spirv
+   $ . setvars.sh
 
 Running examples with the SPIR-V backend
 ------------------------------------------
@@ -48,9 +48,9 @@ Running DFT from the unit-test suite
        Number of workgroups  : [16]
 
    Test: class uk.ac.manchester.tornado.unittests.compute.ComputeTests#testDFT
-       Running test: testDFT                    ................  [PASS] 
+       Running test: testDFT                    ................  [PASS]
 
-In this execution, the SPIR-V Binary is stored in ``/tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv``. 
+In this execution, the SPIR-V Binary is stored in ``/tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv``.
 We can disassemble the binary with ``spirv-dis`` `from Khronos <https://github.com/KhronosGroup/SPIRV-Tools>`__
 
 Note: Usually, ``spirv-dis`` can be installed from the common OS repositories (e.g., Fedora, Ubuntu repositories):
@@ -62,6 +62,18 @@ Note: Usually, ``spirv-dis`` can be installed from the common OS repositories (e
 
    ## Ubuntu OS:
    sudo apt-get install spirv-tools
+
+
+TornadoVM/Java Options for SPIR-V:
+''''''''''''''''''''''''''''''
+
+- ``-Dtornado.spirv.version=1.2``: Modify the minimum version supported. By default is 1.2. However, developers can change this value. Note that the generated code might not work, as TornadoVM requires at least 1.2.
+
+- ``-Dtornado.spirv.dispatcher=opencl``: It sets the runtime to dispatch SPIR-V kernels. Allowed values are: ``opencl`` and ``levelzero``.
+
+- ``-Dtornado.spirv.levelzero.extended.memory=True``: It uses Level Zero extended memory mode. It is set to ``true`` by default.
+
+
 
 Disassemble the SPIR-V binary:
 ''''''''''''''''''''''''''''''

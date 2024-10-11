@@ -60,7 +60,7 @@ add_library(tornado-ptx SHARED
 	source/PTXDevice.cpp
 	source/PTXEvent.cpp
 	source/PTX.cpp
-	source/PTXNvidiaPowerMetric.cpp
+	source/PTXNvidiaPowerMetricHandler.cpp
 	source/ptx_utils.cpp
 	source/ptx_log.h
 	)

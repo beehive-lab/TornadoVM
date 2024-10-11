@@ -35,7 +35,6 @@ import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Event;
-
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -91,7 +90,10 @@ public class TornadoVM {
         final Deque<Integer> activeDevices = executionContext.getActiveDeviceIndexes();
         int bound = executionContext.getValidContextSize();
         for (int i = 0; i < bound; i++) {
-            tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice(activeDevices.pop()));
+            tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, //
+                    tornadoVMBytecodes[i],  //
+                    timeProfiler,  //
+                    executionContext.getDevice(activeDevices.pop()));
         }
     }
 

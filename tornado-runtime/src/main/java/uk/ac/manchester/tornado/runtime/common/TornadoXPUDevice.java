@@ -65,32 +65,38 @@ public interface TornadoXPUDevice extends TornadoDevice {
     /**
      * It installs the Tornado code for the specified schedulable task.
      *
+     * @param executionPlanId
+     *     ID number for the execution plan that the task belongs to.
      * @param task
      *     The {@link SchedulableTask} to install the code for.
      * @return The {@link TornadoInstalledCode} indicating the installation status.
      */
-    TornadoInstalledCode installCode(SchedulableTask task);
+    TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task);
 
     /**
      * It checks if the specified schedulable task is in full Just-In-Time (JIT)
      * mode.
      *
+     * @param executionPlanId
+     *     ID for the execution plan to be compiled.
      * @param task
      *     The {@link SchedulableTask} to check for full JIT mode.
      * @return True if the task is in full JIT mode, false otherwise.
      */
-    boolean isFullJITMode(SchedulableTask task);
+    boolean isFullJITMode(long executionPlanId, SchedulableTask task);
 
     /**
      * It retrieves the Tornado installed code from the cache for the specified
      * schedulable task.
      *
+     * @param executionPlanId
+     *     ID for the execution plan to be obtained from the code cache
      * @param task
      *     The {@link SchedulableTask} to get the installed code from the
      *     cache.
      * @return The {@link TornadoInstalledCode} from the cache.
      */
-    TornadoInstalledCode getCodeFromCache(SchedulableTask task);
+    TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task);
 
     /**
      * It checks for atomic operations in the specified schedulable task and returns
@@ -180,6 +186,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * It returns from the sketch of a task whether the loop index is written in the output buffer.
      * 
      * @param task
+     *     {@link SchedulableTask}
      * @return
      */
     default boolean loopIndexInWrite(SchedulableTask task) {

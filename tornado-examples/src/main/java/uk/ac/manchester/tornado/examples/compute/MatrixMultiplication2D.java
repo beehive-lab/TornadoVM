@@ -17,6 +17,9 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -26,6 +29,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
@@ -39,7 +43,7 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 public class MatrixMultiplication2D {
     // CHECKSTYLE:OFF
-    private static final int WARMING_UP_ITERATIONS = 15;
+    private static final int WARMING_UP_ITERATIONS = 100;
 
     private static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -65,15 +69,16 @@ public class MatrixMultiplication2D {
         });
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws TornadoExecutionPlanException, FileNotFoundException {
 
         int size = 512;
         if (args.length >= 1) {
-            try {
-                size = Integer.parseInt(args[0]);
-            } catch (NumberFormatException nfe) {
-                size = 512;
-            }
+            size = Integer.parseInt(args[0]);
+        }
+
+        boolean verify = true;
+        if (args.length >= 2) {
+            verify = Boolean.parseBoolean(args[1]);
         }
 
         System.out.println("Computing MxM of " + size + "x" + size);
@@ -96,40 +101,62 @@ public class MatrixMultiplication2D {
                 .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
 
+        ArrayList<Long> tornadoElapsedTime = new ArrayList<>();
+        ArrayList<Long> javaElapsedTime = new ArrayList<>();
+        ArrayList<Long> streamsElapsedTime = new ArrayList<>();
+
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withWarmUp();
+        long start;
+        long end;
+        TornadoDeviceType deviceType;
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executor.withWarmUp();
 
-        // 1. Warm up Tornado
-        for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+            // 1. Warm up Tornado
+            for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+                long s = System.nanoTime();
+                executor.execute();
+                long e = System.nanoTime();
+                tornadoElapsedTime.add(e - s);
+            }
+
+            // Run parallel on the GPU with Tornado
+            start = System.nanoTime();
             executor.execute();
+            end = System.nanoTime();
+            tornadoElapsedTime.add(end - start);
+            deviceType = executor.getDevice(0).getDeviceType();
         }
-
-        // 2. Run parallel on the GPU with Tornado
-        long start = System.nanoTime();
-        executor.execute();
-        long end = System.nanoTime();
 
         // Run sequential
-        // 1. Warm up sequential
+        // 2. Warm up sequential
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+            long s = System.nanoTime();
             matrixMultiplication(matrixA, matrixB, resultSeq, size);
+            long e = System.nanoTime();
+            javaElapsedTime.add(e - s);
         }
 
-        // 2. Run the sequential code
+        // Run the sequential code
         long startSequential = System.nanoTime();
         matrixMultiplication(matrixA, matrixB, resultSeq, size);
         long endSequential = System.nanoTime();
+        javaElapsedTime.add(endSequential - startSequential);
 
-        // Run multithread
+        // Multithreaded version
+        // 3. Multithreaded version warmup
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+            long s = System.nanoTime();
             parallelStreamsMxM(matrixA, matrixB, resultSeq, size);
+            long e = System.nanoTime();
+            streamsElapsedTime.add(e - s);
         }
 
-        // 2. Run the sequential code
+        // Run multithreaded version
         long startStream = System.nanoTime();
         parallelStreamsMxM(matrixA, matrixB, resultSeq, size);
         long endStream = System.nanoTime();
+        streamsElapsedTime.add(endStream - startStream);
 
         // Compute Gigaflops and performance
         long nanoSecGPUElapsedTime = (end - start);
@@ -137,21 +164,32 @@ public class MatrixMultiplication2D {
         long nanoSecStreamElaptedTime = (endStream - startStream);
 
         double flops = 2 * Math.pow(size, 3);
-        double gpuGigaFlops = (1.0E-9 * flops) / (nanoSecGPUElapsedTime / 1000000000.0f);
-        double cpuGigaFlops = (1.0E-9 * flops) / (nanoSecCPUElaptedTime / 1000000000.0f);
-        double streamGigaFlops = (1.0E-9 * flops) / (nanoSecStreamElaptedTime / 1000000000.0f);
+        final float timeScaleSec = 1000000000.0f;
+        double gpuGigaFlops = (1.0E-9 * flops) / (nanoSecGPUElapsedTime / timeScaleSec);
+        double cpuGigaFlops = (1.0E-9 * flops) / (nanoSecCPUElaptedTime / timeScaleSec);
+        double streamGigaFlops = (1.0E-9 * flops) / (nanoSecStreamElaptedTime / timeScaleSec);
         double speedup = (double) (endSequential - startSequential) / (double) (end - start);
 
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
         String formatStreamFGlops = String.format("%.2f", streamGigaFlops);
 
-        TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
         System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ns");
         System.out.println("\tStreams Execution: " + formatStreamFGlops + " GFlops, Total time = " + (nanoSecStreamElaptedTime) + " ns");
         System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ns");
         System.out.println("\tSpeedup: " + speedup + "x");
-        System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
+        if (verify) {
+            System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
+        }
+
+        // Store the CSV Table for all metrics
+        PrintWriter fileWriter = new PrintWriter("stats-mxm-" + size + ".txt");
+        fileWriter.println("Java, Stream, TornadoVM");
+        for (int i = 0; i < javaElapsedTime.size(); i++) {
+            fileWriter.println(javaElapsedTime.get(i) + "," + streamsElapsedTime.get(i) + "," + tornadoElapsedTime.get(i));
+        }
+        fileWriter.close();
+
     }
 
     private static boolean verify(Matrix2DFloat par, Matrix2DFloat seq, int size) {

@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEvent;
@@ -44,6 +45,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetricHandler;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVOCLPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVBufferProvider;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
@@ -51,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Class to map a SPIR-V device (Device represented either in LevelZero or an
@@ -65,28 +68,34 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     protected SPIRVContext spirvContext;
     protected SPIRVTornadoDevice tornadoDevice;
     protected SPIRVMemoryManager memoryManager;
-    protected SPIRVCodeCache codeCache;
     protected boolean wasReset;
     protected Map<Long, SPIRVEventPool> spirvEventPool;
     private TornadoBufferProvider bufferProvider;
+    protected PowerMetric powerMetricHandler;
+    private final Set<Long> executionIds;
 
-    private Set<Long> executionIds;
+    /**
+     * Map table to represent the compiled-code per execution plan. Each entry in the execution plan has its own
+     * code cache. The code cache manages the compilation and the cache for each task within an execution plan.
+     */
+    protected Map<Long, SPIRVCodeCache> codeCache;
 
     protected SPIRVDeviceContext(SPIRVDevice device, SPIRVContext context) {
         init(device);
         this.spirvContext = context;
         this.executionIds = Collections.synchronizedSet(new HashSet<>());
+        if (isDeviceContextLevelZero()) {
+            this.powerMetricHandler = new SPIRVLevelZeroPowerMetricHandler(this);
+        } else {
+            this.powerMetricHandler = new SPIRVOCLPowerMetricHandler();
+        }
     }
 
     private void init(SPIRVDevice device) {
         this.device = device;
         this.tornadoDevice = new SPIRVTornadoDevice(device);
         this.memoryManager = new SPIRVMemoryManager(this);
-        if (this instanceof SPIRVLevelZeroDeviceContext) {
-            this.codeCache = new SPIRVLevelZeroCodeCache(this);
-        } else {
-            this.codeCache = new SPIRVOCLCodeCache(this);
-        }
+        this.codeCache = new ConcurrentHashMap<>();
         this.wasReset = false;
         this.spirvEventPool = new ConcurrentHashMap<>();
         this.bufferProvider = new SPIRVBufferProvider(this);
@@ -98,6 +107,10 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     public SPIRVDevice getDevice() {
         return device;
+    }
+
+    public PowerMetric getPowerMetric() {
+        return this.powerMetricHandler;
     }
 
     @Override
@@ -149,14 +162,43 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return TornadoRuntimeProvider.getTornadoRuntime().getBackendIndex(SPIRVBackendImpl.class);
     }
 
-    public SPIRVTornadoDevice asMapping() {
+    private boolean isDeviceContextLevelZero() {
+        return this instanceof SPIRVLevelZeroDeviceContext;
+    }
+
+    private boolean isDeviceContextOCL() {
+        return this instanceof SPIRVOCLDeviceContext;
+    }
+
+    public SPIRVTornadoDevice toDevice() {
         return tornadoDevice;
     }
 
+    @Override
     public void reset(long executionPlanId) {
-        spirvEventPool.put(executionPlanId, new SPIRVEventPool(TornadoOptions.EVENT_WINDOW));
-        codeCache.reset();
+        spirvContext.reset(executionPlanId, getDeviceIndex());
+        spirvEventPool.remove(executionPlanId);
+
+        getMemoryManager().releaseKernelStackFrame(executionPlanId);
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        spirvCodeCache.reset();
+        codeCache.remove(executionPlanId);
+
+        executionIds.remove(executionPlanId);
         wasReset = true;
+    }
+
+    private SPIRVCodeCache getSPIRVCodeCache(long executionPlanId) {
+        if (!codeCache.containsKey(executionPlanId)) {
+            SPIRVCodeCache spirvCodeCache;
+            if (this instanceof SPIRVLevelZeroDeviceContext) {
+                spirvCodeCache = new SPIRVLevelZeroCodeCache(this);
+            } else {
+                spirvCodeCache = new SPIRVOCLCodeCache(this);
+            }
+            codeCache.put(executionPlanId, spirvCodeCache);
+        }
+        return codeCache.get(executionPlanId);
     }
 
     public int readBuffer(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
@@ -288,7 +330,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     private ProfilerTransfer createStartAndStopBufferTimers() {
-        if (this instanceof SPIRVLevelZeroDeviceContext && TornadoOptions.isProfilerEnabled()) {
+        if (isDeviceContextLevelZero() && TornadoOptions.isProfilerEnabled()) {
             LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDeviceRuntime());
             LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDeviceRuntime());
             return new ProfilerTransfer(start, stop);
@@ -378,29 +420,34 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         spirvContext.flush(executionPlanId, deviceIndex);
     }
 
-    public TornadoInstalledCode installBinary(SPIRVCompilationResult result) {
-        return installBinary(result.getMeta(), result.getId(), result.getName(), result.getSPIRVBinary());
+    public TornadoInstalledCode installBinary(long executionPlanId, SPIRVCompilationResult result) {
+        return installBinary(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getSPIRVBinary());
     }
 
-    public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
-        return codeCache.installSPIRVBinary(meta, id, entryPoint, code);
+    public SPIRVInstalledCode installBinary(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.installSPIRVBinary(meta, id, entryPoint, code);
     }
 
-    public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
-        return codeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile);
+    public SPIRVInstalledCode installBinary(long executionPlanId, TaskDataContext meta, String id, String entryPoint, String pathToFile) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.installSPIRVBinary(meta, id, entryPoint, pathToFile);
     }
 
-    public boolean isCached(String id, String entryPoint) {
-        return codeCache.isCached(STR."\{id}-\{entryPoint}");
+    public boolean isCached(long executionPlanId, String id, String entryPoint) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
-    public boolean isCached(String methodName, SchedulableTask task) {
-        return codeCache.isCached(STR."\{task.getId()}-\{methodName}");
+    public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.isCached(task.getId() + "-" + methodName);
     }
 
-    public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
-        return codeCache.getInstalledCode(id, entryPoint);
+    public SPIRVInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint) {
+        SPIRVCodeCache spirvCodeCache = getSPIRVCodeCache(executionPlanId);
+        return spirvCodeCache.getInstalledCode(id, entryPoint);
     }
 
     public int enqueueMarker(long executionPlanId) {
@@ -418,7 +465,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         if (eventId == -1) {
             return EMPTY_EVENT;
         }
-        if (this instanceof SPIRVLevelZeroDeviceContext) {
+        if (isDeviceContextLevelZero()) {
             SPIRVEventPool eventPool = getEventPool(executionPlanId);
             LinkedList<TimeStamp> list = eventPool.getTimers(eventId);
             EventDescriptor eventDescriptor = eventPool.getDescriptor(eventId);
@@ -427,13 +474,13 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
             } else {
                 return new SPIRVLevelZeroEvent(eventDescriptor, eventId, null, null);
             }
-        } else if (this instanceof SPIRVOCLDeviceContext spirvoclDeviceContext) {
-            SPIRVOCLContext context = (SPIRVOCLContext) spirvoclDeviceContext.getSpirvContext();
-            OCLCommandQueue commandQueue = context.getCommandQueue(executionPlanId, spirvoclDeviceContext.getDeviceIndex());
+        } else if (isDeviceContextOCL()) {
+            SPIRVOCLContext context = (SPIRVOCLContext) this.getSpirvContext();
+            OCLCommandQueue commandQueue = context.getCommandQueue(executionPlanId, this.getDeviceIndex());
             OCLEventPool eventPool = context.getOCLEventPool(executionPlanId);
             return new OCLEvent(eventPool.getDescriptor(eventId).getNameDescription(), commandQueue, eventId, eventPool.getOCLEvent(eventId));
         } else {
-            throw new RuntimeException("Not implemented yet");
+            throw new TornadoRuntimeException("[Error] SPIR-V Device Context Class not implemented yet.");
         }
     }
 
@@ -443,6 +490,11 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     public long getPowerUsage() {
+        if (isDeviceContextLevelZero()) {
+            long[] powerUsage = new long[1];
+            powerMetricHandler.getPowerUsage(powerUsage);
+            return powerUsage[0];
+        }
         return 0;
     }
 }

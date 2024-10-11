@@ -46,6 +46,13 @@ tests:
 	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
+fast-tests:
+	rm -f tornado_unittests.log
+	tornado --devices
+	tornado-test --ea --verbose --quickPass
+	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
@@ -59,10 +66,6 @@ tests-spirv-opencl:
 	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
 	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
-
-tests-opt:
-	tornado --devices
-	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
 
 test-slam:
 	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests

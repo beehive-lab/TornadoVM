@@ -53,4 +53,11 @@ public class PTXMemoryManager implements TornadoMemoryProvider {
         }
         return ptxKernelStackFrame.get(threadId);
     }
+
+    public void releaseKernelStackFrame(long executionPlanId) {
+        PTXKernelStackFrame stackFrame = ptxKernelStackFrame.remove(executionPlanId);
+        if (stackFrame != null) {
+            stackFrame.invalidate();
+        }
+    }
 }

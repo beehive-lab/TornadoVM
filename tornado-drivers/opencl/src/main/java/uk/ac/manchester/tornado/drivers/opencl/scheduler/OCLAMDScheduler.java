@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLAMDScheduler extends OCLKernelScheduler {
 
@@ -43,7 +43,7 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public int launch(long executionPlanId, OCLKernel kernel, TaskMetaData meta, int[] waitEvents, long batchThreads) {
+    public int launch(long executionPlanId, OCLKernel kernel, TaskDataContext meta, int[] waitEvents, long batchThreads) {
         if (meta.isWorkerGridAvailable()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
             long[] global = grid.getGlobalWork();
@@ -56,7 +56,7 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
+    public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
@@ -69,7 +69,7 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateLocalWork(final TaskMetaData meta) {
+    public void calculateLocalWork(final TaskDataContext meta) {
         final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
@@ -87,7 +87,7 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void checkAndAdaptLocalWork(TaskMetaData meta) {
+    public void checkAndAdaptLocalWork(TaskDataContext meta) {
     }
 
     private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {

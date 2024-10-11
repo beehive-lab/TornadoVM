@@ -50,10 +50,12 @@ public record Shape(long... dimensions) {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
         Shape shape = (Shape) o;
         return Arrays.equals(dimensions, shape.dimensions);
     }
@@ -65,7 +67,7 @@ public record Shape(long... dimensions) {
 
     @Override
     public String toString() {
-        return STR."Shape{dimensions=\{Arrays.toString(dimensions)}}";
+        return "Shape{dimensions=" + Arrays.toString(dimensions) + "}";
     }
 
     /**

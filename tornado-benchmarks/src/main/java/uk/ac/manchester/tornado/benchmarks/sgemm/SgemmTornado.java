@@ -27,7 +27,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
@@ -47,7 +46,6 @@ public class SgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntimeProvider.getProperty("usePrebuilt", "False"));
     private WorkerGrid worker;
     private FloatArray a;
     private FloatArray b;
@@ -85,41 +83,13 @@ public class SgemmTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        if (!USE_PREBUILT) {
-            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
-            taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-            taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-            immutableTaskGraph = taskGraph.snapshot();
-            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.withWarmUp();
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
+        taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-        } else {
-            String filePath = "/tmp/mxmFloat.spv";
-
-            TornadoDevice device = null;
-            int maxDevices = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices();
-            for (int i = 0; i < maxDevices; i++) {
-                device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i);
-                if (device.isSPIRVSupported()) {
-                    break;
-                }
-            }
-
-            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                    .prebuiltTask("t0", //
-                            "sgemm", //
-                            filePath, //
-                            new Object[] { m, n, n, a, b, c }, //
-                            new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                            device, //
-                            new int[] { n, n })//
-                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-
-            immutableTaskGraph = taskGraph.snapshot();
-            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-
-        }
+        executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
+        executionPlan.withWarmUp();
     }
 
     @Override

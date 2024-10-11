@@ -28,11 +28,15 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.AccessorParameters;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -49,7 +53,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
+ * tornado-test -V uk.ac.manchester.tornado.unittests.atomics.TestAtomics
  * </code>
  * </p>
  */
@@ -277,20 +281,24 @@ public class TestAtomics extends TornadoTestBase {
         TornadoDevice defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
+        AccessorParameters accessorParameters = new AccessorParameters(2);
+        accessorParameters.set(0, a, Access.WRITE_ONLY);
+        accessorParameters.set(1, b, Access.WRITE_ONLY);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .prebuiltTask("t0", //
                         "add", //
                         tornadoSDK + "/examples/generated/atomics.cl", //
-                        new Object[] { a, b }, //
-                        new Access[] { Access.WRITE_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { 32 }, //
-                        new int[] { 155 } // Atomics - Initial Value
-                )//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
+                        accessorParameters, //
+                        new int[] { 155 }   // Array for AtomicsInteger - Initial int value
+                ).transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(32);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice(defaultDevice) //
+                    .execute();
         }
 
         boolean repeated = isValueRepeated(a);

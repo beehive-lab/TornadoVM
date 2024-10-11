@@ -17,24 +17,28 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import java.util.stream.IntStream;
+
+import uk.ac.manchester.tornado.api.AccessorParameters;
+
 public class PrebuiltTaskPackage extends TaskPackage {
 
     private final String entryPoint;
     private final String filename;
     private final Object[] args;
     private final Access[] accesses;
-    private final TornadoDevice device;
-    private final int[] dimensions;
     private int[] atomics;
 
-    public PrebuiltTaskPackage(String id, String entryPoint, String fileName, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    PrebuiltTaskPackage(String id, String entryPoint, String fileName, AccessorParameters accessorParameters) {
         super(id, null);
         this.entryPoint = entryPoint;
         this.filename = fileName;
-        this.args = args;
-        this.accesses = accesses;
-        this.device = device;
-        this.dimensions = dimensions;
+        this.args = new Object[accessorParameters.numAccessors()];
+        this.accesses = new Access[accessorParameters.numAccessors()];
+        IntStream.range(0, accessorParameters.numAccessors()).forEach(i -> {
+            this.args[i] = accessorParameters.getAccessor(i).object();
+            this.accesses[i] = accessorParameters.getAccessor(i).access();
+        });
     }
 
     public PrebuiltTaskPackage withAtomics(int[] atomics) {
@@ -56,14 +60,6 @@ public class PrebuiltTaskPackage extends TaskPackage {
 
     public Access[] getAccesses() {
         return accesses;
-    }
-
-    public TornadoDevice getDevice() {
-        return device;
-    }
-
-    public int[] getDimensions() {
-        return dimensions;
     }
 
     @Override

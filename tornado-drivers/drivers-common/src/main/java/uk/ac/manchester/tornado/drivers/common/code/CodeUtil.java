@@ -52,8 +52,9 @@ public class CodeUtil {
         } else {
             argTypes = new JavaType[sigCount];
         }
+        var declaringClass = method.getDeclaringClass();
         for (int i = 0; i < sigCount; i++) {
-            argTypes[argIndex++] = sig.getParameterType(i, null);
+            argTypes[argIndex++] = sig.getParameterType(i, declaringClass);
         }
 
         final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
@@ -70,21 +71,59 @@ public class CodeUtil {
                 inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(JavaKind.Short)), variableIndex);
                 continue;
             }
-            inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(argTypes[i].getJavaKind())), variableIndex);
 
+            var javaKind = convertJavaKind(argTypes[i]);
+            inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(javaKind)), variableIndex);
         }
 
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();
         LIRKind lirKind = LIRKind.value(target.arch.getPlatformKind(returnKind));
 
         Variable returnParameter = new Variable(lirKind, variableIndex);
-        variableIndex++;
-
         return new CallingConvention(0, returnParameter, inputParameters);
     }
 
     public static boolean isHalfFloat(JavaType type) {
         return type.toJavaName().equals(HalfFloat.class.getName());
+    }
+
+    /**
+     * Convert a {@link JavaType} to a {@link JavaKind}, all wrappers for primitive types are converted to the corresponding {@link JavaKind} of the primitive type.
+     *
+     * @param type
+     * @return
+     */
+    public static JavaKind convertJavaKind(JavaType type) {
+        return switch (type.getName()) {
+            case "Ljava/lang/Boolean;" -> JavaKind.Boolean;
+            case "Ljava/lang/Byte;" -> JavaKind.Byte;
+            case "Ljava/lang/Short;" -> JavaKind.Short;
+            case "Ljava/lang/Character;" -> JavaKind.Char;
+            case "Ljava/lang/Integer;" -> JavaKind.Int;
+            case "Ljava/lang/Long;" -> JavaKind.Long;
+            case "Ljava/lang/Float;" -> JavaKind.Float;
+            case "Ljava/lang/Double;" -> JavaKind.Double;
+            default -> type.getJavaKind();
+        };
+    }
+
+
+    public static JavaKind javaKindFromBitSize(int bitSize, boolean isFloat) {
+        if (isFloat) {
+            return switch (bitSize) {
+                case 32 -> JavaKind.Float;
+                case 64 -> JavaKind.Double;
+                default -> throw new IllegalArgumentException("Unsupported floating point bit size: " + bitSize);
+            };
+        } else {
+            return switch (bitSize) {
+                case 8 -> JavaKind.Byte;
+                case 16 -> JavaKind.Short;
+                case 32 -> JavaKind.Int;
+                case 64 -> JavaKind.Long;
+                default -> throw new IllegalArgumentException("Unsupported integer bit size: " + bitSize);
+            };
+        }
     }
 
 }

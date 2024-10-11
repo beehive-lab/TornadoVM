@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  *
  * <p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
+ * tornado-test -V uk.ac.manchester.tornado.unittests.batches.TestBatches
  * </code>
  * </p>
  */
@@ -105,11 +105,11 @@ public class BatchConfiguration {
                     case ShortArray _ -> DataTypeSize.SHORT.getSize();
                     case ByteArray _ -> DataTypeSize.BYTE.getSize();
                     case CharArray _ -> DataTypeSize.CHAR.getSize();
-                    default -> throw new TornadoRuntimeException(STR."Unsupported array type: \{o.getClass()}");
+                    default -> throw new TornadoRuntimeException("Unsupported array type: " + o.getClass());
                 };
                 elementSizes.add(elementSize);
             } else {
-                throw new TornadoRuntimeException(STR."Unsupported type: \{o.getClass()}");
+                throw new TornadoRuntimeException("Unsupported type: " + o.getClass());
             }
         }
 
@@ -125,9 +125,9 @@ public class BatchConfiguration {
         int remainingChunkSize = (int) (totalSize % batchSize);
 
         if (TornadoOptions.DEBUG) {
-            System.out.println(STR."Batch Size: \{batchSize}");
-            System.out.println(STR."Total chunks: \{totalChunks}");
-            System.out.println(STR."remainingChunkSize: \{remainingChunkSize}");
+            System.out.println("Batch Size: " + batchSize);
+            System.out.println("Total chunks: " + totalChunks);
+            System.out.println("remainingChunkSize: " + remainingChunkSize);
         }
         return new BatchConfiguration(totalChunks, remainingChunkSize, elementSizes.getFirst());
     }

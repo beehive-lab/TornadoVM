@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2024, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ * tornado-test -V uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
  */
 public class TestMath extends TornadoTestBase {
@@ -246,6 +246,7 @@ public class TestMath extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCompilerFlags(TornadoVMBackendType.OPENCL, "-cl-opt-disable");
             executionPlan.execute();
         }
 

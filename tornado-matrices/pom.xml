@@ -5,7 +5,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>1.0.7-dev</version>
+        <version>1.0.9-dev</version>
     </parent>
     <artifactId>tornado-matrices</artifactId>
     <name>tornado-matrices</name>

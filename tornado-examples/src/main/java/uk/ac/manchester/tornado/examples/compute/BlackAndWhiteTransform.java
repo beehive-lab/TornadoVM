@@ -104,7 +104,7 @@ public class BlackAndWhiteTransform {
             try {
                 ImageIO.write(image, "jpg", new File("/tmp/" + fileName));
             } catch (IOException e) {
-                throw new RuntimeException(STR."Input file not found: \{IMAGE_FILE}");
+                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
             }
         }
 
@@ -137,7 +137,7 @@ public class BlackAndWhiteTransform {
                 start = System.nanoTime();
                 executor.execute();
                 end = System.nanoTime();
-                System.out.println(STR."Total TornadoVM time: \{end - start} (ns)");
+                System.out.println("Total TornadoVM time: " + (end - start) + " (ns)");
             }
 
             // unmarshall data from IntArray to BufferedImage to draw on the screen
@@ -176,7 +176,7 @@ public class BlackAndWhiteTransform {
                     }
                 }
                 end = System.nanoTime();
-                System.out.println(STR."Total sequential time: \{end - start} (ns)");
+                System.out.println("Total sequential time: " + (end - start) + " (ns)");
             }
 
             // draw the image

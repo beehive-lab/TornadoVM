@@ -21,6 +21,8 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 
 public final class StorageFormats {
 
@@ -188,6 +190,74 @@ public final class StorageFormats {
         final int dimY = matrix[0].length;
         final int dimZ = matrix[0][0].length;
         FloatArray flattenMatrix = new FloatArray(dimX * dimY * dimZ);
+
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                for (int k = 0; k < dimZ; k++) {
+                    int index = toRowMajor3D(i, j, k, dimZ, dimY);
+                    flattenMatrix.set(index, matrix[i][j][k]);
+                }
+            }
+        }
+        return flattenMatrix;
+    }
+
+    public static IntArray toRowMajor3D(int[][][] matrix) {
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
+        final int dimZ = matrix[0][0].length;
+        IntArray flattenMatrix = new IntArray(dimX * dimY * dimZ);
+
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                for (int k = 0; k < dimZ; k++) {
+                    int index = toRowMajor3D(i, j, k, dimZ, dimY);
+                    flattenMatrix.set(index, matrix[i][j][k]);
+                }
+            }
+        }
+        return flattenMatrix;
+    }
+
+    public static DoubleArray toRowMajor3D(double[][][] matrix) {
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
+        final int dimZ = matrix[0][0].length;
+        DoubleArray flattenMatrix = new DoubleArray(dimX * dimY * dimZ);
+
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                for (int k = 0; k < dimZ; k++) {
+                    int index = toRowMajor3D(i, j, k, dimZ, dimY);
+                    flattenMatrix.set(index, matrix[i][j][k]);
+                }
+            }
+        }
+        return flattenMatrix;
+    }
+
+    public static LongArray toRowMajor3D(long[][][] matrix) {
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
+        final int dimZ = matrix[0][0].length;
+        LongArray flattenMatrix = new LongArray(dimX * dimY * dimZ);
+
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                for (int k = 0; k < dimZ; k++) {
+                    int index = toRowMajor3D(i, j, k, dimZ, dimY);
+                    flattenMatrix.set(index, matrix[i][j][k]);
+                }
+            }
+        }
+        return flattenMatrix;
+    }
+
+    public static ShortArray toRowMajor3D(short[][][] matrix) {
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
+        final int dimZ = matrix[0][0].length;
+        ShortArray flattenMatrix = new ShortArray(dimX * dimY * dimZ);
 
         for (int i = 0; i < dimX; i++) {
             for (int j = 0; j < dimY; j++) {

@@ -64,7 +64,7 @@ public class OCLVectorWrapper implements XPUBuffer {
     private long setSubRegionSize;
 
     public OCLVectorWrapper(final OCLDeviceContext device, final Object object, long batchSize) {
-        TornadoInternalError.guarantee(object instanceof PrimitiveStorage, STR."Expecting a PrimitiveStorage type, but found: \{object.getClass()}");
+        TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type, but found: " + object.getClass());
         this.deviceContext = device;
         this.batchSize = batchSize;
         this.bufferId = INIT_VALUE;
@@ -89,7 +89,7 @@ public class OCLVectorWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
@@ -167,7 +167,7 @@ public class OCLVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 return deviceContext.enqueueReadBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -206,7 +206,7 @@ public class OCLVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -247,7 +247,7 @@ public class OCLVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 return deviceContext.readBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -318,7 +318,7 @@ public class OCLVectorWrapper implements XPUBuffer {
             if (value instanceof TornadoNativeArray nativeArray) {
                 deviceContext.writeBuffer(executionPlanId, bufferId, offset, bytes, nativeArray.getSegmentWithHeader().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException(STR."Data type not supported: \{value.getClass()}");
+                throw new TornadoRuntimeException("Data not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -347,7 +347,7 @@ public class OCLVectorWrapper implements XPUBuffer {
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class) {
             return JavaKind.Object;
         } else {
-            TornadoInternalError.shouldNotReachHere(STR."The type should be an array, but found: \{type}");
+            TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);
         }
         return null;
     }

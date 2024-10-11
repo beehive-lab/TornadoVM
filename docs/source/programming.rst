@@ -236,7 +236,7 @@ example also makes use of loop tiling. There are three main steps to leverage th
                sum += aSub[k* TS + row] * bSub[col * TS + k];
            }
            // Synchronise before loading the next tile
-           context.globalBarrier();
+           context.localBarrier();
        }
 
        // Store the final result in C

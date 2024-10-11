@@ -5,7 +5,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>1.0.7-dev</version>
+    <version>1.0.9-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -2088,6 +2088,14 @@
             <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.graalvm.compiler</groupId>
+            <artifactId>compiler</artifactId>
+            <version>23.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
     <modules>
         <module>tornado-runtime</module>

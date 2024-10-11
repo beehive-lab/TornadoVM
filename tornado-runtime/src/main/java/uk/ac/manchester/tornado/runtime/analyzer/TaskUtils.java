@@ -55,11 +55,9 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class TaskUtils {
 
@@ -199,79 +197,79 @@ public class TaskUtils {
         return null;
     }
 
-    public static CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
+    public static CompilableTask createTask(Method method, ScheduleContext meta, String id, Task code) {
         return createTask(meta, id, method, code, true);
     }
 
-    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task1<T1> code, T1 arg1) {
+    public static <T1> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task1<T1> code, T1 arg1) {
         return createTask(meta, id, method, code, true, arg1);
     }
 
-    public static <T1, T2> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
+    public static <T1, T2> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
         return createTask(meta, id, method, code, true, arg1, arg2);
     }
 
-    public static <T1, T2, T3> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
+    public static <T1, T2, T3> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3);
     }
 
-    public static <T1, T2, T3, T4> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
+    public static <T1, T2, T3, T4> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4);
     }
 
-    public static <T1, T2, T3, T4, T5> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
+    public static <T1, T2, T3, T4, T5> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5);
     }
 
-    public static <T1, T2, T3, T4, T5, T6> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
+    public static <T1, T2, T3, T4, T5, T6> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
             T6 arg6) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+    public static <T1, T2, T3, T4, T5, T6, T7> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
             T5 arg5, T6 arg6, T7 arg7) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3,
             T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2,
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(Method method, ScheduleContext meta, String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> CompilableTask createTask(Method method, ScheduleContext meta, String id,
             TornadoFunctions.Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> CompilableTask createTask(Method method, ScheduleContext meta, String id,
             TornadoFunctions.Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11,
             T12 arg12) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> CompilableTask createTask(Method method, ScheduleContext meta, String id,
             TornadoFunctions.Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11,
             T12 arg12, T13 arg13) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> CompilableTask createTask(Method method, ScheduleContext meta, String id,
             TornadoFunctions.Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10,
             T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> CompilableTask createTask(Method method, ScheduleContext meta, String id,
             Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11,
             T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
@@ -302,32 +300,29 @@ public class TaskUtils {
         return cvs;
     }
 
-    private static DomainTree buildDomainTree(int[] dims) {
-        final DomainTree domain = new DomainTree(dims.length);
-        for (int i = 0; i < dims.length; i++) {
-            domain.set(i, new IntDomain(0, 1, dims[i]));
-        }
-        return domain;
-
-    }
-
-    public static PrebuiltTask createTask(ScheduleMetaData meta, PrebuiltTaskPackage taskPackage) {
-        DomainTree domain = buildDomainTree(taskPackage.getDimensions());
+    /**
+     * Marshal object from {@link PrebuiltTaskPackage} to {@link PrebuiltTask}.
+     * 
+     * @param meta
+     *     {@link ScheduleContext}
+     * @param taskPackage
+     *     {@link PrebuiltTaskPackage}
+     * @return {@link PrebuiltTask}
+     */
+    public static PrebuiltTask createTask(ScheduleContext meta, PrebuiltTaskPackage taskPackage) {
         PrebuiltTask prebuiltTask = new PrebuiltTask(meta, //
                 taskPackage.getId(), //
                 taskPackage.getEntryPoint(), //
                 taskPackage.getFilename(), //
                 taskPackage.getArgs(),  //
-                taskPackage.getAccesses(), //
-                taskPackage.getDevice(), //
-                domain);
+                taskPackage.getAccesses());
         if (taskPackage.getAtomics() != null) {
-            prebuiltTask.withAtomics(taskPackage.getAtomics());
+            prebuiltTask.setAtomics(taskPackage.getAtomics());
         }
         return prebuiltTask;
     }
 
-    private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
+    private static CompilableTask createTask(ScheduleContext meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
         final Object[] cvs;
 

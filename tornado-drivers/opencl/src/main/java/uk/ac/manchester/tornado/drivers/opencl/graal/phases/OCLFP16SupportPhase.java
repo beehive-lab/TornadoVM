@@ -66,7 +66,7 @@ public class OCLFP16SupportPhase extends Phase {
 
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {
             if (readNode.getLocationIdentity().toString().contains("VectorHalf") && !fp16Support) {
-                throw new TornadoDeviceFP16NotSupported(STR."The current OpenCL device (\{deviceContext.getDeviceName()}) does not support FP64");
+                throw new TornadoDeviceFP16NotSupported("The current OpenCL device (" + deviceContext.getDeviceName() + ") does not support FP16");
             }
         }
     }

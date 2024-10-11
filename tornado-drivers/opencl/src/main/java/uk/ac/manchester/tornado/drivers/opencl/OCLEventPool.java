@@ -87,7 +87,7 @@ public class OCLEventPool {
          * exit.
          */
         if (oclEventId == -1) {
-            logger.fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
+            logger.fatal("invalid event: event=0x%x, description=%s\n", oclEventId, descriptorId.getNameDescription());
             logger.fatal("terminating application as system integrity has been compromised.");
             System.exit(-1);
         }
@@ -148,7 +148,7 @@ public class OCLEventPool {
         return result;
     }
 
-    protected void reset() {
+    public void reset() {
         for (int index = 0; index < events.length; index++) {
             if (events[index] > 0) {
                 internalEvent.setEventId(index, events[index]);

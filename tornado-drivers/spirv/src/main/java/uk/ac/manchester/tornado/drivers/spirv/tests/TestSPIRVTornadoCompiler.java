@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVPlatform;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVRuntimeImpl;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * How to test?
@@ -59,8 +59,8 @@ public class TestSPIRVTornadoCompiler {
             codeCache = new SPIRVLevelZeroCodeCache(deviceContext);
         }
 
-        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("SPIRV-Backend");
-        TaskMetaData task = new TaskMetaData(scheduleMetaData, "saxpy");
+        ScheduleContext scheduleMetaData = new ScheduleContext("SPIRV-Backend");
+        TaskDataContext task = new TaskDataContext(scheduleMetaData, "saxpy");
         new SPIRVCompilationResult("saxpy", "saxpy", task);
 
         String tornadoSDK = System.getenv("TORNADO_SDK");

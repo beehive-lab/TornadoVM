@@ -21,29 +21,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.runtime;
+package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.runtime.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+public class ScheduleContext extends AbstractRTContext implements Cloneable {
 
-public class OCLPrebuiltTask extends PrebuiltTask {
-
-    private OCLInstalledCode code;
-
-    protected OCLPrebuiltTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] access, OCLTornadoDevice device, DomainTree domain) {
-        super(meta, id, entryPoint, filename, args, access, device, domain);
+    public ScheduleContext(String id) {
+        super(id, null);
     }
 
-    public void dumpCode() {
-        for (byte b : code.getCode()) {
-            System.out.printf("%c", b);
+    @Override
+    public ScheduleContext clone() {
+        try {
+            return (ScheduleContext) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
         }
-    }
-
-    public OCLInstalledCode getCode() {
-        return code;
     }
 }

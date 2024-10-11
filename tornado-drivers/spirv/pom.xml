@@ -7,7 +7,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>1.0.7-dev</version>
+        <version>1.0.9-dev</version>
     </parent>
     <artifactId>tornado-drivers-spirv</artifactId>
     <name>tornado-drivers-spirv</name>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>beehive-lab</groupId>
             <artifactId>beehive-levelzero-jni</artifactId>
-            <version>0.1.3</version>
+            <version>0.1.4</version>
         </dependency>
 
         <dependency>

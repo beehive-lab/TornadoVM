@@ -222,6 +222,7 @@ public class OCLProgram {
         OCLKernel kernel;
         try {
             kernel = new OCLKernel(clCreateKernel(programPointer, entryPoint), deviceContext);
+            kernels.add(kernel);
         } catch (OCLException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }

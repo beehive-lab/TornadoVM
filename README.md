@@ -1,5 +1,7 @@
 # TornadoVM
 
+![TornadoVM version](https://img.shields.io/badge/version-1.0.8-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
 TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
@@ -18,7 +20,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 1.0.6 - 27/06/2024 :
+**Latest Release:** TornadoVM 1.0.8 - 30/09/2024 :
 See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
@@ -259,12 +261,12 @@ You can import the TornadoVM API by setting this the following dependency in the
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.8</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.8</version>
 </dependency>
 </dependencies>
 ```
@@ -356,23 +358,23 @@ For Academic & Industry collaborations, please contact [here](https://www.tornad
 
 Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornadovm.org/about-us).
 
-## 11. Licenses
+## 11. Licenses Per Module
 
-To use TornadoVM, you can link the TornadoVM API to your application which is under Apache 2.
+To use TornadoVM, you can link the TornadoVM API to your application which is under [Apache 2](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2).
 
 Each Java TornadoVM module is licensed as follows:
 
-| Module                         | License                                                                                                                                                       |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Tornado-API                    | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Runtime                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
-| Tornado-Assembly               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Drivers                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
-| Tornado-Drivers-OpenCL-Headers | [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE)                   |
-| Tornado-scripts                | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Annotation             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Unittests              | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Benchmarks             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Examples               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-| Tornado-Matrices               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)       |
-|                                |
+| Module                         | License                                                                                                                                                          |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Tornado-API                    | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Runtime                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2%20Classpath%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
+| Tornado-Assembly               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Drivers                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
+| Tornado-Drivers-OpenCL-Headers | [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE)                      |
+| Tornado-scripts                | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Annotation             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Unittests              | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Benchmarks             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Examples               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+| Tornado-Matrices               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
+|                                |                                                                                                                                                                  | 

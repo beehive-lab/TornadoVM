@@ -46,11 +46,11 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
+    private final TornadoLogger logger;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
-    private final TornadoLogger logger;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
@@ -100,7 +100,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
             case TornadoImagesInterface<?> imagesInterface -> imagesInterface.getSegmentWithHeader();
             case TornadoMatrixInterface<?> matrixInterface -> matrixInterface.getSegmentWithHeader();
             case TornadoVolumesInterface<?> volumesInterface -> volumesInterface.getSegmentWithHeader();
-            default -> throw new TornadoMemoryException(STR."Memory Segment not supported: \{reference.getClass()}");
+            default -> throw new TornadoMemoryException("Memory Segment not supported: " + reference.getClass());
         };
     }
 
@@ -183,7 +183,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         }
 
         if (bufferSize <= 0) {
-            throw new TornadoMemoryException(STR."[ERROR] Bytes Allocated <= 0: \{bufferSize}");
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
         if (TornadoOptions.FULL_DEBUG) {

@@ -32,15 +32,15 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CompilableTask implements SchedulableTask {
 
     protected final Object[] args;
     protected final Method method;
     private final Object[] resolvedArgs;
-    protected TaskMetaData meta;
+    protected TaskDataContext meta;
     protected boolean shouldCompile;
     private long batchNumThreads;
     private int batchNumber;
@@ -49,12 +49,12 @@ public class CompilableTask implements SchedulableTask {
     private TornadoProfiler profiler;
     private boolean forceCompiler;
 
-    public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
+    public CompilableTask(ScheduleContext meta, String id, Method method, Object... args) {
         this.method = method;
         this.args = args;
         this.shouldCompile = true;
         this.resolvedArgs = args;
-        this.meta = TaskMetaData.create(meta, id, method);
+        this.meta = TaskDataContext.create(meta, id, method);
     }
 
     @Override
@@ -81,17 +81,17 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public TornadoXPUDevice getDevice() {
-        return meta.getLogicDevice();
+        return meta.getXPUDevice();
     }
 
     @Override
     public String getFullName() {
-        return STR."task \{meta.getId()} - \{method.getName()}";
+        return "task " + meta.getId() + " - " + method.getName();
     }
 
     @Override
     public String getNormalizedName() {
-        return STR."\{meta.getId()}.\{method.getName()}";
+        return meta.getId() + "." + method.getName();
     }
 
     @Override
@@ -100,13 +100,12 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final TornadoDevice mapping) {
-        meta.setDevice(mapping);
-        return this;
+    public void setDevice(final TornadoDevice device) {
+        meta.setDevice(device);
     }
 
     @Override
-    public TaskMetaData meta() {
+    public TaskDataContext meta() {
         return meta;
     }
 

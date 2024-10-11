@@ -23,35 +23,35 @@
  * SOFTWARE.
  */
 #include <jni.h>
-/* Header for class uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler */
 
-#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
-#define _Included_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler
+#define _Included_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler
 #ifdef __cplusplus
 extern "C" {
 #endif
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler
  * Method:    clNvmlInit
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler_clNvmlInit
         (JNIEnv *, jclass);
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler
  * Method:    clNvmlDeviceGetHandleByIndex
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetHandleByIndex
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler_clNvmlDeviceGetHandleByIndex
         (JNIEnv *, jclass, jlong, jlongArray);
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler
  * Method:    clNvmlDeviceGetPowerUsage
  * Signature: ([J[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetric_clNvmlDeviceGetPowerUsage
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler_clNvmlDeviceGetPowerUsage
         (JNIEnv *, jclass, jlongArray, jlongArray);
 
 

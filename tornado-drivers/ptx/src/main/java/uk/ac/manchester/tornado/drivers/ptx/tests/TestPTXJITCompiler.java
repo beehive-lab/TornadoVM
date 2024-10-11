@@ -53,8 +53,8 @@ import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Test the PTX JIT Compiler and connection with the Tornado Runtime
@@ -74,7 +74,7 @@ public class TestPTXJITCompiler {
         new TestPTXJITCompiler().test();
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, Object... parameters) {
+    public MetaCompilation compileMethod(long executionPlanId, Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -91,10 +91,10 @@ public class TestPTXJITCompiler {
         TornadoDevice device = tornadoRuntime.getBackend(PTXBackendImpl.class).getDefaultDevice();
 
         // Create a new task for TornadoVM
-        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        ScheduleContext scheduleMetaData = new ScheduleContext("s0");
         // Create a compilable task
         CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
-        TaskMetaData taskMeta = compilableTask.meta();
+        TaskDataContext taskMeta = compilableTask.meta();
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
@@ -107,16 +107,16 @@ public class TestPTXJITCompiler {
         PTXCompilationResult compilationResult = PTXCompiler.compileSketchForDevice(sketch, compilableTask, (PTXProviders) providers, ptxBackend, new EmptyProfiler());
 
         // Install the PTX Code in the VM
-        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(compilationResult, resolvedJavaMethod.getName());
+        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, compilationResult, resolvedJavaMethod.getName());
 
         return new MetaCompilation(taskMeta, (PTXInstalledCode) ptxCode);
     }
 
-    public void runWithPTXAPI(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void runWithPTXAPI(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         PTX.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
     }
 
-    public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, float[] c) {
+    public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(tornadoDevice);
@@ -161,10 +161,11 @@ public class TestPTXJITCompiler {
 
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
+        final long executionPlanId = 0;
 
         PTXTornadoDevice tornadoDevice = PTX.defaultDevice();
 
-        MetaCompilation compileMethod = compileMethod(TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
+        MetaCompilation compileMethod = compileMethod(executionPlanId, TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
         // Check with all internal APIs
         run(tornadoDevice, (PTXInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);

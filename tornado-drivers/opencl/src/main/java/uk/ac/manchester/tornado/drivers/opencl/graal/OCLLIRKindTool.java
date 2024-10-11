@@ -38,6 +38,21 @@ public class OCLLIRKindTool implements LIRKindTool {
         this.target = target;
     }
 
+
+    public LIRKind getUnsignedIntegerKind(int numBits) {
+        if (numBits <= 8) {
+            return LIRKind.value(OCLKind.UCHAR);
+        } else if (numBits <= 16) {
+            return LIRKind.value(OCLKind.USHORT);
+        } else if (numBits <= 32) {
+            return LIRKind.value(OCLKind.UINT);
+        } else if (numBits <= 64) {
+            return LIRKind.value(OCLKind.ULONG);
+        } else {
+            throw shouldNotReachHere();
+        }
+    }
+
     @Override
     public LIRKind getIntegerKind(int numBits) {
         if (numBits <= 8) {

@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  *
  * <code>
- * tornado-test -V --fast uk.ac.manchester.tornado.unittests.branching.TestConditionals
+ * tornado-test -V uk.ac.manchester.tornado.unittests.branching.TestConditionals
  * </code>
  */
 public class TestConditionals extends TornadoTestBase {

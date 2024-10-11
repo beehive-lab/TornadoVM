@@ -131,7 +131,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
+    public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
         return null;
     }
 
@@ -201,12 +201,12 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public boolean isFullJITMode(SchedulableTask task) {
+    public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
         return false;
     }
 
     @Override
-    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+    public TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task) {
         return null;
     }
 
@@ -276,7 +276,7 @@ public class JVMMapping implements TornadoXPUDevice {
     }
 
     @Override
-    public int getDriverIndex() {
+    public int getBackendIndex() {
         return 0;
     }
 

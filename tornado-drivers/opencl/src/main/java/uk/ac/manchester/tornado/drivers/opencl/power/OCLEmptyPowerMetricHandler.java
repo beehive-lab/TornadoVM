@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,12 +21,21 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.tasks.meta;
+package uk.ac.manchester.tornado.drivers.opencl.power;
 
-public class ScheduleMetaData extends AbstractMetaData {
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 
-    public ScheduleMetaData(String id) {
-        super(id, null);
+public class OCLEmptyPowerMetricHandler implements PowerMetric {
+
+    public OCLEmptyPowerMetricHandler() {
     }
 
+    @Override
+    public void initializePowerLibrary() {
+    }
+
+    @Override
+    public void getPowerUsage(long[] powerUsage) {
+
+    }
 }

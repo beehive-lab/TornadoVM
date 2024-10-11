@@ -28,6 +28,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
@@ -41,11 +42,12 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
@@ -64,7 +66,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
@@ -103,7 +105,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    private DeviceThreadScheduling calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
+    private DeviceThreadScheduling calculateGlobalAndLocalBlockOfThreads(TaskDataContext meta, long batchThreads) {
         long[] globalWork = new long[3];
         long[] localWork = new long[3];
         Arrays.fill(globalWork, 1);
@@ -144,7 +146,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         return result;
     }
 
-    private ThreadBlockDispatcher suggestThreadSchedulingToLevelZeroDriver(DeviceThreadScheduling threadScheduling, LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, TaskMetaData meta) {
+    private ThreadBlockDispatcher suggestThreadSchedulingToLevelZeroDriver(DeviceThreadScheduling threadScheduling, LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, TaskDataContext meta) {
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
@@ -194,6 +196,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp = new LevelZeroKernelTimeStamp(deviceContext, commandList, commandQueue);
             kernelTimeStamp.createEventTimer();
+            ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readInitialCounters();
         }
 
         ZeEventHandle kernelEventTimer = kernelTimeStamp != null ? kernelTimeStamp.getKernelEventTimer() : null;
@@ -206,12 +209,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
     }
 
-    private boolean computeThreadBlock(TaskMetaData meta) {
+    private boolean computeThreadBlock(TaskDataContext meta) {
         return meta.shouldResetThreadsBlock() || deviceThreadScheduling == null || threadBlockDispatcher == null || meta.isWorkerGridAvailable();
     }
 
     @Override
-    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads) {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
@@ -235,7 +238,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
                 // If the device was updated for the same ExecutionPlan and same TornadoVM instance,
                 // then, we disable the reset of the threads for the next execution.
                 // This will enable the thread-blocks not to be re-computed over and over again, but
-                // only when the device is changed. 
+                // only when the device is changed.
                 meta.disableResetThreadBlock();
                 meta.setLocalWorkToNotDefined();
             }
@@ -249,12 +252,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp.solveEvent(executionPlanId, meta);
+            ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readFinalCounters();
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
         }
 
         return 0;
     }
 
-    private void calculateLocalWork(TaskMetaData meta) {
+    private void calculateLocalWork(TaskDataContext meta) {
         final long[] localWork = meta.initLocalWork();
 
         switch (meta.getDims()) {
@@ -290,7 +295,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         return value;
     }
 
-    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskDataContext metaData) {
         long[] intermediates = new long[] { 1, 1, 1 };
 
         long[] maxWorkItemSizes = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
@@ -315,7 +320,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         return intermediates;
     }
 
-    private void calculateGlobalWork(TaskMetaData meta, long batchThreads) {
+    private void calculateGlobalWork(TaskDataContext meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
 
         for (int i = 0; i < meta.getDims(); i++) {
@@ -327,7 +332,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         }
     }
 
-    private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
+    private void checkLocalWorkGroupFitsOnDevice(final TaskDataContext meta) {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {

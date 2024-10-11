@@ -30,29 +30,29 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLTargetDevice getDevice();
 
-    OCLCodeCache getCodeCache();
+    OCLCodeCache getCodeCache(long executionPlanId);
 
-    boolean isCached(String id, String entryPoint);
+    boolean isCached(long executionPlanId, String id, String entryPoint);
 
-    OCLInstalledCode getInstalledCode(String id, String entryPoint);
+    OCLInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint);
 
-    OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean printKernel);
+    OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result);
 
-    OCLInstalledCode installCode(OCLCompilationResult result);
+    OCLInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 
-    OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code);
+    OCLInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel);
 
-    boolean isKernelAvailable();
+    boolean isKernelAvailable(long executionPlanId);
 
     void reset(long executionPlanId);
 
-    TornadoXPUDevice asMapping();
+    TornadoXPUDevice toDevice();
 
     void dumpEvents();
 
