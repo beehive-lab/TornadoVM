@@ -366,8 +366,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
                     ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
                     : -1);
-            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getInputVoltageMetric() != null)
-                    ? Long.parseLong(UpsMeterReader.getInputVoltageMetric())
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
                     : -1);
         }
     }

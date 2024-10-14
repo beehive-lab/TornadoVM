@@ -15,7 +15,7 @@ import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 public class UpsMeterReader {
 
-    private static String INPUT_VOLTAGE_OID = "1.3.6.1.2.1.33.1.4.4.1.2.1";
+    private static String OUTPUT_VOLTAGE_OID = "1.3.6.1.2.1.33.1.4.4.1.2.1";
     private static String OUTPUT_POWER_OID = "1.3.6.1.2.1.33.1.4.4.1.4.1";
     private static String COMMUNITY = "public";
     private static String ADDRESS = "192.168.8.193";
@@ -66,8 +66,8 @@ public class UpsMeterReader {
         return getSnmpValue(OUTPUT_POWER_OID);
     }
 
-    public static String getInputVoltageMetric() {
-        return getSnmpValue(INPUT_VOLTAGE_OID);
+    public static String getOutputVoltageMetric() {
+        return getSnmpValue(OUTPUT_VOLTAGE_OID);
     }
 
 }
