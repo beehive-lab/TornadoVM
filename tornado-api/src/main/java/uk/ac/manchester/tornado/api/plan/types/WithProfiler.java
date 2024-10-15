@@ -19,15 +19,19 @@ package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 
 public final class WithProfiler extends ExecutionPlanType {
 
-    public WithProfiler(TornadoExecutionPlan parent) {
+    private final ProfilerMode profilerMode;
+
+    public WithProfiler(TornadoExecutionPlan parent, ProfilerMode profilerMode) {
         super(parent);
+        this.profilerMode = profilerMode;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withProfiler ";
+        return parentLink.toString() + "\n -> withProfiler(" + profilerMode.toString() + ") ";
     }
 }

@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
-import uk.ac.manchester.tornado.api.plan.types.WithDevicePlan;
+import uk.ac.manchester.tornado.api.plan.types.WithDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
@@ -42,7 +42,7 @@ public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
         permits OffConcurrentDevices, OffMemoryLimit, OffPrintKernel, //
         OffProfiler, OffThreadInfo, WithWarmUp, WithBatch, WithClearProfiles,  //
         WithCompilerFlags, WithConcurrentDevices, WithDefaultScheduler, //
-        WithDevicePlan, WithDynamicReconfiguration, WithFreeDeviceMemory, //
+        WithDevice, WithDynamicReconfiguration, WithFreeDeviceMemory, //
         WithGridScheduler, WithMemoryLimit, WithPrintKernel, WithProfiler, //
         WithResetDevice, WithThreadInfo {
 

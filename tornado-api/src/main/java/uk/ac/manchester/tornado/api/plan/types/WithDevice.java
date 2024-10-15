@@ -19,15 +19,19 @@ package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
-public final class WithDevicePlan extends ExecutionPlanType {
+public final class WithDevice extends ExecutionPlanType {
 
-    public WithDevicePlan(TornadoExecutionPlan parent) {
+    private final TornadoDevice device;
+
+    public WithDevice(TornadoExecutionPlan parent, TornadoDevice device) {
         super(parent);
+        this.device = device;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withDevice ";
+        return parentLink.toString() + "\n -> withDevice(" + device.getTornadoVMBackend() + ":" + device.getPhysicalDevice().getDeviceName() + ")";
     }
 }

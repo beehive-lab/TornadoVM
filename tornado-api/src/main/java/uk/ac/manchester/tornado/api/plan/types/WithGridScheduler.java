@@ -18,16 +18,20 @@
 package uk.ac.manchester.tornado.api.plan.types;
 
 import uk.ac.manchester.tornado.api.ExecutionPlanType;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
 public final class WithGridScheduler extends ExecutionPlanType {
 
-    public WithGridScheduler(TornadoExecutionPlan parent) {
+    private final GridScheduler gridScheduler;
+
+    public WithGridScheduler(TornadoExecutionPlan parent, GridScheduler gridScheduler) {
         super(parent);
+        this.gridScheduler = gridScheduler;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withGridScheduler ";
+        return parentLink.toString() + "\n -> withGridScheduler(<" + gridScheduler + ">)";
     }
 }
