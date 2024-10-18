@@ -1,5 +1,3 @@
-.. _build-run-with-ide:
-
 Build and Run with IDE
 ======================
 
@@ -41,7 +39,7 @@ Install the following plugins:
 2. **Save Actions**
    Install it from:
    https://plugins.jetbrains.com/plugin/7642-save-actions
-   This plugin allows post-save actions (e.g., code formatting on save).
+   This plugin allows post-save actions (e.g. code formatting on save).
 
    - To enable auto-formatter with save-actions:
      - Go to: **Settings > Other Settings > Save Actions**
@@ -72,19 +70,19 @@ Prerequisites
 
 Ensure that **cmake** is installed and available in your system's PATH.
 
-1. **Check if cmake is in your PATH:**
+1. **Check if cmake is in your PATH**
    Verify that your system recognizes `cmake` by running:
 
    .. code:: bash
 
       $ cmake --version
 
-   If it is recognised, skip the next step. Otherwise, you need to add cmake to your system's PATH.
+   If it is recognized, skip the next step. Otherwise, you need to add cmake to your system's PATH.
 
-2. **Add cmake to PATH (macOS/Linux):**
-You can add cmake to your PATH by updating your shell configuration file.
+2. **Add cmake to PATH (macOS/Linux)**
+You can add `cmake` to your PATH by updating your shell configuration file.
 
-a. Open your shell configuration file (e.g., `.bashrc`, `.zshrc`):
+a. Open your shell configuration file (e.g. `.bashrc`, `.zshrc`):
 
    .. code:: bash
 
@@ -102,6 +100,36 @@ c. Save and apply the changes:
 
       $ source ~/.zshrc  # or source ~/.bashrc
 
+3. **Add cmake and pyInstaller to PATH (Windows)**
+
+a. Find the path of the `cmake` and `pyInstaller` commands:
+Open your shell configuration (e.g. x64 Native Tools Command Prompt for VS 2022) and initialize the environment:
+
+   .. code:: bash
+
+      $ cd <path-to-TornadoVM-directory>
+      $ .\bin\windowsMicrosoftStudioTools2022.cmd
+
+Verify that your system recognizes `cmake` and `pyInstaller` by running:
+
+   .. code:: bash
+
+      $ where cmake
+      $ where pyInstaller
+
+b. Update the PATH:
+You can add the variables to your PATH by searching **Edit the system environment variables**, clicking **Environment Variables...**, and editing the **PATH** with your cmake directory.
+
+   **Examples**:
+
+   .. code:: bash
+
+      C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\
+
+   .. code:: bash
+
+      <path-to-TornadoVM-directory>\.venv\Scripts
+
 Configure the Project Structure
 ===============================
 
@@ -109,12 +137,12 @@ Configure the Project Structure
 
 a. In the **Project** tab:
 
-   - The *SDK* uses a valid Java version (e.g., OpenJDK 21, GraalVM JDK 21, etc.).
-   - The *Language level* is set to match the Java version (e.g., Java 21).
+   - The *SDK* uses a valid Java version (e.g. OpenJDK 21, GraalVM JDK 21, etc.).
+   - The *Language level* is set to match the Java version (e.g. Java 21).
 
 b. In the **Modules** tab:
 
-   - Ensure that the *Language level* of every module matches the project level (e.g., Java 21).
+   - Ensure that the *Language level* of every module matches the project level (e.g. Java 21).
 
 Configuring the TornadoVM Utilities
 ===================================
@@ -122,10 +150,10 @@ Configuring the TornadoVM Utilities
 1. **Configure the TornadoVM Maven Build**
 
 a. Navigate to the Maven configuration:
-   Go to **Run > Edit Configurations > Maven > _internal_TornadoVM_Maven-cleanAndinstall_**
+Go to **Run > Edit Configurations > Maven > _internal_TornadoVM_Maven-cleanAndinstall_**
 
 b. Set up the build profiles:
-   In the **Profiles** field, list the profiles you want to build, separated by spaces.
+In the **Profiles** field, list the profiles you want to build, separated by spaces.
 
    **Examples**:
 
@@ -142,20 +170,20 @@ b. Set up the build profiles:
         graal-jdk-21 opencl-backend ptx-backend spirv-backend
 
 c. Check available profiles:
-   You can find the available profiles in the right-hand vertical bar in IntelliJ under **Maven > Profiles**.
+You can find the available profiles in the right-hand vertical bar in IntelliJ under **Maven > Profiles**.
 
    **Important:** Even though profiles are listed in the Maven pane, you must explicitly configure them in the **_internal_TornadoVM_Maven-cleanAndinstall_** utility. The enablement/disablement of profiles in the Maven pane does not always reflect in this utility.
 
 2. **Configure the TornadoVM Python Build**
 
 a. Navigate to the Python configuration:
-   Go to **Run > Edit Configurations > Python > TornadoVM-Full-Build**
+Go to **Run > Edit Configurations > Python > TornadoVM-Full-Build**
 
 b. Configure the Python interpreter:
-   In the **Use specified interpreter** field, select a valid Python interpreter installed on your system.
+In the **Use specified interpreter** field, select a valid Python interpreter installed on your system.
 
 c. Update environment variables for selected backends:
-   In the **Environmental variables** section, locate the `selected_backends` field. Update the list of backends you want to use, separated by commas.
+In the **Environmental variables** section, locate the `selected_backends` field. Update the list of backends you want to use, separated by commas.
 
    **Examples**:
 
@@ -176,9 +204,21 @@ Configure Applications to Debug/Run
 
 To run and debug Java applications with TornadoVM on IntelliJ, you need to obtain the TornadoVM `JAVA_FLAGS`. Open a terminal and run:
 
+- **macOS/Linux:**
+
    .. code:: bash
 
+      $ cd <path-to-TornadoVM-directory>
       $ source setvars.sh
+      $ tornado --printJavaFlags
+
+- **Windows:**
+
+   .. code:: bash
+
+      $ cd <path-to-TornadoVM-directory>
+      $ .\bin\windowsMicrosoftStudioTools2022.cmd
+      $ setvars.cmd
       $ tornado --printJavaFlags
 
 The output will differ depending on the backends you've built. For example, if you build with all backends, it should be similar to this:
@@ -199,14 +239,14 @@ Copy the flags starting from `-server` to the end.
 2. **Configure new Applications**
 
 a. Add new configurations:
-   Go to **Run > Edit Configurations > Application > Add new run configuration...**
+Go to **Run > Edit Configurations > Application > Add new run configuration...**
 
    Add your own parameters, for example:
 
    - **Name:** MatrixMultiplication2D
    - **VM Options:** Add the flags you copied earlier
-   - **Main class:** e.g., `uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D`
-   - **Program arguments:** e.g., `128`
+   - **Main class:** e.g. `uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D`
+   - **Program arguments:** e.g. `128`
 
 b. Apply and run the application.
 
