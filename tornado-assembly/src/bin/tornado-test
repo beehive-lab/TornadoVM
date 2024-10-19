@@ -346,7 +346,7 @@ __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 if (os.name == 'nt'):
     TORNADO_CMD = "python " + os.path.expandvars(r"%TORNADO_SDK%/bin/tornado").replace("\\", "/") + " "
 else:
-    TORNADO_CMD = "tornado "
+    TORNADO_CMD = os.environ["TORNADO_SDK"] + "/bin/tornado "
 
 ENABLE_ASSERTIONS = "-ea "
 
