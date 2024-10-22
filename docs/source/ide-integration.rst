@@ -1,8 +1,9 @@
 Build and Run with IDE
-======================
+##################################
 
-IntelliJ
---------
+
+JetBrains IntelliJ Installation
+*******************************
 
 Download and install the latest IntelliJ IDEA Community Edition:
 https://www.jetbrains.com/idea/download/
@@ -19,7 +20,7 @@ For IntelliJ to pick up the required TornadoVM dependencies from the `pom.xml` f
 .. _ide_plugins:
 
 Required JetBrains Plugins
-==========================
+**************************
 
 Open IntelliJ and go to **Preferences > Plugins > Browse Repositories**.
 Install the following plugins:
@@ -60,17 +61,19 @@ Install the following plugins:
 
 .. _ide_tornadovm_build:
 
-Build TornadoVM with IntelliJ
-=============================
+Building TornadoVM with IntelliJ
+********************************
 
 Follow these steps to build TornadoVM with IntelliJ.
 
 Prerequisites
--------------
+=============
 
 Ensure that **cmake** is installed and available in your system's PATH.
 
-1. **Check if cmake is in your PATH**
+1. Check if cmake is in the PATH
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
    Verify that your system recognizes `cmake` by running:
 
    .. code:: bash
@@ -79,7 +82,9 @@ Ensure that **cmake** is installed and available in your system's PATH.
 
    If it is recognized, skip the next step. Otherwise, you need to add cmake to your system's PATH.
 
-2. **Add cmake to PATH (macOS/Linux)**
+2. Add cmake to PATH (macOS/Linux)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 You can add `cmake` to your PATH by updating your shell configuration file.
 
 a. Open your shell configuration file (e.g. `.bashrc`, `.zshrc`):
@@ -100,7 +105,8 @@ c. Save and apply the changes:
 
       $ source ~/.zshrc  # or source ~/.bashrc
 
-3. **Add cmake and pyInstaller to PATH (Windows)**
+3. Add cmake and pyInstaller to PATH (Windows)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 a. Find the path of the `cmake` and `pyInstaller` commands:
 Open your shell configuration (e.g. x64 Native Tools Command Prompt for VS 2022) and initialize the environment:
@@ -120,6 +126,8 @@ Verify that your system recognizes `cmake` and `pyInstaller` by running:
 b. Update the PATH:
 You can add the variables to your PATH by searching **Edit the system environment variables**, clicking **Environment Variables...**, and editing the **PATH** with your cmake directory.
 
+**Important:** It is recommended to use the python interpreter under the virtual environment (.venv) as the Python SDK for your TornadoVM project, since it contains all dependent modules (i.e., PyInstaller, psutil) to build TornadoVM and run the tests from IntelliJ.
+
    **Examples**:
 
    .. code:: bash
@@ -130,8 +138,8 @@ You can add the variables to your PATH by searching **Edit the system environmen
 
       <path-to-TornadoVM-directory>\.venv\Scripts
 
-Configure the Project Structure
-===============================
+Configuring the Project Structure
+*********************************
 
 1. Go to **File > Project Structure** and apply the following configurations:
 
@@ -145,14 +153,18 @@ b. In the **Modules** tab:
    - Ensure that the *Language level* of every module matches the project level (e.g. Java 21).
 
 Configuring the TornadoVM Utilities
-===================================
+***********************************
 
-1. **Configure the TornadoVM Maven Build**
+1. Configuring the TornadoVM Maven Build Utility
+================================================
 
-a. Navigate to the Maven configuration:
+a. Navigate to the Maven configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Go to **Run > Edit Configurations > Maven > _internal_TornadoVM_Maven-cleanAndinstall_**
 
-b. Set up the build profiles:
+b. Set up the build profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In the **Profiles** field, list the profiles you want to build, separated by spaces.
 
    **Examples**:
@@ -169,20 +181,29 @@ In the **Profiles** field, list the profiles you want to build, separated by spa
 
         graal-jdk-21 opencl-backend ptx-backend spirv-backend
 
-c. Check available profiles:
+c. Check available profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 You can find the available profiles in the right-hand vertical bar in IntelliJ under **Maven > Profiles**.
 
    **Important:** Even though profiles are listed in the Maven pane, you must explicitly configure them in the **_internal_TornadoVM_Maven-cleanAndinstall_** utility. The enablement/disablement of profiles in the Maven pane does not always reflect in this utility.
 
-2. **Configure the TornadoVM Python Build**
+2. Configuring the TornadoVM Python Build Utility
+=================================================
 
-a. Navigate to the Python configuration:
+a. Navigate to the Python configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Go to **Run > Edit Configurations > Python > TornadoVM-Full-Build**
 
-b. Configure the Python interpreter:
+b. Configure the Python interpreter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 In the **Use specified interpreter** field, select a valid Python interpreter installed on your system.
 
-c. Update environment variables for selected backends:
+c. Update environment variables for selected backends
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 In the **Environmental variables** section, locate the `selected_backends` field. Update the list of backends you want to use, separated by commas.
 
    **Examples**:
@@ -193,14 +214,13 @@ In the **Environmental variables** section, locate the `selected_backends` field
 
         opencl-backend,ptx-backend,spirv-backend
 
-d. Apply to save your settings and run the build by clicking **Run TornadoVM-Full-Build**.
+Apply to save your settings and run the build by clicking **Run TornadoVM-Full-Build**.
 
-.. _ide_tornadovm_run:
+Configuring Applications to Debug/Run
+*************************************
 
-Configure Applications to Debug/Run
-===================================
-
-1. **Obtain the TornadoVM Java flags**
+1. Obtain the TornadoVM Java flags
+==================================
 
 To run and debug Java applications with TornadoVM on IntelliJ, you need to obtain the TornadoVM `JAVA_FLAGS`. Open a terminal and run:
 
@@ -236,9 +256,11 @@ The output will differ depending on the backends you've built. For example, if y
 
 Copy the flags starting from `-server` to the end.
 
-2. **Configure new Applications**
+2. Configure new Applications
+=============================
 
 a. Add new configurations:
+
 Go to **Run > Edit Configurations > Application > Add new run configuration...**
 
    Add your own parameters, for example:
@@ -250,10 +272,9 @@ Go to **Run > Edit Configurations > Application > Add new run configuration...**
 
 b. Apply and run the application.
 
-.. _ide_checkstyle:
 
-Configure the IDEA CheckStyle
-=============================
+Configuring the IDEA CheckStyle
+*******************************
 
 1. Go to **File > Settings > Tools > CheckStyle**.
 
