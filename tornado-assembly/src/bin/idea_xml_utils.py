@@ -201,6 +201,8 @@ def cleanup_build_directory(buildDirectoryString):
     tornadoRootDirectory = Path(buildDirectoryString)
     if tornadoRootDirectory.exists() and tornadoRootDirectory.is_dir():
         for file in tornadoRootDirectory.iterdir():
+            if file.name == ".gitignore":
+                continue
             if file.is_file():
                 file.unlink()
 
