@@ -224,7 +224,6 @@ def tornadovm_ide_init(tornadoSDKPath, javaHome, backends):
         sys.exit(0)
 
     backends_separated_comma = ",".join(backends)
-    backends_separated_space = " ".join(backends)
 
     if os.name == 'nt':
         # Multiple paths of pytho executables may be listed, the first is selected as default
