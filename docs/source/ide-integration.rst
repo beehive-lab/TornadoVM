@@ -194,7 +194,7 @@ You can find the available profiles in the right-hand vertical bar in IntelliJ u
 a. Navigate to the Python configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Go to **Run > Edit Configurations > Python > TornadoVM-Full-Build**
+Go to **Run > Edit Configurations > Python > TornadoVM-Build**
 
 b. Configure the Python interpreter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -214,7 +214,7 @@ In the **Environmental variables** section, locate the `selected_backends` field
 
         opencl-backend,ptx-backend,spirv-backend
 
-Apply to save your settings and run the build by clicking **Run TornadoVM-Full-Build**.
+Apply to save your settings and run the build by clicking **Run TornadoVM-Build**.
 
 Configuring Applications to Debug/Run
 *************************************
