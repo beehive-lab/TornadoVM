@@ -19,7 +19,7 @@
 
 import os
 import subprocess
-
+import config_utils as cutils
 
 def update_paths():
     """
@@ -81,6 +81,8 @@ def main():
     selected_backends_str = os.environ.get("selected_backends", "")
     update_backend_file(selected_backends_str)
     copy_graal_jars()
+    if os.name == 'nt':
+        cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
 
 
 if __name__ == "__main__":

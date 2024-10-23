@@ -53,19 +53,18 @@ __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
 ## ################################################################
 
 class TornadoInstaller:
-    
+
     def __init__(self):
         self.workDirName = ""
+        self.dependenciesDirName = ""
         self.osPlatform = self.getOSPlatform()
         self.hardware = self.getMachineArc()
         self.env = {}
         self.env["PATH"] = [os.path.join(self.getCurrentDirectory(), "bin", "bin")]
         self.env["TORNADO_SDK"] = os.path.join(self.getCurrentDirectory(), "bin", "sdk")
 
-
     def getOSPlatform(self):
         return platform.system().lower()
-
 
     def getMachineArc(self):
         compatibleMachineTypes = {
@@ -77,10 +76,8 @@ class TornadoInstaller:
         machine = platform.machine().lower()
         return compatibleMachineTypes[machine]
 
-
     def processFileName(self, url):
         return os.path.basename(url)
-
 
     def setWorkDir(self, jdk):
         tornadoDir = "TornadoVM-" + jdk
@@ -88,10 +85,13 @@ class TornadoInstaller:
         if not os.path.exists(self.workDirName):
             os.makedirs(self.workDirName)
 
+    def setDependenciesDir(self):
+        self.dependenciesDirName = os.path.join(__DIRECTORY_DEPENDENCIES__)
+        if not os.path.exists(self.dependenciesDirName):
+            os.makedirs(self.dependenciesDirName)
 
     def getCurrentDirectory(self):
         return os.getcwd()
-
 
     def downloadCMake(self):
         url = config.CMAKE[self.osPlatform][self.hardware]
@@ -101,7 +101,7 @@ class TornadoInstaller:
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
-        fullPath = os.path.join(self.workDirName, fileName)
+        fullPath = os.path.join(self.dependenciesDirName, fileName)
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
@@ -110,14 +110,14 @@ class TornadoInstaller:
         try:
             if os.name == 'nt':
                 ar = zipfile.ZipFile(fullPath, 'r')
-                cmakeTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                cmakeTLD = os.path.join(self.getCurrentDirectory(), self.dependenciesDirName, self.getTLDName(ar))
                 if not os.path.exists(cmakeTLD):
-                    ar.extractall(self.workDirName)
+                    ar.extractall(self.dependenciesDirName)
             else:
                 ar = tarfile.open(fullPath, "r:gz")
-                cmakeTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                cmakeTLD = os.path.join(self.getCurrentDirectory(), self.dependenciesDirName, self.getTLDName(ar))
                 if not os.path.exists(cmakeTLD):
-                    ar.extractall(self.workDirName, numeric_owner=True)
+                    ar.extractall(self.dependenciesDirName, numeric_owner=True)
         except:
             print(f"Unpacking failed for CMake {url}")
             sys.exit(0)
@@ -132,7 +132,6 @@ class TornadoInstaller:
         extraPath = os.path.join(extraPath, "bin")
         self.env["PATH"].append(os.path.join(cmakeTLD, extraPath))
 
-
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
         if url == None:
@@ -141,7 +140,7 @@ class TornadoInstaller:
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
-        fullPath = os.path.join(self.workDirName, fileName)
+        fullPath = os.path.join(self.dependenciesDirName, fileName)
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
@@ -150,14 +149,14 @@ class TornadoInstaller:
         try:
             if os.name == 'nt':
                 ar = zipfile.ZipFile(fullPath, 'r')
-                mavenTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                mavenTLD = os.path.join(self.getCurrentDirectory(), self.dependenciesDirName, self.getTLDName(ar))
                 if not os.path.exists(mavenTLD):
-                    ar.extractall(self.workDirName)
+                    ar.extractall(self.dependenciesDirName)
             else:
                 ar = tarfile.open(fullPath, "r:gz")
-                mavenTLD = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
+                mavenTLD = os.path.join(self.getCurrentDirectory(), self.dependenciesDirName, self.getTLDName(ar))
                 if not os.path.exists(mavenTLD):
-                    ar.extractall(self.workDirName, numeric_owner=True)
+                    ar.extractall(self.dependenciesDirName, numeric_owner=True)
         except:
             print(f"Unpacking failed for Maven {url}")
             sys.exit(0)
@@ -178,7 +177,6 @@ class TornadoInstaller:
         else:
             extractedDirectory = extractedNames[0]
         return extractedDirectory
-
 
     def downloadJDK(self, jdk):
         url = config.JDK[jdk][self.osPlatform][self.hardware]
@@ -225,7 +223,6 @@ class TornadoInstaller:
         ## Update env-variables
         self.env["JAVA_HOME"] = os.path.join(jdkTLD, extraPath)
 
-
     def setEnvironmentVariables(self):
         ## 1. PATH
         paths = self.env["PATH"]
@@ -241,14 +238,12 @@ class TornadoInstaller:
         ## 3. TORNADO_SDK
         os.environ["TORNADO_SDK"] = self.env["TORNADO_SDK"]
 
-
     def compileTornadoVM(self, makeJDK, backend, polyglotOption):
         if os.name == 'nt':
             command = "nmake /f Makefile.mak " + makeJDK + " " + backend + " " + polyglotOption
         else:
             command = "make " + makeJDK + " " + backend + " " + polyglotOption
         os.system(command)
-
 
     def createSourceFile(self):
         print(" ------------------------------------------")
@@ -306,7 +301,6 @@ class TornadoInstaller:
                 print("\t" + jdk)
             sys.exit(0)
 
-
     def composeBackendOption(sekf, args):
         backend = args.backend.replace(" ", "").lower()
         for b in backend.split(","):
@@ -316,19 +310,16 @@ class TornadoInstaller:
         backend = "BACKEND=" + backend
         return backend
 
-
     def composePolyglotOption(self, args):
         if args.polyglot:
             polyglotOption = "polyglot"
         else:
             polyglotOption = ""
         return polyglotOption
-    
 
     def check_or_install_python_modules(self):
         command = "pip3 install -r bin/tornadoDepModules.txt"
         os.system(command)
-
 
     def install(self, args):
 
@@ -354,6 +345,7 @@ class TornadoInstaller:
         else:
             directoryPostfix = args.jdk
 
+        self.setDependenciesDir()
         self.setWorkDir(directoryPostfix)
 
         self.downloadCMake()
