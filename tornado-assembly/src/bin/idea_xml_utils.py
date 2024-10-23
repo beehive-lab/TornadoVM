@@ -227,7 +227,9 @@ def tornadovm_ide_init(tornadoSDKPath, javaHome, backends):
     backends_separated_space = " ".join(backends)
 
     if os.name == 'nt':
-        pythonHome = subprocess.check_output(["where", "python"]).decode().strip()
+        # Multiple paths of pytho executables may be listed, the first is selected as default
+        pythonHome = subprocess.check_output(["where", "python"]).decode().strip().split("\r\n")
+        pythonHome = Path(pythonHome[0])
     else:
         pythonHome = subprocess.check_output(["which", "python3"]).decode().strip()
 
