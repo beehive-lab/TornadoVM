@@ -23,6 +23,14 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+def generate_backend_profiles_as_xml_entries(BACKEND_PROFILES):
+    xml_entries = []
+    for backend in BACKEND_PROFILES:
+        xml_entry_line = f'<entry key="{backend}" value="true" />'
+        xml_entries.append(xml_entry_line)
+
+    return "\n".join(xml_entries)
+
 def define_and_get_internal_maven_content(TORNADO_ROOT, JAVA_HOME, BACKEND_PROFILES):
     maven_directory = os.path.join(str(TORNADO_ROOT), "etc", "dependencies", "apache-maven-3.9.3")
     if "graal" in JAVA_HOME:
@@ -30,6 +38,7 @@ def define_and_get_internal_maven_content(TORNADO_ROOT, JAVA_HOME, BACKEND_PROFI
     else:
         JAVA_PROFILE = "jdk21"
     
+    xml_backend_profiles = generate_backend_profiles_as_xml_entries(BACKEND_PROFILES)
     xml_internal_maven_build_content = f"""<?xml version="1.0" encoding="UTF-8"?>
     <component name="ProjectRunConfigurationManager">
       <configuration default="false" name="_internal_TornadoVM_Maven-cleanAndinstall" type="MavenRunConfiguration" factoryName="Maven">
@@ -70,7 +79,7 @@ def define_and_get_internal_maven_content(TORNADO_ROOT, JAVA_HOME, BACKEND_PROFI
               <option name="profilesMap">
                 <map>
                   <entry key="{JAVA_PROFILE}" value="true" />
-                  <entry key="{BACKEND_PROFILES}" value="true" />
+                  {xml_backend_profiles}
                 </map>
               </option>
               <option name="projectsCmdOptionValues">
@@ -130,7 +139,7 @@ def define_and_get_tornadovm_build_content(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME,
     </component>"""
     return xml_TornadoVM_build_content
 
-def define_and_get_tornadovm_tests_content(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HOME):
+def define_and_get_tornadovm_tests_content(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HOME, BACKEND_PROFILES):
     test_script_directory = os.path.join(str(TORNADO_SDK), "bin", "tornado-test")
     python_version = subprocess.check_output([str(PYTHON_HOME), "--version"]).decode().strip()
     python_version_name = python_version.split()[1]
@@ -147,7 +156,7 @@ def define_and_get_tornadovm_tests_content(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME,
         <envs>
           <env name="BACKEND" value="opencl" />
           <env name="PYTHONUNBUFFERED" value="1" />
-          <env name="selected_backends" value="opencl-backend" />
+          <env name="selected_backends" value="{BACKEND_PROFILES}"/>
           <env name="TORNADO_SDK" value="{TORNADO_SDK}" />
           <env name="JAVA_HOME" value="{JAVA_HOME}" />
         </envs>
@@ -182,8 +191,8 @@ def generate_tornadovm_build_xml(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HO
     with open(xml_directory, "w") as file:
         file.write(xml_build_content)
 
-def generate_tornadovm_tests_xml(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HOME):
-    xml_tests_content = define_and_get_tornadovm_tests_content(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HOME)
+def generate_tornadovm_tests_xml(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HOME, BACKEND_PROFILES):
+    xml_tests_content = define_and_get_tornadovm_tests_content(TORNADO_ROOT, TORNADO_SDK, JAVA_HOME, PYTHON_HOME, BACKEND_PROFILES)
     xml_directory = os.path.join(str(TORNADO_ROOT), ".build", "TornadoVM-Tests.run.xml")
     with open(xml_directory, "w") as file:
         file.write(xml_tests_content)
@@ -229,6 +238,6 @@ def tornadovm_ide_init(tornadoSDKPath, javaHome, backends):
 
     cleanup_build_directory(os.path.join(str(tornadoRoot), ".build"))
 
-    generate_internal_maven_build_xml(tornadoRoot, javaHome, backends_separated_space)
+    generate_internal_maven_build_xml(tornadoRoot, javaHome, backends)
     generate_tornadovm_build_xml(tornadoRoot, tornadoSDKPath, javaHome, pythonHome, backends_separated_comma)
-    generate_tornadovm_tests_xml(tornadoRoot, tornadoSDKPath, javaHome, pythonHome)
+    generate_tornadovm_tests_xml(tornadoRoot, tornadoSDKPath, javaHome, pythonHome, backends_separated_comma)
