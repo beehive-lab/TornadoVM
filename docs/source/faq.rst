@@ -18,7 +18,7 @@ API is under **Apache 2**, and hence it can be freely used in any application.
 3. How can I use it?
 --------------------
 
-In Linux and Mac OSx, TornadoVM can be installed by the `installer <https://github.com/beehive-lab/tornadovm-installer>`__.
+In Linux and Mac OSx, TornadoVM can be installed by the `installer <https://github.com/beehive-lab/TornadoVM/blob/master/bin/tornadovm-installer>`__.
 Alternatively, TornadoVM can be configured either manually (:ref:`installation`) or by using docker images (:ref:`docker`).
 
 List of compatible JDKs
@@ -26,8 +26,8 @@ List of compatible JDKs
 
 TornadoVM can be currently executed with the following configurations:
 
--  TornadoVM with GraalVM (JDK 21): see the installation guide: :ref:`installation_graalvm`.
--  TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21): see the installation guide: :ref:`installation_jdk17plus`.
+-  TornadoVM with GraalVM (JDK 21).
+-  TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21).
 
 Windows
 ~~~~~~~~~~
