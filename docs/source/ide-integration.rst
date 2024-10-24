@@ -152,41 +152,19 @@ b. In the **Modules** tab:
 
    - Ensure that the *Language level* of every module matches the project level (e.g. Java 21).
 
-Configuring the TornadoVM Utilities
-***********************************
+Configuring IntelliJ for TornadoVM
+**********************************
 
-1. Configuring the TornadoVM Maven Build Utility
-================================================
+1. Initializing the IntelliJ Project Files
+==========================================
 
-a. Navigate to the Maven configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the file with the environment variables (``setvars.sh``, ``setvars.cmd``), as explained in the :ref:`installation`.
 
-Go to **Run > Edit Configurations > Maven > _internal_TornadoVM_Maven-cleanAndinstall_**
+Then you can execute the command to generate the IDE project files based on your built TornadoVM instance (i.e., with the JAVA_HOME and the backends), as follows:
 
-b. Set up the build profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In the **Profiles** field, list the profiles you want to build, separated by spaces.
+   .. code:: bash
 
-   **Examples**:
-
-   - To build with the *graal-jdk-21* and *opencl-backend* profiles, type:
-
-     .. code:: text
-
-        graal-jdk-21 opencl-backend
-
-   - To build with all backends, type:
-
-     .. code:: text
-
-        graal-jdk-21 opencl-backend ptx-backend spirv-backend
-
-c. Check available profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can find the available profiles in the right-hand vertical bar in IntelliJ under **Maven > Profiles**.
-
-   **Important:** Even though profiles are listed in the Maven pane, you must explicitly configure them in the **_internal_TornadoVM_Maven-cleanAndinstall_** utility. The enablement/disablement of profiles in the Maven pane does not always reflect in this utility.
+      $ tornado --ideinit
 
 2. Configuring the TornadoVM Python Build Utility
 =================================================
@@ -204,17 +182,13 @@ In the **Use specified interpreter** field, select a valid Python interpreter in
 c. Update environment variables for selected backends
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the **Environmental variables** section, locate the `selected_backends` field. Update the list of backends you want to use, separated by commas.
+The **Environmental variables** section has been populated based on your built TornadoVM instance.
+If you change ``JAVA_HOME`` or built with different backends, you will need to run the ``tornado --ideinit`` command.
 
-   **Examples**:
+d. Build TornadoVM from IntelliJ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   - To use all backends, set the value to:
-
-     .. code:: text
-
-        opencl-backend,ptx-backend,spirv-backend
-
-Apply to save your settings and run the build by clicking **Run TornadoVM-Build**.
+Run a new build by clicking **Run TornadoVM-Build**.
 
 Configuring Applications to Debug/Run
 *************************************
