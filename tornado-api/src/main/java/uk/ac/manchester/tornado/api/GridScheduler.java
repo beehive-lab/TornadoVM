@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.security.Key;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,5 +49,18 @@ public class GridScheduler {
 
     public Set<String> keySet() {
         return gridTaskMap.keySet();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (String taskName : gridTaskMap.keySet()) {
+            sb.append(taskName) //
+                    .append("::GlobalWorkGroup=") //
+                    .append(Arrays.toString(gridTaskMap.get(taskName).getGlobalWork())) //
+                    .append("::LocalWorkGroup=") //
+                    .append(Arrays.toString(gridTaskMap.get(taskName).getLocalWork()));
+        }
+        return sb.toString();
     }
 }

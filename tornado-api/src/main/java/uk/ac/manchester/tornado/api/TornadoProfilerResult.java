@@ -41,9 +41,11 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerInterface;
 public class TornadoProfilerResult implements ProfilerInterface {
 
     private final TornadoExecutor executor;
+    private String traceExecutionPlan;
 
-    TornadoProfilerResult(TornadoExecutor executor) {
+    TornadoProfilerResult(TornadoExecutor executor, String traceExecutionPlan) {
         this.executor = executor;
+        this.traceExecutionPlan = traceExecutionPlan;
     }
 
     /**
@@ -224,6 +226,10 @@ public class TornadoProfilerResult implements ProfilerInterface {
     @Override
     public long getTotalDeviceMemoryUsage() {
         return executor.getTotalDeviceMemoryUsage();
+    }
+
+    public String getTraceExecutionPlan() {
+        return traceExecutionPlan;
     }
 
 }
