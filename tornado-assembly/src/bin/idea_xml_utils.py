@@ -102,16 +102,19 @@ def define_and_get_tornadovm_tests_content(xml_templates_directory, project_dire
 def generate_internal_maven_build_xml(xml_templates_directory, project_directory, java_home, backend_profiles):
     xml_internal_content = define_and_get_internal_maven_content(xml_templates_directory, project_directory, java_home, backend_profiles)
     xml_build_directory = os.path.join(project_directory, ".build", "_internal_TornadoVM_Maven-cleanAndinstall.run.xml")
-    write_generated_template(xml_internal_content, xml_build_directory)    
+    print("Generating " + xml_build_directory)
+    write_generated_template(xml_internal_content, xml_build_directory) 
 
 def generate_tornadovm_build_xml(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles):
     xml_build_content = define_and_get_tornadovm_build_content(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles)
     xml_build_directory = os.path.join(project_directory, ".build", "TornadoVM-Build.run.xml")
+    print("Generating " + xml_build_directory)
     write_generated_template(xml_build_content, xml_build_directory)
 
 def generate_tornadovm_tests_xml(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles):
     xml_tests_content = define_and_get_tornadovm_tests_content(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles)
     xml_tests_directory = os.path.join(project_directory, ".build", "TornadoVM-Tests.run.xml")
+    print("Generating " + xml_tests_directory)
     write_generated_template(xml_tests_content, xml_tests_directory)
 
 def generate_xml_files(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backends):
@@ -119,6 +122,7 @@ def generate_xml_files(xml_templates_directory, project_directory, tornado_sdk, 
     generate_internal_maven_build_xml(xml_templates_directory, project_directory, java_home, backends)
     generate_tornadovm_build_xml(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backends_separated_comma)
     generate_tornadovm_tests_xml(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backends_separated_comma)
+    print("IntelIj Files Generated ............... [ok]")
 
 def cleanup_build_directory(build_directory_string):
     tornado_root_directory = Path(build_directory_string)
