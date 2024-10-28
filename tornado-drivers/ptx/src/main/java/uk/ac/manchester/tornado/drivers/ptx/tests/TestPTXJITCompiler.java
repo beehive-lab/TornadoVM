@@ -127,7 +127,7 @@ public class TestPTXJITCompiler {
         DataObjectState stateC = new DataObjectState();
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[]{Access.NONE, Access.NONE, Access.NONE});
 
         final long executionPlanId = 0;
         // Copy-IN A

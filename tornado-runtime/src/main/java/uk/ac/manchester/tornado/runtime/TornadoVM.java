@@ -34,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
@@ -62,6 +63,8 @@ public class TornadoVM {
 
     private final TornadoVMInterpreter[] tornadoVMInterpreters;
 
+    private final Access[] accesses;
+
     /**
      * It constructs a new TornadoVM instance.
      *
@@ -73,11 +76,12 @@ public class TornadoVM {
      * @param timeProfiler
      *     the {@link TornadoProfiler} for profiling execution time
      */
-    public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
+    public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, Access[] accesses) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
         this.tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
         this.tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
+        this.accesses = accesses;
         bindBytecodesToInterpreters();
     }
 
@@ -93,7 +97,7 @@ public class TornadoVM {
             tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, //
                     tornadoVMBytecodes[i],  //
                     timeProfiler,  //
-                    executionContext.getDevice(activeDevices.pop()));
+                    executionContext.getDevice(activeDevices.pop()), accesses);
         }
     }
 

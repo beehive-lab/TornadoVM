@@ -29,6 +29,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -59,14 +60,14 @@ public abstract class TornadoBufferProvider {
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
-    protected abstract long allocateBuffer(long size);
+    protected abstract long allocateBuffer(long size, Access access);
 
     protected abstract void releaseBuffer(long buffer);
 
-    private synchronized long allocate(long size) {
-        long buffer = allocateBuffer(size);
+    private synchronized long allocate(long size, Access access) {
+        long buffer = allocateBuffer(size, access);
         currentMemoryAvailable -= size;
-        BufferContainer bufferInfo = new BufferContainer(buffer, size);
+        BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
         usedBuffers.add(bufferInfo);
         return bufferInfo.buffer;
     }
@@ -133,10 +134,10 @@ public abstract class TornadoBufferProvider {
      *     Size in bytes for the requested buffer.
      * @return It returns a buffer native pointer.
      */
-    private synchronized long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes) {
+    private synchronized long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes, Access access) {
         freeBuffers(sizeInBytes);
         if (sizeInBytes <= currentMemoryAvailable) {
-            return allocate(sizeInBytes);
+            return allocate(sizeInBytes, access);
         } else {
             throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
         }
@@ -154,18 +155,18 @@ public abstract class TornadoBufferProvider {
      * @throws {@link
      *     TornadoOutOfMemoryException}
      */
-    public synchronized long getOrAllocateBufferWithSize(long sizeInBytes) {
+    public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
         TornadoTargetDevice device = deviceContext.getDevice();
         if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
             // Allocate if there is enough device memory.
-            return allocate(sizeInBytes);
+            return allocate(sizeInBytes, access);
         } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
             int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes);
             // If a buffer was found, mark it as used and return it.
             if (minBufferIndex != -1) {
                 return markBufferUsed(minBufferIndex).buffer;
             } else {
-                return freeUnusedNativeBufferAndAssignRegion(sizeInBytes);
+                return freeUnusedNativeBufferAndAssignRegion(sizeInBytes, access);
             }
         } else {
             throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
@@ -208,7 +209,7 @@ public abstract class TornadoBufferProvider {
         freeBuffers(DEVICE_AVAILABLE_MEMORY);
     }
 
-    private record BufferContainer(long buffer, long size) {
+    private record BufferContainer(long buffer, long size, Access access) {
 
         @Override
         public boolean equals(Object object) {

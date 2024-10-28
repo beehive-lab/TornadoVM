@@ -516,7 +516,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return result;
     }
 
-    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, OCLDeviceContext deviceContext, long batchSize) {
+    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, OCLDeviceContext deviceContext, long batchSize, Access access) {
         XPUBuffer result = null;
         if (type.isArray()) {
             if (!type.getComponentType().isArray()) {
@@ -533,27 +533,27 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             if (object instanceof AtomicInteger) {
                 result = new AtomicsBuffer(new int[] {}, deviceContext);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
-                result = new OCLVectorWrapper(deviceContext, object, batchSize);
+                result = new OCLVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof IntArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof FloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof DoubleArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof LongArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof ShortArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof ByteArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof CharArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof HalfFloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
             } else {
-                result = new OCLXPUBuffer(deviceContext, object);
+                result = new OCLXPUBuffer(deviceContext, object, access);
             }
         }
 
@@ -562,29 +562,29 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
         if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
             bufferProvider.resetBuffers();
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocatedSpace += allocate(objects[i], batchSize, states[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
         }
         return allocatedSpace;
     }
 
-    private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState) {
+    private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState, Access access) {
         final XPUBuffer buffer;
         TornadoInternalError.guarantee(deviceObjectState.isAtomicRegionPresent() || !deviceObjectState.hasObjectBuffer(), "A device memory leak might be occurring.");
-        buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
+        buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize, access);
         deviceObjectState.setXPUBuffer(buffer);
-        buffer.allocate(object, batchSize);
+        buffer.allocate(object, batchSize, access);
         return buffer;
     }
 
     @Override
-    public long allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
@@ -592,7 +592,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         } else {
-            buffer = newDeviceBufferAllocation(object, batchSize, state);
+            buffer = newDeviceBufferAllocation(object, batchSize, state, access);
         }
 
         if (buffer.getClass() == AtomicsBuffer.class) {

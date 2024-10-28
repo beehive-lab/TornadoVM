@@ -82,7 +82,7 @@ public class BatchConfiguration {
         HashSet<Long> inputSizes = new HashSet<>();
         LinkedHashSet<Byte> elementSizes = new LinkedHashSet<>();
 
-        for (Object o : context.getObjects()) {
+        for (Object o : context.getObjects().keySet()) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
                 DataTypeSize dataTypeSize = DataTypeSize.findDataTypeSize(componentType);

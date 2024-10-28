@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import java.util.HashMap;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -41,6 +42,7 @@ public class PrebuiltTask implements SchedulableTask {
     private final String entryPoint;
     private final String filename;
     private final Access[] argumentsAccess;
+//    private final HashMap<Object, Access> argumentsAccess;
     protected long batchThreads;
     protected int batchNumber;
     protected long batchSize;

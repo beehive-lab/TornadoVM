@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
@@ -33,7 +34,7 @@ public class SPIRVBufferProvider extends TornadoBufferProvider {
     }
 
     @Override
-    public long allocateBuffer(long size) {
+    public long allocateBuffer(long size, Access access) {
         return ((SPIRVDeviceContext) deviceContext).getSpirvContext().allocateMemory(deviceContext.getDeviceIndex(), size);
     }
 

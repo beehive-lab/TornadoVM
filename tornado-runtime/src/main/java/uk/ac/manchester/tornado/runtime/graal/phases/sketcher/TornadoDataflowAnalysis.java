@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Queue;
@@ -83,6 +84,25 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             logger.debug("access: parameter %d -> %s\n", i, accesses[i]);
         }
         logger.debug("[Compiler Pass] TornadoVM DataFlow Analysis finished");
+//        HashMap<Object, Access> accesses = context.getAccesses();
+//        TornadoLogger logger = new TornadoLogger(this.getClass());
+//
+//        //for (int i = 0; i < accesses.length; i++) {
+//        int i = 0;
+//        for (Object ob : accesses.keySet()) {
+//           // accesses[i] = Access.NONE;
+//            accesses.put(ob, Access.NONE);
+//            ParameterNode param = graph.getParameter(i);
+//
+//            // Only interested in objects
+//            if (param != null && param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+//                Access access = processUsages(param, context.getMetaAccess());
+//                accesses.put(ob, access);
+//            }
+//            logger.debug("access: parameter %d -> %s\n", i, accesses.get(ob));
+//            i++;
+//        }
+//        logger.debug("[Compiler Pass] TornadoVM DataFlow Analysis finished");
     }
 
     @Override

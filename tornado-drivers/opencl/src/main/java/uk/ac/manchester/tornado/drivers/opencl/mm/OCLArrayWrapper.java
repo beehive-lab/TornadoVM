@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -89,7 +90,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) {
+    public void allocate(Object value, long batchSize, Access access) {
         final T hostArray = cast(value);
         if (batchSize <= 0) {
             bufferSize = sizeOf(hostArray);
@@ -101,7 +102,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
             logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);

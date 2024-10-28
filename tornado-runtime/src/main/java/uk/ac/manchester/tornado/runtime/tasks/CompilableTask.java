@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -65,6 +66,11 @@ public class CompilableTask implements SchedulableTask {
         for (int i = 0; i < args.length; i++) {
             buffer.append(String.format("arg  : [%s] %s -> %s%n", argumentsAccess[i], args[i], resolvedArgs[i]));
         }
+//        HashMap<Object, Access> argumentsAccess = meta.getArgumentsAccess();
+//        //TODO!!!!
+////        for (int i = 0; i < args.length; i++) {
+////            buffer.append(String.format("arg  : [%s] %s -> %s%n", argumentsAccess[i], args[i], resolvedArgs[i]));
+////        }
         buffer.append("meta : ").append(meta.toString());
         return buffer.toString();
     }
@@ -76,6 +82,7 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public Access[] getArgumentsAccess() {
+    //public HashMap<Object, Access> getArgumentsAccess() {
         return meta.getArgumentsAccess();
     }
 

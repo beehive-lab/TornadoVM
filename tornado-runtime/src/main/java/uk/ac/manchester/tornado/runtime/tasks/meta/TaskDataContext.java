@@ -51,6 +51,7 @@ public class TaskDataContext extends AbstractRTContext {
     private final int constantSize;
     private final int localSize;
     protected Access[] argumentsAccess;
+    //protected HashMap<Object, Access> argumentsAccess;
     protected DomainTree domain;
     private long[] globalOffset;
     private long[] globalWork;
@@ -66,6 +67,7 @@ public class TaskDataContext extends AbstractRTContext {
         this.constantData = null;
         profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
+        //argumentsAccess = new HashMap<Object, Access>();
         Arrays.fill(argumentsAccess, Access.NONE);
 
         inspectLocalWork();
@@ -140,6 +142,14 @@ public class TaskDataContext extends AbstractRTContext {
         localWork = new long[] { 1, 1, 1 };
         return localWork;
     }
+
+//    public void setArgumentsAccess(HashMap<Object, Access> access) {
+//        this.argumentsAccess = access;
+//    }
+//
+//    public HashMap<Object, Access> getArgumentsAccess() {
+//        return argumentsAccess;
+//    }
 
     public void setArgumentsAccess(Access[] access) {
         this.argumentsAccess = access;

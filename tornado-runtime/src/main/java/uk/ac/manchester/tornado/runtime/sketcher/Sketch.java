@@ -27,6 +27,8 @@ import org.graalvm.compiler.graph.Graph;
 
 import uk.ac.manchester.tornado.api.common.Access;
 
+import java.util.HashMap;
+
 public class Sketch {
 
     private final Graph graph;
@@ -37,9 +39,11 @@ public class Sketch {
      * Argument accesses of the {@link #graph}. If arguments escape to callees, it
      * will contain the updated accesses based on what the non-inlined methods do.
      */
+    //private final HashMap<Object, Access> argumentsAccess;
     private final Access[] argumentsAccess;
 
     Sketch(Graph graph, Access[] argumentAccesses, boolean batchWriteThreadIndex) {
+    //Sketch(Graph graph, HashMap<Object, Access> argumentAccesses, boolean batchWriteThreadIndex) {
         this.graph = graph;
         this.argumentsAccess = argumentAccesses;
         this.batchWriteThreadIndex = batchWriteThreadIndex;
@@ -50,6 +54,7 @@ public class Sketch {
     }
 
     public Access[] getArgumentsAccess() {
+    //public HashMap<Object, Access> getArgumentsAccess() {
         return argumentsAccess;
     }
 
