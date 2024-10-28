@@ -164,7 +164,7 @@ Then you can execute the command to generate the IDE project files based on your
 
    .. code:: bash
 
-      $ tornado --ideinit
+      $ tornado --intellijinit
 
 2. Configuring the TornadoVM Python Build Utility
 =================================================
@@ -183,7 +183,7 @@ c. Update environment variables for selected backends
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The **Environmental variables** section has been populated based on your built TornadoVM instance.
-If you change ``JAVA_HOME`` or built with different backends, you will need to run the ``tornado --ideinit`` command.
+If you change ``JAVA_HOME`` or built with different backends, you will need to run the ``tornado --intellijinit`` command.
 
 d. Build TornadoVM from IntelliJ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
