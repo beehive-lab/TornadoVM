@@ -395,7 +395,7 @@ class TornadoVMRunnerTool():
             print(javaFlags)
             sys.exit(0)
 
-        if (args.ideinit):
+        if (args.intellijinit):
             ideaUtils.tornadovm_ide_init(os.environ['TORNADO_SDK'], self.java_home, self.listOfBackends)
             sys.exit(0)
 
@@ -472,7 +472,7 @@ def parseArguments():
     parser.add_argument("application", nargs="?")
     parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
                         help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
-    parser.add_argument("--ideinit", action="store_true", dest="ideinit", default=False, help="Generate internal xml files for IntelliJ IDE")
+    parser.add_argument("--intellijinit", action="store_true", dest="intellijinit", default=False, help="Generate internal xml files for IntelliJ IDE")
     parser.add_argument("param1", nargs="?")
     parser.add_argument("param2", nargs="?")
     parser.add_argument("param3", nargs="?")
