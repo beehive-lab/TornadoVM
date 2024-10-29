@@ -1,5 +1,6 @@
 .idea/
 .unittestingStatus
+.build/*.xml
 beehive-spirv-toolkit/
 bin/__pycache__/
 bin/bin
