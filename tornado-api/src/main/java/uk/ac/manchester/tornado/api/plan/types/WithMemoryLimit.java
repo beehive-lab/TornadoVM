@@ -22,13 +22,16 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
 public final class WithMemoryLimit extends ExecutionPlanType {
 
-    public WithMemoryLimit(TornadoExecutionPlan parent) {
+    private final String memoryLimit;
+
+    public WithMemoryLimit(TornadoExecutionPlan parent, String memoryLimit) {
         super(parent);
+        this.memoryLimit = memoryLimit;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withMemoryLimit ";
+        return parentLink.toString() + "\n -> withMemoryLimit(" + memoryLimit + ") ";
     }
 
 }

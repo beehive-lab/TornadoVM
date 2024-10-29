@@ -17,17 +17,24 @@
  */
 package uk.ac.manchester.tornado.api.plan.types;
 
+import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ExecutionPlanType;
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
 public final class WithDynamicReconfiguration extends ExecutionPlanType {
 
-    public WithDynamicReconfiguration(TornadoExecutionPlan parent) {
+    final private Policy policy;
+    final private DRMode mode;
+
+    public WithDynamicReconfiguration(TornadoExecutionPlan parent, Policy policy, DRMode mode) {
         super(parent);
+        this.policy = policy;
+        this.mode = mode;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withDynamicReconfiguration ";
+        return parentLink.toString() + "\n -> withDynamicReconfiguration(" + policy.name() + ", " + mode.name() + ")";
     }
 }

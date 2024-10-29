@@ -16,7 +16,7 @@
           <option name="threads" />
           <option name="useMavenConfig" value="true" />
           <option name="usePluginRegistry" value="false" />
-          <option name="userSettingsFile" value="$USER_HOME$/.m2/settings.xml" />
+          <option name="userSettingsFile" value="" />
           <option name="workOffline" value="false" />
         </MavenGeneralSettings>
       </option>

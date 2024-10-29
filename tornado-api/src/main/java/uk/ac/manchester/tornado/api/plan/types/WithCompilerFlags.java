@@ -21,12 +21,16 @@ import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
 public final class WithCompilerFlags extends ExecutionPlanType {
-    public WithCompilerFlags(TornadoExecutionPlan parent) {
+
+    private final String compilerFlags;
+
+    public WithCompilerFlags(TornadoExecutionPlan parent, String compilerFlags) {
         super(parent);
+        this.compilerFlags = compilerFlags;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withCompilerFlags ";
+        return parentLink.toString() + "\n -> withCompilerFlags (<" + compilerFlags + ">)";
     }
 }

@@ -22,12 +22,15 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
 public final class WithBatch extends ExecutionPlanType {
 
-    public WithBatch(TornadoExecutionPlan parent) {
+    private final String batchSize;
+
+    public WithBatch(TornadoExecutionPlan parent, String batchSize) {
         super(parent);
+        this.batchSize = batchSize;
     }
 
     @Override
     public String toString() {
-        return parentLink.toString() + "\n -> withBatch ";
+        return parentLink.toString() + "\n -> withBatch(<" + batchSize + ">";
     }
 }
