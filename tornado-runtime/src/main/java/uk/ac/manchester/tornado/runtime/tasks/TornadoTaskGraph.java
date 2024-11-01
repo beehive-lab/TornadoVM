@@ -640,7 +640,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
 
         int index = executionContext.addTask(task);
-        Access[] argumentsAccess = null;
 
         if (task instanceof CompilableTask compilableTask) {
             checkForMemorySegmentAsTaskParameter(compilableTask);
@@ -652,6 +651,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getBackendIndex(), compilableTask.meta().getDeviceIndex());
             this.compilationGraph = lookup.getGraph();
             this.accesses = lookup.getArgumentsAccess();
+        } else {
+            PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+            this.accesses = prebuiltTask.getArgumentsAccess();
         }
 
         // Prepare Initial Graph before the TornadoVM bytecode generation
