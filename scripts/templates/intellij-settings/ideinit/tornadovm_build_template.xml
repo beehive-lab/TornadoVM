@@ -1,5 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="TornadoVM-Full-OpenCL-Build" type="PythonConfigurationType"
+    <configuration default="false" name="TornadoVM-Build" type="PythonConfigurationType"
                    factoryName="Python">
         <module name="tornado-annotation"/>
         <option name="INTERPRETER_OPTIONS" value=""/>
@@ -7,17 +8,18 @@
         <envs>
             <env name="PYTHONUNBUFFERED" value="1"/>
             <env name="BACKEND" value="opencl"/>
-            <env name="TORNADO_SDK" value="$PROJECT_DIR$/bin/sdk"/>
-            <env name="selected_backends" value="opencl"/>
+            <env name="TORNADO_SDK" value="[@@TORNADO_SDK@@]"/>
+            <env name="JAVA_HOME" value="[@@JAVA_HOME@@]" />
+            <env name="selected_backends" value="[@@BACKEND_PROFILES@@]"/>
         </envs>
-        <option name="SDK_HOME" value=""/>
-        <option name="SDK_NAME" value="Python 3.9 (tornado)"/>
-        <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$"/>
+        <option name="SDK_HOME" value="[@@PYTHON_SDK_HOME@@]"/>
+        <option name="SDK_NAME" value="[@@PYTHON_SDK_NAME@@]"/>
+        <option name="WORKING_DIRECTORY" value="[@@PROJECT_DIR@@]"/>
         <option name="IS_MODULE_SDK" value="false"/>
         <option name="ADD_CONTENT_ROOTS" value="true"/>
         <option name="ADD_SOURCE_ROOTS" value="true"/>
         <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py"/>
-        <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bin/post_installation.py"/>
+        <option name="SCRIPT_NAME" value="[@@POST_INSTALLATION_SCRIPT_DIRECTORY@@]"/>
         <option name="PARAMETERS" value=""/>
         <option name="SHOW_COMMAND_LINE" value="false"/>
         <option name="EMULATE_TERMINAL" value="false"/>

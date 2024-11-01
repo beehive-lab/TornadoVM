@@ -24,6 +24,7 @@ import re
 import shlex
 import subprocess
 import sys
+import idea_xml_utils as ideaUtils
 from pathlib import Path
 
 # ########################################################
@@ -394,6 +395,10 @@ class TornadoVMRunnerTool():
             print(javaFlags)
             sys.exit(0)
 
+        if (args.intellijinit):
+            ideaUtils.tornadovm_ide_init(os.environ['TORNADO_SDK'], self.java_home, self.listOfBackends)
+            sys.exit(0)
+
         if (args.showDevices):
             command = javaFlags + "uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose"
             os.system(command)
@@ -467,6 +472,7 @@ def parseArguments():
     parser.add_argument("application", nargs="?")
     parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
                         help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
+    parser.add_argument("--intellijinit", action="store_true", dest="intellijinit", default=False, help="Generate internal xml files for IntelliJ IDE")
     parser.add_argument("param1", nargs="?")
     parser.add_argument("param2", nargs="?")
     parser.add_argument("param3", nargs="?")
@@ -482,8 +488,13 @@ def parseArguments():
     parser.add_argument("param13", nargs="?")
     parser.add_argument("param14", nargs="?")
     parser.add_argument("param15", nargs="?")
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
     args = parser.parse_args()
-    return args
+    return args 
 
 
 if __name__ == "__main__":

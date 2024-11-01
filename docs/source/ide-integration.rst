@@ -1,147 +1,264 @@
-.. _ide-integration:
+Build and Run with IDE
+##################################
 
-IDE Integration
-===============================
 
-IntelliJ
---------
+JetBrains IntelliJ Installation
+*******************************
 
-Download and install the latest IntelliJ IDEA Community Edition: https://www.jetbrains.com/idea/download/
+Download and install the latest IntelliJ IDEA Community Edition:
+https://www.jetbrains.com/idea/download/
 
-Change the IntelliJ maximum memory to 2 GB or more `(instructions) <https://www.jetbrains.com/help/idea/increasing-memory-heap.html#d1366197e127>`__.
+Change the IntelliJ maximum memory to 2 GB or more (follow `these instructions <https://www.jetbrains.com/help/idea/increasing-memory-heap.html#d1366197e127>`__).
 
-For Intellij to pickup the required Tornado dependencies from the poms, go to **View > Tool Windows > Maven** and select **jdk-8, ptx-backend,
-opencl-backend** under profiles.
+For IntelliJ to pick up the required TornadoVM dependencies from the `pom.xml` file, go to **View > Tool Windows > Maven**, and select the following profiles:
 
-Required Plugins:
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+- **graal-jdk-21**
+- **ptx-backend**
+- **opencl-backend**
+- **spirv-backend**
+
+.. _ide_plugins:
+
+Required JetBrains Plugins
+**************************
 
 Open IntelliJ and go to **Preferences > Plugins > Browse Repositories**.
 Install the following plugins:
 
-1. `Eclipse Code Formatter: <https://plugins.jetbrains.com/plugin/6546-eclipse-code-formatter>`__
-   Formats source code according to eclipse standards (.xml). After the
-   installation of the plugin, go to: **File > Settings > Other Settings
-   > Ecliple Code Formatter**, and select **“Use the Eclipse code
-   formatter”**. Finally, load the TornadoVM code formatter
-   (**./scripts/templates/eclipse-settings/Tornado.xml**) as the Eclipse
-   Java Formatter config file, and click **Apply**.
+1. **Eclipse Code Formatter**
+   Install it from:
+   https://plugins.jetbrains.com/plugin/6546-eclipse-code-formatter
+   This plugin formats source code according to Eclipse standards (.xml).
 
-2. `Save Actions: <https://plugins.jetbrains.com/plugin/7642-save-actions>`__
-   Allows post-save actions (e.g. code formating on save).
+   After installation:
 
-   -  To enable the auto-formatter with save-actions, go to **Settings
-      -> Other Settings -> Save Actions**, and mark the following:
+   - Go to: **File > Settings > Other Settings > Eclipse Code Formatter**
+   - Select **Use the Eclipse code formatter**
+   - Load the TornadoVM code formatter from: `./scripts/templates/eclipse-settings/Tornado.xml`
+   - Click **Apply**
 
-      -  Activate save actions on save
-      -  Activate save actions in shortcut
-      -  Reformat file
+2. **Save Actions**
+   Install it from:
+   https://plugins.jetbrains.com/plugin/7642-save-actions
+   This plugin allows post-save actions (e.g. code formatting on save).
 
-3. `Python Plugin (Optional): <https://plugins.jetbrains.com/plugin/631-python>`__
-   Allows Python scripting.
+   - To enable auto-formatter with save-actions:
+     - Go to: **Settings > Other Settings > Save Actions**
+     - Check the following options:
+     - Activate save actions on save
+     - Activate save actions in shortcut
+     - Reformat file
 
-4. `CheckStyle-IDEA Plugin (Optional): <https://plugins.jetbrains.com/plugin/1065-checkstyle-idea>`__
-    Checks project for compliance with custom checkstyle rules.
+3. **Python Plugin (Optional)**
+   Install it from:
+   https://plugins.jetbrains.com/plugin/631-python
+   Allows Python scripting in IntelliJ.
 
-Run and Debug TornadoVM with Intellij
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. **CheckStyle-IDEA Plugin (Optional)**
+   Install it from:
+   https://plugins.jetbrains.com/plugin/1065-checkstyle-idea
+   Checks your project for compliance with custom checkstyle rules.
 
-Normal maven lifecycle goals like *package* and *install* will not
-result a succefull build for TornadoVM.
+.. _ide_tornadovm_build:
 
-Two different configurations are needed for **Build** and **Debug**.
+Building TornadoVM with IntelliJ
+********************************
 
-Build/Run Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Follow these steps to build TornadoVM with IntelliJ.
 
-1. Go to **File > Project Structure** and ensure that:
+Prerequisites
+=============
 
--  **In the Project Tab:**
+Ensure that **cmake** is installed and available in your system's PATH.
 
-   -  The Project SDK uses the same java version as the project (e.g. Java 17).
-   -  The Project language level is using the same java version (e.g. Java 17 with Lambdas, type annotations etc.).
+1. Check if cmake is in the PATH
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  **In the Modules Tab:**
+   Verify that your system recognizes `cmake` by running:
 
-   -  The module SDK of every module uses the same java version
-      (e.g. 1.8.0_131).
+   .. code:: bash
 
-1. In the right vertical bar in Intellij: **Maven Projects > tornadovm
-   (root) > Lifecycle > package > right click > create tornadovm
-   [package]**
+      $ cmake --version
 
-2. Then: **Run > Edit Configurations > Maven > tornadovm Package**. You
-   need to manually add and check the following information:
+   If it is recognized, skip the next step. Otherwise, you need to add cmake to your system's PATH.
 
--  In the **Parameters** tab :
+2. Add cmake to PATH (macOS/Linux)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   -  In **Command line**, add the following:
+You can add `cmake` to your PATH by updating your shell configuration file.
 
-      -  ``-Dcmake.root.dir=/home/michalis/opt/cmake-3.10.2-Linux-x86_64/ clean package``
+a. Open your shell configuration file (e.g. `.bashrc`, `.zshrc`):
 
-         -  In case that you need to reduce the amount of maven warnings
-            add also on the above line the command **–quiet**, which
-            constraints maven verbose to only errors.
+   .. code:: bash
 
-   -  In **Profiles (separated with space)**, add the following:
+      $ vim ~/.zshrc  # or ~/.bashrc depending on your shell
 
-      -  ``jdk-8``
-      -  at least one backend depending on what you want to build
-         ``{opencl-backend, ptx-backend}``
+b. Add the following line, replacing `<custom-path>` with the path to your cmake installation:
 
--  In the **Runner** tab: Ensure that the selected **JRE** corresponds
-   to ``Use Project JDK`` (e.g.1.8.0_131).
+   .. code:: bash
 
-Finally, one the top right corner drop-down menu select the adove
-custome ``tornadovm [package]`` configuration. To build either press the
-**play button** on the top right corner or **Shift+F10**.
+      $ export PATH=<custom-path>/cmake-3.25.2-macos-universal/CMake.app/Contents/bin:$PATH
 
-Debug/Run Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+c. Save and apply the changes:
 
-In order to Run and Debug Java code running through TornadoVM another
-custom configuration is needed. For this configuration the TornadoVM
-``JAVA_FLAGS`` and ``CLASSPATHS`` are needed.
+   .. code:: bash
 
-**Firstly, you need to obtain the ``JAVA_FLAGS`` used by TornadoVM. Use
-the following commands to print the flags:**
+      $ source ~/.zshrc  # or source ~/.bashrc
 
-.. code:: bash 
+3. Add cmake and pyInstaller to PATH (Windows)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   $ make BACKENDS={opencl,ptx,spirv}
-   $ tornado --printJavaFlags
+a. Find the path of the `cmake` and `pyInstaller` commands:
+Open your shell configuration (e.g. x64 Native Tools Command Prompt for VS 2022) and initialize the environment:
 
-Output should be something similar to this:
+   .. code:: bash
 
-.. code:: bash
+      $ cd <path-to-TornadoVM-directory>
+      $ .\bin\windowsMicrosoftStudioTools2022.cmd
 
-   /PATH_TO_JDK/jdk1.8.0_131/bin/java
-   -server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
+Verify that your system recognizes `cmake` and `pyInstaller` by running:
 
-You need to copy from ``-server`` to end.
+   .. code:: bash
 
-**Now, introduce a new Run Configuration**
+      $ where cmake
+      $ where pyInstaller
 
-Again, **Run > Edit Configurations > Application > Add new (e.g. plus
-sign)**
+b. Update the PATH:
+You can add the variables to your PATH by searching **Edit the system environment variables**, clicking **Environment Variables...**, and editing the **PATH** with your cmake directory.
 
-Then, add your own parameters similar to the following:
+**Important:** It is recommended to use the python interpreter under the virtual environment (.venv) as the Python SDK for your TornadoVM project, since it contains all dependent modules (i.e., PyInstaller, psutil) to build TornadoVM and run the tests from IntelliJ.
 
--  **Main Class:**
-   uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
--  **VM Options:** What you copied from ``-server`` and on
--  **Working Directory:** ``/home/tornadovm``
--  **JRE:** Default (Should point to the 1.8.0_131)
--  **Use classpath of module** Select from drop-down menu e.g
-   ``tornado-examples``
+   **Examples**:
 
-Finally, you can select the new custom configuration by selecting the
-configuration from the right top drop-down menu. Now, you can run it by
-pressing the **play button** on the top right corner or **Shift+F10**.
+   .. code:: bash
 
-CheckStyle-IDEA Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-First, add the custom checkstyle file to enable its rules go to  **IntelliJ > Settings > Tools > CheckStyle** then,
-under configuration file click plus then add the configuration file which is under `tornado-assembly/src/etc/checkstyle.xml`.
+      C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\
 
-Then, on the side on enabled plugins click on checkstyle and then in `rules` topdown menu click the custom rules file.
+   .. code:: bash
+
+      <path-to-TornadoVM-directory>\.venv\Scripts
+
+Configuring the Project Structure
+*********************************
+
+1. Go to **File > Project Structure** and apply the following configurations:
+
+a. In the **Project** tab:
+
+   - The *SDK* uses a valid Java version (e.g. OpenJDK 21, GraalVM JDK 21, etc.).
+   - The *Language level* is set to match the Java version (e.g. Java 21).
+
+b. In the **Modules** tab:
+
+   - Ensure that the *Language level* of every module matches the project level (e.g. Java 21).
+
+Configuring IntelliJ for TornadoVM
+**********************************
+
+1. Initializing the IntelliJ Project Files
+==========================================
+
+To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the file with the environment variables (``setvars.sh``, ``setvars.cmd``), as explained in the :ref:`installation`.
+
+Then you can execute the command to generate the IDE project files based on your built TornadoVM instance (i.e., with the JAVA_HOME and the backends), as follows:
+
+   .. code:: bash
+
+      $ tornado --intellijinit
+
+2. Configuring the TornadoVM Python Build Utility
+=================================================
+
+a. Navigate to the Python configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+
+b. Configure the Python interpreter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the **Use specified interpreter** field, select a valid Python interpreter installed on your system.
+
+c. Update environment variables for selected backends
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The **Environmental variables** section has been populated based on your built TornadoVM instance.
+If you change ``JAVA_HOME`` or built with different backends, you will need to run the ``tornado --intellijinit`` command.
+
+d. Build TornadoVM from IntelliJ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run a new build by clicking **Run TornadoVM-Build**.
+
+Configuring Applications to Debug/Run
+*************************************
+
+1. Obtain the TornadoVM Java flags
+==================================
+
+To run and debug Java applications with TornadoVM on IntelliJ, you need to obtain the TornadoVM `JAVA_FLAGS`. Open a terminal and run:
+
+- **macOS/Linux:**
+
+   .. code:: bash
+
+      $ cd <path-to-TornadoVM-directory>
+      $ source setvars.sh
+      $ tornado --printJavaFlags
+
+- **Windows:**
+
+   .. code:: bash
+
+      $ cd <path-to-TornadoVM-directory>
+      $ .\bin\windowsMicrosoftStudioTools2022.cmd
+      $ setvars.cmd
+      $ tornado --printJavaFlags
+
+The output will differ depending on the backends you've built. For example, if you build with all backends, it should be similar to this:
+
+   .. code:: bash
+
+      <path-to-TornadoVM-directory>/etc/dependencies/TornadoVM-graal-jdk-21/graalvm-community-openjdk-21.0.1+12.1/bin/java
+      -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
+      -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
+      -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel  -XX:+UseParallelGC
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/opencl-exports
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/spirv-exports
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/ptx-exports --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.opencl,tornado.drivers.ptx
+
+Copy the flags starting from `-server` to the end.
+
+2. Configure new Applications
+=============================
+
+a. Add new configurations:
+
+Go to **Run > Edit Configurations > Application > Add new run configuration...**
+
+   Add your own parameters, for example:
+
+   - **Name:** MatrixMultiplication2D
+   - **VM Options:** Add the flags you copied earlier
+   - **Main class:** e.g. `uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D`
+   - **Program arguments:** e.g. `128`
+
+b. Apply and run the application.
+
+
+Configuring the IDEA CheckStyle
+*******************************
+
+1. Go to **File > Settings > Tools > CheckStyle**.
+
+2. Under **Configuration File**, click the *plus* sign to add a new configuration.
+
+3. Set the description to "TornadoVM Checkstyle".
+
+4. **Use a local Checkstyle file** and point to:
+   `<path-to-TornadoVM-directory>/tornado-assembly/src/etc/checkstyle.xml`.
+
+5. Click **Next**, then **Finish**.
+
+6. Enable the new CheckStyle configuration in the list of active configurations.
