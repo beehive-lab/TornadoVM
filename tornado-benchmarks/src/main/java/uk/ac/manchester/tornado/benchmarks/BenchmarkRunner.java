@@ -30,6 +30,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkRunner {
 
+    private static final boolean SKIP_TORNADOVM = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skiptornadovm", "False"));
+
     private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", "False"));
 
     private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
@@ -83,11 +85,13 @@ public abstract class BenchmarkRunner {
             refFirstIteration = -1;
         }
 
-        final String selectedDevices = TornadoRuntimeProvider.getProperty("devices");
-        if (selectedDevices == null || selectedDevices.isEmpty()) {
-            runBenchmarkAllDevices(id, refElapsed, refElapsedMedian, refFirstIteration);
-        } else {
-            bechmarkForSelectedDevice(id, selectedDevices, refElapsed, refElapsedMedian, refFirstIteration);
+        if (!SKIP_TORNADOVM) {
+            final String selectedDevices = TornadoRuntimeProvider.getProperty("devices");
+            if (selectedDevices == null || selectedDevices.isEmpty()) {
+                runBenchmarkAllDevices(id, refElapsed, refElapsedMedian, refFirstIteration);
+            } else {
+                bechmarkForSelectedDevice(id, selectedDevices, refElapsed, refElapsedMedian, refFirstIteration);
+            }
         }
     }
 

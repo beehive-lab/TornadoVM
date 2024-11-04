@@ -61,6 +61,7 @@ if __JAVA_VERSION__ != JDK_8_VERSION:
 __RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
+__SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL__ = " -Dtornado.enable=False "
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
@@ -195,6 +196,8 @@ mediumSizes = {
 def composeAllOptions(args):
     jvm_options = __JVM_FLAGS__
     tornado_options = ""
+    if args.skip_tornadovm:
+        jvm_options = jvm_options + __SKIP_TORNADOVM__
     if args.skip_serial:
         jvm_options = jvm_options + __SKIP_SERIAL__
     if args.skip_parallel:
@@ -335,6 +338,13 @@ def parseArguments():
         dest="full",
         default=False,
         help="Run for all sizes in all devices. Including big data sizes",
+    )
+    parser.add_argument(
+        "--skipTornadoVM",
+        action="store_true",
+        dest="skip_tornadovm",
+        default=False,
+        help="Skip TornadoVM parallel implementations",
     )
     parser.add_argument(
         "--skipSequential",
