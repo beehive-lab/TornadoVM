@@ -37,4 +37,6 @@ public interface TornadoRuntime {
     <D extends TornadoBackend> int getBackendIndex(Class<D> driverClass);
 
     boolean isProfilerEnabled();
+
+    long getUpsPowerMetric();
 }
