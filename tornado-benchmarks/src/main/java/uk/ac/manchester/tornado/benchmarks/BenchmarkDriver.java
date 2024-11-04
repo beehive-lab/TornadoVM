@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
+import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
@@ -48,6 +49,7 @@ public abstract class BenchmarkDriver {
     private List<Long> deviceKernelTimers;
     private List<Long> deviceCopyIn;
     private List<Long> deviceCopyOut;
+    private List<Long> javaPowerMetrics;
 
     private int startingIndex = 30;
 
@@ -111,6 +113,7 @@ public abstract class BenchmarkDriver {
             deviceCopyIn = new ArrayList<>();
             deviceCopyOut = new ArrayList<>();
         }
+        javaPowerMetrics = new ArrayList<>();
 
         for (long i = 0; i < iterations; i++) {
             if (!skipGC()) {
@@ -119,6 +122,11 @@ public abstract class BenchmarkDriver {
             final long start = System.nanoTime();
             runBenchmark(device);
             final long end = System.nanoTime();
+            if (device == null) {
+                TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+                long powerMetric = runtime.getUpsPowerMetric();
+                javaPowerMetrics.add(powerMetric);
+            }
 
             if (isProfilerEnabled) {
                 // Ensure the execution was correct, so we can count for general stats.
@@ -217,6 +225,10 @@ public abstract class BenchmarkDriver {
         return getAverage(timers);
     }
 
+    public long getMedianPowerMetric() {
+        return (long) getAverage(toArray(javaPowerMetrics));
+    }
+
     public double getVariance() {
         double mean = getAverage();
         double temp = 0;
@@ -243,7 +255,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e, medianPower=%d%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution(), getMedianPowerMetric());
     }
 
     public String getSummary() {
