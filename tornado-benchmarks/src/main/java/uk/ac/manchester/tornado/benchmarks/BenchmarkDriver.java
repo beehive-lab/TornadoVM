@@ -163,6 +163,16 @@ public abstract class BenchmarkDriver {
         return minValue;
     }
 
+    public double getMax(double[] arr) {
+        double maxValue = arr[0];
+        for (int i = 1; i < arr.length; i++) {
+            if (arr[i] > maxValue) {
+                maxValue = arr[i];
+            }
+        }
+        return maxValue;
+    }
+
     public double getMedian(double[] arr) {
         double[] temp = arr.clone();
         sort(temp);
@@ -225,8 +235,16 @@ public abstract class BenchmarkDriver {
         return getAverage(timers);
     }
 
-    public long getMedianPowerMetric() {
+    public long getAveragePowerMetric() {
         return (long) getAverage(toArray(javaPowerMetrics));
+    }
+
+    public long getLowestPowerMetric() {
+        return (long) getMin(toArray(javaPowerMetrics));
+    }
+
+    public long getHighestPowerMetric() {
+        return (long) getMax(toArray(javaPowerMetrics));
     }
 
     public double getVariance() {
@@ -255,7 +273,8 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e, medianPower=%d%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution(), getMedianPowerMetric());
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e - lowestPower=%d%n, averagePower=%d%n, highestPower=%d%n", getAverage(), getMedian(), getFirstIteration(),
+                getBestExecution(), getLowestPowerMetric(), getAveragePowerMetric(), getHighestPowerMetric());
     }
 
     public String getSummary() {
