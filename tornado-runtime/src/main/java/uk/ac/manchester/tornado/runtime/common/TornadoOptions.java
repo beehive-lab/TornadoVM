@@ -407,6 +407,8 @@ public class TornadoOptions {
      */
     public static final boolean ENABLE_OOO_EXECUTION = getBooleanValue("tornado.ooo-execution.enable", FALSE);
 
+    public static final String UPS_IP_ADDRESS = getProperty("tornado.ups.ip", null);
+
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
