@@ -59,7 +59,11 @@ public class OCLScheduler {
         int majorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[0]);
         int minorVersion = Integer.parseInt(device.getDriverVersion().split("\\.")[1]);
 
-        return majorVersion >= NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER && minorVersion >= NVIDIA_MINOR_VERSION_GENERIC_SCHEDULER;
+        if (majorVersion == NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER && minorVersion >= NVIDIA_MINOR_VERSION_GENERIC_SCHEDULER) {
+            return true;
+        } else {
+            return majorVersion > NVIDIA_MAJOR_VERSION_GENERIC_SCHEDULER;
+        }
     }
 
     private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
@@ -67,11 +71,7 @@ public class OCLScheduler {
         if (device.getDeviceVendor().contains(SUPPORTED_VENDORS.AMD.getName())) {
             return new OCLAMDScheduler(context);
         } else if (device.getDeviceVendor().contains(SUPPORTED_VENDORS.NVIDIA.getName())) {
-            if (isDriverVersionCompatible(device)) {
-                return new OCLNVIDIAGPUScheduler(context);
-            } else {
-                return new OCLGenericGPUScheduler(context);
-            }
+            return isDriverVersionCompatible(device) ? new OCLNVIDIAGPUScheduler(context) : new OCLGenericGPUScheduler(context);
         } else {
             return new OCLGenericGPUScheduler(context);
         }
