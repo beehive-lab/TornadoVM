@@ -273,7 +273,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e - lowestPower=%d%n, averagePower=%d%n, highestPower=%d%n", getAverage(), getMedian(), getFirstIteration(),
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e - lowestPower=%d, averagePower=%d, highestPower=%d%n", getAverage(), getMedian(), getFirstIteration(),
                 getBestExecution(), getLowestPowerMetric(), getAveragePowerMetric(), getHighestPowerMetric());
     }
 
