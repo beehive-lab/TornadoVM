@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import java.util.ArrayList;
-
 import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -42,13 +40,11 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoopMerge;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpSwitch;
-import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVCapability;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLoopControl;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
-import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVPairLiteralIntegerIdRef;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -172,13 +168,13 @@ public class SPIRVControlFlow {
         private void emitLoopUnrollSuggestion(SPIRVId trueBranch, SPIRVId falseBranch, SPIRVAssembler asm) {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpLoopMerge with Loop Unroll");
             // With Partial Loop Unroll Suggestion
-            ArrayList<SPIRVOperand> params = new ArrayList<>(1);
-            params.add(new SPIRVLiteralInteger(unrollFactor));
-            SPIRVLoopControl control = new SPIRVLoopControl(256, "PartialCount", params, new SPIRVCapability[0]);
-            asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, control));
+            //            ArrayList<SPIRVOperand> params = new ArrayList<>(1);
+            //            params.add(new SPIRVLiteralInteger(unrollFactor));
+            //            SPIRVLoopControl control = new SPIRVLoopControl(256, "PartialCount", params, new SPIRVCapability[0]);
+            //            asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, control));
 
             // With Loop-Unroll suggestion
-            //asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, SPIRVLoopControl.Unroll()));
+            asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, SPIRVLoopControl.Unroll()));
         }
     }
 
