@@ -137,7 +137,6 @@ public class PartialLoopUnrollPhase extends Phase {
 
                 // Depending on LoopBound, check if we can apply unroll
                 if ((loopBound > LOOP_UNROLL_FACTOR) && (loopBound % LOOP_UNROLL_FACTOR == 0)) {
-                    System.out.println("Applying Loop Unrolling --> " + loopBound);
                     PartialUnrollNode partialUnrollNode = graph.addOrUnique(new PartialUnrollNode(LOOP_UNROLL_FACTOR));
                     FixedNode successorLoop = loopBeginNode.next();
                     loopBeginNode.setNext(partialUnrollNode);
