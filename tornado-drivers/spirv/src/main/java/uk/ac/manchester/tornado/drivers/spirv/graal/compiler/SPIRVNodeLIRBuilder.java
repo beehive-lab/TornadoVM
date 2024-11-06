@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -54,12 +55,14 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
@@ -107,7 +110,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVDirectCall;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
-import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PartialUnrollNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -520,12 +523,27 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        final Variable condition = emitLogicNode(x.condition());
+        boolean isConditionFromParallelLoop = false;
+        int unrollFactor = 0;
         if (isLoop) {
-            getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));
-        } else {
-            getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));
+            BasicBlock<?> block = gen.getCurrentBlock();
+            HIRBlock hirBlock = (HIRBlock) block;
+            AbstractBeginNode beginNode = hirBlock.getBeginNode();
+            if (beginNode instanceof LoopBeginNode loopBeginNode) {
+                // Once pragma is inserted, it is easier to analyze if partial unroll is possible
+                FixedNode successor = loopBeginNode.next();
+                if (successor instanceof PartialUnrollNode partialUnrollNode) {
+                    isConditionFromParallelLoop = true;
+                    unrollFactor = partialUnrollNode.getPartialUnrollFactor();
+                }
+            }
+            if (!isConditionFromParallelLoop) {
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoopUnroll");
+            }
         }
+
+        final Variable condition = emitLogicNode(x.condition());
+        getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()), unrollFactor);
     }
 
     @Override
@@ -744,7 +762,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             throw new RuntimeException("Unimplemented");
-        } else if (node instanceof PragmaUnrollNode || node instanceof ThreadConfigurationNode) {
+        } else if (node instanceof PartialUnrollNode || node instanceof ThreadConfigurationNode) {
             // ignore emit-action
         } else {
             super.emitNode(node);

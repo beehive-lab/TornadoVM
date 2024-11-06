@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -22,6 +22,8 @@
  *
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
+
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -38,11 +40,15 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpBranch;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpBranchConditional;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoopMerge;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpSwitch;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVCapability;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLoopControl;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVPairLiteralIntegerIdRef;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -112,27 +118,32 @@ public class SPIRVControlFlow {
         @Use
         protected Value condition;
 
-        private LabelRef lirTrueBlock;
-        private LabelRef lirFalseBlock;
+        private final LabelRef lirTrueBlock;
+        private final LabelRef lirFalseBlock;
 
-        public BranchConditional(Value condition, LabelRef lirTrueBlock, LabelRef lirFalseBlock) {
+        private final int unrollFactor;
+
+        public BranchConditional(Value condition, LabelRef lirTrueBlock, LabelRef lirFalseBlock, int unrollFactor) {
             super(TYPE);
             this.condition = condition;
             this.lirTrueBlock = lirTrueBlock;
             this.lirFalseBlock = lirFalseBlock;
+            this.unrollFactor = unrollFactor;
         }
 
         /**
          * It emits the following pattern:
          *
+         * <p>
          * <code>
-         *     OpBranchConditional %condition %trueBranch %falseBranch
+         * OpBranchConditional %condition %trueBranch %falseBranch
          * </code>
+         * </p>
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder crb}
+         *     {@link SPIRVCompilationResultBuilder crb}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -141,6 +152,10 @@ public class SPIRVControlFlow {
 
             SPIRVId trueBranch = getIdForBranch(lirTrueBlock, asm);
             SPIRVId falseBranch = getIdForBranch(lirFalseBlock, asm);
+
+            if (unrollFactor != 0) {
+                emitLoopUnrollSuggestion(trueBranch, falseBranch, asm);
+            }
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpBranchConditional: " + condition + "? " + lirTrueBlock + ":" + lirFalseBlock);
 
@@ -152,7 +167,18 @@ public class SPIRVControlFlow {
 
             // Note: we do not need to register a new ID, since this operation does not
             // generate one.
+        }
 
+        private void emitLoopUnrollSuggestion(SPIRVId trueBranch, SPIRVId falseBranch, SPIRVAssembler asm) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpLoopMerge with Loop Unroll");
+            // With Partial Loop Unroll Suggestion
+            ArrayList<SPIRVOperand> params = new ArrayList<>(1);
+            params.add(new SPIRVLiteralInteger(unrollFactor));
+            SPIRVLoopControl control = new SPIRVLoopControl(256, "PartialCount", params, new SPIRVCapability[0]);
+            asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, control));
+
+            // With Loop-Unroll suggestion
+            //asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, SPIRVLoopControl.Unroll()));
         }
     }
 
@@ -172,7 +198,7 @@ public class SPIRVControlFlow {
          * It emits the following pattern:
          *
          * <code>
-         *     SPIRVOpBranch %branch
+         * SPIRVOpBranch %branch
          * </code>
          *
          * @param crb
@@ -206,7 +232,7 @@ public class SPIRVControlFlow {
          * It emits the following pattern:
          *
          * <code>
-         *     SPIRVOpBranch %branch
+         * SPIRVOpBranch %branch
          * </code>
          *
          * @param crb

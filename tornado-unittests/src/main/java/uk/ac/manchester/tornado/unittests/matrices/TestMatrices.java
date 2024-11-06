@@ -293,8 +293,7 @@ public class TestMatrices extends TornadoTestBase {
                 .task("t0", TestMatrices::matrixVector, matrix, vector, result, N) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.execute();
         }
 

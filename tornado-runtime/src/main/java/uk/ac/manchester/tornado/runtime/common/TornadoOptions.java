@@ -129,6 +129,11 @@ public class TornadoOptions {
      * Enable/Disable FMA Optimizations. True by default.
      */
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
+
+    /**
+     * Enable/Disable Partial Loop Unroll: True by default
+     */
+    public static final boolean ENABLE_PARTIAL_LOOP_UNROLL = getBooleanValue("tornado.enable.loopunroll", TRUE);
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
