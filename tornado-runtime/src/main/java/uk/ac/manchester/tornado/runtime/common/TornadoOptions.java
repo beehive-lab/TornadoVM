@@ -350,7 +350,7 @@ public class TornadoOptions {
     /**
      * Set Loop unrolling factor for the FPGA compilation. Default is set to 2.
      */
-    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
+    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "4"));
 
     /**
      * Enable basic debug information. Disabled by default.
