@@ -419,7 +419,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isPartialUnrollEnabled() {
-        return getBooleanValue("tornado.experimental.partial.unroll", FALSE);
+        return getBooleanValue("tornado.experimental.partial.unroll", TRUE);
     }
 
     private static boolean getBooleanValue(String property, String defaultValue) {

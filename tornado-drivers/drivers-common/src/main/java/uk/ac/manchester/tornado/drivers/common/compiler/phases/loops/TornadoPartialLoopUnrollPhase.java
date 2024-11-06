@@ -44,7 +44,8 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
  * @see org.graalvm.compiler.loop.phases.LoopTransformations
  */
 
-public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
+public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
+
     private static final int LOOP_UNROLL_FACTOR_DEFAULT = 2;
     private static final int LOOP_BOUND_UPPER_LIMIT = 16384;
 
