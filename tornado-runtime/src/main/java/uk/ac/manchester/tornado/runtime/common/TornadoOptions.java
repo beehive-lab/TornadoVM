@@ -131,9 +131,11 @@ public class TornadoOptions {
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
 
     /**
-     * Enable/Disable Partial Loop Unroll: True by default
+     * Enable/Disable Loop Unroll SPIR-V instruction: True by default.
+     *
+     * <p>This flag only applies for the SPIR-V Backend</p>
      */
-    public static final boolean ENABLE_PARTIAL_LOOP_UNROLL = getBooleanValue("tornado.enable.loopunroll", TRUE);
+    public static final boolean ENABLE_SPIRV_LOOP_UNROLL = getBooleanValue("tornado.spirv.loopunroll", TRUE);
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
@@ -419,7 +421,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isPartialUnrollEnabled() {
-        return getBooleanValue("tornado.experimental.partial.unroll", TRUE);
+        return getBooleanValue("tornado.experimental.partial.unroll", FALSE);
     }
 
     private static boolean getBooleanValue(String property, String defaultValue) {

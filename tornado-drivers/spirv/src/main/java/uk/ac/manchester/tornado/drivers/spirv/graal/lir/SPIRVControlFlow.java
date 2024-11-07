@@ -166,14 +166,8 @@ public class SPIRVControlFlow {
         }
 
         private void emitLoopUnrollSuggestion(SPIRVId trueBranch, SPIRVId falseBranch, SPIRVAssembler asm) {
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpLoopMerge with Loop Unroll");
-            // With Partial Loop Unroll Suggestion
-            //            ArrayList<SPIRVOperand> params = new ArrayList<>(1);
-            //            params.add(new SPIRVLiteralInteger(unrollFactor));
-            //            SPIRVLoopControl control = new SPIRVLoopControl(256, "PartialCount", params, new SPIRVCapability[0]);
-            //            asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, control));
-
             // With Loop-Unroll suggestion
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpLoopMerge: " + falseBranch + " - " + trueBranch + " - UNROLL");
             asm.currentBlockScope().add(new SPIRVOpLoopMerge(falseBranch, trueBranch, SPIRVLoopControl.Unroll()));
         }
     }

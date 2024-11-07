@@ -62,7 +62,7 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
-        if (TornadoOptions.ENABLE_PARTIAL_LOOP_UNROLL) {
+        if (TornadoOptions.ENABLE_SPIRV_LOOP_UNROLL) {
             appendPhase(new PartialLoopUnrollPhase());
         }
 

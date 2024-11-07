@@ -32,8 +32,10 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 
 /**
  * Applies partial unroll on counted loops of more than 128 elements. By default,
@@ -60,9 +62,7 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
         LoopsData dataCounted;
         try {
             dataCounted = new TornadoLoopsData(graph);
-        } catch (NullPointerException runtimeException) {
-            // If the LoopData object can't be instantiated, then it does not apply
-            // partial loop unroll
+        } catch (NullPointerException nullPointerException) {
             return OptimizationStatus.ERROR;
         }
 
@@ -80,7 +80,7 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
             });
 
             new DeadCodeEliminationPhase().apply(graph);
-        } catch (Exception exception) {
+        } catch (NullPointerException runtimeException) {
             return OptimizationStatus.ERROR;
         }
         return OptimizationStatus.SUCCESS;
@@ -103,8 +103,17 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
         return ALWAYS_APPLICABLE;
     }
 
+    private StructuredGraph checkStatus(StructuredGraph graph, StructuredGraph snapshot, OptimizationStatus status) {
+        return status != OptimizationStatus.SUCCESS ? snapshot : graph;
+    }
+
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
+
+        TornadoMidTierContext tornadoMidTierContext = (TornadoMidTierContext) context;
+        if (!tornadoMidTierContext.getMeta().applyPartialLoopUnroll()) {
+            return;
+        }
 
         if (!graph.hasLoops()) {
             return;
@@ -113,9 +122,11 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
         int initialNodeCount = graph.getNodeCount();
         int unrollFactor = getUnrollFactor();
 
+        StructuredGraph snapshot = (StructuredGraph) graph.copy(TornadoCoreRuntime.getDebugContext());
         for (int i = 0; Math.pow(2, i) < unrollFactor; i++) {
             if (graph.getNodeCount() < getUpperGraphLimit(initialNodeCount)) {
                 OptimizationStatus status = partialUnroll(graph, context);
+                graph = checkStatus(graph, snapshot, status);
                 if (status != OptimizationStatus.SUCCESS) {
                     return;
                 }
