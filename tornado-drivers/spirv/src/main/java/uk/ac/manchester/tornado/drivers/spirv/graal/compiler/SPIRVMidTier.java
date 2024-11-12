@@ -37,9 +37,9 @@ import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
 import org.graalvm.compiler.phases.common.ReassociationPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
-import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionCheckingElimination;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoPartialLoopUnrollPhase;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc.TornadoPanamaSegmentsHeaderPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -88,7 +88,7 @@ public class SPIRVMidTier extends TornadoMidTier {
         appendPhase(canonicalizer);
 
         if (TornadoOptions.isPartialUnrollEnabled()) {
-            appendPhase(new TornadoPartialLoopUnroll());
+            appendPhase(new TornadoPartialLoopUnrollPhase());
         }
 
         appendPhase(new MidTierLoweringPhase(canonicalizer));

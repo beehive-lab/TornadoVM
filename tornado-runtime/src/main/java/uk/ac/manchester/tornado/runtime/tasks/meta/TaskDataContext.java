@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.EventSet;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
@@ -318,5 +319,9 @@ public class TaskDataContext extends AbstractRTContext {
     @Override
     public String toString() {
         return String.format("task meta data: domain=%s, global workgroup size=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
+    }
+
+    public boolean applyPartialLoopUnroll() {
+        return TornadoOptions.isPartialUnrollEnabled();
     }
 }
