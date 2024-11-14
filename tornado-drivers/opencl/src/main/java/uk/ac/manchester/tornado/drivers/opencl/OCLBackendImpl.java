@@ -62,7 +62,7 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     private final OCLBackend[][] backends;
     private final List<OCLContextInterface> contexts;
     private OCLBackend[] flatBackends;
-    private List<TornadoDevice> devices;
+    private volatile List<TornadoDevice> devices;
     private final TornadoLogger logger;
 
     public OCLBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
@@ -167,9 +167,13 @@ public final class OCLBackendImpl implements TornadoAcceleratorBackend {
     @Override
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
-            devices = new ArrayList<>();
-            for (int deviceIndex = 0; deviceIndex < getNumDevices(); deviceIndex++) {
-                devices.add(getDevice(deviceIndex));
+            synchronized (this) {
+                if (devices == null) {
+                    devices = new ArrayList<>();
+                    for (int deviceIndex = 0; deviceIndex < getNumDevices(); deviceIndex++) {
+                        devices.add(getDevice(deviceIndex));
+                    }
+                }
             }
         }
         return devices;

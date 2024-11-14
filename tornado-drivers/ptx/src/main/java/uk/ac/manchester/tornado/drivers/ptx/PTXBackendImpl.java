@@ -48,7 +48,7 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
 
     private final PTXBackend[] backends;
     private final TornadoLogger logger;
-    private List<TornadoDevice> devices;
+    private volatile List<TornadoDevice> devices;
 
     public PTXBackendImpl(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfig) {
 
@@ -132,9 +132,13 @@ public final class PTXBackendImpl implements TornadoAcceleratorBackend {
     @Override
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
-            devices = new ArrayList<>();
-            for (int i = 0; i < getNumDevices(); i++) {
-                devices.add(backends[i].getDeviceContext().toDevice());
+            synchronized (this) {
+                if (devices == null) {
+                    devices = new ArrayList<>();
+                    for (int i = 0; i < getNumDevices(); i++) {
+                        devices.add(backends[i].getDeviceContext().toDevice());
+                    }
+                }
             }
         }
         return devices;

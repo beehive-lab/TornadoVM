@@ -67,7 +67,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
      * devices).
      */
     private int backendCounter;
-    private List<TornadoDevice> devices;
+    private volatile List<TornadoDevice> devices;
 
     public SPIRVBackendImpl(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfigAccess vmConfigAccess) {
         int numPlatforms = SPIRVRuntimeImpl.getInstance().getNumPlatforms();
@@ -190,9 +190,13 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
     @Override
     public List<TornadoDevice> getAllDevices() {
         if (devices == null) {
-            devices = new ArrayList<>();
-            for (int i = 0; i < getNumDevices(); i++) {
-                devices.add(flatBackends[i].getDeviceContext().toDevice());
+            synchronized (this) {
+                if (devices == null) {
+                    devices = new ArrayList<>();
+                    for (int i = 0; i < getNumDevices(); i++) {
+                        devices.add(flatBackends[i].getDeviceContext().toDevice());
+                    }
+                }
             }
         }
         return devices;
