@@ -48,14 +48,14 @@ public class TensorQ8 extends Tensor {
         int blockIndex = index / GGMLType.Q8_0.getBlockSize();
         int withinBlockIndex = index % GGMLType.Q8_0.getBlockSize();
         int blockOffset = blockIndex * GGMLType.Q8_0.getTypeSize();
-        byte quant = readByte(tensorStorage.getSegment(), blockOffset + Float16.BYTES + withinBlockIndex);
+        byte quant = readBy te(tensorStorage.getSegment(), blockOffset + Float16.BYTES + withinBlockIndex);
         float scale = Float.float16ToFloat(readShort(tensorStorage.getSegment(), blockOffset));
         return quant * scale;
     }
 
     @Override
     public Shape getShape() {
-        return null;
+        return shape;
     }
 
     @Override
@@ -65,32 +65,32 @@ public class TensorQ8 extends Tensor {
 
     @Override
     public DType getDType() {
-        return null;
+        return dType;
     }
 
     @Override
     public int getSize() {
-        return 0;
+        return numberOfElements;
     }
 
     @Override
     public MemorySegment getSegment() {
-        return null;
+        return tensorStorage.getSegment();
     }
 
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return null;
+        return tensorStorage.getSegmentWithHeader();
     }
 
     @Override
     public long getNumBytesOfSegmentWithHeader() {
-        return 0;
+        return tensorStorage.getNumBytesOfSegmentWithHeader();
     }
 
     @Override
     public long getNumBytesOfSegment() {
-        return 0;
+        return tensorStorage.getNumBytesOfSegment();
     }
 
     @Override
@@ -100,6 +100,6 @@ public class TensorQ8 extends Tensor {
 
     @Override
     public int getElementSize() {
-        return 0;
+        return numberOfElements;
     }
 }
