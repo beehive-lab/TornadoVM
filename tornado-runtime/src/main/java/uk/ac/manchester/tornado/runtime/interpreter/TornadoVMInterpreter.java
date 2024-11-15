@@ -148,14 +148,8 @@ public class TornadoVMInterpreter {
 
         logger.debug("created %d kernelStackFrame", kernelStackFrame.length);
         logger.debug("created %d event lists", events.length);
-        objectAccesses = graphExecutionContext.getObjects();
-        // UPDATE ACCESSES FROM SKETCHER
-        int i = 0;
-        for (Object ob : objectAccesses.keySet()) {
-            objectAccesses.put(ob, accesses[i]);
-            i++;
-        }
-        objects = Arrays.asList(objectAccesses.keySet().toArray());
+        objectAccesses = graphExecutionContext.getObjectsAccesses();
+        objects = graphExecutionContext.getObjects();
         dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 

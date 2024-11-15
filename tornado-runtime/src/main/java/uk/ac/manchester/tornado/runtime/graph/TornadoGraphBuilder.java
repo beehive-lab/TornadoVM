@@ -112,7 +112,7 @@ public class TornadoGraphBuilder {
         int taskIndex = 0;
 
         final List<Object> constants = executionContext.getConstants();
-        final HashMap<Object, Access> objects = executionContext.getObjects();
+        final List<Object> objects = executionContext.getObjects();
 
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
         for (int i = 0; i < constants.size(); i++) {

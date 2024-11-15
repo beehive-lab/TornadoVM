@@ -75,7 +75,8 @@ public class TornadoExecutionContext {
     private List<SchedulableTask> tasks;
     private List<Object> constants;
     private Map<Integer, Integer> objectMap;
-    private HashMap<Object, Access> objects;
+    private HashMap<Object, Access> objectsAccesses;
+    private List<Object> objects;
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
@@ -98,7 +99,8 @@ public class TornadoExecutionContext {
         tasks = new ArrayList<>();
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
-        objects = new HashMap<>();
+        objects = new ArrayList<>();
+        objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
@@ -130,7 +132,8 @@ public class TornadoExecutionContext {
             index = objectMap.get(parameter.hashCode());
         } else {
             index = objects.size();
-            objects.put(parameter, access);
+            objects.add(parameter);
+            objectsAccesses.put(parameter, access);
             objectMap.put(parameter.hashCode(), index);
             objectState.add(index, new LocalObjectState(parameter));
         }
@@ -160,7 +163,7 @@ public class TornadoExecutionContext {
     public boolean doesExceedExecutionPlanLimit() {
         long totalSize = 0;
 
-        for (Object parameter : getObjects().keySet()) {
+        for (Object parameter : getObjects()) {
 
             if (parameter.getClass().isArray()) {
                 Class<?> componentType = parameter.getClass().getComponentType();
@@ -225,9 +228,10 @@ public class TornadoExecutionContext {
 
             index = oldIndex;
             // TODO: check
-            Access access = objects.get(oldObj);
-            objects.remove(oldObj);
-            objects.put(newObj, access);
+            objects.add(index, newObj);
+            Access access = objectsAccesses.get(oldObj);
+            objectsAccesses.remove(oldObj);
+            objectsAccesses.put(newObj, access);
             objectMap.put(newObj.hashCode(), index);
             objectState.add(index, newLocalObjectState);
         }
@@ -261,8 +265,12 @@ public class TornadoExecutionContext {
         return constants;
     }
 
-    public HashMap<Object, Access> getObjects() {
+    public List<Object> getObjects() {
         return objects;
+    }
+
+    public HashMap<Object, Access> getObjectsAccesses() {
+        return objectsAccesses;
     }
 
     public TornadoXPUDevice getDeviceForTask(int index) {
@@ -619,7 +627,9 @@ public class TornadoExecutionContext {
 
         newExecutionContext.objectMap = new HashMap<>(objectMap);
 
-        newExecutionContext.objects = new HashMap<>(objects);
+        newExecutionContext.objectsAccesses = new HashMap<>(objectsAccesses);
+
+        newExecutionContext.objects = new ArrayList<>(objects);
 
         List<LocalObjectState> objectStateCopy = new ArrayList<>();
         for (LocalObjectState localObjectState : objectState) {
