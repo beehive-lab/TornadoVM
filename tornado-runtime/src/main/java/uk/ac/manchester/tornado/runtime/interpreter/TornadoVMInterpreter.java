@@ -786,7 +786,8 @@ public class TornadoVMInterpreter {
         }
 
         if (atomicsArray != null) {
-            bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray);
+            //TODO: What should the access be??
+            bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray, Access.READ_WRITE);
             List<Integer> allEvents = bufferAtomics.enqueueWrite(graphExecutionContext.getExecutionPlanId(), null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {

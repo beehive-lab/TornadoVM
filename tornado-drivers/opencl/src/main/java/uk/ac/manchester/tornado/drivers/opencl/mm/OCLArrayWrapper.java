@@ -56,22 +56,24 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     private long bufferSize;
     private long setSubRegionSize;
     private TornadoLogger logger;
+    private Access access;
 
-    protected OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize) {
+    protected OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize, Access access) {
         this.deviceContext = device;
         this.kind = kind;
         this.batchSize = batchSize;
         this.bufferId = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
         this.bufferOffset = 0;
+        this.access = access;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         logger = new TornadoLogger(this.getClass());
     }
 
-    protected OCLArrayWrapper(final T array, final OCLDeviceContext device, final JavaKind kind, long batchSize) {
-        this(device, kind, batchSize);
+    protected OCLArrayWrapper(final T array, final OCLDeviceContext device, final JavaKind kind, long batchSize, Access access) {
+        this(device, kind, batchSize, access);
         bufferSize = sizeOf(array);
     }
 
@@ -115,7 +117,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getBufferProvider().markBufferReleased(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -127,7 +129,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
     @Override

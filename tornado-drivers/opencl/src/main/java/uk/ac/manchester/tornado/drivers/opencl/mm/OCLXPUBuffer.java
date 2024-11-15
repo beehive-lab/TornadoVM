@@ -102,19 +102,19 @@ public class OCLXPUBuffer implements XPUBuffer {
             if (type.isArray()) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 if (type == int[].class) {
-                    wrappedField = new OCLIntArrayWrapper((int[]) objectFromField, device, 0);
+                    wrappedField = new OCLIntArrayWrapper((int[]) objectFromField, device, 0, access);
                 } else if (type == float[].class) {
-                    wrappedField = new OCLFloatArrayWrapper((float[]) objectFromField, device, 0);
+                    wrappedField = new OCLFloatArrayWrapper((float[]) objectFromField, device, 0, access);
                 } else if (type == double[].class) {
-                    wrappedField = new OCLDoubleArrayWrapper((double[]) objectFromField, device, 0);
+                    wrappedField = new OCLDoubleArrayWrapper((double[]) objectFromField, device, 0, access);
                 } else if (type == long[].class) {
-                    wrappedField = new OCLLongArrayWrapper((long[]) objectFromField, device, 0);
+                    wrappedField = new OCLLongArrayWrapper((long[]) objectFromField, device, 0, access);
                 } else if (type == short[].class) {
-                    wrappedField = new OCLShortArrayWrapper((short[]) objectFromField, device, 0);
+                    wrappedField = new OCLShortArrayWrapper((short[]) objectFromField, device, 0, access);
                 } else if (type == char[].class) {
-                    wrappedField = new OCLCharArrayWrapper((char[]) objectFromField, device, 0);
+                    wrappedField = new OCLCharArrayWrapper((char[]) objectFromField, device, 0, access);
                 } else if (type == byte[].class) {
-                    wrappedField = new OCLByteArrayWrapper((byte[]) objectFromField, device, 0);
+                    wrappedField = new OCLByteArrayWrapper((byte[]) objectFromField, device, 0, access);
                 } else {
                     logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
@@ -182,7 +182,7 @@ public class OCLXPUBuffer implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        deviceContext.getBufferProvider().markBufferReleased(this.bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, this.access);
         bufferId = -1;
     }
 
@@ -462,6 +462,6 @@ public class OCLXPUBuffer implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 }

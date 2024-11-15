@@ -24,16 +24,17 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLCharArrayWrapper extends OCLArrayWrapper<char[]> {
 
-    public OCLCharArrayWrapper(OCLDeviceContext device, long batchSize) {
-        super(device, JavaKind.Char, batchSize);
+    public OCLCharArrayWrapper(OCLDeviceContext device, long batchSize, Access access) {
+        super(device, JavaKind.Char, batchSize, access);
     }
 
-    protected OCLCharArrayWrapper(final char[] array, final OCLDeviceContext device, long batchSize) {
-        super(array, device, JavaKind.Char, batchSize);
+    protected OCLCharArrayWrapper(final char[] array, final OCLDeviceContext device, long batchSize, Access access) {
+        super(array, device, JavaKind.Char, batchSize, access);
     }
 
     @Override

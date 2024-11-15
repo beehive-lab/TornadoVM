@@ -203,7 +203,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        deviceContext.getBufferProvider().markBufferReleased(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -214,7 +214,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
     @Override

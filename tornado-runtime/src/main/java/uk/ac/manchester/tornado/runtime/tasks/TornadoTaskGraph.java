@@ -1009,7 +1009,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 streamOutObjects.add(functionParameter);
                 // the correct access will be set later on by the TornadoDataflowAnalysis
                 // CHECK HERE!!!!!
-                executionContext.getLocalStateObject(functionParameter, Access.NONE).setStreamOut(true);
+                executionContext.getLocalStateObject(functionParameter, Access.WRITE_ONLY).setStreamOut(true);
             }
 
             // List of output objects for the dynamic reconfiguration
@@ -1097,14 +1097,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (vm == null) {
             return;
         }
-        inputModesObjects.forEach(inputStreamObject -> freeDeviceMemoryObject(inputStreamObject.getObject()));
-        outputModeObjects.forEach(outputStreamObject -> freeDeviceMemoryObject(outputStreamObject.getObject()));
+        for (StreamingObject inputStreamObject : inputModesObjects) {
+            if (streamOutObjects.contains(inputStreamObject.object)) {
+                // READ-WRITE
+                freeDeviceMemoryObject(inputStreamObject, Access.READ_WRITE);
+            } else {
+                freeDeviceMemoryObject(inputStreamObject, Access.READ_ONLY);
+            }
+        }
+
+        for (StreamingObject outputStreamObject : outputModeObjects) {
+            if (streamInObjects.contains(outputStreamObject.object)) {
+                // READ-WRITE
+                freeDeviceMemoryObject(outputStreamObject, Access.READ_WRITE);
+            } else {
+                freeDeviceMemoryObject(outputStreamObject, Access.WRITE_ONLY);
+            }
+        }
+       // inputModesObjects.forEach(inputStreamObject -> freeDeviceMemoryObject(inputStreamObject.getObject()));
+       // outputModeObjects.forEach(outputStreamObject -> freeDeviceMemoryObject(outputStreamObject.getObject()));
         meta().getXPUDevice().getDeviceContext().reset(executionPlanId);
     }
 
-    private void freeDeviceMemoryObject(Object object) {
-        // TODO: this will be fixed with the different free lists, at the moment access is NONE
-        final LocalObjectState localState = executionContext.getLocalStateObject(object, Access.NONE);
+    private void freeDeviceMemoryObject(Object object, Access access) {
+        final LocalObjectState localState = executionContext.getLocalStateObject(object, access);
         releaseObjectFromDeviceMemory(localState, meta().getXPUDevice());
     }
 
@@ -1112,9 +1128,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final XPUDeviceBufferState deviceBufferState = dataObjectState.getDeviceBufferState(device);
         deviceBufferState.setLockBuffer(false);
-        if (deviceBufferState.hasObjectBuffer()) {
+       if (deviceBufferState.hasObjectBuffer()) {
             device.deallocate(deviceBufferState);
-        }
+       }
     }
 
     private void syncField(Object object) {

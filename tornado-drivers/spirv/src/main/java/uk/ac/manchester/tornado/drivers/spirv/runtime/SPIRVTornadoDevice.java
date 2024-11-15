@@ -117,7 +117,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr, Access access) {
         return null;
     }
 
@@ -312,8 +312,10 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
-            bufferProvider.resetBuffers();
+        for (Access access : accesses) {
+            if (!bufferProvider.isNumFreeBuffersAvailable(objects.length, access)) {
+                bufferProvider.resetBuffers(access);
+            }
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
@@ -322,17 +324,17 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         return allocatedSpace;
     }
 
-    private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state) {
+    private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
         state.setXPUBuffer(buffer);
-        buffer.allocate(object, batchSize);
+        buffer.allocate(object, batchSize, access);
         return buffer;
     }
 
     @Override
-    public long allocate(Object object, long batchSize, DeviceBufferState state, Access accesses) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
@@ -340,7 +342,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         } else {
-            buffer = createNewBufferAllocation(object, batchSize, state);
+            buffer = createNewBufferAllocation(object, batchSize, state, access);
         }
 
         if (buffer.getClass() == AtomicsBuffer.class) {

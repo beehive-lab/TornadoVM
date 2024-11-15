@@ -122,7 +122,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr, Access access) {
         return null;
     }
 
@@ -289,8 +289,10 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
-            bufferProvider.resetBuffers();
+        for (Access access : accesses) {
+            if (!bufferProvider.isNumFreeBuffersAvailable(objects.length, access)) {
+                bufferProvider.resetBuffers(access);
+            }
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
@@ -306,7 +308,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize);
             state.setXPUBuffer(buffer);
-            buffer.allocate(object, batchSize);
+            buffer.allocate(object, batchSize, access);
         } else {
             buffer = state.getXPUBuffer();
             if (batchSize != 0) {

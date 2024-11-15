@@ -40,12 +40,13 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     private long[] addresses;
     private OCLArrayWrapper<E>[] wrappers;
     private final OCLDeviceContext deviceContext;
+    private Access access;
 
-    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize) {
-        super(device, JavaKind.Object, batchSize);
+    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize, Access access) {
+        super(device, JavaKind.Object, batchSize, access);
         this.deviceContext = device;
         innerWrapperFactory = factory;
-        tableWrapper = new OCLLongArrayWrapper(device, batchSize);
+        tableWrapper = new OCLLongArrayWrapper(device, batchSize, access);
     }
 
     @Override

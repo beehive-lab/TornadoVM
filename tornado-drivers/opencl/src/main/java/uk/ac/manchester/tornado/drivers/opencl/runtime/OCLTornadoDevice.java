@@ -230,9 +230,9 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public XPUBuffer createOrReuseAtomicsBuffer(int[] array) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] array, Access access) {
         if (reuseBuffer == null) {
-            reuseBuffer = getDeviceContext().getMemoryManager().createAtomicsBuffer(array);
+            reuseBuffer = getDeviceContext().getMemoryManager().createAtomicsBuffer(array, access);
         }
         reuseBuffer.setIntBuffer(array);
         return reuseBuffer;
@@ -471,45 +471,45 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return loadPreCompiledBinaryForTask(executionPlanId, task);
     }
 
-    private XPUBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize) {
+    private XPUBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize, Access access) {
         XPUBuffer result = null;
         if (type == float[].class) {
-            result = new OCLFloatArrayWrapper(device, batchSize);
+            result = new OCLFloatArrayWrapper(device, batchSize, access);
         } else if (type == int[].class) {
-            result = new OCLIntArrayWrapper(device, batchSize);
+            result = new OCLIntArrayWrapper(device, batchSize, access);
         } else if (type == double[].class) {
-            result = new OCLDoubleArrayWrapper(device, batchSize);
+            result = new OCLDoubleArrayWrapper(device, batchSize, access);
         } else if (type == short[].class) {
-            result = new OCLShortArrayWrapper(device, batchSize);
+            result = new OCLShortArrayWrapper(device, batchSize, access);
         } else if (type == byte[].class) {
-            result = new OCLByteArrayWrapper(device, batchSize);
+            result = new OCLByteArrayWrapper(device, batchSize, access);
         } else if (type == long[].class) {
-            result = new OCLLongArrayWrapper(device, batchSize);
+            result = new OCLLongArrayWrapper(device, batchSize, access);
         } else if (type == char[].class) {
-            result = new OCLCharArrayWrapper(device, batchSize);
+            result = new OCLCharArrayWrapper(device, batchSize, access);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }
         return result;
     }
 
-    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, OCLDeviceContext device, long batchSize) {
+    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, OCLDeviceContext device, long batchSize, Access access) {
         XPUBuffer result = null;
 
         if (componentType == int[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == short[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == char[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == byte[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == float[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == double[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == long[].class) {
-            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context, batchSize), batchSize);
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context, batchSize, access), batchSize, access);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }
@@ -520,18 +520,18 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         XPUBuffer result = null;
         if (type.isArray()) {
             if (!type.getComponentType().isArray()) {
-                result = createArrayWrapper(type, deviceContext, batchSize);
+                result = createArrayWrapper(type, deviceContext, batchSize, access);
             } else {
                 final Class<?> componentType = type.getComponentType();
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
-                    result = createMultiArrayWrapper(componentType, type, deviceContext, batchSize);
+                    result = createMultiArrayWrapper(componentType, type, deviceContext, batchSize, access);
                 } else {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }
         } else if (!type.isPrimitive()) {
             if (object instanceof AtomicInteger) {
-                result = new AtomicsBuffer(new int[] {}, deviceContext);
+                result = new AtomicsBuffer(new int[] {}, deviceContext, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
@@ -564,8 +564,10 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
-            bufferProvider.resetBuffers();
+        for (Access access : accesses) {
+            if (!bufferProvider.isNumFreeBuffersAvailable(objects.length, access)) {
+                bufferProvider.resetBuffers(access);
+            }
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {

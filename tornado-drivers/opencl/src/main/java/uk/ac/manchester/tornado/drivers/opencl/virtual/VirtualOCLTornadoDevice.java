@@ -181,7 +181,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr, Access access) {
         return null;
     }
 
