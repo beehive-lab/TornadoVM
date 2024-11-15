@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -229,13 +229,13 @@ public class SPIRVLIRGenerator extends LIRGenerator {
      * based on a bitwise and operation between two values.
      *
      * @param leftVal
-     *            the left value of a condition
+     *     the left value of a condition
      * @param right
-     *            the right value of a condition
+     *     the right value of a condition
      * @param trueValue
-     *            the true value to move in the result
+     *     the true value to move in the result
      * @param falseValue
-     *            the false value to move in the result
+     *     the false value to move in the result
      * @return Variable: reference to the variable that contains the result
      */
     @Override
@@ -387,8 +387,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return (SPIRVArithmeticTool) super.getArithmetic();
     }
 
-    public void emitConditionalBranch(Value condition, LabelRef trueBranch, LabelRef falseBranch) {
-        append(new SPIRVControlFlow.BranchConditional(condition, trueBranch, falseBranch));
+    public void emitConditionalBranch(Value condition, LabelRef trueBranch, LabelRef falseBranch, int unrollFactor) {
+        append(new SPIRVControlFlow.BranchConditional(condition, trueBranch, falseBranch, unrollFactor));
     }
 
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {

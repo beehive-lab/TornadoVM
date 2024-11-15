@@ -129,6 +129,13 @@ public class TornadoOptions {
      * Enable/Disable FMA Optimizations. True by default.
      */
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
+
+    /**
+     * Enable/Disable Loop Unroll SPIR-V instruction: True by default.
+     *
+     * <p>This flag only applies for the SPIR-V Backend</p>
+     */
+    public static final boolean ENABLE_SPIRV_LOOP_UNROLL = getBooleanValue("tornado.spirv.loopunroll", TRUE);
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
@@ -343,9 +350,9 @@ public class TornadoOptions {
     }
 
     /**
-     * Set Loop unrolling factor for the FPGA compilation. Default is set to 2.
+     * Set Loop unrolling factor. Default is set to 4.
      */
-    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
+    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "4"));
 
     /**
      * Enable basic debug information. Disabled by default.

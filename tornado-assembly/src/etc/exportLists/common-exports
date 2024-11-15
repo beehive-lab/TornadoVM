@@ -96,3 +96,5 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.drivers.common
