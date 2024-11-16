@@ -404,4 +404,140 @@ public class TestTensorQ8 extends TornadoTestBase {
             }
         }
     }
+
+    @Test
+    public void testSequentialBlockUpdates() {
+        // Test updating blocks in sequence vs random order
+        int blockSize = GGMLType.Q8_0.getBlockSize();
+        Shape shape = new Shape(blockSize * 3);  // Three blocks
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        printVerbose("\nTesting sequential block updates:");
+
+        // Sequential updates
+        for (int block = 0; block < 3; block++) {
+            float blockValue = (block + 1) * 10.0f;
+            printVerboseF("\nSetting block %d to %.2f:%n", block, blockValue);
+
+            for (int i = 0; i < blockSize; i++) {
+                int index = block * blockSize + i;
+                tensorQ8.setFloat(index, blockValue);
+                float retrieved = tensorQ8.getFloat(index);
+                printVerboseF("Index %d: Set=%.6f Got=%.6f%n",
+                        index, blockValue, retrieved);
+                Assert.assertEquals("Sequential block update failed",
+                        blockValue, retrieved, 0.1f);
+            }
+        }
+
+        // Verify all blocks maintain their values
+        printVerbose("\nVerifying all blocks after updates:");
+        for (int block = 0; block < 3; block++) {
+            float expectedValue = (block + 1) * 10.0f;
+            for (int i = 0; i < blockSize; i++) {
+                int index = block * blockSize + i;
+                float retrieved = tensorQ8.getFloat(index);
+                Assert.assertEquals("Block value changed unexpectedly",
+                        expectedValue, retrieved, 0.1f);
+            }
+        }
+    }
+
+    @Test
+    public void testMaximumPrecisionValues() {
+        // Test precision with values requiring maximum accuracy
+        Shape shape = new Shape(GGMLType.Q8_0.getBlockSize());
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        printVerbose("\nTesting maximum precision values:");
+
+        // Test precise decimal values
+        float[] preciseValues = {
+                1.23456789f,
+                -1.23456789f,
+                12.3456789f,
+                -12.3456789f,
+                123.456789f,
+                -123.456789f
+        };
+
+        for (int i = 0; i < preciseValues.length; i++) {
+            tensorQ8.setFloat(i, preciseValues[i]);
+            float retrieved = tensorQ8.getFloat(i);
+            float relativeError = Math.abs((retrieved - preciseValues[i]) / preciseValues[i]);
+
+            printVerboseF("Precise value test %d: Set=%.9f Got=%.9f RelError=%.9f%n",
+                    i, preciseValues[i], retrieved, relativeError);
+
+            // For high-precision values, we expect relative error < 1%
+            Assert.assertTrue(
+                    String.format("Precision lost: expected=%.9f, got=%.9f, error=%.9f",
+                            preciseValues[i], retrieved, relativeError),
+                    relativeError < 0.01f);
+        }
+    }
+
+    @Test
+    public void testBlockScaleInterference() {
+        // Test that updates in one block don't affect other blocks' scales
+        int blockSize = GGMLType.Q8_0.getBlockSize();
+        Shape shape = new Shape(blockSize * 2);  // Two blocks
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        printVerbose("\nTesting block scale interference:");
+
+        // Set first block to small values
+        printVerbose("\nSetting first block to small values:");
+        for (int i = 0; i < blockSize; i++) {
+            float value = 0.1f + (0.1f * i / blockSize);
+            tensorQ8.setFloat(i, value);
+            printVerboseF("Block 1 index %d: Set=%.6f%n", i, value);
+        }
+
+        // Set second block to large values
+        printVerbose("\nSetting second block to large values:");
+        for (int i = 0; i < blockSize; i++) {
+            float value = 100.0f + (100.0f * i / blockSize);
+            tensorQ8.setFloat(blockSize + i, value);
+            printVerboseF("Block 2 index %d: Set=%.6f%n", i, value);
+        }
+
+        // Verify first block maintained small values
+        printVerbose("\nVerifying first block maintained precision:");
+        for (int i = 0; i < blockSize; i++) {
+            float expected = 0.1f + (0.1f * i / blockSize);
+            float retrieved = tensorQ8.getFloat(i);
+            float relativeError = Math.abs((retrieved - expected) / expected);
+
+            printVerboseF("Block 1 verification index %d: Expected=%.6f Got=%.6f RelError=%.6f%n",
+                    i, expected, retrieved, relativeError);
+
+            Assert.assertTrue(
+                    String.format("Block 1 precision lost after block 2 update at index %d", i),
+                    relativeError < 0.1f);
+        }
+    }
+
+    @Test
+    public void testBlockBoundaryUpdates() {
+        // Test updating values at block boundaries
+        int blockSize = GGMLType.Q8_0.getBlockSize();
+        Shape shape = new Shape(blockSize * 2);  // Two blocks
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        // Set values around block boundary
+        float[] boundaryValues = {1.0f, 2.0f, 3.0f, 4.0f};
+        int boundaryStart = blockSize - 2;  // Two values before boundary
+
+        printVerbose("\nTesting block boundary updates:");
+        for (int i = 0; i < boundaryValues.length; i++) {
+            int index = boundaryStart + i;
+            tensorQ8.setFloat(index, boundaryValues[i]);
+            float retrieved = tensorQ8.getFloat(index);
+            printVerboseF("Index %d (block boundary +/- 2): Set=%.6f Got=%.6f%n",
+                    index, boundaryValues[i], retrieved);
+            Assert.assertEquals("Value mismatch at block boundary",
+                    boundaryValues[i], retrieved, 0.1f);
+        }
+    }
 }
