@@ -18,7 +18,6 @@
 package uk.ac.manchester.tornado.api.types.tensors;
 
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
