@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.tensors.GGMLType;
 
 /**
  * This class represents an array of bytes stored in native memory.
@@ -59,6 +60,23 @@ public final class ByteArray extends TornadoNativeArray {
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    public ByteArray(int numberOfElements, boolean noHeader) {
+        this.numberOfElements = numberOfElements;
+        baseIndex=0;
+        segmentByteSize = numberOfElements * BYTE_BYTES;
+        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
+//        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+
+    public ByteArray(int numberOfElements, long requiredStorageSize) {
+        this.numberOfElements = numberOfElements;
+        baseIndex=0;
+//        segmentByteSize = numberOfElements * BYTE_BYTES;
+        segment = Arena.ofAuto().allocate(requiredStorageSize, 1);
+        //        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
@@ -119,6 +137,14 @@ public final class ByteArray extends TornadoNativeArray {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / BYTE_BYTES);
         ByteArray byteArray = new ByteArray(numElements);
+        MemorySegment.copy(segment, 0, byteArray.segment, byteArray.baseIndex * BYTE_BYTES, byteSize);
+        return byteArray;
+    }
+
+    public static ByteArray fromSegment(MemorySegment segment, boolean noHeader) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / BYTE_BYTES);
+        ByteArray byteArray = new ByteArray(numElements, noHeader);
         MemorySegment.copy(segment, 0, byteArray.segment, byteArray.baseIndex * BYTE_BYTES, byteSize);
         return byteArray;
     }
