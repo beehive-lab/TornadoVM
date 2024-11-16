@@ -33,7 +33,7 @@ public class TensorQ8 extends Tensor {
     private final int blockSize;
     private final int bytesPerBlock;
 
-    private static final int HEADER_SIZE = (int) TornadoNativeArray.ARRAY_HEADER;
+//    private static final int HEADER_SIZE = (int) TornadoNativeArray.ARRAY_HEADER;
 
     public TensorQ8(Shape shape) {
         super(DType.QINT8, shape);
@@ -52,7 +52,7 @@ public class TensorQ8 extends Tensor {
 
         // Calculate total storage size in bytes, including header
         long dataSize = (long)numBlocks * bytesPerBlock;
-        long totalSize = dataSize + HEADER_SIZE;
+        long totalSize = dataSize;
 
         if (DEBUG_TENSOR_Q8) {
             System.out.println("Debug info:");
@@ -61,7 +61,6 @@ public class TensorQ8 extends Tensor {
             System.out.println("Bytes per block: " + bytesPerBlock);
             System.out.println("Number of blocks: " + numBlocks);
             System.out.println("Data size: " + dataSize);
-            System.out.println("Header size: " + HEADER_SIZE);
             System.out.println("Total size with header: " + totalSize);
         }
 
@@ -73,14 +72,13 @@ public class TensorQ8 extends Tensor {
         int blockOffset = blockIndex * bytesPerBlock;
 
         try {
-            float scale = Float.float16ToFloat(readShort(tensorStorage.getSegmentWithHeader(), HEADER_SIZE + blockOffset));
+            float scale = Float.float16ToFloat(readShort(tensorStorage.getSegmentWithHeader(),   blockOffset));
             for (int i = 0; i < blockSize; i++) {
-                byte quant = readByte(tensorStorage.getSegmentWithHeader(), HEADER_SIZE + blockOffset + Float16.BYTES + i);
+                byte quant = readByte(tensorStorage.getSegmentWithHeader(),   blockOffset + Float16.BYTES + i);
                 values[i] = quant * scale;
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to read block " + blockIndex +
-                    " at offset " + blockOffset + ": " + e.getMessage());
+            throw new RuntimeException("Failed to read block " + blockIndex + " at offset " + blockOffset + ": " + e.getMessage());
         }
         return values;
     }
@@ -95,12 +93,11 @@ public class TensorQ8 extends Tensor {
         int blockOffset = blockIndex * bytesPerBlock;
 
         try {
-            float scale = Float.float16ToFloat(readShort(tensorStorage.getSegmentWithHeader(), HEADER_SIZE + blockOffset));
-            byte quant = readByte(tensorStorage.getSegmentWithHeader(), HEADER_SIZE + blockOffset + Float16.BYTES + withinBlockIndex);
+            float scale = Float.float16ToFloat(readShort(tensorStorage.getSegmentWithHeader(),   blockOffset));
+            byte quant = readByte(tensorStorage.getSegmentWithHeader(),  + blockOffset + Float16.BYTES + withinBlockIndex);
             return quant * scale;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get float at index " + index +
-                    " (block " + blockIndex + ", offset " + blockOffset + "): " + e.getMessage());
+            throw new RuntimeException("Failed to get float at index " + index + " (block " + blockIndex + ", offset " + blockOffset + "): " + e.getMessage());
         }
     }
 
@@ -124,16 +121,15 @@ public class TensorQ8 extends Tensor {
 
         try {
             // Write scale
-            writeShort(tensorStorage.getSegmentWithHeader(), HEADER_SIZE + blockOffset, Float.floatToFloat16(scale));
+            writeShort(tensorStorage.getSegmentWithHeader(),   blockOffset, Float.floatToFloat16(scale));
 
             // Write quantized values
             for (int i = 0; i < blockValues.length; i++) {
                 int quantized = Math.min(127, Math.max(-128, Math.round(blockValues[i] / scale)));
-                writeByte(tensorStorage.getSegmentWithHeader(), HEADER_SIZE + blockOffset + Float16.BYTES + i, (byte)quantized);
+                writeByte(tensorStorage.getSegmentWithHeader(), blockOffset + Float16.BYTES + i, (byte)quantized);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to set float at index " + index +
-                    " (block " + blockIndex + ", offset " + blockOffset + "): " + e.getMessage());
+            throw new RuntimeException("Failed to set float at index " + index +  " (block " + blockIndex + ", offset " + blockOffset + "): " + e.getMessage());
         }
     }
 
@@ -184,7 +180,7 @@ public class TensorQ8 extends Tensor {
 
     @Override
     public MemorySegment getSegment() {
-        return tensorStorage.getSegment();
+        return tensorStorage.getSegmentWithHeader();
     }
 
     @Override
