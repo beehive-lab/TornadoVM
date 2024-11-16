@@ -132,6 +132,14 @@ public final class ByteArray extends TornadoNativeArray {
         return byteArray;
     }
 
+    // Temporary workaround to copy raw memory segment without a tornado header
+    public static ByteArray fromSegment(MemorySegment segment, int numberOfElements) {
+        long byteSize = segment.byteSize();
+        ByteArray byteArray = new ByteArray(numberOfElements, byteSize);
+        MemorySegment.copy(segment, 0, byteArray.segment, byteArray.baseIndex * BYTE_BYTES, byteSize);
+        return byteArray;
+    }
+
     /**
      * Creates a new instance of the {@link ByteArray} class from a {@link ByteBuffer}.
      *

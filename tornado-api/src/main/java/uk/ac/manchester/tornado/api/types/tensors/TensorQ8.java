@@ -33,7 +33,6 @@ public class TensorQ8 extends Tensor {
     private final int blockSize;
     private final int bytesPerBlock;
 
-//    private static final int HEADER_SIZE = (int) TornadoNativeArray.ARRAY_HEADER;
 
     public TensorQ8(Shape shape) {
         super(DType.QINT8, shape);
@@ -65,6 +64,38 @@ public class TensorQ8 extends Tensor {
         }
 
         this.tensorStorage = new ByteArray(numberOfElements, totalSize);
+    }
+
+    public TensorQ8(int numberOfElements, MemorySegment memorySegment) {
+        super(DType.QINT8, new Shape(numberOfElements));
+        this.shape = new Shape(numberOfElements);
+        this.numberOfElements = numberOfElements;
+        this.dType = DType.QINT8;
+        this.blockSize = GGMLType.Q8_0.getBlockSize();
+
+        // Each block contains:
+        // - 2 bytes for float16 scale
+        // - blockSize bytes for quantized values
+        this.bytesPerBlock = Float16.BYTES + blockSize;
+
+        // Calculate number of blocks needed to store all elements
+        int numBlocks = (numberOfElements + blockSize - 1) / blockSize;
+
+        // Calculate total storage size in bytes, including header
+        long dataSize = (long)numBlocks * bytesPerBlock;
+        long totalSize = dataSize;
+
+        if (DEBUG_TENSOR_Q8) {
+            System.out.println("Debug info:");
+            System.out.println("Number of elements: " + numberOfElements);
+            System.out.println("Block size: " + blockSize);
+            System.out.println("Bytes per block: " + bytesPerBlock);
+            System.out.println("Number of blocks: " + numBlocks);
+            System.out.println("Data size: " + dataSize);
+            System.out.println("Total size with header: " + totalSize);
+        }
+
+        this.tensorStorage = ByteArray.fromSegment(memorySegment, numberOfElements);
     }
 
     private float[] getBlockValues(int blockIndex) {
