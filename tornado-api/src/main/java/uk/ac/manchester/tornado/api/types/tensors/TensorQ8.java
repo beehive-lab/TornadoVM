@@ -24,15 +24,30 @@ import java.lang.foreign.ValueLayout;
 
 public class TensorQ8 extends Tensor {
     private final boolean  DEBUG_TENSOR_Q8 = false;
+    /** Storage for the quantized tensor data including scales and values. */
     private final ByteArray tensorStorage;
+
+    /** Total number of elements in the tensor. */
     private final int numberOfElements;
+
+    /** Shape information for the tensor. */
     private final Shape shape;
+
+    /** Data type of the tensor (QINT8). */
     private final DType dType;
 
+    /** Number of values in each quantization block. */
     private final int blockSize;
+
+    /** Total bytes per block including scale and quantized values. */
     private final int bytesPerBlock;
 
-
+    /**
+     * Constructs a new Q8 tensor with the specified shape.
+     * Allocates memory and initializes the tensor storage.
+     *
+     * @param shape The shape of the tensor to create
+     */
     public TensorQ8(Shape shape) {
         super(DType.QINT8, shape);
         this.shape = shape;
@@ -65,6 +80,13 @@ public class TensorQ8 extends Tensor {
         this.tensorStorage = new ByteArray(numberOfElements, totalSize);
     }
 
+    /**
+     * Constructs a Q8 tensor using existing memory segment data.
+     * Used for creating a tensor view of pre-existing quantized data.
+     *
+     * @param numberOfElements The number of elements in the tensor
+     * @param memorySegment The memory segment containing the quantized data
+     */
     public TensorQ8(int numberOfElements, MemorySegment memorySegment) {
         super(DType.QINT8, new Shape(numberOfElements));
         this.shape = new Shape(numberOfElements);
@@ -113,6 +135,15 @@ public class TensorQ8 extends Tensor {
         return values;
     }
 
+    /**
+     * Gets a single float value from the tensor at the specified index.
+     * The value is dequantized using the scale factor from its containing block.
+     *
+     * @param index The index of the value to retrieve
+     * @return The dequantized float value
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     * @throws RuntimeException if there is an error reading the value
+     */
     public float getFloat(int index) {
         if (index < 0 || index >= numberOfElements) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + numberOfElements);
@@ -131,6 +162,15 @@ public class TensorQ8 extends Tensor {
         }
     }
 
+    /**
+     * Sets a float value in the tensor at the specified index.
+     * Updates the entire block's scale factor when any value in the block changes.
+     *
+     * @param index The index where the value should be set
+     * @param value The float value to set
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     * @throws RuntimeException if there is an error writing the value
+     */
     public void setFloat(int index, float value) {
         if (index < 0 || index >= numberOfElements) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + numberOfElements);
@@ -162,6 +202,14 @@ public class TensorQ8 extends Tensor {
             throw new RuntimeException("Failed to set float at index " + index +  " (block " + blockIndex + ", offset " + blockOffset + "): " + e.getMessage());
         }
     }
+
+    /**
+     * Computes the optimal scale factor for a block of values.
+     * The scale is chosen to maximize the use of the INT8 range (-128 to 127).
+     *
+     * @param values The array of float values to compute the scale for
+     * @return The optimal scale factor for quantizing the values
+     */
 
     private float computeOptimalScale(float[] values) {
         float maxAbs = 1e-5f;
