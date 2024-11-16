@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 public class TensorQ8 extends Tensor {
-    private final boolean  DEBUG_TENSOR_Q8 = false;
+    private final boolean  DEBUG_TENSOR_Q8 = true;
     private final ByteArray tensorStorage;
     private final int numberOfElements;
     private final Shape shape;

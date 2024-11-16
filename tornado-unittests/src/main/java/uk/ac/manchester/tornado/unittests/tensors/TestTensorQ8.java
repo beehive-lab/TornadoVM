@@ -333,4 +333,95 @@ public class TestTensorQ8 extends TornadoTestBase {
                     relativeError < 0.1f);  // Allow 10% relative error
         }
     }
+
+    @Test
+    public void testNonAlignedBlockSize() {
+        // Test tensor with size not aligned to block size
+        int blockSize = GGMLType.Q8_0.getBlockSize();
+        Shape shape = new Shape(blockSize + 5); // Intentionally non-aligned
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        // Set values in both full and partial blocks
+        for (int i = 0; i < shape.getSize(); i++) {
+            float value = i * 1.5f;
+            tensorQ8.setFloat(i, value);
+            float retrieved = tensorQ8.getFloat(i);
+            Assert.assertEquals("Value mismatch in non-aligned blocks",
+                    value, retrieved, 0.1f);
+        }
+    }
+
+    @Test
+    public void testZeroCrossing() {
+        // Test values around zero to verify sign handling
+        Shape shape = new Shape(GGMLType.Q8_0.getBlockSize());
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        // Test different ranges of values around zero
+        float[][] testRanges = {
+                // Small values - might get quantized to zero
+                {-0.001f, -0.0001f, 0.0f, 0.0001f, 0.001f},
+                // Medium values - should preserve sign
+                {-0.1f, -0.05f, 0.0f, 0.05f, 0.1f},
+                // Larger values - should definitely preserve sign
+                {-1.0f, -0.5f, 0.0f, 0.5f, 1.0f}};
+
+        System.out.println("\nTesting zero crossing behavior:");
+        for (int range = 0; range < testRanges.length; range++) {
+            System.out.printf("\nRange %d:%n", range);
+
+            // Set values from current range
+            for (int i = 0; i < testRanges[range].length; i++) {
+                float value = testRanges[range][i];
+                tensorQ8.setFloat(i, value);
+                float retrieved = tensorQ8.getFloat(i);
+
+                System.out.printf("Value: %10.6f -> Retrieved: %10.6f%n", value, retrieved);
+
+                if (Math.abs(value) >= 0.01f) {  // Only check sign for values >= 0.01
+                    Assert.assertEquals(String.format("Sign mismatch for value %.6f", value), Math.signum(value), Math.signum(retrieved), 0.0f);
+                } else {
+                    // For very small values, just verify they're close to zero
+                    Assert.assertTrue(String.format("Small value %.6f not close enough to zero (got %.6f)", value, retrieved), Math.abs(retrieved) < 0.01f);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testRepeatedUpdates() {
+        // Test stability when repeatedly updating values
+        Shape shape = new Shape(GGMLType.Q8_0.getBlockSize());
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        float testValue = 1.0f;
+        int testIndex = 0;
+
+        // Repeatedly update same value
+        for (int i = 0; i < 100; i++) {
+            tensorQ8.setFloat(testIndex, testValue);
+            float retrieved = tensorQ8.getFloat(testIndex);
+            Assert.assertEquals("Value unstable after repeated updates",
+                    testValue, retrieved, 0.1f);
+        }
+    }
+
+    @Test
+    public void testAlternatingPatterns() {
+        // Test alternating positive/negative pattern
+        Shape shape = new Shape(GGMLType.Q8_0.getBlockSize());
+        TensorQ8 tensorQ8 = new TensorQ8(shape);
+
+        for (int i = 0; i < shape.getSize(); i++) {
+            float value = (i % 2 == 0) ? 1.0f : -1.0f;
+            tensorQ8.setFloat(i, value);
+        }
+
+        for (int i = 0; i < shape.getSize(); i++) {
+            float expected = (i % 2 == 0) ? 1.0f : -1.0f;
+            float retrieved = tensorQ8.getFloat(i);
+            Assert.assertEquals("Alternating pattern not preserved",
+                    expected, retrieved, 0.1f);
+        }
+    }
 }
