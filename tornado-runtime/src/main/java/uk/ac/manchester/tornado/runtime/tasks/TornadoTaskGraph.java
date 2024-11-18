@@ -1100,18 +1100,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (StreamingObject inputStreamObject : inputModesObjects) {
             if (streamOutObjects.contains(inputStreamObject.object)) {
                 // READ-WRITE
-                freeDeviceMemoryObject(inputStreamObject, Access.READ_WRITE);
+                freeDeviceMemoryObject(inputStreamObject.object, Access.READ_WRITE);
             } else {
-                freeDeviceMemoryObject(inputStreamObject, Access.READ_ONLY);
+                freeDeviceMemoryObject(inputStreamObject.object, Access.READ_ONLY);
             }
         }
 
         for (StreamingObject outputStreamObject : outputModeObjects) {
             if (streamInObjects.contains(outputStreamObject.object)) {
                 // READ-WRITE
-                freeDeviceMemoryObject(outputStreamObject, Access.READ_WRITE);
+                freeDeviceMemoryObject(outputStreamObject.object, Access.READ_WRITE);
             } else {
-                freeDeviceMemoryObject(outputStreamObject, Access.WRITE_ONLY);
+                freeDeviceMemoryObject(outputStreamObject.object, Access.WRITE_ONLY);
             }
         }
        // inputModesObjects.forEach(inputStreamObject -> freeDeviceMemoryObject(inputStreamObject.getObject()));
