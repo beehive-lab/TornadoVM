@@ -56,9 +56,10 @@ public class OCLBufferProvider extends TornadoBufferProvider {
             case READ_WRITE:
                 return OCLMemFlags.CL_MEM_READ_WRITE;
             default:
-                shouldNotReachHere();
+                //shouldNotReachHere();
+                return OCLMemFlags.CL_MEM_READ_ONLY;
         }
-        return -1;
+       // return -1;
     }
 
 }
