@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.function.Function;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
@@ -42,15 +43,15 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     private PTXArrayWrapper<E>[] wrappers;
     private long setSubRegionSize;
 
-    public PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, long batchSize) {
-        this(device, factory);
+    public PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, long batchSize, Access access) {
+        this(device, factory, access);
     }
 
-    private PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory) {
-        super(device, JavaKind.Object);
+    private PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, Access access) {
+        super(device, JavaKind.Object, access);
         this.deviceContext = device;
         innerWrapperFactory = factory;
-        tableWrapper = new PTXLongArrayWrapper(device);
+        tableWrapper = new PTXLongArrayWrapper(device, access);
     }
 
     @Override
@@ -89,7 +90,7 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object value, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
 
         if (batchSize > 0) {
             throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported. BatchSize = " + batchSize + " (bytes)");
@@ -100,16 +101,16 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
         }
         addresses = new long[Array.getLength(value)];
         wrappers = new PTXArrayWrapper[Array.getLength(value)];
-        tableWrapper.allocate(addresses, batchSize);
-        allocateElements((T) value, batchSize);
+        tableWrapper.allocate(addresses, batchSize, access);
+        allocateElements((T) value, batchSize, access);
     }
 
-    private void allocateElements(T values, long batchSize) {
+    private void allocateElements(T values, long batchSize, Access access) {
         final E[] elements = innerCast(values);
         try {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
-                wrappers[i].allocate(elements[i], batchSize);
+                wrappers[i].allocate(elements[i], batchSize, access);
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {

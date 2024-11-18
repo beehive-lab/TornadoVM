@@ -24,13 +24,14 @@
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXLongArrayWrapper extends PTXArrayWrapper<long[]> {
     private long setSubRegionSize;
 
-    public PTXLongArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Long);
+    public PTXLongArrayWrapper(PTXDeviceContext deviceContext, Access access) {
+        super(deviceContext, JavaKind.Long, access);
     }
 
     @Override
