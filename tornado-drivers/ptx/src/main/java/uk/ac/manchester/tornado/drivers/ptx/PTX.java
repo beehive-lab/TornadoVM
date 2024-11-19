@@ -118,7 +118,7 @@ public class PTX {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, numArgs, Access.NONE);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values

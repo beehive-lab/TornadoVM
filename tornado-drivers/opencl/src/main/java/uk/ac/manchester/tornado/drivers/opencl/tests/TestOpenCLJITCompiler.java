@@ -138,7 +138,7 @@ public class TestOpenCLJITCompiler {
         tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3, Access.NONE);
 
         // Fill header of call callWrapper with empty values
         callWrapper.setKernelContext(new HashMap<>());

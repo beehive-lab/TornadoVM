@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -52,8 +53,9 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     private long bufferSize;
     private long setSubRegionSize;
     private final TornadoLogger logger;
+    private final Access access;
 
-    public SPIRVArrayWrapper(SPIRVDeviceContext deviceContext, JavaKind javaKind, long batchSize) {
+    public SPIRVArrayWrapper(SPIRVDeviceContext deviceContext, JavaKind javaKind, long batchSize, Access access) {
         this.deviceContext = deviceContext;
         this.kind = javaKind;
         this.batchSize = batchSize;
@@ -61,13 +63,14 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         this.bufferSize = INIT_VALUE;
         this.bufferOffset = 0;
         this.logger = new TornadoLogger(this.getClass());
+        this.access = access;
 
         this.arrayLengthOffset = TornadoCoreRuntime.getVMConfig().arrayOopDescLengthOffset();
         this.arrayHeaderSize = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(kind);
     }
 
-    protected SPIRVArrayWrapper(final T array, final SPIRVDeviceContext device, final JavaKind kind, long batchSize) {
-        this(device, kind, batchSize);
+    protected SPIRVArrayWrapper(final T array, final SPIRVDeviceContext device, final JavaKind kind, long batchSize, Access access) {
+        this(device, kind, batchSize, access);
         bufferSize = sizeOf(array);
     }
 
@@ -238,7 +241,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object objectReference, long batchSize) {
+    public void allocate(Object objectReference, long batchSize, Access access) {
         final T hostArray = cast(objectReference);
         if (batchSize <= 0) {
             bufferSize = sizeOf(hostArray);
@@ -250,7 +253,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
             logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
@@ -263,7 +266,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
     public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getBufferProvider().markBufferReleased(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -290,7 +293,7 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
 }

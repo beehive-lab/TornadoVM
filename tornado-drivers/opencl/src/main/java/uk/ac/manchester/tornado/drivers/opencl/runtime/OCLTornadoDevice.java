@@ -225,7 +225,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs, Access access) {
         return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
     }
 

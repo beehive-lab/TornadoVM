@@ -52,7 +52,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      *     The number of arguments for the kernel call wrapper.
      * @return The created {@link KernelStackFrame} object.
      */
-    KernelStackFrame createKernelStackFrame(long executionId, int numArgs);
+    KernelStackFrame createKernelStackFrame(long executionId, int numArgs, Access access);
 
     /**
      * It creates or reuses an atomic buffer for the specified integer array.

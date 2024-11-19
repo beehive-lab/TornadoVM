@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
@@ -127,7 +128,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     }
 
     @Override
-    public long allocateMemory(int deviceIndex, long numBytes) {
+    public long allocateMemory(int deviceIndex, long numBytes, Access access) {
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
         LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDeviceRuntime();
         ZeDeviceMemAllocDescriptor deviceMemAllocDesc = createDeviceDescription();

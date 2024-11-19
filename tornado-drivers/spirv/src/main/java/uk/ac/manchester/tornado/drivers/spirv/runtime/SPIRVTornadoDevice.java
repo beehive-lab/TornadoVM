@@ -112,8 +112,8 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
-        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs, Access access) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs, access);
     }
 
     @Override
@@ -237,56 +237,56 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         throw new RuntimeException("Unsupported");
     }
 
-    private XPUBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
+    private XPUBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize, Access access) {
         if (klass == int[].class) {
-            return new SPIRVIntArrayWrapper(device, batchSize);
+            return new SPIRVIntArrayWrapper(device, batchSize, access);
         } else if (klass == float[].class) {
-            return new SPIRVFloatArrayWrapper(device, batchSize);
+            return new SPIRVFloatArrayWrapper(device, batchSize, access);
         } else if (klass == double[].class) {
-            return new SPIRVDoubleArrayWrapper(device, batchSize);
+            return new SPIRVDoubleArrayWrapper(device, batchSize, access);
         } else if (klass == short[].class) {
-            return new SPIRVShortArrayWrapper(device, batchSize);
+            return new SPIRVShortArrayWrapper(device, batchSize, access);
         } else if (klass == byte[].class) {
-            return new SPIRVByteArrayWrapper(device, batchSize);
+            return new SPIRVByteArrayWrapper(device, batchSize, access);
         } else if (klass == long[].class) {
-            return new SPIRVLongArrayWrapper(device, batchSize);
+            return new SPIRVLongArrayWrapper(device, batchSize, access);
         } else if (klass == char[].class) {
-            return new SPIRVCharArrayWrapper(device, batchSize);
+            return new SPIRVCharArrayWrapper(device, batchSize, access);
         }
         throw new RuntimeException("[SPIRV] Array Wrapper Not Implemented yet: " + klass);
     }
 
-    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
+    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize, Access access) {
         XPUBuffer result = null;
 
         if (componentType == int[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVIntArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVIntArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == short[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVShortArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVShortArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == char[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVCharArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVCharArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == byte[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVByteArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVByteArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == float[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVFloatArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVFloatArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == double[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVDoubleArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVDoubleArrayWrapper(context, batchSize, access), batchSize, access);
         } else if (componentType == long[].class) {
-            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVLongArrayWrapper(context, batchSize), batchSize);
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVLongArrayWrapper(context, batchSize, access), batchSize, access);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }
         return result;
     }
 
-    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
+    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize, Access access) {
         if (type.isArray()) {
             if (!type.getComponentType().isArray()) {
-                return createArrayWrapper(type, deviceContext, batchSize);
+                return createArrayWrapper(type, deviceContext, batchSize, access);
             } else {
                 final Class<?> componentType = type.getComponentType();
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
-                    return createMultiArrayWrapper(componentType, type, deviceContext, batchSize);
+                    return createMultiArrayWrapper(componentType, type, deviceContext, batchSize, access);
                 } else {
                     throw new TornadoRuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented.");
                 }
@@ -295,15 +295,15 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             if (object instanceof AtomicInteger) {
                 throw new TornadoRuntimeException("[ERROR] AtomicInteger types are not supported yet.");
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
-                return new SPIRVVectorWrapper(deviceContext, object, batchSize);
+                return new SPIRVVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
-                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize);
+                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access);
             } else if (object instanceof TornadoNativeArray && !(object instanceof Tensor)) {
                 // For Tensor objects, we use the SPIRVObjectWrapper
-                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize);
+                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access);
             } else {
                 // Possible a vector type, we encapsulate in an object
-                return new SPIRVObjectWrapper(deviceContext, object);
+                return new SPIRVObjectWrapper(deviceContext, object, access);
             }
         }
         return null;
@@ -327,7 +327,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
-        buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
+        buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize, access);
         state.setXPUBuffer(buffer);
         buffer.allocate(object, batchSize, access);
         return buffer;

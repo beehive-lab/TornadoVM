@@ -176,7 +176,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs, Access access) {
         return null;
     }
 

@@ -35,7 +35,7 @@ public class SPIRVBufferProvider extends TornadoBufferProvider {
 
     @Override
     public long allocateBuffer(long size, Access access) {
-        return ((SPIRVDeviceContext) deviceContext).getSpirvContext().allocateMemory(deviceContext.getDeviceIndex(), size);
+        return ((SPIRVDeviceContext) deviceContext).getSpirvContext().allocateMemory(deviceContext.getDeviceIndex(), size, access);
     }
 
     @Override
