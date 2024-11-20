@@ -66,6 +66,7 @@ public final class ByteArray extends TornadoNativeArray {
     public ByteArray(int numberOfElements, long requiredStorageSize) {
         this.numberOfElements = numberOfElements;
         baseIndex=0;
+        this.segmentByteSize = requiredStorageSize;
         segment = Arena.ofAuto().allocate(requiredStorageSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
