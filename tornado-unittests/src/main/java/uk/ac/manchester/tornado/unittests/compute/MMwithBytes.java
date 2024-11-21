@@ -37,6 +37,18 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertFalse;
 
+/**
+ * Test to check the infinity values are properly replaced for code gen.
+ *
+ * <p>
+ * How to run?
+ * </p>
+ *
+ * <code>
+ * tornado-test -V uk.ac.manchester.tornado.unittests.compute.MMwithBytes
+ * </code>
+ *
+ */
 public class MMwithBytes extends TornadoTestBase {
 
     @Test
@@ -93,8 +105,6 @@ public class MMwithBytes extends TornadoTestBase {
             assertFalse("Output contains NaN at index " + i, Float.isNaN(result));
             assertFalse("Output contains Infinity at index " + i, Float.isInfinite(result));
         }
-
-        // Optionally, add further checks against a precomputed result array if available
     }
 
     public static void matmulTornado(KernelContext context, ByteArray thisx, FloatArray that, FloatArray out, int dim1) {
