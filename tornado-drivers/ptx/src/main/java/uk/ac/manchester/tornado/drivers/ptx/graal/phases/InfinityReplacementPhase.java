@@ -18,7 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
+package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 
 import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.nodes.GraphState;
