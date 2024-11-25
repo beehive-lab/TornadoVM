@@ -164,7 +164,7 @@ public class TornadoSketcher {
 
             sketchTier.apply(graph, highTierContext);
             graph.maybeCompress();
-            methodAccesses = highTierContext.getAccesses();
+
             // Compile all non-inlined call-targets into a single compilation-unit
             graph.getInvokes() //
                     .forEach(invoke -> { //
@@ -176,12 +176,14 @@ public class TornadoSketcher {
                         buildSketch(newRequest);
                     });
 
-
+            Access[] highTierAccesses = highTierContext.getAccesses();
             graph.getInvokes().forEach(invoke -> {
                 // Merge the accesses of the caller with the accesses of the callee
                 Sketch sketch = lookup(invoke.callTarget().targetMethod(), backendIndex, deviceIndex);
-                mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
+                mergeAccesses(highTierAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
+
+            methodAccesses = highTierAccesses;
 
             return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex());
 
