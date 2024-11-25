@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -102,7 +101,6 @@ public class TornadoGraphBuilder {
     public static TornadoGraph buildGraph(TornadoExecutionContext executionContext, ByteBuffer buffer) {
         TornadoGraph graph = new TornadoGraph();
         Access[] accesses = null;
-//        HashMap<Object, Access> accesses = null;
         SchedulableTask task;
         AbstractNode[] args = null;
         ContextNode context = null;

@@ -227,7 +227,6 @@ public class TornadoExecutionContext {
             newLocalObjectState.setStreamOut(oldLocalObjectState.isStreamOut());
 
             index = oldIndex;
-            // TODO: check
             objects.add(index, newObj);
             Access access = objectsAccesses.get(oldObj);
             objectsAccesses.remove(oldObj);

@@ -127,10 +127,9 @@ public class SPIRVOCLContext extends SPIRVContext {
             case READ_WRITE:
                 return OCLMemFlags.CL_MEM_READ_WRITE;
             default:
-                //shouldNotReachHere();
-                return OCLMemFlags.CL_MEM_READ_ONLY;
+                // if access has not been deducted by sketcher set it as RW
+                return OCLMemFlags.CL_MEM_READ_WRITE;
         }
-        // return -1;
     }
 
     @Override

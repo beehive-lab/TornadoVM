@@ -174,13 +174,6 @@ public class TornadoVMInterpreter {
             TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
             dataObjectStates[i] = graphExecutionContext.getLocalStateObject(object, access).getDataObjectState();
         }
-//        int i = 0;
-//        for (Object object : objects.keySet()) {
-//            Access access = objects.get(object);
-//            TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
-//            dataObjectStates[i] = graphExecutionContext.getLocalStateObject(object, access).getDataObjectState();
-//            i++;
-//        }
     }
 
     private void rewindBufferToBegin() {
@@ -418,19 +411,6 @@ public class TornadoVMInterpreter {
                 tornadoVMBytecodeList.append(verbose).append("\n");
             }
         }
-//        int i = 0;
-//        for (Object object : this.objects.keySet()) {
-//        //for (int i = 0; i < objects.length; i++) {
-//            objects[i] = object;
-//            accesses[i] = this.objects.get(object);
-//            objectStates[i] = resolveObjectState(args[i]);
-//
-//            if (TornadoOptions.PRINT_BYTECODES) {
-//                String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
-//                tornadoVMBytecodeList.append(verbose).append("\n");
-//            }
-//            i++;
-//        }
 
         long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
 

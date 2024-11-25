@@ -32,7 +32,6 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
 
-import java.util.HashMap;
 
 public class TornadoSketchTierContext extends HighTierContext {
 
@@ -42,7 +41,6 @@ public class TornadoSketchTierContext extends HighTierContext {
      * Contains the argument accesses of the {@link #method}. The array gets populated in the {@link TornadoDataflowAnalysis} phase.
      * It includes accesses of arguments passed to non-inlined callees of the {@link #method}.
      */
-    //private final HashMap<Object, Access> argumentAccess;
     private final Access[] argumentAccess;
     private boolean batchWriteThreadIndex;
 
@@ -53,7 +51,6 @@ public class TornadoSketchTierContext extends HighTierContext {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
         int parameterCount = method.getParameters().length;
-        //this.argumentAccess = new HashMap<>();
         this.argumentAccess = new Access[method.isStatic() ? parameterCount : parameterCount + 1];
         device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex).getDevice(deviceIndex);
     }
@@ -66,7 +63,6 @@ public class TornadoSketchTierContext extends HighTierContext {
         return method;
     }
 
-    //public HashMap<Object, Access> getAccesses() {
     public Access[] getAccesses() {
         return argumentAccess;
     }

@@ -21,15 +21,11 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 
-import java.util.HashMap;
-
 public interface SchedulableTask {
 
     Object[] getArguments();
 
     Access[] getArgumentsAccess();
-
-    //HashMap<Object, Access> getArgumentsAccess();
 
     TaskContextInterface meta();
 

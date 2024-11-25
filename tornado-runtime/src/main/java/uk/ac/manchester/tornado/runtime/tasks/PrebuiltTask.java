@@ -42,7 +42,6 @@ public class PrebuiltTask implements SchedulableTask {
     private final String entryPoint;
     private final String filename;
     private final Access[] argumentsAccess;
-//    private final HashMap<Object, Access> argumentsAccess;
     protected long batchThreads;
     protected int batchNumber;
     protected long batchSize;
