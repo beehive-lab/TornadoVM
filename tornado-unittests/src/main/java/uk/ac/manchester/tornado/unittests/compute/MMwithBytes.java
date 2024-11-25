@@ -69,7 +69,7 @@ public class MMwithBytes extends TornadoTestBase {
             byteArrayWeights.set(offset, (byte) 0);          // scale byte 1
             byteArrayWeights.set(offset + 1, (byte) 0);      // scale byte 2
             for (int j = 2; j < 2 + 32; j++) {
-                byteArrayWeights.set(offset + j, (byte) (Math.random() * 255 - 128)); // random quantized values
+                byteArrayWeights.set(offset + j, (byte) ((i*3f) * 255 - 128)); // random quantized values
             }
         }
 
