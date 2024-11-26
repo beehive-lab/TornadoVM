@@ -29,12 +29,14 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -170,4 +172,99 @@ public class MMwithBytes extends TornadoTestBase {
         }
         return 0.0f;
     }
+
+    public static void positiveInfinity(FloatArray positiveInfinity) {
+        for (@Parallel int i = 0; i < positiveInfinity.getSize(); i++) {
+            if (positiveInfinity.get(i) != Float.POSITIVE_INFINITY) {
+                positiveInfinity.set(i, Float.NEGATIVE_INFINITY);
+            }
+        }
+    }
+
+    @Test
+    public void testPositiveInfinity() throws TornadoExecutionPlanException {
+        final int N = 1024;
+        FloatArray positiveInfinityArray = new FloatArray(N);
+
+        positiveInfinityArray.init(Float.POSITIVE_INFINITY);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, positiveInfinityArray)
+                .task("t0", MMwithBytes::positiveInfinity , positiveInfinityArray)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, positiveInfinityArray);
+
+
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        // Validate that all values remain Float.POSITIVE_INFINITY after TornadoVM processing
+        for (int i = 0; i < N; i++) {
+            assertEquals(Float.POSITIVE_INFINITY, positiveInfinityArray.get(i), 0.0f);
+        }
+    }
+
+    public static void negativeInfinity(FloatArray negativeInfinityArray) {
+        for (@Parallel int i = 0; i < negativeInfinityArray.getSize(); i++) {
+            if (negativeInfinityArray.get(i) != Float.NEGATIVE_INFINITY) {
+                negativeInfinityArray.set(i, Float.POSITIVE_INFINITY);
+            }
+        }
+    }
+
+    @Test
+    public void testNegativeInfinity() throws TornadoExecutionPlanException {
+        final int N = 1024;
+        FloatArray negativeInfinityArray = new FloatArray(N);
+
+        negativeInfinityArray.init(Float.NEGATIVE_INFINITY);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray)
+                .task("t0", MMwithBytes::negativeInfinity , negativeInfinityArray)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
+
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        // Validate that all values remain Float.NEGATIVE_INFINITY after TornadoVM processing
+        for (int i = 0; i < N; i++) {
+            assertEquals(Float.NEGATIVE_INFINITY, negativeInfinityArray.get(i), 0.0f);
+        }
+    }
+
+    public static void negativeInfinityAssignment(FloatArray x) {
+        for (@Parallel int i = 0; i < x.getSize(); i++) {
+            x.set(i, Float.NEGATIVE_INFINITY);
+        }
+    }
+
+    @Test
+    public void testNegativeInfinityAssignment() throws TornadoExecutionPlanException {
+        final int N = 1024;
+        FloatArray negativeInfinityArray = new FloatArray(N);
+
+        negativeInfinityArray.init(2f);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray)
+                .task("t0", MMwithBytes::negativeInfinityAssignment, negativeInfinityArray)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        // Validate that all values remain Float.NEGATIVE_INFINITY after TornadoVM processing
+        for (int i = 0; i < N; i++) {
+            assertEquals(Float.NEGATIVE_INFINITY, negativeInfinityArray.get(i), 0.0f);
+        }
+    }
+
 }
