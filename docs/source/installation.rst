@@ -462,7 +462,7 @@ Then the following package should be installed:
 Installation for RISC-V RVV 1.0 on Linux
 ========================================
 
-The RISC-V port is experimental, but users can try on real RISC-V hardware. 
+The RISC-V port is experimental, but users can try it on real RISC-V hardware. 
 The following instructions have been tested on Linux Bianbu OS 1.0.15 on a Bananapi F3 SBC. 
 
 
