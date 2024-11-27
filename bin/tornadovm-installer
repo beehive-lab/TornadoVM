@@ -36,7 +36,7 @@ import installer_config as config
 ## Configuration
 ## ################################################################
 __DIRECTORY_DEPENDENCIES__ = os.path.join("etc", "dependencies")
-__VERSION__ = "v1.0.7-dev"
+__VERSION__ = "v1.0.9-dev"
 
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
@@ -47,6 +47,7 @@ __SUPPORTED_JDKS__ = [
     config.__ZULU21__,
     config.__TEMURIN21__,
     config.__SAPMACHINE21__,
+    config.__LIBERICA21__,
 ]
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
@@ -71,7 +72,8 @@ class TornadoInstaller:
             "x86_64"  : "x86_64",
             "amd64"   : "x86_64",
             "arm64"   : "arm64",
-            "aarch64" : "arm64"
+            "aarch64" : "arm64",
+            "riscv64" : "riscv64"
         }
         machine = platform.machine().lower()
         return compatibleMachineTypes[machine]
@@ -96,8 +98,13 @@ class TornadoInstaller:
     def downloadCMake(self):
         url = config.CMAKE[self.osPlatform][self.hardware]
         if url == None:
-            print("CMake not configured for this OS/ machine configuration: {self.osPlatform}/ {self.hardware}")
-            sys.exit(0)
+            ## When using the RISC-V installer, CMAKE will be None
+            ## Only for this case, we can use the system cmake instead.
+            if (self.hardware == "riscv64"):
+                return
+            else:
+                print("CMake not configured for this OS/ machine configuration: {self.osPlatform}/ {self.hardware}")
+                sys.exit(0)
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
@@ -375,6 +382,7 @@ def listSupportedJDKs():
     zulu-jdk-21       : Install TornadoVM with Azul Zulu JDK 21
     temurin-jdk-21    : Install TornadoVM with Eclipse Temurin JDK 21
     sapmachine-jdk-21 : Install TornadoVM with SapMachine OpenJDK 21
+    liberica-jdk-21   : Install TornadoVM with Liberica OpenJDK 21 (Only option for RISC-V 64)
 
     Usage:
       $ ./bin/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
