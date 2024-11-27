@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTier
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.PartialLoopUnrollPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFP64SupportPhase;
@@ -96,6 +97,8 @@ public class SPIRVLowTier extends TornadoLowTier {
         if (TornadoOptions.MATH_OPTIMIZATIONS) {
             appendPhase(new InverseSquareRootPhase());
         }
+
+        appendPhase(new InfinityReplacementPhase());
 
         // TODO Atomics Phase for SPIRV (this is the last thing to support)
 
