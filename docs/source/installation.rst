@@ -466,7 +466,7 @@ The RISC-V port is experimental, but users can try it on real RISC-V hardware.
 The following instructions have been tested on Linux Bianbu OS 1.0.15 on a Bananapi F3 SBC. 
 
 
-The installation requires a patch for RISC-V. This patch disable `cmake-maven` pkugin for the native OpenCL part due to unsupported port for RISC-V. 
+The installation requires a patch that disables the `cmake-maven` plugin for the native OpenCL part due to unsupported port for RISC-V. 
 
 We have pushed a script that automatically applies the patch and builds TornadoVM to run on RISC-V. 
 
