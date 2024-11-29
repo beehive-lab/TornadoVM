@@ -24,8 +24,8 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
 public final class WithDynamicReconfiguration extends ExecutionPlanType {
 
-    final private Policy policy;
-    final private DRMode mode;
+    private final Policy policy;
+    private final DRMode mode;
 
     public WithDynamicReconfiguration(TornadoExecutionPlan parent, Policy policy, DRMode mode) {
         super(parent);

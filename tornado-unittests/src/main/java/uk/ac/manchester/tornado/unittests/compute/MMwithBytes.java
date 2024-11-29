@@ -71,7 +71,7 @@ public class MMwithBytes extends TornadoTestBase {
             byteArrayWeights.set(offset, (byte) 0);          // scale byte 1
             byteArrayWeights.set(offset + 1, (byte) 0);      // scale byte 2
             for (int j = 2; j < 2 + 32; j++) {
-                byteArrayWeights.set(offset + j, (byte) ((i*3f) * 255 - 128)); // random quantized values
+                byteArrayWeights.set(offset + j, (byte) ((i * 3f) * 255 - 128)); // random quantized values
             }
         }
 
@@ -90,10 +90,8 @@ public class MMwithBytes extends TornadoTestBase {
         workerGrid.setLocalWork(32, 1, 1);
 
         // Define the TaskGraph for matrix multiplication
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, byteArrayWeights, inputVector)
-                .task("t0", MMwithBytes::matmulTornado, new KernelContext(), byteArrayWeights, inputVector, outputVector, dim)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputVector);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, byteArrayWeights, inputVector).task("t0", MMwithBytes::matmulTornado, new KernelContext(),
+                byteArrayWeights, inputVector, outputVector, dim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputVector);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
@@ -110,8 +108,8 @@ public class MMwithBytes extends TornadoTestBase {
     }
 
     public static void matmulTornado(KernelContext context, ByteArray thisx, FloatArray that, FloatArray out, int dim1) {
-        final int BLOCK_SIZE = 32; // Assuming this is the block size used in quantization
-        final int BYTES_PER_BLOCK = 2 + BLOCK_SIZE; // 2 bytes for scale + block_size bytes for values
+        final int blockSize = 32; // Assuming this is the block size used in quantization
+        final int bytesPerBlock = 2 + blockSize; // 2 bytes for scale + block_size bytes for values
 
         int idx = context.globalIdx;
 
@@ -121,14 +119,14 @@ public class MMwithBytes extends TornadoTestBase {
         for (int j = 0; j < dim1; j++) {
             int index = thisOffset + j;
             // Calculate block position
-            int blockIndex = index / BLOCK_SIZE;
-            int withinBlockIndex = index % BLOCK_SIZE;
-            int blockOffset = blockIndex * BYTES_PER_BLOCK;
+            int blockIndex = index / blockSize;
+            int withinBlockIndex = index % blockSize;
+            int blockOffset = blockIndex * bytesPerBlock;
 
             // Read scale (float16) for this block
             int scaleByte1 = thisx.get(blockOffset) & 0xFF;
             int scaleByte2 = thisx.get(blockOffset + 1) & 0xFF;
-            short scaleFloat16 = (short)((scaleByte2 << 8) | scaleByte1);
+            short scaleFloat16 = (short) ((scaleByte2 << 8) | scaleByte1);
             float scale = decodeFloat16(scaleFloat16);
 
             // Read quantized value
@@ -148,9 +146,13 @@ public class MMwithBytes extends TornadoTestBase {
         int frac = value & 0x03FF;
 
         // Handle special cases
-        if (exp == 0x1F) return sign == 0 ? Float.POSITIVE_INFINITY : Float.NEGATIVE_INFINITY;
+        if (exp == 0x1F) {
+            return sign == 0 ? Float.POSITIVE_INFINITY : Float.NEGATIVE_INFINITY;
+        }
         if (exp == 0) {
-            if (frac == 0) return sign == 0 ? 0.0f : -0.0f;
+            if (frac == 0) {
+                return sign == 0 ? 0.0f : -0.0f;
+            }
             float result = frac * pow2(-24);
             return sign == 0 ? result : -result;
         }
@@ -163,7 +165,7 @@ public class MMwithBytes extends TornadoTestBase {
     private static float pow2(int n) {
         if (n >= 0) {
             if (n < 31) {
-                return (float)(1 << n);
+                return (float) (1 << n);
             }
             return Float.POSITIVE_INFINITY;
         }
@@ -183,17 +185,13 @@ public class MMwithBytes extends TornadoTestBase {
 
     @Test
     public void testPositiveInfinity() throws TornadoExecutionPlanException {
-        final int N = 1024;
-        FloatArray positiveInfinityArray = new FloatArray(N);
+        final int n = 1024;
+        FloatArray positiveInfinityArray = new FloatArray(n);
 
         positiveInfinityArray.init(Float.POSITIVE_INFINITY);
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, positiveInfinityArray)
-                .task("t0", MMwithBytes::positiveInfinity , positiveInfinityArray)
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, positiveInfinityArray).task("t0", MMwithBytes::positiveInfinity, positiveInfinityArray)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, positiveInfinityArray);
-
-
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
@@ -201,7 +199,7 @@ public class MMwithBytes extends TornadoTestBase {
         }
 
         // Validate that all values remain Float.POSITIVE_INFINITY after TornadoVM processing
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             assertEquals(Float.POSITIVE_INFINITY, positiveInfinityArray.get(i), 0.0f);
         }
     }
@@ -216,16 +214,13 @@ public class MMwithBytes extends TornadoTestBase {
 
     @Test
     public void testNegativeInfinity() throws TornadoExecutionPlanException {
-        final int N = 1024;
-        FloatArray negativeInfinityArray = new FloatArray(N);
+        final int n = 1024;
+        FloatArray negativeInfinityArray = new FloatArray(n);
 
         negativeInfinityArray.init(Float.NEGATIVE_INFINITY);
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray)
-                .task("t0", MMwithBytes::negativeInfinity , negativeInfinityArray)
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", MMwithBytes::negativeInfinity, negativeInfinityArray)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
-
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
@@ -233,7 +228,7 @@ public class MMwithBytes extends TornadoTestBase {
         }
 
         // Validate that all values remain Float.NEGATIVE_INFINITY after TornadoVM processing
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             assertEquals(Float.NEGATIVE_INFINITY, negativeInfinityArray.get(i), 0.0f);
         }
     }
@@ -246,14 +241,12 @@ public class MMwithBytes extends TornadoTestBase {
 
     @Test
     public void testNegativeInfinityAssignment() throws TornadoExecutionPlanException {
-        final int N = 1024;
-        FloatArray negativeInfinityArray = new FloatArray(N);
+        final int n = 1024;
+        FloatArray negativeInfinityArray = new FloatArray(n);
 
         negativeInfinityArray.init(2f);
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray)
-                .task("t0", MMwithBytes::negativeInfinityAssignment, negativeInfinityArray)
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", MMwithBytes::negativeInfinityAssignment, negativeInfinityArray)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -262,7 +255,7 @@ public class MMwithBytes extends TornadoTestBase {
         }
 
         // Validate that all values remain Float.NEGATIVE_INFINITY after TornadoVM processing
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             assertEquals(Float.NEGATIVE_INFINITY, negativeInfinityArray.get(i), 0.0f);
         }
     }
