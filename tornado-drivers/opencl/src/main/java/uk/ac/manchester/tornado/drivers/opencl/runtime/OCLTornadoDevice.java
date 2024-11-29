@@ -561,11 +561,26 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         return result;
     }
 
+    private HashMap<Access, Integer> getNumOfDistinctAccess(Access[] accesses) {
+        HashMap<Access, Integer> distinctAccesses = new HashMap<>();
+        for (Access access : accesses) {
+            if (distinctAccesses.containsKey(access)) {
+                int numOfAccesses = distinctAccesses.get(access);
+                distinctAccesses.replace(access, numOfAccesses, numOfAccesses + 1);
+            } else {
+                distinctAccesses.put(access, 1);
+            }
+        }
+        return distinctAccesses;
+    }
+
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        for (Access access : accesses) {
-            if (!bufferProvider.isNumFreeBuffersAvailable(objects.length, access)) {
+        HashMap<Access, Integer> distinctAccesses = getNumOfDistinctAccess(accesses);
+        for (Access access : distinctAccesses.keySet()) {
+            int numOfObjectsForAccessType = distinctAccesses.get(access);
+            if (!bufferProvider.isNumFreeBuffersAvailable(numOfObjectsForAccessType, access)) {
                 bufferProvider.resetBuffers(access);
             }
         }
