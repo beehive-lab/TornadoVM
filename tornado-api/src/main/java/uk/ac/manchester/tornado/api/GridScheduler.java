@@ -17,7 +17,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.security.Key;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
