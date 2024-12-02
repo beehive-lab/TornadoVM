@@ -456,6 +456,57 @@ Then the following package should be installed:
    $ apt-get install ocl-icd-opencl-dev
 
 
+
+.. _installation_riscv:
+
+Installation for RISC-V RVV 1.0 on Linux
+========================================
+
+The RISC-V port is experimental, but users can try it on real RISC-V hardware. 
+The following instructions have been tested on Linux Bianbu OS 1.0.15 on a Bananapi F3 SBC. 
+
+
+The installation requires a patch that disables the `cmake-maven` plugin for the native OpenCL part due to unsupported port for RISC-V. 
+
+We have pushed a script that automatically applies the patch and builds TornadoVM to run on RISC-V. 
+
+
+First, install the dependencies:
+
+.. code:: bash
+
+   sudo apt-get install python3-psutil cmake 
+
+
+Then, download the script to apply the patch:
+
+
+.. code:: bash
+
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/d79af888a9873f8a3b44e4cc35a8ae382684cdb2/apply-riscv-patch.sh 
+   bash apply-riscv-patch.sh 
+
+
+Run TornadoVM:
+
+.. code:: bash
+
+   source setvars.sh
+   tornado --devices 
+
+   Number of Tornado drivers: 1
+   Driver: OpenCL
+      Total number of OpenCL devices  : 1
+      Tornado device=0:0  (DEFAULT)
+        OPENCL --  [ComputeAorta] -- RefSi G1 RV64
+                Global Memory Size: 2.0 GB
+                Local Memory Size: 256.0 KB
+                Workgroup Dimensions: 3
+                Total Number of Block Threads: [1024]
+                Max WorkGroup Configuration: [1024, 1024, 1024]
+                Device OpenCL C version: OpenCL C 1.2 Clang 19.1.5
+
+
 IDE Code Formatter
 ====================
 

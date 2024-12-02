@@ -198,6 +198,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.compute.MMwithBytes"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestConcat"),
@@ -274,6 +275,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
+    "uk.ac.manchester.tornado.unittests.compute.MMwithBytes#testMatrixMultiplicationWithBytes",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGenTest#test02",
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testComputePi",
