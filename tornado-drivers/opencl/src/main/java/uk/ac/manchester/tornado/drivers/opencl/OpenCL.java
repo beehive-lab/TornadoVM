@@ -171,11 +171,11 @@ public class OpenCL {
             switch (access) {
                 case READ_WRITE:
                 case READ_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_ONLY);
                     tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState, Access.WRITE_ONLY);
                     break;
                 default:
                     break;
@@ -185,7 +185,7 @@ public class OpenCL {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionContextId, numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionContextId, numArgs, Access.NONE);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values

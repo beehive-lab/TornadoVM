@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
@@ -46,8 +47,8 @@ public class FieldBuffer {
         this.logger = new TornadoLogger(getClass());
     }
 
-    public void allocate(final Object ref, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        objectBuffer.allocate(getFieldValue(ref), batchSize);
+    public void allocate(final Object ref, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        objectBuffer.allocate(getFieldValue(ref), batchSize, access);
     }
 
     public void deallocate() {

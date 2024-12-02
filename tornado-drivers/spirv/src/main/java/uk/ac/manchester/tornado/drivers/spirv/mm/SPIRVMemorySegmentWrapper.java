@@ -26,6 +26,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -56,20 +57,24 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
     private long subregionSize;
 
-    public SPIRVMemorySegmentWrapper(SPIRVDeviceContext deviceContext, long batchSize) {
+    private Access access;
+
+    public SPIRVMemorySegmentWrapper(SPIRVDeviceContext deviceContext, long batchSize, Access access) {
         this.spirvDeviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.access = access;
     }
 
-    public SPIRVMemorySegmentWrapper(long bufferSize, SPIRVDeviceContext deviceContext, long batchSize) {
+    public SPIRVMemorySegmentWrapper(long bufferSize, SPIRVDeviceContext deviceContext, long batchSize, Access access) {
         this.spirvDeviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.access = access;
     }
 
     @Override
@@ -168,14 +173,14 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
         MemorySegment memorySegment = getSegmentWithHeader(reference);
         if (batchSize <= 0 && memorySegment != null) {
             bufferSize = memorySegment.byteSize();
-            bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+            bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
         } else {
             bufferSize = batchSize;
-            bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = spirvDeviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
         if (bufferSize <= 0) {
@@ -190,7 +195,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        spirvDeviceContext.getBufferProvider().markBufferReleased(bufferId);
+        spirvDeviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
         if (TornadoOptions.FULL_DEBUG) {
@@ -215,6 +220,6 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return spirvDeviceContext.getBufferProvider().deallocate();
+        return spirvDeviceContext.getBufferProvider().deallocate(access);
     }
 }

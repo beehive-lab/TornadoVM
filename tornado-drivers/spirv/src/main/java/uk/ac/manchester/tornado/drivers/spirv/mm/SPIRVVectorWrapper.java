@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -62,8 +63,9 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
+    private Access access;
 
-    public SPIRVVectorWrapper(final SPIRVDeviceContext device, final Object object, long batchSize) {
+    public SPIRVVectorWrapper(final SPIRVDeviceContext device, final Object object, long batchSize, Access access) {
         TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type, but found: " + object.getClass());
         this.deviceContext = device;
         this.batchSize = batchSize;
@@ -73,6 +75,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         this.kind = getJavaKind(payload.getClass());
         this.bufferSize = sizeOf(payload);
         this.logger = new TornadoLogger(this.getClass());
+        this.access = access;
     }
 
     public long getBatchSize() {
@@ -80,7 +83,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) {
+    public void allocate(Object value, long batchSize, Access access) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
         final Object hostArray = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (batchSize <= 0) {
@@ -93,7 +96,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
             logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
@@ -106,7 +109,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
     public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getBufferProvider().markBufferReleased(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -119,7 +122,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
     @Override

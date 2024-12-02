@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAI
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
@@ -48,9 +49,9 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         return DEVICE_AVAILABLE_MEMORY;
     }
 
-    public SPIRVKernelStackFrame createKernelStackFrame(long threadId, final int maxArgs) {
+    public SPIRVKernelStackFrame createKernelStackFrame(long threadId, final int maxArgs, Access access) {
         if (!spirvKernelStackFrame.containsKey(threadId)) {
-            long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
+            long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES, access);
             spirvKernelStackFrame.put(threadId, new SPIRVKernelStackFrame(kernelCallBuffer, maxArgs, deviceContext));
         }
         return spirvKernelStackFrame.get(threadId);

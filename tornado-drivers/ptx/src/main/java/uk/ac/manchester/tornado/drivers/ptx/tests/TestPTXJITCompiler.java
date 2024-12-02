@@ -127,7 +127,7 @@ public class TestPTXJITCompiler {
         DataObjectState stateC = new DataObjectState();
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY});
 
         final long executionPlanId = 0;
         // Copy-IN A
@@ -136,7 +136,7 @@ public class TestPTXJITCompiler {
         tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3, Access.NONE);
 
         callWrapper.setKernelContext(new HashMap<>());
 

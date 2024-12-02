@@ -24,16 +24,17 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
 
-    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
-        super(deviceContext, JavaKind.Double, batchSize);
+    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, long batchSize, Access access) {
+        super(deviceContext, JavaKind.Double, batchSize, access);
     }
 
-    protected OCLDoubleArrayWrapper(final double[] array, final OCLDeviceContext device, long batchSize) {
-        super(array, device, JavaKind.Double, batchSize);
+    protected OCLDoubleArrayWrapper(final double[] array, final OCLDeviceContext device, long batchSize, Access access) {
+        super(array, device, JavaKind.Double, batchSize, access);
     }
 
     @Override

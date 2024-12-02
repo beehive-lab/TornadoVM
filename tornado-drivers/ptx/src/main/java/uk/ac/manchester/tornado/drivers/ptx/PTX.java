@@ -104,11 +104,11 @@ public class PTX {
             switch (access) {
                 case READ_WRITE:
                 case READ_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_WRITE);
                     tornadoDevice.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState, Access.WRITE_ONLY);
                     break;
                 default:
                     break;
@@ -118,7 +118,7 @@ public class PTX {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, numArgs, Access.NONE);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values
