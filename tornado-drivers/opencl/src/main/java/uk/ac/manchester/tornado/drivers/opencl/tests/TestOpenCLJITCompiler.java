@@ -128,7 +128,7 @@ public class TestOpenCLJITCompiler {
         DataObjectState stateC = new DataObjectState();
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[] {Access.NONE, Access.NONE, Access.NONE});
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[] {Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY});
 
         long executionPlanId = 0;
 

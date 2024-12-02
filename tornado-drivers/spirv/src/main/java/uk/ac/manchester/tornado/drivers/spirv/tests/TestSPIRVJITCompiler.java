@@ -128,7 +128,7 @@ public class TestSPIRVJITCompiler {
         DataObjectState stateC = new DataObjectState();
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(spirvTornadoDevice);
 
-        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[]{Access.NONE, Access.NONE, Access.NONE});
+        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY});
 
         final long executionPlanId = 0;
 

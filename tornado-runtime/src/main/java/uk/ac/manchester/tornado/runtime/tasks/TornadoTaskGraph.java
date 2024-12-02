@@ -967,7 +967,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 isObjectForStreaming = true;
             }
 
-            // the correct access will be set later on by the TornadoDataflowAnalysis
+            // the access will be updated later on by the TornadoDataflowAnalysis if necessary
             executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setStreamIn(isObjectForStreaming);
 
             // List of input objects for the dynamic reconfiguration
@@ -1007,8 +1007,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // hash-set.
             if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
-                // the correct access will be set later on by the TornadoDataflowAnalysis
-                // CHECK HERE!!!!!
+                // the access will be updated later on by the TornadoDataflowAnalysis if necessary
                 executionContext.getLocalStateObject(functionParameter, Access.WRITE_ONLY).setStreamOut(true);
             }
 

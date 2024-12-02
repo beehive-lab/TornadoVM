@@ -70,7 +70,7 @@ public class TestVM {
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(device);
 
         // Allocate a
-        device.allocate(a, 0, objectStateA, Access.NONE);
+        device.allocate(a, 0, objectStateA, Access.READ_ONLY);
 
         final long executionPlanId = 0;
 
@@ -78,10 +78,10 @@ public class TestVM {
         device.ensurePresent(executionPlanId, a, objectStateA, null, 0, 0);
 
         // Allocate buffer B
-        device.allocate(b, 0, objectStateB, Access.NONE);
+        device.allocate(b, 0, objectStateB, Access.READ_ONLY);
 
         // Allocate buffer c
-        device.allocate(c, 0, objectStateC, Access.NONE);
+        device.allocate(c, 0, objectStateC, Access.WRITE_ONLY);
 
         // Stream IN buffer C
         device.streamIn(executionPlanId, c, 0, 0, objectStateC, null);

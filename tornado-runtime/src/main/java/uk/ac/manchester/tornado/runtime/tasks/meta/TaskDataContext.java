@@ -67,7 +67,6 @@ public class TaskDataContext extends AbstractRTContext {
         this.constantData = null;
         profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
-        //argumentsAccess = new HashMap<Object, Access>();
         Arrays.fill(argumentsAccess, Access.NONE);
 
         inspectLocalWork();
