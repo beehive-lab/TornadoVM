@@ -118,6 +118,7 @@ public final class CharArray extends TornadoNativeArray {
     public static CharArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / CHAR_BYTES);
+        ensureMultipleOfElementSize(byteSize, CHAR_BYTES);
         CharArray charArray = new CharArray(numElements);
         MemorySegment.copy(segment, 0, charArray.segment, charArray.baseIndex * CHAR_BYTES, byteSize);
         return charArray;

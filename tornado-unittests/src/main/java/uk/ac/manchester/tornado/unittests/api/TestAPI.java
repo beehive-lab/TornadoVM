@@ -495,5 +495,15 @@ public class TestAPI extends TornadoTestBase {
         }
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuildWithSegmentsWrongSize() {
+        final int num_elements = 10;
+        final int additional_bytes = 1;
+        final long byteSize = Integer.BYTES * num_elements + additional_bytes;
+
+        MemorySegment m = Arena.ofAuto().allocate(byteSize);
+        IntArray intArray = IntArray.fromSegment(m);
+    }
+
     // CHECKSTYLE:ON
 }

@@ -120,6 +120,7 @@ public final class DoubleArray extends TornadoNativeArray {
     public static DoubleArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / DOUBLE_BYTES);
+        ensureMultipleOfElementSize(byteSize, DOUBLE_BYTES);
         DoubleArray doubleArray = new DoubleArray(numElements);
         MemorySegment.copy(segment, 0, doubleArray.segment, doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
         return doubleArray;
