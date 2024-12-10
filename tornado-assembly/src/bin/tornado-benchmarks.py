@@ -21,6 +21,7 @@ import argparse
 import os
 import subprocess
 import sys
+import time
 
 try:
     __JAVA_HOME__ = os.environ["JAVA_HOME"]
@@ -246,6 +247,7 @@ def runBenchmarksFullCoverage(args):
             command += '"'
             print(command)
             os.system(command)
+            time.sleep(args.interval)
 
 
 def runMediumConfiguration(args):
@@ -273,6 +275,7 @@ def runMediumConfiguration(args):
             command += '"'
             print(command)
             os.system(command)
+            time.sleep(args.interval)
 
 
 def runWithJMH(args):
@@ -413,6 +416,13 @@ def parseArguments():
         dest="properties",
         default=False,
         help="Print dimensions and sizes for all benchmarks",
+    )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        dest="interval",
+        default=0.0,
+        help="Time interval (in seconds) to wait between execution of benchmarks. Default is 0 seconds.",
     )
     
     args = parser.parse_args()
