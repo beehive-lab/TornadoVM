@@ -303,5 +303,48 @@ public class TestExecutor extends TornadoTestBase {
         }
     }
 
+    /**
+     * Test Multi-Graphs in an execution plan
+     * 
+     * @throws TornadoExecutionPlanException
+     */
+    @Test
+    public void test06() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        TaskGraph tg1 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        TaskGraph tg2 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t1", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+
+            // Select graph 1 (tg2) to execute
+            executionPlan.withGraph(1).execute();
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+            // Select the graph 0 (tg1) to execute
+            executionPlan.withGraph(0).execute();
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+            // Select all graphs (tg1 and tg2) to execute.
+            executionPlan.withAllGraphs().execute();
+        }
+    }
     // CHECKSTYLE:ON
 }
