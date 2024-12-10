@@ -304,7 +304,9 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Test Multi-Graphs in an execution plan
+     * Test Multi-Graphs in an execution plan. An execution plan can hold and launch
+     * multiple immutable task graphs. This tests shows how to execute individual immutable
+     * task graphs in any order.
      * 
      * @throws TornadoExecutionPlanException
      */
@@ -331,6 +333,8 @@ public class TestExecutor extends TornadoTestBase {
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
 
             // Select graph 1 (tg2) to execute
+            // Once selected, every time we call the execute method,
+            // TornadoVM will launch the passed task-graph.
             executionPlan.withGraph(1).execute();
             for (int i = 0; i < c.getSize(); i++) {
                 assertEquals(a.get(i) + b.get(i), c.get(i));
@@ -343,6 +347,10 @@ public class TestExecutor extends TornadoTestBase {
             }
 
             // Select all graphs (tg1 and tg2) to execute.
+            // Since we selected individual task-graphs, we should be
+            // able to reverse this action and invoke all task-graph
+            // again. This is achieved with the `withAllGraphs` from the
+            // execution plan.
             executionPlan.withAllGraphs().execute();
         }
     }
