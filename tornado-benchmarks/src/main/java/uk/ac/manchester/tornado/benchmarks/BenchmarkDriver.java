@@ -219,7 +219,7 @@ public abstract class BenchmarkDriver {
             javaEnergyMetrics.add(calculateTotalEnergy());
         }
         barrier();
-        writeToCsv(id);
+        writeToCsv(id, device);
 
         if (VALIDATE) {
             validate(device);
@@ -310,11 +310,12 @@ public abstract class BenchmarkDriver {
         return getAverage(timers);
     }
 
-    private void writeToCsv(String id) {
+    private void writeToCsv(String id, TornadoDevice device) {
         // Format the date to use in the filename
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd");
         String currentDate = LocalDate.now().format(dateFormatter);
-        String fileName = "energy_metrics_" + currentDate + ".csv";
+        String currentSetup = (device != null) ? device.getPlatformName() : "java_reference";
+        String fileName = "energy_metrics_" + currentSetup + "_" + currentDate + ".csv";
 
         // Write the List to CSV
         try (FileWriter writer = new FileWriter(fileName, true)) {
