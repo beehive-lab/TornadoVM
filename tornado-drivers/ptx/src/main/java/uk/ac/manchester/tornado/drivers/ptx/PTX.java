@@ -103,8 +103,10 @@ public class PTX {
 
             switch (access) {
                 case READ_WRITE:
-                case READ_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState, Access.READ_WRITE);
+                    tornadoDevice.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
+                case READ_ONLY:
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_ONLY);
                     tornadoDevice.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:

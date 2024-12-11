@@ -170,6 +170,9 @@ public class OpenCL {
 
             switch (access) {
                 case READ_WRITE:
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_WRITE);
+                    tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
+                    break;
                 case READ_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState, Access.READ_ONLY);
                     tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
