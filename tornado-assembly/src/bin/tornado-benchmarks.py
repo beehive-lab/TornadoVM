@@ -64,7 +64,6 @@ __JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
-__SKIP_PARALLEL__ = " -Dtornado.enable=False "
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
@@ -201,8 +200,6 @@ def composeAllOptions(args):
         jvm_options = jvm_options + __SKIP_TORNADOVM__
     if args.skip_serial:
         jvm_options = jvm_options + __SKIP_SERIAL__
-    if args.skip_parallel:
-        jvm_options = jvm_options + __SKIP_PARALLEL__
     if args.validate:
         jvm_options = jvm_options + __VALIDATE__
     if args.skip_devices != None:
@@ -350,18 +347,11 @@ def parseArguments():
         help="Skip TornadoVM parallel implementations",
     )
     parser.add_argument(
-        "--skipSequential",
+        "--skipSerial",
         action="store_true",
         dest="skip_serial",
         default=False,
         help="Skip java version",
-    )
-    parser.add_argument(
-        "--skipParallel",
-        action="store_true",
-        dest="skip_parallel",
-        default=False,
-        help="Skip parallel version",
     )
     parser.add_argument(
         "--skipDevices",
