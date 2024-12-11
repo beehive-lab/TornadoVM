@@ -342,6 +342,10 @@ public class TornadoOptions {
         return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
 
+    public static boolean isUpsReaderEnabled() {
+        return UPS_IP_ADDRESS != null;
+    }
+
     /**
      * Set Loop unrolling factor for the FPGA compilation. Default is set to 2.
      */

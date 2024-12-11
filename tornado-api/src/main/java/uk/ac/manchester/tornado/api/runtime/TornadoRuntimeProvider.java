@@ -46,6 +46,10 @@ public class TornadoRuntimeProvider {
         return runtimeImpl.isProfilerEnabled();
     }
 
+    public static boolean isUpsReaderEnabled() {
+        return runtimeImpl.isUpsReaderEnabled();
+    }
+
     public static void setProperty(String key, String value) {
         tornadoImpl.setTornadoProperty(key, value);
     }
