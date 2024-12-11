@@ -110,8 +110,7 @@ public abstract class BenchmarkDriver {
         return true;
     }
 
-    public void benchmark(String id, TornadoDevice device, boolean isProfilerEnabled, boolean isUpsReaderEnabled) {
-
+    public void benchmark(TornadoDevice device, boolean isProfilerEnabled) {
         setUp();
         int size = toIntExact(iterations);
         timers = new double[size];
@@ -120,56 +119,15 @@ public abstract class BenchmarkDriver {
             deviceCopyIn = new ArrayList<>();
             deviceCopyOut = new ArrayList<>();
         }
-        if (isUpsReaderEnabled) {
-            javaEnergyMetrics = new ArrayList<>();
-        }
 
         for (long i = 0; i < iterations; i++) {
-            Thread t0, t1;
-            if (isUpsReaderEnabled) {
-                javaPowerMetrics = new ArrayList<>();
-                javaStartTimer = new ArrayList<>();
-                javaStopTimer = new ArrayList<>();
-
-                t0 = new Thread(() -> {
-                    runBenchmark(device);
-                });
-                t1 = new Thread(() -> {
-                    if (device == null) {
-                        TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
-                        while (t0.isAlive()) {
-                            javaStartTimer.add(System.currentTimeMillis());
-                            long powerMetric = runtime.getUpsPowerMetric();
-                            javaPowerMetrics.add(powerMetric);
-                            javaStopTimer.add(System.currentTimeMillis());
-                        }
-                    }
-                });
-            } else {
-                t0 = null;
-                t1 = null;
-            }
             if (!skipGC()) {
                 System.gc();
             }
 
-            final long start, end;
-            if (isUpsReaderEnabled) {
-                start = System.nanoTime();
-                t0.start();
-                t1.start();
-                try {
-                    t0.join();
-                    t1.join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                end = System.nanoTime();
-            } else {
-                start = System.nanoTime();
-                runBenchmark(device);
-                end = System.nanoTime();
-            }
+            final long start = System.nanoTime();
+            runBenchmark(device);
+            final long end = System.nanoTime();
 
             if (isProfilerEnabled) {
                 // Ensure the execution was correct, so we can count for general stats.
@@ -186,14 +144,82 @@ public abstract class BenchmarkDriver {
             }
 
             timers[toIntExact(i)] = (end - start);
-            if (isUpsReaderEnabled) {
-                javaEnergyMetrics.add(calculateTotalEnergy());
-            }
         }
         barrier();
-        if (isUpsReaderEnabled) {
-            writeToCsv(id);
+
+        if (VALIDATE) {
+            validate(device);
         }
+
+        tearDown();
+    }
+
+    public void benchmarkWithEnergy(String id, TornadoDevice device, boolean isProfilerEnabled) {
+        setUp();
+        int size = toIntExact(iterations);
+        timers = new double[size];
+        if (isProfilerEnabled) {
+            deviceKernelTimers = new ArrayList<>();
+            deviceCopyIn = new ArrayList<>();
+            deviceCopyOut = new ArrayList<>();
+        }
+        javaEnergyMetrics = new ArrayList<>();
+
+        for (long i = 0; i < iterations; i++) {
+            Thread t0, t1;
+            javaPowerMetrics = new ArrayList<>();
+            javaStartTimer = new ArrayList<>();
+            javaStopTimer = new ArrayList<>();
+
+            t0 = new Thread(() -> {
+                runBenchmark(device);
+            });
+            t1 = new Thread(() -> {
+                if (device == null) {
+                    TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+                    while (t0.isAlive()) {
+                        javaStartTimer.add(System.currentTimeMillis());
+                        long powerMetric = runtime.getUpsPowerMetric();
+                        javaPowerMetrics.add(powerMetric);
+                        javaStopTimer.add(System.currentTimeMillis());
+                    }
+                }
+            });
+
+            if (!skipGC()) {
+                System.gc();
+            }
+
+            final long start = System.nanoTime();
+            t0.start();
+            t1.start();
+            try {
+                t0.join();
+                t1.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            final long end = System.nanoTime();
+
+            if (isProfilerEnabled) {
+                // Ensure the execution was correct, so we can count for general stats.
+                TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
+                if (profilerResult.getDeviceKernelTime() != 0) {
+                    deviceKernelTimers.add(profilerResult.getDeviceKernelTime());
+                }
+                if (profilerResult.getDeviceWriteTime() != 0) {
+                    deviceCopyIn.add(profilerResult.getDeviceWriteTime());
+                }
+                if (profilerResult.getDeviceReadTime() != 0) {
+                    deviceCopyOut.add(profilerResult.getDeviceReadTime());
+                }
+            }
+
+            timers[toIntExact(i)] = (end - start);
+            javaEnergyMetrics.add(calculateTotalEnergy());
+        }
+        barrier();
+        writeToCsv(id);
 
         if (VALIDATE) {
             validate(device);
