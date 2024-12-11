@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
 /**
  * Executor Class to dispatch Tornado Task-Graphs. An executor plan
@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 class TornadoExecutor {
 
     private final List<ImmutableTaskGraph> immutableTaskGraphList;
+    private List<ImmutableTaskGraph> subgraphList;
 
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
@@ -221,5 +222,23 @@ class TornadoExecutor {
 
     long getCurrentDeviceMemoryUsage() {
         return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
+    }
+
+    void selectGraph(int graphIndex) {
+        if (subgraphList == null) {
+            subgraphList = new ArrayList<>();
+            immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
+        }
+        immutableTaskGraphList.clear();
+        Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
+    }
+
+    void selectAll() {
+        if (subgraphList == null) {
+            return;
+        }
+        immutableTaskGraphList.clear();
+        subgraphList.forEach(g -> Collections.addAll(immutableTaskGraphList, g));
+        subgraphList = null;
     }
 }

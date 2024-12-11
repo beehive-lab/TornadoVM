@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
+import java.util.Random;
 
 import org.junit.Test;
 
@@ -300,6 +301,105 @@ public class TestExecutor extends TornadoTestBase {
             System.out.println("After the execution");
             System.out.println(planResult.getProfilerResult().getTraceExecutionPlan());
 
+        }
+    }
+
+    /**
+     * Test Multi-Graphs in an execution plan. An execution plan can hold and launch
+     * multiple immutable task graphs. This tests shows how to execute individual immutable
+     * task graphs in any order.
+     * 
+     * @throws TornadoExecutionPlanException
+     */
+    @Test
+    public void test06() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        a.init(1);
+        b.init(2);
+
+        TaskGraph tg1 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        TaskGraph tg2 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t1", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+
+            // Select graph 1 (tg2) to execute
+            // Once selected, every time we call the execute method,
+            // TornadoVM will launch the passed task-graph.
+            executionPlan.withGraph(1).execute();
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+            // Select the graph 0 (tg1) to execute
+            executionPlan.withGraph(0).execute();
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+            // Select all graphs (tg1 and tg2) to execute.
+            // Since we selected individual task-graphs, we should be
+            // able to reverse this action and invoke all task-graph
+            // again. This is achieved with the `withAllGraphs` from the
+            // execution plan.
+            executionPlan.withAllGraphs().execute();
+        }
+    }
+
+    /**
+     * Test Multi-Graphs in an execution plan. Based on the {@link #test06()}, this test checks
+     * task-graphs with different tasks and data.
+     *
+     * @throws TornadoExecutionPlanException
+     */
+    @Test
+    public void test07() throws TornadoExecutionPlanException {
+        int numElements = 16;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        Random r = new Random();
+        for (int i = 0; i < a.getSize(); i++) {
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
+        }
+
+        TaskGraph tg1 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        // Set dependency from graph tg1 to tg2 
+
+        TaskGraph tg2 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, c) //
+                .task("t1", TestHello::compute, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+
+            // Select graph 0 (tg1) and run
+            executionPlan.withGraph(0).execute();
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(a.get(i) + b.get(i), c.get(i));
+            }
+
+            // Select the graph 1 (tg2) and run
+            executionPlan.withGraph(1).execute();
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals((a.get(i) + b.get(i)) * 2, c.get(i));
+            }
         }
     }
 
