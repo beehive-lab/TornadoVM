@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
@@ -40,6 +41,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
+import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
@@ -163,6 +165,34 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
         planResults.add(executionResult);
         return executionResult;
+    }
+
+    /**
+     * Select a graph from the {@link TornadoExecutionPlan} to execute.
+     * This method allows developers to select a specific graph from the
+     * execution plan to launch. Developers can choose which graph from
+     * the input list to use (passed in the constructor).
+     *
+     * 
+     * @since 1.0.9
+     * @param graphIndex
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withGraph(int graphIndex) {
+        tornadoExecutor.selectGraph(graphIndex);
+        return new WithGraph(this, graphIndex);
+    }
+
+    /**
+     * Select all graphs from the {@link TornadoExecutionPlan}. This method
+     * has an effect if the {@link #withGraph(int)} method was invoked.
+     *
+     * @since 1.0.9
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withAllGraphs() {
+        tornadoExecutor.selectAll();
+        return new WithAllGraphs(this);
     }
 
     /**
@@ -522,4 +552,5 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         }
         return planResults.get(index);
     }
+
 }

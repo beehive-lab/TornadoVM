@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
@@ -30,6 +31,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
+import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
@@ -39,12 +41,11 @@ import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
 
 public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
-        permits OffConcurrentDevices, OffMemoryLimit, OffPrintKernel, //
-        OffProfiler, OffThreadInfo, WithWarmUp, WithBatch, WithClearProfiles,  //
-        WithCompilerFlags, WithConcurrentDevices, WithDefaultScheduler, //
-        WithDevice, WithDynamicReconfiguration, WithFreeDeviceMemory, //
-        WithGridScheduler, WithMemoryLimit, WithPrintKernel, WithProfiler, //
-        WithResetDevice, WithThreadInfo {
+        permits OffConcurrentDevices, OffMemoryLimit, OffPrintKernel, OffProfiler, //
+        OffThreadInfo, WithAllGraphs, WithBatch, WithClearProfiles, WithCompilerFlags,  //
+        WithConcurrentDevices, WithDefaultScheduler, WithDevice, WithDynamicReconfiguration, //
+        WithFreeDeviceMemory, WithGraph, WithGridScheduler, WithMemoryLimit, WithPrintKernel, //
+        WithProfiler, WithResetDevice, WithThreadInfo, WithWarmUp { //
 
     public ExecutionPlanType(TornadoExecutionPlan parentNode) {
 
