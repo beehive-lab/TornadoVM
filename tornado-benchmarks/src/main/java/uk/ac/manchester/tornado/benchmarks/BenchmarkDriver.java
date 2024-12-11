@@ -21,6 +21,10 @@ import static java.lang.Math.toIntExact;
 import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.humanReadableByteCount;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +53,10 @@ public abstract class BenchmarkDriver {
     private List<Long> deviceKernelTimers;
     private List<Long> deviceCopyIn;
     private List<Long> deviceCopyOut;
+    private List<Long> javaEnergyMetrics;
     private List<Long> javaPowerMetrics;
+    private List<Long> javaStartTimer;
+    private List<Long> javaStopTimer;
 
     private int startingIndex = 30;
 
@@ -103,7 +110,7 @@ public abstract class BenchmarkDriver {
         return true;
     }
 
-    public void benchmark(TornadoDevice device, boolean isProfilerEnabled) {
+    public void benchmark(String id, TornadoDevice device, boolean isProfilerEnabled, boolean isUpsReaderEnabled) {
 
         setUp();
         int size = toIntExact(iterations);
@@ -113,19 +120,55 @@ public abstract class BenchmarkDriver {
             deviceCopyIn = new ArrayList<>();
             deviceCopyOut = new ArrayList<>();
         }
-        javaPowerMetrics = new ArrayList<>();
+        if (isUpsReaderEnabled) {
+            javaEnergyMetrics = new ArrayList<>();
+        }
 
         for (long i = 0; i < iterations; i++) {
+            Thread t0, t1;
+            if (isUpsReaderEnabled) {
+                javaPowerMetrics = new ArrayList<>();
+                javaStartTimer = new ArrayList<>();
+                javaStopTimer = new ArrayList<>();
+
+                t0 = new Thread(() -> {
+                    runBenchmark(device);
+                });
+                t1 = new Thread(() -> {
+                    if (device == null) {
+                        TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+                        while (t0.isAlive()) {
+                            javaStartTimer.add(System.currentTimeMillis());
+                            long powerMetric = runtime.getUpsPowerMetric();
+                            javaPowerMetrics.add(powerMetric);
+                            javaStopTimer.add(System.currentTimeMillis());
+                        }
+                    }
+                });
+            } else {
+                t0 = null;
+                t1 = null;
+            }
             if (!skipGC()) {
                 System.gc();
             }
-            final long start = System.nanoTime();
-            runBenchmark(device);
-            final long end = System.nanoTime();
-            if (device == null) {
-                TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
-                long powerMetric = runtime.getUpsPowerMetric();
-                javaPowerMetrics.add(powerMetric);
+
+            final long start, end;
+            if (isUpsReaderEnabled) {
+                start = System.nanoTime();
+                t0.start();
+                t1.start();
+                try {
+                    t0.join();
+                    t1.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                end = System.nanoTime();
+            } else {
+                start = System.nanoTime();
+                runBenchmark(device);
+                end = System.nanoTime();
             }
 
             if (isProfilerEnabled) {
@@ -143,8 +186,14 @@ public abstract class BenchmarkDriver {
             }
 
             timers[toIntExact(i)] = (end - start);
+            if (isUpsReaderEnabled) {
+                javaEnergyMetrics.add(calculateTotalEnergy());
+            }
         }
         barrier();
+        if (isUpsReaderEnabled) {
+            writeToCsv(id);
+        }
 
         if (VALIDATE) {
             validate(device);
@@ -235,16 +284,43 @@ public abstract class BenchmarkDriver {
         return getAverage(timers);
     }
 
-    public long getAveragePowerMetric() {
-        return (long) getAverage(toArray(javaPowerMetrics));
+    private void writeToCsv(String id) {
+        // Format the date to use in the filename
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd");
+        String currentDate = LocalDate.now().format(dateFormatter);
+        String fileName = "energy_metrics_" + currentDate + ".csv";
+
+        // Write the List to CSV
+        try (FileWriter writer = new FileWriter(fileName, true)) {
+            writer.append(id).append(",");
+            int size = javaEnergyMetrics.size();
+            for (int i = 0; i < size; i++) {
+                writer.append(String.valueOf(javaEnergyMetrics.get(i)));
+                if (i < size - 1) {
+                    writer.append(",");
+                }
+            }
+            writer.append("\n"); // New line for each entry
+            System.out.println("Updated CSV file (" + fileName + ") with new energy metrics for " + id + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public long getLowestPowerMetric() {
-        return (long) getMin(toArray(javaPowerMetrics));
+    public long getFirstEnergyMetric() {
+        return javaEnergyMetrics.getFirst();
     }
 
-    public long getHighestPowerMetric() {
-        return (long) getMax(toArray(javaPowerMetrics));
+    public long getAverageEnergyMetric() {
+        return (long) getAverage(toArray(javaEnergyMetrics));
+    }
+
+    public long getLowestEnergyMetric() {
+        return (long) getMin(toArray(javaEnergyMetrics));
+    }
+
+    public long getHighestEnergyMetric() {
+        return (long) getMax(toArray(javaEnergyMetrics));
     }
 
     public double getVariance() {
@@ -273,8 +349,28 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e - lowestPower=%d, averagePower=%d, highestPower=%d%n", getAverage(), getMedian(), getFirstIteration(),
-                getBestExecution(), getLowestPowerMetric(), getAveragePowerMetric(), getHighestPowerMetric());
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
+    }
+
+    private Long calculateTotalEnergy() {
+        long totalEnergy = 0;
+
+        if (javaStartTimer.size() == javaStopTimer.size() && javaStartTimer.size() == javaPowerMetrics.size()) {
+            for (int i = 0; i < javaStartTimer.size(); i++) {
+                long timeInterval = javaStopTimer.get(i) - javaStartTimer.get(i);
+                long energyForInterval = timeInterval * javaPowerMetrics.get(i);
+                totalEnergy += energyForInterval;
+            }
+        } else {
+            throw new IllegalArgumentException("All lists must have the same size.");
+        }
+
+        return totalEnergy;
+    }
+
+    public String getEnergySummary() {
+        return String.format("firstIteration(mJ)=%d, lowestEnergy(mJ)=%d, averageEnergy(mJ)=%d, highestEnergy(mJ)=%d%n", getFirstEnergyMetric(), getLowestEnergyMetric(), getAverageEnergyMetric(),
+                getHighestEnergyMetric());
     }
 
     public String getSummary() {

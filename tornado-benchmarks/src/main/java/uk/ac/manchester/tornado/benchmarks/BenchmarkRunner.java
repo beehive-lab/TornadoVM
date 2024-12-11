@@ -56,6 +56,10 @@ public abstract class BenchmarkRunner {
         return TornadoRuntimeProvider.isProfilerEnabled();
     }
 
+    private static boolean isUpsReaderEnabled() {
+        return TornadoRuntimeProvider.isUpsReaderEnabled();
+    }
+
     public void run() {
         final String id = getIdString();
 
@@ -66,9 +70,12 @@ public abstract class BenchmarkRunner {
         if (!isProfilerEnabled() && !SKIP_SERIAL) {
             // Run the Java Reference
             final BenchmarkDriver referenceTest = getJavaDriver();
-            referenceTest.benchmark(null, false);
+            referenceTest.benchmark(id, null, false, isUpsReaderEnabled());
 
-            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
+            System.out.printf("Performance: bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
+            if (isUpsReaderEnabled()) {
+                System.out.printf("Energy: bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getEnergySummary());
+            }
 
             refElapsed = referenceTest.getAverage();
             refElapsedMedian = referenceTest.getMedian();
@@ -76,8 +83,11 @@ public abstract class BenchmarkRunner {
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
-                streamsTest.benchmark(null, false);
+                streamsTest.benchmark(id, null, false, isUpsReaderEnabled());
                 System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getSummary());
+                if (isUpsReaderEnabled()) {
+                    System.out.printf("Energy: bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getEnergySummary());
+                }
             }
         } else {
             refElapsed = -1;
@@ -121,7 +131,7 @@ public abstract class BenchmarkRunner {
                 TornadoRuntimeProvider.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver benchmarkDriver = getTornadoDriver();
                 try {
-                    benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled());
+                    benchmarkDriver.benchmark(id, tornadoDevice, isProfilerEnabled(), isUpsReaderEnabled());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -147,6 +157,9 @@ public abstract class BenchmarkRunner {
                             benchmarkDriver.getAverageCopyOutTime(), //
                             driver.getDevice(deviceIndex));
                 }
+                if (isUpsReaderEnabled()) {
+                    System.out.printf("Energy: bm=%-15s, device=%-5s, id=%-20s, %s\n", id, driverIndex + ":" + deviceIndex, "benchmarkDriver", benchmarkDriver.getEnergySummary());
+                }
 
             }
         }
@@ -163,7 +176,7 @@ public abstract class BenchmarkRunner {
             final BenchmarkDriver deviceTest = getTornadoDriver();
             final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
-            deviceTest.benchmark(tornadoDevice, isProfilerEnabled());
+            deviceTest.benchmark(id, tornadoDevice, isProfilerEnabled(), isUpsReaderEnabled());
 
             System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex, deviceTest
                     .getPreciseSummary(), refElapsed / deviceTest.getAverage(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(), deviceTest.getCV(),
