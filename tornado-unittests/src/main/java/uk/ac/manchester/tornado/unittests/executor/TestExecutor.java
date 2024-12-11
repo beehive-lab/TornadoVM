@@ -376,25 +376,26 @@ public class TestExecutor extends TornadoTestBase {
         }
 
         TaskGraph tg1 = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         // Set dependency from graph tg1 to tg2 
 
         TaskGraph tg2 = new TaskGraph("s1") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, c) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, c) //
                 .task("t1", TestHello::compute, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
 
+            // Select graph 0 (tg1) and run
             executionPlan.withGraph(0).execute();
             for (int i = 0; i < c.getSize(); i++) {
                 assertEquals(a.get(i) + b.get(i), c.get(i));
             }
 
-            // Select the graph 0 (tg1) to execute
+            // Select the graph 1 (tg2) and run
             executionPlan.withGraph(1).execute();
             for (int i = 0; i < c.getSize(); i++) {
                 assertEquals((a.get(i) + b.get(i)) * 2, c.get(i));
