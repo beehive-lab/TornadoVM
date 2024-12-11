@@ -92,6 +92,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     private static SPIRVBackendImpl driver = null;
     private final SPIRVDevice device;
     private final int deviceIndex;
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     public SPIRVTornadoDevice(SPIRVDevice lowLevelDevice) {
         this.deviceIndex = lowLevelDevice.getDeviceIndex();
@@ -319,6 +320,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
+            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
             allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
         }
         return allocatedSpace;

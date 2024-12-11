@@ -296,6 +296,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
+            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
             allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
         }
         return allocatedSpace;

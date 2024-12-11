@@ -112,6 +112,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     private final String platformName;
     private XPUBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     /**
      * Constructor used also in SLAMBench/KFusion
@@ -299,7 +300,6 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
             return installedCode;
         } catch (Exception e) {
-            TornadoLogger logger = new TornadoLogger();
             logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
             logger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
@@ -586,6 +586,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
+            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
             allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
         }
         return allocatedSpace;

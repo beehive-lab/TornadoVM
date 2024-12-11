@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
@@ -49,6 +50,7 @@ public abstract class TornadoBufferProvider {
     protected final HashMap<Access, ArrayList<BufferContainer>> freeBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> usedBuffers;
     protected long currentMemoryAvailable;
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     private static final String RESET = "\u001B[0m";
     public static final String YELLOW = "\u001B[33m";
@@ -79,6 +81,7 @@ public abstract class TornadoBufferProvider {
         currentMemoryAvailable -= size;
         BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
         usedBuffers.get(access).add(bufferInfo);
+        logger.debug("Buffer %s has been allocated and included in the usedBuffers list with access: %s", bufferInfo, access);
         return bufferInfo.buffer;
     }
 
@@ -201,6 +204,7 @@ public abstract class TornadoBufferProvider {
             // if found, we mark it as free by inserting it into the free list
             BufferContainer removedBuffer = usedBuffers.get(access).remove(foundIndex);
             freeBuffers.get(access).add(removedBuffer);
+            logger.debug("Buffer %s has been released and included in the freeBuffers list for access: %s", removedBuffer, access);
         }
     }
 
