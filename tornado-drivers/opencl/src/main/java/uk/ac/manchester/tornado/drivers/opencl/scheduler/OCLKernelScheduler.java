@@ -27,7 +27,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.drivers.common.power.UpsMeterReader;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGridInfo;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;

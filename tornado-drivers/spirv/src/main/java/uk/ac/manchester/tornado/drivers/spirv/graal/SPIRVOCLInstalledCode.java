@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.drivers.common.power.UpsMeterReader;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;

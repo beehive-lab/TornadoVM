@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.common.power;
+package uk.ac.manchester.tornado.runtime.common;
 
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
@@ -35,7 +35,6 @@ import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class UpsMeterReader {
 

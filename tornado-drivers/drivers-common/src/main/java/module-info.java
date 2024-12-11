@@ -2,7 +2,6 @@ open module tornado.drivers.common {
     requires transitive jdk.internal.vm.ci;
     requires transitive jdk.internal.vm.compiler;
     requires transitive tornado.runtime;
-    requires snmp4j;
 
     exports uk.ac.manchester.tornado.drivers.providers;
     exports uk.ac.manchester.tornado.drivers.common;

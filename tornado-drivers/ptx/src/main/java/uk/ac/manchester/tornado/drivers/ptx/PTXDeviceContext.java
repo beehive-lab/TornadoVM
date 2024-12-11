@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
-import uk.ac.manchester.tornado.drivers.common.power.UpsMeterReader;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
