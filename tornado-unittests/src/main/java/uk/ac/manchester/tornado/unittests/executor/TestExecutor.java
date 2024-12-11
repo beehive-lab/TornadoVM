@@ -357,7 +357,7 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Test Multi-Graphs in an execution plan. Based on the {@link #test06()}, this test checke
+     * Test Multi-Graphs in an execution plan. Based on the {@link #test06()}, this test checks
      * task-graphs with different tasks and data.
      *
      * @throws TornadoExecutionPlanException
