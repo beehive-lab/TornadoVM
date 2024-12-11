@@ -129,6 +129,10 @@ public class TornadoExecutionContext {
                 constants.add(parameter);
             }
         } else if (objectMap.containsKey(parameter.hashCode())) {
+            // update access of the object if the sketcher has deducted it is READ_WRITE
+            if (access.name().equals("READ_WRITE") && !objectsAccesses.get(parameter).name().equals(access.name())) {
+                objectsAccesses.replace(parameter, access);
+            }
             index = objectMap.get(parameter.hashCode());
         } else {
             index = objects.size();

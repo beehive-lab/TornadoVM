@@ -117,7 +117,7 @@ public class TornadoVMInterpreter {
      * @param device
      *     The {@link TornadoXPUDevice} device.
      */
-    public TornadoVMInterpreter(TornadoExecutionContext graphExecutionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoXPUDevice device, Access[] accesses) {
+    public TornadoVMInterpreter(TornadoExecutionContext graphExecutionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoXPUDevice device) {
         this.graphExecutionContext = graphExecutionContext;
         this.timeProfiler = timeProfiler;
         this.bytecodeResult = bytecodeResult;

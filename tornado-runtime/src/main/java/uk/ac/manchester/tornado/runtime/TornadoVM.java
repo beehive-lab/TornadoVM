@@ -63,8 +63,6 @@ public class TornadoVM {
 
     private final TornadoVMInterpreter[] tornadoVMInterpreters;
 
-    private final Access[] accesses;
-
     /**
      * It constructs a new TornadoVM instance.
      *
@@ -76,12 +74,11 @@ public class TornadoVM {
      * @param timeProfiler
      *     the {@link TornadoProfiler} for profiling execution time
      */
-    public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, Access[] accesses) {
+    public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
         this.tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
         this.tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
-        this.accesses = accesses;
         bindBytecodesToInterpreters();
     }
 
@@ -97,7 +94,7 @@ public class TornadoVM {
             tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, //
                     tornadoVMBytecodes[i],  //
                     timeProfiler,  //
-                    executionContext.getDevice(activeDevices.pop()), accesses);
+                    executionContext.getDevice(activeDevices.pop()));
         }
     }
 
