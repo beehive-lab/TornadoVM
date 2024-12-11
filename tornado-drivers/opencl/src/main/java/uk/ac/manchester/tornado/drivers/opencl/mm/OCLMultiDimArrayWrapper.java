@@ -27,6 +27,7 @@ import java.lang.reflect.Array;
 import java.util.function.Function;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -39,12 +40,14 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     private long[] addresses;
     private OCLArrayWrapper<E>[] wrappers;
     private final OCLDeviceContext deviceContext;
+    private Access access;
 
-    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize) {
-        super(device, JavaKind.Object, batchSize);
+    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize, Access access) {
+        super(device, JavaKind.Object, batchSize, access);
         this.deviceContext = device;
+        this.access = access;
         innerWrapperFactory = factory;
-        tableWrapper = new OCLLongArrayWrapper(device, batchSize);
+        tableWrapper = new OCLLongArrayWrapper(device, batchSize, access);
     }
 
     @Override
@@ -58,7 +61,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object value, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
 
         if (batchSize > 0) {
             throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported. BatchSize = " + batchSize + " (bytes)");
@@ -69,16 +72,16 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         }
         addresses = new long[Array.getLength(value)];
         wrappers = new OCLArrayWrapper[Array.getLength(value)];
-        tableWrapper.allocate(addresses, batchSize);
-        allocateElements((T) value, batchSize);
+        tableWrapper.allocate(addresses, batchSize, access);
+        allocateElements((T) value, batchSize, access);
     }
 
-    private void allocateElements(T values, long batchSize) {
+    private void allocateElements(T values, long batchSize, Access access) {
         final E[] elements = innerCast(values);
         try {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
-                wrappers[i].allocate(elements[i], batchSize);
+                wrappers[i].allocate(elements[i], batchSize, access);
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {

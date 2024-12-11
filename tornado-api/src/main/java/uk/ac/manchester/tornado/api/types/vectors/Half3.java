@@ -176,7 +176,7 @@ public final class Half3 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX().getFloat32(), getY().getFloat32(), getZ().getFloat32());
     }
 
     @Override

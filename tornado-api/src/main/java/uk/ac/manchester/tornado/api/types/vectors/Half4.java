@@ -186,12 +186,12 @@ public final class Half4 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX().getFloat32(), getY().getFloat32(), getZ().getFloat32(), getW().getFloat32());
     }
 
     @Override
     public String toString() {
-        return toString(FloatOps.FMT_3);
+        return toString(FloatOps.FMT_4);
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.lang.reflect.Array;
 import java.util.function.Function;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
@@ -39,12 +40,14 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
     private long[] addresses;
     private SPIRVArrayWrapper<E>[] wrappers;
     private final SPIRVDeviceContext deviceContext;
+    private Access access;
 
-    public SPIRVMultiDimArrayWrapper(SPIRVDeviceContext deviceContext, Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory, long batchSize) {
-        super(deviceContext, JavaKind.Object, batchSize);
+    public SPIRVMultiDimArrayWrapper(SPIRVDeviceContext deviceContext, Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory, long batchSize, Access access) {
+        super(deviceContext, JavaKind.Object, batchSize, access);
         this.deviceContext = deviceContext;
         this.innerWrapperFactory = innerWrapperFactory;
-        this.tableWrapper = new SPIRVLongArrayWrapper(deviceContext, batchSize);
+        this.tableWrapper = new SPIRVLongArrayWrapper(deviceContext, batchSize, access);
+        this.access = access;
     }
 
     @Override
@@ -61,12 +64,12 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         return (E[]) value;
     }
 
-    private void allocateElements(T values, long batchSize) {
+    private void allocateElements(T values, long batchSize, Access access) {
         final E[] elements = innerCast(values);
         try {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
-                wrappers[i].allocate(elements[i], batchSize);
+                wrappers[i].allocate(elements[i], batchSize, access);
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
@@ -76,7 +79,7 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object value, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (batchSize > 0) {
             throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported. BatchSize = " + batchSize + " (bytes)");
         }
@@ -86,8 +89,8 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         }
         addresses = new long[Array.getLength(value)];
         wrappers = new SPIRVArrayWrapper[Array.getLength(value)];
-        tableWrapper.allocate(addresses, batchSize);
-        allocateElements((T) value, batchSize);
+        tableWrapper.allocate(addresses, batchSize, access);
+        allocateElements((T) value, batchSize, access);
     }
 
     private int readElements(long executionPlanId, T values) {

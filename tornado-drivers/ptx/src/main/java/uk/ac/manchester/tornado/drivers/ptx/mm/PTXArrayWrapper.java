@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -51,12 +52,14 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     private JavaKind kind;
     private long setSubRegionSize;
     private final TornadoLogger logger;
+    private Access access;
 
-    public PTXArrayWrapper(PTXDeviceContext deviceContext, JavaKind kind) {
+    public PTXArrayWrapper(PTXDeviceContext deviceContext, JavaKind kind, Access access) {
         this.deviceContext = deviceContext;
         this.kind = kind;
         this.buffer = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
+        this.access = access;
 
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
@@ -197,7 +200,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) {
+    public void allocate(Object value, long batchSize, Access access) {
         final T hostArray = cast(value);
         if (batchSize <= 0) {
             bufferSize = sizeOf(hostArray);
@@ -209,7 +212,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+        this.buffer = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
             logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
@@ -221,7 +224,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(buffer != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getBufferProvider().markBufferReleased(buffer);
+        deviceContext.getBufferProvider().markBufferReleased(buffer, access);
         buffer = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -233,7 +236,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
     private long sizeOf(final T array) {

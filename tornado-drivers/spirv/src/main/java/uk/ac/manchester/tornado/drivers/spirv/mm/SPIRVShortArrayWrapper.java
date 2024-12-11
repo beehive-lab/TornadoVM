@@ -24,16 +24,17 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVShortArrayWrapper extends SPIRVArrayWrapper<short[]> {
 
-    public SPIRVShortArrayWrapper(SPIRVDeviceContext device, long batchSize) {
-        super(device, JavaKind.Short, batchSize);
+    public SPIRVShortArrayWrapper(SPIRVDeviceContext device, long batchSize, Access access) {
+        super(device, JavaKind.Short, batchSize, access);
     }
 
-    protected SPIRVShortArrayWrapper(final short[] array, final SPIRVDeviceContext device, long batchSize) {
-        super(array, device, JavaKind.Short, batchSize);
+    protected SPIRVShortArrayWrapper(final short[] array, final SPIRVDeviceContext device, long batchSize, Access access) {
+        super(array, device, JavaKind.Short, batchSize, access);
     }
 
     @Override

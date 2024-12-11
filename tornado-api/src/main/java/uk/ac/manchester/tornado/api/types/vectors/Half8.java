@@ -236,7 +236,7 @@ public final class Half8 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
+        return String.format(fmt, getS0().getFloat32(), getS1().getFloat32(), getS2().getFloat32(), getS3().getFloat32(), getS4().getFloat32(), getS5().getFloat32(), getS6().getFloat32(), getS7().getFloat32());
     }
 
     @Override

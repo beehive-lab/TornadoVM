@@ -21,6 +21,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.utils.ShortOps;
 
 import java.nio.ShortBuffer;
 
@@ -152,7 +153,7 @@ public final class Half2 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
+        return String.format(fmt, getX().getFloat32(), getY().getFloat32());
     }
 
     @Override

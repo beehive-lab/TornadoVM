@@ -75,6 +75,7 @@ public class TornadoExecutionContext {
     private List<SchedulableTask> tasks;
     private List<Object> constants;
     private Map<Integer, Integer> objectMap;
+    private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
@@ -99,6 +100,7 @@ public class TornadoExecutionContext {
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
         objects = new ArrayList<>();
+        objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
@@ -118,7 +120,7 @@ public class TornadoExecutionContext {
         return kernelStackFrame;
     }
 
-    public int insertVariable(Object parameter) {
+    public int insertVariable(Object parameter, Access access) {
         int index;
         if (parameter.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(parameter.getClass())) {
             index = constants.indexOf(parameter);
@@ -127,10 +129,15 @@ public class TornadoExecutionContext {
                 constants.add(parameter);
             }
         } else if (objectMap.containsKey(parameter.hashCode())) {
+            // update access of the object if the sketcher has deducted it is READ_WRITE
+            if (access.name().equals("READ_WRITE") && !objectsAccesses.get(parameter).name().equals(access.name())) {
+                objectsAccesses.replace(parameter, access);
+            }
             index = objectMap.get(parameter.hashCode());
         } else {
             index = objects.size();
             objects.add(parameter);
+            objectsAccesses.put(parameter, access);
             objectMap.put(parameter.hashCode(), index);
             objectState.add(index, new LocalObjectState(parameter));
         }
@@ -225,6 +232,9 @@ public class TornadoExecutionContext {
 
             index = oldIndex;
             objects.add(index, newObj);
+            Access access = objectsAccesses.get(oldObj);
+            objectsAccesses.remove(oldObj);
+            objectsAccesses.put(newObj, access);
             objectMap.put(newObj.hashCode(), index);
             objectState.add(index, newLocalObjectState);
         }
@@ -260,6 +270,10 @@ public class TornadoExecutionContext {
 
     public List<Object> getObjects() {
         return objects;
+    }
+
+    public HashMap<Object, Access> getObjectsAccesses() {
+        return objectsAccesses;
     }
 
     public TornadoXPUDevice getDeviceForTask(int index) {
@@ -370,8 +384,8 @@ public class TornadoExecutionContext {
         return tasks.get(0).getDevice();
     }
 
-    public LocalObjectState getLocalStateObject(Object object) {
-        return objectState.get(insertVariable(object));
+    public LocalObjectState getLocalStateObject(Object object, Access access) {
+        return objectState.get(insertVariable(object, access));
     }
 
     @Deprecated
@@ -615,6 +629,8 @@ public class TornadoExecutionContext {
         newExecutionContext.constants = new ArrayList<>(this.constants);
 
         newExecutionContext.objectMap = new HashMap<>(objectMap);
+
+        newExecutionContext.objectsAccesses = new HashMap<>(objectsAccesses);
 
         newExecutionContext.objects = new ArrayList<>(objects);
 

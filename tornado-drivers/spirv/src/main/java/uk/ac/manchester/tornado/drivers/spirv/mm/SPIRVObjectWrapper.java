@@ -37,6 +37,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -71,11 +72,13 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     private ByteBuffer buffer;
     private long subRegionSize;
     private final TornadoLogger logger;
+    private final Access access;
 
-    public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object) {
+    public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object, Access access) {
         this.objectType = object.getClass();
         this.deviceContext = deviceContext;
         this.logger = new TornadoLogger(this.getClass());
+        this.access = access;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -99,60 +102,60 @@ public class SPIRVObjectWrapper implements XPUBuffer {
             if (type.isArray()) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 if (type == int[].class) {
-                    wrappedField = new SPIRVIntArrayWrapper((int[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVIntArrayWrapper((int[]) objectFromField, deviceContext, 0, access);
                 } else if (type == float[].class) {
-                    wrappedField = new SPIRVFloatArrayWrapper((float[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVFloatArrayWrapper((float[]) objectFromField, deviceContext, 0, access);
                 } else if (type == double[].class) {
-                    wrappedField = new SPIRVDoubleArrayWrapper((double[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVDoubleArrayWrapper((double[]) objectFromField, deviceContext, 0, access);
                 } else if (type == long[].class) {
-                    wrappedField = new SPIRVLongArrayWrapper((long[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVLongArrayWrapper((long[]) objectFromField, deviceContext, 0, access);
                 } else if (type == short[].class) {
-                    wrappedField = new SPIRVShortArrayWrapper((short[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVShortArrayWrapper((short[]) objectFromField, deviceContext, 0, access);
                 } else if (type == char[].class) {
-                    wrappedField = new SPIRVCharArrayWrapper((char[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVCharArrayWrapper((char[]) objectFromField, deviceContext, 0, access);
                 } else if (type == byte[].class) {
-                    wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, deviceContext, 0);
+                    wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, deviceContext, 0, access);
                 } else {
                     logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == CharArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((CharArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (type == HalfFloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0);
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
-                wrappedField = new SPIRVVectorWrapper(deviceContext, object, 0);
+                wrappedField = new SPIRVVectorWrapper(deviceContext, object, 0, access);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new SPIRVObjectWrapper(deviceContext, TornadoUtils.getObjectFromField(reflectedField, object));
+                wrappedField = new SPIRVObjectWrapper(deviceContext, TornadoUtils.getObjectFromField(reflectedField, object), access);
             }
 
             if (wrappedField != null) {
@@ -167,12 +170,12 @@ public class SPIRVObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (DEBUG) {
             logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size());
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size(), access);
         this.bufferOffset = 0;
         setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
@@ -183,7 +186,7 @@ public class SPIRVObjectWrapper implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        deviceContext.getBufferProvider().markBufferReleased(this.bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, access);
         bufferId = -1;
     }
 
@@ -462,6 +465,6 @@ public class SPIRVObjectWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 }
