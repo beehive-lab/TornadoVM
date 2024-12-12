@@ -24,16 +24,17 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVDoubleArrayWrapper extends SPIRVArrayWrapper<double[]> {
 
-    public SPIRVDoubleArrayWrapper(SPIRVDeviceContext device, long batchSize) {
-        super(device, JavaKind.Double, batchSize);
+    public SPIRVDoubleArrayWrapper(SPIRVDeviceContext device, long batchSize, Access access) {
+        super(device, JavaKind.Double, batchSize, access);
     }
 
-    protected SPIRVDoubleArrayWrapper(final double[] array, final SPIRVDeviceContext device, long batchSize) {
-        super(array, device, JavaKind.Double, batchSize);
+    protected SPIRVDoubleArrayWrapper(final double[] array, final SPIRVDeviceContext device, long batchSize, Access access) {
+        super(array, device, JavaKind.Double, batchSize, access);
     }
 
     @Override

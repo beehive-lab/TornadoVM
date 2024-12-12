@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.runtime;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
@@ -33,7 +34,7 @@ public class PTXBufferProvider extends TornadoBufferProvider {
     }
 
     @Override
-    public long allocateBuffer(long size) {
+    public long allocateBuffer(long size, Access access) {
         return ((PTXDeviceContext) deviceContext).getDevice().getPTXContext().allocateMemory(size);
     }
 

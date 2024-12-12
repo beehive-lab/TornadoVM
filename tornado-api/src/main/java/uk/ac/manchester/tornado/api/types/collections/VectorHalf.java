@@ -178,7 +178,7 @@ public final class VectorHalf implements TornadoCollectionInterface<ShortBuffer>
         StringBuilder sb = new StringBuilder("[");
         sb.append("[ ");
         for (int i = 0; i < numElements; i++) {
-            sb.append(String.format(fmt, get(i)) + " ");
+            sb.append(String.format(fmt, get(i).getFloat32()) + " ");
         }
         sb.append("]");
         return sb.toString();

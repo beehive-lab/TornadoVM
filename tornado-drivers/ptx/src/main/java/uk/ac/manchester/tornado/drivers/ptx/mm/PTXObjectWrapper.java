@@ -37,6 +37,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -67,11 +68,13 @@ public class PTXObjectWrapper implements XPUBuffer {
     private int fieldsOffset;
     private long subRegionSize;
     private final TornadoLogger logger;
+    private Access access;
 
-    public PTXObjectWrapper(final PTXDeviceContext device, Object object) {
+    public PTXObjectWrapper(final PTXDeviceContext device, Object object, Access access) {
         this.type = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
+        this.access = access;
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
 
@@ -94,47 +97,47 @@ public class PTXObjectWrapper implements XPUBuffer {
             XPUBuffer wrappedField = null;
             if (type.isArray()) {
                 if (type == int[].class) {
-                    wrappedField = new PTXIntArrayWrapper(deviceContext);
+                    wrappedField = new PTXIntArrayWrapper(deviceContext, access);
                 } else if (type == float[].class) {
-                    wrappedField = new PTXFloatArrayWrapper(deviceContext);
+                    wrappedField = new PTXFloatArrayWrapper(deviceContext, access);
                 } else if (type == double[].class) {
-                    wrappedField = new PTXDoubleArrayWrapper(deviceContext);
+                    wrappedField = new PTXDoubleArrayWrapper(deviceContext, access);
                 } else if (type == long[].class) {
-                    wrappedField = new PTXLongArrayWrapper(deviceContext);
+                    wrappedField = new PTXLongArrayWrapper(deviceContext, access);
                 } else if (type == short[].class) {
-                    wrappedField = new PTXShortArrayWrapper(deviceContext);
+                    wrappedField = new PTXShortArrayWrapper(deviceContext, access);
                 } else if (type == byte[].class) {
-                    wrappedField = new PTXByteArrayWrapper(deviceContext);
+                    wrappedField = new PTXByteArrayWrapper(deviceContext, access);
                 } else {
                     logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (type == HalfFloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
-                wrappedField = new PTXVectorWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), 0);
+                wrappedField = new PTXVectorWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), 0, access);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new PTXObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object));
+                wrappedField = new PTXObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
             }
 
             if (wrappedField != null) {
@@ -149,12 +152,12 @@ public class PTXObjectWrapper implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) {
+    public void allocate(Object reference, long batchSize, Access access) {
         if (DEBUG) {
             logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize());
+        this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize(), access);
 
         if (DEBUG) {
             logger.debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
@@ -165,14 +168,14 @@ public class PTXObjectWrapper implements XPUBuffer {
                 if (batchSize > 0) {
                     throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported for Objects Fields. BatchSize = " + batchSize + " (bytes)");
                 }
-                buffer.allocate(reference, batchSize);
+                buffer.allocate(reference, batchSize, access);
             }
         }
     }
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        deviceContext.getBufferProvider().markBufferReleased(address);
+        deviceContext.getBufferProvider().markBufferReleased(address, access);
         address = -1;
         for (FieldBuffer buffer : wrappedFields) {
             if (buffer != null) {
@@ -447,7 +450,7 @@ public class PTXObjectWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
 }

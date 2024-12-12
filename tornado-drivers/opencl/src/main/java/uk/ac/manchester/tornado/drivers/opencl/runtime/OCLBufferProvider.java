@@ -23,9 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLBufferProvider extends TornadoBufferProvider {
 
@@ -34,13 +37,28 @@ public class OCLBufferProvider extends TornadoBufferProvider {
     }
 
     @Override
-    public long allocateBuffer(long size) {
-        return ((OCLDeviceContext) deviceContext).getMemoryManager().createBuffer(size, OCLMemFlags.CL_MEM_READ_WRITE).getBuffer();
+    public long allocateBuffer(long size, Access access) {
+        long oclMemFlags = getOCLMemFlagForAccess(access);
+        return ((OCLDeviceContext) deviceContext).getMemoryManager().createBuffer(size, oclMemFlags).getBuffer();
     }
 
     @Override
     protected void releaseBuffer(long buffer) {
         ((OCLDeviceContext) deviceContext).getMemoryManager().releaseBuffer(buffer);
+    }
+
+    private static long getOCLMemFlagForAccess(Access access) {
+        switch (access) {
+            case READ_ONLY:
+                return OCLMemFlags.CL_MEM_READ_ONLY;
+            case WRITE_ONLY:
+                return OCLMemFlags.CL_MEM_WRITE_ONLY;
+            case READ_WRITE:
+                return OCLMemFlags.CL_MEM_READ_WRITE;
+            default:
+                // if access has not been deducted by sketcher set it as RW
+                return OCLMemFlags.CL_MEM_READ_WRITE;
+        }
     }
 
 }

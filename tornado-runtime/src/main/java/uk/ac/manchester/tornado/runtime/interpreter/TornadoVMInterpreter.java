@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
@@ -61,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -78,6 +80,7 @@ public class TornadoVMInterpreter {
     private static final int MAX_EVENTS = TornadoOptions.MAX_EVENTS;
     private final boolean useDependencies;
 
+    private final HashMap<Object, Access> objectAccesses;
     private final List<Object> objects;
 
     private final DataObjectState[] dataObjectStates;
@@ -145,7 +148,7 @@ public class TornadoVMInterpreter {
 
         logger.debug("created %d kernelStackFrame", kernelStackFrame.length);
         logger.debug("created %d event lists", events.length);
-
+        objectAccesses = graphExecutionContext.getObjectsAccesses();
         objects = graphExecutionContext.getObjects();
         dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
@@ -167,8 +170,9 @@ public class TornadoVMInterpreter {
     public void fetchGlobalStates() {
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
+            final Access access = objectAccesses.get(object);
             TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
-            dataObjectStates[i] = graphExecutionContext.getLocalStateObject(object).getDataObjectState();
+            dataObjectStates[i] = graphExecutionContext.getLocalStateObject(object, access).getDataObjectState();
         }
     }
 
@@ -395,10 +399,12 @@ public class TornadoVMInterpreter {
 
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, long sizeBatch) {
         Object[] objects = new Object[args.length];
+        Access[] accesses = new Access[args.length];
         XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[args.length];
         for (int i = 0; i < objects.length; i++) {
             objects[i] = this.objects.get(args[i]);
             objectStates[i] = resolveObjectState(args[i]);
+            accesses[i] = this.objectAccesses.get(objects[i]);
 
             if (TornadoOptions.PRINT_BYTECODES) {
                 String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
@@ -406,7 +412,7 @@ public class TornadoVMInterpreter {
             }
         }
 
-        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates);
+        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
 
         graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
@@ -754,7 +760,7 @@ public class TornadoVMInterpreter {
         }
 
         if (atomicsArray != null) {
-            bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray);
+            bufferAtomics = interpreterDevice.createOrReuseAtomicsBuffer(atomicsArray, Access.READ_WRITE);
             List<Integer> allEvents = bufferAtomics.enqueueWrite(graphExecutionContext.getExecutionPlanId(), null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {
@@ -858,7 +864,7 @@ public class TornadoVMInterpreter {
             logger.debug("Recompiling task on device " + device);
         }
         if (kernelStackFrame[index] == null || !kernelStackFrame[index].isValid() || redeployOnDevice) {
-            kernelStackFrame[index] = device.createKernelStackFrame(graphExecutionContext.getExecutionPlanId(), numArgs);
+            kernelStackFrame[index] = device.createKernelStackFrame(graphExecutionContext.getExecutionPlanId(), numArgs, Access.NONE);
         }
         return kernelStackFrame[index];
     }

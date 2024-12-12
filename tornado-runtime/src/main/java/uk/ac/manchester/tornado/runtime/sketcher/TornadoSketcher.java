@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExec
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -78,6 +79,7 @@ public class TornadoSketcher {
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
     private static TornadoLogger logger = new TornadoLogger();
+    public static Access[] methodAccesses;
 
     private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
         List<TornadoSketcherCacheEntry> entries = cache.get(method);
@@ -174,12 +176,14 @@ public class TornadoSketcher {
                         buildSketch(newRequest);
                     });
 
-            Access[] methodAccesses = highTierContext.getAccesses();
+            Access[] highTierAccesses = highTierContext.getAccesses();
             graph.getInvokes().forEach(invoke -> {
                 // Merge the accesses of the caller with the accesses of the callee
                 Sketch sketch = lookup(invoke.callTarget().targetMethod(), backendIndex, deviceIndex);
-                mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
+                mergeAccesses(highTierAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
+
+            methodAccesses = highTierAccesses;
 
             return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex());
 

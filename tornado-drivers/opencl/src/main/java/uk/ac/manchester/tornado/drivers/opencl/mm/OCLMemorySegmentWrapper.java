@@ -26,6 +26,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -51,22 +52,25 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     private long bufferSize;
 
     private long subregionSize;
+    private Access access;
 
-    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize) {
+    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize, Access access) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.access = access;
         onDevice = false;
     }
 
-    public OCLMemorySegmentWrapper(long bufferSize, OCLDeviceContext deviceContext, long batchSize) {
+    public OCLMemorySegmentWrapper(long bufferSize, OCLDeviceContext deviceContext, long batchSize, Access access) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.access = access;
         onDevice = false;
     }
 
@@ -175,16 +179,16 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
         if (bufferSize <= 0) {
@@ -199,7 +203,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        deviceContext.getBufferProvider().markBufferReleased(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -210,7 +214,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
     @Override
