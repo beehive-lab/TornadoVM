@@ -64,7 +64,7 @@ __JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
-__STORE_OUTPUT_TO_FILE__ = " -Dtornado.benchmarks.store.output.to.file=True"
+__STORE_OUTPUT_TO_FILE__ = " -Dtornado.benchmarks.store.output.to.file="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
@@ -198,23 +198,23 @@ def composeAllOptions(args):
     jvm_options = __JVM_FLAGS__
     tornado_options = ""
     if args.skip_tornadovm:
-        jvm_options = jvm_options + __SKIP_TORNADOVM__
+        jvm_options = jvm_options + __SKIP_TORNADOVM__ + " "
     if args.skip_serial:
-        jvm_options = jvm_options + __SKIP_SERIAL__
+        jvm_options = jvm_options + __SKIP_SERIAL__ + " "
     if args.store_output_to_file:
-        jvm_options = jvm_options + __STORE_OUTPUT_TO_FILE__
+        jvm_options = jvm_options + __STORE_OUTPUT_TO_FILE__ + args.store_output_to_file + " "
     if args.validate:
-        jvm_options = jvm_options + __VALIDATE__
+        jvm_options = jvm_options + __VALIDATE__ + " "
     if args.skip_devices != None:
         jvm_options = jvm_options + __SKIP_DEVICES__ + args.skip_devices + " "
     if args.profiler:
         tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler + " "
     if args.jvmFlags != None:
-        jvm_options = jvm_options + args.jvmFlags
+        jvm_options = jvm_options + args.jvmFlags + " "
     if args.tornadoThreadScheduler == True:
-        jvm_options = jvm_options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__
+        jvm_options = jvm_options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ + " "
     if args.spirvOptimizer:
-        jvm_options = jvm_options + __ENABLE_SPIRV_OPTIMIZER__
+        jvm_options = jvm_options + __ENABLE_SPIRV_OPTIMIZER__ + " "
     return jvm_options, tornado_options
 
 
@@ -419,9 +419,9 @@ def parseArguments():
     )
     parser.add_argument(
         "--storeOutputToFile",
-        action="store_true",
+        action="store",
         dest="store_output_to_file",
-        default=False,
+        default=None,
         help="Store the console output to a file",
     )
     

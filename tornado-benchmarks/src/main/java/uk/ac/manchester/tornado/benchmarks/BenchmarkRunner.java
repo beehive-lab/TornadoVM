@@ -19,8 +19,6 @@ package uk.ac.manchester.tornado.benchmarks;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,9 +36,7 @@ public abstract class BenchmarkRunner {
     private static final boolean SKIP_TORNADOVM = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skiptornadovm", FALSE));
     private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", FALSE));
     private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", TRUE));
-    private static final boolean STORE_OUTPUT_TO_FILE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.store.output.to.file", FALSE));
-
-    private String fileName;
+    private static final String STORE_OUTPUT_TO_FILE = System.getProperty("tornado.benchmarks.store.output.to.file", "");
 
     protected abstract String getName();
 
@@ -73,10 +69,6 @@ public abstract class BenchmarkRunner {
         final double refElapsedMedian;
         final double refFirstIteration;
 
-        if (STORE_OUTPUT_TO_FILE) {
-            initializeOutputFile();
-        }
-
         if (!isProfilerEnabled() && !SKIP_SERIAL) {
             StringBuilder stringBuilder = new StringBuilder();
             // Run the Java Reference
@@ -107,10 +99,10 @@ public abstract class BenchmarkRunner {
                     stringBuilder.append("Energy: bm=" + id + ", " + "id=" + "java-streams" + ", " + streamsTest.getEnergySummary() + "\n");
                 }
             }
-            if (STORE_OUTPUT_TO_FILE) {
-                redirectOutputToFile(stringBuilder.toString());
-            } else {
+            if (STORE_OUTPUT_TO_FILE.isEmpty()) {
                 System.out.printf(stringBuilder.toString());
+            } else {
+                redirectOutputToFile(stringBuilder.toString());
             }
         } else {
             refElapsed = -1;
@@ -128,14 +120,8 @@ public abstract class BenchmarkRunner {
         }
     }
 
-    private void initializeOutputFile() {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
-        String currentDateTime = LocalDateTime.now().format(dateTimeFormatter);
-        fileName = "console_output_" + currentDateTime + ".log";
-    }
-
     private void redirectOutputToFile(String output) {
-        try (FileWriter writer = new FileWriter(fileName, true)) {
+        try (FileWriter writer = new FileWriter(STORE_OUTPUT_TO_FILE, true)) {
             writer.append(output);
             writer.append("\n");
         } catch (IOException e) {
@@ -200,10 +186,10 @@ public abstract class BenchmarkRunner {
                 if (isUpsReaderEnabled()) {
                     stringBuilder.append("Energy: bm=" + id + ", " + "id=" + driverIndex + ":" + deviceIndex + ", " + benchmarkDriver.getEnergySummary() + "\n");
                 }
-                if (STORE_OUTPUT_TO_FILE) {
-                    redirectOutputToFile(stringBuilder.toString());
-                } else {
+                if (STORE_OUTPUT_TO_FILE.isEmpty()) {
                     System.out.printf(stringBuilder.toString());
+                } else {
+                    redirectOutputToFile(stringBuilder.toString());
                 }
             }
         }
@@ -233,10 +219,10 @@ public abstract class BenchmarkRunner {
                     + ", speedupFirstIteration=" + refFirstIteration / deviceTest.getFirstIteration() //
                     + ", CV=" + deviceTest.getCV() //
                     + ", deviceName=" + driver.getDevice(deviceIndex) + "\n");
-            if (STORE_OUTPUT_TO_FILE) {
-                redirectOutputToFile(stringBuilder.toString());
-            } else {
+            if (STORE_OUTPUT_TO_FILE.isEmpty()) {
                 System.out.printf(stringBuilder.toString());
+            } else {
+                redirectOutputToFile(stringBuilder.toString());
             }
         }
     }
