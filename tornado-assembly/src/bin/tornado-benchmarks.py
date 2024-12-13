@@ -64,6 +64,7 @@ __JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
+__STORE_OUTPUT_TO_FILE__ = " -Dtornado.benchmarks.store.output.to.file=True"
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
@@ -200,6 +201,8 @@ def composeAllOptions(args):
         jvm_options = jvm_options + __SKIP_TORNADOVM__
     if args.skip_serial:
         jvm_options = jvm_options + __SKIP_SERIAL__
+    if args.store_output_to_file:
+        jvm_options = jvm_options + __STORE_OUTPUT_TO_FILE__
     if args.validate:
         jvm_options = jvm_options + __VALIDATE__
     if args.skip_devices != None:
@@ -413,6 +416,13 @@ def parseArguments():
         dest="interval",
         default=0.0,
         help="Time interval (in seconds) to wait between execution of benchmarks. Default is 0 seconds.",
+    )
+    parser.add_argument(
+        "--storeOutputToFile",
+        action="store_true",
+        dest="store_output_to_file",
+        default=False,
+        help="Store the console output to a file",
     )
     
     args = parser.parse_args()

@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,12 +33,14 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkRunner {
+    private static final String FALSE = "FALSE";
+    private static final String TRUE = "TRUE";
+    private static final boolean SKIP_TORNADOVM = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skiptornadovm", FALSE));
+    private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", FALSE));
+    private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", TRUE));
+    private static final boolean STORE_OUTPUT_TO_FILE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.store.output.to.file", FALSE));
 
-    private static final boolean SKIP_TORNADOVM = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skiptornadovm", "False"));
-
-    private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", "False"));
-
-    private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
+    private String fileName;
 
     protected abstract String getName();
 
@@ -67,7 +73,12 @@ public abstract class BenchmarkRunner {
         final double refElapsedMedian;
         final double refFirstIteration;
 
+        if (STORE_OUTPUT_TO_FILE) {
+            initializeOutputFile();
+        }
+
         if (!isProfilerEnabled() && !SKIP_SERIAL) {
+            StringBuilder stringBuilder = new StringBuilder();
             // Run the Java Reference
             final BenchmarkDriver referenceTest = getJavaDriver();
             if (isUpsReaderEnabled()) {
@@ -75,9 +86,9 @@ public abstract class BenchmarkRunner {
             } else {
                 referenceTest.benchmark(null, false);
             }
-            System.out.printf("Performance: bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
+            stringBuilder.append("Performance: bm=" + id + ", " + "id=" + "java-reference" + ", " + referenceTest.getPreciseSummary() + "\n");
             if (isUpsReaderEnabled()) {
-                System.out.printf("Energy: bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getEnergySummary());
+                stringBuilder.append("Energy: bm=" + id + ", " + "id=" + "java-reference" + ", " + referenceTest.getEnergySummary() + "\n");
             }
 
             refElapsed = referenceTest.getAverage();
@@ -91,10 +102,15 @@ public abstract class BenchmarkRunner {
                 } else {
                     streamsTest.benchmark(null, false);
                 }
-                System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getSummary());
+                stringBuilder.append("Performance: bm=" + id + ", " + "id=" + "java-streams" + ", " + streamsTest.getPreciseSummary() + "\n");
                 if (isUpsReaderEnabled()) {
-                    System.out.printf("Energy: bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getEnergySummary());
+                    stringBuilder.append("Energy: bm=" + id + ", " + "id=" + "java-streams" + ", " + streamsTest.getEnergySummary() + "\n");
                 }
+            }
+            if (STORE_OUTPUT_TO_FILE) {
+                redirectOutputToFile(stringBuilder.toString());
+            } else {
+                System.out.printf(stringBuilder.toString());
             }
         } else {
             refElapsed = -1;
@@ -112,8 +128,23 @@ public abstract class BenchmarkRunner {
         }
     }
 
-    private void runBenchmarkAllDevices(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
+    private void initializeOutputFile() {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+        String currentDateTime = LocalDateTime.now().format(dateTimeFormatter);
+        fileName = "console_output_" + currentDateTime + ".log";
+    }
 
+    private void redirectOutputToFile(String output) {
+        try (FileWriter writer = new FileWriter(fileName, true)) {
+            writer.append(output);
+            writer.append("\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void runBenchmarkAllDevices(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
+        StringBuilder stringBuilder = new StringBuilder();
         final Map<Integer, Set<Integer>> blacklistedDevices = new HashMap<>();
 
         // Specify in <backendIndex:deviceIndex>
@@ -148,36 +179,38 @@ public abstract class BenchmarkRunner {
                 }
 
                 if (!isProfilerEnabled()) {
-                    System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", //
-                            id, //
-                            driverIndex + ":" + deviceIndex, //
-                            benchmarkDriver.getPreciseSummary(), //
-                            refElapsed / benchmarkDriver.getAverage(), //
-                            refElapsedMedian / benchmarkDriver.getMedian(), //
-                            refFirstIteration / benchmarkDriver.getFirstIteration(), //
-                            benchmarkDriver.getCV(), //
-                            driver.getDevice(deviceIndex));
+                    stringBuilder.append("Performance: bm=" + id //
+                            + ", device=" + driverIndex + ":" + deviceIndex //
+                            + ", " + benchmarkDriver.getPreciseSummary() //
+                            + ", speedupAvg=" + refElapsed / benchmarkDriver.getAverage() //
+                            + ", speedupMedian=" + refElapsedMedian / benchmarkDriver.getMedian() //
+                            + ", speedupFirstIteration=" + refFirstIteration / benchmarkDriver.getFirstIteration() //
+                            + ", CV=" + benchmarkDriver.getCV() //
+                            + ", deviceName=" + driver.getDevice(deviceIndex) + "\n");
                 } else {
                     // Profiler enabled
-                    System.out.printf("bm=%-15s, device=%-5s, kernelMin=%.2f, kernelAvg=%.2f, copyInAvg=%.2f, copyOutAvg=%.2f, deviceName=%s\n", //
-                            id, //
-                            driverIndex + ":" + deviceIndex, //
-                            benchmarkDriver.getBestKernelTime(), //
-                            benchmarkDriver.getAverageKernelTime(), //
-                            benchmarkDriver.getAverageCopyInTime(), //
-                            benchmarkDriver.getAverageCopyOutTime(), //
-                            driver.getDevice(deviceIndex));
+                    stringBuilder.append("Performance: bm=" + id //
+                            + ", " + "id=" + driverIndex + ":" + deviceIndex //
+                            + ", kernelMin=" + benchmarkDriver.getBestKernelTime() //
+                            + ", kernelAvg=" + benchmarkDriver.getAverageKernelTime() //
+                            + ", copyInAvg=" + benchmarkDriver.getAverageCopyInTime() //
+                            + ", copyOutAvg=" + benchmarkDriver.getAverageCopyOutTime() //
+                            + ", deviceName=" + driver.getDevice(deviceIndex) + "\n");
                 }
                 if (isUpsReaderEnabled()) {
-                    System.out.printf("Energy: bm=%-15s, device=%-5s, id=%-20s, %s\n", id, driverIndex + ":" + deviceIndex, "benchmarkDriver", benchmarkDriver.getEnergySummary());
+                    stringBuilder.append("Energy: bm=" + id + ", " + "id=" + driverIndex + ":" + deviceIndex + ", " + benchmarkDriver.getEnergySummary() + "\n");
                 }
-
+                if (STORE_OUTPUT_TO_FILE) {
+                    redirectOutputToFile(stringBuilder.toString());
+                } else {
+                    System.out.printf(stringBuilder.toString());
+                }
             }
         }
     }
 
     private void bechmarkForSelectedDevice(String id, String selectedDevices, double refElapsed, double refElapsedMedian, double refFirstIteration) {
-
+        StringBuilder stringBuilder = new StringBuilder();
         final String[] devices = selectedDevices.split(",");
         for (String device : devices) {
             final String[] stringIndex = device.split(":");
@@ -192,10 +225,19 @@ public abstract class BenchmarkRunner {
             } else {
                 deviceTest.benchmark(tornadoDevice, isProfilerEnabled());
             }
-
-            System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex, deviceTest
-                    .getPreciseSummary(), refElapsed / deviceTest.getAverage(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(), deviceTest.getCV(),
-                    driver.getDevice(deviceIndex));
+            stringBuilder.append("Performance: bm=" + id //
+                    + ", " + "device=" + driverIndex + ":" + deviceIndex //
+                    + ", " + deviceTest.getPreciseSummary() //
+                    + ", speedupAvg=" + refElapsed / deviceTest.getAverage() //
+                    + ", speedupMedian=" + refElapsedMedian / deviceTest.getMedian() //
+                    + ", speedupFirstIteration=" + refFirstIteration / deviceTest.getFirstIteration() //
+                    + ", CV=" + deviceTest.getCV() //
+                    + ", deviceName=" + driver.getDevice(deviceIndex) + "\n");
+            if (STORE_OUTPUT_TO_FILE) {
+                redirectOutputToFile(stringBuilder.toString());
+            } else {
+                System.out.printf(stringBuilder.toString());
+            }
         }
     }
 
