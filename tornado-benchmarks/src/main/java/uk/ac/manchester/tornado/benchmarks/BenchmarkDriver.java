@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -167,24 +168,26 @@ public abstract class BenchmarkDriver {
 
         for (long i = 0; i < iterations; i++) {
             Thread t0, t1;
-            javaPowerMetrics = new ArrayList<>();
-            javaStartTimer = new ArrayList<>();
-            javaStopTimer = new ArrayList<>();
-
-            t0 = new Thread(() -> {
-                runBenchmark(device);
-            });
+            javaPowerMetrics = Collections.synchronizedList(new ArrayList<>());
+            javaStartTimer = Collections.synchronizedList(new ArrayList<>());
+            javaStopTimer = Collections.synchronizedList(new ArrayList<>());
+            t0 = new Thread(() -> runBenchmark(device), "BenchmarkThread");
             t1 = new Thread(() -> {
-                if (device == null) {
-                    TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
-                    while (t0.isAlive()) {
-                        javaStartTimer.add(System.currentTimeMillis());
-                        long powerMetric = runtime.getUpsPowerMetric();
-                        javaPowerMetrics.add(powerMetric);
-                        javaStopTimer.add(System.currentTimeMillis());
+                TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+                while (t0.isAlive()) {
+                    try {
+                        Thread.sleep(30);
+                    } catch (InterruptedException e) {
+                        System.err.println("The thread for monitoring the power consumption is interrupted: " + e.getMessage());
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
                     }
+                    javaStartTimer.add(System.currentTimeMillis());
+                    long powerMetric = runtime.getUpsPowerMetric();
+                    javaPowerMetrics.add(powerMetric);
+                    javaStopTimer.add(System.currentTimeMillis());
                 }
-            });
+            }, "PowerMonitoringThread");
 
             if (!skipGC()) {
                 System.gc();
@@ -197,6 +200,7 @@ public abstract class BenchmarkDriver {
                 t0.join();
                 t1.join();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
             final long end = System.nanoTime();
@@ -376,7 +380,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
+        return String.format("average(ns)=%6e, median(ns)=%6e, firstIteration(ns)=%6e, best(ns)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
     private Long calculateTotalEnergy() {
