@@ -39,10 +39,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.FloatDivNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
@@ -52,11 +49,13 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.spirv.graal.HalfFloatStamp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
@@ -264,7 +263,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             subNode = new VectorSubHalfNode(subX, subY);
             graph.addWithoutUnique(subNode);
         } else {
-            subNode = new SubNode(subX, subY);
+            subNode = new SubHalfNode(subX, subY);
             graph.addWithoutUnique(subNode);
         }
         subHalfFloatNode.replaceAtUsages(subNode);
@@ -315,7 +314,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         ValueNode divX = getHalfOperand(divHalfFloatNode.getX(), graph, isVectorOperation);
         ValueNode divY = getHalfOperand(divHalfFloatNode.getY(), graph, isVectorOperation);
 
-        FloatDivNode divNode = new FloatDivNode(divX, divY);
+        DivHalfNode divNode = new DivHalfNode(divX, divY);
         graph.addWithoutUnique(divNode);
 
         divHalfFloatNode.replaceAtUsages(divNode);
