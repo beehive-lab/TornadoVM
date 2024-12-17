@@ -31,6 +31,6 @@ public class AddHalfNode extends ValueNode implements ArithmeticLIRLowerable {
         Value inputY = builder.operand(y);
 
         SPIRVArithmeticTool spirvArithmeticTool = (SPIRVArithmeticTool) generator;
-        builder.setResult(this, spirvArithmeticTool.emitAnd(inputX, inputY));
+        builder.setResult(this, spirvArithmeticTool.emitAdd(inputX, inputY, false));
     }
 }
