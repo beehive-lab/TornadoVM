@@ -34,6 +34,8 @@ import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.ValueProxyNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.FloatDivNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
@@ -47,6 +49,9 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.HalfFloatConstantNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
@@ -55,6 +60,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElem
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorMultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
@@ -111,7 +117,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
                 if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                     NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
-                    ValueNode valueInput = newHalfFloatInstance.getValue();
+                    ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph); //newHalfFloatInstance.getValue();
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
                     deleteFixed(newHalfFloatInstance);
@@ -194,6 +200,20 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     }
 
+    private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
+        if (halfFloatValue instanceof ConstantNode) {
+            ConstantNode floatValue = (ConstantNode) halfFloatValue;
+            Constant half = new RawConstant(floatValue.asJavaConstant().asInt());
+            HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(half);
+            graph.addWithoutUnique(halfFloatConstantNode);
+            floatValue.replaceAtUsages(halfFloatConstantNode);
+            floatValue.safeDelete();
+            return halfFloatConstantNode;
+        } else {
+            return halfFloatValue;
+        }
+    }
+
     private static ValueNode replaceAdd(AddHalfFloatNode addHalfFloatNode, StructuredGraph graph) {
         ValueNode addNode;
         ValueNode addX = getHalfOperand(addHalfFloatNode.getX(), graph);
@@ -202,7 +222,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             addNode = new VectorAddHalfNode(addX, addY);
             graph.addWithoutUnique(addNode);
         } else {
-            addNode = new AddNode(addX, addY);
+            addNode = new AddHalfNode(addX, addY);
             graph.addWithoutUnique(addNode);
         }
 
@@ -263,7 +283,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             multNode = new VectorMultHalfNode(multX, multY);
             graph.addWithoutUnique(multNode);
         } else {
-            multNode = new MulNode(multX, multY);
+            multNode = new MultHalfNode(multX, multY);
             graph.addWithoutUnique(multNode);
         }
 
@@ -293,6 +313,25 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
         for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
             replaceDiv(divHalfFloatNode, graph);
+        }
+    }
+
+    private static ValuePhiNode replacePhi(ValuePhiNode phiNode, StructuredGraph graph) {
+        if (phiNode.getStackKind().isObject()) {
+            ValueNode[] values = new ValueNode[phiNode.valueCount()];
+            phiNode.values().toArray(values);
+            ValuePhiNode halfPhiNode = new ValuePhiNode(new HalfFloatStamp(), phiNode.merge(), values);
+            graph.addWithoutUnique(halfPhiNode);
+            if (phiNode.usages().filter(ValueProxyNode.class).isNotEmpty()) {
+                ValueProxyNode proxy = phiNode.usages().filter(ValueProxyNode.class).first();
+                proxy.replaceAtUsages(phiNode);
+                proxy.safeDelete();
+            }
+            phiNode.replaceAtUsages(halfPhiNode);
+            phiNode.safeDelete();
+            return halfPhiNode;
+        } else {
+            return phiNode;
         }
     }
 
@@ -338,6 +377,8 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             halfOperand = replaceSub((SubHalfFloatNode) operand, graph);
         } else if (operand instanceof DivHalfFloatNode) {
             halfOperand = replaceDiv((DivHalfFloatNode) operand, graph);
+        } else if (operand instanceof ValuePhiNode) {
+            halfOperand = replacePhi((ValuePhiNode) operand, graph);
         } else {
             halfOperand = operand;
         }

@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.vectortypes;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -245,6 +246,19 @@ public class TestHalfFloats extends TornadoTestBase {
             half2.setX(HalfFloat.add(value.get(i).getS0(), value.get(i).getS1()));
             half2.setY(value.get(i).getS1());
             output.set(i, half2);
+        }
+    }
+
+    private static void matrixMultiplication(final HalfFloatArray A, final HalfFloatArray B, final HalfFloatArray C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                HalfFloat sum = new HalfFloat(0.0f);
+                for (int k = 0; k < size; k++) {
+                    HalfFloat mult = HalfFloat.mult(A.get((i * size) + k), B.get((k * size) + j));
+                    sum = HalfFloat.add(sum, mult);
+                }
+                C.set((i * size) + j, sum);
+            }
         }
     }
 
@@ -926,6 +940,37 @@ public class TestHalfFloats extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getY().getFloat32(), tornadoOutput.get(i).getY().getFloat32(), DELTA);
         }
     }
+
+    @Test
+    public void testMatrixMultiplication() throws TornadoExecutionPlanException {
+        int N = 256;
+        HalfFloatArray matrixA = new HalfFloatArray(N * N);
+        HalfFloatArray matrixB = new HalfFloatArray(N * N);
+        HalfFloatArray matrixCSeq = new HalfFloatArray(N * N);
+        HalfFloatArray matrixC = new HalfFloatArray(N * N);
+
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA.set(idx, new HalfFloat(2.5f));
+            matrixB.set(idx, new HalfFloat(3.5f));
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestHalfFloats::matrixMultiplication, matrixA, matrixB, matrixC, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executor.execute();
+        }
+
+        matrixMultiplication(matrixA, matrixB, matrixCSeq, N);
+
+        for (int i = 0; i < N * N; i++) {
+            assertEquals(matrixCSeq.get(i).getFloat32(), matrixC.get(i).getFloat32(), DELTA);
+        }
+    }
+
 
     @Test(timeout = 1000) //timeout of 1sec
     public void testAllocationIssue() {
