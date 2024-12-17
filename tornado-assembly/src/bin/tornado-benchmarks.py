@@ -64,6 +64,7 @@ __JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
+__ENERGY_MONITOR_INTERVAL__ = " -Denergy.monitor.interval="
 __STORE_OUTPUT_TO_FILE__ = " -Dtornado.benchmarks.store.output.to.file="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
@@ -201,6 +202,8 @@ def composeAllOptions(args):
         jvm_options = jvm_options + __SKIP_TORNADOVM__ + " "
     if args.skip_serial:
         jvm_options = jvm_options + __SKIP_SERIAL__ + " "
+    if args.energyInterval:
+        jvm_options = jvm_options + __ENERGY_MONITOR_INTERVAL__ + str(args.energyInterval) + " "
     if args.store_output_to_file:
         jvm_options = jvm_options + __STORE_OUTPUT_TO_FILE__ + args.store_output_to_file + " "
     if args.validate:
@@ -416,6 +419,13 @@ def parseArguments():
         dest="interval",
         default=0.0,
         help="Time interval (in seconds) to wait between execution of benchmarks. Default is 0 seconds.",
+    )
+    parser.add_argument(
+        "--energyInterval",
+        type=int,
+        dest="energyInterval",
+        default=0,
+        help="Time interval (in milliseconds) for the thread that monitors energy to sleep. Default is 0 milliseconds.",
     )
     parser.add_argument(
         "--storeOutputToFile",

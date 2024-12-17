@@ -40,8 +40,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkDriver {
 
-    private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "false"));
-
+    private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "False"));
+    private static final int ENERGY_MONITOR_INTERVAL = Integer.parseInt(System.getProperty("energy.monitor.interval", "0"));
     private static final boolean VALIDATE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.validate", "False"));
 
     public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "1000.0"));
@@ -111,6 +111,10 @@ public abstract class BenchmarkDriver {
         return true;
     }
 
+    private boolean isEnergyMonitorIntervalEnabled() {
+        return ENERGY_MONITOR_INTERVAL > 0;
+    }
+
     public void benchmark(TornadoDevice device, boolean isProfilerEnabled) {
         setUp();
         int size = toIntExact(iterations);
@@ -175,12 +179,14 @@ public abstract class BenchmarkDriver {
             t1 = new Thread(() -> {
                 TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
                 while (t0.isAlive()) {
-                    try {
-                        Thread.sleep(30);
-                    } catch (InterruptedException e) {
-                        System.err.println("The thread for monitoring the power consumption is interrupted: " + e.getMessage());
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
+                    if (isEnergyMonitorIntervalEnabled()) {
+                        try {
+                            Thread.sleep(ENERGY_MONITOR_INTERVAL);
+                        } catch (InterruptedException e) {
+                            System.err.println("The thread for monitoring the power consumption is interrupted: " + e.getMessage());
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        }
                     }
                     javaStartTimer.add(System.currentTimeMillis());
                     long powerMetric = runtime.getUpsPowerMetric();
