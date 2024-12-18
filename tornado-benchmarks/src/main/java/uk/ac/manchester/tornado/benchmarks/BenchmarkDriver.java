@@ -54,10 +54,9 @@ public abstract class BenchmarkDriver {
     private List<Long> deviceKernelTimers;
     private List<Long> deviceCopyIn;
     private List<Long> deviceCopyOut;
-    private List<Long> javaEnergyMetrics;
-    private List<Long> javaPowerMetrics;
-    private List<Long> javaStartTimer;
-    private List<Long> javaStopTimer;
+    private List<Long> totalEnergyMetrics;
+    private List<Long> powerMetricsPerIteration;
+    private List<Long> snapshotTimerPerIteration;
 
     private int startingIndex = 30;
 
@@ -168,13 +167,12 @@ public abstract class BenchmarkDriver {
             deviceCopyIn = new ArrayList<>();
             deviceCopyOut = new ArrayList<>();
         }
-        javaEnergyMetrics = new ArrayList<>();
+        totalEnergyMetrics = new ArrayList<>();
 
         for (long i = 0; i < iterations; i++) {
             Thread t0, t1;
-            javaPowerMetrics = Collections.synchronizedList(new ArrayList<>());
-            javaStartTimer = Collections.synchronizedList(new ArrayList<>());
-            javaStopTimer = Collections.synchronizedList(new ArrayList<>());
+            powerMetricsPerIteration = Collections.synchronizedList(new ArrayList<>());
+            snapshotTimerPerIteration = Collections.synchronizedList(new ArrayList<>());
             t0 = new Thread(() -> runBenchmark(device), "BenchmarkThread");
             t1 = new Thread(() -> {
                 TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
@@ -188,10 +186,9 @@ public abstract class BenchmarkDriver {
                             throw new RuntimeException(e);
                         }
                     }
-                    javaStartTimer.add(System.currentTimeMillis());
                     long powerMetric = runtime.getUpsPowerMetric();
-                    javaPowerMetrics.add(powerMetric);
-                    javaStopTimer.add(System.currentTimeMillis());
+                    snapshotTimerPerIteration.add(System.currentTimeMillis());
+                    powerMetricsPerIteration.add(powerMetric);
                 }
             }, "PowerMonitoringThread");
 
@@ -226,7 +223,7 @@ public abstract class BenchmarkDriver {
             }
 
             timers[toIntExact(i)] = (end - start);
-            javaEnergyMetrics.add(calculateTotalEnergy());
+            totalEnergyMetrics.add(calculateTotalEnergy(start));
         }
         barrier();
         writeToCsv(id, device);
@@ -330,9 +327,9 @@ public abstract class BenchmarkDriver {
         // Write the List to CSV
         try (FileWriter writer = new FileWriter(fileName, true)) {
             writer.append(id).append(",");
-            int size = javaEnergyMetrics.size();
+            int size = totalEnergyMetrics.size();
             for (int i = 0; i < size; i++) {
-                writer.append(String.valueOf(javaEnergyMetrics.get(i)));
+                writer.append(String.valueOf(totalEnergyMetrics.get(i)));
                 if (i < size - 1) {
                     writer.append(",");
                 }
@@ -345,19 +342,19 @@ public abstract class BenchmarkDriver {
     }
 
     public long getFirstEnergyMetric() {
-        return javaEnergyMetrics.getFirst();
+        return totalEnergyMetrics.getFirst();
     }
 
     public long getAverageEnergyMetric() {
-        return (long) getAverage(toArray(javaEnergyMetrics));
+        return (long) getAverage(toArray(totalEnergyMetrics));
     }
 
     public long getLowestEnergyMetric() {
-        return (long) getMin(toArray(javaEnergyMetrics));
+        return (long) getMin(toArray(totalEnergyMetrics));
     }
 
     public long getHighestEnergyMetric() {
-        return (long) getMax(toArray(javaEnergyMetrics));
+        return (long) getMax(toArray(totalEnergyMetrics));
     }
 
     public double getVariance() {
@@ -389,13 +386,16 @@ public abstract class BenchmarkDriver {
         return String.format("average(ns)=%6e, median(ns)=%6e, firstIteration(ns)=%6e, best(ns)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
-    private Long calculateTotalEnergy() {
+    private Long calculateTotalEnergy(long startTime) {
         long totalEnergy = 0;
 
-        if (javaStartTimer.size() == javaStopTimer.size() && javaStartTimer.size() == javaPowerMetrics.size()) {
-            for (int i = 0; i < javaStartTimer.size(); i++) {
-                long timeInterval = javaStopTimer.get(i) - javaStartTimer.get(i);
-                long energyForInterval = timeInterval * javaPowerMetrics.get(i);
+        if (snapshotTimerPerIteration.size() == powerMetricsPerIteration.size()) {
+            long timeInterval = snapshotTimerPerIteration.get(0) - startTime;
+            long energyForInterval = timeInterval * powerMetricsPerIteration.get(0);
+            totalEnergy += energyForInterval;
+            for (int i = 0; i < snapshotTimerPerIteration.size() - 1; i++) {
+                timeInterval = snapshotTimerPerIteration.get(i + 1) - snapshotTimerPerIteration.get(i);
+                energyForInterval = timeInterval * powerMetricsPerIteration.get(i + 1);
                 totalEnergy += energyForInterval;
             }
         } else {
