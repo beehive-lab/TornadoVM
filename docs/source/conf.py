@@ -7,7 +7,7 @@ copyright = "2013-2024, APT Group, Department of Computer Science"
 author = "The University of Manchester"
 
 release = "v1.0.9"
-version = "v1.0.9-dev"
+version = "v1.0.9"
 
 # -- General configuration
 
