@@ -8,12 +8,12 @@ These need to be installed before executing either automatic or manual TornadoVM
 
 * GCC >= 10.0 or LLVM/clang (Linux)
 * Xcode >= 15 (macOS only)
-* Visual Studio Community 2022 (Windows only)
+* Visual Studio Community 2022 (Windows 11 recommended)
 * Python >= 3.6 (all OSes)
 * At least one of following drivers:
       * OpenCL drivers: GPUs and CPUs >= 2.1, FPGAs >= 1.0
       * NVIDIA drivers and CUDA Toolkit 10.0+
-      * Intel drivers and Level-Zero >= 1.2
+      * Intel compute-runtime and/or GPU drivers (OpenCL), and Level-Zero >= 1.2
 
 For Intel-based MacOS users: the OpenCL support for your Apple model can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
@@ -39,11 +39,14 @@ The following table includes the platforms that TornadoVM can be executed.
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Windows 10/11             | OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested         | CUDA 12.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
-| Windows WSL               | OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested         | Not Supported   | Level-Zero >= 1.2    |
+| Windows WSL               | OpenCL for GPUs and CPUs >= 2.1, FPGAs not tested         | CUDA 12.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 
-**Note:** The SPIR-V backend of TornadoVM is supported for Linux and Windows.
-The SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs), and Intel ARC GPUs.
+**Note:** The SPIR-V backend of TornadoVM is supported for Linux and Windows systems.
+The SPIR-V backend can be dispatched through two different runtimes:
+
+- Via Level Zero: it runs on Intel HD Graphics (integrated GPUs), and Intel ARC GPUs.
+- Via OpenCL: it runs on Linux and Windows on any device with OpenCL >= 2.1 support (CPUs, GPUs).
 
 .. _installation:
 
@@ -247,7 +250,7 @@ To recompile TornadoVM after an update:
 .. _installation_windows:
 
 Installation for Windows 10/11
-======================================
+==============================
 
 **[DISCLAIMER] Please, note that, although TornadoVM can run on Windows 10/11, it is still experimental.**
 
@@ -370,6 +373,166 @@ And TornadoVM is ready to be used. If you want to recompile with a different bac
 
    ## run specific examples (e.g., NBody)
    tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody
+
+
+.. _installation_windows_wsl:
+
+Installation for Windows Subsystem for Linux (WSL) 
+===================================================
+
+
+This tutorial shows how to install TornadoVM with CUDA to run on NVIDIA GPUs within WSL, and Intel GPU via the Intel compute runtime.
+
+Install WSL using PowerShell
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: bash
+
+   ## By default, Windows 11 installs Ubuntu 24.04 LTS, as in Jan 2025
+   wsl --install 
+
+
+For more details about how to configure WSL, follow the official documentation: `link <https://learn.microsoft.com/en-us/windows/wsl/install>`_
+
+
+Setup CUDA in WSL 
+~~~~~~~~~~~~~~~~~~
+
+If you have an NVIDIA GPU installed in your Windows 11 PC, the NVIDIA driver is also installed for WSL. 
+What we need to install next is the CUDA SDK. Open a terminal in WSL:
+
+.. code:: bash
+
+   ## Update the system
+   sudo apt-get update
+   sudo apt-get dist-upgrade 
+
+
+Install CUDA. For detailed instructions, follow the NVIDIA's guidelines: `link <https://docs.nvidia.com/cuda/wsl-user-guide/index.html>`_.
+
+
+.. code:: bash
+
+   sudo apt-key del 7fa2af80
+
+   wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
+   sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
+   wget https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda-repo-wsl-ubuntu-12-6-local_12.6.3-1_amd64.deb
+   sudo dpkg -i cuda-repo-wsl-ubuntu-12-6-local_12.6.3-1_amd64.deb
+   sudo cp /var/cuda-repo-wsl-ubuntu-12-6-local/cuda-*-keyring.gpg /usr/share/keyrings/
+   sudo apt-get update
+   sudo apt-get -y install cuda-toolkit-12-6
+
+
+Update the ``~/.bashrc file``:
+
+.. code:: bash
+
+   export C_INCLUDE_PATH=/usr/local/cuda/include
+   export CPLUS_INCLUDE_PATH=/usr/local/cuda/include
+   export LD_LIBRARY_PATH=/usr/local/cuda/lib64
+   export PATH=/usr/local/cuda/bin/:$PATH
+
+
+Login again or type ``bash``.
+
+
+Now you can install TornadoVM. 
+
+
+Install Intel Compute Runtime for OpenCL and Level Zero for WSL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Go to `https://github.com/intel/compute-runtime/releases/ <https://github.com/intel/compute-runtime/releases/>`_ and download the latest release.
+In this tutorial, the latest version is ``24.48.31907.7`` (`link <https://github.com/intel/compute-runtime/releases/tag/24.48.31907.7>`_).
+
+
+.. code:: bash
+
+   mkdir -p ~/bin/neo
+   cd ~/bin/neo
+   wget https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-core-2_2.2.3+18220_amd64.deb
+   wget https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-opencl-2_2.2.3+18220_amd64.deb
+   wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-level-zero-gpu-dbgsym_1.6.31907.7_amd64.ddeb
+   wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-level-zero-gpu_1.6.31907.7_amd64.deb
+   wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-opencl-icd-dbgsym_24.48.31907.7_amd64.ddeb
+   wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-opencl-icd_24.48.31907.7_amd64.deb
+   wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/libigdgmm12_22.5.4_amd64.deb
+
+
+Verify CheckSums: 
+
+.. code:: bash
+
+   wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/ww48.sum
+   sha256sum -c ww48.sum
+
+
+Install packages:
+
+.. code:: bash
+
+   sudo dpkg -i *.deb
+
+
+Update soft link for OpenCL:
+
+
+.. code:: bash
+
+   sudo ln -s /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 /usr/lib/x86_64-linux-gnu/libOpenCL.so 
+
+
+
+We are ready to install TornadoVM.
+
+
+Install TornadoVM for WSL
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Install a new Python's environment:
+
+.. code:: bash
+
+   sudo apt install python3-venv 
+   ## Setup a new environment for Python modules 
+   python3 -m venv ~/bin/venv 
+   source ~/bin/venv/bin/activate 
+
+
+Clone and build TornadoVM:
+
+
+.. code:: bash
+
+   cd ~/
+   git clone  git clone https://github.com/beehive-lab/TornadoVM.git tornado
+   cd tornado 
+
+  ## Install OpenCL only 
+   ./bin/tornadovm-installer --jdk jdk21 --backend=opencl
+
+   ## Install OpenCL and PTX 
+   ./bin/tornadovm-installer --jdk jdk21 --backend=opencl,ptx
+
+   ## Install All backends:
+   ./bin/tornadovm-installer --jdk jdk21 --backend=opencl,ptx,spirv
+
+
+Finally enable environment:
+
+.. code:: bash
+
+   source ~/bin/venv/bin/activate 
+   source setvars.sh
+
+Run tests:
+
+.. code:: bash
+
+   make tests 
+
 
 
 
