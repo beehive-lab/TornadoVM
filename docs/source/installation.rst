@@ -440,23 +440,6 @@ To run individual tests:
    tornado --jvm "-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
 
 
-Known issues on Linux
-=======================
-
-- For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
-
-- In Ubuntu >= 16.04 CMake can cause the following error:
-
-``Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2").``
-
-Then the following package should be installed:
-
-.. code:: bash
-
-   $ apt-get install ocl-icd-opencl-dev
-
-
-
 .. _installation_riscv:
 
 Installation for RISC-V RVV 1.0 on Linux
@@ -478,13 +461,28 @@ First, install the dependencies:
    sudo apt-get install python3-psutil cmake 
 
 
-Then, download the script to apply the patch:
+OpenCL backend only
+~~~~~~~~~~~~~~~~~~~
+
+Then, download the script to apply the patch for the OpenCL backend:
 
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/d79af888a9873f8a3b44e4cc35a8ae382684cdb2/apply-riscv-patch.sh 
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/b2cc2b7f33b9d8771f54806bd2247fd64cdfd31f/apply-riscv-patch.sh
    bash apply-riscv-patch.sh 
+
+
+SPIR-V + OpenCL backends
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to enable both OpenCL and SPIR-V backends, use the following patch:
+
+.. code:: bash
+
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/dc8abb04756c134fa74fdd3f4959a4e920818b83/apply-riscv-spirv-patch.sh
+   bash apply-riscv-spirv-patch.sh
+
 
 
 Run TornadoVM:
@@ -505,6 +503,23 @@ Run TornadoVM:
                 Total Number of Block Threads: [1024]
                 Max WorkGroup Configuration: [1024, 1024, 1024]
                 Device OpenCL C version: OpenCL C 1.2 Clang 19.1.5
+
+
+Known issues on Linux
+=======================
+
+- For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
+
+- In Ubuntu >= 16.04 CMake can cause the following error:
+
+``Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2").``
+
+Then the following package should be installed:
+
+.. code:: bash
+
+   $ apt-get install ocl-icd-opencl-dev
+
 
 
 IDE Code Formatter
