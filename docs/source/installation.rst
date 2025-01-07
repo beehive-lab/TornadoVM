@@ -1,5 +1,5 @@
 Installation & Configuration
-##################################
+#############################
 
 Pre-requisites
 ****************
@@ -18,7 +18,7 @@ These need to be installed before executing either automatic or manual TornadoVM
 For Intel-based MacOS users: the OpenCL support for your Apple model can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
 Supported Platforms
-***********************
+*******************
 
 The following table includes the platforms that TornadoVM can be executed.
 
@@ -51,12 +51,12 @@ The SPIR-V backend can be dispatched through two different runtimes:
 .. _installation:
 
 Installation
-*****************
+************
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code.
 
 Installation Script
-====================
+===================
 
 The ``tornadovm-installer`` script provided in this repository will compile/download ``OpenJDK``, ``CMake``, ``Maven`` and it will build the TornadoVM project.
 This installation script has been tested on Linux, macOS and Windows.
@@ -202,7 +202,7 @@ To recompile TornadoVM to use a different backend:
 .. _installation_appleMSeries:
 
 Installation for MacOS M1/M2/M3
-=================================
+===============================
 
 
 Download dependencies:
@@ -255,7 +255,7 @@ Installation for Windows 10/11
 **[DISCLAIMER] Please, note that, although TornadoVM can run on Windows 10/11, it is still experimental.**
 
 1. Install prerequisites
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maven
 ^^^^^^
@@ -276,7 +276,7 @@ Download and install CMake from the `official site <https://cmake.org/download/>
 
 
 2. Install the GPU drivers and toolkits (e.g., NVIDIA drivers and CUDA Toolkit)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A) CUDA Driver
 
@@ -318,7 +318,7 @@ In this case, enable the following packages:
 
 
 4. Download TornadoVM
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Clone the latest TornadoVM source code from the GitHub `repository <https://github.com/beehive-lab/TornadoVM>`__:
 
@@ -331,7 +331,7 @@ Hereafter, the directory with the source code will be referred as ``<TornadoVM>`
 
 
 5. Configure/Compile the TornadoVM Project 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 The installation script downloads the following dependencies:
@@ -361,7 +361,7 @@ And TornadoVM is ready to be used. If you want to recompile with a different bac
 
 
 6. Check the installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
@@ -539,10 +539,10 @@ Run tests:
 .. _installation_mali:
 
 Installation for ARM Mali GPUs
-====================================
+==============================
 
 1. Installation
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 The installation of TornadoVM to run on ARM Mali GPUs requires JDK21 with GraalVM.
 
@@ -552,7 +552,7 @@ The OpenCL driver for Mali GPUs on Linux that has been tested is:
    `link <https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel>`__
 
 2. Testing on ARM MALI GPUs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We have tested TornadoVM on the following ARM Mali GPUs:
 
@@ -572,7 +572,7 @@ The rest of the unittests should pass.
 
 
 Running Examples
-=================
+================
 
 TornadoVM uses modules:
 
@@ -604,7 +604,7 @@ To run individual tests:
 
 
 Known issues on Linux
-=======================
+=====================
 
 - For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
 
@@ -671,10 +671,10 @@ Run TornadoVM:
 
 
 IDE Code Formatter
-====================
+==================
 
 Using Eclipse and Netbeans
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The code formatter in Eclipse is automatically applied after generating the setting files.
 
@@ -687,7 +687,7 @@ The code formatter in Eclipse is automatically applied after generating the sett
 For Netbeans, the Eclipse Formatter Plugin is needed.
 
 Using IntelliJ
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 
 Install plugins:
@@ -704,7 +704,7 @@ Then :
 
 
 TornadoVM Maven Projects
-================================
+========================
 
 
 To use the TornadoVM API in your projects, you can checkout our maven repository as follows:
@@ -738,7 +738,7 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
 Notice that, for running with TornadoVM, you will need either the docker images or the full JVM with TornadoVM enabled.
 
 Versions available
-========================
+==================
 
 * 1.0.9
 * 1.0.7
