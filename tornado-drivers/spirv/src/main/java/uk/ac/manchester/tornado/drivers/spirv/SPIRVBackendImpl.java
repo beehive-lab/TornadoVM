@@ -75,7 +75,7 @@ public final class SPIRVBackendImpl implements TornadoAcceleratorBackend {
         logger.info("[SPIR-V] Found %d platforms", numPlatforms);
 
         if (numPlatforms < 1) {
-            throw new TornadoBailoutRuntimeException("[Warning] No SPIR-V platforms found. Deoptimizing to sequential execution");
+            throw new TornadoBailoutRuntimeException("[ERROR] No SPIR-V platforms found. Deoptimizing to sequential execution");
         }
         platforms = new ArrayList<>();
         spirvBackends = new SPIRVBackend[numPlatforms][];

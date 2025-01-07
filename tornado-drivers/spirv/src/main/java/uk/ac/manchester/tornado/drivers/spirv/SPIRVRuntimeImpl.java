@@ -60,16 +60,13 @@ public class SPIRVRuntimeImpl {
     }
 
     private SPIRVDispatcher instantiateDispatcher(String runtimeName) {
-        SPIRVDispatcher dispatcher;
-        System.out.println("Creating Dispatcher for " + runtimeName);
         if (runtimeName.equalsIgnoreCase("opencl")) {
-            dispatcher = new SPIRVOpenCLDriver();
+            return new SPIRVOpenCLDriver();
         } else if (runtimeName.equalsIgnoreCase("levelzero")) {
-            dispatcher = new SPIRVLevelZeroDriver();
+            return new SPIRVLevelZeroDriver();
         } else {
             throw new TornadoRuntimeException(ERROR_PLATFORM_NOT_IMPLEMENTED);
         }
-        return dispatcher;
     }
 
     private synchronized void init() {
