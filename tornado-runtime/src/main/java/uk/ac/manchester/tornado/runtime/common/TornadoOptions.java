@@ -220,7 +220,7 @@ public class TornadoOptions {
     /**
      * Use Level Zero or OpenCL as the SPIR-V Code runtime and code dispatcher. Allowed values: "opencl", "levelzero". The default option is "opencl".
      */
-    public static final String SPIRV_DEFAULT_RUNTIME = getProperty("tornado.spirv.dispatcher", "opencl");
+    public static final String SPIRV_DEFAULT_RUNTIME = getProperty("tornado.spirv.default.dispatcher", "opencl");
 
     /**
      * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero".
