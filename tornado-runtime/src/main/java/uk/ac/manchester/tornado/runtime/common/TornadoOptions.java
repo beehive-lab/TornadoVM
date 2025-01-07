@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -218,9 +218,23 @@ public class TornadoOptions {
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
     /**
-     * Use Level Zero or OpenCL as the SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero". The default option is "opencl".
+     * Use Level Zero or OpenCL as the SPIR-V Code runtime and code dispatcher. Allowed values: "opencl", "levelzero". The default option is "opencl".
      */
-    public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "opencl");
+    public static final String SPIRV_DEFAULT_RUNTIME = getProperty("tornado.spirv.dispatcher", "opencl");
+
+    /**
+     * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero".
+     *
+     * <p>
+     * <ul>
+     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
+     *   <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
+     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes.
+     * *</ul>
+     * </p>
+     */
+    public static final String SPIRV_INSTALLED_RUNTIMES = getProperty("tornado.spirv.runtimes", "opencl,levelzero");
+
     /**
      * Check I/O parameters for every task within a task-graph.
      */

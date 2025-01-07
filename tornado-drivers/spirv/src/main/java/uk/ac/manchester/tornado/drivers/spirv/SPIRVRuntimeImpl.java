@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  */
 public class SPIRVRuntimeImpl {
 
-    private final String ERROR_PLATFORM_NOT_IMPLEMENTED = "SPIR-V Runtime Implementation not supported: " + TornadoOptions.SPIRV_DISPATCHER + " \nUse \"opencl\" or \"levelzero\"";
+    private final String ERROR_PLATFORM_NOT_IMPLEMENTED = "SPIR-V Runtime Implementation not supported: " + TornadoOptions.SPIRV_DEFAULT_RUNTIME + " \nUse \"opencl\" or \"levelzero\"";
 
     private List<SPIRVPlatform> platforms;
     private static SPIRVRuntimeImpl instance;
@@ -59,20 +59,32 @@ public class SPIRVRuntimeImpl {
         init();
     }
 
+    private SPIRVDispatcher instantiateDispatcher(String runtimeName) {
+        SPIRVDispatcher dispatcher;
+        System.out.println("Creating Dispatcher for " + runtimeName);
+        if (runtimeName.equalsIgnoreCase("opencl")) {
+            dispatcher = new SPIRVOpenCLDriver();
+        } else if (runtimeName.equalsIgnoreCase("levelzero")) {
+            dispatcher = new SPIRVLevelZeroDriver();
+        } else {
+            throw new TornadoRuntimeException(ERROR_PLATFORM_NOT_IMPLEMENTED);
+        }
+        return dispatcher;
+    }
+
     private synchronized void init() {
         if (platforms == null) {
-            SPIRVDispatcher[] dispatchers = new SPIRVDispatcher[SPIRVRuntimeType.values().length];
-            SPIRVDispatcher levelZeroDriver = new SPIRVLevelZeroDriver();
-            SPIRVDispatcher openCLDriver = new SPIRVOpenCLDriver();
-            int index = 0;
-            if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("opencl")) {
-                dispatchers[index++] = openCLDriver;
-                dispatchers[index] = levelZeroDriver;
-            } else if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("levelzero")) {
-                dispatchers[index++] = levelZeroDriver;
-                dispatchers[index] = openCLDriver;
-            } else {
-                throw new TornadoRuntimeException(ERROR_PLATFORM_NOT_IMPLEMENTED);
+            List<SPIRVDispatcher> dispatchers = new ArrayList<>();
+            dispatchers.add(instantiateDispatcher(TornadoOptions.SPIRV_DEFAULT_RUNTIME));
+
+            String[] listOfRuntimes = TornadoOptions.SPIRV_INSTALLED_RUNTIMES.split(",");
+            if (listOfRuntimes.length > 1) {
+                // We need to install the second runtime
+                for (String runtime : listOfRuntimes) {
+                    if (!runtime.equals(TornadoOptions.SPIRV_DEFAULT_RUNTIME)) {
+                        dispatchers.add( instantiateDispatcher(runtime));
+                    }
+                }
             }
 
             platforms = new ArrayList<>();
