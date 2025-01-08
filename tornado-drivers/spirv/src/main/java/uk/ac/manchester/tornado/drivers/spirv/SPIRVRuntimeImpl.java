@@ -24,7 +24,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -73,13 +75,8 @@ public class SPIRVRuntimeImpl {
 
     private synchronized void init() {
         if (platforms == null) {
-            List<SPIRVDispatcher> dispatchers = new ArrayList<>();
             String[] listOfRuntimes = TornadoOptions.SPIRV_INSTALLED_RUNTIMES.split(",");
-
-            // We need to install the second runtime
-            for (String runtime : listOfRuntimes) {
-                dispatchers.add(instantiateDispatcher(runtime));
-            }
+            List<SPIRVDispatcher> dispatchers = Arrays.stream(listOfRuntimes).map(this::instantiateDispatcher).toList();
 
             platforms = new ArrayList<>();
             for (SPIRVDispatcher dispatcher : dispatchers) {
