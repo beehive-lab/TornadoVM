@@ -69,7 +69,7 @@ TornadoVM/Java Options for SPIR-V:
 
 - ``-Dtornado.spirv.version=1.2``: Modify the minimum version supported. By default is 1.2. However, developers can change this value. Note that the generated code might not work, as TornadoVM requires at least 1.2.
 
-- ``-Dtornado.spirv.runtimes=opencl,levelzero``: It sets the list of supported runtimes to dispatch SPIR-V. Allowed values are: ``opencl`` and ``levelzero``. They are sepated by a comma, and the first in the list is taken as deafult. 
+- ``-Dtornado.spirv.runtimes=opencl,levelzero``: It sets the list of supported runtimes to dispatch SPIR-V. Allowed values are: ``opencl`` and ``levelzero``. They are separated by a comma, and the first in the list is taken as default. 
 
 - ``-Dtornado.spirv.levelzero.extended.memory=True``: It uses Level Zero extended memory mode. It is set to ``true`` by default.
 
