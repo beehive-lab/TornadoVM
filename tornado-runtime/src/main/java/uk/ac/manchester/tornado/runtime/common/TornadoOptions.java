@@ -217,19 +217,17 @@ public class TornadoOptions {
      * It enables inlining during Java bytecode parsing. Default is False.
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
-    /**
-     * Use Level Zero or OpenCL as the SPIR-V Code runtime and code dispatcher. Allowed values: "opencl", "levelzero". The default option is "opencl".
-     */
-    public static final String SPIRV_DEFAULT_RUNTIME = getProperty("tornado.spirv.default.dispatcher", "opencl");
 
     /**
-     * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero".
+     * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero". The first in the list is set to the
+     * default one.
      *
      * <p>
      * <ul>
      *   <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
      *   <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
-     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes.
+     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes, being
+     *   OpenCL the first in the list (default).
      * *</ul>
      * </p>
      */

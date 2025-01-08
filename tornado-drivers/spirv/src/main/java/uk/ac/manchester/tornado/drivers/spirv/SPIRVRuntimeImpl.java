@@ -43,8 +43,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  */
 public class SPIRVRuntimeImpl {
 
-    private final String ERROR_PLATFORM_NOT_IMPLEMENTED = "SPIR-V Runtime Implementation not supported: " + TornadoOptions.SPIRV_DEFAULT_RUNTIME + " \nUse \"opencl\" or \"levelzero\"";
-
     private List<SPIRVPlatform> platforms;
     private static SPIRVRuntimeImpl instance;
 
@@ -59,29 +57,28 @@ public class SPIRVRuntimeImpl {
         init();
     }
 
+    private String printErrorPlatformNotImplemented(String spirvPlatform) {
+        return "SPIR-V Runtime Implementation not supported: " + spirvPlatform + " \nUse \"opencl\" or \"levelzero\"";
+    }
+
     private SPIRVDispatcher instantiateDispatcher(String runtimeName) {
         if (runtimeName.equalsIgnoreCase("opencl")) {
             return new SPIRVOpenCLDriver();
         } else if (runtimeName.equalsIgnoreCase("levelzero")) {
             return new SPIRVLevelZeroDriver();
         } else {
-            throw new TornadoRuntimeException(ERROR_PLATFORM_NOT_IMPLEMENTED);
+            throw new TornadoRuntimeException(printErrorPlatformNotImplemented(runtimeName));
         }
     }
 
     private synchronized void init() {
         if (platforms == null) {
             List<SPIRVDispatcher> dispatchers = new ArrayList<>();
-            dispatchers.add(instantiateDispatcher(TornadoOptions.SPIRV_DEFAULT_RUNTIME));
-
             String[] listOfRuntimes = TornadoOptions.SPIRV_INSTALLED_RUNTIMES.split(",");
-            if (listOfRuntimes.length > 1) {
-                // We need to install the second runtime
-                for (String runtime : listOfRuntimes) {
-                    if (!runtime.equals(TornadoOptions.SPIRV_DEFAULT_RUNTIME)) {
-                        dispatchers.add( instantiateDispatcher(runtime));
-                    }
-                }
+
+            // We need to install the second runtime
+            for (String runtime : listOfRuntimes) {
+                dispatchers.add(instantiateDispatcher(runtime));
             }
 
             platforms = new ArrayList<>();
