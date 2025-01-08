@@ -377,7 +377,7 @@ And TornadoVM is ready to be used. If you want to recompile with a different bac
 
 .. _installation_windows_wsl:
 
-Installation for Windows Subsystem for Linux (WSL) 
+Installation for Windows Subsystem for Linux (WSL)
 ===================================================
 
 
@@ -388,23 +388,23 @@ Install WSL using PowerShell
 .. code:: bash
 
    ## By default, Windows 11 installs Ubuntu 24.04 LTS, as in Jan 2025
-   wsl --install 
+   wsl --install
 
 
 For more details about how to configure WSL, follow the official documentation: `link <https://learn.microsoft.com/en-us/windows/wsl/install>`_
 
 
-Setup CUDA in WSL 
+Setup CUDA in WSL
 ~~~~~~~~~~~~~~~~~~
 
-If you have an NVIDIA GPU installed in your Windows 11 PC, the NVIDIA driver is also installed for WSL. 
+If you have an NVIDIA GPU installed in your Windows 11 PC, the NVIDIA driver is also installed for WSL.
 What we need to install next is the CUDA SDK. Open a terminal in WSL:
 
 .. code:: bash
 
    ## Update the system
    sudo apt-get update
-   sudo apt-get dist-upgrade 
+   sudo apt-get dist-upgrade
 
 
 Install CUDA. For detailed instructions, follow the NVIDIA's guidelines: `link <https://docs.nvidia.com/cuda/wsl-user-guide/index.html>`_.
@@ -436,7 +436,7 @@ Update the ``~/.bashrc file``:
 Login again or type ``bash``.
 
 
-Now you can install TornadoVM. 
+Now you can install TornadoVM.
 
 
 Install Intel Compute Runtime for OpenCL and Level Zero for WSL
@@ -460,7 +460,7 @@ In this tutorial, the latest version is ``24.48.31907.7`` (`link <https://github
    wget https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/libigdgmm12_22.5.4_amd64.deb
 
 
-Verify CheckSums: 
+Verify CheckSums:
 
 .. code:: bash
 
@@ -480,7 +480,7 @@ Update soft link for OpenCL:
 
 .. code:: bash
 
-   sudo ln -s /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 /usr/lib/x86_64-linux-gnu/libOpenCL.so 
+   sudo ln -s /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 /usr/lib/x86_64-linux-gnu/libOpenCL.so
 
 
 
@@ -495,10 +495,10 @@ Install a new Python's environment:
 
 .. code:: bash
 
-   sudo apt install python3-venv 
-   ## Setup a new environment for Python modules 
-   python3 -m venv ~/bin/venv 
-   source ~/bin/venv/bin/activate 
+   sudo apt install python3-venv
+   ## Setup a new environment for Python modules
+   python3 -m venv ~/bin/venv
+   source ~/bin/venv/bin/activate
 
 
 Clone and build TornadoVM:
@@ -508,12 +508,12 @@ Clone and build TornadoVM:
 
    cd ~/
    git clone https://github.com/beehive-lab/TornadoVM.git tornado
-   cd tornado 
+   cd tornado
 
-  ## Install OpenCL only 
+  ## Install OpenCL only
    ./bin/tornadovm-installer --jdk jdk21 --backend=opencl
 
-   ## Install OpenCL and PTX 
+   ## Install OpenCL and PTX
    ./bin/tornadovm-installer --jdk jdk21 --backend=opencl,ptx
 
    ## Install All backends:
@@ -524,14 +524,14 @@ Finally enable environment:
 
 .. code:: bash
 
-   source ~/bin/venv/bin/activate 
+   source ~/bin/venv/bin/activate
    source setvars.sh
 
 Run tests:
 
 .. code:: bash
 
-   make tests 
+   make tests
 
 
 
@@ -602,24 +602,6 @@ To run individual tests:
 
    tornado --jvm "-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
 
-
-Known issues on Linux
-=====================
-
-- For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
-
-- In Ubuntu >= 16.04 CMake can cause the following error:
-
-``Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2").``
-
-Then the following package should be installed:
-
-.. code:: bash
-
-   $ apt-get install ocl-icd-opencl-dev
-
-
-
 .. _installation_riscv:
 
 Installation for RISC-V RVV 1.0 on Linux
@@ -641,13 +623,28 @@ First, install the dependencies:
    sudo apt-get install python3-psutil cmake 
 
 
-Then, download the script to apply the patch:
+OpenCL backend only
+~~~~~~~~~~~~~~~~~~~
+
+Then, download the script to apply the patch for the OpenCL backend:
 
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/d79af888a9873f8a3b44e4cc35a8ae382684cdb2/apply-riscv-patch.sh 
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/b2cc2b7f33b9d8771f54806bd2247fd64cdfd31f/apply-riscv-patch.sh
    bash apply-riscv-patch.sh 
+
+
+SPIR-V + OpenCL backends
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to enable both OpenCL and SPIR-V backends, use the following patch:
+
+.. code:: bash
+
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/dc8abb04756c134fa74fdd3f4959a4e920818b83/apply-riscv-spirv-patch.sh
+   bash apply-riscv-spirv-patch.sh
+
 
 
 Run TornadoVM:
@@ -668,6 +665,23 @@ Run TornadoVM:
                 Total Number of Block Threads: [1024]
                 Max WorkGroup Configuration: [1024, 1024, 1024]
                 Device OpenCL C version: OpenCL C 1.2 Clang 19.1.5
+
+
+Known issues on Linux
+=======================
+
+- For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
+
+- In Ubuntu >= 16.04 CMake can cause the following error:
+
+``Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2").``
+
+Then the following package should be installed:
+
+.. code:: bash
+
+   $ apt-get install ocl-icd-opencl-dev
+
 
 
 IDE Code Formatter
