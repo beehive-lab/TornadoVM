@@ -443,16 +443,18 @@ def parseArguments():
     )
     parser.add_argument(
         "--storeEnergyMetricsToFile",
-        action="store",
+        action="store_true",
         dest="store_energy_metrics_to_file",
-        default=None,
+        required=False,
+        default=False,
         help="Store the energy metrics to automatically generated files in current path",
     )
     parser.add_argument(
         "--storePowerMetricsToFile",
-        action="store",
+        action="store_true",
         dest="store_power_metrics_to_file",
-        default=None,
+        required=False,
+        default=False,
         help="Store the power metrics to automatically generated files in current path",
     )
 
