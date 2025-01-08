@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,6 +42,8 @@ public abstract class BenchmarkDriver {
 
     private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "False"));
     private static final int ENERGY_MONITOR_INTERVAL = Integer.parseInt(System.getProperty("energy.monitor.interval", "0"));
+    private static final boolean STORE_ENERGY_METRICS = Boolean.parseBoolean(System.getProperty("store.energy.metrics", "False"));
+    private static final boolean STORE_POWER_METRICS = Boolean.parseBoolean(System.getProperty("store.power.metrics", "False"));
     private static final boolean VALIDATE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.validate", "False"));
 
     public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "1000.0"));
@@ -55,6 +57,9 @@ public abstract class BenchmarkDriver {
     private List<Long> deviceCopyIn;
     private List<Long> deviceCopyOut;
     private List<Long> totalEnergyMetrics;
+    private List<Long> firstPowerMetricPerIteration;
+    private List<Long> averagePowerMetricPerIteration;
+    private List<Long> lastPowerMetricPerIteration;
     private List<Long> powerMetricsPerIteration;
     private List<Long> snapshotTimerPerIteration;
 
@@ -129,9 +134,9 @@ public abstract class BenchmarkDriver {
                 System.gc();
             }
 
-            final long start = System.nanoTime();
+            final long start = System.currentTimeMillis();
             runBenchmark(device);
-            final long end = System.nanoTime();
+            final long end = System.currentTimeMillis();
 
             if (isProfilerEnabled) {
                 // Ensure the execution was correct, so we can count for general stats.
@@ -168,6 +173,9 @@ public abstract class BenchmarkDriver {
             deviceCopyOut = new ArrayList<>();
         }
         totalEnergyMetrics = new ArrayList<>();
+        firstPowerMetricPerIteration = new ArrayList<>();
+        averagePowerMetricPerIteration = new ArrayList<>();
+        lastPowerMetricPerIteration = new ArrayList<>();
 
         for (long i = 0; i < iterations; i++) {
             Thread t0, t1;
@@ -196,7 +204,7 @@ public abstract class BenchmarkDriver {
                 System.gc();
             }
 
-            final long start = System.nanoTime();
+            final long start = System.currentTimeMillis();
             t0.start();
             t1.start();
             try {
@@ -206,7 +214,7 @@ public abstract class BenchmarkDriver {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
-            final long end = System.nanoTime();
+            final long end = System.currentTimeMillis();
 
             if (isProfilerEnabled) {
                 // Ensure the execution was correct, so we can count for general stats.
@@ -224,9 +232,17 @@ public abstract class BenchmarkDriver {
 
             timers[toIntExact(i)] = (end - start);
             totalEnergyMetrics.add(calculateTotalEnergy(start));
+            firstPowerMetricPerIteration.add(powerMetricsPerIteration.getFirst());
+            averagePowerMetricPerIteration.add((long) getAverage(toArray(powerMetricsPerIteration)));
+            lastPowerMetricPerIteration.add(powerMetricsPerIteration.getLast());
         }
         barrier();
-        writeToCsv(id, device);
+        if (STORE_ENERGY_METRICS) {
+            writeToCsv(id, device);
+        }
+        if (STORE_POWER_METRICS) {
+            writePowerMetricsToCsv(id, device);
+        }
 
         if (VALIDATE) {
             validate(device);
@@ -318,26 +334,52 @@ public abstract class BenchmarkDriver {
     }
 
     private void writeToCsv(String id, TornadoDevice device) {
+        String fileName = "energy_metrics_" + formatFileNameSuffix(id, device);
+        writeListToCSV(totalEnergyMetrics, fileName, id);
+    }
+
+    private void writePowerMetricsToCsv(String id, TornadoDevice device) {
+        String fileName = "first_power_metrics_" + formatFileNameSuffix(id, device);
+        writeListToCSV(firstPowerMetricPerIteration, fileName, id);
+
+        fileName = "average_power_metrics_" + formatFileNameSuffix(id, device);
+        writeListToCSV(averagePowerMetricPerIteration, fileName, id);
+
+        fileName = "last_power_metrics_" + formatFileNameSuffix(id, device);
+        writeListToCSV(lastPowerMetricPerIteration, fileName, id);
+    }
+
+    private String formatFileNameSuffix(String id, TornadoDevice device) {
         // Format the date to use in the filename
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd");
         String currentDate = LocalDate.now().format(dateFormatter);
         String currentSetup = (device != null) ? device.getPlatformName() : "java_reference";
-        String fileName = "energy_metrics_" + currentSetup + "_" + currentDate + ".csv";
+        String[] idParts = id.split("-");
 
-        // Write the List to CSV
+        return idParts[0] + "_" + currentSetup + "_" + currentDate + ".csv";
+    }
+
+    private void writeListToCSV(List list, String fileName, String id) {
         try (FileWriter writer = new FileWriter(fileName, true)) {
-            writer.append(id).append(",");
-            int size = totalEnergyMetrics.size();
-            for (int i = 0; i < size; i++) {
-                writer.append(String.valueOf(totalEnergyMetrics.get(i)));
-                if (i < size - 1) {
-                    writer.append(",");
-                }
-            }
-            writer.append("\n"); // New line for each entry
+            String[] idParts = id.split("-");
+            String benchmarkName = idParts[0];
+            String dataSize = idParts[idParts.length - 1];
+            writer.append(benchmarkName).append(",").append(dataSize).append(",");
+            writeListToFileWriter(list, writer);
+            writer.append("\n");
             System.out.println("Updated CSV file (" + fileName + ") with new energy metrics for " + id + "\n");
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void writeListToFileWriter(List list, FileWriter writer) throws IOException {
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            writer.append(String.valueOf(list.get(i)));
+            if (i < size - 1) {
+                writer.append(",");
+            }
         }
     }
 
@@ -383,7 +425,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average(ns)=%6e, median(ns)=%6e, firstIteration(ns)=%6e, best(ns)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
+        return String.format("average(ms)=%6e, median(ms)=%6e, firstIteration(ms)=%6e, best(ms)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
     private Long calculateTotalEnergy(long startTime) {

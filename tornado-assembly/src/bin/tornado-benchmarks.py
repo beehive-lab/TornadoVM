@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -65,6 +65,8 @@ __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __ENERGY_MONITOR_INTERVAL__ = " -Denergy.monitor.interval="
+__STORE_ENERGY_METRICS__ = " -Dstore.energy.metrics=True"
+__STORE_POWER_METRICS__ = " -Dstore.power.metrics=True"
 __STORE_OUTPUT_TO_FILE__ = " -Dtornado.benchmarks.store.output.to.file="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
@@ -97,7 +99,6 @@ __BENCHMARKS__ = [
     "juliaset",
 ]
 
-
 ## ========================================================================================
 ## Dimensions
 ## ========================================================================================
@@ -119,6 +120,8 @@ __DIMENSIONS__ = {
     "dft": "1",
     "juliaset": "2"
 }
+
+
 ## ========================================================================================
 
 
@@ -206,6 +209,10 @@ def composeAllOptions(args):
         jvm_options = jvm_options + __ENERGY_MONITOR_INTERVAL__ + str(args.energyInterval) + " "
     if args.store_output_to_file:
         jvm_options = jvm_options + __STORE_OUTPUT_TO_FILE__ + args.store_output_to_file + " "
+    if args.store_energy_metrics_to_file:
+        jvm_options = jvm_options + __STORE_ENERGY_METRICS__ + " "
+    if args.store_power_metrics_to_file:
+        jvm_options = jvm_options + __STORE_POWER_METRICS__ + " "
     if args.validate:
         jvm_options = jvm_options + __VALIDATE__ + " "
     if args.skip_devices != None:
@@ -434,7 +441,21 @@ def parseArguments():
         default=None,
         help="Store the console output to a file",
     )
-    
+    parser.add_argument(
+        "--storeEnergyMetricsToFile",
+        action="store",
+        dest="store_energy_metrics_to_file",
+        default=None,
+        help="Store the energy metrics to automatically generated files in current path",
+    )
+    parser.add_argument(
+        "--storePowerMetricsToFile",
+        action="store",
+        dest="store_power_metrics_to_file",
+        default=None,
+        help="Store the power metrics to automatically generated files in current path",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -444,6 +465,7 @@ def printProperties():
         dims = __DIMENSIONS__.get(benchmark, "-1")  # get dimension, -1 by default
         for size in sizes[0]:
             print(f"{benchmark}, dims={dims}, size={size}")
+
 
 def main():
     args = parseArguments()
