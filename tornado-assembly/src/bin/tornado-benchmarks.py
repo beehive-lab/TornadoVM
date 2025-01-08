@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -128,10 +128,10 @@ __MAX_ITERATIONS__ = 131
 ITERATIONS = __MAX_ITERATIONS__
 allSizes = {
     "montecarlo": [
-        [512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576],
+        [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 1048576],
         [__MAX_ITERATIONS__],
     ],
-    "nbody": [[512, 1024, 2048, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
+    "nbody": [[512, 1024, 2048, 4096, 16384, 32768], [__MAX_ITERATIONS__]],
     "saxpy": [
         [
             512,
@@ -140,7 +140,7 @@ allSizes = {
             4096,
             8192,
             16384,
-            32798,
+            32768,
             65536,
             131072,
             262144,
@@ -153,7 +153,7 @@ allSizes = {
     ],
     "sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
     "blackscholes": [
-        [512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304],
+        [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 1048576, 4194304],
         [__MAX_ITERATIONS__],
     ],
     "dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
@@ -173,7 +173,7 @@ mediumSizes = {
             4096,
             8192,
             16384,
-            32798,
+            32768,
             65536,
             131072,
             262144,
@@ -184,7 +184,7 @@ mediumSizes = {
         ["getSize()"],
     ],
     "sgemm": [[128, 256, 512, 1024, 2048], ["getSize()"]],
-    "blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], ["getSize()"]],
+    "blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
     "dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
     "blurFilter": [[256, 512, 1024, 2048], ["getSize()"]],
     "juliaset": [[512, 1024, 2048, 4096], ["getSize()"]],
