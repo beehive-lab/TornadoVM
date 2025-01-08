@@ -507,7 +507,7 @@ Clone and build TornadoVM:
 .. code:: bash
 
    cd ~/
-   git clone  git clone https://github.com/beehive-lab/TornadoVM.git tornado
+   git clone https://github.com/beehive-lab/TornadoVM.git tornado
    cd tornado 
 
   ## Install OpenCL only 
