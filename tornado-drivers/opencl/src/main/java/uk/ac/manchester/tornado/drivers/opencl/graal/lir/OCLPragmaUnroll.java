@@ -9,15 +9,15 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 @Opcode("Unroll")
 public class OCLPragmaUnroll extends OCLLIROp {
 
-    private int unroll;
+    private final int unrollFactor;
 
-    public OCLPragmaUnroll(int unroll) {
+    public OCLPragmaUnroll(int unrollFactor) {
         super(LIRKind.Illegal);
-        this.unroll = unroll;
+        this.unrollFactor = unrollFactor;
     }
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        asm.emitLine("#pragma unroll " + unroll);
+        asm.emitLine("#pragma unroll " + unrollFactor);
     }
 }
