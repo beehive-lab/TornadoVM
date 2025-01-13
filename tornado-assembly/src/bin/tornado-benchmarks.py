@@ -235,8 +235,13 @@ def printBenchmarks(indent=""):
 
 
 def runBenchmarksFullCoverage(args):
+    if args.benchmark and args.benchmark not in allSizes:
+        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+        return
     jvm_options, tornado_options = composeAllOptions(args)
     for key in allSizes.keys():
+        if args.benchmark and key != args.benchmark:
+            continue
         for size in allSizes[key][0]:
             command = (
                     __TORNADO_COMMAND__
@@ -374,9 +379,16 @@ def parseArguments():
         help="Skip devices. Provide a list of devices (e.g., 0,1)",
     )
     parser.add_argument(
+        "--benchmark",
+        action="store",
+        dest="benchmark",
+        default=None,
+        help="Run a specific BENCHMARK, as defined in the argument list",
+    )
+    parser.add_argument(
         "--printBenchmarks",
         action="store_true",
-        dest="benchmarks",
+        dest="print_benchmarks",
         default=False,
         help="Print the list of available benchmarks",
     )
@@ -475,8 +487,10 @@ def main():
     if args.iterations > 0:
         ITERATIONS = args.iterations
 
-    if args.benchmarks:
+    if args.print_benchmarks:
         printBenchmarks()
+    elif args.benchmark:
+        runBenchmarksFullCoverage(args)
     elif args.full:
         runBenchmarksFullCoverage(args)
     elif args.medium:
