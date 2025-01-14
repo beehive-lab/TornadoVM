@@ -21,10 +21,9 @@ import static java.lang.Math.toIntExact;
 import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.humanReadableByteCount;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,8 +41,7 @@ public abstract class BenchmarkDriver {
 
     private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "False"));
     private static final int ENERGY_MONITOR_INTERVAL = Integer.parseInt(System.getProperty("energy.monitor.interval", "0"));
-    private static final boolean STORE_ENERGY_METRICS = Boolean.parseBoolean(System.getProperty("store.energy.metrics", "False"));
-    private static final boolean STORE_POWER_METRICS = Boolean.parseBoolean(System.getProperty("store.power.metrics", "False"));
+    private static final String STORE_ENERGY_METRICS_TO_DIRECTORY = System.getProperty("store.energy.metrics.to.directory", "");
     private static final boolean VALIDATE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.validate", "False"));
 
     public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "1000.0"));
@@ -237,10 +235,8 @@ public abstract class BenchmarkDriver {
             lastPowerMetricPerIteration.add(powerMetricsPerIteration.getLast());
         }
         barrier();
-        if (STORE_ENERGY_METRICS) {
+        if (!STORE_ENERGY_METRICS_TO_DIRECTORY.isEmpty()) {
             writeToCsv(id, device);
-        }
-        if (STORE_POWER_METRICS) {
             writePowerMetricsToCsv(id, device);
         }
 
@@ -350,17 +346,14 @@ public abstract class BenchmarkDriver {
     }
 
     private String formatFileNameSuffix(String id, TornadoDevice device) {
-        // Format the date to use in the filename
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd");
-        String currentDate = LocalDate.now().format(dateFormatter);
-        String currentSetup = (device != null) ? device.getPlatformName() : "java_reference";
+        String currentSetup = (device != null) ? device.toString() : "java_reference";
         String[] idParts = id.split("-");
 
-        return idParts[0] + "_" + currentSetup + "_" + currentDate + ".csv";
+        return idParts[0] + "_" + currentSetup + ".csv";
     }
 
     private void writeListToCSV(List list, String fileName, String id) {
-        try (FileWriter writer = new FileWriter(fileName, true)) {
+        try (FileWriter writer = new FileWriter(new File(STORE_ENERGY_METRICS_TO_DIRECTORY, fileName), true)) {
             String[] idParts = id.split("-");
             String benchmarkName = idParts[0];
             String dataSize = idParts[idParts.length - 1];

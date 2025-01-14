@@ -65,9 +65,7 @@ __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __ENERGY_MONITOR_INTERVAL__ = " -Denergy.monitor.interval="
-__STORE_ENERGY_METRICS__ = " -Dstore.energy.metrics=True"
-__STORE_POWER_METRICS__ = " -Dstore.power.metrics=True"
-__STORE_OUTPUT_TO_FILE__ = " -Dtornado.benchmarks.store.output.to.file="
+__STORE_ENERGY_METRICS_TO_DIRECTORY__ = " -Dstore.energy.metrics.to.directory="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
@@ -207,12 +205,8 @@ def composeAllOptions(args):
         jvm_options = jvm_options + __SKIP_SERIAL__ + " "
     if args.energyInterval:
         jvm_options = jvm_options + __ENERGY_MONITOR_INTERVAL__ + str(args.energyInterval) + " "
-    if args.store_output_to_file:
-        jvm_options = jvm_options + __STORE_OUTPUT_TO_FILE__ + args.store_output_to_file + " "
-    if args.store_energy_metrics_to_file:
-        jvm_options = jvm_options + __STORE_ENERGY_METRICS__ + " "
-    if args.store_power_metrics_to_file:
-        jvm_options = jvm_options + __STORE_POWER_METRICS__ + " "
+    if args.store_energy_metrics_to_directory:
+        jvm_options = jvm_options + __STORE_ENERGY_METRICS_TO_DIRECTORY__ + args.store_energy_metrics_to_directory + " "
     if args.validate:
         jvm_options = jvm_options + __VALIDATE__ + " "
     if args.skip_devices != None:
@@ -447,27 +441,11 @@ def parseArguments():
         help="Time interval (in milliseconds) for the thread that monitors energy to sleep. Default is 0 milliseconds.",
     )
     parser.add_argument(
-        "--storeOutputToFile",
+        "--storeEnergyMetricsToDir",
         action="store",
-        dest="store_output_to_file",
+        dest="store_energy_metrics_to_directory",
         default=None,
-        help="Store the console output to a file",
-    )
-    parser.add_argument(
-        "--storeEnergyMetricsToFile",
-        action="store_true",
-        dest="store_energy_metrics_to_file",
-        required=False,
-        default=False,
-        help="Store the energy metrics to automatically generated files in current path",
-    )
-    parser.add_argument(
-        "--storePowerMetricsToFile",
-        action="store_true",
-        dest="store_power_metrics_to_file",
-        required=False,
-        default=False,
-        help="Store the power metrics to automatically generated files in current path",
+        help="Store the energy metrics in a specific directory",
     )
 
     args = parser.parse_args()
