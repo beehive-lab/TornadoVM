@@ -260,9 +260,14 @@ def runBenchmarksFullCoverage(args):
 
 
 def runMediumConfiguration(args):
+    if args.benchmark and args.benchmark not in allSizes:
+        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+        return
     jvm_options, tornado_options = composeAllOptions(args)
     print(tornado_options, jvm_options)
     for key in mediumSizes.keys():
+        if args.benchmark and key != args.benchmark:
+            continue
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
             command = (
@@ -298,11 +303,16 @@ def runWithJMH(args):
 
 
 def runDefaultSizePerBenchmark(args):
+    if args.benchmark and args.benchmark not in allSizes:
+        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+        return
     printBenchmarks()
     jvm_options, tornado_options = composeAllOptions(args)
     print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
           jvm_options + Colors.RESET)
     for b in __BENCHMARKS__:
+        if args.benchmark and b != args.benchmark:
+            continue
         command = (
                 __TORNADO_COMMAND__
                 + tornado_options
@@ -467,8 +477,6 @@ def main():
 
     if args.print_benchmarks:
         printBenchmarks()
-    elif args.benchmark:
-        runBenchmarksFullCoverage(args)
     elif args.full:
         runBenchmarksFullCoverage(args)
     elif args.medium:
