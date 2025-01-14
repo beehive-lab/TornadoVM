@@ -18,9 +18,7 @@
 package uk.ac.manchester.tornado.api.types.matrix;
 
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.LongOps;
-import uk.ac.manchester.tornado.api.types.utils.ShortOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
 
 import java.lang.foreign.MemorySegment;
@@ -41,9 +39,12 @@ public final class Matrix3DLong extends Matrix3DType implements TornadoMatrixInt
     /**
      * Storage format for matrix.
      *
-     * @param rows    number of rows
-     * @param columns number of columns
-     * @param array   array reference which contains data
+     * @param rows
+     *     number of rows
+     * @param columns
+     *     number of columns
+     * @param array
+     *     array reference which contains data
      */
     public Matrix3DLong(int rows, int columns, int depth, LongArray array) {
         super(rows, columns, depth);
@@ -54,8 +55,10 @@ public final class Matrix3DLong extends Matrix3DType implements TornadoMatrixInt
     /**
      * Storage format for matrix.
      *
-     * @param rows    number of columns
-     * @param columns number of columns
+     * @param rows
+     *     number of columns
+     * @param columns
+     *     number of columns
      */
     public Matrix3DLong(int rows, int columns, int depth) {
         this(rows, columns, depth, new LongArray(rows * columns * depth));

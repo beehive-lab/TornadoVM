@@ -117,12 +117,12 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs) {
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs, Access access) {
         return getDeviceContext().getMemoryManager().createCallWrapper(executionPlanId, numArgs);
     }
 
     @Override
-    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr) {
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] arr, Access access) {
         return null;
     }
 
@@ -242,43 +242,43 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         return getDeviceContext().getInstalledCode(executionPlanId, functionName);
     }
 
-    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, long batchSize) {
+    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, long batchSize, Access access) {
         XPUBuffer result = null;
         if (type.isArray()) {
 
             if (!type.getComponentType().isArray()) {
-                result = createArrayWrapper(type, getDeviceContext(), batchSize);
+                result = createArrayWrapper(type, getDeviceContext(), batchSize, access);
             } else {
                 final Class<?> componentType = type.getComponentType();
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
-                    result = createMultiArrayWrapper(componentType, type, batchSize);
+                    result = createMultiArrayWrapper(componentType, type, batchSize, access);
                 } else {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }
         } else if (!type.isPrimitive()) {
             if (object.getClass().getAnnotation(Vector.class) != null) {
-                result = new PTXVectorWrapper(getDeviceContext(), object, batchSize);
+                result = new PTXVectorWrapper(getDeviceContext(), object, batchSize, access);
             } else if (object instanceof MemorySegment) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof IntArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof FloatArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof DoubleArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof LongArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof ShortArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof ByteArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof CharArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else if (object instanceof HalfFloatArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
             } else {
-                result = new PTXObjectWrapper(getDeviceContext(), object);
+                result = new PTXObjectWrapper(getDeviceContext(), object, access);
             }
         }
 
@@ -287,26 +287,29 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states) {
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.isNumFreeBuffersAvailable(objects.length)) {
-            bufferProvider.resetBuffers();
+        for (Access access : accesses) {
+            if (!bufferProvider.isNumFreeBuffersAvailable(objects.length, access)) {
+                bufferProvider.resetBuffers(access);
+            }
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            allocatedSpace += allocate(objects[i], batchSize, states[i]);
+            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
+            allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
         }
         return allocatedSpace;
     }
 
     @Override
-    public long allocate(Object object, long batchSize, DeviceBufferState state) {
+    public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
-            buffer = createDeviceBuffer(object.getClass(), object, batchSize);
+            buffer = createDeviceBuffer(object.getClass(), object, batchSize, access);
             state.setXPUBuffer(buffer);
-            buffer.allocate(object, batchSize);
+            buffer.allocate(object, batchSize, access);
         } else {
             buffer = state.getXPUBuffer();
             if (batchSize != 0) {
@@ -332,46 +335,46 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         return deallocatedSpace;
     }
 
-    private XPUBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {
+    private XPUBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize, Access access) {
         XPUBuffer result = null;
         if (type == int[].class) {
-            result = new PTXIntArrayWrapper(deviceContext);
+            result = new PTXIntArrayWrapper(deviceContext, access);
         } else if (type == short[].class) {
-            result = new PTXShortArrayWrapper(deviceContext);
+            result = new PTXShortArrayWrapper(deviceContext, access);
         } else if (type == byte[].class) {
-            result = new PTXByteArrayWrapper(deviceContext);
+            result = new PTXByteArrayWrapper(deviceContext, access);
         } else if (type == float[].class) {
-            result = new PTXFloatArrayWrapper(deviceContext);
+            result = new PTXFloatArrayWrapper(deviceContext, access);
         } else if (type == double[].class) {
-            result = new PTXDoubleArrayWrapper(deviceContext);
+            result = new PTXDoubleArrayWrapper(deviceContext, access);
         } else if (type == long[].class) {
-            result = new PTXLongArrayWrapper(deviceContext);
+            result = new PTXLongArrayWrapper(deviceContext, access);
         } else if (type == char[].class) {
-            result = new PTXCharArrayWrapper(deviceContext);
+            result = new PTXCharArrayWrapper(deviceContext, access);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }
         return result;
     }
 
-    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, long batchSize) {
+    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, long batchSize, Access access) {
         XPUBuffer result = null;
         PTXDeviceContext deviceContext = getDeviceContext();
 
         if (componentType == int[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXIntArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXIntArrayWrapper(context, access), batchSize, access);
         } else if (componentType == short[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXShortArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXShortArrayWrapper(context, access), batchSize, access);
         } else if (componentType == char[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXCharArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXCharArrayWrapper(context, access), batchSize, access);
         } else if (componentType == byte[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXByteArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXByteArrayWrapper(context, access), batchSize, access);
         } else if (componentType == float[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXFloatArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXFloatArrayWrapper(context, access), batchSize, access);
         } else if (componentType == double[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXDoubleArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXDoubleArrayWrapper(context, access), batchSize, access);
         } else if (componentType == long[].class) {
-            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXLongArrayWrapper::new, batchSize);
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, (context) -> new PTXLongArrayWrapper(context, access), batchSize, access);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }

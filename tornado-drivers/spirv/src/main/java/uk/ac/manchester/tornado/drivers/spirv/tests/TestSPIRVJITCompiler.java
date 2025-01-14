@@ -31,6 +31,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
@@ -127,7 +128,7 @@ public class TestSPIRVJITCompiler {
         DataObjectState stateC = new DataObjectState();
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(spirvTornadoDevice);
 
-        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
+        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY});
 
         final long executionPlanId = 0;
 
@@ -137,7 +138,8 @@ public class TestSPIRVJITCompiler {
         spirvTornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call stack wrapper for SPIR-V with 3 arguments
-        KernelStackFrame stackFrame = spirvTornadoDevice.createKernelStackFrame(executionPlanId, 3);
+        // TODO: have a look
+        KernelStackFrame stackFrame = spirvTornadoDevice.createKernelStackFrame(executionPlanId, 3, Access.NONE);
         stackFrame.setKernelContext(new HashMap<>());
 
         // Add kernel arguments to the SPIR-V Stack Frame

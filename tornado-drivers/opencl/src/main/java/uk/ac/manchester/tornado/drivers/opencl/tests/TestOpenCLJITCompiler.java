@@ -128,7 +128,7 @@ public class TestOpenCLJITCompiler {
         DataObjectState stateC = new DataObjectState();
         XPUDeviceBufferState objectStateC = stateC.getDeviceBufferState(tornadoDevice);
 
-        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new DeviceBufferState[] { objectStateA, objectStateB, objectStateC }, new Access[] {Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY});
 
         long executionPlanId = 0;
 
@@ -138,7 +138,7 @@ public class TestOpenCLJITCompiler {
         tornadoDevice.ensurePresent(executionPlanId, b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, 3, Access.NONE);
 
         // Fill header of call callWrapper with empty values
         callWrapper.setKernelContext(new HashMap<>());

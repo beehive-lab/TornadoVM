@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api.memory;
 
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
@@ -50,7 +51,7 @@ public interface XPUBuffer {
 
     List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 
-    void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
+    void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
     void markAsFreeBuffer() throws TornadoMemoryException;
 

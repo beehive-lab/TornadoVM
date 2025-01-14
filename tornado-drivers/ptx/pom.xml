@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tornado-drivers</artifactId>
         <groupId>tornado</groupId>
-        <version>1.0.9-dev</version>
+        <version>1.0.10-dev </version>
     </parent>
     <artifactId>tornado-drivers-ptx</artifactId>
     <name>tornado-drivers-ptx</name>

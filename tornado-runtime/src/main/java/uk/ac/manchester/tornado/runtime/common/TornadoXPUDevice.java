@@ -23,6 +23,7 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
@@ -51,7 +52,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      *     The number of arguments for the kernel call wrapper.
      * @return The created {@link KernelStackFrame} object.
      */
-    KernelStackFrame createKernelStackFrame(long executionId, int numArgs);
+    KernelStackFrame createKernelStackFrame(long executionId, int numArgs, Access access);
 
     /**
      * It creates or reuses an atomic buffer for the specified integer array.
@@ -60,7 +61,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      *     The integer array for which to create or reuse an atomic buffer.
      * @return The created or reused {@link XPUBuffer}.
      */
-    XPUBuffer createOrReuseAtomicsBuffer(int[] arr);
+    XPUBuffer createOrReuseAtomicsBuffer(int[] arr, Access access);
 
     /**
      * It installs the Tornado code for the specified schedulable task.

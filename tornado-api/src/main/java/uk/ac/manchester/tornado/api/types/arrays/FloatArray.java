@@ -120,6 +120,7 @@ public final class FloatArray extends TornadoNativeArray {
     public static FloatArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / FLOAT_BYTES);
+        ensureMultipleOfElementSize(byteSize, FLOAT_BYTES);
         FloatArray floatArray = new FloatArray(numElements);
         MemorySegment.copy(segment, 0, floatArray.segment, floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;

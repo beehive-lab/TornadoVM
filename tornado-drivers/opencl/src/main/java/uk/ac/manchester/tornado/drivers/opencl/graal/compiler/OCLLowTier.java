@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFP16SupportPhase;
@@ -99,6 +100,8 @@ public class OCLLowTier extends TornadoLowTier {
         if (TornadoOptions.MATH_OPTIMIZATIONS) {
             appendPhase(new InverseSquareRootPhase());
         }
+
+        appendPhase(new InfinityReplacementPhase());
 
         appendPhase(new TornadoAtomicsParametersPhase());
 

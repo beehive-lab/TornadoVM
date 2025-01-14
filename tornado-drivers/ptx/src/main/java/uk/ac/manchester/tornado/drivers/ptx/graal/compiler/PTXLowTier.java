@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoF
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopCanonicalization;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.InverseSquareRootPhase;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.InfinityReplacementPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXFMAPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFixedArrayCopyPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoHalfFloatVectorOffset;
@@ -84,6 +85,9 @@ public class PTXLowTier extends TornadoLowTier {
         if (TornadoOptions.MATH_OPTIMIZATIONS) {
             appendPhase(new InverseSquareRootPhase());
         }
+
+        appendPhase(new InfinityReplacementPhase());
+
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 

@@ -43,18 +43,29 @@ import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoop
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.utils.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.*;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InfinityReplacementPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.PartialLoopUnrollPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFP64SupportPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFixedArrayCopyPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoHalfFloatVectorOffset;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 
 public class SPIRVLowTier extends TornadoLowTier {
 
     public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringByNodePhase.AddressLowering addressLowering) {
-        CanonicalizerPhase canonicalizer = getCannonicalizer(options);
+
+        CanonicalizerPhase canonicalizer = getCannonicalizer();
 
         appendPhase(new SPIRVFP64SupportPhase(deviceContext));
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
+
+        if (TornadoOptions.ENABLE_SPIRV_LOOP_UNROLL) {
+            appendPhase(new PartialLoopUnrollPhase());
+        }
 
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
@@ -87,6 +98,8 @@ public class SPIRVLowTier extends TornadoLowTier {
             appendPhase(new InverseSquareRootPhase());
         }
 
+        appendPhase(new InfinityReplacementPhase());
+
         // TODO Atomics Phase for SPIRV (this is the last thing to support)
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
@@ -100,7 +113,7 @@ public class SPIRVLowTier extends TornadoLowTier {
         }
     }
 
-    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
+    private CanonicalizerPhase getCannonicalizer() {
         return CanonicalizerPhase.create();
     }
 }
