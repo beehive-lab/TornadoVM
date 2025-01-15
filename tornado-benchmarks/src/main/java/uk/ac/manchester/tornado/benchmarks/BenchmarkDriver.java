@@ -133,9 +133,9 @@ public abstract class BenchmarkDriver {
                 System.gc();
             }
 
-            final long start = System.currentTimeMillis();
+            final long start = System.nanoTime();
             runBenchmark(device);
-            final long end = System.currentTimeMillis();
+            final long end = System.nanoTime();
 
             if (isProfilerEnabled) {
                 // Ensure the execution was correct, so we can count for general stats.
@@ -194,7 +194,7 @@ public abstract class BenchmarkDriver {
                         }
                     }
                     long powerMetric = runtime.getPowerMetric();
-                    snapshotTimerPerIteration.add(System.currentTimeMillis());
+                    snapshotTimerPerIteration.add(System.nanoTime());
                     powerMetricsPerIteration.add(powerMetric);
                 }
             }, "PowerMonitoringThread");
@@ -203,7 +203,7 @@ public abstract class BenchmarkDriver {
                 System.gc();
             }
 
-            final long start = System.currentTimeMillis();
+            final long start = System.nanoTime();
             t0.start();
             t1.start();
             try {
@@ -213,7 +213,7 @@ public abstract class BenchmarkDriver {
                 Thread.currentThread().interrupt();
                 throw new TornadoRuntimeException(e);
             }
-            final long end = System.currentTimeMillis();
+            final long end = System.nanoTime();
 
             if (isProfilerEnabled) {
                 // Ensure the execution was correct, so we can count for general stats.
@@ -419,7 +419,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average(ms)=%6e, median(ms)=%6e, firstIteration(ms)=%6e, best(ms)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
+        return String.format("average(ns)=%6e, median(ns)=%6e, firstIteration(ns)=%6e, best(ns)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
     private Long calculateTotalEnergy(long startTime) {
@@ -427,6 +427,8 @@ public abstract class BenchmarkDriver {
 
         if (snapshotTimerPerIteration.size() == powerMetricsPerIteration.size()) {
             long timeInterval = snapshotTimerPerIteration.get(0) - startTime;
+            // Convert from nanoseconds to milliseconds
+            timeInterval /= 1000000;
             long energyForInterval = timeInterval * powerMetricsPerIteration.get(0);
             totalEnergy += energyForInterval;
             for (int i = 0; i < snapshotTimerPerIteration.size() - 1; i++) {
