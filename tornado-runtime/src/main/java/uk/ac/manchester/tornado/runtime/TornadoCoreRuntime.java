@@ -187,12 +187,12 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     }
 
     @Override
-    public boolean isUpsReaderEnabled() {
+    public boolean isPowerMonitoringEnabled() {
         return TornadoOptions.isUpsReaderEnabled();
     }
 
     @Override
-    public long getUpsPowerMetric() {
+    public long getPowerMetric() {
         return (UpsMeterReader.getOutputPowerMetric() != null) ? Long.parseLong(UpsMeterReader.getOutputPowerMetric()) : -1;
     }
 

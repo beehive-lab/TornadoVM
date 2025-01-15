@@ -38,7 +38,7 @@ public interface TornadoRuntime {
 
     boolean isProfilerEnabled();
 
-    boolean isUpsReaderEnabled();
+    boolean isPowerMonitoringEnabled();
 
-    long getUpsPowerMetric();
+    long getPowerMetric();
 }

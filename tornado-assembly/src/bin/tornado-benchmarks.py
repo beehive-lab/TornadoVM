@@ -65,7 +65,7 @@ __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __ENERGY_MONITOR_INTERVAL__ = " -Denergy.monitor.interval="
-__STORE_ENERGY_METRICS_TO_DIRECTORY__ = " -Dstore.energy.metrics.to.directory="
+__DUMP_ENERGY_METRICS_TO_DIRECTORY__ = " -Ddump.energy.metrics.to.directory="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
@@ -203,10 +203,10 @@ def composeAllOptions(args):
         jvm_options = jvm_options + __SKIP_TORNADOVM__ + " "
     if args.skip_serial:
         jvm_options = jvm_options + __SKIP_SERIAL__ + " "
-    if args.energyInterval:
-        jvm_options = jvm_options + __ENERGY_MONITOR_INTERVAL__ + str(args.energyInterval) + " "
-    if args.store_energy_metrics_to_directory:
-        jvm_options = jvm_options + __STORE_ENERGY_METRICS_TO_DIRECTORY__ + args.store_energy_metrics_to_directory + " "
+    if args.delayEnergyInterval:
+        jvm_options = jvm_options + __ENERGY_MONITOR_INTERVAL__ + str(args.delayEnergyInterval) + " "
+    if args.dumpEnergyTableDir:
+        jvm_options = jvm_options + __DUMP_ENERGY_METRICS_TO_DIRECTORY__ + args.dumpEnergyTableDir + " "
     if args.validate:
         jvm_options = jvm_options + __VALIDATE__ + " "
     if args.skip_devices != None:
@@ -257,7 +257,7 @@ def runBenchmarksFullCoverage(args):
             command += '"'
             print(command)
             os.system(command)
-            time.sleep(args.interval)
+            time.sleep(args.delayInterval)
 
 
 def runMediumConfiguration(args):
@@ -290,7 +290,7 @@ def runMediumConfiguration(args):
             command += '"'
             print(command)
             os.system(command)
-            time.sleep(args.interval)
+            time.sleep(args.delayInterval)
 
 
 def runWithJMH(args):
@@ -438,25 +438,25 @@ def parseArguments():
         help="Print dimensions and sizes for all benchmarks",
     )
     parser.add_argument(
-        "--interval",
+        "--delayInterval",
         type=float,
-        dest="interval",
+        dest="delayInterval",
         default=0.0,
         help="Time interval (in seconds) to wait between execution of benchmarks. Default is 0 seconds.",
     )
     parser.add_argument(
-        "--energyInterval",
+        "--delayEnergyInterval",
         type=int,
-        dest="energyInterval",
+        dest="delayEnergyInterval",
         default=0,
         help="Time interval (in milliseconds) for the thread that monitors energy to sleep. Default is 0 milliseconds.",
     )
     parser.add_argument(
-        "--storeEnergyMetricsToDir",
+        "--dumpEnergyTable",
         action="store",
-        dest="store_energy_metrics_to_directory",
+        dest="dumpEnergyTableDir",
         default=None,
-        help="Store the energy metrics in a specific directory",
+        help="Store the energy metric tables in a specific directory",
     )
 
     args = parser.parse_args()

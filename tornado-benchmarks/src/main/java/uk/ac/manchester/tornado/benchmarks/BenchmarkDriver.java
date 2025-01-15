@@ -35,13 +35,14 @@ import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkDriver {
 
     private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "False"));
     private static final int ENERGY_MONITOR_INTERVAL = Integer.parseInt(System.getProperty("energy.monitor.interval", "0"));
-    private static final String STORE_ENERGY_METRICS_TO_DIRECTORY = System.getProperty("store.energy.metrics.to.directory", "");
+    private static final String DUMP_ENERGY_METRICS_TO_DIRECTORY = System.getProperty("dump.energy.metrics.to.directory", "");
     private static final boolean VALIDATE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.validate", "False"));
 
     public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "1000.0"));
@@ -189,10 +190,10 @@ public abstract class BenchmarkDriver {
                         } catch (InterruptedException e) {
                             System.err.println("The thread for monitoring the power consumption is interrupted: " + e.getMessage());
                             Thread.currentThread().interrupt();
-                            throw new RuntimeException(e);
+                            throw new TornadoRuntimeException(e);
                         }
                     }
-                    long powerMetric = runtime.getUpsPowerMetric();
+                    long powerMetric = runtime.getPowerMetric();
                     snapshotTimerPerIteration.add(System.currentTimeMillis());
                     powerMetricsPerIteration.add(powerMetric);
                 }
@@ -210,7 +211,7 @@ public abstract class BenchmarkDriver {
                 t1.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+                throw new TornadoRuntimeException(e);
             }
             final long end = System.currentTimeMillis();
 
@@ -235,7 +236,7 @@ public abstract class BenchmarkDriver {
             lastPowerMetricPerIteration.add(powerMetricsPerIteration.getLast());
         }
         barrier();
-        if (!STORE_ENERGY_METRICS_TO_DIRECTORY.isEmpty()) {
+        if (!DUMP_ENERGY_METRICS_TO_DIRECTORY.isEmpty()) {
             writeToCsv(id, device);
             writePowerMetricsToCsv(id, device);
         }
@@ -353,7 +354,7 @@ public abstract class BenchmarkDriver {
     }
 
     private void writeListToCSV(List list, String fileName, String id) {
-        try (FileWriter writer = new FileWriter(new File(STORE_ENERGY_METRICS_TO_DIRECTORY, fileName), true)) {
+        try (FileWriter writer = new FileWriter(new File(DUMP_ENERGY_METRICS_TO_DIRECTORY, fileName), true)) {
             String[] idParts = id.split("-");
             String benchmarkName = idParts[0];
             String dataSize = idParts[idParts.length - 1];

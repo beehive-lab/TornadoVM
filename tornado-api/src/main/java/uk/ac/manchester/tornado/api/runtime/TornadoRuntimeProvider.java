@@ -47,7 +47,7 @@ public class TornadoRuntimeProvider {
     }
 
     public static boolean isUpsReaderEnabled() {
-        return runtimeImpl.isUpsReaderEnabled();
+        return runtimeImpl.isPowerMonitoringEnabled();
     }
 
     public static void setProperty(String key, String value) {
