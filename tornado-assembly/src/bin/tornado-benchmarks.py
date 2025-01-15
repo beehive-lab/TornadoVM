@@ -456,7 +456,7 @@ def parseArguments():
         action="store",
         dest="dump_energy_table_dir",
         default=None,
-        help="Store the energy metric tables in a specific directory",
+        help="Store the energy metric table in a specific directory",
     )
 
     args = parser.parse_args()
