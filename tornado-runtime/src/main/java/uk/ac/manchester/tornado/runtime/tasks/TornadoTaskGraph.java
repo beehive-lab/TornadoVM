@@ -969,8 +969,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 isObjectForStreaming = true;
             }
 
-            // the access will be updated later on by the TornadoDataflowAnalysis if necessary
+            // The access will be updated later on by the TornadoDataflowAnalysis if necessary
             executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setStreamIn(isObjectForStreaming);
+
+            if (mode == DataTransferMode.UNDER_DEMAND) {
+                executionContext.getLocalStateObject(parameter, Access.READ_ONLY).enableUnderDemand();
+            }
 
             // List of input objects in the processing list for the dynamic reconfiguration
             inputModesObjects.add(new StreamingObject(mode, parameter));
