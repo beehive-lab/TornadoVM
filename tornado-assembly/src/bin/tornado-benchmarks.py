@@ -133,9 +133,9 @@ ITERATIONS = __MAX_ITERATIONS__
 allSizes = {
     "montecarlo": [
         [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 1048576],
-        [__MAX_ITERATIONS__],
+        ["getSize()"],
     ],
-    "nbody": [[512, 1024, 2048, 4096, 16384, 32768], [__MAX_ITERATIONS__]],
+    "nbody": [[512, 1024, 2048, 4096, 16384, 32768], ["getSize()"]],
     "saxpy": [
         [
             512,
@@ -153,16 +153,16 @@ allSizes = {
             2097152,
             4194304,
         ],
-        [__MAX_ITERATIONS__],
+        ["getSize()"],
     ],
-    "sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
+    "sgemm": [[128, 256, 512, 1024, 2048], ["getSize()"]],
     "blackscholes": [
         [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 1048576, 4194304],
-        [__MAX_ITERATIONS__],
+        ["getSize()"],
     ],
-    "dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
-    "blurFilter": [[256, 512, 1024, 2048, 8192, 16384], [__MAX_ITERATIONS__]],
-    "juliaset": [[512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
+    "dft": [[256, 512, 1024, 2048, 4096, 8192], ["getSize()"]],
+    "blurFilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
+    "juliaset": [[512, 1024, 2048, 4096, 8192], ["getSize()"]],
 }
 
 mediumSizes = {
