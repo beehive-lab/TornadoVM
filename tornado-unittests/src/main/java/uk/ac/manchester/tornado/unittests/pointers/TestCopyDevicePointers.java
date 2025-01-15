@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * <p>
  *     <code>
- *         tornado-test -V uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers
+ *         tornado-test -pbc --threadInfo -V uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers
  *     </code>
  * </p>
  */
@@ -58,6 +58,7 @@ public class TestCopyDevicePointers extends TornadoTestBase {
         // We will have a task graph which needs to be executed multiple times on the
         // hardware accelerator
         TaskGraph taskGraph1 = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, array)
                 .task("s0", TestCopyDevicePointers::iterativeUpdate, array)
                 .transferToHost(DataTransferMode.UNDER_DEMAND, array);
 
@@ -67,6 +68,7 @@ public class TestCopyDevicePointers extends TornadoTestBase {
         // another task-graph. The idea is to copy device pointers to avoid sync with the host
         // back and forth.
         TaskGraph taskGraph2 = new TaskGraph("s1")
+                .transferToDevice(DataTransferMode.UNDER_DEMAND, array)          // Copy-In should be under demand
                 .task("s1", TestCopyDevicePointers::computeSquare, copyArray)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, copyArray);
 
