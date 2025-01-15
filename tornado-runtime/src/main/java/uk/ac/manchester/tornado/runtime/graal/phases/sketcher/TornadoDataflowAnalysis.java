@@ -301,26 +301,32 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         while (!nodesToProcess.isEmpty()) {
             Node node = nodesToProcess.remove();
             visited.add(node);
-            if (node instanceof ParallelStrideNode parallelStrideNode) {
-                Node valueNode = parallelStrideNode.value();
-                if (valueNode instanceof ConstantNode constantNode) {
-                    ConstantNode constantNode1 = ConstantNode.forInt(1);
-                    return constantNode.getValue().equals(constantNode1.getValue());
-                }
-            } else if (node instanceof BinaryArithmeticNode) {
-                Node a = ((BinaryArithmeticNode<?>) node).getX();
-                Node b = ((BinaryArithmeticNode<?>) node).getY();
-                if (!visited.contains(a)) {
-                    nodesToProcess.add(a);
-                }
-                if (!visited.contains(b)) {
-                    nodesToProcess.add(b);
-                }
-            } else if (node instanceof PhiNode phiNode) {
-                for (ValueNode valuePhiNode : phiNode.values()) {
-                    if (!visited.contains(valuePhiNode)) {
-                        nodesToProcess.add(valuePhiNode);
+            switch (node) {
+                case ParallelStrideNode parallelStrideNode -> {
+                    Node valueNode = parallelStrideNode.value();
+                    if (valueNode instanceof ConstantNode constantNode) {
+                        ConstantNode constantNode1 = ConstantNode.forInt(1);
+                        return constantNode.getValue().equals(constantNode1.getValue());
                     }
+                }
+                case BinaryArithmeticNode binaryArithmeticNode -> {
+                    Node a = binaryArithmeticNode.getX();
+                    Node b = binaryArithmeticNode.getY();
+                    if (!visited.contains(a)) {
+                        nodesToProcess.add(a);
+                    }
+                    if (!visited.contains(b)) {
+                        nodesToProcess.add(b);
+                    }
+                }
+                case PhiNode phiNode -> {
+                    for (ValueNode valuePhiNode : phiNode.values()) {
+                        if (!visited.contains(valuePhiNode)) {
+                            nodesToProcess.add(valuePhiNode);
+                        }
+                    }
+                }
+                default -> {
                 }
             }
         }

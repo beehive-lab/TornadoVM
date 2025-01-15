@@ -68,7 +68,7 @@ public class TestCopyDevicePointers extends TornadoTestBase {
         // another task-graph. The idea is to copy device pointers to avoid sync with the host
         // back and forth.
         TaskGraph taskGraph2 = new TaskGraph("s1")
-                .transferToDevice(DataTransferMode.UNDER_DEMAND, array)          // Copy-In should be under demand
+                .transferToDevice(DataTransferMode.UNDER_DEMAND, copyArray)          // Copy-In should be under demand
                 .task("s1", TestCopyDevicePointers::computeSquare, copyArray)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, copyArray);
 

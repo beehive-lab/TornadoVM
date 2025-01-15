@@ -955,6 +955,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
             }
 
+            // If the parameter is a number, then we do not need to copy
+            // since the TornadoVM JIT compiler inlines all values
             if (parameter instanceof Number) {
                 continue;
             }
@@ -970,7 +972,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // the access will be updated later on by the TornadoDataflowAnalysis if necessary
             executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setStreamIn(isObjectForStreaming);
 
-            // List of input objects for the dynamic reconfiguration
+            // List of input objects in the processing list for the dynamic reconfiguration
             inputModesObjects.add(new StreamingObject(mode, parameter));
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
@@ -979,6 +981,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 }
             }
 
+            // Add in the list for fast arguments lookup
             argumentsLookUp.add(parameter);
         }
     }
@@ -1003,7 +1006,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] Scalar value used as output. Use an array or a vector-type instead");
             }
 
-            // If the object mode is set to LAST then we *only* insert it in the lookup
+            // If the object mode is set to UNDER_DEMAND then we *only* insert it in the lookup
             // hash-set.
             if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
