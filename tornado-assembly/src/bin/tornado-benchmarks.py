@@ -237,6 +237,7 @@ def runBenchmarksFullCoverage(args):
         if args.benchmark and key != args.benchmark:
             continue
         for size in allSizes[key][0]:
+            numIterations = eval(allSizes[key][1][0])
             command = (
                     __TORNADO_COMMAND__
                     + tornado_options
@@ -247,7 +248,7 @@ def runBenchmarksFullCoverage(args):
                     + ' --params="'
                     + key
                     + " "
-                    + str(allSizes[key][1][0])
+                    + str(numIterations)
                     + " "
                     + str(size)
             )
