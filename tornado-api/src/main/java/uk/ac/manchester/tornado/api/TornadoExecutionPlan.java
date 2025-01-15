@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * Class to create and optimize execution plans for running a set of
@@ -553,4 +554,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return planResults.get(index);
     }
 
+    /**
+     * Copy device pointers from one task-graph to another within the same execution plan.
+     * @param destArray
+     * @param srcArray
+     * @param offset
+     * @param fromGraphIndex
+     * @param toGraphIndex
+     *
+     * @since v1.0.10
+     */
+    public void copyPointerFromGraphToGraph(FloatArray destArray, FloatArray srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
+        // update the corresponding pointers from one graph to another
+    }
 }
