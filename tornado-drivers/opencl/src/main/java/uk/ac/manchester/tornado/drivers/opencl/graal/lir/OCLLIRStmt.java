@@ -193,6 +193,43 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("SUB_HALF")
+    public static class SubHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SubHalfStmt> TYPE = LIRInstructionClass.create(SubHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public SubHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, x);
+            asm.space();
+            asm.emitSymbol("-");
+            asm.space();
+            asm.emitValue(crb, y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("VSUB_HALF")
     public static class VectorSubHalfStmt extends AbstractInstruction {
 
@@ -318,6 +355,43 @@ public class OCLLIRStmt {
             } else {
                 asm.emitValue(crb, y);
             }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("DIV_HALF")
+    public static class DivHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<DivHalfStmt> TYPE = LIRInstructionClass.create(DivHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public DivHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, x);
+            asm.space();
+            asm.emitSymbol("/");
+            asm.space();
+            asm.emitValue(crb, y);
             asm.delimiter();
             asm.eol();
         }

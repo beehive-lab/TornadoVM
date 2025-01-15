@@ -32,6 +32,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
@@ -47,7 +48,7 @@ public class VectorSubHalfNode extends ValueNode implements LIRLowerable {
     private ValueNode y;
 
     public VectorSubHalfNode(ValueNode x, ValueNode y) {
-        super(TYPE, StampFactory.forKind(JavaKind.Short));
+        super(TYPE, new HalfFloatStamp());
         this.x = x;
         this.y = y;
     }

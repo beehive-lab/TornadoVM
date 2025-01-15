@@ -205,11 +205,8 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
         if (halfFloatValue instanceof ConstantNode) {
             ConstantNode floatValue = (ConstantNode) halfFloatValue;
-            Constant half = new RawConstant(floatValue.asJavaConstant().asInt());
-            HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(half);
+            HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
-            floatValue.replaceAtUsages(halfFloatConstantNode);
-            floatValue.safeDelete();
             return halfFloatConstantNode;
         } else {
             return halfFloatValue;

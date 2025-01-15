@@ -19,15 +19,16 @@ public class HalfFloatConstantNode extends FloatingNode implements LIRLowerable 
 
     public static final NodeClass<HalfFloatConstantNode> TYPE = NodeClass.create(HalfFloatConstantNode.class);
 
-    private Constant halfFloatValue;
+    @Input
+    private ConstantNode halfFloatValue;
 
-    public HalfFloatConstantNode(Constant halfFloatValue) {
+    public HalfFloatConstantNode(ConstantNode halfFloatValue) {
         super(TYPE, new HalfFloatStamp());
         this.halfFloatValue = halfFloatValue;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        generator.setResult(this, new ConstantValue(LIRKind.value(OCLKind.HALF), halfFloatValue));
+        generator.setResult(this, new ConstantValue(LIRKind.value(OCLKind.HALF), halfFloatValue.asConstant()));
     }
 }

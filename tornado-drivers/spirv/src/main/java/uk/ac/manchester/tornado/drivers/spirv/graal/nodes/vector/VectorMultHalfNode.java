@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -55,7 +56,7 @@ public class VectorMultHalfNode extends ValueNode implements LIRLowerable {
     private ValueNode y;
 
     public VectorMultHalfNode(ValueNode x, ValueNode y) {
-        super(TYPE, StampFactory.forKind(JavaKind.Short));
+        super(TYPE, new HalfFloatStamp());
         this.x = x;
         this.y = y;
     }

@@ -36,9 +36,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
@@ -54,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXHalfFloatDivisionNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorAddHalfNode;
@@ -203,11 +201,8 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
         if (halfFloatValue instanceof ConstantNode) {
             ConstantNode floatValue = (ConstantNode) halfFloatValue;
-            Constant half = new RawConstant(floatValue.asJavaConstant().asInt());
-            HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(half);
+            HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
-            floatValue.replaceAtUsages(halfFloatConstantNode);
-            floatValue.safeDelete();
             return halfFloatConstantNode;
         } else {
             return halfFloatValue;
@@ -259,7 +254,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             subNode = new VectorSubHalfNode(subX, subY);
             graph.addWithoutUnique(subNode);
         } else {
-            subNode = new SubNode(subX, subY);
+            subNode = new SubHalfNode(subX, subY);
             graph.addWithoutUnique(subNode);
         }
         subHalfFloatNode.replaceAtUsages(subNode);

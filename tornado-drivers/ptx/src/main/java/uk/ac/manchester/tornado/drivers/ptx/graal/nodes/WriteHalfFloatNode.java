@@ -36,6 +36,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
@@ -54,7 +55,7 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
     private ValueNode valueNode;
 
     public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
-        super(TYPE, StampFactory.forKind(JavaKind.Short));
+        super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
         this.valueNode = valueNode;
     }

@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.ptx.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
@@ -47,7 +48,7 @@ public class PTXHalfFloatDivisionNode extends FloatingNode implements LIRLowerab
     private ValueNode divisor;
 
     public PTXHalfFloatDivisionNode(ValueNode dividend, ValueNode divisor) {
-        super(TYPE, StampFactory.forKind(JavaKind.Short));
+        super(TYPE, new HalfFloatStamp());
         this.dividend = dividend;
         this.divisor = divisor;
     }

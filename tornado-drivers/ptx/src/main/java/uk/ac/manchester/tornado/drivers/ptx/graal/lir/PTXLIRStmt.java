@@ -265,6 +265,41 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("SUB_HALF")
+    public static class SubHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SubHalfStmt> TYPE = LIRInstructionClass.create(SubHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public SubHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(SUB + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("VSUB_HALF")
     public static class VectorSubHalfStmt extends AbstractInstruction {
 
