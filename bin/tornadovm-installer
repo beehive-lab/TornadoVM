@@ -36,7 +36,7 @@ import installer_config as config
 ## Configuration
 ## ################################################################
 __DIRECTORY_DEPENDENCIES__ = os.path.join("etc", "dependencies")
-__VERSION__ = "v1.0.9-dev"
+__VERSION__ = "v1.0.9"
 
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,

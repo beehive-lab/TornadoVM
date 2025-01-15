@@ -6,7 +6,7 @@
     <parent>
         <artifactId>tornado</artifactId>
         <groupId>tornado</groupId>
-        <version>1.0.9-dev</version>
+        <version>1.0.10-dev </version>
     </parent>
 
     <artifactId>tornado-annotation</artifactId>
