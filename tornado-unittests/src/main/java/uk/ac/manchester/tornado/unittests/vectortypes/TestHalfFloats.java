@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.unittests.vectortypes;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import org.junit.Test;
 
