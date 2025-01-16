@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -39,7 +39,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
-import org.graalvm.compiler.nodes.calc.FloatDivNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
@@ -202,6 +201,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     }
 
+    /**
+     * This function receives a half float value and, if it is a constant, it encapsulates it in a {@code HalfFloatConstantNode}.
+     * Otherwise, the input value is returned.
+     *
+     * @param halfFloatValue The half float value.
+     * @param graph The Structured Graph.
+     * @return The half float value, either as is, or in the form of the {@code HalfFloatConstantNode}.
+     */
     private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
         if (halfFloatValue instanceof ConstantNode) {
             ConstantNode floatValue = (ConstantNode) halfFloatValue;
@@ -325,6 +332,17 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         }
     }
 
+    /**
+     * Since the compiler treats half float values as Objects by default,
+     * this function examines if the stamp of a {@code ValuePhiNode} is an Object stamp,
+     * and if it is, it replaces the node with a new {@code ValuePhiNode} with a {@code HalfFloatStamp}.
+     * It is safe to assume that the Object stamp corresponds to a half value and not another
+     * Object type, because the functions that invoke it are operating only on half float related nodes.
+     *
+     * @param phiNode The {@code ValuePhiNode} to be examined.
+     * @param graph The Structured Graph.
+     * @return The {@code ValuePhiNode} with the {@code HalfFloatStamp}, or the existing {@code ValuePhiNode}.
+     */
     private static ValuePhiNode replacePhi(ValuePhiNode phiNode, StructuredGraph graph) {
         if (phiNode.getStackKind().isObject()) {
             ValueNode[] values = new ValueNode[phiNode.valueCount()];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, 2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,10 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats;
 
 /**
  * <p>
@@ -169,6 +172,19 @@ public class TestMatrices extends TornadoTestBase {
         for (@Parallel int i = 0; i < first.length; i++) {
             for (@Parallel int j = 0; j < first.length; j++) {
                 first[i][j] = first[i][j] + second[i][j];
+            }
+        }
+    }
+
+    private static void matrixMultiplicationHalfFloats(final HalfFloatArray A, final HalfFloatArray B, final HalfFloatArray C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                HalfFloat sum = new HalfFloat(0.0f);
+                for (int k = 0; k < size; k++) {
+                    HalfFloat mult = HalfFloat.mult(A.get((i * size) + k), B.get((k * size) + j));
+                    sum = HalfFloat.add(sum, mult);
+                }
+                C.set((i * size) + j, sum);
             }
         }
     }
@@ -781,6 +797,36 @@ public class TestMatrices extends TornadoTestBase {
 
         for (int i = 0; i < firstMatrix.length; i++) {
             Assert.assertArrayEquals(firstMatrixSeq[i], firstMatrix[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testHalfFloatMatrixMultiplication() throws TornadoExecutionPlanException {
+        int N = 256;
+        HalfFloatArray matrixA = new HalfFloatArray(N * N);
+        HalfFloatArray matrixB = new HalfFloatArray(N * N);
+        HalfFloatArray matrixCSeq = new HalfFloatArray(N * N);
+        HalfFloatArray matrixC = new HalfFloatArray(N * N);
+
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA.set(idx, new HalfFloat(2.5f));
+            matrixB.set(idx, new HalfFloat(3.5f));
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrices::matrixMultiplicationHalfFloats, matrixA, matrixB, matrixC, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executor.execute();
+        }
+
+        matrixMultiplicationHalfFloats(matrixA, matrixB, matrixCSeq, N);
+
+        for (int i = 0; i < N * N; i++) {
+            assertEquals(matrixCSeq.get(i).getFloat32(), matrixC.get(i).getFloat32(), DELTA);
         }
     }
     // CHECKSTYLE:ON
