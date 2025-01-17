@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -21,57 +21,41 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
 @NodeInfo
-public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
-
-    public static final NodeClass<WriteHalfFloatNode> TYPE = NodeClass.create(WriteHalfFloatNode.class);
-
-    @Input
-    private AddressNode addressNode;
+public class AddHalfNode extends ValueNode implements LIRLowerable {
+    public static final NodeClass<AddHalfNode> TYPE = NodeClass.create(AddHalfNode.class);
 
     @Input
-    private ValueNode valueNode;
+    private ValueNode x;
 
-    public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
+    @Input
+    private ValueNode y;
+
+    public AddHalfNode(ValueNode x, ValueNode y) {
         super(TYPE, new HalfFloatStamp());
-        this.addressNode = addressNode;
-        this.valueNode = valueNode;
+        this.x = x;
+        this.y = y;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
-        Value valueToStore;
-        if (valueNode.stamp(NodeView.DEFAULT).isFloatStamp()) {
-            // the value to be written is in float format, so the bytecodes to convert
-            // to half float need to be generated
-            Value value = generator.operand(valueNode);
-            Variable intermediate = tool.newVariable(LIRKind.value(PTXKind.F32));
-            Variable result = tool.newVariable(LIRKind.value(PTXKind.F16));
-            tool.append(new PTXLIRStmt.ConvertHalfFloatStmt(result, value, intermediate));
-            valueToStore = result;
-        } else {
-            valueToStore = generator.operand(valueNode);
-        }
-        Value addressValue = generator.operand(addressNode);
-        PTXUnary.MemoryAccess access = (PTXUnary.MemoryAccess) addressValue;
-        tool.append(new PTXLIRStmt.HalfFloatStoreStmt(access, valueToStore));
+        Variable result = tool.newVariable(LIRKind.value(PTXKind.F16));
+        Value inputX = generator.operand(x);
+        Value inputY = generator.operand(y);
+        tool.append(new PTXLIRStmt.AddHalfStmt(result, inputX, inputY));
+        generator.setResult(this, result);
     }
 }

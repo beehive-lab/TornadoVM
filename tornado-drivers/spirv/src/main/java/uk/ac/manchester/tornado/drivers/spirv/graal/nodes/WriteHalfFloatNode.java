@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -35,8 +34,8 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
@@ -55,7 +54,7 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
     private ValueNode valueNode;
 
     public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
-        super(TYPE, StampFactory.forKind(JavaKind.Short));
+        super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
         this.valueNode = valueNode;
     }
