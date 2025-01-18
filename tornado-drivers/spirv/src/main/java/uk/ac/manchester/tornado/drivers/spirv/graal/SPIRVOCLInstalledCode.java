@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
@@ -164,6 +165,15 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         if (TornadoOptions.isProfilerEnabled()) {
+            // Metrics captured before blocking
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
+                    : -1);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
+                    : -1);
+
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
@@ -175,8 +185,6 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
-            // TODO: Add Power User Metric
-            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
         }
     }
 

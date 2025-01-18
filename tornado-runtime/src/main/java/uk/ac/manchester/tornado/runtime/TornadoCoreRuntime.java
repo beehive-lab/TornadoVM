@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
@@ -183,6 +184,16 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     @Override
     public boolean isProfilerEnabled() {
         return TornadoOptions.PROFILER_LOGS_ACCUMULATE() && TornadoOptions.isProfilerEnabled();
+    }
+
+    @Override
+    public boolean isPowerMonitoringEnabled() {
+        return TornadoOptions.isUpsReaderEnabled();
+    }
+
+    @Override
+    public long getPowerMetric() {
+        return (UpsMeterReader.getOutputPowerMetric() != null) ? Long.parseLong(UpsMeterReader.getOutputPowerMetric()) : -1;
     }
 
     public MetaAccessProvider getMetaAccess() {
