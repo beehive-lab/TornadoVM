@@ -184,7 +184,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
     stage('Benchmarks') {
         timeout(time: 15, unit: 'MINUTES') {
             sh 'python3 tornado-assembly/src/bin/tornado-benchmarks.py --printBenchmarks '
-            sh 'python3 tornado-assembly/src/bin/tornado-benchmarks.py --medium --skipSequential --iterations 5 '
+            sh 'python3 tornado-assembly/src/bin/tornado-benchmarks.py --medium --skipSerial --iterations 5 '
         }
     }
     stage('Clone & Build KFusion') {
