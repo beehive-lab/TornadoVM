@@ -499,6 +499,37 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
+
+        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
+        Access objectAccessSrc = graphSrc.getObjectAccess(srcArray);
+        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(srcArray, objectAccessSrc);
+        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+
+        // The device is the same for both task-graphs
+        final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+
+        final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+
+        Access objectAccessDest = getObjectAccess(destArray);
+        final LocalObjectState localStateDest = executionContext.getLocalStateObject(destArray, objectAccessDest);
+        final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+        final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
+
+        // We need to alloc if needed
+        if (!deviceStateDest.hasObjectBuffer()) {
+            System.out.println("Alloc? ");
+            device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
+        }
+
+        final TornadoXPUDevice deviceDest = meta().getXPUDevice();
+        // destDevice and device must be the same
+
+        // Then we need to copy the pointers
+        deviceDest.copyDevicePointers(executionPlanId, destArray, srcArray, deviceStateSrc, deviceStateDest, offset);
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }

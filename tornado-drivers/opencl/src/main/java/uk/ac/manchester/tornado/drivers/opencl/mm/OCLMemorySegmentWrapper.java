@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
@@ -235,4 +236,14 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     public long getBatchSize() {
         return batchSize;
     }
+
+    @Override
+    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        System.out.println("copyPointer from OCLMemorySegmentWrapper");
+        if (!(srcPointer instanceof OCLMemorySegmentWrapper oclMemorySegmentWrapper)) {
+            throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
+        }
+        deviceContext.copyDevicePointer(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset);
+    }
+
 }

@@ -27,10 +27,30 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.plan.types.*;
+import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
+import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
+import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
+import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
+import uk.ac.manchester.tornado.api.plan.types.WithBatch;
+import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
+import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
+import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithDevice;
+import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
+import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
+import uk.ac.manchester.tornado.api.plan.types.WithGraph;
+import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
+import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
+import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
+import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
+import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * Class to create and optimize execution plans for running a set of
@@ -543,8 +563,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *
      * @since v1.0.10
      */
-    public void copyPointerFromGraphToGraph(FloatArray destArray, FloatArray srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
-        // update the corresponding pointers from one graph to another
-        tornadoExecutor.transferToHost();
+    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
+        // Be sure to update the whole list of graphs
+        tornadoExecutor.selectAll();
+        tornadoExecutor.copyPointerFromGraphToGraph(destArray, srcArray, offset, fromGraphIndex, toGraphIndex);
     }
 }

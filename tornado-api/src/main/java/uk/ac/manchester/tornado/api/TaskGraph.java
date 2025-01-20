@@ -905,4 +905,8 @@ public class TaskGraph implements TaskGraphInterface {
     long getCurrentDeviceMemoryUsage() {
         return taskGraphImpl.getCurrentDeviceMemoryUsage();
     }
+
+    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
+        taskGraphImpl.copyPointerFromGraphToGraph(destArray, srcArray, offset, taskGraphSrc);
+    }
 }

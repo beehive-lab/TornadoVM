@@ -346,4 +346,9 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.setSubRegionSize = batchSize;
     }
 
+    @Override
+    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+
+    }
+
 }

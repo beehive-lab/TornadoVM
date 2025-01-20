@@ -213,4 +213,8 @@ public class ImmutableTaskGraph {
     long getCurrentDeviceMemoryUsage() {
         return taskGraph.getCurrentDeviceMemoryUsage();
     }
+
+    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.copyPointerFromGraphToGraph(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
+    }
 }

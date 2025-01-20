@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -176,7 +177,6 @@ public class OCLCommandQueue extends CommandQueue {
 
     /**
      * Enqueues a barrier into the command queue of the specified device
-     *
      */
     public long enqueueBarrier() {
         return enqueueBarrier(null);
@@ -430,5 +430,9 @@ public class OCLCommandQueue extends CommandQueue {
 
     public int getOpenclVersion() {
         return openclVersion;
+    }
+
+    public void copyDevicePointer(long destDevicePtr, long srcDevicePtr, long offset) {
+        NativeCommandQueue.copyDevicePointer(destDevicePtr, srcDevicePtr, offset);
     }
 }

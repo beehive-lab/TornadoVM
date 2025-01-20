@@ -200,4 +200,5 @@ public interface TornadoDevice {
 
     boolean isSPIRVSupported();
 
+    void copyDevicePointers(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset);
 }

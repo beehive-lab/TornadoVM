@@ -593,6 +593,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState, Access access) {
+        System.out.println("[LOW-LEVEL] New Buffer Allocation for object: " + object);
         final XPUBuffer buffer;
         TornadoInternalError.guarantee(deviceObjectState.isAtomicRegionPresent() || !deviceObjectState.hasObjectBuffer(), "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize, access);
@@ -838,6 +839,14 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void copyDevicePointers(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        System.out.println("[debug] copyDevicePointers ... ");
+        XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
+        XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
+        devicePointer.copyDevicePointer(executionPlanId, srcPointer, offset);
     }
 
 }

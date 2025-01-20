@@ -233,6 +233,14 @@ class TornadoExecutor {
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
     }
 
+    private ImmutableTaskGraph getGraph(int graphIndex) {
+        if (graphIndex < immutableTaskGraphList.size()) {
+            return immutableTaskGraphList.get(graphIndex);
+        } else {
+            throw new TornadoRuntimeException("TaskGraph index #" + graphIndex + " does not exist in current executor");
+        }
+    }
+
     void selectAll() {
         if (subgraphList == null) {
             return;
@@ -240,5 +248,12 @@ class TornadoExecutor {
         immutableTaskGraphList.clear();
         subgraphList.forEach(g -> Collections.addAll(immutableTaskGraphList, g));
         subgraphList = null;
+    }
+
+    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
+        // Identify the task-graphs to take for the update operation
+        ImmutableTaskGraph taskGraphSrc = getGraph(fromGraphIndex);
+        ImmutableTaskGraph taskGraphDest = getGraph(toGraphIndex);
+        taskGraphDest.copyPointerFromGraphToGraph(destArray, srcArray, offset, taskGraphSrc);
     }
 }
