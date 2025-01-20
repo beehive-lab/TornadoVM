@@ -27,28 +27,7 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
-import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
-import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
-import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
-import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
-import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
-import uk.ac.manchester.tornado.api.plan.types.WithBatch;
-import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
-import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
-import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
-import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
-import uk.ac.manchester.tornado.api.plan.types.WithDevice;
-import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
-import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
-import uk.ac.manchester.tornado.api.plan.types.WithGraph;
-import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
-import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
-import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
-import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
-import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
-import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
-import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
+import uk.ac.manchester.tornado.api.plan.types.*;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -81,19 +60,18 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     protected ExecutorFrame executionFrame;
 
-    // Pointers
     /**
-     * Pointer to the Root of the List.
+     * Reference to the Root of the List.
      */
     protected TornadoExecutionPlan rootNode;
 
     /**
-     * Pointer to the next node in the list.
+     * Reference to the next node in the list.
      */
     protected TornadoExecutionPlan childLink;
 
     /**
-     * Pointer to the previous node in the list.
+     * Reference to the previous node in the list.
      */
     protected TornadoExecutionPlan parentLink;
 
@@ -556,6 +534,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     /**
      * Copy device pointers from one task-graph to another within the same execution plan.
+     * 
      * @param destArray
      * @param srcArray
      * @param offset
@@ -566,5 +545,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public void copyPointerFromGraphToGraph(FloatArray destArray, FloatArray srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
         // update the corresponding pointers from one graph to another
+        tornadoExecutor.transferToHost();
     }
 }

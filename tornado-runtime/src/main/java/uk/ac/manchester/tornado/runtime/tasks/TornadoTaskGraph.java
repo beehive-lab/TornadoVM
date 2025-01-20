@@ -1159,18 +1159,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final XPUDeviceBufferState deviceBufferState = dataObjectState.getDeviceBufferState(device);
         deviceBufferState.setLockBuffer(false);
-       if (deviceBufferState.hasObjectBuffer()) {
+        if (deviceBufferState.hasObjectBuffer()) {
             device.deallocate(deviceBufferState);
-       }
+        }
     }
 
     private void syncField(Object object) {
-        /*
-         * Clean the profiler -- avoids the possibility of reporting the `execute`
-         * profiling information twice.
-         */
+        // Clean the profiler: it avoids the possibility of reporting
+        // the `execute` profiling information twice.
         timeProfiler.clean();
+
+        // sync all objects from the context
         executionContext.sync();
+
+        // update the profiler if needed
         updateProfiler();
     }
 
