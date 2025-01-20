@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -19,7 +19,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
+package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -35,9 +35,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 @NodeInfo
-public class VectorSubHalfNode extends ValueNode implements LIRLowerable {
-
-    public static final NodeClass<VectorSubHalfNode> TYPE = NodeClass.create(VectorSubHalfNode.class);
+public class DivHalfNode extends ValueNode implements LIRLowerable {
+    public static final NodeClass<DivHalfNode> TYPE = NodeClass.create(DivHalfNode.class);
 
     @Input
     private ValueNode x;
@@ -45,7 +44,7 @@ public class VectorSubHalfNode extends ValueNode implements LIRLowerable {
     @Input
     private ValueNode y;
 
-    public VectorSubHalfNode(ValueNode x, ValueNode y) {
+    public DivHalfNode(ValueNode x, ValueNode y) {
         super(TYPE, new HalfFloatStamp());
         this.x = x;
         this.y = y;
@@ -56,8 +55,7 @@ public class VectorSubHalfNode extends ValueNode implements LIRLowerable {
         Variable result = tool.newVariable(LIRKind.value(OCLKind.HALF));
         Value inputX = generator.operand(x);
         Value inputY = generator.operand(y);
-        tool.append(new OCLLIRStmt.VectorSubHalfStmt(result, inputX, inputY));
+        tool.append(new OCLLIRStmt.DivHalfStmt(result, inputX, inputY));
         generator.setResult(this, result);
     }
-
 }

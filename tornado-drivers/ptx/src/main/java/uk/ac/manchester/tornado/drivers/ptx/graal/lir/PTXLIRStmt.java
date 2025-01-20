@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -230,6 +230,76 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("ADD_HALF")
+    public static class AddHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<AddHalfStmt> TYPE = LIRInstructionClass.create(AddHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public AddHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(ADD + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("SUB_HALF")
+    public static class SubHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SubHalfStmt> TYPE = LIRInstructionClass.create(SubHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public SubHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(SUB + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("VSUB_HALF")
     public static class VectorSubHalfStmt extends AbstractInstruction {
 
@@ -278,6 +348,41 @@ public class PTXLIRStmt {
         protected Value y;
 
         public VectorMultHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(MUL + DOT + "rn.f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(x);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("MULT_HALF")
+    public static class MultHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MultHalfStmt> TYPE = LIRInstructionClass.create(MultHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public MultHalfStmt(Value result, Value x, Value y) {
             super(TYPE);
             this.result = result;
             this.x = x;
@@ -417,7 +522,12 @@ public class PTXLIRStmt {
             } else {
                 asm.emitSymbol(TAB);
                 if (shouldEmitMove(lhsKind, rhsKind)) {
-                    asm.emit(MOVE + DOT + lhsKind.toString());
+                    if (lhsKind.isF16()) {
+                        // here
+                        asm.emit(MOVE + DOT + "b16");
+                    } else {
+                        asm.emit(MOVE + DOT + lhsKind.toString());
+                    }
                 } else {
                     asm.emit(CONVERT + DOT);
                     if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
