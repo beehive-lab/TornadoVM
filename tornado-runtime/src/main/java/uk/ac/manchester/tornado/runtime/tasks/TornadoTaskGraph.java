@@ -518,7 +518,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // We need to alloc if needed
         if (!deviceStateDest.hasObjectBuffer()) {
-            System.out.println("Alloc? ");
             device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
         }
 

@@ -432,7 +432,7 @@ public class OCLCommandQueue extends CommandQueue {
         return openclVersion;
     }
 
-    public void copyDevicePointer(long destDevicePtr, long srcDevicePtr, long offset) {
-        NativeCommandQueue.copyDevicePointer(destDevicePtr, srcDevicePtr, offset);
+    public long copyDevicePointer(long srcDevicePtr, long offset) {
+        return NativeCommandQueue.copyDevicePointer(srcDevicePtr, offset, 4);
     }
 }

@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.pointers;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -39,7 +41,15 @@ public class TestCopyDevicePointers extends TornadoTestBase {
 
     public static void iterativeUpdate(FloatArray array) {
         for (@Parallel int i = 0; i < array.getSize(); i++) {
-            array.set(i, 1.5f);
+            array.set(i, array.get(i) + 1.0f);
+        }
+    }
+
+    public static void iterativeUpdate2D(FloatArray array, int m, int n) {
+        for (@Parallel int i = 0; i < m; i++) {
+            for (@Parallel int j = 0; j < n; j++) {
+                array.set(i, i);
+            }
         }
     }
 
@@ -49,16 +59,22 @@ public class TestCopyDevicePointers extends TornadoTestBase {
         }
     }
 
+    public static void computeRow(FloatArray array) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, array.get(i) + 0.1f);
+        }
+    }
+
     @Test
     public void testCopyDevicePointers() throws TornadoExecutionPlanException {
         final int size = 32;
 
         FloatArray array = new FloatArray(size);
+        array.init(0.5f);
 
         // We will have a task graph which needs to be executed multiple times on the
         // hardware accelerator
         TaskGraph taskGraph1 = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, array) //
                 .task("s0", TestCopyDevicePointers::iterativeUpdate, array) //
                 .transferToHost(DataTransferMode.UNDER_DEMAND, array);
 
@@ -89,11 +105,49 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();
 
-            // Execute a second time
+            for (int i = 0; i < copyArray.getSize(); i++) {
+                assertEquals(7.0f, copyArray.get(i), 0.01f);
+            }
+        }
+    }
+
+    @Test
+    public void testCopyDevicePointersMatrix() throws TornadoExecutionPlanException {
+        final int size = 32;
+
+        FloatArray matrix = new FloatArray(size * size);
+
+        // We will have a task graph which needs to be executed multiple times on the
+        // hardware accelerator
+        TaskGraph taskGraph1 = new TaskGraph("s0") //
+                .task("s0", TestCopyDevicePointers::iterativeUpdate2D, matrix, size, size) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, matrix);
+
+        FloatArray row = new FloatArray(size);
+
+        // Then we will have a second task-graph for which we will need to pass data from
+        // another task-graph. The idea is to copy device pointers to avoid sync with the host
+        // back and forth.
+        TaskGraph taskGraph2 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.UNDER_DEMAND, row)   // Copy-In should be under demand
+                .task("s1", TestCopyDevicePointers::computeRow, row) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, row);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph1.snapshot(), taskGraph2.snapshot())) {
+
+            executionPlan.withGraph(0).execute();
+
+            // perform a copy
+            int offset = 15 * size;   // Select row 15
+            int fromGraphIndex = 0;
+            int toGraphIndex = 1;
+            executionPlan.copyPointerFromGraphToGraph(row, matrix, offset, fromGraphIndex, toGraphIndex);
+
+            // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();
 
-            for (int i = 0; i < copyArray.getSize(); i++) {
-                System.out.println(copyArray.get(i));
+            for (int i = 0; i < row.getSize(); i++) {
+                assertEquals(15.1f, row.get(i), 0.01f);
             }
         }
     }

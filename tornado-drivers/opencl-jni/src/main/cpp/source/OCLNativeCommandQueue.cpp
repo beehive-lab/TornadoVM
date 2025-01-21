@@ -1,10 +1,8 @@
 /*
 * MIT License
  *
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,28 +30,18 @@
     #include <CL/cl.h>
 #endif
 
-#include <iostream>
-
 #include "OCLNativeCommandQueue.h"
-
-// Copy device pointers
-void copyDevicePointers(unsigned char **dst, unsigned char* src, long offset, int sizeOfType) {
-    std::cout << "[jni] copyDevicePointers ... " << std::endl;
-    *dst = src + (offset * sizeOfType);
-}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue
  * Method:    copyDevicePointer
- * Signature: (JJJ)J
+ * Signature: (JJI)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_copyDevicePointer
-    (JNIEnv * env, jclass klass, jlong destDevicePointer, jlong srcDevicePointer, jlong offset) {
-    unsigned char *src = reinterpret_cast<unsigned char *>(srcDevicePointer);
-    unsigned char *dest = reinterpret_cast<unsigned char *>(destDevicePointer);
-    copyDevicePointers(& dest, src , offset, 4);
-    std::cout << "[jni] copyDevicePointers done" << std::endl;
-    return -1;
+(JNIEnv * env, jclass klass, jlong srcDevicePointer, jlong offset, jint sizeDataType) {
+    char *src = reinterpret_cast<char *>(srcDevicePointer);
+    char *address = src + (offset * sizeDataType);
+    return reinterpret_cast<jlong>(address);
 }
 
 
