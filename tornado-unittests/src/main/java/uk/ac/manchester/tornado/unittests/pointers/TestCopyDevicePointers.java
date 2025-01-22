@@ -19,6 +19,8 @@ package uk.ac.manchester.tornado.unittests.pointers;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.stream.IntStream;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -47,8 +49,8 @@ public class TestCopyDevicePointers extends TornadoTestBase {
 
     public static void iterativeUpdate2D(FloatArray array, int m, int n) {
         for (@Parallel int i = 0; i < m; i++) {
-            for (@Parallel int j = 0; j < n; j++) {
-                array.set(i, i);
+            for (int j = 0; j < n; j++) {
+                array.set(i * n + j, i);
             }
         }
     }
@@ -105,9 +107,8 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();
 
-            for (int i = 0; i < copyArray.getSize(); i++) {
-                assertEquals(7.0f, copyArray.get(i), 0.01f);
-            }
+            // Check result
+            IntStream.range(0, copyArray.getSize()).forEach(i -> assertEquals(7.0f, copyArray.get(i), 0.01f));
         }
     }
 
@@ -137,8 +138,7 @@ public class TestCopyDevicePointers extends TornadoTestBase {
 
             executionPlan.withGraph(0).execute();
 
-            // perform a copy
-            int offset = 15 * size;   // Select row 15
+            int offset = 15 * size;
             int fromGraphIndex = 0;
             int toGraphIndex = 1;
             executionPlan.copyPointerFromGraphToGraph(row, matrix, offset, fromGraphIndex, toGraphIndex);
@@ -146,9 +146,9 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();
 
-            for (int i = 0; i < row.getSize(); i++) {
-                assertEquals(15.1f, row.get(i), 0.01f);
-            }
+            IntStream.range(0, row.getSize()).mapToObj(row::get).forEach(System.out::println);
+
+            IntStream.range(0, row.getSize()).forEach(i -> assertEquals(15.1f, row.get(i), 0.01f));
         }
     }
 }

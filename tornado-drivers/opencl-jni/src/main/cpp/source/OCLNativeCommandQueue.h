@@ -34,10 +34,20 @@ extern "C" {
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue
  * Method:    copyDevicePointer
- * Signature: (JJI)J
+ * Signature: (JJJI)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_copyDevicePointer
-(JNIEnv *, jclass, jlong, jlong, jint);
+(JNIEnv *, jclass, jlong, jlong, jlong, jint);
+
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue
+ * Method:    copyDevicePointerWithMapping
+ * Signature: (JJJJIII)J
+ */
+JNIEXPORT jlong JNICALL
+Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_copyDevicePointerWithMapping
+(JNIEnv *, jclass, jlong, jlong, jlong, jlong, jint, jint, jint);
 
 #ifdef __cplusplus
 }
