@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import java.util.HashMap;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
