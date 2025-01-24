@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
@@ -251,6 +252,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         launchKernelWithLevelZero(executionPlanId, kernel, deviceThreadScheduling, threadBlockDispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
+                    : -1);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
+                    : -1);
             kernelTimeStamp.solveEvent(executionPlanId, meta);
             ((SPIRVLevelZeroPowerMetricHandler) deviceContext.getPowerMetric()).readFinalCounters();
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());

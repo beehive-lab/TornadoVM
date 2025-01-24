@@ -37,4 +37,18 @@ public interface TornadoRuntime {
     <D extends TornadoBackend> int getBackendIndex(Class<D> driverClass);
 
     boolean isProfilerEnabled();
+
+    /**
+     * Checks whether TornadoVM is configured to support power metrics monitoring.
+     *
+     * @return true if power metrics monitoring is enabled, false otherwise.
+     */
+    boolean isPowerMonitoringEnabled();
+
+    /**
+     * Retrieves the current power metric measured in Watts.
+     *
+     * @return the power metric as a long value, representing the current power consumption in Watts.
+     */
+    long getPowerMetric();
 }

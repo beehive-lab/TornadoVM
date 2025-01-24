@@ -361,6 +361,10 @@ public class TornadoOptions {
         return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
 
+    public static boolean isUpsReaderEnabled() {
+        return UPS_IP_ADDRESS != null;
+    }
+
     /**
      * Set Loop unrolling factor. Default is set to 4.
      */
@@ -425,6 +429,8 @@ public class TornadoOptions {
      * Enable out-of-order execution. False by default.
      */
     public static final boolean ENABLE_OOO_EXECUTION = getBooleanValue("tornado.ooo-execution.enable", FALSE);
+
+    public static final String UPS_IP_ADDRESS = getProperty("tornado.ups.ip", null);
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be
