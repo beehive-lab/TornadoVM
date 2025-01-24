@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2022, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2024-2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -120,10 +120,18 @@ public class OCLUnary {
 
         private static final String arrayName = OCLArchitecture.atomicSpace.getName();
         private int index;
+        private boolean incrementsFirst;
 
         public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
             super(opcode, lirKind, value);
             this.index = index;
+            this.incrementsFirst = false;
+        }
+
+        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index, boolean incrementsFirst) {
+            super(opcode, lirKind, value);
+            this.index = index;
+            this.incrementsFirst = incrementsFirst;
         }
 
         @Override
@@ -133,7 +141,11 @@ public class OCLUnary {
 
         @Override
         public String toString() {
-            return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+            if (incrementsFirst) {
+                return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
+            } else {
+                return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+            }
         }
     }
 
