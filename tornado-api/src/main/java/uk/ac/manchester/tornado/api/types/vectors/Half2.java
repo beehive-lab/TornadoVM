@@ -21,7 +21,6 @@ import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
-import uk.ac.manchester.tornado.api.types.utils.ShortOps;
 
 import java.nio.ShortBuffer;
 

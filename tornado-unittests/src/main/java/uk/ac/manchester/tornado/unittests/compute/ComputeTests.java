@@ -51,7 +51,6 @@ import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.matrices.TestMatrices;
 
 /**
  * Test to check functionality of benchmarks available in the compute-benchmark
