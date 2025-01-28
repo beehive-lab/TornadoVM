@@ -177,7 +177,8 @@ public abstract class BenchmarkDriver {
         lastPowerMetricPerIteration = new ArrayList<>();
 
         for (long i = 0; i < iterations; i++) {
-            Thread t0, t1;
+            Thread t0;
+            Thread t1;
             powerMetricsPerIteration = Collections.synchronizedList(new ArrayList<>());
             snapshotTimerPerIteration = Collections.synchronizedList(new ArrayList<>());
             t0 = new Thread(() -> runBenchmark(device), "BenchmarkThread");
