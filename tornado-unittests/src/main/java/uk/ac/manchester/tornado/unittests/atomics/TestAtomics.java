@@ -568,12 +568,19 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
+        Random random = new Random();
         final int size = 32;
         IntArray a = new IntArray(size);
-        a.init(1);
+        IntArray dataSequential = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            int intRandomValue = random.nextInt();
+            a.set(i, intRandomValue);
+            dataSequential.set(i, intRandomValue);
+        }
 
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
+        AtomicInteger jai = new AtomicInteger(initialValueA);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -584,11 +591,13 @@ public class TestAtomics extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        boolean repeated = isValueRepeated(a);
+        atomic13DecrementAndGet(dataSequential, jai);
 
+        boolean repeated = isValueRepeated(a);
         int lastValue = ai.get();
         assertFalse(repeated);
         assertEquals(initialValueA - size, lastValue);
+        assertArrayEquals(dataSequential.toHeapArray(), a.toHeapArray());
     }
 
     @Test
@@ -600,12 +609,16 @@ public class TestAtomics extends TornadoTestBase {
         Random random = new Random();
         final int size = 32;
         IntArray a = new IntArray(size);
+        IntArray dataSequential = new IntArray(size);
         for (int i = 0; i < size; i++) {
-            a.set(i, random.nextInt());
+            int intRandomValue = random.nextInt();
+            a.set(i, intRandomValue);
+            dataSequential.set(i, intRandomValue);
         }
 
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
+        AtomicInteger jai = new AtomicInteger(initialValueA);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -616,11 +629,13 @@ public class TestAtomics extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        boolean repeated = isValueRepeated(a);
+        atomic13GetAndDecrement(dataSequential, jai);
 
+        boolean repeated = isValueRepeated(a);
         int lastValue = ai.get();
         assertFalse(repeated);
         assertEquals(initialValueA - size, lastValue);
+        assertArrayEquals(dataSequential.toHeapArray(), a.toHeapArray());
     }
 
     @Test
@@ -722,8 +737,9 @@ public class TestAtomics extends TornadoTestBase {
         IntArray dataTornadoVM = new IntArray(size);
         IntArray dataSequential = new IntArray(size);
         for (int i = 0; i < size; i++) {
-            dataTornadoVM.set(i, random.nextInt());
-            dataSequential.set(i, random.nextInt());
+            int intRandomValue = random.nextInt();
+            dataTornadoVM.set(i, intRandomValue);
+            dataSequential.set(i, intRandomValue);
         }
 
         KernelContext context = new KernelContext();
@@ -762,8 +778,9 @@ public class TestAtomics extends TornadoTestBase {
         IntArray dataTornadoVM = new IntArray(size);
         IntArray dataSequential = new IntArray(size);
         for (int i = 0; i < size; i++) {
-            dataTornadoVM.set(i, random.nextInt());
-            dataSequential.set(i, random.nextInt());
+            int intRandomValue = random.nextInt();
+            dataTornadoVM.set(i, intRandomValue);
+            dataSequential.set(i, intRandomValue);
         }
 
         KernelContext context = new KernelContext();
