@@ -116,22 +116,20 @@ public class OCLUnary {
         }
     }
 
-    public static class IntrinsicAtomicInc extends UnaryConsumer {
+    public enum AtomicOperator {
+        INCREMENT_AND_GET, GET_AND_INCREMENT, DECREMENT_AND_GET, GET_AND_DECREMENT
+    }
+
+    public static class IntrinsicAtomicOperator extends UnaryConsumer {
 
         private static final String arrayName = OCLArchitecture.atomicSpace.getName();
         private int index;
-        private boolean operatorFirst;
+        private final AtomicOperator atomicOperator;
 
-        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
+        public IntrinsicAtomicOperator(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index, AtomicOperator atomicOperator) {
             super(opcode, lirKind, value);
             this.index = index;
-            this.operatorFirst = false;
-        }
-
-        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index, boolean operatorFirst) {
-            super(opcode, lirKind, value);
-            this.index = index;
-            this.operatorFirst = operatorFirst;
+            this.atomicOperator = atomicOperator;
         }
 
         @Override
@@ -141,14 +139,21 @@ public class OCLUnary {
 
         @Override
         public String toString() {
-            if (operatorFirst) {
-                if (opcode.toString().equals("atomic_inc")) {
+            switch (atomicOperator) {
+                case INCREMENT_AND_GET -> {
                     return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
-                } else if (opcode.toString().equals("atomic_dec")) {
+                }
+                case DECREMENT_AND_GET -> {
                     return String.format("%s(&%s[%s]) - %d", opcode.toString(), arrayName, index, 1);
                 }
+                case GET_AND_INCREMENT -> {
+                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                }
+                case GET_AND_DECREMENT -> {
+                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                }
             }
-            return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+            return "";
         }
     }
 

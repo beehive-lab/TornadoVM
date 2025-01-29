@@ -44,18 +44,12 @@ public class IncAtomicNode extends NodeAtomic implements LIRLowerable {
 
     @Input
     ValueNode atomicNode;
-    boolean incrementsFirst;
+    OCLUnary.AtomicOperator atomicOperator;
 
-    public IncAtomicNode(ValueNode atomicValue, boolean incrementsFirst) {
+    public IncAtomicNode(ValueNode atomicValue, OCLUnary.AtomicOperator atomicOperator) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.atomicNode = atomicValue;
-        this.incrementsFirst = incrementsFirst;
-    }
-
-    public IncAtomicNode(ValueNode atomicValue) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
-        this.atomicNode = atomicValue;
-        this.incrementsFirst = false;
+        this.atomicOperator = atomicOperator;
     }
 
     @Override
@@ -86,12 +80,12 @@ public class IncAtomicNode extends NodeAtomic implements LIRLowerable {
 
             int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
 
-            OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
+            OCLUnary.IntrinsicAtomicOperator intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicOperator( //
                     OCLAssembler.OCLUnaryIntrinsic.ATOMIC_INC, //
                     tool.getLIRKind(stamp), //
                     generator.operand(atomicNode), //
                     indexFromGlobal, //
-                    incrementsFirst);
+                    atomicOperator);
 
             OCLLIRStmt.AssignStmt assignStmt = new OCLLIRStmt.AssignStmt(result, intrinsicAtomicAdd);
             tool.append(assignStmt);

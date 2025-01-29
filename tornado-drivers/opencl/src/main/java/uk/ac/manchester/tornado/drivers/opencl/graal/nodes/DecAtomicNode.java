@@ -44,18 +44,12 @@ public class DecAtomicNode extends NodeAtomic implements LIRLowerable {
 
     @Input
     ValueNode atomicNode;
-    boolean decrementsFirst;
+    OCLUnary.AtomicOperator atomicOperator;
 
-    public DecAtomicNode(ValueNode atomicValue, boolean decrementsFirst) {
+    public DecAtomicNode(ValueNode atomicValue, OCLUnary.AtomicOperator atomicOperator) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.atomicNode = atomicValue;
-        this.decrementsFirst = decrementsFirst;
-    }
-
-    public DecAtomicNode(ValueNode atomicValue) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
-        this.atomicNode = atomicValue;
-        this.decrementsFirst = false;
+        this.atomicOperator = atomicOperator;
     }
 
     private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool generator) {
@@ -81,12 +75,12 @@ public class DecAtomicNode extends NodeAtomic implements LIRLowerable {
 
             int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
 
-            OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
+            OCLUnary.IntrinsicAtomicOperator intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicOperator( //
                     OCLAssembler.OCLUnaryIntrinsic.ATOMIC_DEC, //
                     tool.getLIRKind(stamp), //
                     generator.operand(atomicNode), //
                     indexFromGlobal, //
-                    decrementsFirst);
+                    atomicOperator);
 
             OCLLIRStmt.AssignStmt assignStmt = new OCLLIRStmt.AssignStmt(result, intrinsicAtomicAdd);
             tool.append(assignStmt);
