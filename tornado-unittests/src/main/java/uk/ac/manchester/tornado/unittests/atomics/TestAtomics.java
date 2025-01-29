@@ -728,7 +728,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic17_getAndIncrement() throws TornadoExecutionPlanException {
+    public void testAtomic17_getAndIncrement_kernel_api() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -755,11 +755,7 @@ public class TestAtomics extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(32);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            TornadoExecutionResult executionResult = executionPlan.withGridScheduler(gridScheduler).execute();
-
-            if (!executionResult.isReady()) {
-                fail();
-            }
+            executionPlan.withGridScheduler(gridScheduler).execute();
         }
 
         atomic17GetAndIncrement(dataSequential, jai);
@@ -769,7 +765,41 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic17_incrementAndGet() throws TornadoExecutionPlanException {
+    public void testAtomic17_getAndIncrement_parallel_api() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        Random random = new Random();
+        final int size = 32;
+        IntArray dataTornadoVM = new IntArray(size);
+        IntArray dataSequential = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            int intRandomValue = random.nextInt();
+            dataTornadoVM.set(i, intRandomValue);
+            dataSequential.set(i, intRandomValue);
+        }
+
+        AtomicInteger ai = new AtomicInteger(200);
+        AtomicInteger jai = new AtomicInteger(200);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM, ai) //
+                .task("t0", TestAtomics::atomic17GetAndIncrement, dataTornadoVM, ai) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM, ai); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        atomic17GetAndIncrement(dataSequential, jai);
+
+        assertEquals(jai.get(), ai.get());
+        assertArrayEquals(dataSequential.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic17_incrementAndGet_kernel_api() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -796,11 +826,41 @@ public class TestAtomics extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(32);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            TornadoExecutionResult executionResult = executionPlan.withGridScheduler(gridScheduler).execute();
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
 
-            if (!executionResult.isReady()) {
-                fail();
-            }
+        atomic17IncrementAndGet(dataSequential, jai);
+
+        assertEquals(jai.get(), ai.get());
+        assertArrayEquals(dataSequential.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic17_incrementAndGet_parallel_api() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        Random random = new Random();
+        final int size = 32;
+        IntArray dataTornadoVM = new IntArray(size);
+        IntArray dataSequential = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            int intRandomValue = random.nextInt();
+            dataTornadoVM.set(i, intRandomValue);
+            dataSequential.set(i, intRandomValue);
+        }
+
+        AtomicInteger ai = new AtomicInteger(200);
+        AtomicInteger jai = new AtomicInteger(200);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM, ai) //
+                .task("t0", TestAtomics::atomic17IncrementAndGet, dataTornadoVM, ai) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM, ai); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
         }
 
         atomic17IncrementAndGet(dataSequential, jai);
