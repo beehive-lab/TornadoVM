@@ -553,7 +553,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Copy device pointers from one task-graph to another within the same execution plan.
+     * Copy device objects (internal device buffers) from one task-graph to another within the same execution plan.
+     * This call performs the buffer device allocation if needed, and then it will copy the srcArray device pointer
+     * to the destArray pointer, if possible.
      * 
      * @param destArray
      * @param srcArray
