@@ -120,18 +120,18 @@ public class OCLUnary {
 
         private static final String arrayName = OCLArchitecture.atomicSpace.getName();
         private int index;
-        private boolean incrementsFirst;
+        private boolean operatorFirst;
 
         public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
             super(opcode, lirKind, value);
             this.index = index;
-            this.incrementsFirst = false;
+            this.operatorFirst = false;
         }
 
-        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index, boolean incrementsFirst) {
+        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index, boolean operatorFirst) {
             super(opcode, lirKind, value);
             this.index = index;
-            this.incrementsFirst = incrementsFirst;
+            this.operatorFirst = operatorFirst;
         }
 
         @Override
@@ -141,11 +141,14 @@ public class OCLUnary {
 
         @Override
         public String toString() {
-            if (incrementsFirst) {
-                return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
-            } else {
-                return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+            if (operatorFirst) {
+                if (opcode.toString().equals("atomic_inc")) {
+                    return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
+                } else if (opcode.toString().equals("atomic_dec")) {
+                    return String.format("%s(&%s[%s]) - %d", opcode.toString(), arrayName, index, 1);
+                }
             }
+            return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
         }
     }
 
