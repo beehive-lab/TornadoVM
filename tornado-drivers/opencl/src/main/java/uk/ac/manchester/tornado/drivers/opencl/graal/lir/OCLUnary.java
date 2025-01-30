@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2022, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2024-2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -116,14 +116,20 @@ public class OCLUnary {
         }
     }
 
-    public static class IntrinsicAtomicInc extends UnaryConsumer {
+    public enum AtomicOperator {
+        INCREMENT_AND_GET, GET_AND_INCREMENT, DECREMENT_AND_GET, GET_AND_DECREMENT
+    }
+
+    public static class IntrinsicAtomicOperator extends UnaryConsumer {
 
         private static final String arrayName = OCLArchitecture.atomicSpace.getName();
         private int index;
+        private final AtomicOperator atomicOperator;
 
-        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
+        public IntrinsicAtomicOperator(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index, AtomicOperator atomicOperator) {
             super(opcode, lirKind, value);
             this.index = index;
+            this.atomicOperator = atomicOperator;
         }
 
         @Override
@@ -133,7 +139,21 @@ public class OCLUnary {
 
         @Override
         public String toString() {
-            return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+            switch (atomicOperator) {
+                case INCREMENT_AND_GET -> {
+                    return String.format("%s(&%s[%s]) + %d", opcode.toString(), arrayName, index, 1);
+                }
+                case DECREMENT_AND_GET -> {
+                    return String.format("%s(&%s[%s]) - %d", opcode.toString(), arrayName, index, 1);
+                }
+                case GET_AND_INCREMENT -> {
+                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                }
+                case GET_AND_DECREMENT -> {
+                    return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+                }
+            }
+            return "";
         }
     }
 
