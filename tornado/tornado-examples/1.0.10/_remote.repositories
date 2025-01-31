@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Fri Jan 31 10:07:15 CET 2025
+tornado-examples-1.0.10-sources.jar>=
+tornado-examples-1.0.10.jar>=
+tornado-examples-1.0.10.pom>=
