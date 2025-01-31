@@ -5,6 +5,33 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0.10
+---------------
+31/01/25
+
+Improvements
+~~~~~~~~~~~~
+
+- `#608 <https://github.com/beehive-lab/TornadoVM/pull/608>`_: Selective execution with multiple SPIR-V runtimes (either OpenCL, Intel Level Zero, or both) to unlock execution on RISC-V systems. 
+- `#611 <https://github.com/beehive-lab/TornadoVM/pull/611>`_: Support of ``HalfFloat`` for Matrix Types (``FP16`` -> ``FP16``).
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#607 <https://github.com/beehive-lab/TornadoVM/pull/607>`_: WSL installation and configuration updated for WSL Ubuntu 24 LTS and Windows 11.
+- `#609 <https://github.com/beehive-lab/TornadoVM/pull/609>`_: Documentation and patch for RISC-V64 updated.
+- `#610 <https://github.com/beehive-lab/TornadoVM/pull/610>`_: Maven dependency updated
+- `#612 <https://github.com/beehive-lab/TornadoVM/pull/612>`_: Re-enable colours in maven builds on Linux. 
+
+Bug Fixes 
+~~~~~~~~~~~~
+
+- `#606 <https://github.com/beehive-lab/TornadoVM/pull/606>`_: Fix data sizes in benchmark suite.
+- `#613 <https://github.com/beehive-lab/TornadoVM/pull/613>`_: Fix code formatter.
+- `#614 <https://github.com/beehive-lab/TornadoVM/pull/614>`_: Fix flags for the benchmark pipeline in Jenkins. 
+- `#615 <https://github.com/beehive-lab/TornadoVM/pull/615>`_: Fix code style based on the formatter. 
+- `#616 <https://github.com/beehive-lab/TornadoVM/pull/616>`_: Fix atomics for the Kernel API and the OpenCL backend.
+
 
 TornadoVM 1.0.9
 ---------------
@@ -47,7 +74,6 @@ Bug Fixes
 - Fix bitwise negation operations for the PTX backend:  `link <https://github.com/beehive-lab/TornadoVM/commit/0db1cd3e7fd90accd737ca2bfd6d2450c40f3713>`_ 
 - ``GetBackendImpl::getAllDevices`` thread-safe: `link <https://github.com/beehive-lab/TornadoVM/commit/0d4425264ffe0633ea79c8aba91233591059d3fd>`_ 
 - Check size elements for memory segments: `link <https://github.com/beehive-lab/TornadoVM/commit/4360385156236bb2397debeea65fedea349c6bca>`_. 
-
 
 
 TornadoVM 1.0.8
