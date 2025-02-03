@@ -30,15 +30,19 @@ import jdk.vm.ci.meta.RawConstant;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedGuardNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -49,6 +53,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
@@ -160,6 +165,13 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         replaceMultHalfFloatNodes(graph);
         replaceDivHalfFloatNodes(graph);
 
+        for (LoadFieldNode loadFieldNode : graph.getNodes().filter(LoadFieldNode.class)) {
+            // if the field loaded is from the HalfFloat class for the FP16->FP32 conversion, replace it
+            if (loadFieldNode.usages().filter(OCLConvertHalfToFloat.class).isNotEmpty()) {
+                replaceFieldAccess(loadFieldNode);
+            }
+        }
+
         // add after the loadindexedvector nodes the marker node to fix the offset of its read
 
         for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
@@ -196,6 +208,46 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
         }
 
+    }
+
+    private static void replaceFieldAccess(LoadFieldNode loadFieldNode) {
+        // remove the FixGuardNode associated with the loading of the field
+        if (loadFieldNode.predecessor() instanceof FixedGuardNode) {
+            FixedGuardNode fixedGuardNode = (FixedGuardNode) loadFieldNode.predecessor();
+            deleteFixed(fixedGuardNode);
+        }
+        ArrayList<Node> nodesToBeDeleted = new ArrayList<>();
+        nodesToBeDeleted.add(loadFieldNode);
+        // iterate the inputs of the LoadFieldNode until you reach the node to replace it
+        Node replacement = identifyFieldReplacement(loadFieldNode.object(), nodesToBeDeleted);
+        loadFieldNode.replaceAtUsages(replacement);
+
+        //delete obsolete nodes
+        for (Node toBeDeleted : nodesToBeDeleted) {
+            if (toBeDeleted instanceof FixedNode) {
+                deleteFixed(toBeDeleted);
+            } else {
+                toBeDeleted.safeDelete();
+            }
+        }
+    }
+
+    private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
+        // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
+        if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        if (input instanceof PiNode || input instanceof IsNullNode) {
+            nodesToBeDeleted.add(input);
+        }
+        Node replacement = null;
+        for (Node iterativeInputs : input.inputs()) {
+            replacement = identifyFieldReplacement(iterativeInputs, nodesToBeDeleted);
+            if (replacement != null) { // if the replacement node was found, stop the recursion
+                return replacement;
+            }
+        }
+        return replacement;
     }
 
     /**
