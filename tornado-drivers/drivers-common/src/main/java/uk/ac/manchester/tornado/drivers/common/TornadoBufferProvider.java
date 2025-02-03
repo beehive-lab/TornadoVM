@@ -26,7 +26,6 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAI
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -210,7 +209,7 @@ public abstract class TornadoBufferProvider {
 
     /**
      * Function that returns true if the there are, at least numBuffers available in the free list.
-     * 
+     *
      * @param numBuffers
      *     Number of free buffers.
      * @return boolean.

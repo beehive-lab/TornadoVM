@@ -6,7 +6,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>1.0.10-dev </version>
+        <version>1.0.11-dev</version>
     </parent>
     <artifactId>tornado-drivers-opencl-jni</artifactId>
     <name>tornado-drivers-opencl-jni</name>

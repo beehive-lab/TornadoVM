@@ -117,6 +117,14 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void setSystemPowerConsumption(ProfilerType systemPowerConsumptionType, String taskId, long powerConsumption) {
+    }
+
+    @Override
+    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskId, long voltage) {
+    }
+
+    @Override
     public synchronized void sum(ProfilerType type, long sum) {
 
     }

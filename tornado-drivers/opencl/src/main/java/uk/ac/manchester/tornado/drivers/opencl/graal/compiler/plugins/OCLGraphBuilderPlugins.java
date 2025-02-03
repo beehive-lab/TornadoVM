@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, 2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, 2024-2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -80,6 +80,7 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
@@ -149,7 +150,15 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("incrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get())));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.INCREMENT_AND_GET)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("getAndIncrement", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
                 return true;
             }
         });
@@ -157,7 +166,15 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("decrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(), OCLUnary.AtomicOperator.DECREMENT_AND_GET)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("getAndDecrement", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(), OCLUnary.AtomicOperator.GET_AND_DECREMENT)));
                 return true;
             }
         });
@@ -408,7 +425,6 @@ public class OCLGraphBuilderPlugins {
                     }
 
                 }
-
 
                 PrintfNode printfNode = new PrintfNode(actualArgs);
                 b.append(printfNode);

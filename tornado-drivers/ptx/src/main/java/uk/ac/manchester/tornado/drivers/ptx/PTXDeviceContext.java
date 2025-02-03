@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
@@ -350,6 +351,15 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         if (TornadoOptions.isProfilerEnabled()) {
+            // Metrics captured before blocking
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), getPowerUsage());
+            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
+                    : -1);
+            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
+                    ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
+                    : -1);
+
             Event tornadoKernelEvent = resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
@@ -361,7 +371,6 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
-            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), getPowerUsage());
         }
     }
 
