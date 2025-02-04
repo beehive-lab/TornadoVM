@@ -88,6 +88,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -103,6 +104,7 @@ public class OCLGraphBuilderPlugins {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
 
+        registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
@@ -375,6 +377,19 @@ public class OCLGraphBuilderPlugins {
                 });
             }
         }
+    }
+
+    private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, Float.class);
+
+        r.register(new InvocationPlugin("float16ToFloat", short.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
+                OCLConvertHalfToFloat convertHalfToFloat = new OCLConvertHalfToFloat(halfValue);
+                b.addPush(JavaKind.Float, convertHalfToFloat);
+                return true;
+            }
+        });
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {

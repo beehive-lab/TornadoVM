@@ -73,6 +73,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
@@ -99,6 +100,7 @@ public class SPIRVGraphBuilderPlugins {
         }
 
         registerCompilerIntrinsicsPlugins(invocationPlugins);
+        registerFP16ConversionPlugins(invocationPlugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(invocationPlugins);
 
@@ -356,6 +358,18 @@ public class SPIRVGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.addPush(JavaKind.Object, new SlotsBaseAddressNode());
+                return true;
+            }
+        });
+    }
+
+    private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, Float.class);
+        r.register(new InvocationPlugin("float16ToFloat", short.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
+                SPIRVConvertHalfToFloat convertHalfToFloat = new SPIRVConvertHalfToFloat(halfValue);
+                b.addPush(JavaKind.Float, convertHalfToFloat);
                 return true;
             }
         });

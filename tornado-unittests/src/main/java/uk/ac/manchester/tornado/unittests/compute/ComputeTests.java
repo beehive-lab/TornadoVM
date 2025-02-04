@@ -406,6 +406,32 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
+    private static void matrixMultiplicationHalfFloatToFloat(final HalfFloatArray A, final HalfFloatArray B, final FloatArray C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                HalfFloat sum = new HalfFloat(0.0f);
+                for (int k = 0; k < size; k++) {
+                    HalfFloat mult = HalfFloat.mult(A.get((i * size) + k), B.get((k * size) + j));
+                    sum = HalfFloat.add(sum, mult);
+                }
+                C.set((i * size) + j, sum.getFloat32());
+            }
+        }
+    }
+
+    private static void matrixMultiplicationHalfFloatToFloat2(final HalfFloatArray A, final HalfFloatArray B, final FloatArray C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < size; k++) {
+                    float mult = A.get((i * size) + k).getFloat32() * B.get((k * size) + j).getFloat32();
+                    sum += mult;
+                }
+                C.set((i * size) + j, sum);
+            }
+        }
+    }
+
     @Test
     public void testNBody() throws TornadoExecutionPlanException {
 
@@ -970,5 +996,66 @@ public class ComputeTests extends TornadoTestBase {
             assertEquals(matrixCSeq.get(i).getFloat32(), matrixC.get(i).getFloat32(), DELTA);
         }
     }
+
+    @Test
+    public void testHalfFloatToFloatMatrixMultiplication() throws TornadoExecutionPlanException {
+        int N = 256;
+        HalfFloatArray matrixA = new HalfFloatArray(N * N);
+        HalfFloatArray matrixB = new HalfFloatArray(N * N);
+        FloatArray matrixCSeq = new FloatArray(N * N);
+        FloatArray matrixC = new FloatArray(N * N);
+
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA.set(idx, new HalfFloat(2.5f));
+            matrixB.set(idx, new HalfFloat(3.5f));
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", ComputeTests::matrixMultiplicationHalfFloatToFloat, matrixA, matrixB, matrixC, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executor.execute();
+        }
+
+        matrixMultiplicationHalfFloatToFloat(matrixA, matrixB, matrixCSeq, N);
+
+        for (int i = 0; i < N * N; i++) {
+            assertEquals(matrixCSeq.get(i), matrixC.get(i), DELTA);
+        }
+    }
+
+    @Test
+    public void testHalfFloatToFloatMatrixMultiplication2() throws TornadoExecutionPlanException {
+        int N = 256;
+        HalfFloatArray matrixA = new HalfFloatArray(N * N);
+        HalfFloatArray matrixB = new HalfFloatArray(N * N);
+        FloatArray matrixCSeq = new FloatArray(N * N);
+        FloatArray matrixC = new FloatArray(N * N);
+
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA.set(idx, new HalfFloat(2.5f));
+            matrixB.set(idx, new HalfFloat(3.5f));
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", ComputeTests::matrixMultiplicationHalfFloatToFloat2, matrixA, matrixB, matrixC, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executor.execute();
+        }
+
+        matrixMultiplicationHalfFloatToFloat2(matrixA, matrixB, matrixCSeq, N);
+
+        for (int i = 0; i < N * N; i++) {
+            assertEquals(matrixCSeq.get(i), matrixC.get(i), DELTA);
+        }
+    }
+
     // CHECKSTYLE:ON
 }

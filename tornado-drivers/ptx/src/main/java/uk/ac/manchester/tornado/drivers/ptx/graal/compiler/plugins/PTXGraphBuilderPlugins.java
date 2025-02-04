@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, 2022, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,6 +76,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
@@ -90,6 +91,7 @@ public class PTXGraphBuilderPlugins {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
 
+        registerFP16ConversionPlugins(plugins);
         registerTornadoInstrinsicsPlugins(plugins);
         registerPTXBuiltinPlugins(plugins);
         PTXMathPlugins.registerTornadoMathPlugins(plugins);
@@ -97,6 +99,18 @@ public class PTXGraphBuilderPlugins {
         PTXHalfFloatPlugin.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(plugins);
         registerKernelContextPlugins(plugins);
+    }
+
+    private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, Float.class);
+        r.register(new InvocationPlugin("float16ToFloat", short.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
+                PTXConvertHalfToFloat convertHalfToFloat = new PTXConvertHalfToFloat(halfValue);
+                b.addPush(JavaKind.Float, convertHalfToFloat);
+                return true;
+            }
+        });
     }
 
     private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {

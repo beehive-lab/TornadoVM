@@ -405,6 +405,36 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("CONVERT_HALF")
+    public static class ConvertHalfToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertHalfToFloatStmt> TYPE = LIRInstructionClass.create(ConvertHalfToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value halfValue;
+
+        public ConvertHalfToFloatStmt(Value floatValue, Value halfValue) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT + DOT + "f32" + DOT + "f16");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(floatValue);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(halfValue);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("LOCAL_MEMORY_ACCESS")
     public static class LocalMemoryAccessStmt extends AbstractInstruction {
 
