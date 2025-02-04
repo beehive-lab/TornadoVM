@@ -566,8 +566,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @since v1.0.10
      */
     public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
-        // Be sure to update the whole list of graphs
-        tornadoExecutor.selectAll();
         tornadoExecutor.copyPointerFromGraphToGraph(destArray, srcArray, offset, fromGraphIndex, toGraphIndex);
     }
 }
