@@ -663,6 +663,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         return false;
     }
 
+    @Override
+    public void copyDevicePointers(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
+        XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
+        devicePointer.copyDevicePointer(executionPlanId, srcPointer, offset);
+    }
+
     /**
      * In CUDA the context is not attached to the whole process, but to individual
      * threads Therefore, in the case of new threads executing a task schedule, we

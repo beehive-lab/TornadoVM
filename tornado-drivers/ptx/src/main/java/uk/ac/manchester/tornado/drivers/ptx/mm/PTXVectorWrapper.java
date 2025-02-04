@@ -329,4 +329,9 @@ public class PTXVectorWrapper implements XPUBuffer {
         XPUBuffer.super.setIntBuffer(arr);
     }
 
+    @Override
+    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new UnsupportedOperationException();
+    }
+
 }

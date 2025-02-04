@@ -453,4 +453,9 @@ public class PTXObjectWrapper implements XPUBuffer {
         return deviceContext.getBufferProvider().deallocate(access);
     }
 
+    @Override
+    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new UnsupportedOperationException();
+    }
+
 }
