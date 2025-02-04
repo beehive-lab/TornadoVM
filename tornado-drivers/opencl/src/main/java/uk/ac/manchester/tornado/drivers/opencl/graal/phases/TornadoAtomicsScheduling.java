@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, 2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,7 +28,7 @@ import java.util.Optional;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StartNode;
@@ -77,7 +77,7 @@ public class TornadoAtomicsScheduling extends Phase {
 
         if (first != null && !(first instanceof StartNode)) {
             first.replaceAtPredecessor(startNode);
-            startNode.setNext((EndNode) first);
+            startNode.setNext((FixedNode) first);
         }
     }
 

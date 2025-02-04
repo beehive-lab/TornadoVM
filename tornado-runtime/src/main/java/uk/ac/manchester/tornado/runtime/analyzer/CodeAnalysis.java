@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -69,9 +69,9 @@ public class CodeAnalysis {
      * Build Graal-IR for an input Java method.
      *
      * @param taskInputCode
-     *            Input Java method to be compiled by Graal
+     *     Input Java method to be compiled by Graal
      * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the
-     *         input method in the Graal-IR format,
+     *     input method in the Graal-IR format,
      */
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
         Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
@@ -92,8 +92,8 @@ public class CodeAnalysis {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
             opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
             OptionValues options = new OptionValues(opts);
-            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod)
-                    .compilationId(compilationIdentifier).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod).compilationId(
+                    compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
             graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
@@ -109,7 +109,7 @@ public class CodeAnalysis {
      * It compiles and installs the method that represents the object {@code graph}.
      *
      * @param graph
-     *            Compile-graph
+     *     Compile-graph
      * @return {@link InstalledCode}
      */
     public static InstalledCode compileAndInstallMethod(StructuredGraph graph) {

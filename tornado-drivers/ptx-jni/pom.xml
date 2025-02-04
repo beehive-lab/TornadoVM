@@ -6,7 +6,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>1.0.10-dev </version>
+        <version>1.0.11-dev</version>
     </parent>
     <artifactId>tornado-drivers-ptx-jni</artifactId>
     <name>tornado-drivers-ptx-jni</name>
