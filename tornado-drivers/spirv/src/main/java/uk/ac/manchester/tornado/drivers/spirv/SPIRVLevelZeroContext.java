@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
+import uk.ac.manchester.tornado.drivers.opencl.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -590,5 +591,11 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
                 commmandQueueTable.remove(executionPlanId);
             }
         }
+    }
+
+    @Override
+    public long copyDevicePointer(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType) {
+        LevelZeroByteBuffer deviceBuffer = deviceBufferMap.get(srcBuffer);
+        return NativeCommandQueue.copyDevicePointer(destBuffer, deviceBuffer.getPtrBuffer(), offset, sizeOfType);
     }
 }

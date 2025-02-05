@@ -43,8 +43,8 @@
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_copyDevicePointer
 (JNIEnv * env, jclass klass, jlong destDevicePointer, jlong srcDevicePointer, jlong offset, jint sizeDataType) {
-    unsigned char *src = reinterpret_cast<unsigned char *>(srcDevicePointer);
-    unsigned char *address = src + (offset * sizeDataType);
+    auto src = reinterpret_cast<unsigned char *>(srcDevicePointer);
+    auto address = src + (offset * sizeDataType);
     return reinterpret_cast<jlong>(address);
 }
 

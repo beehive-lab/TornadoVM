@@ -146,8 +146,6 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();
 
-            IntStream.range(0, row.getSize()).mapToObj(row::get).forEach(System.out::println);
-
             IntStream.range(0, row.getSize()).forEach(i -> assertEquals(15.1f, row.get(i), 0.01f));
         }
     }

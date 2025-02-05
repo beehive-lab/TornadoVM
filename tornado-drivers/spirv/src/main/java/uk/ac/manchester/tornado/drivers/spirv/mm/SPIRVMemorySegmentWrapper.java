@@ -223,8 +223,7 @@ public class SPIRVMemorySegmentWrapper implements XPUBuffer {
         if (!(srcPointer instanceof SPIRVMemorySegmentWrapper spirvMemorySegmentWrapper)) {
             throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
         }
-        this.bufferId = spirvMemorySegmentWrapper.bufferId;
-        //this.bufferId = spirvDeviceContext.copyDevicePointer(executionPlanId, this.bufferId, spirvMemorySegmentWrapper.bufferId, offset);
+        this.bufferId = spirvDeviceContext.copyDevicePointer(executionPlanId, this.bufferId, spirvMemorySegmentWrapper.bufferId, offset, sizeOfType);
     }
 
     @Override
