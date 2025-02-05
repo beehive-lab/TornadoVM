@@ -134,7 +134,7 @@ public class AtomicsBuffer implements XPUBuffer {
 
     @Override
     public int getSizeOfType() {
-        return 0;
+        throw new TornadoRuntimeException("[ERROR] not implemented");
     }
 
     @Override

@@ -377,7 +377,7 @@ public class SPIRVVectorWrapper implements XPUBuffer {
 
     @Override
     public int getSizeOfType() {
-        return -1;
+        throw new TornadoRuntimeException("[ERROR] not implemented");
     }
 
 }
