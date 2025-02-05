@@ -133,6 +133,11 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
+    public int getSizeOfType() {
+        return 0;
+    }
+
+    @Override
     public long deallocate() {
         return deviceContext.getBufferProvider().deallocate(access);
     }

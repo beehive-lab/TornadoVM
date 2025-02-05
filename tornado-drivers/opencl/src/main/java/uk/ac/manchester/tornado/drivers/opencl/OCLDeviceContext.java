@@ -670,8 +670,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         return getOCLCodeCache(executionPlanId);
     }
 
-    public long copyDevicePointer(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset) {
+    public long copyDevicePointer(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType) {
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
-        return commandQueue.copyDevicePointer(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset);
+        return commandQueue.copyDevicePointer(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType);
     }
 }

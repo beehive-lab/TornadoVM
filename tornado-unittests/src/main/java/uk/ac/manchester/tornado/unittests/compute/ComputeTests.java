@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.unittests.compute;
 
 import static org.junit.Assert.assertEquals;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Random;
 import java.util.stream.IntStream;
 

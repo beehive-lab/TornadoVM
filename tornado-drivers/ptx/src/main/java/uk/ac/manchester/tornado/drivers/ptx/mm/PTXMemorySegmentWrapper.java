@@ -53,26 +53,25 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
-    private Access access;
+    private final Access access;
+    private final int sizeOfType;
 
-    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize, Access access) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = INIT_VALUE;
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        this.access = access;
-        logger = new TornadoLogger(this.getClass());
-    }
-
-    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize, Access access) {
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
         this.access = access;
-        logger = new TornadoLogger(this.getClass());
+        this.logger = new TornadoLogger(this.getClass());
+        this.sizeOfType = sizeOfType;
+        if (sizeOfType <= 0) {
+            throw new TornadoRuntimeException("Invalid size of type " + sizeOfType);
+        }
+    }
+
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
+        this(deviceContext, INIT_VALUE, batchSize, access, sizeOfType);
     }
 
     @Override
@@ -244,6 +243,11 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
             throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
         }
         this.bufferId = deviceContext.copyDevicePointer(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return sizeOfType;
     }
 
 }

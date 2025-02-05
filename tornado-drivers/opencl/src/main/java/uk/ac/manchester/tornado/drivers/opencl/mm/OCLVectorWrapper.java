@@ -369,4 +369,9 @@ public class OCLVectorWrapper implements XPUBuffer {
     public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
         throw new TornadoRuntimeException("Operation not supported");
     }
+
+    @Override
+    public int getSizeOfType() {
+        return 0;
+    }
 }

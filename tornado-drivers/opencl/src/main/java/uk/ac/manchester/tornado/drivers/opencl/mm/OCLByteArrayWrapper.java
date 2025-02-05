@@ -24,9 +24,9 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import jdk.vm.ci.meta.JavaKind;
-
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLByteArrayWrapper extends OCLArrayWrapper<byte[]> {
 
@@ -56,6 +56,11 @@ public class OCLByteArrayWrapper extends OCLArrayWrapper<byte[]> {
     @Override
     protected int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return OCLKind.BOOL.getSizeInBytes();
     }
 
 }

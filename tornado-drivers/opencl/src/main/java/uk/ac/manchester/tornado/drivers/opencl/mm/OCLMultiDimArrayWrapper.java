@@ -30,6 +30,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -138,6 +139,11 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         }
         tableWrapper.enqueueWrite(executionPlanId, addresses, 0, 0, null, false);
         writeElements(executionPlanId, value);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] OCLMultiDimArrayWrapper getSizeOfType not supported");
     }
 
 }

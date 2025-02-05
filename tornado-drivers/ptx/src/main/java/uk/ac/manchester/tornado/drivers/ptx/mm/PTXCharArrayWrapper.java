@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.ptx.mm;
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 
 public class PTXCharArrayWrapper extends PTXArrayWrapper<char[]> {
     private long setSubRegionSize;
@@ -100,5 +101,10 @@ public class PTXCharArrayWrapper extends PTXArrayWrapper<char[]> {
     @Override
     public void setIntBuffer(int[] arr) {
         super.setIntBuffer(arr);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return PTXKind.B8.getSizeInBytes();
     }
 }

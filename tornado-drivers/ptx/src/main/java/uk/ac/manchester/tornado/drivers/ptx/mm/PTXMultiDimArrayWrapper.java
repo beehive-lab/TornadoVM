@@ -31,6 +31,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -87,6 +88,11 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     @Override
     public void setIntBuffer(int[] arr) {
         super.setIntBuffer(arr);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] OCLMultiDimArrayWrapper getSizeOfType not supported");
     }
 
     @Override

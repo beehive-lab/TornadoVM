@@ -432,10 +432,10 @@ public class OCLCommandQueue extends CommandQueue {
         return openclVersion;
     }
 
-    public long copyDevicePointer(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset) {
+    public long copyDevicePointer(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType) {
         long ptr;
         if (offset == 0) {
-            ptr = NativeCommandQueue.copyDevicePointer(destDevicePtr, srcDevicePtr, offset, 4);
+            ptr = NativeCommandQueue.copyDevicePointer(destDevicePtr, srcDevicePtr, offset, sizeOfType);
         } else {
             // FIXME: PoC to check custom ranges from the source array
             ptr = NativeCommandQueue.copyDevicePointerWithMapping(commandQueuePtr, destDevicePtr, srcDevicePtr, offset, 4, 32 * 32, 32);

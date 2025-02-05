@@ -370,4 +370,14 @@ public class SPIRVVectorWrapper implements XPUBuffer {
         return null;
     }
 
+    @Override
+    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return -1;
+    }
+
 }

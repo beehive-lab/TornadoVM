@@ -334,4 +334,9 @@ public class PTXVectorWrapper implements XPUBuffer {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public int getSizeOfType() {
+        return 0;
+    }
+
 }

@@ -72,4 +72,6 @@ public interface XPUBuffer {
 
     void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset);
 
+    int getSizeOfType();
+
 }
