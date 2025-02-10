@@ -194,6 +194,7 @@ public interface TornadoDevice {
 
     Object getAtomic();
 
+    @Deprecated
     void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics);
 
     TornadoVMBackendType getTornadoVMBackend();
