@@ -35,6 +35,8 @@
  */
  JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream_copyDevicePointer
   (JNIEnv * env, jclass klass, jlong destDeviceBufferPtr, jlong srcDeviceBufferPtr, jlong offset, jint sizeOfType) {
-   std::cout << "[JNI] NativePTXStream_copyDevicePointer: destDeviceBufferPtr = " << destDeviceBufferPtr << std::endl;
+   if (LOG_PTX) {
+    std::cout << "[JNI] NativePTXStream_copyDevicePointer: srcDeviceBufferPtr = " << srcDeviceBufferPtr << std::endl;
+   }
    return srcDeviceBufferPtr + (offset * sizeOfType);
  }
