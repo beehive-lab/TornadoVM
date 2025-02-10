@@ -50,6 +50,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 
 import java.nio.charset.StandardCharsets;
 
+import jdk.vm.ci.meta.Constant;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -902,6 +903,56 @@ public class PTXLIRStmt {
                 asm.delimiter();
                 asm.eol();
             }
+        }
+    }
+
+    @Opcode("AtomAdd")
+    public static class AtomicOperation extends AbstractInstruction {
+        public static final LIRInstructionClass<AtomicOperation> TYPE = LIRInstructionClass.create(AtomicOperation.class);
+
+        @Use
+        protected Variable dest;
+
+        @Use
+        PTXUnary.MemoryAccess address;
+
+        @Use
+        PTXNullaryOp atomicOp;
+
+        @Use
+        Constant inc;
+
+        public AtomicOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op, Constant inc) {
+            super(TYPE);
+
+            this.address = address;
+            this.dest = dest;
+            this.atomicOp = op;
+            this.inc = inc;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            //            atom.global.add.u32     d, [a], b;
+            atomicOp.emit(crb, null);
+            System.out.println("[AtomicOperation-emitCode] dest value kind is: " + dest.getValueKind().toString());
+            asm.emitSymbol(DOT);
+            System.out.println("[AtomicOperation-emitCode] memory space is: " + address.getBase().memorySpace.getName());
+            asm.emit(address.getBase().memorySpace.getName());
+            asm.emitSymbol(DOT);
+            asm.emit("add.s32");
+            //            asm.emit("global.add.u32");
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA);
+            asm.space();
+            address.emit(crb, asm, null);
+            asm.emitSymbol(COMMA);
+            asm.space();
+            asm.emitSymbol(inc.toValueString());
+            asm.delimiter();
+            asm.eol();
         }
     }
 

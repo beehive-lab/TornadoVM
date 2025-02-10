@@ -207,6 +207,18 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
+    public static void atomic18(KernelContext context, IntArray input) {
+        /*int tid = context.globalIdx;
+
+        if (tid < input.getSize()) {
+            context.atomicAdd(input, tid, 1);
+        }*/
+
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            context.atomicAdd(input, i, 5);
+        }
+    }
+
     @TornadoNotSupported
     public void testAtomic03() throws TornadoExecutionPlanException {
         final int size = 1024;
@@ -867,5 +879,38 @@ public class TestAtomics extends TornadoTestBase {
 
         assertEquals(jai.get(), ai.get());
         assertArrayEquals(dataSequential.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic18() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        Random random = new Random();
+        final int size = 4;
+        IntArray dataTornadoVM = new IntArray(size);
+        //        for (int i = 0; i < size; i++) {
+        //            dataTornadoVM.set(i, i);
+        //        }
+        dataTornadoVM.init(1);
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        WorkerGrid workerGrid = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            //            executionPlan.withGridScheduler(gridScheduler).execute();
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            System.out.println("Returned value for " + i + ": " + dataTornadoVM.get(i));
+        }
     }
 }

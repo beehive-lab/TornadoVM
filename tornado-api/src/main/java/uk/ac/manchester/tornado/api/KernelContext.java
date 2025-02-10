@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+
 /**
  * Context of TornadoVM execution to exploit kernel-parallel applications, in
  * which the parallelism is implicit.
@@ -179,5 +181,18 @@ public class KernelContext implements ExecutionContext {
     @Override
     public double[] allocateDoubleLocalArray(int size) {
         return new double[size];
+    }
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(int* address, int val);
+     */
+    @Override
+    public void atomicAdd(IntArray array, long index, int val) {
+        //        atomicAdd(array.getSegment(), index, val);
+        //        AtomicInteger atomicInteger = new AtomicInteger(arrayValue);
+        //        return atomicInteger.addAndGet(val);
     }
 }

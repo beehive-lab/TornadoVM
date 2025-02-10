@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+
 /**
  * Generic interface for TornadoVM to implement a Thread-Context API. This
  * interface allows the client to implement barriers, allocate memory in local
@@ -87,4 +89,12 @@ public interface ExecutionContext {
      * @return double[]
      */
     double[] allocateDoubleLocalArray(int size);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(int* address, int val);
+     */
+    void atomicAdd(IntArray array, long index, int val);
 }

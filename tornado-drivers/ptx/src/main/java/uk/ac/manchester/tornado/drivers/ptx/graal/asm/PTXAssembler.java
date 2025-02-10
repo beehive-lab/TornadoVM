@@ -448,6 +448,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXNullaryOp STU = new PTXNullaryOp("stu");
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
         public static final PTXNullaryOp CVTA = new PTXNullaryOp(CONVERT_ADDRESS);
+        public static final PTXNullaryOp ATOM = new PTXNullaryOp("atom");
 
         protected PTXNullaryOp(String opcode) {
             this(opcode, false);
@@ -568,6 +569,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic TANH = new PTXUnaryIntrinsic("tanh.approx", null);
         public static final PTXUnaryIntrinsic RSQRT = new PTXUnaryIntrinsic("rsqrt.approx", null);
         public static final PTXUnaryIntrinsic FLOAT_FLOOR = new PTXUnaryIntrinsic(CONVERT, ROUND_NEGATIVE_INFINITY_INTEGER, true, false);
+//        public static final PTXUnaryIntrinsic ATOMIC = new PTXUnaryIntrinsic("atom", null, false, false);
 
         public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc") {
             @Override

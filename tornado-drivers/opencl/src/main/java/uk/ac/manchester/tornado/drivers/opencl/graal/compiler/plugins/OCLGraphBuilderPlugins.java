@@ -256,6 +256,17 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
+    //    private static void registerAtomicAddOperation(Registration r) {
+    //        r.register(new InvocationPlugin("atomicAdd", Receiver.class, int[].class, Integer.TYPE, Integer.TYPE) {
+    //            @Override
+    //            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
+    //                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(array, index, inc);
+    //                b.append(atomicAddNode);
+    //                return true;
+    //            }
+    //        });
+    //    }
+
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register(new InvocationPlugin("allocateIntLocalArray", Receiver.class, int.class) {
             @Override
@@ -326,6 +337,7 @@ public class OCLGraphBuilderPlugins {
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
         localArraysPlugins(r);
+        //        registerAtomicAddOperation(r);
     }
 
     public static Class getValueLayoutClass(Class k) {

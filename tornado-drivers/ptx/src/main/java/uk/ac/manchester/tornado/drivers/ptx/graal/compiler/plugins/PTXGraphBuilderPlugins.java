@@ -72,8 +72,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
@@ -222,6 +224,21 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
+    private static void registerAtomicAddOperation(Registration r) {
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, IntArray.class, Long.TYPE, Integer.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                System.out.println("----------------[PTXGraphBuilderPlugins::registerAtomicAddOperation]");
+                JavaKind kind = PTXKind.B64.asJavaKind();
+                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forLong(kind.getByteCount())));
+                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
+                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc);
+                b.add(b.append(atomicAddNode));
+                return true;
+            }
+        });
+    }
+
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register(new InvocationPlugin("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
@@ -292,6 +309,7 @@ public class PTXGraphBuilderPlugins {
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
         localArraysPlugins(r);
+        registerAtomicAddOperation(r);
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
@@ -453,6 +471,7 @@ public class PTXGraphBuilderPlugins {
                 r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
+                        System.out.println("[PTXGraphBuilderPlugins] setAtIndex ");
                         MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
