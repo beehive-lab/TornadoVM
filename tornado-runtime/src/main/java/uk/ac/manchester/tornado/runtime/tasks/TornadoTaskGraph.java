@@ -499,7 +499,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
+    public void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
 
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
         Access objectAccessSrc = graphSrc.getObjectAccess(srcArray);

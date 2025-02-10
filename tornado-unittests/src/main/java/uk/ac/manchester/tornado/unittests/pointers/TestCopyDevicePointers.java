@@ -71,24 +71,24 @@ public class TestCopyDevicePointers extends TornadoTestBase {
     public void testCopyDevicePointers() throws TornadoExecutionPlanException {
         final int size = 32;
 
-        FloatArray array = new FloatArray(size);
-        array.init(0.5f);
+        FloatArray fromArray = new FloatArray(size);
+        fromArray.init(0.5f);
 
         // We will have a task graph which needs to be executed multiple times on the
         // hardware accelerator
         TaskGraph taskGraph1 = new TaskGraph("s0") //
-                .task("s0", TestCopyDevicePointers::iterativeUpdate, array) //
-                .transferToHost(DataTransferMode.UNDER_DEMAND, array);
+                .task("s0", TestCopyDevicePointers::iterativeUpdate, fromArray) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, fromArray);
 
-        FloatArray copyArray = new FloatArray(size);
+        FloatArray toArray = new FloatArray(size);
 
         // Then we will have a second task-graph for which we will need to pass data from
         // another task-graph. The idea is to copy device pointers to avoid sync with the host
         // back and forth.
         TaskGraph taskGraph2 = new TaskGraph("s1") //
-                .transferToDevice(DataTransferMode.UNDER_DEMAND, copyArray)   // Copy-In should be under demand
-                .task("s1", TestCopyDevicePointers::compute, copyArray) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, copyArray);
+                .transferToDevice(DataTransferMode.UNDER_DEMAND, toArray)   // Copy-In should be under demand
+                .task("s1", TestCopyDevicePointers::compute, toArray) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, toArray);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph1.snapshot(), taskGraph2.snapshot())) {
             // execute the first graph
@@ -102,13 +102,14 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             int offset = 0;
             int fromGraphIndex = 0;
             int toGraphIndex = 1;
-            executionPlan.copyPointerFromGraphToGraph(copyArray, array, offset, fromGraphIndex, toGraphIndex);
+
+            executionPlan.mapOnDeviceMemoryRegion(toArray, fromArray, offset, fromGraphIndex, toGraphIndex);
 
             // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();
 
             // Check result
-            IntStream.range(0, copyArray.getSize()).forEach(i -> assertEquals(7.0f, copyArray.get(i), 0.01f));
+            IntStream.range(0, toArray.getSize()).forEach(i -> assertEquals(7.0f, toArray.get(i), 0.01f));
         }
     }
 
@@ -141,7 +142,7 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             int offset = 15 * size;
             int fromGraphIndex = 0;
             int toGraphIndex = 1;
-            executionPlan.copyPointerFromGraphToGraph(row, matrix, offset, fromGraphIndex, toGraphIndex);
+            executionPlan.mapOnDeviceMemoryRegion(row, matrix, offset, fromGraphIndex, toGraphIndex);
 
             // Execute the second graph with updated pointers
             executionPlan.withGraph(1).execute();

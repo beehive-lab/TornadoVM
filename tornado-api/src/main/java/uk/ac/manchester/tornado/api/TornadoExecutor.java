@@ -250,12 +250,12 @@ class TornadoExecutor {
         subgraphList = null;
     }
 
-    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
+    public void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
         // Be sure to update the whole list of graphs
         selectAll();
         // Identify the task-graphs to take for the update operation
         ImmutableTaskGraph taskGraphSrc = getGraph(fromGraphIndex);
         ImmutableTaskGraph taskGraphDest = getGraph(toGraphIndex);
-        taskGraphDest.copyPointerFromGraphToGraph(destArray, srcArray, offset, taskGraphSrc);
+        taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 }

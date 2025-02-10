@@ -553,19 +553,26 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Copy device objects (internal device buffers) from one task-graph to another within the same execution plan.
-     * This call performs the buffer device allocation if needed, and then it will copy the srcArray device pointer
-     * to the destArray pointer, if possible.
+     * This function maps the device memory region that corresponds to a TornadoVM array to another on-device memory region.
+     * This call instructs the TornadoVM runtime to not perform a data transfers between `device` -> `host` -> `device`. Instead,
+     * it can update the corresponding device pointers.
+     *
+     * <p>
+     * The semantics is as follows: there is the source array, and the dest array. This call maps the dest array to the source
+     * array from a given offset. The source array is passed from the task-graph `fromTaskGraphIndex`, and the dest array is located
+     * in taken from the `toGraphIndex`. This method can be invoked in a multi-task-graph execution plan. It will not work if
+     * there is only one task-graph in the execution plan.
+     * </p>
      * 
-     * @param destArray
-     * @param srcArray
+     * @param destTornadoArray
+     * @param srcTornadoArray
      * @param offset
      * @param fromGraphIndex
      * @param toGraphIndex
      *
-     * @since v1.0.10
+     * @since v1.1.0
      */
-    public void copyPointerFromGraphToGraph(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
-        tornadoExecutor.copyPointerFromGraphToGraph(destArray, srcArray, offset, fromGraphIndex, toGraphIndex);
+    public void mapOnDeviceMemoryRegion(Object destTornadoArray, Object srcTornadoArray, long offset, int fromGraphIndex, int toGraphIndex) {
+        tornadoExecutor.mapOnDeviceMemoryRegion(destTornadoArray, srcTornadoArray, offset, fromGraphIndex, toGraphIndex);
     }
 }
