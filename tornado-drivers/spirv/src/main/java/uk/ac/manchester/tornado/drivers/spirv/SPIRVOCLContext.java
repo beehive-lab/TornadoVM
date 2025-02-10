@@ -315,8 +315,8 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public long copyDevicePointer(long executionPlanId, int deviceIndex, long dstBuffer, long srcBuffer, long offset, int sizeOfType) {
+    public long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long dstBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
-        return commandQueue.copyDevicePointer(commandQueue.getCommandQueuePtr(), dstBuffer, srcBuffer, offset, sizeOfType);
+        return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), dstBuffer, srcBuffer, offset, sizeOfType, sizeSource, sizeDest);
     }
 }

@@ -29,8 +29,10 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.
 
 import java.nio.ByteBuffer;
 
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.natives.NativeCommandQueue;
@@ -432,13 +434,14 @@ public class OCLCommandQueue extends CommandQueue {
         return openclVersion;
     }
 
-    public long copyDevicePointer(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType) {
+    public long mapOnDeviceMemoryRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         long ptr;
         if (offset == 0) {
-            ptr = NativeCommandQueue.copyDevicePointer(destDevicePtr, srcDevicePtr, offset, sizeOfType);
+            ptr = NativeCommandQueue.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr);
         } else {
             // FIXME: PoC to check custom ranges from the source array
-            ptr = NativeCommandQueue.copyDevicePointerWithMapping(commandQueuePtr, destDevicePtr, srcDevicePtr, offset, 4, 32 * 32, 32);
+            final long headerSize = TornadoNativeArray.ARRAY_HEADER / JavaKind.Int.getByteCount(); // Header always contains integer values
+            ptr = NativeCommandQueue.mapOnDeviceMemoryNDRegion(commandQueuePtr, destDevicePtr, srcDevicePtr, offset, sizeOfType, headerSize, sizeSource, sizeDest);
         }
         return ptr;
     }

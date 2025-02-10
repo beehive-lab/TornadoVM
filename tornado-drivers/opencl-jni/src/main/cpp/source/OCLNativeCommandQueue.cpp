@@ -38,36 +38,32 @@
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue
- * Method:    copyDevicePointer
- * Signature: (JJJI)J
+ * Method:    mapOnDeviceMemoryRegion
+ * Signature: (JJ)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_copyDevicePointer
-(JNIEnv * env, jclass klass, jlong destDevicePointer, jlong srcDevicePointer, jlong offset, jint sizeDataType) {
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_mapOnDeviceMemoryRegion
+  (JNIEnv * env, jclass klass, jlong destDevicePointer, jlong srcDevicePointer) {
     auto src = reinterpret_cast<unsigned char *>(srcDevicePointer);
-    auto address = src + (offset * sizeDataType);
+    auto address = src;
     return reinterpret_cast<jlong>(address);
 }
 
-
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue
- * Method:    copyDevicePointerWithMapping
- * Signature: (JJJJIII)J
+ * Method:    mapOnDeviceMemoryNDRegion
+ * Signature: (JJJJIJJJ)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_copyDevicePointerWithMapping
-  (JNIEnv * env, jclass klass, jlong commandQueuePtr, jlong destDevicePtr, jlong srcDevicePtr, jlong offset, jint sizeDataType, jint sizeA, jint sizeB) {
-
-    // FIXME: this is just a PoC to check custom ranges (sub-ranges from the source array) in OpenCL.
-
+JNIEXPORT jlong JNICALL
+Java_uk_ac_manchester_tornado_drivers_opencl_natives_NativeCommandQueue_mapOnDeviceMemoryNDRegion
+(JNIEnv * env, jclass klass, jlong commandQueuePtr, jlong destDevicePtr, jlong srcDevicePtr, jlong offset, jint sizeDataType, jlong headerSize, jlong sizeSource, jlong sizeDest) {
     const auto commandQueue = reinterpret_cast<cl_command_queue >(commandQueuePtr);
     cl_int status;
-    const int headerSize = 6;
     const auto mappedPtr1 = static_cast<float *>(clEnqueueMapBuffer(commandQueue,
         reinterpret_cast<cl_mem>(srcDevicePtr),
         CL_TRUE,
         CL_MAP_READ,
         0,
-        (sizeA * sizeDataType) + (headerSize * sizeof(int)),
+        sizeSource,
         0,
         nullptr,
         nullptr,
@@ -78,7 +74,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_Nat
         CL_TRUE,
         CL_MAP_WRITE,
         0,
-        (sizeB * sizeDataType) + (headerSize * sizeof(int)),
+        sizeDest,
         0,
         nullptr,
         nullptr,
@@ -87,7 +83,8 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_natives_Nat
     // Checking with skip TornadoVM/Segment header
     const float *p1 = mappedPtr1 + (offset + headerSize);
     float *p2 = mappedPtr2 + headerSize;
-    for (int i = 0; i < sizeB; i++) {
+    int elements = (sizeDest - headerSize) / sizeDataType;
+    for (int i = 0; i < elements; i++) {
         *p2 = *p1;
         p2++;
         p1++;

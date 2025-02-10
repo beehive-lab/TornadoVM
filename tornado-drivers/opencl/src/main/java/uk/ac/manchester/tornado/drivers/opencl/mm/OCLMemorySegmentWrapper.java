@@ -233,11 +233,13 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
         if (!(srcPointer instanceof OCLMemorySegmentWrapper oclMemorySegmentWrapper)) {
             throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
         }
-        this.bufferId = deviceContext.copyDevicePointer(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset, sizeOfType);
+        final long sizeSource = oclMemorySegmentWrapper.bufferSize;
+        final long sizeDest = bufferSize;
+        this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset, sizeOfType, sizeSource, sizeDest);
     }
 
     @Override

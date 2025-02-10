@@ -293,7 +293,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public void copyDevicePointer(long executionPlanId, XPUBuffer srcPointer, long offset) {
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
         throw new TornadoRuntimeException("[ERROR] not implemented");
     }
 }

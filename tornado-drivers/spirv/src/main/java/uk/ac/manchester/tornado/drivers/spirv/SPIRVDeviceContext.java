@@ -498,7 +498,7 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return 0;
     }
 
-    public long copyDevicePointer(long executionPlanId, long destBuffer, long srcBuffer, long offset, int sizeOfType) {
-        return spirvContext.copyDevicePointer(executionPlanId, getDeviceIndex(), destBuffer, srcBuffer, offset, sizeOfType);
+    public long mapOnDeviceMemoryRegion(long executionPlanId, long destBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest) {
+        return spirvContext.mapOnDeviceMemoryRegion(executionPlanId, getDeviceIndex(), destBuffer, srcBuffer, offset, sizeOfType, sizeSource, sizeDest);
     }
 }

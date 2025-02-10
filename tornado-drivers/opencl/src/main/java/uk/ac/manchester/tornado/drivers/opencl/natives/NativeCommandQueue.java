@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.natives;
 
 public class NativeCommandQueue {
 
-    public static native long copyDevicePointer(long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType);
+    public static native long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr);
 
-    public static native long copyDevicePointerWithMapping(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, int sizeA, int sizeB);
+    public static native long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest);
 }

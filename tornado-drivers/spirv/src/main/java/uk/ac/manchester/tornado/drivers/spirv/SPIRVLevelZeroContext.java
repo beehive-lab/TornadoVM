@@ -594,8 +594,12 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     }
 
     @Override
-    public long copyDevicePointer(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType) {
+    public long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         LevelZeroByteBuffer deviceBuffer = deviceBufferMap.get(srcBuffer);
-        return NativeCommandQueue.copyDevicePointer(destBuffer, deviceBuffer.getPtrBuffer(), offset, sizeOfType);
+        if (offset == 0) {
+            return NativeCommandQueue.mapOnDeviceMemoryRegion(destBuffer, deviceBuffer.getPtrBuffer());
+        } else {
+            throw new TornadoRuntimeException("mapOnDeviceMemoryRegion for ND Memory regions");
+        }
     }
 }

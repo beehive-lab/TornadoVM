@@ -601,8 +601,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return streamTable.get(executionPlanId).get(device);
     }
 
-    public long copyDevicePointer(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset) {
+    public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset) {
         PTXStream ptxStream = getStream(executionPlanId);
-        return ptxStream.copyDevicePointer(destDevicePtr, srcDevicePtr, offset);
+        return ptxStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset);
     }
 }

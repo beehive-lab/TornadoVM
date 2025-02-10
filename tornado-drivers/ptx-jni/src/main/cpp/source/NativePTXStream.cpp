@@ -23,17 +23,16 @@
  * SOFTWARE.
  */
 #include <jni.h>
-#include <cuda.h>
 
 #include <iostream>
 #include "NativePTXStream.h"
 #include "ptx_log.h"
 /*
-* Class:     uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream
- * Method:    copyDevicePointer
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream
+ * Method:    mapOnDeviceMemoryRegion
  * Signature: (JJJI)J
  */
- JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream_copyDevicePointer
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream_mapOnDeviceMemoryRegion
   (JNIEnv * env, jclass klass, jlong destDeviceBufferPtr, jlong srcDeviceBufferPtr, jlong offset, jint sizeOfType) {
    if (LOG_PTX) {
     std::cout << "[JNI] NativePTXStream_copyDevicePointer: srcDeviceBufferPtr = " << srcDeviceBufferPtr << std::endl;

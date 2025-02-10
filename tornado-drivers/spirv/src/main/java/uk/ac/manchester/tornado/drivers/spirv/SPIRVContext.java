@@ -99,5 +99,5 @@ public abstract class SPIRVContext {
 
     public abstract void reset(long executionPlanId, int deviceIndex);
 
-    public abstract long copyDevicePointer(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType);
+    public abstract long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest);
 }

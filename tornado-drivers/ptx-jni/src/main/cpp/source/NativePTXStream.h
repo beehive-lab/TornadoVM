@@ -33,11 +33,11 @@ extern "C" {
 #endif
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream
- * Method:    copyDevicePointer
+ * Method:    mapOnDeviceMemoryRegion
  * Signature: (JJJI)J
  */
- JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream_copyDevicePointer
-  (JNIEnv *, jclass, jlong, jlong, jlong, jint);
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_nstream_NativePTXStream_mapOnDeviceMemoryRegion
+(JNIEnv *, jclass, jlong, jlong, jlong, jint);
 
 #ifdef __cplusplus
 }

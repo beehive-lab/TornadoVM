@@ -25,6 +25,6 @@ package uk.ac.manchester.tornado.drivers.ptx.nstream;
 
 public class NativePTXStream {
 
-    public native static long copyDevicePointer(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType);
+    public native static long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType);
 
 }
