@@ -77,6 +77,7 @@ public class TestCopyDevicePointers extends TornadoTestBase {
         // We will have a task graph which needs to be executed multiple times on the
         // hardware accelerator
         TaskGraph taskGraph1 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, srcArray) //
                 .task("s0", TestCopyDevicePointers::iterativeUpdate, srcArray) //
                 .transferToHost(DataTransferMode.UNDER_DEMAND, srcArray);
 

@@ -842,7 +842,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     @Override
-    public void copyDevicePointers(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+    public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
         XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
         XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
         devicePointer.copyDevicePointer(executionPlanId, srcPointer, offset);

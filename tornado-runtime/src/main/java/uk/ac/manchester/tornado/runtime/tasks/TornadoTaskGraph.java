@@ -525,7 +525,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // destDevice and device must be the same
 
         // Then we need to copy the pointers
-        deviceDest.copyDevicePointers(executionPlanId, destArray, srcArray, deviceStateSrc, deviceStateDest, offset);
+        deviceDest.mapDeviceRegion(executionPlanId, destArray, srcArray, deviceStateSrc, deviceStateDest, offset);
     }
 
     @Override
