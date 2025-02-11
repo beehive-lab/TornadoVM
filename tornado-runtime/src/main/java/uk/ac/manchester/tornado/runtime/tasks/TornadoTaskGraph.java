@@ -1236,6 +1236,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return eventParameter;
     }
 
+    private boolean copyUnderDemand(Object object) {
+        for (StreamingObject outputObject : outputModeObjects) {
+            if (outputObject.getObject().equals(object) && outputObject.getMode() == DataTransferMode.UNDER_DEMAND) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void syncRuntimeTransferToHost(Object... objects) {
         if (vm == null) {
@@ -1244,6 +1253,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         List<Event> events = new ArrayList<>();
         for (Object object : objects) {
+            if (copyUnderDemand(object)) {
+                new TornadoLogger().debug("Object " + object + " to be copied UNDER_DEMAND");
+            }
             // Check if it is an argument captured by the scope (not in the parameter list).
             if (!argumentsLookUp.contains(object)) {
                 syncField(object);
@@ -1286,6 +1298,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         Event event = null;
+
+        if (copyUnderDemand(object)) {
+            new TornadoLogger().debug(partialCopySize + " bytes of the object " + object + " to be copied UNDER_DEMAND from offset " + offset);
+        }
 
         // Check if it is an argument captured by the scope (not in the parameter list).
         if (!argumentsLookUp.contains(object)) {
