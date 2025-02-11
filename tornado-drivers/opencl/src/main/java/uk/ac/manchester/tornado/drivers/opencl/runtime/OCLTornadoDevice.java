@@ -74,6 +74,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
@@ -535,23 +536,23 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, 0);
             } else if (object instanceof IntArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.INT.getSizeInBytes());
             } else if (object instanceof FloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.FLOAT.getSizeInBytes());
             } else if (object instanceof DoubleArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.DOUBLE.getSizeInBytes());
             } else if (object instanceof LongArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.LONG.getSizeInBytes());
             } else if (object instanceof ShortArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.SHORT.getSizeInBytes());
             } else if (object instanceof ByteArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.CHAR.getSizeInBytes());
             } else if (object instanceof CharArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.CHAR.getSizeInBytes());
             } else if (object instanceof HalfFloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.HALF.getSizeInBytes());
             } else {
                 result = new OCLXPUBuffer(deviceContext, object, access);
             }
@@ -838,6 +839,13 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
+        XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
+        devicePointer.mapOnDeviceMemoryRegion(executionPlanId, srcPointer, offset);
     }
 
 }

@@ -346,4 +346,9 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.setSubRegionSize = batchSize;
     }
 
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
+
 }

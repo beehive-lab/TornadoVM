@@ -499,6 +499,36 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
+
+        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
+        Access objectAccessSrc = graphSrc.getObjectAccess(srcArray);
+        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(srcArray, objectAccessSrc);
+        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+
+        // The device is the same for both task-graphs
+        final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+
+        final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+
+        Access objectAccessDest = getObjectAccess(destArray);
+        final LocalObjectState localStateDest = executionContext.getLocalStateObject(destArray, objectAccessDest);
+        final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+        final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
+
+        // We need to alloc if needed
+        if (!deviceStateDest.hasObjectBuffer()) {
+            device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
+        }
+
+        final TornadoXPUDevice deviceDest = meta().getXPUDevice();
+        // destDevice and device must be the same
+
+        // Then we need to copy the pointers
+        deviceDest.mapDeviceRegion(executionPlanId, destArray, srcArray, deviceStateSrc, deviceStateDest, offset);
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -955,6 +985,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
             }
 
+            // If the parameter is a number, then we do not need to copy
+            // since the TornadoVM JIT compiler inlines all values
             if (parameter instanceof Number) {
                 continue;
             }
@@ -967,10 +999,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 isObjectForStreaming = true;
             }
 
-            // the access will be updated later on by the TornadoDataflowAnalysis if necessary
+            // The access will be updated later on by the TornadoDataflowAnalysis if necessary
             executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setStreamIn(isObjectForStreaming);
 
-            // List of input objects for the dynamic reconfiguration
+            if (mode == DataTransferMode.UNDER_DEMAND) {
+                executionContext.getLocalStateObject(parameter, Access.READ_ONLY).enableUnderDemand();
+            }
+
+            // List of input objects in the processing list for the dynamic reconfiguration
             inputModesObjects.add(new StreamingObject(mode, parameter));
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
@@ -979,6 +1015,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 }
             }
 
+            // Add in the list for fast arguments lookup
             argumentsLookUp.add(parameter);
         }
     }
@@ -1003,7 +1040,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] Scalar value used as output. Use an array or a vector-type instead");
             }
 
-            // If the object mode is set to LAST then we *only* insert it in the lookup
+            // If the object mode is set to UNDER_DEMAND then we *only* insert it in the lookup
             // hash-set.
             if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
@@ -1152,18 +1189,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final XPUDeviceBufferState deviceBufferState = dataObjectState.getDeviceBufferState(device);
         deviceBufferState.setLockBuffer(false);
-       if (deviceBufferState.hasObjectBuffer()) {
+        if (deviceBufferState.hasObjectBuffer()) {
             device.deallocate(deviceBufferState);
-       }
+        }
     }
 
     private void syncField(Object object) {
-        /*
-         * Clean the profiler -- avoids the possibility of reporting the `execute`
-         * profiling information twice.
-         */
+        // Clean the profiler: it avoids the possibility of reporting
+        // the `execute` profiling information twice.
         timeProfiler.clean();
+
+        // sync all objects from the context
         executionContext.sync();
+
+        // update the profiler if needed
         updateProfiler();
     }
 

@@ -194,10 +194,12 @@ public interface TornadoDevice {
 
     Object getAtomic();
 
+    @Deprecated
     void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics);
 
     TornadoVMBackendType getTornadoVMBackend();
 
     boolean isSPIRVSupported();
 
+    void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset);
 }

@@ -670,4 +670,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         return getOCLCodeCache(executionPlanId);
     }
 
+    public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
+        return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
+    }
 }

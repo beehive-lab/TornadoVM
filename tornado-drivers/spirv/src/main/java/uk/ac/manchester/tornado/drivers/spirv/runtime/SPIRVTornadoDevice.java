@@ -66,9 +66,9 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVXPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -298,13 +298,13 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 return new SPIRVVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
-                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access);
-            } else if (object instanceof TornadoNativeArray && !(object instanceof Tensor)) {
+                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access, 0);
+            } else if (object instanceof TornadoNativeArray nativeArray && !(object instanceof Tensor)) {
                 // For Tensor objects, we use the SPIRVObjectWrapper
-                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access);
+                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access, nativeArray.getElementSize());
             } else {
                 // Possible a vector type, we encapsulate in an object
-                return new SPIRVObjectWrapper(deviceContext, object, access);
+                return new SPIRVXPUBuffer(deviceContext, object, access);
             }
         }
         return null;
@@ -594,4 +594,12 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
     public void moveDataFromDeviceBufferToHost(long executionPlanId, XPUDeviceBufferState objectStateA, Object b) {
         objectStateA.getXPUBuffer().read(executionPlanId, b, 0, 0, null, false);
     }
+
+    @Override
+    public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
+        XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
+        devicePointer.mapOnDeviceMemoryRegion(executionPlanId, srcPointer, offset);
+    }
+
 }

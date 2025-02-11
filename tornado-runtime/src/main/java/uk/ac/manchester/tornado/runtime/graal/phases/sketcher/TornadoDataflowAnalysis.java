@@ -143,8 +143,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             if (predecessor == null) {
                 break;
             }
-            if (predecessor instanceof IfNode) {
-                IfNode ifNode = (IfNode) predecessor;
+            if (predecessor instanceof IfNode ifNode) {
 
                 if (shouldIgnoreNode(ifNode, fatherNodeStore)) {
                     continue;
@@ -194,7 +193,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 }
             } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode || currentNode instanceof WriteNode || currentNode instanceof JavaWriteNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
-                fatherNodeStore = meta.getFatherNodeStore();
+                fatherNodeStore = meta.fatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
                 isWritten = true;
@@ -217,7 +216,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isReadField = true;
             } else if (currentNode instanceof StoreFieldNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
-                fatherNodeStore = meta.getFatherNodeStore();
+                fatherNodeStore = meta.fatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
                 isWrittenField = true;
@@ -301,55 +300,40 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         while (!nodesToProcess.isEmpty()) {
             Node node = nodesToProcess.remove();
             visited.add(node);
-            if (node instanceof ParallelStrideNode parallelStrideNode) {
-                Node valueNode = parallelStrideNode.value();
-                if (valueNode instanceof ConstantNode constantNode) {
-                    ConstantNode constantNode1 = ConstantNode.forInt(1);
-                    return constantNode.getValue().equals(constantNode1.getValue());
-                }
-            } else if (node instanceof BinaryArithmeticNode) {
-                Node a = ((BinaryArithmeticNode<?>) node).getX();
-                Node b = ((BinaryArithmeticNode<?>) node).getY();
-                if (!visited.contains(a)) {
-                    nodesToProcess.add(a);
-                }
-                if (!visited.contains(b)) {
-                    nodesToProcess.add(b);
-                }
-            } else if (node instanceof PhiNode phiNode) {
-                for (ValueNode valuePhiNode : phiNode.values()) {
-                    if (!visited.contains(valuePhiNode)) {
-                        nodesToProcess.add(valuePhiNode);
+            switch (node) {
+                case ParallelStrideNode parallelStrideNode -> {
+                    Node valueNode = parallelStrideNode.value();
+                    if (valueNode instanceof ConstantNode constantNode) {
+                        ConstantNode constantNode1 = ConstantNode.forInt(1);
+                        return constantNode.getValue().equals(constantNode1.getValue());
                     }
+                }
+                case BinaryArithmeticNode binaryArithmeticNode -> {
+                    Node a = binaryArithmeticNode.getX();
+                    Node b = binaryArithmeticNode.getY();
+                    if (!visited.contains(a)) {
+                        nodesToProcess.add(a);
+                    }
+                    if (!visited.contains(b)) {
+                        nodesToProcess.add(b);
+                    }
+                }
+                case PhiNode phiNode -> {
+                    for (ValueNode valuePhiNode : phiNode.values()) {
+                        if (!visited.contains(valuePhiNode)) {
+                            nodesToProcess.add(valuePhiNode);
+                        }
+                    }
+                }
+                default -> {
                 }
             }
         }
         return false;
     }
 
-    private static class MetaControlFlow {
-        private boolean isWrittenTrueCondition;
-        private boolean isWrittenFalseCondition;
-        private IfNode fatherNodeStore;
-
-        MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
-            super();
-            this.isWrittenTrueCondition = isWrittenTrueCondition;
-            this.isWrittenFalseCondition = isWrittenFalseCondition;
-            this.fatherNodeStore = fatherNodeStore;
-        }
-
-        public boolean isWrittenTrueCondition() {
-            return isWrittenTrueCondition;
-        }
-
-        public boolean isWrittenFalseCondition() {
-            return isWrittenFalseCondition;
-        }
-
-        public IfNode getFatherNodeStore() {
-            return fatherNodeStore;
-        }
+    private record MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition,
+                                   IfNode fatherNodeStore) {
     }
 
 }

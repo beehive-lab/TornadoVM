@@ -296,4 +296,9 @@ public abstract class SPIRVArrayWrapper<T> implements XPUBuffer {
         return deviceContext.getBufferProvider().deallocate(access);
     }
 
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
+
 }

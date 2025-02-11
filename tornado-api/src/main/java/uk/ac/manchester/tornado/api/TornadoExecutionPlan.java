@@ -80,19 +80,18 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     protected ExecutorFrame executionFrame;
 
-    // Pointers
     /**
-     * Pointer to the Root of the List.
+     * Reference to the Root of the List.
      */
     protected TornadoExecutionPlan rootNode;
 
     /**
-     * Pointer to the next node in the list.
+     * Reference to the next node in the list.
      */
     protected TornadoExecutionPlan childLink;
 
     /**
-     * Pointer to the previous node in the list.
+     * Reference to the previous node in the list.
      */
     protected TornadoExecutionPlan parentLink;
 
@@ -553,4 +552,27 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return planResults.get(index);
     }
 
+    /**
+     * This function maps the device memory region that corresponds to a TornadoVM object to another on-device memory region.
+     * This call instructs the TornadoVM runtime to avoid transferring data between `device` -> `host` -> `device`. Instead,
+     * it can update the corresponding device pointers.
+     *
+     * <p>
+     * The semantics are as follows: there is the source object, and the destination object. This call maps the dest object
+     * to the source object from a given offset. The source object is passed from the task-graph `fromGraphIndex`, and
+     * the destination object is taken from the `toGraphIndex`. This method can be invoked in a multi-task-graph execution
+     * plan. It will not work if there is only one task-graph in the execution plan.
+     * </p>
+     * 
+     * @param destTornadoArray
+     * @param srcTornadoArray
+     * @param offset
+     * @param fromGraphIndex
+     * @param toGraphIndex
+     *
+     * @since v1.1.0
+     */
+    public void mapOnDeviceMemoryRegion(Object destTornadoArray, Object srcTornadoArray, long offset, int fromGraphIndex, int toGraphIndex) {
+        tornadoExecutor.mapOnDeviceMemoryRegion(destTornadoArray, srcTornadoArray, offset, fromGraphIndex, toGraphIndex);
+    }
 }

@@ -40,6 +40,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -50,11 +51,12 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-public class PTXObjectWrapper implements XPUBuffer {
+public class CUDAXPUBuffer implements XPUBuffer {
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
     private final Class<?> type;
@@ -70,7 +72,7 @@ public class PTXObjectWrapper implements XPUBuffer {
     private final TornadoLogger logger;
     private Access access;
 
-    public PTXObjectWrapper(final PTXDeviceContext device, Object object, Access access) {
+    public CUDAXPUBuffer(final PTXDeviceContext device, Object object, Access access) {
         this.type = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
@@ -113,31 +115,31 @@ public class PTXObjectWrapper implements XPUBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.F32.getSizeInBytes());
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.B8.getSizeInBytes());
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.F64.getSizeInBytes());
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.B32.getSizeInBytes());
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.B16.getSizeInBytes());
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.B64.getSizeInBytes());
             } else if (type == HalfFloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper(device, ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize(), 0, access, PTXKind.B16.getSizeInBytes());
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new PTXVectorWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), 0, access);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new PTXObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
+                wrappedField = new CUDAXPUBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
             }
 
             if (wrappedField != null) {
@@ -451,6 +453,16 @@ public class PTXObjectWrapper implements XPUBuffer {
     @Override
     public long deallocate() {
         return deviceContext.getBufferProvider().deallocate(access);
+    }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
     }
 
 }
