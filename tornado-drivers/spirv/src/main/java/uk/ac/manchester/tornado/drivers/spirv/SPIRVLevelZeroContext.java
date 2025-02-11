@@ -599,7 +599,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         if (offset == 0) {
             return NativeCommandQueue.mapOnDeviceMemoryRegion(destBuffer, deviceBuffer.getPtrBuffer());
         } else {
-            throw new TornadoRuntimeException("mapOnDeviceMemoryRegion for ND Memory regions");
+            throw new TornadoRuntimeException("mapOnDeviceMemoryRegion with offset not supported");
         }
     }
 }

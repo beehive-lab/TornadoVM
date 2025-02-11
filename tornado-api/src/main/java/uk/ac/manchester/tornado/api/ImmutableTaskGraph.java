@@ -214,7 +214,7 @@ public class ImmutableTaskGraph {
         return taskGraph.getCurrentDeviceMemoryUsage();
     }
 
-    public void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
+    void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
 }

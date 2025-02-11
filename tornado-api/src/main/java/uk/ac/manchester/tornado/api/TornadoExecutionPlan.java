@@ -553,15 +553,15 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * This function maps the device memory region that corresponds to a TornadoVM array to another on-device memory region.
-     * This call instructs the TornadoVM runtime to not perform a data transfers between `device` -> `host` -> `device`. Instead,
+     * This function maps the device memory region that corresponds to a TornadoVM object to another on-device memory region.
+     * This call instructs the TornadoVM runtime to avoid transferring data between `device` -> `host` -> `device`. Instead,
      * it can update the corresponding device pointers.
      *
      * <p>
-     * The semantics is as follows: there is the source array, and the dest array. This call maps the dest array to the source
-     * array from a given offset. The source array is passed from the task-graph `fromTaskGraphIndex`, and the dest array is located
-     * in taken from the `toGraphIndex`. This method can be invoked in a multi-task-graph execution plan. It will not work if
-     * there is only one task-graph in the execution plan.
+     * The semantics are as follows: there is the source object, and the destination object. This call maps the dest object
+     * to the source object from a given offset. The source object is passed from the task-graph `fromGraphIndex`, and
+     * the destination object is taken from the `toGraphIndex`. This method can be invoked in a multi-task-graph execution
+     * plan. It will not work if there is only one task-graph in the execution plan.
      * </p>
      * 
      * @param destTornadoArray
