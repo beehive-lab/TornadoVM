@@ -364,4 +364,14 @@ public class OCLVectorWrapper implements XPUBuffer {
     public long deallocate() {
         return deviceContext.getBufferProvider().deallocate(access);
     }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("Operation not supported");
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
 }

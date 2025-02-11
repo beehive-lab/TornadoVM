@@ -30,6 +30,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -58,6 +59,11 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
     @Override
     public long size() {
         return tableWrapper.size();
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] OCLMultiDimArrayWrapper getSizeOfType not supported");
     }
 
     private E[] innerCast(T value) {

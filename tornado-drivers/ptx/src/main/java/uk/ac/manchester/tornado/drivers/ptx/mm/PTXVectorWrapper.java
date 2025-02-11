@@ -65,7 +65,7 @@ public class PTXVectorWrapper implements XPUBuffer {
     private long buffer;
     private long bufferSize;
     private long setSubRegionSize;
-    private Access access;
+    private final Access access;
 
     public PTXVectorWrapper(final PTXDeviceContext device, final Object object, long batchSize, Access access) {
         TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
@@ -327,6 +327,16 @@ public class PTXVectorWrapper implements XPUBuffer {
     @Override
     public void setIntBuffer(int[] arr) {
         XPUBuffer.super.setIntBuffer(arr);
+    }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
     }
 
 }

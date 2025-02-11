@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
@@ -48,30 +49,27 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     private final long batchSize;
     private long bufferId;
     private long bufferOffset;
-    private boolean onDevice;
     private long bufferSize;
 
     private long subregionSize;
     private Access access;
+    private final int sizeOfType;
 
-    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize, Access access) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = INIT_VALUE;
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        this.access = access;
-        onDevice = false;
-    }
-
-    public OCLMemorySegmentWrapper(long bufferSize, OCLDeviceContext deviceContext, long batchSize, Access access) {
+    public OCLMemorySegmentWrapper(long bufferSize, OCLDeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
         this.access = access;
-        onDevice = false;
+        this.sizeOfType = sizeOfType;
+        if (sizeOfType <= 0) {
+            throw new TornadoRuntimeException("Invalid size of type " + sizeOfType);
+        }
+    }
+
+    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
+        this(INIT_VALUE, deviceContext, batchSize, access, sizeOfType);
     }
 
     @Override
@@ -141,7 +139,6 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
         }
-        onDevice = true;
     }
 
     @Override
@@ -174,7 +171,6 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
                     hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
-        onDevice = true;
         return returnEvents;
     }
 
@@ -235,4 +231,20 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     public long getBatchSize() {
         return batchSize;
     }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        if (!(srcPointer instanceof OCLMemorySegmentWrapper oclMemorySegmentWrapper)) {
+            throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
+        }
+        final long sizeSource = oclMemorySegmentWrapper.bufferSize;
+        final long sizeDest = bufferSize;
+        this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset, sizeOfType, sizeSource, sizeDest);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return sizeOfType;
+    }
+
 }

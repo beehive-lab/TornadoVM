@@ -98,4 +98,6 @@ public abstract class SPIRVContext {
             ProfilerTransfer profilerTransfer);
 
     public abstract void reset(long executionPlanId, int deviceIndex);
+
+    public abstract long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest);
 }

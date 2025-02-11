@@ -291,4 +291,9 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     public void setSizeSubRegion(long batchSize) {
         this.setSubRegionSize = batchSize;
     }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
 }

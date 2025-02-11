@@ -301,4 +301,9 @@ public class JVMMapping implements TornadoXPUDevice {
         return false;
     }
 
+    @Override
+    public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        throw new UnsupportedOperationException();
+    }
+
 }

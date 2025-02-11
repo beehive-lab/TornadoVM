@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -142,7 +142,7 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
 	    mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, (void *) host_ptr, &status);
 	}
 	LOG_OCL_AND_VALIDATE("clCreateBuffer", status);
-    return env->NewObject(resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) status);
+    return env->NewObject(resultClass, constructorId, reinterpret_cast<jlong>(mem), host_ptr, status);
 }
 
 /*

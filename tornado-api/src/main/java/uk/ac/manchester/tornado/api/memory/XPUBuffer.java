@@ -70,4 +70,8 @@ public interface XPUBuffer {
     default void setIntBuffer(int[] arr) {
     }
 
+    void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset);
+
+    int getSizeOfType();
+
 }

@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv.mm;
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 public class SPIRVLongArrayWrapper extends SPIRVArrayWrapper<long[]> {
 
@@ -55,5 +56,10 @@ public class SPIRVLongArrayWrapper extends SPIRVArrayWrapper<long[]> {
     @Override
     protected int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return SPIRVKind.OP_TYPE_INT_64.getSizeInBytes();
     }
 }

@@ -128,6 +128,16 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
+
+    @Override
     public long deallocate() {
         return deviceContext.getBufferProvider().deallocate(access);
     }
