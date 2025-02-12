@@ -70,6 +70,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void transferToDevice(int mode, Object... objects);
 
+    void consumeFromDevice(Object... objects);
+
     void transferToHost(int mode, Object... objects);
 
     void dump();
@@ -103,6 +105,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     TornadoTaskGraphInterface createImmutableTaskGraph();
 
     Collection<?> getOutputs();
+
+    Collection<?> getPersistentObjects();
 
     void enableProfiler(ProfilerMode profilerMode);
 

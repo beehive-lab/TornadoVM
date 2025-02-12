@@ -97,6 +97,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     protected List<TornadoExecutionResult> planResults;
 
+    List<Object> persistantObjects;
+
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
      * running a set of immutable tasks-graphs. An executor plan contains an
@@ -113,8 +115,22 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         executionFrame = new ExecutorFrame(id);
         rootNode = this;
         planResults = new ArrayList<>();
+        persistantObjects = new ArrayList<>();
+
+        System.out.println("Retrieved Persistent Objects:");
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
+            System.out.println("\t" + immutableTaskGraph.getPersistentObjects().toString());
+        }
+        System.out.println("end Persistent Objects:");
     }
 
+
+//    List<Object> getPersistentObjects() {
+//        List<Object> persistentObjects = new ArrayList<>();
+//        immutableTaskGraphList.forEach(immutableTaskGraph -> persistentObjects.addAll(immutableTaskGraph.getPersistentObjects()));
+//        return persistentObjects;
+//    }
+//
     /**
      * Method to obtain a specific device using the driver index (backend index) and
      * device index.

@@ -684,6 +684,13 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    @Override
+    public TaskGraph consumeFromDevice(Object... objects) {
+        taskGraphImpl.consumeFromDevice(objects);
+        return this;
+    }
+
+
     /**
      * Tag a set of objects (Java objects) to be transferred from the device to the
      * host after the execution completes. There are two modes:
@@ -856,6 +863,10 @@ public class TaskGraph implements TaskGraphInterface {
 
     public Collection<?> getOutputs() {
         return taskGraphImpl.getOutputs();
+    }
+
+    public Collection<?> getPersistentObjects() {
+        return  taskGraphImpl.getPersistentObjects();
     }
 
     void enableProfiler(ProfilerMode profilerMode) {

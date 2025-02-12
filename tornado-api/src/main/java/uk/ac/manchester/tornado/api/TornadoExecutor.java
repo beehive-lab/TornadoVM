@@ -37,10 +37,12 @@ class TornadoExecutor {
 
     private final List<ImmutableTaskGraph> immutableTaskGraphList;
     private List<ImmutableTaskGraph> subgraphList;
+    private List<Object> pers;
 
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
+        this.pers = getPersistentObjects();
     }
 
     void execute(ExecutorFrame executionPackage) {
@@ -190,6 +192,12 @@ class TornadoExecutor {
         List<Object> outputs = new ArrayList<>();
         immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
         return outputs;
+    }
+
+    List<Object> getPersistentObjects() {
+        List<Object> persistentObjects = new ArrayList<>();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> persistentObjects.addAll(immutableTaskGraph.getPersistentObjects()));
+        return persistentObjects;
     }
 
     void withThreadInfo() {

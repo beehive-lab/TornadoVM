@@ -77,6 +77,7 @@ public class TornadoExecutionContext {
     private Map<Integer, Integer> objectMap;
     private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
+    private List<Object> persistentObjects;
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
@@ -100,6 +101,7 @@ public class TornadoExecutionContext {
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
         objects = new ArrayList<>();
+        persistentObjects = new ArrayList<>();
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
@@ -258,6 +260,22 @@ public class TornadoExecutionContext {
             tasks.add(task);
         }
         return index;
+    }
+
+    // Method to add an object to the list
+    public void addPersistentObject(Object object) {
+        if (object != null) {
+            persistentObjects.add(object);
+            System.out.println("Added object: " + object);
+            System.out.println("Current List: " + persistentObjects);
+            System.out.println("Size after adding: " + persistentObjects.size()); // Debugging size
+        } else {
+            System.out.println("Cannot add null object.");
+        }
+    }
+
+    public List<Object> getPersistentObjects() {
+        return persistentObjects; // Return a copy to prevent modification
     }
 
     public void setTask(int index, SchedulableTask task) {
@@ -633,6 +651,8 @@ public class TornadoExecutionContext {
         newExecutionContext.objectsAccesses = new HashMap<>(objectsAccesses);
 
         newExecutionContext.objects = new ArrayList<>(objects);
+
+        newExecutionContext.persistentObjects = new ArrayList<>(persistentObjects);
 
         List<LocalObjectState> objectStateCopy = new ArrayList<>();
         for (LocalObjectState localObjectState : objectState) {

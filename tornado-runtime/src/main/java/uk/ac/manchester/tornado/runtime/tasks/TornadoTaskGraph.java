@@ -174,6 +174,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
     private List<Object> streamInObjects;
+    private List<Object> persistantObjects;
 
     private Set<Object> argumentsLookUp;
 
@@ -225,6 +226,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         streamInObjects = new ArrayList<>();
         inputModesObjects = new ArrayList<>();
         outputModeObjects = new ArrayList<>();
+        persistantObjects = new ArrayList<>();
     }
 
     static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
@@ -405,6 +407,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.inputModesObjects = Collections.unmodifiableList(this.inputModesObjects);
         newTaskGraph.streamInObjects = Collections.unmodifiableList(this.streamInObjects);
         newTaskGraph.outputModeObjects = Collections.unmodifiableList(this.outputModeObjects);
+        newTaskGraph.persistantObjects = Collections.unmodifiableList(this.persistantObjects);
 
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
@@ -433,6 +436,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public Collection<?> getOutputs() {
         return streamOutObjects;
+    }
+
+    @Override
+    public Collection<?> getPersistentObjects() {
+        return persistantObjects;
     }
 
     @Override
@@ -1020,6 +1028,42 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+
+
+    @Override
+    public void consumeFromDevice(Object... objects) {
+        for (Object parameter : objects) {
+            if (parameter == null) {
+                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
+            } else if (parameter instanceof Number) {
+                throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in schedule " + executionContext.getId());
+            }
+//            TornadoTaskGraph graphSrc = (TornadoTaskGraph) ;
+//            Access objectAccessSrc = graphSrc.getObjectAccess(parameter);
+//            final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(parameter, objectAccessSrc);
+//            final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+//
+//            // The device is the same for both task-graphs
+//            final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+//
+//            final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+//            // We need to alloc if needed
+//            if (!deviceStateSrc.hasObjectBuffer()) {
+////                device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
+//            }
+
+            executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setOnDevice();
+
+            if (TornadoOptions.isReusedBuffersEnabled()) {
+                if (!argumentsLookUp.contains(parameter)) {
+                    lockObjectsInMemory(parameter);
+                }
+            }
+
+            argumentsLookUp.add(parameter);
+        }
+    }
+
     private boolean isANumber(Object parameter) {
         return parameter instanceof Number;
     }
@@ -1042,10 +1086,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             // If the object mode is set to UNDER_DEMAND then we *only* insert it in the lookup
             // hash-set.
+            System.out.println("Add " + functionParameter + " mode " + mode);
+
             if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
                 // the access will be updated later on by the TornadoDataflowAnalysis if necessary
                 executionContext.getLocalStateObject(functionParameter, Access.WRITE_ONLY).setStreamOut(true);
+            }
+
+            if (mode == DataTransferMode.UNDER_DEMAND) {
+//                System.out.println("Add " + functionParameter);
+                executionContext.addPersistentObject(functionParameter);
+                persistantObjects.add(functionParameter);
             }
 
             // List of output objects for the dynamic reconfiguration
