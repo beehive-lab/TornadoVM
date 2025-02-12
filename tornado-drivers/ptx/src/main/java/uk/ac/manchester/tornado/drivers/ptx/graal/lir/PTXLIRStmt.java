@@ -937,10 +937,9 @@ public class PTXLIRStmt {
             atomicOp.emit(crb, null);
             System.out.println("[AtomicOperation-emitCode] dest value kind is: " + dest.getValueKind().toString());
             asm.emitSymbol(DOT);
-            System.out.println("[AtomicOperation-emitCode] memory space is: " + address.getBase().memorySpace.getName());
             asm.emit(address.getBase().memorySpace.getName());
             asm.emitSymbol(DOT);
-            asm.emit("add.s32");
+            asm.emit("add.u32");
             //            asm.emit("global.add.u32");
             asm.emitSymbol(TAB);
 

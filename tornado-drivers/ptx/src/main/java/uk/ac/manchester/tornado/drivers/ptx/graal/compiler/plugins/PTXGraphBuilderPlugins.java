@@ -42,6 +42,8 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrin
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.RawConstant;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -49,7 +51,9 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -225,12 +229,18 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, IntArray.class, Long.TYPE, Integer.TYPE) {
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, IntArray.class, Integer.TYPE, Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                System.out.println("----------------[PTXGraphBuilderPlugins::registerAtomicAddOperation]");
-                JavaKind kind = PTXKind.B64.asJavaKind();
-                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forLong(kind.getByteCount())));
+                JavaKind kind = PTXKind.U32.asJavaKind();
+
+                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // The offset is used by MulNode.
+                Constant panamaHeaderOffset = new RawConstant(6);
+                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
+                AddNode newIndex = b.append(new AddNode(index, constantNode));
+                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
+                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
                 final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
                 AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc);
                 b.add(b.append(atomicAddNode));

@@ -19,6 +19,8 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Context of TornadoVM execution to exploit kernel-parallel applications, in
  * which the parallelism is implicit.
@@ -190,9 +192,9 @@ public class KernelContext implements ExecutionContext {
      * PTX equivalent: atomicAdd(int* address, int val);
      */
     @Override
-    public void atomicAdd(IntArray array, long index, int val) {
-        //        atomicAdd(array.getSegment(), index, val);
-        //        AtomicInteger atomicInteger = new AtomicInteger(arrayValue);
-        //        return atomicInteger.addAndGet(val);
+    public void atomicAdd(IntArray array, int index, int val) {
+        int arrayValue = array.get(index);
+        AtomicInteger atomicInteger = new AtomicInteger(arrayValue);
+        array.set(index, atomicInteger.addAndGet(val));
     }
 }

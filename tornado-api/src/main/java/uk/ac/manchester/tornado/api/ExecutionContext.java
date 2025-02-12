@@ -96,5 +96,5 @@ public interface ExecutionContext {
      * <p>
      * PTX equivalent: atomicAdd(int* address, int val);
      */
-    void atomicAdd(IntArray array, long index, int val);
+    void atomicAdd(IntArray array, int index, int val);
 }
