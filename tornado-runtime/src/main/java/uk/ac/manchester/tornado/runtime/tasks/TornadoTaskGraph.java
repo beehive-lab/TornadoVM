@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.api.profiler.ProfilerType.ALLOCATION_BYTE
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_IN_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
@@ -861,7 +862,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         if (compile) {
-            if (TornadoOptions.DEBUG) {
+            if (DEBUG) {
                 System.out.println("[DEBUG] JIT compilation for the FPGA");
             }
             compileTaskToOpenCL();
@@ -895,7 +896,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void dumpDeoptimisationReason(TornadoBailoutRuntimeException e) {
-        if (!TornadoOptions.DEBUG) {
+        if (!DEBUG) {
             System.err.println(RED + "[Bailout] Running the sequential implementation. Enable --debug to see the reason." + RESET);
         } else {
             System.err.println(e.getMessage());
@@ -926,7 +927,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (TornadoOptions.RECOVER_BAILOUT) {
                 deoptimiseToSequentialJava(e);
             } else {
-                if (TornadoOptions.DEBUG) {
+                if (DEBUG) {
                     e.printStackTrace();
                 }
                 throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.getMessage());
@@ -1275,6 +1276,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return eventParameter;
     }
 
+    private boolean copyUnderDemand(Object object) {
+        for (StreamingObject outputObject : outputModeObjects) {
+            if (outputObject.getObject().equals(object) && outputObject.getMode() == DataTransferMode.UNDER_DEMAND) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void syncRuntimeTransferToHost(Object... objects) {
         if (vm == null) {
@@ -1283,6 +1293,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         List<Event> events = new ArrayList<>();
         for (Object object : objects) {
+            if (DEBUG) {
+                if (copyUnderDemand(object)) {
+                    new TornadoLogger().debug("Object " + object + " to be copied UNDER_DEMAND");
+                }
+            }
             // Check if it is an argument captured by the scope (not in the parameter list).
             if (!argumentsLookUp.contains(object)) {
                 syncField(object);
@@ -1325,6 +1340,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         Event event = null;
+        if (DEBUG) {
+            if (copyUnderDemand(object)) {
+                new TornadoLogger().debug(partialCopySize + " bytes of the object " + object + " to be copied UNDER_DEMAND from offset " + offset);
+            }
+        }
 
         // Check if it is an argument captured by the scope (not in the parameter list).
         if (!argumentsLookUp.contains(object)) {
@@ -1691,7 +1711,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             for (int i = 0; i < threads.length; i++) {
                 isAlive = threads[i].isAlive();
                 if (!isAlive) {
-                    if (TornadoOptions.DEBUG) {
+                    if (DEBUG) {
                         System.out.println("SELECTED Thread-Device: " + threads[i].getName() + " ");
                     }
                     winner = i;
@@ -1733,7 +1753,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             final long start = timer.time();
             runAllTasksJavaSequential();
             final long endSequentialCode = timer.time();
-            if (TornadoOptions.DEBUG) {
+            if (DEBUG) {
                 System.out.println("Seq finished: " + Thread.currentThread().getName());
             }
 
@@ -1757,7 +1777,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 for (TaskPackage taskPackage : taskPackages) {
                     String taskID = taskPackage.getId();
                     TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
-                    if (TornadoOptions.DEBUG) {
+                    if (DEBUG) {
                         System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
                     }
                     task.addTask(taskPackage);
@@ -1838,7 +1858,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
-            if (TornadoOptions.DEBUG) {
+            if (DEBUG) {
                 System.out.println(getListDevices());
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
@@ -1869,7 +1889,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (TaskPackage taskPackage : taskPackages) {
             TornadoRuntimeProvider.setProperty(this.getTaskGraphName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
-        if (TornadoOptions.DEBUG) {
+        if (DEBUG) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
         TaskGraph task = taskGraphIndex.get(deviceWinnerIndex);
@@ -1983,7 +2003,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 }
 
                 TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
-                if (TornadoOptions.DEBUG) {
+                if (DEBUG) {
                     System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskNumber);
                 }
                 task.addTask(taskPackage);
@@ -2096,7 +2116,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             updateHistoryTables(policy, deviceWinnerIndex);
 
-            if (TornadoOptions.DEBUG) {
+            if (DEBUG) {
                 System.out.println(getListDevices());
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
@@ -2150,7 +2170,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface scheduleDynamicReconfigurationSequential(Policy policy) {
 
         if (policy == Policy.LATENCY) {
-            if (TornadoOptions.DEBUG) {
+            if (DEBUG) {
                 System.out.println("[WARNING]: LATENCY policy using the DRMode.SERIAL is not allowed. Changing to PERFORMANCE mode");
             }
             policy = Policy.PERFORMANCE;
@@ -2325,7 +2345,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             addInner(index, type, method, meta, id, parameters);
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
-            if (!TornadoOptions.DEBUG) {
+            if (!DEBUG) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
             }
             throw e;
@@ -2353,7 +2373,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             addInner(type, method, meta, id, parameters);
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
-            if (!TornadoOptions.DEBUG) {
+            if (!DEBUG) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
             }
             throw e; // Rethrow the same exception
