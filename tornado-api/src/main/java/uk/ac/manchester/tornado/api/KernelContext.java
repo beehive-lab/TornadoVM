@@ -17,9 +17,13 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Context of TornadoVM execution to exploit kernel-parallel applications, in
@@ -196,5 +200,38 @@ public class KernelContext implements ExecutionContext {
         int arrayValue = array.get(index);
         AtomicInteger atomicInteger = new AtomicInteger(arrayValue);
         array.set(index, atomicInteger.addAndGet(val));
+    }
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(long* address, long val);
+     */
+    @Override
+    public void atomicAdd(LongArray array, int index, long val) {
+        long arrayValue = array.get(index);
+        AtomicLong atomicLong = new AtomicLong(arrayValue);
+        array.set(index, atomicLong.addAndGet(val));
+    }
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(float* address, float val);
+     */
+    @Override
+    public void atomicAdd(FloatArray array, int index, float val) {
+    }
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(double* address, double val);
+     */
+    @Override
+    public void atomicAdd(DoubleArray array, int index, double val) {
     }
 }
