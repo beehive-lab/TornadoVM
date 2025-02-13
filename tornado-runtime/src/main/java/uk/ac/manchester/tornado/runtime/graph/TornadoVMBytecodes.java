@@ -191,7 +191,20 @@ public enum TornadoVMBytecodes {
      * DEALLOC(obj,dest)
      * </code>
      */
-    DEALLOC((byte) 24);
+    DEALLOC((byte) 24),
+
+
+    /**
+     * Reuse of a buffer from a device.
+     * <p>
+     * Format:
+     *
+     * <code>
+     * ON_DEVICE(obj,dest)
+     * </code>
+     */
+    ON_DEVICE((byte) 25);
+
 
     final byte value;
 

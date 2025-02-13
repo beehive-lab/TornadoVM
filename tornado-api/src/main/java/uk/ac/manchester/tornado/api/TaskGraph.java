@@ -920,4 +920,9 @@ public class TaskGraph implements TaskGraphInterface {
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
+
+    void updatePersistentStates(TornadoTaskGraphInterface taskGraphSrc) {
+        taskGraphImpl.updatePersistentStates(taskGraphSrc);
+    }
+
 }

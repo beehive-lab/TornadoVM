@@ -170,6 +170,10 @@ public class ImmutableTaskGraph {
         return taskGraph.getPersistentObjects();
     }
 
+//    Object setPersistentObject(Object object) {
+//        taskGraph.setPersistentObject();
+//    }
+
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
     }
@@ -221,4 +225,9 @@ public class ImmutableTaskGraph {
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
+
+    void updatePersistentStates(ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.updatePersistentStates(taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
 }

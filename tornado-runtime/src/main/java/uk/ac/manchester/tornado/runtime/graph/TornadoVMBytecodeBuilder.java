@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
@@ -87,6 +88,8 @@ public class TornadoVMBytecodeBuilder {
     void emitAsyncNode(AbstractNode node, int dependencyBC, long offset, long batchSize, long nThreads) {
         if (node instanceof AllocateMultipleBuffersNode) {
             bitcodeASM.allocate(((AllocateMultipleBuffersNode) node).getValues(), batchSize);
+        } else if (node instanceof OnDeviceObjectNode) {
+            bitcodeASM.onDevice(node.getIndex());
         } else if (node instanceof CopyInNode) {
             bitcodeASM.transferToDeviceOnce(((CopyInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
@@ -196,6 +199,11 @@ public class TornadoVMBytecodeBuilder {
             for (AbstractNode node : values) {
                 buffer.putInt(node.getIndex());
             }
+        }
+
+        public void onDevice(int object) {
+            buffer.put(TornadoVMBytecodes.ON_DEVICE.value);
+            buffer.putInt(object);
         }
 
         public void deallocate(int object) {

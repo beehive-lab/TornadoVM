@@ -231,6 +231,7 @@ public class TornadoExecutionContext {
             newLocalObjectState.setStreamIn(oldLocalObjectState.isStreamIn());
             newLocalObjectState.setForceStreamIn(oldLocalObjectState.isForcedStreamIn());
             newLocalObjectState.setStreamOut(oldLocalObjectState.isStreamOut());
+            newLocalObjectState.setOnDevice(oldLocalObjectState.isOnDevice());
 
             index = oldIndex;
             objects.add(index, newObj);
@@ -266,16 +267,11 @@ public class TornadoExecutionContext {
     public void addPersistentObject(Object object) {
         if (object != null) {
             persistentObjects.add(object);
-            System.out.println("Added object: " + object);
-            System.out.println("Current List: " + persistentObjects);
-            System.out.println("Size after adding: " + persistentObjects.size()); // Debugging size
-        } else {
-            System.out.println("Cannot add null object.");
         }
     }
 
     public List<Object> getPersistentObjects() {
-        return persistentObjects; // Return a copy to prevent modification
+        return persistentObjects;
     }
 
     public void setTask(int index, SchedulableTask task) {

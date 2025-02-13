@@ -275,4 +275,10 @@ class TornadoExecutor {
         ImmutableTaskGraph taskGraphDest = getGraph(toGraphIndex);
         taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
+
+    void updatePersistentStates(int fromTaskGraphIndex, int toTaskGraphIndex) {
+        ImmutableTaskGraph taskGraphSrc = getGraph(fromTaskGraphIndex);
+        ImmutableTaskGraph taskGraphDest = getGraph(toTaskGraphIndex);
+        taskGraphDest.updatePersistentStates(taskGraphSrc);
+    }
 }

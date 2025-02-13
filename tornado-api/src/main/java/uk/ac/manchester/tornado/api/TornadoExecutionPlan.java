@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.api;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
@@ -117,20 +118,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         planResults = new ArrayList<>();
         persistantObjects = new ArrayList<>();
 
-        System.out.println("Retrieved Persistent Objects:");
-        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
-            System.out.println("\t" + immutableTaskGraph.getPersistentObjects().toString());
+
+        if (id == 1) {
+            System.out.println("Retrieved Persistent Objects:");
+            if (immutableTaskGraphs.length > 1) {
+                immutableTaskGraphs[1].updatePersistentStates(immutableTaskGraphs[0]);
+            }
+            System.out.println("end Persistent Objects:");
         }
-        System.out.println("end Persistent Objects:");
     }
 
 
-//    List<Object> getPersistentObjects() {
-//        List<Object> persistentObjects = new ArrayList<>();
-//        immutableTaskGraphList.forEach(immutableTaskGraph -> persistentObjects.addAll(immutableTaskGraph.getPersistentObjects()));
-//        return persistentObjects;
-//    }
-//
     /**
      * Method to obtain a specific device using the driver index (backend index) and
      * device index.

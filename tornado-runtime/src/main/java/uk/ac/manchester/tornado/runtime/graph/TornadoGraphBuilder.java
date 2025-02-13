@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -66,10 +67,20 @@ public class TornadoGraphBuilder {
 
     private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
         final AllocateNode allocateNode = new AllocateNode(context);
+        System.out.println("Allocate " + argIndex + ": " + arg.toString() + args.toString());
         allocateNode.setValue((ObjectNode) arg);
         graph.add(allocateNode);
         context.addUse(allocateNode);
         args[argIndex] = allocateNode;
+        persistNode.addValue((ObjectNode) arg);
+    }
+
+    private static void createOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
+        final OnDeviceObjectNode onDeviceObjectNode = new OnDeviceObjectNode(context);
+        onDeviceObjectNode.setValue((ObjectNode) arg);
+        graph.add(onDeviceObjectNode);
+        context.addUse(onDeviceObjectNode);
+        args[argIndex] = onDeviceObjectNode;
         persistNode.addValue((ObjectNode) arg);
     }
 
@@ -111,6 +122,7 @@ public class TornadoGraphBuilder {
 
         final List<Object> constants = executionContext.getConstants();
         final List<Object> objects = executionContext.getObjects();
+        final List<Object> persistentObjects = executionContext.getPersistentObjects();
 
 
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
@@ -141,12 +153,24 @@ public class TornadoGraphBuilder {
 
                 final AbstractNode arg = objectNodes[variableIndex];
                 if (!(arg instanceof ContextOpNode)) {
+                    final ObjectNode objectNode = (ObjectNode) arg;
+                    final LocalObjectState state = states.get(objectNode.getIndex());
+                    System.out.println("XXXXXXXXXX " + state.isOnDevice() +" " + accesses[argIndex].toString() + " " + objectNode.toString());
+                    System.out.println("a " + arg.toString());
+                    System.out.println("a " + state.getObject().toString());
+                    System.out.println("XXXXXXXXXX " + state.isOnDevice() + " " + objectNode.toString()) ;
+
                     if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
+                    }  else if (state.isOnDevice()) {
+                        System.out.println("XXXXXXXXXX");
+                        System.out.println("a " + arg.toString());
+                        createOnDeviceNode(context, graph, arg, args, argIndex, persist);
                     } else {
-                        final ObjectNode objectNode = (ObjectNode) arg;
-                        final LocalObjectState state = states.get(objectNode.getIndex());
-                        if (state.isStreamIn()) {
+//                        final ObjectNode objectNode = (ObjectNode) arg;
+//                        final LocalObjectState state = states.get(objectNode.getIndex());
+
+                       if (state.isStreamIn()) {
                             createStreamInNode(context, graph, objectNode, args, argIndex, persist);
                         } else {
                             if (!state.isUnderDemand()) {
@@ -179,7 +203,9 @@ public class TornadoGraphBuilder {
                     } else if (objectNodes[variableIndex] instanceof CopyInNode copyInNode) {
                         value = copyInNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof AllocateNode allocateNode) {
-                        value = allocateNode.getValue();
+                        value = allocateNode.getValue(); }
+                    else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
+                        value = onDeviceObjectNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof StreamInNode streamInNode) {
                         value = streamInNode.getValue();
                     } else {

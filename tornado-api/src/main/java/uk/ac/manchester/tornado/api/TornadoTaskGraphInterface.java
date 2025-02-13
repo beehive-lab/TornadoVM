@@ -131,4 +131,7 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags);
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
+
+    void updatePersistentStates(TornadoTaskGraphInterface taskGraphSrc);
+
 }

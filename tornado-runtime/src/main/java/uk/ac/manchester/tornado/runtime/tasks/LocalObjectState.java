@@ -90,9 +90,10 @@ public class LocalObjectState {
         this.underDemand = true;
     }
 
-    public void setOnDevice() {
-        this.onDevice = true;
+    public void setOnDevice(boolean isOnDevice) {
+        this.onDevice = isOnDevice;
     }
+
 
     public boolean isOnDevice() {
         return onDevice;
@@ -139,6 +140,7 @@ public class LocalObjectState {
         newLocalObjectState.forceStreamIn = this.forceStreamIn;
         newLocalObjectState.underDemand = this.underDemand;
         newLocalObjectState.dataObjectState = dataObjectState.clone();
+        newLocalObjectState.onDevice = this.onDevice;
         return newLocalObjectState;
     }
 
