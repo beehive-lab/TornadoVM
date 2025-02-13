@@ -47,7 +47,10 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -208,6 +211,27 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     public static void atomic18(KernelContext context, IntArray input, IntArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            context.atomicAdd(input, i, 1);
+            output.set(i, input.get(i));
+        }
+    }
+
+    public static void atomic18(KernelContext context, LongArray input, LongArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            context.atomicAdd(input, i, 1);
+            output.set(i, input.get(i));
+        }
+    }
+
+    public static void atomic18(KernelContext context, FloatArray input, FloatArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            context.atomicAdd(input, i, 1);
+            output.set(i, input.get(i));
+        }
+    }
+
+    public static void atomic18(KernelContext context, DoubleArray input, DoubleArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             context.atomicAdd(input, i, 1);
             output.set(i, input.get(i));
@@ -904,7 +928,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
-    public void testAtomic18_parallel_api() throws TornadoExecutionPlanException {
+    public void testAtomic18_parallel_api_int() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
@@ -930,6 +954,91 @@ public class TestAtomics extends TornadoTestBase {
         atomic18(context, dataTornadoVM, outputJava);
 
         assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_long() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        LongArray dataTornadoVM = new LongArray(size);
+        LongArray output = new LongArray(size);
+        LongArray outputJava = new LongArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        atomic18(context, dataTornadoVM, outputJava);
+
+        assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_float() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        FloatArray dataTornadoVM = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i + 1, output.get(i), 0.1f);
+        }
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_double() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        DoubleArray dataTornadoVM = new DoubleArray(size);
+        DoubleArray output = new DoubleArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i + 1, output.get(i), 0.1f);
+        }
     }
 
     @Test
