@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -32,7 +33,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
@@ -48,8 +49,8 @@ public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLower
     @Input
     ValueNode inc;
 
-    public AtomicAddNodeTemplate(AddressNode addressNode, ValueNode inc) {
-        super(TYPE, StampFactory.forKind(PTXKind.U32.asJavaKind()));
+    public AtomicAddNodeTemplate(AddressNode addressNode, ValueNode inc, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind));
         this.address = addressNode;
         this.inc = inc;
     }
@@ -58,10 +59,6 @@ public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLower
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable dest = tool.newVariable(tool.getLIRKind(stamp));
-        //        Variable dest = tool.newVariable(LIRKind.value(PTXKind.U32));
-
-        System.out.println("[AtomicAddNodeTemplate] dest lir kind from stamp is: " + tool.getLIRKind(stamp).toString());
-
-        tool.append(new PTXLIRStmt.AtomicOperation((PTXUnary.MemoryAccess) gen.operand(address), dest, ATOM, inc.asConstant()));
+        tool.append(new PTXLIRStmt.AtomicOperation((PTXUnary.MemoryAccess) gen.operand(address), dest, ATOM, PTXAssembler.PTXBinaryOp.ADD, inc.asConstant()));
     }
 }

@@ -76,7 +76,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomicAddNodeTemplate;
@@ -242,7 +245,64 @@ public class PTXGraphBuilderPlugins {
                 SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
                 MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
                 final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc);
+                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                b.add(b.append(atomicAddNode));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, LongArray.class, Integer.TYPE, Long.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                JavaKind kind = PTXKind.U64.asJavaKind();
+
+                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // The offset is used by MulNode.
+                Constant panamaHeaderOffset = new RawConstant(3);
+                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
+                AddNode newIndex = b.append(new AddNode(index, constantNode));
+                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
+                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
+                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                b.add(b.append(atomicAddNode));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                JavaKind kind = PTXKind.F32.asJavaKind();
+
+                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // The offset is used by MulNode.
+                Constant panamaHeaderOffset = new RawConstant(6);
+                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
+                AddNode newIndex = b.append(new AddNode(index, constantNode));
+                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
+                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
+                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                b.add(b.append(atomicAddNode));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                JavaKind kind = PTXKind.F64.asJavaKind();
+
+                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // The offset is used by MulNode.
+                Constant panamaHeaderOffset = new RawConstant(3);
+                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
+                AddNode newIndex = b.append(new AddNode(index, constantNode));
+                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
+                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
+                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }
@@ -481,7 +541,6 @@ public class PTXGraphBuilderPlugins {
                 r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
-                        System.out.println("[PTXGraphBuilderPlugins] setAtIndex ");
                         MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                         AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);

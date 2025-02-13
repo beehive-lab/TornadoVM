@@ -51,6 +51,8 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import java.nio.charset.StandardCharsets;
 
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -920,27 +922,30 @@ public class PTXLIRStmt {
         PTXNullaryOp atomicOp;
 
         @Use
+        PTXAssembler.PTXBinaryOp arithmeticOp;
+
+        @Use
         Constant inc;
 
-        public AtomicOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op, Constant inc) {
+        public AtomicOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp atomicOp, PTXAssembler.PTXBinaryOp arithmeticOp, Constant inc) {
             super(TYPE);
 
             this.address = address;
             this.dest = dest;
-            this.atomicOp = op;
+            this.atomicOp = atomicOp;
+            this.arithmeticOp = arithmeticOp;
             this.inc = inc;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            //            atom.global.add.u32     d, [a], b;
             atomicOp.emit(crb, null);
-            System.out.println("[AtomicOperation-emitCode] dest value kind is: " + dest.getValueKind().toString());
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.getName());
             asm.emitSymbol(DOT);
-            asm.emit("add.u32");
-            //            asm.emit("global.add.u32");
+            asm.emit(arithmeticOp.toString());
+            asm.emitSymbol(DOT);
+            asm.emit(resolvePTXTypeFromValueKind(dest.getValueKind()));
             asm.emitSymbol(TAB);
 
             asm.emitValue(dest);
@@ -952,6 +957,22 @@ public class PTXLIRStmt {
             asm.emitSymbol(inc.toValueString());
             asm.delimiter();
             asm.eol();
+        }
+    }
+
+    /*
+     * This method helps to resolve the PTX type for the atom.add operation. The valid types for instruction 'atom'
+     * .u32 or .s32 or .u64 or .f64 or f16 or f16x2 or .f32 or .bf16 or .bf16x2.
+     * Hence, we need to return 'u64' as the type for Java 'long' types.
+     */
+    private static String resolvePTXTypeFromValueKind(ValueKind valueKind) {
+        switch (valueKind.toString().toLowerCase()) {
+            case "s64" -> {
+                return "u64";
+            }
+            default -> {
+                return valueKind.toString().toLowerCase();
+            }
         }
     }
 
