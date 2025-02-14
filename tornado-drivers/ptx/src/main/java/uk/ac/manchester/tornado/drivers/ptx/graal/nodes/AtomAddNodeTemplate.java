@@ -39,17 +39,17 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp.ATOM;
 
-@NodeInfo(shortName = "AtomicAdd")
-public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLowerable {
+@NodeInfo(shortName = "AtomAdd")
+public class AtomAddNodeTemplate extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<AtomicAddNodeTemplate> TYPE = NodeClass.create(AtomicAddNodeTemplate.class);
+    public static final NodeClass<AtomAddNodeTemplate> TYPE = NodeClass.create(AtomAddNodeTemplate.class);
 
     @Input
     AddressNode address;
     @Input
     ValueNode inc;
 
-    public AtomicAddNodeTemplate(AddressNode addressNode, ValueNode inc, JavaKind kind) {
+    public AtomAddNodeTemplate(AddressNode addressNode, ValueNode inc, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind));
         this.address = addressNode;
         this.inc = inc;
@@ -59,6 +59,6 @@ public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLower
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable dest = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new PTXLIRStmt.AtomicOperation((PTXUnary.MemoryAccess) gen.operand(address), dest, ATOM, PTXAssembler.PTXBinaryOp.ADD, inc.asConstant()));
+        tool.append(new PTXLIRStmt.AtomOperation((PTXUnary.MemoryAccess) gen.operand(address), dest, ATOM, PTXAssembler.PTXBinaryOp.ADD, inc.asConstant()));
     }
 }

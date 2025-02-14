@@ -82,7 +82,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomicAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
@@ -245,7 +245,7 @@ public class PTXGraphBuilderPlugins {
                 SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
                 MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
                 final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }
@@ -264,7 +264,7 @@ public class PTXGraphBuilderPlugins {
                 SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
                 MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
                 final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }
@@ -283,7 +283,7 @@ public class PTXGraphBuilderPlugins {
                 SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
                 MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
                 final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }
@@ -302,7 +302,7 @@ public class PTXGraphBuilderPlugins {
                 SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
                 MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
                 final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(address, inc, kind);
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }

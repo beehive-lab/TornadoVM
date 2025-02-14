@@ -51,7 +51,6 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import java.nio.charset.StandardCharsets;
 
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -909,8 +908,8 @@ public class PTXLIRStmt {
     }
 
     @Opcode("AtomAdd")
-    public static class AtomicOperation extends AbstractInstruction {
-        public static final LIRInstructionClass<AtomicOperation> TYPE = LIRInstructionClass.create(AtomicOperation.class);
+    public static class AtomOperation extends AbstractInstruction {
+        public static final LIRInstructionClass<AtomOperation> TYPE = LIRInstructionClass.create(AtomOperation.class);
 
         @Use
         protected Variable dest;
@@ -927,7 +926,7 @@ public class PTXLIRStmt {
         @Use
         Constant inc;
 
-        public AtomicOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp atomicOp, PTXAssembler.PTXBinaryOp arithmeticOp, Constant inc) {
+        public AtomOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp atomicOp, PTXAssembler.PTXBinaryOp arithmeticOp, Constant inc) {
             super(TYPE);
 
             this.address = address;
