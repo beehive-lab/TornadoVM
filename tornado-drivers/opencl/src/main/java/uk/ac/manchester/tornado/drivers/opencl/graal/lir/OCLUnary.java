@@ -131,8 +131,6 @@ public class OCLUnary {
             asm.space();
             asm.emitSymbol(inc.toValueString());
             asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
-            asm.delimiter();
-            asm.eol();
         }
     }
 
