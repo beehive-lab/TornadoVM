@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
+import jdk.vm.ci.meta.Constant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
@@ -97,6 +98,42 @@ public class OCLUnary {
             return String.format("%s(%s)", opcode.toString(), value);
         }
 
+    }
+
+    @Opcode("AtomAdd")
+    public static class AtomOperation extends UnaryConsumer {
+
+        @Use
+        OCLUnary.MemoryAccess address;
+
+        @Use
+        OCLAssembler.OCLUnaryIntrinsic atomicOp;
+
+        @Use
+        Constant inc;
+
+        public AtomOperation(OCLUnaryOp opcode, LIRKind lirKind, Value value, OCLUnary.MemoryAccess address, OCLAssembler.OCLUnaryIntrinsic atomicOp, Constant inc) {
+            super(opcode, lirKind, value);
+
+            this.address = address;
+            this.atomicOp = atomicOp;
+            this.inc = inc;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // atom_add(volatile global(3clc) long *p, long val);
+            atomicOp.emit(crb);
+            asm.emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+            asm.emit("(volatile __global int *) "); //FIXME: Cast to the proper type
+            address.emit(crb, asm);
+            asm.emitSymbol(OCLAssemblerConstants.EXPR_DELIMITER);
+            asm.space();
+            asm.emitSymbol(inc.toValueString());
+            asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+            asm.delimiter();
+            asm.eol();
+        }
     }
 
     public static class IntrinsicAtomicFetch extends UnaryConsumer {

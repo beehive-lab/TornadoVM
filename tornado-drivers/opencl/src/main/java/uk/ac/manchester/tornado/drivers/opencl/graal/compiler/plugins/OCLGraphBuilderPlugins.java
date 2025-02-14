@@ -44,6 +44,8 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryInt
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.RawConstant;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -52,7 +54,9 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -78,9 +82,11 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
@@ -129,7 +135,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("atomic_add", int[].class, Integer.TYPE, Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
-                AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, index, inc);
+                AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, inc, JavaKind.Int);
                 b.addPush(JavaKind.Int, b.append(atomicIncNode));
                 return true;
             }
@@ -256,16 +262,26 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    //    private static void registerAtomicAddOperation(Registration r) {
-    //        r.register(new InvocationPlugin("atomicAdd", Receiver.class, int[].class, Integer.TYPE, Integer.TYPE) {
-    //            @Override
-    //            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
-    //                AtomicAddNodeTemplate atomicAddNode = new AtomicAddNodeTemplate(array, index, inc);
-    //                b.append(atomicAddNode);
-    //                return true;
-    //            }
-    //        });
-    //    }
+    private static void registerAtomicAddOperation(Registration r) {
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, IntArray.class, Integer.TYPE, Integer.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                JavaKind kind = OCLKind.UINT.asJavaKind();
+
+                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // The offset is used by MulNode.
+                Constant panamaHeaderOffset = new RawConstant(6);
+                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
+                AddNode newIndex = b.append(new AddNode(index, constantNode));
+                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, OCLKind.LONG.asJavaKind().getBitCount()));
+                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
+                b.add(b.append(atomicAddNode));
+                return true;
+            }
+        });
+    }
 
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register(new InvocationPlugin("allocateIntLocalArray", Receiver.class, int.class) {
@@ -337,7 +353,7 @@ public class OCLGraphBuilderPlugins {
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
         localArraysPlugins(r);
-        //        registerAtomicAddOperation(r);
+        registerAtomicAddOperation(r);
     }
 
     public static Class getValueLayoutClass(Class k) {
