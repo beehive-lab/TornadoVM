@@ -28,7 +28,6 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -45,14 +44,11 @@ public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLower
     @Input
     ValueNode array;
     @Input
-    ValueNode index;
-    @Input
     ValueNode inc;
 
-    public AtomicAddNodeTemplate(ValueNode array, ValueNode index, ValueNode inc) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
+    public AtomicAddNodeTemplate(ValueNode array, ValueNode inc, JavaKind javaKind) {
+        super(TYPE, StampFactory.forKind(javaKind));
         this.array = array;
-        this.index = index;
         this.inc = inc;
     }
 
