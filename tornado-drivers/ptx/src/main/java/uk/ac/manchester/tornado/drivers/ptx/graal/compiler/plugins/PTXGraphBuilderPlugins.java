@@ -237,7 +237,7 @@ public class PTXGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind kind = PTXKind.U32.asJavaKind();
 
-                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
                 // The offset is used by MulNode.
                 Constant panamaHeaderOffset = new RawConstant(6);
                 ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
@@ -256,7 +256,7 @@ public class PTXGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind kind = PTXKind.U64.asJavaKind();
 
-                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
                 // The offset is used by MulNode.
                 Constant panamaHeaderOffset = new RawConstant(3);
                 ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
@@ -275,7 +275,7 @@ public class PTXGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind kind = PTXKind.F32.asJavaKind();
 
-                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
                 // The offset is used by MulNode.
                 Constant panamaHeaderOffset = new RawConstant(6);
                 ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
@@ -294,7 +294,7 @@ public class PTXGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind kind = PTXKind.F64.asJavaKind();
 
-                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
                 // The offset is used by MulNode.
                 Constant panamaHeaderOffset = new RawConstant(3);
                 ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
