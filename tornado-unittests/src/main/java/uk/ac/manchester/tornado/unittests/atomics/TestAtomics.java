@@ -929,7 +929,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic18_parallel_api_int() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
@@ -958,7 +957,6 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic18_parallel_api_long() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
