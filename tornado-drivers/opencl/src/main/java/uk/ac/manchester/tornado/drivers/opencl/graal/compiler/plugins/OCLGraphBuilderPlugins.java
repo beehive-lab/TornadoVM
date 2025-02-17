@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.ATAN2;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
@@ -82,7 +83,10 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
@@ -268,7 +272,7 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind kind = OCLKind.UINT.asJavaKind();
 
-                //This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
                 // The offset is used by MulNode.
                 Constant panamaHeaderOffset = new RawConstant(6);
                 ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
@@ -279,6 +283,41 @@ public class OCLGraphBuilderPlugins {
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
                 b.add(b.append(atomicAddNode));
                 return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, LongArray.class, Integer.TYPE, Long.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                JavaKind kind = OCLKind.ULONG.asJavaKind();
+
+                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
+                // The offset is used by MulNode.
+                Constant panamaHeaderOffset = new RawConstant(3);
+                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
+                AddNode newIndex = b.append(new AddNode(index, constantNode));
+                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, OCLKind.LONG.asJavaKind().getBitCount()));
+                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
+                b.add(b.append(atomicAddNode));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                unimplemented("In OpenCL, the atomic_add function does not support floating point operations.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                unimplemented("In OpenCL, the atomic_add function does not support floating point operations.");
+                return false;
             }
         });
     }
