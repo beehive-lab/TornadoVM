@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, 2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +40,7 @@ public class OCLAssemblerConstants {
     public static final String CONSTANT_REGION_NAME = "_constant_region";
     public static final String KERNEL_CONTEXT = "_kernel_context";
     public static final String FRAME_REF_NAME = "_frame";
+    public static final String VOLATILE = "volatile";
 
     public static final String STMT_DELIMITER = ";";
     public static final String EXPR_DELIMITER = ",";
