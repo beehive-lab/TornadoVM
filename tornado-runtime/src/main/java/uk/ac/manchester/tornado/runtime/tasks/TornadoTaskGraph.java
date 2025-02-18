@@ -642,7 +642,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             System.out.println("IN UPDATE XXXXXXXXXXXXXXXX 25" + executionContext.getId());
 
             dataObjectStateDest.getDeviceBufferState(device).setXPUBuffer(deviceStateSrc.getXPUBuffer());
+//            dataObjectStateDest.getDeviceBufferState(device).getXPUBuffer().s
             executionContext.getLocalStateObject(firstItem, objectAccessSrc).setOnDevice(true);
+            executionContext.getLocalStateObject(firstItem, Access.READ_WRITE);
         }
 
     }
@@ -1099,7 +1101,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
 
             System.out.println("First ---- ");
-            executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setOnDevice(true);
+            executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             System.out.println("First ---- end ");
 //            executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setOnDevice();
 

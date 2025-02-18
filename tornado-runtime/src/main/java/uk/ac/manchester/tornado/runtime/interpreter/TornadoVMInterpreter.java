@@ -343,10 +343,14 @@ public class TornadoVMInterpreter {
                 executeDependency(tornadoVMBytecodeList, lastEvent, eventList);
             } else if (op == TornadoVMBytecodes.ON_DEVICE.value()) {
               final int objectIndex = bytecodeResult.getInt();
+                final int eventList = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long sizeBatch = bytecodeResult.getLong();
+                final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
                 }
-            lastEvent = executeOnDevice(tornadoVMBytecodeList, objectIndex);
+            executeOnDevice(tornadoVMBytecodeList, objectIndex,  offset, eventList, sizeBatch, waitList);
           } else if (op == TornadoVMBytecodes.BARRIER.value()) {
                 final int eventList = bytecodeResult.getInt();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
@@ -447,7 +451,7 @@ public class TornadoVMInterpreter {
         return -1;
     }
 
-    private int executeOnDevice(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
+    private void executeOnDevice(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
         Object object = objects.get(objectIndex);
 
         if (TornadoOptions.PRINT_BYTECODES) {
@@ -455,28 +459,24 @@ public class TornadoVMInterpreter {
                     InterpreterUtilities.debugDeviceBC(interpreterDevice));
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
-//        Object[] objects = new Object[args.length];
-//        Access[] accesses = new Access[args.length];
-//        XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[args.length];
-//        for (int i = 0; i < objects.length; i++) {
-//            objects[i] = this.objects.get(args[i]);
-//            objectStates[i] = resolveObjectState(args[i]);
-//            accesses[i] = this.objectAccesses.get(objects[i]);
-//
-//            if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
-//                String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("ON DEVICE"), object.hashCode(), object, InterpreterUtilities.debugDeviceBC(interpreterDevice));
-//                tornadoVMBytecodeList.append(verbose).append("\n");
-//
-//            }
-//        }
+        resetEventIndexes(eventList);
 
-//        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
+        if (isObjectKernelContext(object)) {
+            return;
+        }
 
-//        graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
-//        long spaceDeallocated = interpreterDevice.deallocate(objectState);
-        // Update current device area use
-//        graphExecutionContext.setCurrentDeviceMemoryUsage(graphExecutionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
-        return -1;
+        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
+        List<Integer> allEvents;
+
+        allEvents = interpreterDevice.ensurePresent(graphExecutionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
+        resetEventIndexes(eventList);
+
+        if (allEvents != null) {
+            for (Integer e : allEvents) {
+                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
+                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
+            }
+        }
     }
 
     private void transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
