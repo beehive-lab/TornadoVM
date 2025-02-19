@@ -530,7 +530,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void updateAccessForUnderDemandPolicy() {
+    public void updateObjectAccess() {
         // iterate over stream-in and stream-out objects and, if the mode is UNDER_DEMAND, update their Access to READ-WRITE
         HashMap<Object, Access> objectAccesses = executionContext.getObjectsAccesses();
 

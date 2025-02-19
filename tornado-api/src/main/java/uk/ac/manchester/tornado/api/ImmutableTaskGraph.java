@@ -74,7 +74,7 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
-    public TaskGraph getTaskGraph() {
+    TaskGraph getTaskGraph() {
         return taskGraph;
     }
 

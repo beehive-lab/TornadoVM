@@ -910,7 +910,7 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
-    public TornadoTaskGraphInterface getTaskGraphImpl() {
+    TornadoTaskGraphInterface getTaskGraphImpl() {
         return taskGraphImpl;
     }
 }

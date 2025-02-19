@@ -128,5 +128,5 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
 
-    void updateAccessForUnderDemandPolicy();
+    void updateObjectAccess();
 }
