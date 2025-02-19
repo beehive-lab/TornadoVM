@@ -530,6 +530,42 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void updateAccessForUnderDemandPolicy() {
+        // iterate over stream-in and stream-out objects and, if the mode is UNDER_DEMAND, update their Access to READ-WRITE
+        HashMap<Object, Access> objectAccesses = executionContext.getObjectsAccesses();
+
+        for (StreamingObject inputStreamObject : inputModesObjects) {
+            if (inputStreamObject.getMode() == DataTransferMode.UNDER_DEMAND) {
+                Object streamInObject = inputStreamObject.getObject();
+                Access currentAccess = objectAccesses.get(streamInObject);
+                if (currentAccess != Access.READ_WRITE) {
+                    objectAccesses.replace(streamInObject, currentAccess, Access.READ_WRITE);
+                }
+            }
+        }
+
+        for (StreamingObject outputStreamObject : outputModeObjects) {
+            if (outputStreamObject.getMode() == DataTransferMode.UNDER_DEMAND) {
+                Object streamOutObject = outputStreamObject.getObject();
+                Access currentAccess = objectAccesses.get(streamOutObject);
+                if (currentAccess != Access.READ_WRITE) {
+                    objectAccesses.replace(streamOutObject, currentAccess, Access.READ_WRITE);
+                }
+            }
+        }
+
+        for (StreamingObject outputStreamObject : outputModeObjects) {
+            if (outputStreamObject.getMode() == DataTransferMode.UNDER_DEMAND) {
+                Object streamOutObject = outputStreamObject.getObject();
+                Access currentAccess = objectAccesses.get(streamOutObject);
+                if (currentAccess != Access.READ_WRITE) {
+                    objectAccesses.replace(streamOutObject, currentAccess, Access.READ_WRITE);
+                }
+            }
+        }
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -2468,6 +2504,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public long getDeviceKernelTime() {
         return getProfilerValue(TOTAL_KERNEL_TIME);
+    }
+
+
+    public List<StreamingObject> getInputModeObjects () {
+        return inputModesObjects;
+    }
+
+    public List<StreamingObject> getOutputModeObjects () {
+        return outputModeObjects;
     }
 
     private long getProfilerValueFromReduceTaskGraph(ProfilerType profilerType) {

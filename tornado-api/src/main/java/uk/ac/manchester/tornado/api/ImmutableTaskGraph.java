@@ -74,6 +74,10 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    public TaskGraph getTaskGraph() {
+        return taskGraph;
+    }
+
     long getTotalTime() {
         return taskGraph.getTotalTime();
     }

@@ -111,6 +111,13 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         final long id = globalExecutionPlanCounter.incrementAndGet();
         executionFrame = new ExecutorFrame(id);
+        if (immutableTaskGraphs.length > 1) {
+            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
+                TaskGraph taskGraph = immutableTaskGraph.getTaskGraph();
+                TornadoTaskGraphInterface taskGraphImpl = taskGraph.getTaskGraphImpl();
+                taskGraphImpl.updateAccessForUnderDemandPolicy();
+            }
+        }
         rootNode = this;
         planResults = new ArrayList<>();
     }
