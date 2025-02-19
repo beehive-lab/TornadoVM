@@ -2506,15 +2506,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return getProfilerValue(TOTAL_KERNEL_TIME);
     }
 
-
-    public List<StreamingObject> getInputModeObjects () {
-        return inputModesObjects;
-    }
-
-    public List<StreamingObject> getOutputModeObjects () {
-        return outputModeObjects;
-    }
-
     private long getProfilerValueFromReduceTaskGraph(ProfilerType profilerType) {
         return switch (profilerType) {
             case TOTAL_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceKernelTime();
