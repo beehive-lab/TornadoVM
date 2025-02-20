@@ -685,11 +685,10 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraph consumeFromDevice(Object... objects) {
-        taskGraphImpl.consumeFromDevice(objects);
+    public TaskGraph consumeFromDevice(String uniqueTaskGraphName, Object... objects) {
+        taskGraphImpl.consumeFromDevice(uniqueTaskGraphName, objects);
         return this;
     }
-
 
     /**
      * Tag a set of objects (Java objects) to be transferred from the device to the

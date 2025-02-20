@@ -39,10 +39,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -62,6 +64,7 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class TornadoExecutionContext {
@@ -78,6 +81,7 @@ public class TornadoExecutionContext {
     private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
     private List<Object> persistentObjects;
+    private Map<TornadoTaskGraph, List<Object>> persistentObjectsMap;
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
@@ -268,6 +272,15 @@ public class TornadoExecutionContext {
         if (object != null) {
             persistentObjects.add(object);
         }
+    }
+
+    public void addPersistentTaskToObject(TornadoTaskGraph taskGraph, Object object) {
+        persistentObjectsMap.putIfAbsent(taskGraph, new ArrayList<>());
+        persistentObjectsMap.get(taskGraph).add(object);
+    }
+
+    public Map getPersistentObjectsMap() {
+        return persistentObjectsMap;
     }
 
     public List<Object> getPersistentObjects() {
