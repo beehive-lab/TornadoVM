@@ -70,7 +70,7 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void transferToDevice(int mode, Object... objects);
 
-    void consumeFromDevice(Object... objects);
+    void consumeFromDevice(String uniqueTaskGraphName, Object... objects);
 
     void transferToHost(int mode, Object... objects);
 

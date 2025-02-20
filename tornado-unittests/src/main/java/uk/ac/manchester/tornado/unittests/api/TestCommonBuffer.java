@@ -28,7 +28,7 @@ public class TestCommonBuffer extends TornadoTestBase {
                 .transferToHost(DataTransferMode.UNDER_DEMAND, c);
 
         TaskGraph tg2 = new TaskGraph("s1") //
-                .consumeFromDevice(c) //
+                .consumeFromDevice(tg1.getTaskGraphName(), c) //
                 .task("t1", TestHello::add, c, c, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 

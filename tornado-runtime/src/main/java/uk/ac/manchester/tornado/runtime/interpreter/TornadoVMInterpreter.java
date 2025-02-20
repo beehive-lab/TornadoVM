@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -63,7 +64,9 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
@@ -81,6 +84,7 @@ public class TornadoVMInterpreter {
 
     private final HashMap<Object, Access> objectAccesses;
     private final List<Object> objects;
+    private final List<Object> persistentObjects;
 
     private final DataObjectState[] dataObjectStates;
     private final KernelStackFrame[] kernelStackFrame;
@@ -149,6 +153,7 @@ public class TornadoVMInterpreter {
         logger.debug("created %d event lists", events.length);
         objectAccesses = graphExecutionContext.getObjectsAccesses();
         objects = graphExecutionContext.getObjects();
+        persistentObjects = graphExecutionContext.getPersistentObjects();
         dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 
@@ -415,8 +420,27 @@ public class TornadoVMInterpreter {
             objectStates[i] = resolveObjectState(args[i]);
             accesses[i] = this.objectAccesses.get(objects[i]);
 
+
+            for (Object entry : graphExecutionContext.getPersistentObjectsMap().entrySet()) {
+                System.out.println("entr " + entry);
+//                if (entry.getValue().contains(objects[i])) {
+//                    // Perform some action, for example, print a message
+//                    System.out.println("Object found in persistent objects map: " + objects[i]);
+//                }
+            }
+//            Map.Entry<TornadoTaskGraph, List<Object>> entry = (Map.Entry<TornadoTaskGraph, List<Object>>) (Object) entry;
+
+            if (persistentObjects.contains(objects[i]) && objectStates[i].hasContent()) {
+                System.out.println("Persistent object found: " + objects[i]);
+                return  -1;
+            }
+
+            System.out.println("Obj state " + objectStates[i].toString());
+            System.out.println("Obj state " + accesses[i].name());
+
             if (TornadoOptions.PRINT_BYTECODES) {
                 String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
+                System.out.println(verbose);
                 tornadoVMBytecodeList.append(verbose).append("\n");
             }
         }
@@ -440,6 +464,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
             String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("DEALLOC"), object.hashCode(), object, InterpreterUtilities.debugDeviceBC(interpreterDevice));
+            System.out.println(verbose);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -455,8 +480,10 @@ public class TornadoVMInterpreter {
         Object object = objects.get(objectIndex);
 
         if (TornadoOptions.PRINT_BYTECODES) {
+
             String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("ON DEVICE"), object.hashCode(), object,
                     InterpreterUtilities.debugDeviceBC(interpreterDevice));
+            System.out.println(verbose);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
         resetEventIndexes(eventList);
@@ -464,6 +491,11 @@ public class TornadoVMInterpreter {
         if (isObjectKernelContext(object)) {
             return;
         }
+
+//        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
+//        Access objectAccessSrc = graphSrc.getObjectAccess(firstItem);
+//        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(firstItem, objectAccessSrc);
+//        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         List<Integer> allEvents;
@@ -975,6 +1007,7 @@ public class TornadoVMInterpreter {
                     offset,
                     eventList);
             // @formatter:on
+            System.out.println(verbose);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 

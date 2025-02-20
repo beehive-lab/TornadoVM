@@ -68,6 +68,7 @@ public class TornadoGraphBuilder {
     private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
         final AllocateNode allocateNode = new AllocateNode(context);
         System.out.println("Allocate " + argIndex + ": " + arg.toString() + args.toString());
+        System.out.println("123130");
         allocateNode.setValue((ObjectNode) arg);
         graph.add(allocateNode);
         context.addUse(allocateNode);
@@ -120,6 +121,7 @@ public class TornadoGraphBuilder {
         int argIndex = 0;
         int taskIndex = 0;
 
+        System.out.println("Build graph --- --- ---");
         final List<Object> constants = executionContext.getConstants();
         final List<Object> objects = executionContext.getObjects();
         final List<Object> persistentObjects = executionContext.getPersistentObjects();
@@ -155,15 +157,16 @@ public class TornadoGraphBuilder {
                 if (!(arg instanceof ContextOpNode)) {
                     final ObjectNode objectNode = (ObjectNode) arg;
                     final LocalObjectState state = states.get(objectNode.getIndex());
-                    System.out.println("XXXXXXXXXX " + state.isOnDevice() +" " + accesses[argIndex].toString() + " " + objectNode.toString());
+                    System.out.println("0XXXXXXXXXX " + state.isOnDevice() +" " + accesses[argIndex].toString() + " " + objectNode.toString() + " " + accesses.length);
                     System.out.println("a " + arg.toString());
                     System.out.println("a " + state.getObject().toString());
-                    System.out.println("XXXXXXXXXX " + state.isOnDevice() + " " + objectNode.toString()) ;
+                    System.out.println("1XXXXXXXXXX " + state.isOnDevice() + " " + objectNode.toString()) ;
 
                     if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
+                        System.out.println("4XXXXXXXXXX");
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
                     }  else if (state.isOnDevice()) {
-                        System.out.println("XXXXXXXXXX");
+                        System.out.println("2XXXXXXXXXX");
                         System.out.println("a " + arg.toString());
                         createOnDeviceNode(context, graph, arg, args, argIndex, persist);
                     } else {
@@ -177,6 +180,7 @@ public class TornadoGraphBuilder {
                                 createCopyInNode(context, graph, arg, args, argIndex, persist);
                             } else {
                                 // if it is under demand, we only need to allocate the buffer
+                                System.out.println("3XXXXXXXXXX");
                                 createAllocateNode(context, graph, arg, args, argIndex, persist);
                             }
                         }
@@ -254,8 +258,12 @@ public class TornadoGraphBuilder {
                 TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(taskIndex);
                 context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(deviceForTask), deviceForTask));
 
+
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
+
+//                persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
+//                context.addUse(persist);
 
                 if (task instanceof CompilableTask compilableTask) {
                     final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));

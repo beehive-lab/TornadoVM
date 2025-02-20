@@ -520,7 +520,7 @@ public interface TaskGraphInterface {
     TaskGraphInterface transferToDevice(int mode, Object... objects);
 
 
-    TaskGraph consumeFromDevice(Object... objects);
+    TaskGraph consumeFromDevice(String uniqueTaskGraphName, Object... objects);
 
     /**
      * Tag a set of objects (Java objects) to be transferred from the device to the

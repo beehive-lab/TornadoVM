@@ -62,6 +62,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
@@ -645,6 +646,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 //            dataObjectStateDest.getDeviceBufferState(device).getXPUBuffer().s
             executionContext.getLocalStateObject(firstItem, objectAccessSrc).setOnDevice(true);
             executionContext.getLocalStateObject(firstItem, Access.READ_WRITE);
+
         }
 
     }
@@ -1069,38 +1071,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
 
     @Override
-    public void consumeFromDevice(Object... objects) {
+    public void consumeFromDevice(String sourceTaskGraphName, Object... objects) {
         for (Object parameter : objects) {
             if (parameter == null) {
                 throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
             } else if (parameter instanceof Number) {
                 throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in schedule " + executionContext.getId());
             }
-//            TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-//            Access objectAccessSrc = graphSrc.getObjectAccess(srcArray);
-//            final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(srcArray, objectAccessSrc);
-//            final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
-//
-//            // The device is the same for both task-graphs
-//            final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
-//
-//            final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
-//
-//            Access objectAccessDest = getObjectAccess(destArray);
-//            final LocalObjectState localStateDest = executionContext.getLocalStateObject(destArray, objectAccessDest);
-//            final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
-//            final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
-//
-//            // We need to alloc if needed
-//            if (!deviceStateDest.hasObjectBuffer()) {
-//                device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
-//            }
-//
-//            final TornadoXPUDevice deviceDest = meta().getXPUDevice();
-//            // destDevice and device must be the same
-
 
             System.out.println("First ---- ");
+//            TornadoTaskGraph graphSrc = (TornadoTaskGraph) ;
+//
+//            executionContext.addPersistentTaskToObject(graphSrc, parameter);
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             System.out.println("First ---- end ");
 //            executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setOnDevice();
@@ -1530,7 +1512,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private boolean checkForMemorySegmentAsTaskParameter(CompilableTask task) {
         for (Object parameter : task.getArguments()) {
-            if (parameter instanceof MemorySegment) {
+            if (parameter instanceof MemorySegment memorySegment) {
                 String parameterClassName = parameter.getClass().getSimpleName();
                 throw new TornadoRuntimeException("Parameter " + parameterClassName + " is not a valid task argument because it is an instance of a TornadoNativeArray.");
             }

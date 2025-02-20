@@ -89,7 +89,7 @@ public class TornadoVMBytecodeBuilder {
         if (node instanceof AllocateMultipleBuffersNode) {
             bitcodeASM.allocate(((AllocateMultipleBuffersNode) node).getValues(), batchSize);
         } else if (node instanceof OnDeviceObjectNode) {
-            bitcodeASM.onDevice(node.getIndex());
+            bitcodeASM.onDevice(node.getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof CopyInNode) {
             bitcodeASM.transferToDeviceOnce(((CopyInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
@@ -201,9 +201,12 @@ public class TornadoVMBytecodeBuilder {
             }
         }
 
-        public void onDevice(int object) {
+        public void onDevice(int object, int dep, long offset, long size) {
             buffer.put(TornadoVMBytecodes.ON_DEVICE.value);
             buffer.putInt(object);
+            buffer.putInt(dep);
+            buffer.putLong(offset);
+            buffer.putLong(size);
         }
 
         public void deallocate(int object) {
