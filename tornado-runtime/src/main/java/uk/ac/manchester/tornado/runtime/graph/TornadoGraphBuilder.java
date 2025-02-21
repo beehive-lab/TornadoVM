@@ -166,13 +166,11 @@ public class TornadoGraphBuilder {
                         System.out.println("4XXXXXXXXXX");
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
                     }  else if (state.isOnDevice()) {
+                        // state.isOnDevice()
                         System.out.println("2XXXXXXXXXX");
                         System.out.println("a " + arg.toString());
                         createOnDeviceNode(context, graph, arg, args, argIndex, persist);
                     } else {
-//                        final ObjectNode objectNode = (ObjectNode) arg;
-//                        final LocalObjectState state = states.get(objectNode.getIndex());
-
                        if (state.isStreamIn()) {
                             createStreamInNode(context, graph, objectNode, args, argIndex, persist);
                         } else {
@@ -209,6 +207,7 @@ public class TornadoGraphBuilder {
                     } else if (objectNodes[variableIndex] instanceof AllocateNode allocateNode) {
                         value = allocateNode.getValue(); }
                     else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
+                        System.out.println("On device object Nodexx");
                         value = onDeviceObjectNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof StreamInNode streamInNode) {
                         value = streamInNode.getValue();

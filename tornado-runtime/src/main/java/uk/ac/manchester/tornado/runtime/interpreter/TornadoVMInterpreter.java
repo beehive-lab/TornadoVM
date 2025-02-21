@@ -525,17 +525,17 @@ public class TornadoVMInterpreter {
 
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        List<Integer> allEvents;
-
-        allEvents = interpreterDevice.ensurePresent(graphExecutionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
-        resetEventIndexes(eventList);
-
-        if (allEvents != null) {
-            for (Integer e : allEvents) {
-                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
-                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-            }
-        }
+//        List<Integer> allEvents;
+//
+////        allEvents = interpreterDevice.ensurePresent(graphExecutionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
+//        resetEventIndexes(eventList);
+//
+//        if (allEvents != null) {
+//            for (Integer e : allEvents) {
+//                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
+//                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
+//            }
+//        }
     }
 
     private void transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
