@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -237,6 +238,15 @@ class TornadoExecutor {
             subgraphList = new ArrayList<>();
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
+        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex).getTaskGraph().taskGraphImpl.getPersistentTaskToObjectsMap().keySet());
+
+        if (namesList.size() != 0) {
+            if (namesList.size() == 1) {
+                System.out.println("YYYYYYYY HIT ");
+                String whichs = namesList.get(0);
+                subgraphList.get(graphIndex).updatePersistentStates(getGraphByName(whichs));
+            }
+        }
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
     }
@@ -247,6 +257,15 @@ class TornadoExecutor {
         } else {
             throw new TornadoRuntimeException("TaskGraph index #" + graphIndex + " does not exist in current executor");
         }
+    }
+
+    private ImmutableTaskGraph getGraphByName(String uniqueName) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
+                return immutableTaskGraph;
+            }
+        }
+        throw new TornadoRuntimeException("TaskGraph with name " + uniqueName + " does not exist in current executor");
     }
 
     void selectAll() {
@@ -276,9 +295,11 @@ class TornadoExecutor {
         taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
-    void updatePersistentStates(int fromTaskGraphIndex, int toTaskGraphIndex) {
-        ImmutableTaskGraph taskGraphSrc = getGraph(fromTaskGraphIndex);
-        ImmutableTaskGraph taskGraphDest = getGraph(toTaskGraphIndex);
-        taskGraphDest.updatePersistentStates(taskGraphSrc);
+    void updatePersistentStates(ImmutableTaskGraph sourceTaskGraph) {
+        ImmutableTaskGraph taskGraphSrc = sourceTaskGraph;
+        System.out.println("NNN " + taskGraphSrc.isFinished());
+//        taskGraphSrc.isFinished();
+//        ImmutableTaskGraph taskGraphDest = sourceTaskGraph.
+//        taskGraphDest.updatePersistentStates(taskGraphSrc);
     }
 }

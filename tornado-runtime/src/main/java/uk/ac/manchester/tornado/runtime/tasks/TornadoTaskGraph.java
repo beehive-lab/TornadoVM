@@ -179,6 +179,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<Object> streamInObjects;
     private List<Object> persistentObjects;
 
+    private Map<TornadoTaskGraph, List<Object>> taskToPersistentObjectMap;
+
     private Set<Object> argumentsLookUp;
 
     private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
@@ -230,6 +232,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         inputModesObjects = new ArrayList<>();
         outputModeObjects = new ArrayList<>();
         persistentObjects = new ArrayList<>();
+        taskToPersistentObjectMap = new HashMap<>();
     }
 
     static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
@@ -411,6 +414,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.streamInObjects = Collections.unmodifiableList(this.streamInObjects);
         newTaskGraph.outputModeObjects = Collections.unmodifiableList(this.outputModeObjects);
         newTaskGraph.persistentObjects = Collections.unmodifiableList(this.persistentObjects);
+        newTaskGraph.taskToPersistentObjectMap = Collections.unmodifiableMap(this.taskToPersistentObjectMap);
 
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
@@ -502,6 +506,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public long getCurrentDeviceMemoryUsage() {
         return executionContext.getCurrentDeviceMemoryUsage();
+    }
+
+    @Override
+    public Map<String, List<Object>> getPersistentTaskToObjectsMap() {
+        return executionContext.getPersistentTaskToObjectsMap();
     }
 
     @Override
@@ -619,35 +628,31 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         System.out.println("IN UPDATE XXXXXXXXXXXXXXXX");
 
 
-        Collection<?> collection = taskGraphSrc.getPersistentObjects();
-        Iterator<?> iterator = collection.iterator();
-        if (iterator.hasNext()) {
-            Object firstItem = iterator.next();
-            TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-            Access objectAccessSrc = graphSrc.getObjectAccess(firstItem);
-            final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(firstItem, objectAccessSrc);
-            final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
-            // The device is the same for both task-graphs
-            final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
-            System.out.println("IN UPDATE XXXXXXXXXXXXXXXX 24" + graphSrc.executionContext.getId());
+        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
+        final Object objToSink = executionContext.getPersistentTaskToObjectsMap().get(((TornadoTaskGraph) taskGraphSrc).taskGraphName).get(0);
+        Access objectAccessSrc = graphSrc.getObjectAccess(objToSink);
 
-            final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objToSink, objectAccessSrc);
+        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
 
-            executionContext.getObjects().contains(firstItem);
-            executionContext.getObjects().get(0);
+        // The device is the same for both task-graphs
+        final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
 
-            final LocalObjectState localStateDest = executionContext.getLocalStateObject(executionContext.getObjects().get(0), executionContext.getObjectsAccesses().get(firstItem));
-            final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
-            localStateDest.setOnDevice(true);
-            final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
-            System.out.println("IN UPDATE XXXXXXXXXXXXXXXX 25" + executionContext.getId());
+        final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
 
-            dataObjectStateDest.getDeviceBufferState(device).setXPUBuffer(deviceStateSrc.getXPUBuffer());
-//            dataObjectStateDest.getDeviceBufferState(device).getXPUBuffer().s
-            executionContext.getLocalStateObject(firstItem, objectAccessSrc).setOnDevice(true);
-            executionContext.getLocalStateObject(firstItem, Access.READ_WRITE);
 
-        }
+        Access objectAccessDest = Access.READ_WRITE;
+        final LocalObjectState localStateDest = executionContext.getLocalStateObject(objToSink, objectAccessDest);
+        final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+        final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
+
+        dataObjectStateDest.getDeviceBufferState(device).setXPUBuffer(dataObjectStateSrc.getDeviceBufferState(device).getXPUBuffer());
+        // We need to alloc if needed
+//        if (!deviceStateDest.hasObjectBuffer()) {
+//            device.allocate(, 0, deviceStateDest, objectAccessDest);
+//        }
+
+//        final TornadoXPUDevice deviceDest = meta().getXPUDevice();
 
     }
 

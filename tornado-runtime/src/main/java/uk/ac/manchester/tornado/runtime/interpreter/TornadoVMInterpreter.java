@@ -497,7 +497,8 @@ public class TornadoVMInterpreter {
             return;
         }
 
-        TornadoTaskGraph ttg;
+//        TornadoTaskGraph sourceTaskGraph = graphExecutionContext.
+//        TornadoTaskGraph ttg;
 
         //
 //        TornadoTaskGraph graphSrc = (TornadoTaskGraph) `;

@@ -19,10 +19,12 @@ package uk.ac.manchester.tornado.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.IllegalFormatCodePointException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -119,19 +121,19 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         persistantObjects = new ArrayList<>();
 
         for(ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
-            // Update persistent states
+            boolean hasPersistentObjects = immutableTaskGraph.getTaskGraph().getPersistentTaskToObjectsMap().size() > 0;
 
-        }
-
-        if (id == 1) {
-            System.out.println("Retrieved Persistent Objects:");
-            if (immutableTaskGraphs.length > 1) {
-                immutableTaskGraphs[1].updatePersistentStates(immutableTaskGraphs[0]);
+            if (hasPersistentObjects) {
+                System.out.println("ggg " + immutableTaskGraph.getTaskGraph().taskGraphImpl.getTaskGraphName() +     " has persistent objects");
+                updatePersistent(immutableTaskGraph);
             }
-            System.out.println("end Persistent Objects:");
+
         }
     }
 
+    private void updatePersistent(ImmutableTaskGraph taskGraph) {
+        tornadoExecutor.updatePersistentStates(taskGraph);
+    }
 
     /**
      * Method to obtain a specific device using the driver index (backend index) and
@@ -592,5 +594,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public void mapOnDeviceMemoryRegion(Object destTornadoArray, Object srcTornadoArray, long offset, int fromGraphIndex, int toGraphIndex) {
         tornadoExecutor.mapOnDeviceMemoryRegion(destTornadoArray, srcTornadoArray, offset, fromGraphIndex, toGraphIndex);
+    }
+
+    private void updateStates() {
+
     }
 }

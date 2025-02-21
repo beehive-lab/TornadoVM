@@ -74,6 +74,10 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    TaskGraph getTaskGraph() {
+        return taskGraph;
+    }
+
     long getTotalTime() {
         return taskGraph.getTotalTime();
     }
@@ -170,10 +174,6 @@ public class ImmutableTaskGraph {
         return taskGraph.getPersistentObjects();
     }
 
-//    Object setPersistentObject(Object object) {
-//        taskGraph.setPersistentObject();
-//    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
     }
@@ -229,5 +229,6 @@ public class ImmutableTaskGraph {
     void updatePersistentStates(ImmutableTaskGraph taskGraphSrc) {
         taskGraph.updatePersistentStates(taskGraphSrc.taskGraph.taskGraphImpl);
     }
+
 
 }

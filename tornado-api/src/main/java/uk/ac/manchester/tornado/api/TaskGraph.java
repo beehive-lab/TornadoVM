@@ -19,6 +19,8 @@ package uk.ac.manchester.tornado.api;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
@@ -912,8 +914,16 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getTotalDeviceMemoryUsage();
     }
 
+    TornadoTaskGraphInterface getTaskGraphImpl() {
+        return taskGraphImpl;
+    }
+
     long getCurrentDeviceMemoryUsage() {
         return taskGraphImpl.getCurrentDeviceMemoryUsage();
+    }
+
+    Map<String, List<Object>> getPersistentTaskToObjectsMap() {
+        return taskGraphImpl.getPersistentTaskToObjectsMap();
     }
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {

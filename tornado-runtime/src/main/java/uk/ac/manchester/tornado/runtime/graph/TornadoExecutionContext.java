@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -80,6 +81,8 @@ public class TornadoExecutionContext {
     private List<Object> objects;
     private List<Object> persistentObjects;
     private Map<String, List<Object>> persistentTaskToObjectsMap;
+    private Map<TornadoTaskGraph, List<Object>> taskToObjectsMap;
+
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
@@ -108,6 +111,7 @@ public class TornadoExecutionContext {
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
         persistentTaskToObjectsMap=  new HashMap<>();
+        taskToObjectsMap=  new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
         taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
@@ -716,7 +720,28 @@ public class TornadoExecutionContext {
         return persistentTaskToObjectsMap;
     }
     // Getter method to retrieve the list of objects for a given task
-    public List<Object> getPersistentObjects(String task) {
-        return persistentTaskToObjectsMap.getOrDefault(task, Collections.emptyList());
+
+
+    public void addToObject(TornadoTaskGraph taskgraphUniqueName, Object value) {
+        boolean isNewKey = !taskToObjectsMap.containsKey(taskgraphUniqueName);
+
+        taskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
+
+        // Debugging output
+        if (isNewKey) {
+            System.out.println("New key added: " + taskgraphUniqueName);
+        }
+        System.out.println("Added value to task [" + taskgraphUniqueName + "]: " + value);
+        System.out.println("Current values for task [" + taskgraphUniqueName + "]: " + taskToObjectsMap.get(taskgraphUniqueName));
     }
+
+
+    public Map<TornadoTaskGraph, List<Object>> getTaskToObjectsMap() {
+        return taskToObjectsMap;
+    }
+    // Getter method to retrieve the list of objects for a given task
+
+
+
+
 }
