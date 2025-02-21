@@ -39,12 +39,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -81,7 +79,7 @@ public class TornadoExecutionContext {
     private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
     private List<Object> persistentObjects;
-    private Map<TornadoTaskGraph, List<Object>> persistentObjectsMap;
+    private Map<String, List<Object>> persistentTaskToObjectsMap;
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
@@ -99,6 +97,7 @@ public class TornadoExecutionContext {
     private long currentDeviceMemoryUsage;
 
     public TornadoExecutionContext(String id) {
+        System.out.println("Init new exec plan");
         name = id;
         meta = new ScheduleContext(name);
         tasks = new ArrayList<>();
@@ -108,6 +107,7 @@ public class TornadoExecutionContext {
         persistentObjects = new ArrayList<>();
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
+        persistentTaskToObjectsMap=  new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
         taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
@@ -272,15 +272,6 @@ public class TornadoExecutionContext {
         if (object != null) {
             persistentObjects.add(object);
         }
-    }
-
-    public void addPersistentTaskToObject(TornadoTaskGraph taskGraph, Object object) {
-        persistentObjectsMap.putIfAbsent(taskGraph, new ArrayList<>());
-        persistentObjectsMap.get(taskGraph).add(object);
-    }
-
-    public Map getPersistentObjectsMap() {
-        return persistentObjectsMap;
     }
 
     public List<Object> getPersistentObjects() {
@@ -663,6 +654,8 @@ public class TornadoExecutionContext {
 
         newExecutionContext.persistentObjects = new ArrayList<>(persistentObjects);
 
+        newExecutionContext.persistentTaskToObjectsMap = new HashMap<>(persistentTaskToObjectsMap);
+
         List<LocalObjectState> objectStateCopy = new ArrayList<>();
         for (LocalObjectState localObjectState : objectState) {
             objectStateCopy.add(localObjectState.clone());
@@ -698,5 +691,32 @@ public class TornadoExecutionContext {
 
     public void setCurrentDeviceMemoryUsage(long currentDeviceMemoryUsage) {
         this.currentDeviceMemoryUsage = currentDeviceMemoryUsage;
+    }
+
+    // Setter method to add an object to the list for a given task (String key)
+//    public void addPersistentObject(String taskgraphUniqueName, Object value) {
+//        persistentTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
+//    }
+
+    public void addPersistentObject(String taskgraphUniqueName, Object value) {
+        boolean isNewKey = !persistentTaskToObjectsMap.containsKey(taskgraphUniqueName);
+
+        persistentTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
+
+        // Debugging output
+        if (isNewKey) {
+            System.out.println("New key added: " + taskgraphUniqueName);
+        }
+        System.out.println("Added value to task [" + taskgraphUniqueName + "]: " + value);
+        System.out.println("Current values for task [" + taskgraphUniqueName + "]: " + persistentTaskToObjectsMap.get(taskgraphUniqueName));
+    }
+
+
+    public Map<String, List<Object>> getPersistentTaskToObjectsMap() {
+        return persistentTaskToObjectsMap;
+    }
+    // Getter method to retrieve the list of objects for a given task
+    public List<Object> getPersistentObjects(String task) {
+        return persistentTaskToObjectsMap.getOrDefault(task, Collections.emptyList());
     }
 }

@@ -1080,10 +1080,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             System.out.println("First ---- ");
-//            TornadoTaskGraph graphSrc = (TornadoTaskGraph) ;
-//
-//            executionContext.addPersistentTaskToObject(graphSrc, parameter);
+
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
+            executionContext.addPersistentObject(sourceTaskGraphName,parameter);
             System.out.println("First ---- end ");
 //            executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setOnDevice();
 

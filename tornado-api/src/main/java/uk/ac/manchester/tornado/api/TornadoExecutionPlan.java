@@ -118,6 +118,10 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         planResults = new ArrayList<>();
         persistantObjects = new ArrayList<>();
 
+        for(ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
+            // Update persistent states
+
+        }
 
         if (id == 1) {
             System.out.println("Retrieved Persistent Objects:");

@@ -35,7 +35,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -421,19 +423,22 @@ public class TornadoVMInterpreter {
             accesses[i] = this.objectAccesses.get(objects[i]);
 
 
-            for (Object entry : graphExecutionContext.getPersistentObjectsMap().entrySet()) {
-                System.out.println("entr " + entry);
-//                if (entry.getValue().contains(objects[i])) {
-//                    // Perform some action, for example, print a message
-//                    System.out.println("Object found in persistent objects map: " + objects[i]);
-//                }
-            }
-//            Map.Entry<TornadoTaskGraph, List<Object>> entry = (Map.Entry<TornadoTaskGraph, List<Object>>) (Object) entry;
 
-            if (persistentObjects.contains(objects[i]) && objectStates[i].hasContent()) {
-                System.out.println("Persistent object found: " + objects[i]);
-                return  -1;
+            System.out.println("LLL " + graphExecutionContext.getPersistentTaskToObjectsMap().size());
+            for (Map.Entry<String, List<Object>> entry : graphExecutionContext.getPersistentTaskToObjectsMap().entrySet()) {
+                String task = entry.getKey();
+                List<Object> objectsLocal = entry.getValue();
+                System.out.println("XXX Task: " + task);
+                for (Object obj : objectsLocal) {
+                    System.out.println(" - " + obj);
+                    if (obj.equals(objects[i])) {
+                        System.out.println("Persistent object found: " + objects[i]);
+                        return  -1;
+                    }
+                }
             }
+
+
 
             System.out.println("Obj state " + objectStates[i].toString());
             System.out.println("Obj state " + accesses[i].name());
@@ -492,10 +497,31 @@ public class TornadoVMInterpreter {
             return;
         }
 
-//        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-//        Access objectAccessSrc = graphSrc.getObjectAccess(firstItem);
-//        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(firstItem, objectAccessSrc);
+        TornadoTaskGraph ttg;
+
+        //
+//        TornadoTaskGraph graphSrc = (TornadoTaskGraph) `;
+//        Access objectAccessSrc = graphSrc.getObjectAccess(srcArray);
+//        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(srcArray, objectAccessSrc);
 //        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+//
+//        // The device is the same for both task-graphs
+//        final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+//
+//        final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+//
+//        Access objectAccessDest = getObjectAccess(destArray);
+//        final LocalObjectState localStateDest = executionContext.getLocalStateObject(destArray, objectAccessDest);
+//        final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+//        final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
+//
+//        // We need to alloc if needed
+//        if (!deviceStateDest.hasObjectBuffer()) {
+//            device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
+//        }
+
+//        final TornadoXPUDevice deviceDest = meta().getXPUDevice();
+
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         List<Integer> allEvents;
