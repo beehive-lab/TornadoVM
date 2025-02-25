@@ -439,14 +439,8 @@ public class TornadoVMInterpreter {
                 }
             }
 
-
-
-            System.out.println("Obj state " + objectStates[i].toString());
-            System.out.println("Obj state " + accesses[i].name());
-
             if (TornadoOptions.PRINT_BYTECODES) {
                 String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
-                System.out.println(verbose);
                 tornadoVMBytecodeList.append(verbose).append("\n");
             }
         }
@@ -470,7 +464,6 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
             String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("DEALLOC"), object.hashCode(), object, InterpreterUtilities.debugDeviceBC(interpreterDevice));
-            System.out.println(verbose);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -489,7 +482,6 @@ public class TornadoVMInterpreter {
 
             String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("ON DEVICE"), object.hashCode(), object,
                     InterpreterUtilities.debugDeviceBC(interpreterDevice));
-            System.out.println(verbose);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
         resetEventIndexes(eventList);
@@ -498,35 +490,7 @@ public class TornadoVMInterpreter {
             return;
         }
 
-//        TornadoTaskGraph sourceTaskGraph = graphExecutionContext.
-//        TornadoTaskGraph ttg;
-
-        //
-//        TornadoTaskGraph graphSrc = (TornadoTaskGraph) `;
-//        Access objectAccessSrc = graphSrc.getObjectAccess(srcArray);
-//        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(srcArray, objectAccessSrc);
-//        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
-//
-//        // The device is the same for both task-graphs
-//        final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
-//
-//        final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
-//
-//        Access objectAccessDest = getObjectAccess(destArray);
-//        final LocalObjectState localStateDest = executionContext.getLocalStateObject(destArray, objectAccessDest);
-//        final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
-//        final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
-//
-//        // We need to alloc if needed
-//        if (!deviceStateDest.hasObjectBuffer()) {
-//            device.allocate(destArray, 0, deviceStateDest, objectAccessDest);
-//        }
-
-//        final TornadoXPUDevice deviceDest = meta().getXPUDevice();
-
-
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-//        List<Integer> allEvents;
 //
 ////        allEvents = interpreterDevice.ensurePresent(graphExecutionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
 //        resetEventIndexes(eventList);
@@ -1035,7 +999,6 @@ public class TornadoVMInterpreter {
                     offset,
                     eventList);
             // @formatter:on
-            System.out.println(verbose);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 

@@ -100,7 +100,6 @@ public class TornadoExecutionContext {
     private long currentDeviceMemoryUsage;
 
     public TornadoExecutionContext(String id) {
-        System.out.println("Init new exec plan");
         name = id;
         meta = new ScheduleContext(name);
         tasks = new ArrayList<>();
