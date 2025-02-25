@@ -413,6 +413,38 @@ public class TornadoVMInterpreter {
         }
     }
 
+
+    /**
+     * Checks if the given object exists in the persistent task objects map in
+     * order to prevent excess allocations.
+     *
+     * @param objectToFind The object to search for in the persistent tasks
+     * @return true if the object is found in any persistent task, otherwise false
+     */
+    private boolean isPersistentObject(Object objectToFind) {
+        if (graphExecutionContext == null || objectToFind == null) {
+            return false;
+        }
+
+        Map<String, List<Object>> persistentTaskMap = graphExecutionContext.getPersistentTaskToObjectsMap();
+
+        if (persistentTaskMap.isEmpty()) {
+            return false;
+        }
+
+        for (Map.Entry<String, List<Object>> entry : persistentTaskMap.entrySet()) {
+            String taskName = entry.getKey();
+            List<Object> taskObjects = entry.getValue();
+
+            if (taskObjects != null && taskObjects.contains(objectToFind)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, long sizeBatch) {
         Object[] objects = new Object[args.length];
         Access[] accesses = new Access[args.length];
@@ -422,22 +454,26 @@ public class TornadoVMInterpreter {
             objectStates[i] = resolveObjectState(args[i]);
             accesses[i] = this.objectAccesses.get(objects[i]);
 
-
+            // check is Object is already on device to prevent alloc
+            if (isPersistentObject(objects[i])) {
+                return -1; // Or whatever value indicates "found" in your original code
+            }
 
             //TODO: cleanup, make it a seperate method
-            System.out.println("LLL " + graphExecutionContext.getPersistentTaskToObjectsMap().size());
-            for (Map.Entry<String, List<Object>> entry : graphExecutionContext.getPersistentTaskToObjectsMap().entrySet()) {
-                String task = entry.getKey();
-                List<Object> objectsLocal = entry.getValue();
-                System.out.println("XXX Task: " + task);
-                for (Object obj : objectsLocal) {
-                    System.out.println(" - " + obj);
-                    if (obj.equals(objects[i])) {
-                        System.out.println("Persistent object found: " + objects[i]);
-                        return  -1;
-                    }
-                }
-            }
+//            System.out.println("LLL " + graphExecutionContext.getPersistentTaskToObjectsMap().size());
+//            for (Map.Entry<String, List<Object>> entry : graphExecutionContext.getPersistentTaskToObjectsMap().entrySet()) {
+//                String task = entry.getKey();
+//                List<Object> objectsLocal = entry.getValue();
+//                System.out.println("XXX Task: " + task);
+//                for (Object obj : objectsLocal) {
+//                    System.out.println(" - " + obj);
+//                    if (obj.equals(objects[i])) {
+//                        System.out.println("Persistent object found: " + objects[i]);
+//                        return  -1;
+//                    }
+//                }
+//            }
+
 
             if (TornadoOptions.PRINT_BYTECODES) {
                 String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[i], InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
@@ -491,16 +527,7 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-//
-////        allEvents = interpreterDevice.ensurePresent(graphExecutionContext.getExecutionPlanId(), object, objectState, waitList, sizeBatch, offset);
-//        resetEventIndexes(eventList);
-//
-//        if (allEvents != null) {
-//            for (Integer e : allEvents) {
-//                Event event = interpreterDevice.resolveEvent(graphExecutionContext.getExecutionPlanId(), e);
-//                event.waitForEvents(graphExecutionContext.getExecutionPlanId());
-//            }
-//        }
+
     }
 
     private void transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
