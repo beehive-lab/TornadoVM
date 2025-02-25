@@ -1,6 +1,22 @@
+/*
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package uk.ac.manchester.tornado.unittests.api;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -14,7 +30,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestCommonBuffer extends TornadoTestBase {
 
     @Test
-    public void test01() throws TornadoExecutionPlanException {
+    public void testSingleReadWriteSharedObject() throws TornadoExecutionPlanException {
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -53,7 +69,7 @@ public class TestCommonBuffer extends TornadoTestBase {
     }
 
     @Test
-    public void test02() throws TornadoExecutionPlanException {
+    public void testMixInputConsumeAndCopy() throws TornadoExecutionPlanException {
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -96,7 +112,7 @@ public class TestCommonBuffer extends TornadoTestBase {
     }
 
     @Test
-    public void test03() throws TornadoExecutionPlanException {
+    public void testMultipleSharedObjects() throws TornadoExecutionPlanException {
         int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
