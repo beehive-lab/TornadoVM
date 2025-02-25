@@ -696,10 +696,6 @@ public class TornadoExecutionContext {
         this.currentDeviceMemoryUsage = currentDeviceMemoryUsage;
     }
 
-    // Setter method to add an object to the list for a given task (String key)
-//    public void addPersistentObject(String taskgraphUniqueName, Object value) {
-//        persistentTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
-//    }
 
     public void addPersistentObject(String taskgraphUniqueName, Object value) {
         boolean isNewKey = !persistentTaskToObjectsMap.containsKey(taskgraphUniqueName);

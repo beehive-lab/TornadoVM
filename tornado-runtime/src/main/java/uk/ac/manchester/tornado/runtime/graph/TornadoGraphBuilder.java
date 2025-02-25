@@ -207,7 +207,6 @@ public class TornadoGraphBuilder {
                     } else if (objectNodes[variableIndex] instanceof AllocateNode allocateNode) {
                         value = allocateNode.getValue(); }
                     else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
-                        System.out.println("On device object Nodexx");
                         value = onDeviceObjectNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof StreamInNode streamInNode) {
                         value = streamInNode.getValue();
@@ -310,9 +309,10 @@ public class TornadoGraphBuilder {
 
                 Object targetObject = objects.get(objectNode.getIndex());
 
+                // Check if the target object is marked as persistent in the execution context.
                 boolean isPersistentObject = executionContext.getPersistentObjects().contains(targetObject);
 
-                // If the object is NOT a persistent object, perform deallocation
+                // If the object is NOT persistent, proceed with de-allocation. Prevents dealloc for Under_Demand objects
                 if (!isPersistentObject) {
                     DeallocateNode deallocateNode = new DeallocateNode(contextNode);
                     deallocateNode.setValue(objectNode);
