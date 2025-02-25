@@ -27,6 +27,8 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import static org.junit.Assert.assertEquals;
+
 public class TestCommonBuffer extends TornadoTestBase {
 
     @Test
@@ -52,17 +54,12 @@ public class TestCommonBuffer extends TornadoTestBase {
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
 
-            // Select graph 1 (tg2) to execute
-            // Once selected, every time we call the execute method,
-            // TornadoVM will launch the passed task-graph.
             executionPlan.withGraph(0).execute();
-            //
 
-            // Select the graph 0 (tg1) to execute
-            TornadoExecutionResult execute = executionPlan.withGraph(1).execute();
+            executionPlan.withGraph(1).execute();
 
-            for (int i=0; i < a.getSize(); i++) {
-                System.out.println(c.get(i));
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(60, c.get(i)); // Expected: (10 + 20) + (30 + 30) = 60
             }
 
         }
@@ -94,20 +91,12 @@ public class TestCommonBuffer extends TornadoTestBase {
 
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
-
-            // Select graph 1 (tg2) to execute
-            // Once selected, every time we call the execute method,
-            // TornadoVM will launch the passed task-graph.
             executionPlan.withGraph(0).execute();
-            //
+            executionPlan.withGraph(1).execute();
 
-            // Select the graph 0 (tg1) to execute
-            TornadoExecutionResult execute = executionPlan.withGraph(1).execute();
-
-            for (int i=0; i < a.getSize(); i++) {
-                System.out.println(c.get(i));
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(80, c.get(i)); // Expected: (10 + 20) + 50 = 80
             }
-
         }
     }
 
@@ -135,18 +124,11 @@ public class TestCommonBuffer extends TornadoTestBase {
 
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
-
-            // Select graph 1 (tg2) to execute
-            // Once selected, every time we call the execute method,
-            // TornadoVM will launch the passed task-graph.
             executionPlan.withGraph(0).execute();
-            //
+            executionPlan.withGraph(1).execute();
 
-            // Select the graph 0 (tg1) to execute
-            TornadoExecutionResult execute = executionPlan.withGraph(1).execute();
-
-            for (int i=0; i < a.getSize(); i++) {
-                System.out.println(d.get(i));
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(30, d.get(i)); // Expected: 10 + 20 = 30
             }
         }
     }
