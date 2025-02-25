@@ -19,13 +19,14 @@ public class TestCommonBuffer extends TornadoTestBase {
         IntArray b = new IntArray(numElements);
         IntArray c = new IntArray(numElements);
 
-        a.init(1);
-        b.init(2);
+        a.init(10);
+        b.init(20);
 
         TaskGraph tg1 = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
                 .transferToHost(DataTransferMode.UNDER_DEMAND, c);
+                //. persistOnDevice(Object ...) -> same implementation as above
 
         TaskGraph tg2 = new TaskGraph("s1") //
                 .consumeFromDevice(tg1.getTaskGraphName(), c) //
@@ -44,7 +45,7 @@ public class TestCommonBuffer extends TornadoTestBase {
             // Select the graph 0 (tg1) to execute
             TornadoExecutionResult execute = executionPlan.withGraph(1).execute();
 
-            execute.transferToHost(c);
+//            execute.transferToHost(c);
 
             for (int i=0; i < a.getSize(); i++) {
                 System.out.println(c.get(i));

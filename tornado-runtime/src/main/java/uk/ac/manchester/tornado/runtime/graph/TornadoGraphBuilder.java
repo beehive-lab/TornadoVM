@@ -261,8 +261,7 @@ public class TornadoGraphBuilder {
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
 
-//                persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
-//                context.addUse(persist);
+
 
                 if (task instanceof CompilableTask compilableTask) {
                     final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));

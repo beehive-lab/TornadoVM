@@ -349,7 +349,7 @@ public class TornadoVMInterpreter {
                 }
                 executeDependency(tornadoVMBytecodeList, lastEvent, eventList);
             } else if (op == TornadoVMBytecodes.ON_DEVICE.value()) {
-              final int objectIndex = bytecodeResult.getInt();
+                final int objectIndex = bytecodeResult.getInt();
                 final int eventList = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
@@ -424,6 +424,7 @@ public class TornadoVMInterpreter {
 
 
 
+            //TODO: cleanup, make it a seperate method
             System.out.println("LLL " + graphExecutionContext.getPersistentTaskToObjectsMap().size());
             for (Map.Entry<String, List<Object>> entry : graphExecutionContext.getPersistentTaskToObjectsMap().entrySet()) {
                 String task = entry.getKey();
@@ -493,7 +494,7 @@ public class TornadoVMInterpreter {
         }
         resetEventIndexes(eventList);
 
-        if (isObjectKernelContext(object)) {
+        if (isObjectKernelContext(object)) { // TODO: throw exception
             return;
         }
 
