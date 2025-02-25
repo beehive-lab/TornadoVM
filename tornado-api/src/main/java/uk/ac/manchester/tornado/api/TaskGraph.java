@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
@@ -719,6 +720,12 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph transferToHost(final int mode, Object... objects) {
         taskGraphImpl.transferToHost(mode, objects);
+        return this;
+    }
+
+    @Override
+    public TaskGraph persistOnDevice(Object... objects) {
+        taskGraphImpl.transferToDevice(DataTransferMode.UNDER_DEMAND, objects);
         return this;
     }
 

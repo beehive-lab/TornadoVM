@@ -1073,8 +1073,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-
-
     @Override
     public void consumeFromDevice(String sourceTaskGraphName, Object... objects) {
         for (Object parameter : objects) {
@@ -1084,12 +1082,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in schedule " + executionContext.getId());
             }
 
-            System.out.println("First ---- ");
-
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             executionContext.addPersistentObject(sourceTaskGraphName,parameter);
-            System.out.println("First ---- end ");
-//            executionContext.getLocalStateObject(parameter, Access.READ_ONLY).setOnDevice();
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 if (!argumentsLookUp.contains(parameter)) {

@@ -548,6 +548,8 @@ public interface TaskGraphInterface {
      */
     TaskGraphInterface transferToHost(int mode, Object... objects);
 
+    TaskGraph persistOnDevice(Object... objects);
+
     /**
      * Function that closes a task-graph definition and creates an immutable
      * task-graph ready for execution.
