@@ -687,6 +687,18 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    /**
+     * Tag a set of objects to be used directly from the device. It requires
+     * objects to be tagged as persisted objects from a previous taskgraph.
+     * This method ensures that the specified objects are consumed from the device
+     * and do not copied form the host.
+     *
+     * @param uniqueTaskGraphName
+     *     A unique identifier for the task graph.
+     * @param objects
+     *     List of Java objects (usually arrays) to be consumed from the device.
+     * @return {@link TaskGraph}
+     */
     @Override
     public TaskGraph consumeFromDevice(String uniqueTaskGraphName, Object... objects) {
         taskGraphImpl.consumeFromDevice(uniqueTaskGraphName, objects);
@@ -723,6 +735,20 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    /**
+     * Tags a set of objects to persist on the device without transferring them
+     * back to the host after execution.
+     *
+     * <p>
+     * This method marks the objects as available on the device for future taskGraph
+     * executions without redundant data transfers. Data is not transferred to
+     * the host unless explicitly requested via the execution plan.
+     * </p>
+     *
+     * @param objects
+     *     List of Java objects (usually arrays) to persist on the device.
+     * @return {@link TaskGraph}
+     */
     @Override
     public TaskGraph persistOnDevice(Object... objects) {
         taskGraphImpl.transferToDevice(DataTransferMode.UNDER_DEMAND, objects);
