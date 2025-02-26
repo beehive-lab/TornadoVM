@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.unittests.api;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -29,7 +28,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestCommonBuffer extends TornadoTestBase {
+public class TestSharedBuffers extends TornadoTestBase {
 
     @Test
     public void testSingleReadWriteSharedObject() throws TornadoExecutionPlanException {
@@ -41,10 +40,12 @@ public class TestCommonBuffer extends TornadoTestBase {
         a.init(10);
         b.init(20);
 
+
         TaskGraph tg1 = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
-                .persistOnDevice(DataTransferMode.UNDER_DEMAND, c);
+                .persistOnDevice(c);
+
 
         TaskGraph tg2 = new TaskGraph("s1") //
                 .consumeFromDevice(tg1.getTaskGraphName(), c) //
@@ -114,7 +115,7 @@ public class TestCommonBuffer extends TornadoTestBase {
         TaskGraph tg1 = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
-                .persistOnDevice(a,b);
+                .persistOnDevice(a, b);
 
 
         TaskGraph tg2 = new TaskGraph("s1") //
