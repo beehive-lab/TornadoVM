@@ -28,6 +28,15 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * How to run?
+ *
+ * <p>
+ * <code>
+ * tornado-test -V uk.ac.manchester.tornado.unittests.api.TestSharedBuffers
+ * </code>
+ * </p>
+ */
 public class TestSharedBuffers extends TornadoTestBase {
 
     @Test
