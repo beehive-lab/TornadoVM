@@ -50,24 +50,34 @@ public class TestSharedBuffers extends TornadoTestBase {
         b.init(20);
 
 
+        // Create first task graph named "s0"
         TaskGraph tg1 = new TaskGraph("s0") //
+                // Transfer arrays 'a' and 'b' to the device only on first execution
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                // Execute the add method (a + b = c)
                 .task("t0", TestHello::add, a, b, c) //
+                // Keep array 'c' on the device memory for later use
                 .persistOnDevice(c);
 
-
+        // Create second task graph named "s1"
         TaskGraph tg2 = new TaskGraph("s1") //
+                // Get array 'c' from the first task graph (no new transfer needed)
                 .consumeFromDevice(tg1.getTaskGraphName(), c) //
+                // Execute the add method (c + c = c), effectively doubling the value
                 .task("t1", TestHello::add, c, c, c) //
+                // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
 
+            // Execute the first graph (a + b = c) -> c = 30
             executionPlan.withGraph(0).execute();
 
+            // Execute the second graph (c + c = c) -> c = 60
             executionPlan.withGraph(1).execute();
 
+            // Verify results: for each element, check if value is 60
             for (int i = 0; i < a.getSize(); i++) {
                 assertEquals(60, c.get(i)); // Expected: (10 + 20) + (30 + 30) = 60
             }
@@ -87,23 +97,35 @@ public class TestSharedBuffers extends TornadoTestBase {
         b.init(20);
         d.init(50);
 
+        // Create first task graph named "s0"
         TaskGraph tg1 = new TaskGraph("s0") //
+                // Transfer arrays 'a' and 'b' to the device only on first execution
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                // Execute the add method (a + b = c)
                 .task("t0", TestHello::add, a, b, c) //
+                // Keep array 'c' on the device memory for later use
                 .persistOnDevice(c);
 
-
+        // Create second task graph named "s1"
         TaskGraph tg2 = new TaskGraph("s1") //
+                // Transfer array 'd' to the device (this is a new input, not from first graph)
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, d) //
+                // Get array 'c' from the first task graph (no new transfer needed)
                 .consumeFromDevice(tg1.getTaskGraphName(), c) //
+                // Execute the add method (c + d = c), adding 'd' to the existing result in 'c'
                 .task("t1", TestHello::add, c, d, c) //
+                // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
 
+
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+            // Execute the first graph (a + b = c) -> c = 30
             executionPlan.withGraph(0).execute();
+            // Execute the second graph (c + d = c) -> c = 80
             executionPlan.withGraph(1).execute();
 
+            // Verify results: for each element, check if value is 80
             for (int i = 0; i < a.getSize(); i++) {
                 assertEquals(80, c.get(i)); // Expected: (10 + 20) + 50 = 80
             }
@@ -121,22 +143,32 @@ public class TestSharedBuffers extends TornadoTestBase {
         a.init(10);
         b.init(20);
 
+        // Create first task graph named "s0"
         TaskGraph tg1 = new TaskGraph("s0") //
+                // Transfer arrays 'a' and 'b' to the device only on first execution
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                // Execute the add method (a + b = c)
                 .task("t0", TestHello::add, a, b, c) //
+                // Keep arrays 'a' and 'b' on the device memory for later use
                 .persistOnDevice(a, b);
 
-
+        // Create second task graph named "s1"
         TaskGraph tg2 = new TaskGraph("s1") //
+                // Get arrays 'a' and 'b' from the first task graph (no new transfer needed)
                 .consumeFromDevice(tg1.getTaskGraphName(), a, b) //
+                // Execute the add method (a + b = d), creating separate output in 'd'
                 .task("t1", TestHello::add, a, b, d) //
+                // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
 
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+            // Execute the first graph (a + b = c)
             executionPlan.withGraph(0).execute();
+            // Execute the second graph (a + b = d)
             executionPlan.withGraph(1).execute();
 
+            // Verify results: for each element, check if value is 30
             for (int i = 0; i < a.getSize(); i++) {
                 assertEquals(30, d.get(i)); // Expected: 10 + 20 = 30
             }
