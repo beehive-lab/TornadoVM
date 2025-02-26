@@ -947,17 +947,10 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getTotalDeviceMemoryUsage();
     }
 
-    TornadoTaskGraphInterface getTaskGraphImpl() {
-        return taskGraphImpl;
-    }
-
     long getCurrentDeviceMemoryUsage() {
         return taskGraphImpl.getCurrentDeviceMemoryUsage();
     }
 
-    Map<String, List<Object>> getPersistentTaskToObjectsMap() {
-        return taskGraphImpl.getPersistentTaskToObjectsMap();
-    }
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
