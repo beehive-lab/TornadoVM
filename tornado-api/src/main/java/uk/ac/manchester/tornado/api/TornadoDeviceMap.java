@@ -176,5 +176,4 @@ public class TornadoDeviceMap {
         // Return an empty stream
         return Arrays.stream(new TornadoDevice[0]);
     }
-
 }
