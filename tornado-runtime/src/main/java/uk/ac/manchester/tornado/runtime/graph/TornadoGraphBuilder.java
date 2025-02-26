@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
@@ -290,7 +291,7 @@ public class TornadoGraphBuilder {
         ContextOpNode dependencyNode = (ContextOpNode) graph.getNode(dependencyIndex);
         for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
             ContextOpNode node = (ContextOpNode) graph.getNode(i);
-            if (node instanceof CopyInNode || node instanceof AllocateNode || node instanceof StreamInNode) {
+            if (node instanceof CopyInNode || node instanceof AllocateNode || node instanceof StreamInNode || node instanceof OnDeviceObjectNode) {
 
                 ObjectNode objectNode = getObjectNodeFromNode(node);
 
@@ -300,7 +301,9 @@ public class TornadoGraphBuilder {
 
                 // Check if the target object is marked as persistent in the execution context.
                 boolean isPersistentObject = executionContext.getPersistentObjects().contains(targetObject);
+                boolean isCurrentlyConsumed = executionContext.getPersistentTaskToObjectsMap().containsValue(targetObject);
 
+                System.out.println("Object: " + targetObject + " is persistent: " + isPersistentObject + " is currently consumed: " + isCurrentlyConsumed);
                 // If the object is NOT persistent, proceed with de-allocation. Prevents dealloc for Under_Demand objects
                 if (!isPersistentObject) {
                     DeallocateNode deallocateNode = new DeallocateNode(contextNode);
@@ -325,6 +328,8 @@ public class TornadoGraphBuilder {
             return allocateNode.getValue();
         } else if (node instanceof StreamInNode streamInNode) {
             return streamInNode.getValue();
+        } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
+            return  onDeviceObjectNode.getValue();
         }
         throw new IllegalArgumentException("Unknown node type: " + node.getClass());
     }
