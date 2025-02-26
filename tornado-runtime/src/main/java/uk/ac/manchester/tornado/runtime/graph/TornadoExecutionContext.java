@@ -81,7 +81,6 @@ public class TornadoExecutionContext {
     private List<Object> objects;
     private List<Object> persistentObjects;
     private Map<String, List<Object>> persistentTaskToObjectsMap;
-    private Map<TornadoTaskGraph, List<Object>> taskToObjectsMap;
 
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
@@ -110,7 +109,6 @@ public class TornadoExecutionContext {
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
         persistentTaskToObjectsMap=  new HashMap<>();
-        taskToObjectsMap=  new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
         taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
@@ -122,7 +120,6 @@ public class TornadoExecutionContext {
         currentDeviceMemoryUsage = 0;
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
-
     }
 
     public KernelStackFrame[] getKernelStackFrame() {

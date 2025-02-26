@@ -228,7 +228,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         streamInObjects = new ArrayList<>();
         inputModesObjects = new ArrayList<>();
         outputModeObjects = new ArrayList<>();
-        persistentObjects = new ArrayList<>();
         taskToPersistentObjectMap = new HashMap<>();
     }
 
@@ -410,7 +409,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.inputModesObjects = Collections.unmodifiableList(this.inputModesObjects);
         newTaskGraph.streamInObjects = Collections.unmodifiableList(this.streamInObjects);
         newTaskGraph.outputModeObjects = Collections.unmodifiableList(this.outputModeObjects);
-        newTaskGraph.persistentObjects = Collections.unmodifiableList(this.persistentObjects);
         newTaskGraph.taskToPersistentObjectMap = Collections.unmodifiableMap(this.taskToPersistentObjectMap);
 
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
@@ -435,16 +433,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.compilationGraph = this.compilationGraph;
 
         return newTaskGraph;
-    }
-
-    @Override
-    public Collection<?> getOutputs() {
-        return streamOutObjects;
-    }
-
-    @Override
-    public Collection<?> getPersistentObjects() {
-        return persistentObjects;
     }
 
     @Override
@@ -637,6 +625,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             Access objectAccessDest = Access.READ_WRITE;
             LocalObjectState localStateDest = executionContext.getLocalStateObject(objToSink, objectAccessDest);
+
+            if (localStateDest == null) {
+                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSink + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
+            }
+
             DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
             XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
 
@@ -1111,7 +1104,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             if (mode == DataTransferMode.UNDER_DEMAND) {
                 executionContext.addPersistentObject(functionParameter);
-                persistentObjects.add(functionParameter);
             }
 
             // List of output objects for the dynamic reconfiguration

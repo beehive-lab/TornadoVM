@@ -508,7 +508,6 @@ public class TornadoVMInterpreter {
         }
         resetEventIndexes(eventList);
         return -1;
-
     }
 
     private void transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {

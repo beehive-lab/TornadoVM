@@ -49,7 +49,6 @@ public class TestSharedBuffers extends TornadoTestBase {
         a.init(10);
         b.init(20);
 
-
         // Create first task graph named "s0"
         TaskGraph tg1 = new TaskGraph("s0") //
                 // Transfer arrays 'a' and 'b' to the device only on first execution
@@ -67,7 +66,6 @@ public class TestSharedBuffers extends TornadoTestBase {
                 .task("t1", TestHello::add, c, c, c) //
                 // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
 
@@ -116,8 +114,6 @@ public class TestSharedBuffers extends TornadoTestBase {
                 // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
-
-
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
             // Execute the first graph (a + b = c) -> c = 30
             executionPlan.withGraph(0).execute();
@@ -159,7 +155,6 @@ public class TestSharedBuffers extends TornadoTestBase {
                 // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
 
-
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
             // Execute the first graph (a + b = c)
             executionPlan.withGraph(0).execute();
@@ -172,4 +167,5 @@ public class TestSharedBuffers extends TornadoTestBase {
             }
         }
     }
+
 }

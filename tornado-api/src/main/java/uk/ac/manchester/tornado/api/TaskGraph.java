@@ -895,14 +895,6 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getProfileLog();
     }
 
-    public Collection<?> getOutputs() {
-        return taskGraphImpl.getOutputs();
-    }
-
-    public Collection<?> getPersistentObjects() {
-        return  taskGraphImpl.getPersistentObjects();
-    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraphImpl.enableProfiler(profilerMode);
     }
