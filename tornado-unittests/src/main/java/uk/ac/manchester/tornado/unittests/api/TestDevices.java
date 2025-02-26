@@ -122,23 +122,33 @@ public class TestDevices extends TornadoTestBase {
         // Obtain all backends with at least two devices associated to it
         List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getNumDevices() > 1);
 
+        // If the multi-backend list is not empty, then it found at least one backend with multiple devices
+        assertTrue(multiDeviceBackends.size() >= 1);
+
         // Obtain the backend that can support SPIR-V as default device
         List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
 
         // Return all backends that can access an NVIDIA GPU
         List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device //
-                .getDeviceName() //
-                .toLowerCase()//
+                .getPhysicalDevice() //
+                .getDeviceName()     //
+                .toLowerCase()       //
                 .contains("nvidia"));
+
+        assertTrue(backendsWithNVIDIAAccess.size() >= 1);
 
         // Another way to perform the previous query
         List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap //
                 .getBackendsWithPredicate(backend -> backend //
                         .getAllDevices()//
                         .stream()//
-                        .allMatch(device -> device//
-                                .getDeviceName()//
-                                .toLowerCase()//
+                        .anyMatch(device -> device//
+                                .getPhysicalDevice()//
+                                .getDeviceName()    //
+                                .toLowerCase()      //
                                 .contains("nvidia")));
+
+        assertTrue(backendsWithNVIDIAAccess2.size() >= 1);
+
     }
 }

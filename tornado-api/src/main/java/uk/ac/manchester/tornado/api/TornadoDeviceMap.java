@@ -87,6 +87,6 @@ public class TornadoDeviceMap {
      * @return {@link List< TornadoBackend >}
      */
     public List<TornadoBackend> getBackendsWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().allMatch(predicate)).toList();
+        return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().anyMatch(predicate)).toList();
     }
 }
