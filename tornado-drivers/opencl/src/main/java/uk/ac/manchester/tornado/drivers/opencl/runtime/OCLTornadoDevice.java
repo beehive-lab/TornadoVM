@@ -607,12 +607,10 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         final XPUBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getXPUBuffer();
-            System.out.println("1111 Xpu buffer exists " + state.toString());
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
         } else {
-            System.out.println("1212 Xpu new Allocation ");
             buffer = newDeviceBufferAllocation(object, batchSize, state, access);
         }
 
@@ -624,7 +622,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public synchronized long deallocate(DeviceBufferState deviceBufferState) {
-        long deallocatedSpace = 0;
+        long deallocatedSpace = 0L;
         if (deviceBufferState.isLockedBuffer()) {
             return deallocatedSpace;
         }
