@@ -86,23 +86,23 @@ public class TornadoVMBytecodeBuilder {
     }
 
     void emitAsyncNode(AbstractNode node, int dependencyBC, long offset, long batchSize, long nThreads) {
-        if (node instanceof AllocateMultipleBuffersNode) {
-            bitcodeASM.allocate(((AllocateMultipleBuffersNode) node).getValues(), batchSize);
-        } else if (node instanceof OnDeviceObjectNode) {
-            bitcodeASM.onDevice(node.getIndex(), dependencyBC, offset, batchSize); // TODO: Maybe rm dep
-        } else if (node instanceof CopyInNode) {
-            bitcodeASM.transferToDeviceOnce(((CopyInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
-        } else if (node instanceof AllocateNode) {
+        if (node instanceof AllocateMultipleBuffersNode allocateMultipleBuffersNode) {
+            bitcodeASM.allocate(allocateMultipleBuffersNode.getValues(), batchSize);
+        } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
+            bitcodeASM.onDevice(onDeviceObjectNode.getIndex(), dependencyBC, offset, batchSize); // TODO: Maybe rm dep
+        } else if (node instanceof CopyInNode copyInNode) {
+            bitcodeASM.transferToDeviceOnce(copyInNode.getValue().getIndex(), dependencyBC, offset, batchSize);
+        } else if (node instanceof AllocateNode allocateNode) {
             new TornadoLogger().info("[%s]: Skipping deprecated node %s", getClass().getSimpleName(), AllocateNode.class.getSimpleName());
-        } else if (node instanceof CopyOutNode) {
-            ObjectNode value = ((CopyOutNode) node).getValue().getValue();
+        } else if (node instanceof CopyOutNode copyOutNode) {
+            ObjectNode value = copyOutNode.getValue().getValue();
             bitcodeASM.transferToHost(value.getIndex(), dependencyBC, offset, batchSize);
-        } else if (node instanceof StreamInNode) {
-            bitcodeASM.transferToDeviceAlways(((StreamInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
-        } else if (node instanceof DeallocateNode) {
-            bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex());
-        } else if (node instanceof TaskNode) {
-            final TaskNode taskNode = (TaskNode) node;
+        } else if (node instanceof StreamInNode streamInNode) {
+            bitcodeASM.transferToDeviceAlways(streamInNode.getValue().getIndex(), dependencyBC, offset, batchSize);
+        } else if (node instanceof DeallocateNode deallocateNode) {
+            bitcodeASM.deallocate((deallocateNode.getValue().getIndex()));
+        } else if (node instanceof TaskNode taskNodee) {
+            final TaskNode taskNode = taskNodee;
             bitcodeASM.launch(taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
             emitArgList(taskNode);
         }
@@ -114,18 +114,18 @@ public class TornadoVMBytecodeBuilder {
             final AbstractNode argNode = taskNode.getArg(i);
             if (argNode instanceof ConstantNode) {
                 bitcodeASM.constantArg(argNode.getIndex());
-            } else if (argNode instanceof CopyInNode) {
-                bitcodeASM.referenceArg(((CopyInNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof OnDeviceObjectNode) {
-                bitcodeASM.referenceArg(((OnDeviceObjectNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof StreamInNode) {
-                bitcodeASM.referenceArg(((StreamInNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof CopyOutNode) {
-                bitcodeASM.referenceArg(((CopyOutNode) argNode).getValue().getValue().getIndex());
-            } else if (argNode instanceof AllocateNode) {
-                bitcodeASM.referenceArg(((AllocateNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof DependentReadNode) {
-                bitcodeASM.referenceArg(((DependentReadNode) argNode).getValue().getIndex());
+            } else if (argNode instanceof CopyInNode copyInNode) {
+                bitcodeASM.referenceArg(copyInNode.getValue().getIndex());
+            } else if (argNode instanceof OnDeviceObjectNode onDeviceObjectNode) {
+                bitcodeASM.referenceArg(onDeviceObjectNode.getValue().getIndex());
+            } else if (argNode instanceof StreamInNode streamInNode) {
+                bitcodeASM.referenceArg(streamInNode.getValue().getIndex());
+            } else if (argNode instanceof CopyOutNode copyOutNode) {
+                bitcodeASM.referenceArg(copyOutNode.getValue().getValue().getIndex());
+            } else if (argNode instanceof AllocateNode allocateNode) {
+                bitcodeASM.referenceArg(allocateNode.getValue().getIndex());
+            } else if (argNode instanceof DependentReadNode dependentReadNode) {
+                bitcodeASM.referenceArg(dependentReadNode.getValue().getIndex());
             }
         }
     }
