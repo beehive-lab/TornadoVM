@@ -751,7 +751,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph persistOnDevice(Object... objects) {
-        taskGraphImpl.transferToDevice(DataTransferMode.UNDER_DEMAND, objects);
+        taskGraphImpl.transferToHost(DataTransferMode.UNDER_DEMAND, objects);
         return this;
     }
 
