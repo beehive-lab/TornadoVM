@@ -157,7 +157,7 @@ public class TestDevices extends TornadoTestBase {
     @Test
     public void test05() {
         TornadoDeviceMap deviceMap = new TornadoDeviceMap();
-        Stream<TornadoDevice> deviceStream = deviceMap.getDeviceByName("NVIDIA");
+        Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("NVIDIA");
 
         // Get the first that meets the criteria
         TornadoDevice device = deviceStream.findFirst().get();
@@ -169,11 +169,20 @@ public class TestDevices extends TornadoTestBase {
     public void test06() {
         TornadoDeviceType typeToFind = TornadoDeviceType.CPU;
         TornadoDeviceMap deviceMap = new TornadoDeviceMap();
-        Stream<TornadoDevice> deviceStream = deviceMap.getDeviceByType(typeToFind);
+        Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByType(typeToFind);
 
         // Get the first that meets the criteria
         TornadoDevice device = deviceStream.findFirst().get();
         assertNotNull(device);
         assertTrue(device.getDeviceType() == typeToFind);
+    }
+
+    @Test
+    public void test07() {
+        TornadoDeviceMap deviceMap = new TornadoDeviceMap();
+
+        // Intentionally a random name to get an empty stream
+        Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("foo");
+        assertTrue(deviceStream.findAny().isEmpty());
     }
 }

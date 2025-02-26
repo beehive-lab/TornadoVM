@@ -105,7 +105,7 @@ public class TornadoDeviceMap {
      * @return
      *     Stream of devices that meet the criteria. Otherwise, an empty stream.
      */
-    public Stream<TornadoDevice> getDeviceByName(String deviceName) {
+    public Stream<TornadoDevice> getDevicesByName(String deviceName) {
         TornadoDeviceMap deviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
         List<TornadoBackend> backendFilter = deviceMap.getBackendsWithPredicate(backend -> //
         backend.getAllDevices() //
@@ -150,7 +150,7 @@ public class TornadoDeviceMap {
      * @return
      *     Stream of devices that meet the criteria. Otherwise, an empty stream.
      */
-    public Stream<TornadoDevice> getDeviceByType(TornadoDeviceType deviceType) {
+    public Stream<TornadoDevice> getDevicesByType(TornadoDeviceType deviceType) {
         TornadoDeviceMap deviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
         List<TornadoBackend> backendFilter = deviceMap.getBackendsWithPredicate(backend -> //
         backend.getAllDevices() //
