@@ -38,10 +38,10 @@ import static org.junit.Assert.assertEquals;
  * </p>
  */
 public class TestSharedBuffers extends TornadoTestBase {
+    private static final int numElements = 16;
 
     @Test
     public void testSingleReadWriteSharedObject() throws TornadoExecutionPlanException {
-        int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
         IntArray c = new IntArray(numElements);
@@ -87,7 +87,6 @@ public class TestSharedBuffers extends TornadoTestBase {
 
     @Test
     public void testMixInputConsumeAndCopy() throws TornadoExecutionPlanException {
-        int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
         IntArray c = new IntArray(numElements);
@@ -108,10 +107,10 @@ public class TestSharedBuffers extends TornadoTestBase {
 
         // Create second task graph named "s1"
         TaskGraph tg2 = new TaskGraph("s1") //
-                // Transfer array 'd' to the device (this is a new input, not from first graph)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, d) //
                 // Get array 'c' from the first task graph (no new transfer needed)
                 .consumeFromDevice(tg1.getTaskGraphName(), c) //
+                // Transfer array 'd' to the device (this is a new input, not from first graph)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, d) //
                 // Execute the add method (c + d = c), adding 'd' to the existing result in 'c'
                 .task("t1", TestHello::add, c, d, c) //
                 // Transfer results back to host memory after execution
@@ -134,7 +133,6 @@ public class TestSharedBuffers extends TornadoTestBase {
 
     @Test
     public void testMultipleSharedObjects() throws TornadoExecutionPlanException {
-        int numElements = 16;
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
         IntArray c = new IntArray(numElements);

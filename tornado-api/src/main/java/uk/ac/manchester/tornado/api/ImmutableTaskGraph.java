@@ -166,14 +166,6 @@ public class ImmutableTaskGraph {
         return taskGraph.getDevice();
     }
 
-    Collection<?> getOutputs() {
-        return taskGraph.getOutputs();
-    }
-
-    Collection<?> getPersistentObjects() {
-        return taskGraph.getPersistentObjects();
-    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
     }
@@ -229,6 +221,5 @@ public class ImmutableTaskGraph {
     void updatePersistentStates(ImmutableTaskGraph taskGraphSrc) {
         taskGraph.updatePersistentStates(taskGraphSrc.taskGraph.taskGraphImpl);
     }
-
 
 }
