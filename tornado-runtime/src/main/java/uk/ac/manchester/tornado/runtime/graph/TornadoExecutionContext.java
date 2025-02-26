@@ -698,42 +698,11 @@ public class TornadoExecutionContext {
 
 
     public void addPersistentObject(String taskgraphUniqueName, Object value) {
-        boolean isNewKey = !persistentTaskToObjectsMap.containsKey(taskgraphUniqueName);
-
         persistentTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
-
-        // Debugging output
-        if (isNewKey) {
-            System.out.println("New key added: " + taskgraphUniqueName);
-        }
-        System.out.println("Added value to task [" + taskgraphUniqueName + "]: " + value);
-        System.out.println("Current values for task [" + taskgraphUniqueName + "]: " + persistentTaskToObjectsMap.get(taskgraphUniqueName));
     }
-
 
     public Map<String, List<Object>> getPersistentTaskToObjectsMap() {
         return persistentTaskToObjectsMap;
     }
-    // Getter method to retrieve the list of objects for a given task
-
-
-    public void addToObject(TornadoTaskGraph taskgraphUniqueName, Object value) {
-        boolean isNewKey = !taskToObjectsMap.containsKey(taskgraphUniqueName);
-
-        taskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
-
-        // Debugging output
-        if (isNewKey) {
-            System.out.println("New key added: " + taskgraphUniqueName);
-        }
-        System.out.println("Added value to task [" + taskgraphUniqueName + "]: " + value);
-        System.out.println("Current values for task [" + taskgraphUniqueName + "]: " + taskToObjectsMap.get(taskgraphUniqueName));
-    }
-
-
-    public Map<TornadoTaskGraph, List<Object>> getTaskToObjectsMap() {
-        return taskToObjectsMap;
-    }
-    // Getter method to retrieve the list of objects for a given task
 
 }
