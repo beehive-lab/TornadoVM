@@ -114,8 +114,25 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
         final long id = globalExecutionPlanCounter.incrementAndGet();
         executionFrame = new ExecutorFrame(id);
+        updateAccess(immutableTaskGraphs);
         rootNode = this;
         planResults = new ArrayList<>();
+    }
+
+    /**
+     * If the {@code TornadoExecutionPlan} consists of multiple task-graphs, this function
+     * updates the access type of the input and output data of each task-graph, as necessary.
+     *
+     * @param immutableTaskGraphs The list of the immutable task-graphs in the {@code TornadoExecutionPlan}
+     */
+    private void updateAccess(ImmutableTaskGraph... immutableTaskGraphs) {
+        if (immutableTaskGraphs.length > 1) {
+            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
+                TaskGraph taskGraph = immutableTaskGraph.getTaskGraph();
+                TornadoTaskGraphInterface taskGraphImpl = taskGraph.getTaskGraphImpl();
+                taskGraphImpl.updateObjectAccess();
+            }
+        }
     }
 
     /**

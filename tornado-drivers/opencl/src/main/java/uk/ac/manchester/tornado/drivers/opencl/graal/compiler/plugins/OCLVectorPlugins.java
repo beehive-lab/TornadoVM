@@ -398,8 +398,9 @@ public final class OCLVectorPlugins {
         plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
             if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
                 ObjectStamp objStamp = (ObjectStamp) stampPair.getTrustedStamp();
-                if (objStamp.type().getAnnotation(Vector.class) != null) {
-                    OCLKind kind = OCLKind.fromResolvedJavaType(objStamp.type());
+                ResolvedJavaType objStampType = objStamp.type();
+                if (objStampType != null && objStampType.getAnnotation(Vector.class) != null) {
+                    OCLKind kind = OCLKind.fromResolvedJavaType(objStampType);
                     return new ParameterNode(index, StampPair.createSingle(OCLStampFactory.getStampFor(kind)));
                 }
             }

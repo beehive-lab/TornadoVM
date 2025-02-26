@@ -952,4 +952,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.updatePersistentStates(taskGraphSrc);
     }
 
+    TornadoTaskGraphInterface getTaskGraphImpl() {
+        return taskGraphImpl;
+    }
+
 }
