@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.ALLOCATION_BYTES;
-import static uk.ac.manchester.tornado.api.profiler.ProfilerType.SYSTEM_CURRENT_A;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_IN_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
@@ -41,7 +40,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +60,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
@@ -625,35 +622,26 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void updatePersistentStates(TornadoTaskGraphInterface taskGraphSrc) {
-        System.out.println("IN UPDATE XXXXXXXXXXXXXXXX");
-
-
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-        final Object objToSink = executionContext.getPersistentTaskToObjectsMap().get(((TornadoTaskGraph) taskGraphSrc).taskGraphName).get(0);
-        Access objectAccessSrc = graphSrc.getObjectAccess(objToSink);
+        List<Object> objectsToSink = executionContext.getPersistentTaskToObjectsMap()
+                .get(graphSrc.taskGraphName);
 
-        final LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objToSink, objectAccessSrc);
-        final DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
+        for (Object objToSink : objectsToSink) {
+            Access objectAccessSrc = graphSrc.getObjectAccess(objToSink);
+            LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objToSink, objectAccessSrc);
+            DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
 
-        // The device is the same for both task-graphs
-        final TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+            // The device is the same for both task-graphs
+            TornadoXPUDevice device = graphSrc.meta().getXPUDevice();
+            XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
 
-        final XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
+            Access objectAccessDest = Access.READ_WRITE;
+            LocalObjectState localStateDest = executionContext.getLocalStateObject(objToSink, objectAccessDest);
+            DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
+            XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
 
-
-        Access objectAccessDest = Access.READ_WRITE;
-        final LocalObjectState localStateDest = executionContext.getLocalStateObject(objToSink, objectAccessDest);
-        final DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
-        final XPUDeviceBufferState deviceStateDest = dataObjectStateDest.getDeviceBufferState(device);
-
-        dataObjectStateDest.getDeviceBufferState(device).setXPUBuffer(dataObjectStateSrc.getDeviceBufferState(device).getXPUBuffer());
-        // We need to alloc if needed
-//        if (!deviceStateDest.hasObjectBuffer()) {
-//            device.allocate(, 0, deviceStateDest, objectAccessDest);
-//        }
-
-//        final TornadoXPUDevice deviceDest = meta().getXPUDevice();
-
+            deviceStateDest.setXPUBuffer(deviceStateSrc.getXPUBuffer());
+        }
     }
 
     @Override
@@ -1083,7 +1071,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
-            executionContext.addPersistentObject(sourceTaskGraphName,parameter);
+            executionContext.addPersistentObject(sourceTaskGraphName, parameter);
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 if (!argumentsLookUp.contains(parameter)) {
@@ -1115,10 +1103,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] Scalar value used as output. Use an array or a vector-type instead");
             }
 
-            // If the object mode is set to UNDER_DEMAND then we *only* insert it in the lookup
-            // hash-set.
-            System.out.println("Add " + functionParameter + " mode " + mode + " " + executionContext.getId());
-
             if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
                 // the access will be updated later on by the TornadoDataflowAnalysis if necessary
@@ -1126,10 +1110,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             if (mode == DataTransferMode.UNDER_DEMAND) {
-//                System.out.println("Add " + functionParameter);
                 executionContext.addPersistentObject(functionParameter);
                 persistentObjects.add(functionParameter);
-//                executionContext.getLocalStateObject(functionParameter, Access.WRITE_ONLY).setOnDevice(true);
             }
 
             // List of output objects for the dynamic reconfiguration
@@ -1762,9 +1744,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         return deviceWinnerIndex;
-    }
-
-    public record Tuple2(int threadWinnerIndex, Thread join) {
     }
 
     private Tuple2 syncWinner(Thread[] threads) {
@@ -2602,6 +2581,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     // Timer implementation within the Task Schedule
     private interface Timer {
         long time();
+    }
+
+    public record Tuple2(int threadWinnerIndex, Thread join) {
     }
 
     private static class MilliSecTimer implements Timer {
