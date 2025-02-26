@@ -224,17 +224,23 @@ class TornadoExecutor {
             subgraphList = new ArrayList<>();
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
-        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex).getTaskGraph().taskGraphImpl.getPersistentTaskToObjectsMap().keySet());
-
-        if (namesList.size() != 0) {
-            if (namesList.size() == 1) {
-                System.out.println("YYYYYYYY HIT ");
-                String whichs = namesList.get(0);
-                subgraphList.get(graphIndex).updatePersistentStates(getGraphByName(whichs));
-            }
-        }
+        processPersistentStates(graphIndex);
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
+    }
+
+    //TODO: iterate on review if this is the right place to do it
+    private void processPersistentStates(int graphIndex) {
+        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex)
+                .getTaskGraph()
+                .taskGraphImpl
+                .getPersistentTaskToObjectsMap()
+                .keySet());
+
+        if (namesList.size() == 1) {
+            String key = namesList.get(0);
+            subgraphList.get(graphIndex).updatePersistentStates(getGraphByName(key));
+        }
     }
 
     private ImmutableTaskGraph getGraph(int graphIndex) {
