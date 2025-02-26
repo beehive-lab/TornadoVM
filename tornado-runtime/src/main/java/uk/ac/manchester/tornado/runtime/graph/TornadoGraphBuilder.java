@@ -301,9 +301,7 @@ public class TornadoGraphBuilder {
 
                 // Check if the target object is marked as persistent in the execution context.
                 boolean isPersistentObject = executionContext.getPersistentObjects().contains(targetObject);
-                boolean isCurrentlyConsumed = executionContext.getPersistentTaskToObjectsMap().containsValue(targetObject);
 
-                System.out.println("Object: " + targetObject + " is persistent: " + isPersistentObject + " is currently consumed: " + isCurrentlyConsumed);
                 // If the object is NOT persistent, proceed with de-allocation. Prevents dealloc for Under_Demand objects
                 if (!isPersistentObject) {
                     DeallocateNode deallocateNode = new DeallocateNode(contextNode);
