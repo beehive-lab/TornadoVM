@@ -69,8 +69,6 @@ public class TornadoGraphBuilder {
 
     private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
         final AllocateNode allocateNode = new AllocateNode(context);
-        System.out.println("Allocate " + argIndex + ": " + arg.toString() + args.toString());
-        System.out.println("123130");
         allocateNode.setValue((ObjectNode) arg);
         graph.add(allocateNode);
         context.addUse(allocateNode);
@@ -123,10 +121,8 @@ public class TornadoGraphBuilder {
         int argIndex = 0;
         int taskIndex = 0;
 
-        System.out.println("Build graph --- --- ---");
         final List<Object> constants = executionContext.getConstants();
         final List<Object> objects = executionContext.getObjects();
-        final List<Object> persistentObjects = executionContext.getPersistentObjects();
 
 
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
