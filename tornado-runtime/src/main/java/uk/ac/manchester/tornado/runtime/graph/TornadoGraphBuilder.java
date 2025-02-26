@@ -24,6 +24,8 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
@@ -157,18 +159,10 @@ public class TornadoGraphBuilder {
                 if (!(arg instanceof ContextOpNode)) {
                     final ObjectNode objectNode = (ObjectNode) arg;
                     final LocalObjectState state = states.get(objectNode.getIndex());
-                    System.out.println("0XXXXXXXXXX " + state.isOnDevice() +" " + accesses[argIndex].toString() + " " + objectNode.toString() + " " + accesses.length);
-                    System.out.println("a " + arg.toString());
-                    System.out.println("a " + state.getObject().toString());
-                    System.out.println("1XXXXXXXXXX " + state.isOnDevice() + " " + objectNode.toString()) ;
 
                     if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
-                        System.out.println("4XXXXXXXXXX");
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
                     }  else if (state.isOnDevice()) {
-                        // state.isOnDevice()
-                        System.out.println("2XXXXXXXXXX");
-                        System.out.println("a " + arg.toString());
                         createOnDeviceNode(context, graph, arg, args, argIndex, persist);
                     } else {
                        if (state.isStreamIn()) {
@@ -178,7 +172,6 @@ public class TornadoGraphBuilder {
                                 createCopyInNode(context, graph, arg, args, argIndex, persist);
                             } else {
                                 // if it is under demand, we only need to allocate the buffer
-                                System.out.println("3XXXXXXXXXX");
                                 createAllocateNode(context, graph, arg, args, argIndex, persist);
                             }
                         }
