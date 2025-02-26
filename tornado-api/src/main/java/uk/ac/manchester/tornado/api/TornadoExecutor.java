@@ -38,12 +38,10 @@ class TornadoExecutor {
 
     private final List<ImmutableTaskGraph> immutableTaskGraphList;
     private List<ImmutableTaskGraph> subgraphList;
-    private List<Object> pers;
 
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
-        this.pers = getPersistentObjects();
     }
 
     void execute(ExecutorFrame executionPackage) {
@@ -189,18 +187,6 @@ class TornadoExecutor {
         return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
     }
 
-    List<Object> getOutputs() {
-        List<Object> outputs = new ArrayList<>();
-        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
-        return outputs;
-    }
-
-    List<Object> getPersistentObjects() {
-        List<Object> persistentObjects = new ArrayList<>();
-        immutableTaskGraphList.forEach(immutableTaskGraph -> persistentObjects.addAll(immutableTaskGraph.getPersistentObjects()));
-        return persistentObjects;
-    }
-
     void withThreadInfo() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
     }
@@ -295,11 +281,4 @@ class TornadoExecutor {
         taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
-    void updatePersistentStates(ImmutableTaskGraph sourceTaskGraph) {
-        ImmutableTaskGraph taskGraphSrc = sourceTaskGraph;
-        System.out.println("NNN " + taskGraphSrc.isFinished());
-//        taskGraphSrc.isFinished();
-//        ImmutableTaskGraph taskGraphDest = sourceTaskGraph.
-//        taskGraphDest.updatePersistentStates(taskGraphSrc);
-    }
 }
