@@ -502,7 +502,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.PRINT_BYTECODES) {
 
-            String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("ON DEVICE"), object.hashCode(), object, InterpreterUtilities.debugDeviceBC(
+            String verbose = String.format("bc: %s[0x%x] %s on %s", InterpreterUtilities.debugHighLightBC("ON_DEVICE_BUFFER"), object.hashCode(), object, InterpreterUtilities.debugDeviceBC(
                     interpreterDevice));
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
