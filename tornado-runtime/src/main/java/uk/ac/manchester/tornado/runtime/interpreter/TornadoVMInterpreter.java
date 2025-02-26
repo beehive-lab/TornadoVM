@@ -505,13 +505,13 @@ public class TornadoVMInterpreter {
                     interpreterDevice));
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
-        resetEventIndexes(eventList);
+//        resetEventIndexes(eventList);
 
         if (isObjectKernelContext(object)) { // TODO: throw exception
             return;
         }
 
-        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
+//        final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
 
     }
 
