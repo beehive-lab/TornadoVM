@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -63,7 +62,6 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 
 public class TornadoExecutionContext {
@@ -80,7 +78,7 @@ public class TornadoExecutionContext {
     private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
     private List<Object> persistentObjects;
-    private Map<String, List<Object>> persistentTaskToObjectsMap;
+    private Map<String, List<Object>> persistedTaskToObjectsMap;
 
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
@@ -108,7 +106,7 @@ public class TornadoExecutionContext {
         persistentObjects = new ArrayList<>();
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
-        persistentTaskToObjectsMap=  new HashMap<>();
+        persistedTaskToObjectsMap =  new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
         taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
@@ -268,7 +266,7 @@ public class TornadoExecutionContext {
     }
 
     // Method to add an object to the list
-    public void addPersistentObject(Object object) {
+    public void addPersistedObject(Object object) {
         if (object != null) {
             persistentObjects.add(object);
         }
@@ -654,7 +652,7 @@ public class TornadoExecutionContext {
 
         newExecutionContext.persistentObjects = new ArrayList<>(persistentObjects);
 
-        newExecutionContext.persistentTaskToObjectsMap = new HashMap<>(persistentTaskToObjectsMap);
+        newExecutionContext.persistedTaskToObjectsMap = new HashMap<>(persistedTaskToObjectsMap);
 
         List<LocalObjectState> objectStateCopy = new ArrayList<>();
         for (LocalObjectState localObjectState : objectState) {
@@ -694,12 +692,12 @@ public class TornadoExecutionContext {
     }
 
 
-    public void addPersistentObject(String taskgraphUniqueName, Object value) {
-        persistentTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
+    public void addPersistedObject(String taskgraphUniqueName, Object value) {
+        persistedTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
     }
 
-    public Map<String, List<Object>> getPersistentTaskToObjectsMap() {
-        return persistentTaskToObjectsMap;
+    public Map<String, List<Object>> getPersistedTaskToObjectsMap() {
+        return persistedTaskToObjectsMap;
     }
 
 }

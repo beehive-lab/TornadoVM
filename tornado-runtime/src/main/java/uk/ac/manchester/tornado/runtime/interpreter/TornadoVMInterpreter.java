@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -422,7 +421,7 @@ public class TornadoVMInterpreter {
             return false;
         }
 
-        return graphExecutionContext.getPersistentTaskToObjectsMap()
+        return graphExecutionContext.getPersistedTaskToObjectsMap()
                 .values()
                 .stream()
                 .filter(Objects::nonNull)
@@ -431,7 +430,7 @@ public class TornadoVMInterpreter {
 
 
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, long sizeBatch) {
-        final int persistentObjects = graphExecutionContext.getPersistentTaskToObjectsMap().values().stream()
+        final int persistentObjects = graphExecutionContext.getPersistedTaskToObjectsMap().values().stream()
                 .filter(Objects::nonNull)
                 .mapToInt(List::size)
                 .sum();

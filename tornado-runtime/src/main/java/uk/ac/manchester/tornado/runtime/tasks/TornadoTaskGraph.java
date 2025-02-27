@@ -37,7 +37,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -495,8 +494,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public Map<String, List<Object>> getPersistentTaskToObjectsMap() {
-        return executionContext.getPersistentTaskToObjectsMap();
+    public Map<String, List<Object>> getPersistedTaskToObjectsMap() {
+        return executionContext.getPersistedTaskToObjectsMap();
     }
 
     @Override
@@ -648,7 +647,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-        List<Object> objectsToSink = executionContext.getPersistentTaskToObjectsMap()
+        List<Object> objectsToSink = executionContext.getPersistedTaskToObjectsMap()
                 .get(graphSrc.taskGraphName);
 
         for (Object objToSink : objectsToSink) {
@@ -1101,7 +1100,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
-            executionContext.addPersistentObject(sourceTaskGraphName, parameter);
+            executionContext.addPersistedObject(sourceTaskGraphName, parameter);
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 if (!argumentsLookUp.contains(parameter)) {
@@ -1140,7 +1139,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             if (mode == DataTransferMode.UNDER_DEMAND) {
-                executionContext.addPersistentObject(functionParameter);
+                executionContext.addPersistedObject(functionParameter);
             }
 
             // List of output objects for the dynamic reconfiguration

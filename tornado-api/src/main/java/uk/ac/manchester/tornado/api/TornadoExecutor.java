@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -234,12 +233,16 @@ class TornadoExecutor {
         List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex)
                 .getTaskGraph()
                 .taskGraphImpl
-                .getPersistentTaskToObjectsMap()
+                .getPersistedTaskToObjectsMap()
                 .keySet());
+
+        for (String str : namesList) {
+            System.out.println("SS  " + str);
+        }
 
         if (namesList.size() == 1) {
             String key = namesList.get(0);
-            subgraphList.get(graphIndex).updatePersistentStates(getGraphByName(key));
+            subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
         }
     }
 

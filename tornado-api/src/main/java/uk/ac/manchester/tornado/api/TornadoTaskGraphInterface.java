@@ -125,7 +125,7 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     long getCurrentDeviceMemoryUsage();
 
-    Map<String, List<Object>> getPersistentTaskToObjectsMap();
+    Map<String, List<Object>> getPersistedTaskToObjectsMap();
 
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags);
 
