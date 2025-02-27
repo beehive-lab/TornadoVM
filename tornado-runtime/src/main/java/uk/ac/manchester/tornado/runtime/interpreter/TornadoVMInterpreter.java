@@ -442,21 +442,22 @@ public class TornadoVMInterpreter {
 
         int allocCounter = 0;
         long preAllocatedSizes = 0L;
-        for (int i = 0; i < args.length; i++) {
-            Object persistentObj = this.objects.get(args[i]);
+
+        for (int arg : args) {
+            Object persistentObj = this.objects.get(arg);
             if (!isPersistentObject(persistentObj)) {
-                objects[allocCounter] = this.objects.get(args[i]);
-                objectStates[allocCounter] = resolveObjectState(args[i]);
+                objects[allocCounter] = this.objects.get(arg);
+                objectStates[allocCounter] = resolveObjectState(arg);
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
 
                 if (TornadoOptions.PRINT_BYTECODES) {
-                    String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[allocCounter], InterpreterUtilities.debugDeviceBC(interpreterDevice),
-                            sizeBatch);
+                    String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[allocCounter],
+                            InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
                     tornadoVMBytecodeList.append(verbose).append("\n");
                 }
                 allocCounter++;
             } else {
-                preAllocatedSizes += resolveObjectState(args[i]).getXPUBuffer().size();
+                preAllocatedSizes += resolveObjectState(arg).getXPUBuffer().size();
             }
         }
 
