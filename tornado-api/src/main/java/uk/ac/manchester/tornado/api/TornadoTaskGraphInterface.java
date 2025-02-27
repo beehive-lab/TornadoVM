@@ -17,7 +17,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -132,7 +131,7 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
 
-    void updatePersistentStates(TornadoTaskGraphInterface taskGraphSrc);
+    void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc);
 
     void updateObjectAccess();
   

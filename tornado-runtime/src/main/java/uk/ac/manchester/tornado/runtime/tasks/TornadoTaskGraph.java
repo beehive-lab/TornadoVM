@@ -646,7 +646,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void updatePersistentStates(TornadoTaskGraphInterface taskGraphSrc) {
+    public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
         List<Object> objectsToSink = executionContext.getPersistentTaskToObjectsMap()
                 .get(graphSrc.taskGraphName);

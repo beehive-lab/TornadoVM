@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.Collection;
-
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -218,8 +216,8 @@ public class ImmutableTaskGraph {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
 
-    void updatePersistentStates(ImmutableTaskGraph taskGraphSrc) {
-        taskGraph.updatePersistentStates(taskGraphSrc.taskGraph.taskGraphImpl);
+    void updatePersistedObjectState(ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
     }
 
 }

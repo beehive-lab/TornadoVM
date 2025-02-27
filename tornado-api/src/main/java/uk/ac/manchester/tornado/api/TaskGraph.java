@@ -17,10 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
@@ -948,8 +945,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
-    void updatePersistentStates(TornadoTaskGraphInterface taskGraphSrc) {
-        taskGraphImpl.updatePersistentStates(taskGraphSrc);
+    void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
+        taskGraphImpl.updatePersistedObjectState(taskGraphSrc);
     }
 
     TornadoTaskGraphInterface getTaskGraphImpl() {
