@@ -647,12 +647,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-        List<Object> objectsToSink = executionContext.getPersistedTaskToObjectsMap()
+        List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap()
                 .get(graphSrc.taskGraphName);
 
-        for (Object objToSink : objectsToSink) {
-            Access objectAccessSrc = graphSrc.getObjectAccess(objToSink);
-            LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objToSink, objectAccessSrc);
+        for (Object objectToSync : objectsToSync) {
+            Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
+            LocalObjectState localStateSrc = graphSrc.executionContext.getLocalStateObject(objectToSync, objectAccessSrc);
             DataObjectState dataObjectStateSrc = localStateSrc.getDataObjectState();
 
             // The device is the same for both task-graphs
@@ -660,10 +660,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             XPUDeviceBufferState deviceStateSrc = dataObjectStateSrc.getDeviceBufferState(device);
 
             Access objectAccessDest = Access.READ_WRITE;
-            LocalObjectState localStateDest = executionContext.getLocalStateObject(objToSink, objectAccessDest);
+            LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
 
             if (localStateDest == null) {
-                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSink + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
+                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
+            }
+
+            if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
+                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta().getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
             }
 
             DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
@@ -1094,9 +1098,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void consumeFromDevice(String sourceTaskGraphName, Object... objects) {
         for (Object parameter : objects) {
             if (parameter == null) {
-                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
+                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in task-graph " + executionContext.getId());
             } else if (parameter instanceof Number) {
-                throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in schedule " + executionContext.getId());
+                throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in task-graph " + executionContext.getId());
             }
 
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
