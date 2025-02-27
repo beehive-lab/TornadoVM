@@ -190,6 +190,11 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
     }
 
+    List<Object> getOutputs() { List<Object> outputs = new ArrayList<>();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
+        return outputs;
+    }
+
     void withoutThreadInfo() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withoutThreadInfo);
     }

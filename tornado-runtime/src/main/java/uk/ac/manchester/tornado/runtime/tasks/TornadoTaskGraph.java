@@ -37,6 +37,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -442,6 +443,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (profilerMode == ProfilerMode.SILENT) {
             TornadoOptions.TORNADO_PROFILER_LOG = true;
         }
+    }
+
+    @Override
+    public Collection<?> getOutputs() {
+        return streamOutObjects;
     }
 
     @Override

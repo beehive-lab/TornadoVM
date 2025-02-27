@@ -22,6 +22,8 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
+import java.util.Collection;
+
 /**
  * A {@link TaskGraph} is encapsulated in this class and all actions over a task
  * graph are coded from this class. For instance, execution.
@@ -166,6 +168,10 @@ public class ImmutableTaskGraph {
 
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
+    }
+
+    Collection<?> getOutputs() {
+        return taskGraph.getOutputs();
     }
 
     void withConcurrentDevices() {

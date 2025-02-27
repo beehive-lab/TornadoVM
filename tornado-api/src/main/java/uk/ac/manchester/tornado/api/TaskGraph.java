@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -947,6 +948,10 @@ public class TaskGraph implements TaskGraphInterface {
 
     void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
         taskGraphImpl.updatePersistedObjectState(taskGraphSrc);
+    }
+
+    public Collection<?> getOutputs() {
+        return taskGraphImpl.getOutputs();
     }
 
     TornadoTaskGraphInterface getTaskGraphImpl() {

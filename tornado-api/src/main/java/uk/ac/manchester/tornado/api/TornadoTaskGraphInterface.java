@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +104,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     Set<Object> getArgumentsLookup();
 
+    Collection<?> getOutputs();
+
     TornadoTaskGraphInterface createImmutableTaskGraph();
 
     void enableProfiler(ProfilerMode profilerMode);
@@ -134,5 +137,5 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc);
 
     void updateObjectAccess();
-    
+
 }
