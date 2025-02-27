@@ -413,39 +413,30 @@ public class TornadoVMInterpreter {
      * Checks if the given object exists in the persistent task objects map in
      * order to prevent excess allocations.
      *
-     * @param objectToFind
+     * @param object
      *     The object to search for in the persistent tasks
      * @return true if the object is found in any persistent task, otherwise false
      */
-    private boolean isPersistentObject(Object objectToFind) {
-        if (graphExecutionContext == null || objectToFind == null) {
+    private boolean isPersistentObject(Object object) {
+        if (graphExecutionContext == null || object == null) {
             return false;
         }
 
-        Map<String, List<Object>> persistentTaskMap = graphExecutionContext.getPersistentTaskToObjectsMap();
-
-        if (persistentTaskMap.isEmpty()) {
-            return false;
-        }
-
-        for (Map.Entry<String, List<Object>> entry : persistentTaskMap.entrySet()) {
-            List<Object> taskObjects = entry.getValue();
-
-            if (taskObjects != null && taskObjects.contains(objectToFind)) {
-                return true;
-            }
-        }
-
-        return false;
+        return graphExecutionContext.getPersistentTaskToObjectsMap()
+                .values()
+                .stream()
+                .filter(Objects::nonNull)
+                .anyMatch(taskObjects -> taskObjects.contains(object));
     }
+
 
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, long sizeBatch) {
         final int persistentObjects = graphExecutionContext.getPersistentTaskToObjectsMap().values().stream()
-                .filter(Objects::nonNull) // Remove null lists
-                .mapToInt(List::size) // Get size of each list
-                .sum(); // Sum all sizes
+                .filter(Objects::nonNull)
+                .mapToInt(List::size)
+                .sum();
 
-        int objectsToAlloc = args.length - persistentObjects;
+        int objectsToAlloc = args.length - persistentObjects; // alloc is only performed on new objects
         Object[] objects = new Object[objectsToAlloc];
         Access[] accesses = new Access[objectsToAlloc];
         XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[objectsToAlloc];
