@@ -688,7 +688,7 @@ public class TaskGraph implements TaskGraphInterface {
      * Tag a set of objects to be used directly from the device. It requires
      * objects to be tagged as persisted objects from a previous taskgraph.
      * This method ensures that the specified objects are consumed from the device
-     * and do not copied form the host.
+     * and are not copied from the host.
      *
      * @param uniqueTaskGraphName
      *     A unique identifier for the task graph.
