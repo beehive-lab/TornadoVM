@@ -24,8 +24,6 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +33,6 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
@@ -300,10 +297,10 @@ public class TornadoGraphBuilder {
                 Object targetObject = objects.get(objectNode.getIndex());
 
                 // Check if the target object is marked as persistent in the execution context.
-                boolean isPersistentObject = executionContext.getPersistentObjects().contains(targetObject);
+                boolean isPersistedObject = executionContext.getPersistedObjects().contains(targetObject);
 
                 // If the object is NOT persistent, proceed with de-allocation. Prevents dealloc for Under_Demand objects
-                if (!isPersistentObject) {
+                if (!isPersistedObject) {
                     DeallocateNode deallocateNode = new DeallocateNode(contextNode);
                     deallocateNode.setValue(objectNode);
                     deallocateNode.setDependent(dependencyNode);

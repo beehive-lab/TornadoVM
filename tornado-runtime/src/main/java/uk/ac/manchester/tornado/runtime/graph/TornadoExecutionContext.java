@@ -77,7 +77,7 @@ public class TornadoExecutionContext {
     private Map<Integer, Integer> objectMap;
     private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
-    private List<Object> persistentObjects;
+    private List<Object> persistedObjects;
     private Map<String, List<Object>> persistedTaskToObjectsMap;
 
     private List<LocalObjectState> objectState;
@@ -103,7 +103,7 @@ public class TornadoExecutionContext {
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
         objects = new ArrayList<>();
-        persistentObjects = new ArrayList<>();
+        persistedObjects = new ArrayList<>();
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
         persistedTaskToObjectsMap =  new HashMap<>();
@@ -265,15 +265,14 @@ public class TornadoExecutionContext {
         return index;
     }
 
-    // Method to add an object to the list
     public void addPersistedObject(Object object) {
         if (object != null) {
-            persistentObjects.add(object);
+            persistedObjects.add(object);
         }
     }
 
-    public List<Object> getPersistentObjects() {
-        return persistentObjects;
+    public List<Object> getPersistedObjects() {
+        return persistedObjects;
     }
 
     public void setTask(int index, SchedulableTask task) {
@@ -650,7 +649,7 @@ public class TornadoExecutionContext {
 
         newExecutionContext.objects = new ArrayList<>(objects);
 
-        newExecutionContext.persistentObjects = new ArrayList<>(persistentObjects);
+        newExecutionContext.persistedObjects = new ArrayList<>(persistedObjects);
 
         newExecutionContext.persistedTaskToObjectsMap = new HashMap<>(persistedTaskToObjectsMap);
 

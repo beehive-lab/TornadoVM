@@ -150,7 +150,7 @@ public class TornadoVMInterpreter {
         logger.debug("created %d event lists", events.length);
         objectAccesses = graphExecutionContext.getObjectsAccesses();
         objects = graphExecutionContext.getObjects();
-        persistentObjects = graphExecutionContext.getPersistentObjects();
+        persistentObjects = graphExecutionContext.getPersistedObjects();
         dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 
