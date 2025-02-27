@@ -441,6 +441,7 @@ public class TornadoVMInterpreter {
         XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[objectsToAlloc];
 
         int allocCounter = 0;
+        long preAllocatedSizes = 0L;
         for (int i = 0; i < args.length; i++) {
             Object persistentObj = this.objects.get(args[i]);
             if (!isPersistentObject(persistentObj)) {
@@ -454,10 +455,13 @@ public class TornadoVMInterpreter {
                     tornadoVMBytecodeList.append(verbose).append("\n");
                 }
                 allocCounter++;
+            } else {
+                preAllocatedSizes += resolveObjectState(args[i]).getXPUBuffer().size();
             }
         }
 
-        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
+        // total size of objects pre-allocated and current allocation
+        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses) + preAllocatedSizes;
 
         graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
