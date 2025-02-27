@@ -148,7 +148,12 @@ public class TornadoGraphBuilder {
                         if (state.isStreamIn()) {
                             createStreamInNode(context, graph, objectNode, args, argIndex, persist);
                         } else {
-                            createCopyInNode(context, graph, arg, args, argIndex, persist);
+                            if (!state.isUnderDemand()) {
+                                createCopyInNode(context, graph, arg, args, argIndex, persist);
+                            } else {
+                                // if it is under demand, we only need to allocate the buffer
+                                createAllocateNode(context, graph, arg, args, argIndex, persist);
+                            }
                         }
                     }
                 } else {
@@ -159,6 +164,7 @@ public class TornadoGraphBuilder {
                 }
 
                 final AbstractNode nextAccessNode;
+                assert accesses != null;
                 if (accesses[argIndex] == Access.WRITE_ONLY || accesses[argIndex] == Access.READ_WRITE) {
                     final DependentReadNode depRead = new DependentReadNode(context);
                     final ObjectNode value;

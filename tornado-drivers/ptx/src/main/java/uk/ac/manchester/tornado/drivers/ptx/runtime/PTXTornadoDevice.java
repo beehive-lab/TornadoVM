@@ -68,6 +68,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.mm.CUDAXPUBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
@@ -76,7 +78,6 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMultiDimArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -260,25 +261,25 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new PTXVectorWrapper(getDeviceContext(), object, batchSize, access);
             } else if (object instanceof MemorySegment) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, 0);
             } else if (object instanceof IntArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S32.getSizeInBytes());
             } else if (object instanceof FloatArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.F32.getSizeInBytes());
             } else if (object instanceof DoubleArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.F64.getSizeInBytes());
             } else if (object instanceof LongArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S64.getSizeInBytes());
             } else if (object instanceof ShortArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S16.getSizeInBytes());
             } else if (object instanceof ByteArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S8.getSizeInBytes());
             } else if (object instanceof CharArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S8.getSizeInBytes());
             } else if (object instanceof HalfFloatArray) {
-                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access);
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S16.getSizeInBytes());
             } else {
-                result = new PTXObjectWrapper(getDeviceContext(), object, access);
+                result = new CUDAXPUBuffer(getDeviceContext(), object, access);
             }
         }
 
@@ -661,6 +662,13 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     @Override
     public boolean isSPIRVSupported() {
         return false;
+    }
+
+    @Override
+    public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
+        XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
+        devicePointer.mapOnDeviceMemoryRegion(executionPlanId, srcPointer, offset);
     }
 
     /**

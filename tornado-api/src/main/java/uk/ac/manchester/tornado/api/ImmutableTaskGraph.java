@@ -74,6 +74,10 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    TaskGraph getTaskGraph() {
+        return taskGraph;
+    }
+
     long getTotalTime() {
         return taskGraph.getTotalTime();
     }
@@ -212,5 +216,9 @@ public class ImmutableTaskGraph {
 
     long getCurrentDeviceMemoryUsage() {
         return taskGraph.getCurrentDeviceMemoryUsage();
+    }
+
+    void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
 }

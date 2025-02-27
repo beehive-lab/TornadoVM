@@ -37,11 +37,9 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueueTable;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCLBlocking;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
@@ -314,5 +312,11 @@ public class SPIRVOCLContext extends SPIRVContext {
             }
             executionIDs.remove(executionPlanId);
         }
+    }
+
+    @Override
+    public long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long dstBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest) {
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), dstBuffer, srcBuffer, offset, sizeOfType, sizeSource, sizeDest);
     }
 }
