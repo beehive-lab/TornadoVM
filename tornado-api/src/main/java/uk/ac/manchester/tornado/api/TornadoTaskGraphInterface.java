@@ -134,5 +134,5 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc);
 
     void updateObjectAccess();
-  
+    
 }

@@ -18,13 +18,10 @@
 package uk.ac.manchester.tornado.api;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IllegalFormatCodePointException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
