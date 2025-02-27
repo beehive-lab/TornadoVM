@@ -1103,6 +1103,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in task-graph " + executionContext.getId());
             }
 
+            // the accessor is set to READ_WRITE because the object is UNDER_DEMAND
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             executionContext.addPersistedObject(sourceTaskGraphName, parameter);
 
