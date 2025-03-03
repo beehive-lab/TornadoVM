@@ -101,7 +101,7 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
     void allocateAtomicRegion() {
         if (this.atomicsRegion == -1) {
             this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
-                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
+                    atomicRegionSize()).getBuffer();
         }
     }
 
@@ -110,5 +110,9 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
             deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegion);
             this.atomicsRegion = -1;
         }
+    }
+
+    public static long atomicRegionSize() {
+        return INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL;
     }
 }
