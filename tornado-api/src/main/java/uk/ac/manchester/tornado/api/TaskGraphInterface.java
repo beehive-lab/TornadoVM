@@ -519,6 +519,9 @@ public interface TaskGraphInterface {
      */
     TaskGraphInterface transferToDevice(int mode, Object... objects);
 
+
+    TaskGraph consumeFromDevice(String uniqueTaskGraphName, Object... objects);
+
     /**
      * Tag a set of objects (Java objects) to be transferred from the device to the
      * host after the execution completes. There are two modes:
@@ -544,6 +547,8 @@ public interface TaskGraphInterface {
      * @return {@link TaskGraphInterface}
      */
     TaskGraphInterface transferToHost(int mode, Object... objects);
+
+    TaskGraph persistOnDevice(Object... objects);
 
     /**
      * Function that closes a task-graph definition and creates an immutable
