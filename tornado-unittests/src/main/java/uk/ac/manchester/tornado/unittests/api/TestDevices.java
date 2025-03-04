@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.api;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -110,6 +111,8 @@ public class TestDevices extends TornadoTestBase {
     @Test
     public void test04() {
 
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
 
         // Query the number of backends
@@ -137,7 +140,7 @@ public class TestDevices extends TornadoTestBase {
                 .toLowerCase()       //
                 .contains("nvidia"));
 
-        assertTrue(!backendsWithNVIDIAAccess.isEmpty());
+        assertFalse(backendsWithNVIDIAAccess.isEmpty());
 
         // Another way to perform the previous query
         List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap //
@@ -150,12 +153,14 @@ public class TestDevices extends TornadoTestBase {
                                 .toLowerCase()      //
                                 .contains("nvidia")));
 
-        assertTrue(!backendsWithNVIDIAAccess2.isEmpty());
+        assertFalse(backendsWithNVIDIAAccess2.isEmpty());
 
     }
 
     @Test
     public void test05() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         TornadoDeviceMap deviceMap = new TornadoDeviceMap();
         Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("NVIDIA");
 
@@ -167,6 +172,8 @@ public class TestDevices extends TornadoTestBase {
 
     @Test
     public void test06() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
         TornadoDeviceType typeToFind = TornadoDeviceType.CPU;
         TornadoDeviceMap deviceMap = new TornadoDeviceMap();
         Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByType(typeToFind);
@@ -174,7 +181,7 @@ public class TestDevices extends TornadoTestBase {
         // Get the first that meets the criteria
         TornadoDevice device = deviceStream.findFirst().get();
         assertNotNull(device);
-        assertTrue(device.getDeviceType() == typeToFind);
+        assertSame(typeToFind, device.getDeviceType());
     }
 
     @Test

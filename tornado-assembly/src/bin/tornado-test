@@ -319,6 +319,12 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## SPIR-V with Level Zero
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
 
+    ## Test Devices: provided filters depend on the actual hardware installed.
+    ## The fact that these tests fail, does not mean the API is wrong.
+    'uk.ac.manchester.tornado.unittests.api.TestDevices#test04',
+    'uk.ac.manchester.tornado.unittests.api.TestDevices#test05',
+    'uk.ac.manchester.tornado.unittests.api.TestDevices#test06',
+
 ]
 
 ## List of tests to be excluded when running with the quick pass argument as they cause delays
