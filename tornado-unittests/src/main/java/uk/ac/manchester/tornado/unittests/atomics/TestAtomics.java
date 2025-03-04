@@ -213,14 +213,12 @@ public class TestAtomics extends TornadoTestBase {
     public static void atomic18(KernelContext context, IntArray input, IntArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             context.atomicAdd(input, i, 1);
-            output.set(i, input.get(i));
         }
     }
 
     public static void atomic18(KernelContext context, LongArray input, LongArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             context.atomicAdd(input, i, 1);
-            output.set(i, input.get(i));
         }
     }
 
@@ -234,7 +232,6 @@ public class TestAtomics extends TornadoTestBase {
     public static void atomic18(KernelContext context, DoubleArray input, DoubleArray output) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             context.atomicAdd(input, i, 1);
-            output.set(i, input.get(i));
         }
     }
 
@@ -243,7 +240,6 @@ public class TestAtomics extends TornadoTestBase {
 
         if (tid < input.getSize()) {
             context.atomicAdd(input, tid, 1);
-            output.set(tid, input.get(tid));
         }
     }
 
@@ -251,7 +247,6 @@ public class TestAtomics extends TornadoTestBase {
         for (@Parallel int tid = 0; tid < input.getSize(); tid++) {
             int index = input.get(tid);
             context.atomicAdd(output, index, 1);
-            output.set(index, output.get(index));
         }
     }
 
@@ -261,7 +256,6 @@ public class TestAtomics extends TornadoTestBase {
         if (tid < input.getSize()) {
             int index = input.get(tid);
             context.atomicAdd(output, index, 1);
-            output.set(index, output.get(index));
         }
     }
 
