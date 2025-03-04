@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 APT Group, Department of Computer Science,
+ * Copyright (c) 2025 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,37 +34,14 @@ import java.util.Random;
  * How to run?
  * </p>
  * <code>
- * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.Histogram
+ * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.Histogram 1024 256
  * </code>
  */
 public class Histogram {
 
     private static final int NUM_BINS = 4;
-    private static final int BLOCK_SIZE = 256;
+    private static int BLOCK_SIZE = 256;
     private static int size = 256;
-
-    /*public static void histogramOptimized(KernelContext context, IntArray inputData, IntArray histData) {
-        int[] localHist= context.allocateIntLocalArray(NUM_BINS);
-    //        __shared__ int localHist[NUM_BINS];
-
-    //        int tid = threadIdx.x + blockIdx.x * blockDim.x;
-        int tid = context.globalIdx;
-
-
-        if (context.localIdx < NUM_BINS) {
-            localHist[context.localIdx] = 0;
-        }
-        context.localBarrier();
-
-        if (tid < size) {
-            atomicAdd(&localHist[inputData.get(tid)], 1);
-        }
-        context.localBarrier();
-
-        if (context.localIdx < NUM_BINS) {
-            atomicAdd(&histData[context.localIdx], localHist[context.localIdx]);
-        }
-    }*/
 
     /**
      * This method implements the following CUDA kernel with the TornadoVM Kernel API.
@@ -73,7 +50,7 @@ public class Histogram {
      * int tid = threadIdx.x + blockIdx.x * blockDim.x;
      *
      * if (tid < dataSize) {
-     * atomicAdd(&hist[data[tid]], 1); // Atomic increment to avoid race conditions
+     * atomicAdd(&hist[data[tid]], 1);
      * }
      * }
      *
@@ -87,33 +64,37 @@ public class Histogram {
         if (tid < input.getSize()) {
             int index = input.get(tid);
             context.atomicAdd(output, index, 1);
+        }
+    }
+
+    public static void histogram(KernelContext context, IntArray input, IntArray output) {
+        for (int tid = 0; tid < input.getSize(); tid++) {
+            int index = input.get(tid);
+            context.atomicAdd(output, index, 1);
             output.set(index, output.get(index));
         }
-
-        //        for (@Parallel int tid = 0; tid < input.getSize(); tid++) {
-        //            int index = input.get(tid);
-        //            context.atomicAdd(output, index, 1);
-        //            output.set(index, output.get(index));
-        //        }
     }
 
     public static void main(String[] args) throws TornadoExecutionPlanException {
-        //        int[] data = new int[size];
-        Random rand = new Random();
-        //        IntArray inputData = IntArray.fromArray(data);
-        IntArray inputData = new IntArray(size);
-        IntArray histData = new IntArray(size);
+        if (args.length == 1) {
+            size = Integer.parseInt(args[0]);
+        } else if (args.length == 2) {
+            size = Integer.parseInt(args[0]);
+            BLOCK_SIZE = Integer.parseInt(args[1]);
+        }
 
-        // Initialize random data
+        Random rand = new Random();
+        IntArray inputData = new IntArray(size);
+        IntArray histDataTornado = new IntArray(size);
+        IntArray histDataJava = new IntArray(size);
+
+        // Initialize input data with random numbers
         for (int i = 0; i < size; i++) {
             inputData.set(i, rand.nextInt(NUM_BINS));
-            //            inputData.set(i, i);
         }
         inputData.init(2);
-        histData.init(0);
 
         KernelContext context = new KernelContext();
-
         WorkerGrid workerGrid = new WorkerGrid1D(size);
         workerGrid.setGlobalWork(size, 1, 1);
         workerGrid.setLocalWork(BLOCK_SIZE, 1, 1);
@@ -121,16 +102,35 @@ public class Histogram {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputData) //
-                .task("t0", Histogram::histogramKernel, context, inputData, histData) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, histData); //
+                .task("t0", Histogram::histogramKernel, context, inputData, histDataTornado) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, histDataTornado); //
 
+        // Run histogram with TornadoVM
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withGridScheduler(gridScheduler).execute();
-            //            executionPlan.withDefaultScheduler().execute();
         }
 
-        for (int i = 0; i < NUM_BINS + 1; i++) {
-            System.out.println("histData[" + i + "]: " + histData.get(i));
+        // Run histogram in Java
+        histogram(context, inputData, histDataJava);
+
+        final boolean validation = validate(histDataTornado, histDataJava);
+
+        if (validation) {
+            System.out.println("Validation [PASSED].");
+        } else {
+            System.out.println("Validation [FAILED].");
         }
+    }
+
+    private static boolean validate(IntArray histDataTornado, IntArray histDataJava) {
+        int counter = 0;
+        for (int i = 0; i < NUM_BINS + 1; i++) {
+            counter += histDataTornado.get(i);
+            if (histDataJava.get(i) != histDataTornado.get(i)) {
+                System.out.println("[FAIL] histDataJava.get(" + i + "): " + histDataJava.get(i) + " - histDataTornado.get(" + i + "): " + histDataTornado.get(i));
+                return false;
+            }
+        }
+        return counter == histDataTornado.getSize();
     }
 }
