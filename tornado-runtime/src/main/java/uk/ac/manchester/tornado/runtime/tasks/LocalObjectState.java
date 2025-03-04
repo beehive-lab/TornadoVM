@@ -55,6 +55,8 @@ public class LocalObjectState {
 
     private boolean underDemand;
 
+    private boolean onDevice;
+
     /**
      * For each variable, we need to keep track of all devices in which there is a shadow
      * copy. This is achieved by using the {@link DataObjectState} object.
@@ -69,6 +71,7 @@ public class LocalObjectState {
         streamIn = false;
         streamOut = false;
         underDemand = false;
+        onDevice = false;
     }
 
     public Object getObject() {
@@ -85,6 +88,15 @@ public class LocalObjectState {
 
     public void enableUnderDemand() {
         this.underDemand = true;
+    }
+
+    public void setOnDevice(boolean isOnDevice) {
+        this.onDevice = isOnDevice;
+    }
+
+
+    public boolean isOnDevice() {
+        return onDevice;
     }
 
     public void setStreamIn(boolean streamIn) {
@@ -128,6 +140,7 @@ public class LocalObjectState {
         newLocalObjectState.forceStreamIn = this.forceStreamIn;
         newLocalObjectState.underDemand = this.underDemand;
         newLocalObjectState.dataObjectState = dataObjectState.clone();
+        newLocalObjectState.onDevice = this.onDevice;
         return newLocalObjectState;
     }
 

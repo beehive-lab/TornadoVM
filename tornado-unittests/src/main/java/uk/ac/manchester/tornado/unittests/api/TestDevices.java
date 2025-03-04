@@ -19,9 +19,11 @@ package uk.ac.manchester.tornado.unittests.api;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 
@@ -29,6 +31,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoDeviceMap;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
@@ -108,6 +111,8 @@ public class TestDevices extends TornadoTestBase {
     @Test
     public void test04() {
 
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
 
         // Query the number of backends
@@ -122,23 +127,69 @@ public class TestDevices extends TornadoTestBase {
         // Obtain all backends with at least two devices associated to it
         List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getNumDevices() > 1);
 
+        // If the multi-backend list is not empty, then it found at least one backend with multiple devices
+        assertTrue(multiDeviceBackends.size() >= 1);
+
         // Obtain the backend that can support SPIR-V as default device
         List<TornadoBackend> spirvSupported = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getDefaultDevice().isSPIRVSupported());
 
         // Return all backends that can access an NVIDIA GPU
         List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device //
-                .getDeviceName() //
-                .toLowerCase()//
+                .getPhysicalDevice() //
+                .getDeviceName()     //
+                .toLowerCase()       //
                 .contains("nvidia"));
+
+        assertFalse(backendsWithNVIDIAAccess.isEmpty());
 
         // Another way to perform the previous query
         List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap //
                 .getBackendsWithPredicate(backend -> backend //
                         .getAllDevices()//
                         .stream()//
-                        .allMatch(device -> device//
-                                .getDeviceName()//
-                                .toLowerCase()//
+                        .anyMatch(device -> device//
+                                .getPhysicalDevice()//
+                                .getDeviceName()    //
+                                .toLowerCase()      //
                                 .contains("nvidia")));
+
+        assertFalse(backendsWithNVIDIAAccess2.isEmpty());
+
+    }
+
+    @Test
+    public void test05() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        TornadoDeviceMap deviceMap = new TornadoDeviceMap();
+        Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("NVIDIA");
+
+        // Get the first that meets the criteria
+        TornadoDevice device = deviceStream.findFirst().get();
+        assertNotNull(device);
+        assertTrue(device.getPhysicalDevice().getDeviceName().toLowerCase().contains("nvidia"));
+    }
+
+    @Test
+    public void test06() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        TornadoDeviceType typeToFind = TornadoDeviceType.CPU;
+        TornadoDeviceMap deviceMap = new TornadoDeviceMap();
+        Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByType(typeToFind);
+
+        // Get the first that meets the criteria
+        TornadoDevice device = deviceStream.findFirst().get();
+        assertNotNull(device);
+        assertSame(typeToFind, device.getDeviceType());
+    }
+
+    @Test
+    public void test07() {
+        TornadoDeviceMap deviceMap = new TornadoDeviceMap();
+
+        // Intentionally a random name to get an empty stream
+        Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("foo");
+        assertTrue(deviceStream.findAny().isEmpty());
     }
 }

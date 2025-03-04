@@ -18,10 +18,13 @@
 package uk.ac.manchester.tornado.api;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 /**
@@ -87,6 +90,90 @@ public class TornadoDeviceMap {
      * @return {@link List< TornadoBackend >}
      */
     public List<TornadoBackend> getBackendsWithDevicePredicate(Predicate<? super TornadoDevice> predicate) {
-        return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().allMatch(predicate)).toList();
+        return getAllBackends().stream().filter(backend -> backend.getAllDevices().stream().anyMatch(predicate)).toList();
+    }
+
+    /**
+     * Obtain a device object with a specific name. This function returns a Stream of all devices that meet the criteria.
+     * The device objects could be from different backends. For example, if we have multiple backends installed, and we
+     * request a device name with "NVIDIA" in it. In this case, this function can return a stream with multiple devices
+     * from different backends pointing to the same device (e.g., an NVIDIA GPU using the OpenCL backend, and an NVIDIA
+     * GPU using the PTX backend).
+     *
+     * @param deviceName
+     *     Name of the device.
+     * @return
+     *     Stream of devices that meet the criteria. Otherwise, an empty stream.
+     */
+    public Stream<TornadoDevice> getDevicesByName(String deviceName) {
+        TornadoDeviceMap deviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
+        List<TornadoBackend> backendFilter = deviceMap.getBackendsWithPredicate(backend -> //
+        backend.getAllDevices() //
+                .stream() //
+                .anyMatch(device -> device //
+                        .getPhysicalDevice() //
+                        .getDeviceName() //
+                        .toLowerCase() //
+                        .contains(deviceName.toLowerCase())));
+
+        if (!backendFilter.isEmpty()) {
+            Stream<TornadoDevice> deviceStream = null;
+            for (TornadoBackend backend : backendFilter) {
+                Stream<TornadoDevice> deviceStreamI = backend //
+                        .getAllDevices() //
+                        .stream() //
+                        .filter(device -> device //
+                                .getPhysicalDevice()//
+                                .getDeviceName() //
+                                .toLowerCase() //
+                                .contains(deviceName.toLowerCase())); //
+
+                if (deviceStream == null) {
+                    deviceStream = deviceStreamI;
+                } else {
+                    deviceStream = Stream.concat(deviceStream, deviceStreamI);
+                }
+            }
+            return deviceStream;
+        }
+        // Return an empty stream
+        return Arrays.stream(new TornadoDevice[0]);
+    }
+
+    /**
+     * Obtain a device object from a specific type (GPU, Accelerator, CPU). This function returns a Stream of all devices that meet the criteria.
+     * The device objects could be from different backends. For example, if we have multiple backends installed, and we request any GPU device,
+     * this function will return all GPU devices (GPU-OpenCL, GPU-SPIR-V, GPU-PTX), even if they point to the exact same device.
+     * 
+     * @param deviceType
+     *     {@link TornadoDeviceType}
+     * @return
+     *     Stream of devices that meet the criteria. Otherwise, an empty stream.
+     */
+    public Stream<TornadoDevice> getDevicesByType(TornadoDeviceType deviceType) {
+        TornadoDeviceMap deviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
+        List<TornadoBackend> backendFilter = deviceMap.getBackendsWithPredicate(backend -> //
+        backend.getAllDevices() //
+                .stream() //
+                .anyMatch(device -> device.getDeviceType() == deviceType));
+
+        if (!backendFilter.isEmpty()) {
+            Stream<TornadoDevice> deviceStream = null;
+            for (TornadoBackend backend : backendFilter) {
+                Stream<TornadoDevice> deviceStreamI = backend //
+                        .getAllDevices() //
+                        .stream() //
+                        .filter(device -> device.getDeviceType() == deviceType);
+
+                if (deviceStream == null) {
+                    deviceStream = deviceStreamI;
+                } else {
+                    deviceStream = Stream.concat(deviceStream, deviceStreamI);
+                }
+            }
+            return deviceStream;
+        }
+        // Return an empty stream
+        return Arrays.stream(new TornadoDevice[0]);
     }
 }

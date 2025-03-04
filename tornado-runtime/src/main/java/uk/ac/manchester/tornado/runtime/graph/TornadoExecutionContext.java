@@ -77,6 +77,9 @@ public class TornadoExecutionContext {
     private Map<Integer, Integer> objectMap;
     private HashMap<Object, Access> objectsAccesses;
     private List<Object> objects;
+    private List<Object> persistedObjects;
+    private Map<String, List<Object>> persistedTaskToObjectsMap;
+
     private List<LocalObjectState> objectState;
     private List<TornadoXPUDevice> devices;
     private TornadoXPUDevice[] taskToDeviceMapTable;
@@ -100,8 +103,10 @@ public class TornadoExecutionContext {
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
         objects = new ArrayList<>();
+        persistedObjects = new ArrayList<>();
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
+        persistedTaskToObjectsMap =  new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
         taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
@@ -113,7 +118,6 @@ public class TornadoExecutionContext {
         currentDeviceMemoryUsage = 0;
         this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
-
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -229,6 +233,7 @@ public class TornadoExecutionContext {
             newLocalObjectState.setStreamIn(oldLocalObjectState.isStreamIn());
             newLocalObjectState.setForceStreamIn(oldLocalObjectState.isForcedStreamIn());
             newLocalObjectState.setStreamOut(oldLocalObjectState.isStreamOut());
+            newLocalObjectState.setOnDevice(oldLocalObjectState.isOnDevice());
 
             index = oldIndex;
             objects.add(index, newObj);
@@ -258,6 +263,16 @@ public class TornadoExecutionContext {
             tasks.add(task);
         }
         return index;
+    }
+
+    public void addPersistedObject(Object object) {
+        if (object != null) {
+            persistedObjects.add(object);
+        }
+    }
+
+    public List<Object> getPersistedObjects() {
+        return persistedObjects;
     }
 
     public void setTask(int index, SchedulableTask task) {
@@ -634,6 +649,10 @@ public class TornadoExecutionContext {
 
         newExecutionContext.objects = new ArrayList<>(objects);
 
+        newExecutionContext.persistedObjects = new ArrayList<>(persistedObjects);
+
+        newExecutionContext.persistedTaskToObjectsMap = new HashMap<>(persistedTaskToObjectsMap);
+
         List<LocalObjectState> objectStateCopy = new ArrayList<>();
         for (LocalObjectState localObjectState : objectState) {
             objectStateCopy.add(localObjectState.clone());
@@ -670,4 +689,14 @@ public class TornadoExecutionContext {
     public void setCurrentDeviceMemoryUsage(long currentDeviceMemoryUsage) {
         this.currentDeviceMemoryUsage = currentDeviceMemoryUsage;
     }
+
+
+    public void addPersistedObject(String taskgraphUniqueName, Object value) {
+        persistedTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);
+    }
+
+    public Map<String, List<Object>> getPersistedTaskToObjectsMap() {
+        return persistedTaskToObjectsMap;
+    }
+
 }

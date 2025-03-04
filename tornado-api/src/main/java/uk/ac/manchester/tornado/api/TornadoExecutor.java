@@ -186,14 +186,13 @@ class TornadoExecutor {
         return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
     }
 
-    List<Object> getOutputs() {
-        List<Object> outputs = new ArrayList<>();
-        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
-        return outputs;
-    }
-
     void withThreadInfo() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
+    }
+
+    List<Object> getOutputs() { List<Object> outputs = new ArrayList<>();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
+        return outputs;
     }
 
     void withoutThreadInfo() {
@@ -229,9 +228,39 @@ class TornadoExecutor {
             subgraphList = new ArrayList<>();
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
+        processPersistentStates(graphIndex);
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
     }
+
+    /**
+     * Processes the persistent states of a specified subgraph.
+     *
+     * @param graphIndex The index of the subgraph to process.
+     */
+    private void processPersistentStates(int graphIndex) {
+        // Validate that the graphIndex is within bounds of subgraphList
+        if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
+             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
+        }
+
+        // Retrieve the list of persisted task names from the specified subgraph
+        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex)
+                .getTaskGraph()
+                .taskGraphImpl
+                .getPersistedTaskToObjectsMap()
+                .keySet());
+
+        // Determine the safe iteration limit to avoid IndexOutOfBoundsException
+        int limit = Math.min(graphIndex, namesList.size());
+
+        // Iterate over the namesList and update the persisted object state
+        for (int idx = 0; idx < limit; idx++) {
+            String key = namesList.get(idx);
+            subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
+        }
+    }
+
 
     private ImmutableTaskGraph getGraph(int graphIndex) {
         if (graphIndex < immutableTaskGraphList.size()) {
@@ -239,6 +268,15 @@ class TornadoExecutor {
         } else {
             throw new TornadoRuntimeException("TaskGraph index #" + graphIndex + " does not exist in current executor");
         }
+    }
+
+    private ImmutableTaskGraph getGraphByName(String uniqueName) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
+                return immutableTaskGraph;
+            }
+        }
+        throw new TornadoRuntimeException("TaskGraph with name " + uniqueName + " does not exist in current executor");
     }
 
     void selectAll() {
@@ -267,4 +305,5 @@ class TornadoExecutor {
         ImmutableTaskGraph taskGraphDest = getGraph(toGraphIndex);
         taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
+
 }
