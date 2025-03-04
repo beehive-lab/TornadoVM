@@ -669,7 +669,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
 
             if (localStateDest == null) {
-                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
+                continue;
+//                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
             }
 
             if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
