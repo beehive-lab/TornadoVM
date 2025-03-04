@@ -233,23 +233,34 @@ class TornadoExecutor {
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
     }
 
-    //TODO: iterate on review if this is the right place to do it
+    /**
+     * Processes the persistent states of a specified subgraph.
+     *
+     * @param graphIndex The index of the subgraph to process.
+     */
     private void processPersistentStates(int graphIndex) {
+        // Validate that the graphIndex is within bounds of subgraphList
+        if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
+             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
+        }
+
+        // Retrieve the list of persisted task names from the specified subgraph
         List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex)
                 .getTaskGraph()
                 .taskGraphImpl
                 .getPersistedTaskToObjectsMap()
                 .keySet());
 
-        for (String str : namesList) {
-            System.out.println("SS  " + str);
-        }
+        // Determine the safe iteration limit to avoid IndexOutOfBoundsException
+        int limit = Math.min(graphIndex, namesList.size());
 
-        if (namesList.size() == 1) {
-            String key = namesList.get(0);
+        // Iterate over the namesList and update the persisted object state
+        for (int idx = 0; idx < limit; idx++) {
+            String key = namesList.get(idx);
             subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
         }
     }
+
 
     private ImmutableTaskGraph getGraph(int graphIndex) {
         if (graphIndex < immutableTaskGraphList.size()) {
