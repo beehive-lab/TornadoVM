@@ -210,32 +210,31 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    public static void atomic18(KernelContext context, IntArray input, IntArray output) {
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            context.atomicAdd(input, i, 1);
+    public static void atomic18(KernelContext context, IntArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
         }
     }
 
-    public static void atomic18(KernelContext context, LongArray input, LongArray output) {
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            context.atomicAdd(input, i, 1);
+    public static void atomic18(KernelContext context, LongArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
         }
     }
 
-    public static void atomic18(KernelContext context, FloatArray input, FloatArray output) {
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            context.atomicAdd(input, i, 1);
-            output.set(i, input.get(i));
+    public static void atomic18(KernelContext context, FloatArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
         }
     }
 
-    public static void atomic18(KernelContext context, DoubleArray input, DoubleArray output) {
-        for (@Parallel int i = 0; i < input.getSize(); i++) {
-            context.atomicAdd(input, i, 1);
+    public static void atomic18(KernelContext context, DoubleArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
         }
     }
 
-    public static void atomic18Kernel(KernelContext context, IntArray input, IntArray output) {
+    public static void atomic18Kernel(KernelContext context, IntArray input) {
         int tid = context.globalIdx;
 
         if (tid < input.getSize()) {
@@ -927,26 +926,26 @@ public class TestAtomics extends TornadoTestBase {
 
         final int size = 32;
         IntArray dataTornadoVM = new IntArray(size);
-        IntArray output = new IntArray(size);
-        IntArray outputJava = new IntArray(size);
+        IntArray dataJava = new IntArray(size);
         for (int i = 0; i < size; i++) {
             dataTornadoVM.set(i, i);
+            dataJava.set(i, i);
         }
 
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
-                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withDefaultScheduler().execute();
         }
 
-        atomic18(context, dataTornadoVM, outputJava);
+        atomic18(context, dataJava);
 
-        assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
+        assertArrayEquals(dataJava.toHeapArray(), dataTornadoVM.toHeapArray());
     }
 
     @Test
@@ -955,26 +954,26 @@ public class TestAtomics extends TornadoTestBase {
 
         final int size = 32;
         LongArray dataTornadoVM = new LongArray(size);
-        LongArray output = new LongArray(size);
-        LongArray outputJava = new LongArray(size);
+        LongArray dataJava = new LongArray(size);
         for (int i = 0; i < size; i++) {
             dataTornadoVM.set(i, i);
+            dataJava.set(i, i);
         }
 
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
-                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withDefaultScheduler().execute();
         }
 
-        atomic18(context, dataTornadoVM, outputJava);
+        atomic18(context, dataJava);
 
-        assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
+        assertArrayEquals(dataJava.toHeapArray(), dataTornadoVM.toHeapArray());
     }
 
     @Test
@@ -984,7 +983,6 @@ public class TestAtomics extends TornadoTestBase {
 
         final int size = 32;
         FloatArray dataTornadoVM = new FloatArray(size);
-        FloatArray output = new FloatArray(size);
         for (int i = 0; i < size; i++) {
             dataTornadoVM.set(i, i);
         }
@@ -993,15 +991,15 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
-                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withDefaultScheduler().execute();
         }
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + 1, output.get(i), 0.1f);
+            assertEquals(i + 1, dataTornadoVM.get(i), 0.1f);
         }
     }
 
@@ -1012,7 +1010,6 @@ public class TestAtomics extends TornadoTestBase {
 
         final int size = 32;
         DoubleArray dataTornadoVM = new DoubleArray(size);
-        DoubleArray output = new DoubleArray(size);
         for (int i = 0; i < size; i++) {
             dataTornadoVM.set(i, i);
         }
@@ -1021,15 +1018,15 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
-                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, output) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withDefaultScheduler().execute();
         }
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + 1, output.get(i), 0.1f);
+            assertEquals(i + 1, dataTornadoVM.get(i), 0.1f);
         }
     }
 
@@ -1040,10 +1037,10 @@ public class TestAtomics extends TornadoTestBase {
 
         final int size = 32;
         IntArray dataTornadoVM = new IntArray(size);
-        IntArray output = new IntArray(size);
-        IntArray outputJava = new IntArray(size);
+        IntArray dataJava = new IntArray(size);
         for (int i = 0; i < size; i++) {
             dataTornadoVM.set(i, i);
+            dataJava.set(i, i);
         }
 
         KernelContext context = new KernelContext();
@@ -1052,16 +1049,16 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
-                .task("t0", TestAtomics::atomic18Kernel, context, dataTornadoVM, output) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+                .task("t0", TestAtomics::atomic18Kernel, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withGridScheduler(gridScheduler).execute();
         }
 
-        atomic18(context, dataTornadoVM, outputJava);
+        atomic18(context, dataJava);
 
-        assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
+        assertArrayEquals(dataJava.toHeapArray(), dataTornadoVM.toHeapArray());
     }
 
     @Test
