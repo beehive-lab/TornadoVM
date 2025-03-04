@@ -21,9 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
