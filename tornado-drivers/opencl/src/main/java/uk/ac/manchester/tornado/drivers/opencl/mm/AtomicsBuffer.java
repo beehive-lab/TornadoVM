@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class AtomicsBuffer implements XPUBuffer {
 
@@ -40,6 +41,8 @@ public class AtomicsBuffer implements XPUBuffer {
     private final OCLDeviceContext deviceContext;
     private long setSubRegionSize;
     private Access access;
+
+    private static final TornadoLogger logger = new TornadoLogger(AtomicsBuffer.class);
 
     public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext, Access access) {
         this.deviceContext = deviceContext;
@@ -99,7 +102,7 @@ public class AtomicsBuffer implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        deviceContext.getMemoryManager().deallocateAtomicRegion();
+        logger.debug("Marking atomics buffer as free has no effect because we do not use the BufferProvider for this buffer.");
     }
 
     @Override
@@ -139,7 +142,8 @@ public class AtomicsBuffer implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate(access);
+        deviceContext.getMemoryManager().deallocateAtomicRegion();
+        return OCLMemoryManager.atomicRegionSize();
     }
 
 }
