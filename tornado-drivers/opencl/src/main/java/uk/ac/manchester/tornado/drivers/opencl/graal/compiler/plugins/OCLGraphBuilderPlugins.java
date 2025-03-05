@@ -311,7 +311,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                unimplemented("In OpenCL, the atomic_add function does not support floating point operations.");
+                unimplemented("In OpenCL, the atom_add function does not support floating point operations.");
                 return false;
             }
         });
@@ -319,7 +319,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                unimplemented("In OpenCL, the atomic_add function does not support floating point operations.");
+                unimplemented("In OpenCL, the atom_add function does not support floating point operations.");
                 return false;
             }
         });

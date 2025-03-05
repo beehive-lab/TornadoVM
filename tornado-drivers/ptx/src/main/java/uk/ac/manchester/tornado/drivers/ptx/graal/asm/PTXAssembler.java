@@ -569,7 +569,6 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic TANH = new PTXUnaryIntrinsic("tanh.approx", null);
         public static final PTXUnaryIntrinsic RSQRT = new PTXUnaryIntrinsic("rsqrt.approx", null);
         public static final PTXUnaryIntrinsic FLOAT_FLOOR = new PTXUnaryIntrinsic(CONVERT, ROUND_NEGATIVE_INFINITY_INTEGER, true, false);
-//        public static final PTXUnaryIntrinsic ATOMIC = new PTXUnaryIntrinsic("atom", null, false, false);
 
         public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc") {
             @Override
