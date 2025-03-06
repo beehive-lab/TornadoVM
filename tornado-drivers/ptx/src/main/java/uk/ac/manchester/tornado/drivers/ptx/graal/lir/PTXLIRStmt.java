@@ -924,9 +924,9 @@ public class PTXLIRStmt {
         PTXAssembler.PTXBinaryOp arithmeticOp;
 
         @Use
-        Constant inc;
+        Value inc;
 
-        public AtomOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp atomicOp, PTXAssembler.PTXBinaryOp arithmeticOp, Constant inc) {
+        public AtomOperation(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp atomicOp, PTXAssembler.PTXBinaryOp arithmeticOp, Value inc) {
             super(TYPE);
 
             this.address = address;
@@ -953,7 +953,7 @@ public class PTXLIRStmt {
             address.emit(crb, asm, null);
             asm.emitSymbol(COMMA);
             asm.space();
-            asm.emitSymbol(inc.toValueString());
+            asm.emitValue(inc);
             asm.delimiter();
             asm.eol();
         }

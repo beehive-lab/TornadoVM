@@ -59,6 +59,6 @@ public class AtomAddNodeTemplate extends FixedWithNextNode implements LIRLowerab
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable dest = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new PTXLIRStmt.AtomOperation((PTXUnary.MemoryAccess) gen.operand(address), dest, ATOM, PTXAssembler.PTXBinaryOp.ADD, inc.asConstant()));
+        tool.append(new PTXLIRStmt.AtomOperation((PTXUnary.MemoryAccess) gen.operand(address), dest, ATOM, PTXAssembler.PTXBinaryOp.ADD, gen.operand(inc)));
     }
 }
