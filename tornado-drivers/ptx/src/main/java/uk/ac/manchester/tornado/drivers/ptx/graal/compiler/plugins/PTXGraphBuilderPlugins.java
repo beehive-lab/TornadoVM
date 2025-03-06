@@ -235,81 +235,32 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, IntArray.class, Integer.TYPE, Integer.TYPE) {
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, 6);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, 6);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, 3);
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, 6);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, 3);
+    }
+
+    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, int panamaOffset) {
+        r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                JavaKind kind = PTXKind.U32.asJavaKind();
-
-                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
-                // The offset is used by MulNode.
-                Constant panamaHeaderOffset = new RawConstant(6);
-                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
-                AddNode newIndex = b.append(new AddNode(index, constantNode));
-                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
-                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
-                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
+                JavaKind javaKind = kind.asJavaKind();
+                AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }
         });
+    }
 
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, LongArray.class, Integer.TYPE, Long.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                JavaKind kind = PTXKind.U64.asJavaKind();
-
-                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
-                // The offset is used by MulNode.
-                Constant panamaHeaderOffset = new RawConstant(3);
-                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
-                AddNode newIndex = b.append(new AddNode(index, constantNode));
-                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
-                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
-                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
-                b.add(b.append(atomicAddNode));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                JavaKind kind = PTXKind.F32.asJavaKind();
-
-                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
-                // The offset is used by MulNode.
-                Constant panamaHeaderOffset = new RawConstant(6);
-                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
-                AddNode newIndex = b.append(new AddNode(index, constantNode));
-                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
-                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
-                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
-                b.add(b.append(atomicAddNode));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                JavaKind kind = PTXKind.F64.asJavaKind();
-
-                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
-                // The offset is used by MulNode.
-                Constant panamaHeaderOffset = new RawConstant(3);
-                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
-                AddNode newIndex = b.append(new AddNode(index, constantNode));
-                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
-                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
-                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
-                b.add(b.append(atomicAddNode));
-                return true;
-            }
-        });
+    private static AddressNode computeAddress(GraphBuilderContext b, ValueNode segment, ValueNode index, int panamaOffset, JavaKind kind) {
+        ConstantNode constantNode = b.append(new ConstantNode(new RawConstant(panamaOffset), StampFactory.forKind(JavaKind.Int)));
+        AddNode newIndex = b.append(new AddNode(index, constantNode));
+        SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, PTXKind.U64.asJavaKind().getBitCount()));
+        MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+        return b.append(new OffsetAddressNode(segment, mulNode));
     }
 
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
