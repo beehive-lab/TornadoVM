@@ -105,6 +105,14 @@ public interface ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
+     * PTX equivalent: atomicAdd(int* address, int val);
+     */
+    void atomicAdd(int[] array, int index, int val);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
      * PTX equivalent: atomicAdd(long* address, long val);
      */
     void atomicAdd(LongArray array, int index, long val);

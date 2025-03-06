@@ -206,6 +206,19 @@ public class KernelContext implements ExecutionContext {
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
+     * PTX equivalent: atomicAdd(int* address, int val);
+     */
+    @Override
+    public void atomicAdd(int[] array, int index, int val) {
+        int arrayValue = array[index];
+        AtomicInteger atomicInteger = new AtomicInteger(arrayValue);
+        array[index] = atomicInteger.addAndGet(val);
+    }
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
      * PTX equivalent: atomicAdd(long* address, long val);
      */
     @Override
