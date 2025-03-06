@@ -45,11 +45,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
-import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.RawConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -71,7 +67,6 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -270,44 +265,27 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, IntArray.class, Integer.TYPE, Integer.TYPE) {
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, 6);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, 6);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, 3);
+        registerUnsupportedAtomicAddPlugin(r);
+        registerUnsupportedAtomicAddPlugin(r);
+    }
+
+    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, OCLKind kind, int panamaOffset) {
+        r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                JavaKind kind = OCLKind.UINT.asJavaKind();
-
-                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
-                // The offset is used by MulNode.
-                Constant panamaHeaderOffset = new RawConstant(6);
-                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
-                AddNode newIndex = b.append(new AddNode(index, constantNode));
-                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, OCLKind.LONG.asJavaKind().getBitCount()));
-                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
-                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
+                JavaKind javaKind = kind.asJavaKind();
+                AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
+                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(b.append(atomicAddNode));
                 return true;
             }
         });
+    }
 
-        r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, LongArray.class, Integer.TYPE, Long.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
-                JavaKind kind = OCLKind.ULONG.asJavaKind();
-
-                // This constant represents the offset used to skip the Panama header which is 24 Bytes.
-                // The offset is used by MulNode.
-                Constant panamaHeaderOffset = new RawConstant(3);
-                ConstantNode constantNode = b.append(new ConstantNode(panamaHeaderOffset, StampFactory.forKind(JavaKind.Int)));
-                AddNode newIndex = b.append(new AddNode(index, constantNode));
-                SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, OCLKind.LONG.asJavaKind().getBitCount()));
-                MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
-                final AddressNode address = b.append(new OffsetAddressNode(segment, mulNode));
-                AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, kind);
-                b.add(b.append(atomicAddNode));
-                return true;
-            }
-        });
-
+    private static void registerUnsupportedAtomicAddPlugin(Registration r) {
         r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
@@ -315,7 +293,6 @@ public class OCLGraphBuilderPlugins {
                 return false;
             }
         });
-
         r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
@@ -323,6 +300,14 @@ public class OCLGraphBuilderPlugins {
                 return false;
             }
         });
+    }
+
+    private static AddressNode computeAddress(GraphBuilderContext b, ValueNode segment, ValueNode index, int panamaOffset, JavaKind kind) {
+        ConstantNode constantNode = b.append(new ConstantNode(new RawConstant(panamaOffset), StampFactory.forKind(JavaKind.Int)));
+        AddNode newIndex = b.append(new AddNode(index, constantNode));
+        SignExtendNode signExtendNode = b.append(new SignExtendNode(newIndex, OCLKind.LONG.asJavaKind().getBitCount()));
+        MulNode mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forInt(kind.getByteCount())));
+        return b.append(new OffsetAddressNode(segment, mulNode));
     }
 
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
