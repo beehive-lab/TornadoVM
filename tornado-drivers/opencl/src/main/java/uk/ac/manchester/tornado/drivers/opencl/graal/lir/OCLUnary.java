@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import jdk.vm.ci.meta.Constant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
@@ -110,11 +109,11 @@ public class OCLUnary {
         OCLAssembler.OCLUnaryIntrinsic atomicOp;
 
         @Use
-        Constant inc;
+        Value inc;
 
         LIRKind destLirKind;
 
-        public AtomOperation(OCLUnaryOp opcode, LIRKind lirKind, Value value, OCLUnary.MemoryAccess address, OCLAssembler.OCLUnaryIntrinsic atomicOp, Constant inc) {
+        public AtomOperation(OCLUnaryOp opcode, LIRKind lirKind, Value value, OCLUnary.MemoryAccess address, OCLAssembler.OCLUnaryIntrinsic atomicOp, Value inc) {
             super(opcode, lirKind, value);
 
             this.address = address;
@@ -140,7 +139,7 @@ public class OCLUnary {
             address.emit(crb, asm);
             asm.emitSymbol(OCLAssemblerConstants.EXPR_DELIMITER);
             asm.space();
-            asm.emitSymbol(inc.toValueString());
+            asm.emitValue(crb, inc);
             asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         }
     }

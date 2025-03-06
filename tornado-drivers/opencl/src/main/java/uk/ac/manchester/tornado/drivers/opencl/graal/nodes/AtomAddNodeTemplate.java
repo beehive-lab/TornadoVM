@@ -57,7 +57,7 @@ public class AtomAddNodeTemplate extends FixedWithNextNode implements LIRLowerab
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.AtomOperation(OCLAssembler.OCLUnaryOp.CAST_TO_INT, tool.getLIRKind(stamp), gen.operand(address), (OCLUnary.MemoryAccess) gen.operand(
-                address), OCLAssembler.OCLUnaryIntrinsic.ATOM_ADD, inc.asConstant())));
+                address), OCLAssembler.OCLUnaryIntrinsic.ATOM_ADD, gen.operand(inc))));
         gen.setResult(this, result);
     }
 }
