@@ -99,6 +99,51 @@ public class OCLUnary {
 
     }
 
+    @Opcode("AtomAdd")
+    public static class AtomOperation extends UnaryConsumer {
+
+        @Use
+        OCLUnary.MemoryAccess address;
+
+        @Use
+        OCLAssembler.OCLUnaryIntrinsic atomicOp;
+
+        @Use
+        Value inc;
+
+        LIRKind destLirKind;
+
+        public AtomOperation(OCLUnaryOp opcode, LIRKind lirKind, Value value, OCLUnary.MemoryAccess address, OCLAssembler.OCLUnaryIntrinsic atomicOp, Value inc) {
+            super(opcode, lirKind, value);
+
+            this.address = address;
+            this.atomicOp = atomicOp;
+            this.inc = inc;
+            this.destLirKind = lirKind;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            atomicOp.emit(crb);
+            asm.emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+            asm.emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+            asm.emitSymbol(OCLAssemblerConstants.VOLATILE);
+            asm.space();
+            asm.emitSymbol(address.getBase().getMemorySpace().name());
+            asm.space();
+            asm.emit(destLirKind.getPlatformKind().toString().toLowerCase());
+            asm.space();
+            asm.emitSymbol(OCLAssemblerConstants.MULT);
+            asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+            asm.space();
+            address.emit(crb, asm);
+            asm.emitSymbol(OCLAssemblerConstants.EXPR_DELIMITER);
+            asm.space();
+            asm.emitValue(crb, inc);
+            asm.emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+        }
+    }
+
     public static class IntrinsicAtomicFetch extends UnaryConsumer {
 
         public IntrinsicAtomicFetch(OCLUnaryOp opcode, LIRKind lirKind, Value value) {

@@ -164,8 +164,10 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     private boolean isNodeFromKnownObject(Node currentNode) {
         // Comparison based on names due to circular dependencies
-        return currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode") || currentNode.getClass().getName().equals(
-                "uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode");
+        return currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomAddNodeTemplate") || //
+                currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate");
     }
 
     private Access processUsages(Node parameter, MetaAccessProvider metaAccess) {
@@ -332,8 +334,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         return false;
     }
 
-    private record MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition,
-                                   IfNode fatherNodeStore) {
+    private record MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
     }
 
 }

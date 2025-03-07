@@ -47,7 +47,10 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -204,6 +207,60 @@ public class TestAtomics extends TornadoTestBase {
         int i = context.globalIdx;
         if (i < input.getSize()) {
             input.set(i, ai.incrementAndGet());
+        }
+    }
+
+    public static void atomic18(KernelContext context, IntArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
+        }
+    }
+
+    public static void atomic18(KernelContext context, int[] data, int[] incrementingValues) {
+        for (@Parallel int i = 0; i < data.length; i++) {
+            context.atomicAdd(data, i, incrementingValues[i]);
+        }
+    }
+
+    public static void atomic18(KernelContext context, LongArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
+        }
+    }
+
+    public static void atomic18(KernelContext context, FloatArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
+        }
+    }
+
+    public static void atomic18(KernelContext context, DoubleArray data) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            context.atomicAdd(data, i, 1);
+        }
+    }
+
+    public static void atomic18Kernel(KernelContext context, IntArray input) {
+        int tid = context.globalIdx;
+
+        if (tid < input.getSize()) {
+            context.atomicAdd(input, tid, 1);
+        }
+    }
+
+    public static void atomic19(KernelContext context, IntArray input, IntArray output) {
+        for (@Parallel int tid = 0; tid < input.getSize(); tid++) {
+            int index = input.get(tid);
+            context.atomicAdd(output, index, 1);
+        }
+    }
+
+    public static void atomic19Kernel(KernelContext context, IntArray input, IntArray output) {
+        int tid = context.globalIdx;
+
+        if (tid < input.getSize()) {
+            int index = input.get(tid);
+            context.atomicAdd(output, index, 1);
         }
     }
 
@@ -867,5 +924,234 @@ public class TestAtomics extends TornadoTestBase {
 
         assertEquals(jai.get(), ai.get());
         assertArrayEquals(dataSequential.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_IntegerArray() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        IntArray dataTornadoVM = new IntArray(size);
+        IntArray dataJava = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+            dataJava.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        atomic18(context, dataJava);
+
+        assertArrayEquals(dataJava.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_int_array() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        int[] dataTornadoVM = new int[size];
+        int[] incrementingValues = new int[size];
+        int[] dataJava = new int[size];
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM[i] = i;
+            dataJava[i] = i;
+            incrementingValues[i] = 2*i;
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM, incrementingValues) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM, incrementingValues) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        atomic18(context, dataJava, incrementingValues);
+
+        assertArrayEquals(dataJava, dataTornadoVM);
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_LongArray() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        LongArray dataTornadoVM = new LongArray(size);
+        LongArray dataJava = new LongArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+            dataJava.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        atomic18(context, dataJava);
+
+        assertArrayEquals(dataJava.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_FloatArray() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        FloatArray dataTornadoVM = new FloatArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i + 1, dataTornadoVM.get(i), 0.1f);
+        }
+    }
+
+    @Test
+    public void testAtomic18_parallel_api_DoubleArray() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        DoubleArray dataTornadoVM = new DoubleArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i + 1, dataTornadoVM.get(i), 0.1f);
+        }
+    }
+
+    @Test
+    public void testAtomic18_kernel_api() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        IntArray dataTornadoVM = new IntArray(size);
+        IntArray dataJava = new IntArray(size);
+        for (int i = 0; i < size; i++) {
+            dataTornadoVM.set(i, i);
+            dataJava.set(i, i);
+        }
+
+        KernelContext context = new KernelContext();
+        WorkerGrid workerGrid = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic18Kernel, context, dataTornadoVM) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataTornadoVM); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
+
+        atomic18(context, dataJava);
+
+        assertArrayEquals(dataJava.toHeapArray(), dataTornadoVM.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic19_parallel_api() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        final int indexForHistogram = 16;
+        IntArray dataTornadoVM = new IntArray(size);
+        IntArray output = new IntArray(size);
+        IntArray outputJava = new IntArray(size);
+        dataTornadoVM.init(indexForHistogram);
+        output.init(0);
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic19, context, dataTornadoVM, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withDefaultScheduler().execute();
+        }
+
+        atomic19(context, dataTornadoVM, outputJava);
+        assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
+    }
+
+    @Test
+    public void testAtomic19_kernel_api() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        final int indexForHistogram = 16;
+        IntArray dataTornadoVM = new IntArray(size);
+        IntArray output = new IntArray(size);
+        IntArray outputJava = new IntArray(size);
+        dataTornadoVM.init(indexForHistogram);
+        output.init(0);
+
+        KernelContext context = new KernelContext();
+        WorkerGrid workerGrid = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, dataTornadoVM) //
+                .task("t0", TestAtomics::atomic19Kernel, context, dataTornadoVM, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output); //
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
+
+        atomic19(context, dataTornadoVM, outputJava);
+        assertArrayEquals(outputJava.toHeapArray(), output.toHeapArray());
     }
 }
