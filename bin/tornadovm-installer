@@ -247,10 +247,21 @@ class TornadoInstaller:
 
     def compileTornadoVM(self, makeJDK, backend, polyglotOption, mavenSingleThreadedOption):
         if os.name == 'nt':
-            command = "nmake /f Makefile.mak " + makeJDK + " " + backend + " " + polyglotOption + mavenSingleThreadedOption
+            if all(s == "" for s in [polyglotOption, mavenSingleThreadedOption]):
+                command = "nmake /f Makefile.mak " + makeJDK + " " + backend
+            else:
+                if polyglotOption:
+                    command = "nmake /f Makefile.mak " + polyglotOption
+                if mavenSingleThreadedOption:
+                    command = "nmake /f Makefile.mak " + mavenSingleThreadedOption
         else:
-            command = "make " + makeJDK + " " + backend + " " + polyglotOption + mavenSingleThreadedOption
-        print(command)
+            if all(s == "" for s in [polyglotOption, mavenSingleThreadedOption]):
+                        command = "make " + makeJDK + " " + backend
+            else:
+                if polyglotOption:
+                    command = "make " + polyglotOption
+                if mavenSingleThreadedOption:
+                    command = "make " + mavenSingleThreadedOption
         os.system(command)
 
     def createSourceFile(self):
@@ -330,7 +341,6 @@ class TornadoInstaller:
             mavenSingleThreadedOption = "mvn-single-threaded-" + makeJDK
         else:
             mavenSingleThreadedOption = ""
-        print(mavenSingleThreadedOption)
         return mavenSingleThreadedOption
 
     def check_or_install_python_modules(self):
