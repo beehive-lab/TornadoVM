@@ -421,21 +421,13 @@ public class TornadoVMInterpreter {
             return false;
         }
 
-        return graphExecutionContext.getPersistedTaskToObjectsMap()
-                .values()
-                .stream()
-                .filter(Objects::nonNull)
-                .anyMatch(taskObjects -> taskObjects.contains(object));
+        return graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).anyMatch(taskObjects -> taskObjects.contains(object));
     }
 
-
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, long sizeBatch) {
-        final int persistentObjects = graphExecutionContext.getPersistedTaskToObjectsMap().values().stream()
-                .filter(Objects::nonNull)
-                .mapToInt(List::size)
-                .sum();
+        final int numberOfPersistentObjects = graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).mapToInt(List::size).sum();
 
-        int objectsToAlloc = args.length - persistentObjects; // alloc is only performed on new objects
+        int objectsToAlloc = args.length - numberOfPersistentObjects; // alloc is only performed on new objects
         Object[] objects = new Object[objectsToAlloc];
         Access[] accesses = new Access[objectsToAlloc];
         XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[objectsToAlloc];
@@ -444,15 +436,15 @@ public class TornadoVMInterpreter {
         long preAllocatedSizes = 0L;
 
         for (int arg : args) {
-            Object persistentObj = this.objects.get(arg);
-            if (!isPersistentObject(persistentObj)) {
+            Object dataObject = this.objects.get(arg);
+            if (!isPersistentObject(dataObject)) {
                 objects[allocCounter] = this.objects.get(arg);
                 objectStates[allocCounter] = resolveObjectState(arg);
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
 
                 if (TornadoOptions.PRINT_BYTECODES) {
-                    String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[allocCounter],
-                            InterpreterUtilities.debugDeviceBC(interpreterDevice), sizeBatch);
+                    String verbose = String.format("bc: %s%s on %s, size=%d", InterpreterUtilities.debugHighLightBC("ALLOC"), objects[allocCounter], InterpreterUtilities.debugDeviceBC(
+                            interpreterDevice), sizeBatch);
                     tornadoVMBytecodeList.append(verbose).append("\n");
                 }
                 allocCounter++;
@@ -797,7 +789,9 @@ public class TornadoVMInterpreter {
             final byte argType = bytecodeResult.get();
             final int argIndex = bytecodeResult.getInt();
 
-            if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
+            if (argType == TornadoVMBytecodes.PUSH_REFERENCE_THIS.value()) {
+                stackFrame.addCallArgument(new KernelStackFrame.ThisMethodArgument(), false);
+            } else if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
                 // Add a constant argument
                 stackFrame.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {

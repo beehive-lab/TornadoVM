@@ -32,6 +32,11 @@ public interface KernelStackFrame {
     class KernelContextArgument {
     }
 
+    // Mark an argument with this
+    class ThisMethodArgument {
+
+    }
+
     class CallArgument {
         private final Object value;
         private final boolean isReferenceType;

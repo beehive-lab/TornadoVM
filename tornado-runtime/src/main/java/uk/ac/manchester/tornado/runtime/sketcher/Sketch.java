@@ -31,6 +31,8 @@ public class Sketch {
 
     private final Graph graph;
 
+    private final boolean isStatic;
+
     private boolean batchWriteThreadIndex;
 
     /**
@@ -39,10 +41,11 @@ public class Sketch {
      */
     private final Access[] argumentsAccess;
 
-    Sketch(Graph graph, Access[] argumentAccesses, boolean batchWriteThreadIndex) {
+    Sketch(Graph graph, Access[] argumentAccesses, boolean batchWriteThreadIndex, boolean isStatic) {
         this.graph = graph;
         this.argumentsAccess = argumentAccesses;
         this.batchWriteThreadIndex = batchWriteThreadIndex;
+        this.isStatic = isStatic;
     }
 
     public Graph getGraph() {
@@ -55,6 +58,10 @@ public class Sketch {
 
     public boolean getBatchWriteThreadIndex() {
         return this.batchWriteThreadIndex;
+    }
+
+    public boolean isStatic() {
+        return this.isStatic;
     }
 
 }

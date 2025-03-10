@@ -43,6 +43,7 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
     private final OCLDeviceContext deviceContext;
     private Map<Long, OCLKernelStackFrame> oclKernelStackFrame = new ConcurrentHashMap<>();
     private long constantPointer;
+    private long thisAddress;
     private long atomicsRegion = -1;
 
     public OCLMemoryManager(final OCLDeviceContext deviceContext) {
@@ -79,6 +80,7 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
      */
     public void allocateDeviceMemoryRegions() {
         this.constantPointer = createBuffer(4, OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
+        this.thisAddress = createBuffer(4, OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
         allocateAtomicRegion();
     }
 
@@ -92,6 +94,10 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
 
     long toConstantAddress() {
         return constantPointer;
+    }
+
+    long toThisAddress() {
+        return thisAddress;
     }
 
     long toAtomicAddress() {

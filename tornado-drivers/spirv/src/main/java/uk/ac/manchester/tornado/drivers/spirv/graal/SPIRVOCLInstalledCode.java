@@ -31,7 +31,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLErrorCode;
@@ -45,6 +44,7 @@ import uk.ac.manchester.tornado.drivers.spirv.ocl.SPIRVOCLNativeDispatcher;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
@@ -107,8 +107,13 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
                 checkStatus(status, "clSetKernelArg");
                 continue;
             }
-
-            if (RuntimeUtilities.isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+            if (arg.getValue() instanceof KernelStackFrame.ThisMethodArgument) {
+                // This the corresponding buffer of `this`, we set a dummy buffer, similar to the strategy followed for the kernel context.
+                // If in the future we want to set up additional arguments in the `this` buffer (E.g., for synchronization or meta-space)
+                // we can add a new buffer here. 
+                status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
+                checkStatus(status, "clSetKernelArg");
+            } else if (RuntimeUtilities.isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 if (!arg.isReferenceType()) {
                     // In OpenCL, we need to set the argument. But it is set as buffer pointer. So we add the kernelContext as a dummy one.
                     status = dispatcher.clSetKernelArg(kernelPointer, kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());

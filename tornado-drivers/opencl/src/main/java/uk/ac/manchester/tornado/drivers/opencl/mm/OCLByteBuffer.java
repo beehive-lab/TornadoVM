@@ -285,6 +285,10 @@ public class OCLByteBuffer {
         return deviceContext.getMemoryManager().toConstantAddress();
     }
 
+    public long toThisAddress() {
+        return deviceContext.getMemoryManager().toThisAddress();
+    }
+
     public long toAtomicAddress() {
         return deviceContext.getMemoryManager().toAtomicAddress();
     }

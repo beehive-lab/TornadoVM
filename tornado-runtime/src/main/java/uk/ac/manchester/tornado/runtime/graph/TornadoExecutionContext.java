@@ -106,7 +106,7 @@ public class TornadoExecutionContext {
         persistedObjects = new ArrayList<>();
         objectsAccesses = new HashMap<>();
         objectState = new ArrayList<>();
-        persistedTaskToObjectsMap =  new HashMap<>();
+        persistedTaskToObjectsMap = new HashMap<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         kernelStackFrame = new KernelStackFrame[MAX_TASKS];
         taskToDeviceMapTable = new TornadoXPUDevice[MAX_TASKS];
@@ -689,7 +689,6 @@ public class TornadoExecutionContext {
     public void setCurrentDeviceMemoryUsage(long currentDeviceMemoryUsage) {
         this.currentDeviceMemoryUsage = currentDeviceMemoryUsage;
     }
-
 
     public void addPersistedObject(String taskgraphUniqueName, Object value) {
         persistedTaskToObjectsMap.computeIfAbsent(taskgraphUniqueName, k -> new ArrayList<>()).add(value);

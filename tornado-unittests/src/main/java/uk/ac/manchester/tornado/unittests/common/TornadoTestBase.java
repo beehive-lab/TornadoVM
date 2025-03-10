@@ -33,6 +33,8 @@ public abstract class TornadoTestBase {
     public static final float DELTA_05 = 0.5f;
     protected static boolean wasDeviceInspected = false;
 
+    public static final int SIZE_OF_512MB = 512 * 1024 * 1024;
+
     public static TornadoRuntime getTornadoRuntime() {
         return TornadoRuntimeProvider.getTornadoRuntime();
     }

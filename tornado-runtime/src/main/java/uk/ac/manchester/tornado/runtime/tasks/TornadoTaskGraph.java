@@ -653,8 +653,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-        List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap()
-                .get(graphSrc.taskGraphName);
+        List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
         for (Object objectToSync : objectsToSync) {
             Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
@@ -670,11 +669,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             if (localStateDest == null) {
                 continue;
-//                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
+                //                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
             }
 
             if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
-                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta().getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
+                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta()
+                        .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
             }
 
             DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
@@ -751,11 +751,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
 
         int index = executionContext.addTask(task);
+        boolean isStatic = false;
 
         if (task instanceof CompilableTask compilableTask) {
             checkForMemorySegmentAsTaskParameter(compilableTask);
 
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+            isStatic = resolvedMethod.isStatic();
             final TaskDataContext taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
 
@@ -781,7 +783,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         for (final Object arg : args) {
             index = executionContext.insertVariable(arg, accesses[i]);
-            if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
+            if (!isStatic && i == 0) {
+                hlBuffer.put(TornadoGraphBitcodes.THIS.index());
+            } else if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());

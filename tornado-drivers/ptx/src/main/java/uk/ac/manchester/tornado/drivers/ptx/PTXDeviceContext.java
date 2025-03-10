@@ -313,17 +313,17 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             KernelStackFrame.CallArgument arg = ptxKernelArgs.getCallArguments().get(argIndex);
             if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
                 args.putLong(address);
-                continue;
+            } else if (arg.getValue() instanceof KernelStackFrame.ThisMethodArgument) {
+                args.putLong(address);
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
-                if (arg.getValue() instanceof HalfFloat) {
-                    short halfFloat = ((HalfFloat) arg.getValue()).getHalfFloatValue();
-                    args.putLong(((Number) halfFloat).longValue());
-                } else if (arg.getValue() instanceof Number) {
-                    args.putLong(((Number) arg.getValue()).longValue());
-                } else if (arg.getValue() instanceof Character) {
-                    args.putLong((char) arg.getValue());
-                } else {
-                    shouldNotReachHere();
+                switch (arg.getValue()) {
+                    case HalfFloat aFloat -> {
+                        short halfFloat = aFloat.getHalfFloatValue();
+                        args.putLong(((Number) halfFloat).longValue());
+                    }
+                    case Number number -> args.putLong(number.longValue());
+                    case Character c -> args.putLong((char) arg.getValue());
+                    case null, default -> shouldNotReachHere();
                 }
             } else {
                 shouldNotReachHere();

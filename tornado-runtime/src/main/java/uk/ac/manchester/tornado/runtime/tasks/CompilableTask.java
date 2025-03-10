@@ -26,11 +26,13 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -203,6 +205,12 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public boolean isGridSchedulerEnabled() {
         return meta.isGridSchedulerEnabled();
+    }
+
+    @Override
+    public boolean isStatic() {
+        ResolvedJavaMethod resolveJavaMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(method);
+        return resolveJavaMethod.isStatic();
     }
 
 }

@@ -238,6 +238,14 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.feature.extraction=True",
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
 
+    ## Test stress memory fields
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.fields.TestStressFields",
+              testParameters=[
+                  "-Dtornado.device.memory=2GB",
+                  "-Xmx14g", 
+                  "-Dtornado.profiler=True",
+                  "-Dtornado.log.profiler=True" ]),
+
     ## Tests for Multi-Thread and Memory
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
               testParameters=["-Dtornado.device.memory=4GB"]),

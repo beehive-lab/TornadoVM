@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ThisNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -72,6 +73,15 @@ public class TornadoGraphBuilder {
         context.addUse(allocateNode);
         args[argIndex] = allocateNode;
         persistNode.addValue((ObjectNode) arg);
+    }
+
+    private static void createThisNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
+        final ThisNode thisNode = new ThisNode(context);
+        thisNode.setValue((ObjectNode) arg);
+        graph.add(thisNode);
+        context.addUse(thisNode);
+        args[argIndex] = thisNode;
+        //persistNode.addValue((ObjectNode) arg);
     }
 
     private static void createOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
@@ -122,7 +132,6 @@ public class TornadoGraphBuilder {
         final List<Object> constants = executionContext.getConstants();
         final List<Object> objects = executionContext.getObjects();
 
-
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
         for (int i = 0; i < constants.size(); i++) {
             constantNodes[i] = new ConstantNode(i);
@@ -156,10 +165,10 @@ public class TornadoGraphBuilder {
 
                     if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
-                    }  else if (state.isOnDevice()) {
+                    } else if (state.isOnDevice()) {
                         createOnDeviceNode(context, graph, arg, args, argIndex, persist);
                     } else {
-                       if (state.isStreamIn()) {
+                        if (state.isStreamIn()) {
                             createStreamInNode(context, graph, objectNode, args, argIndex, persist);
                         } else {
                             if (!state.isUnderDemand()) {
@@ -192,8 +201,8 @@ public class TornadoGraphBuilder {
                     } else if (objectNodes[variableIndex] instanceof CopyInNode copyInNode) {
                         value = copyInNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof AllocateNode allocateNode) {
-                        value = allocateNode.getValue(); }
-                    else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
+                        value = allocateNode.getValue();
+                    } else if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
                         value = onDeviceObjectNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof StreamInNode streamInNode) {
                         value = streamInNode.getValue();
@@ -216,6 +225,11 @@ public class TornadoGraphBuilder {
             } else if (op == TornadoGraphBitcodes.LOAD_PRIM.index()) {
                 final int variableIndex = buffer.getInt();
                 args[argIndex] = constantNodes[variableIndex];
+                argIndex++;
+            } else if (op == TornadoGraphBitcodes.THIS.index()) {
+                final int variableIndex = buffer.getInt();
+                args[argIndex] = objectNodes[variableIndex];
+                createThisNode(context, graph, args[argIndex], args, argIndex, persist);
                 argIndex++;
             } else if (op == TornadoGraphBitcodes.LAUNCH.index()) {
                 context.addUse(taskNode);
@@ -243,11 +257,8 @@ public class TornadoGraphBuilder {
                 TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(taskIndex);
                 context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(deviceForTask), deviceForTask));
 
-
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
-
-
 
                 if (task instanceof CompilableTask compilableTask) {
                     final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));
@@ -324,7 +335,7 @@ public class TornadoGraphBuilder {
         } else if (node instanceof StreamInNode streamInNode) {
             return streamInNode.getValue();
         } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
-            return  onDeviceObjectNode.getValue();
+            return onDeviceObjectNode.getValue();
         }
         throw new IllegalArgumentException("Unknown node type: " + node.getClass());
     }

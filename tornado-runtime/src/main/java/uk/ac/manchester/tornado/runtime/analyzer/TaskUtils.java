@@ -158,23 +158,23 @@ public class TaskUtils {
          * Method.
          */
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
-        final ConstantPool cp = resolvedMethod.getConstantPool();
-        final byte[] bc = resolvedMethod.getCode();
+        final ConstantPool constantPool = resolvedMethod.getConstantPool();
+        final byte[] code = resolvedMethod.getCode();
 
-        for (int i = 0; i < bc.length; i++) {
-            if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
-                cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
-                JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
+        for (int i = 0; i < code.length; i++) {
+            if (code[i] == (byte) Bytecodes.INVOKESTATIC) {
+                constantPool.loadReferencedType(code[i + 2], Bytecodes.INVOKESTATIC);
+                JavaMethod method = constantPool.lookupMethod(code[i + 2], Bytecodes.INVOKESTATIC);
 
                 if (useToJavaMethod) {
-                    return callToJava(jm);
+                    return callToJava(method);
                 } else {
-                    return callGetMethod(jm);
+                    return callGetMethod(method);
                 }
-            } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
-                cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                switch (jm.getName()) {
+            } else if (code[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
+                constantPool.loadReferencedType(code[i + 2], Bytecodes.INVOKEVIRTUAL);
+                JavaMethod method = constantPool.lookupMethod(code[i + 2], Bytecodes.INVOKEVIRTUAL);
+                switch (method.getName()) {
                     case "booleanValue":
                     case "byteValue":
                     case "charValue":
@@ -187,9 +187,9 @@ public class TaskUtils {
                 }
 
                 if (useToJavaMethod) {
-                    return callToJava(jm);
+                    return callToJava(method);
                 } else {
-                    return callGetMethod(jm);
+                    return callGetMethod(method);
                 }
             }
         }

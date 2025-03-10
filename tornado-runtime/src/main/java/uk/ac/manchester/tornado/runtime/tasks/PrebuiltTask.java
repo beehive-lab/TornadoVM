@@ -216,6 +216,11 @@ public class PrebuiltTask implements SchedulableTask {
         return meta.isGridSchedulerEnabled();
     }
 
+    @Override
+    public boolean isStatic() {
+        return false;
+    }
+
     public int[] getAtomics() {
         return atomics;
     }

@@ -184,7 +184,7 @@ public class TornadoSketcher {
 
             methodAccesses = highTierAccesses;
 
-            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex());
+            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses, highTierContext.getBatchWriteThreadIndex(), resolvedMethod.isStatic());
 
         } catch (Throwable e) {
             logger.fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());

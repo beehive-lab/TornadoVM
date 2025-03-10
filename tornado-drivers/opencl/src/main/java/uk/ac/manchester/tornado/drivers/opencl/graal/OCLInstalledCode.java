@@ -186,11 +186,16 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         // Parameters
         for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
             KernelStackFrame.CallArgument arg = kernelArgs.getCallArguments().get(i);
+
             if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
                 // We do not set any kernel context argument. This is only for the Java side.
                 continue;
             }
-            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+            if (arg.getValue() instanceof KernelStackFrame.ThisMethodArgument) {
+                buffer.clear();
+                buffer.putLong(kernelArgs.toThisAddress());
+                kernel.setArg(index + argIndex, buffer);
+            } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 buffer.clear();
                 PrimitiveSerialiser.put(buffer, arg.getValue());
                 kernel.setArg(index + argIndex, buffer);

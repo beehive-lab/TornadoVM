@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -32,7 +32,8 @@ public enum TornadoGraphBitcodes {
     LOAD_PRIM((byte)2),
     LAUNCH   ((byte)3),
     ARG_LIST ((byte)4),
-    CONTEXT  ((byte)5);
+    CONTEXT  ((byte)5),
+    THIS     ((byte)6);
     // @formatter:on
 
     byte index;

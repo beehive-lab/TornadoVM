@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -193,7 +193,6 @@ public enum TornadoVMBytecodes {
      */
     DEALLOC((byte) 24),
 
-
     /**
      * Reuse of a buffer from a device.
      * <p>
@@ -203,8 +202,9 @@ public enum TornadoVMBytecodes {
      * ON_DEVICE(obj,dest)
      * </code>
      */
-    ON_DEVICE((byte) 25);
+    ON_DEVICE((byte) 25),
 
+    PUSH_REFERENCE_THIS((byte) 26);
 
     final byte value;
 

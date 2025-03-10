@@ -69,4 +69,6 @@ public interface SchedulableTask {
 
     boolean isGridSchedulerEnabled();
 
+    boolean isStatic();
+
 }

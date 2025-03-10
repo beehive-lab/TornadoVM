@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ThisNode;
 
 public class TornadoVMBytecodeBuilder {
 
@@ -89,10 +90,10 @@ public class TornadoVMBytecodeBuilder {
         if (node instanceof AllocateMultipleBuffersNode allocateMultipleBuffersNode) {
             bitcodeASM.allocate(allocateMultipleBuffersNode.getValues(), batchSize);
         } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
-            bitcodeASM.onDevice(onDeviceObjectNode.getIndex(), dependencyBC, offset, batchSize); 
+            bitcodeASM.onDevice(onDeviceObjectNode.getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof CopyInNode copyInNode) {
             bitcodeASM.transferToDeviceOnce(copyInNode.getValue().getIndex(), dependencyBC, offset, batchSize);
-        } else if (node instanceof AllocateNode allocateNode) {
+        } else if (node instanceof AllocateNode) {
             new TornadoLogger().info("[%s]: Skipping deprecated node %s", getClass().getSimpleName(), AllocateNode.class.getSimpleName());
         } else if (node instanceof CopyOutNode copyOutNode) {
             ObjectNode value = copyOutNode.getValue().getValue();
@@ -101,8 +102,7 @@ public class TornadoVMBytecodeBuilder {
             bitcodeASM.transferToDeviceAlways(streamInNode.getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof DeallocateNode deallocateNode) {
             bitcodeASM.deallocate((deallocateNode.getValue().getIndex()));
-        } else if (node instanceof TaskNode taskNodee) {
-            final TaskNode taskNode = taskNodee;
+        } else if (node instanceof TaskNode taskNode) {
             bitcodeASM.launch(taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
             emitArgList(taskNode);
         }
@@ -126,6 +126,8 @@ public class TornadoVMBytecodeBuilder {
                 bitcodeASM.referenceArg(allocateNode.getValue().getIndex());
             } else if (argNode instanceof DependentReadNode dependentReadNode) {
                 bitcodeASM.referenceArg(dependentReadNode.getValue().getIndex());
+            } else if (argNode instanceof ThisNode thisNode) {
+                bitcodeASM.referenceThis(thisNode.getValue().getIndex());
             }
         }
     }
@@ -263,6 +265,11 @@ public class TornadoVMBytecodeBuilder {
 
         void referenceArg(int index) {
             buffer.put(TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value);
+            buffer.putInt(index);
+        }
+
+        void referenceThis(int index) {
+            buffer.put(TornadoVMBytecodes.PUSH_REFERENCE_THIS.value);
             buffer.putInt(index);
         }
 
