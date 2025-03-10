@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -28,27 +29,26 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-
-import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
-@NodeInfo(shortName = "AtomicAdd")
-public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLowerable {
+@NodeInfo(shortName = "AtomAdd")
+public class AtomAddNodeTemplate extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<AtomicAddNodeTemplate> TYPE = NodeClass.create(AtomicAddNodeTemplate.class);
+    public static final NodeClass<AtomAddNodeTemplate> TYPE = NodeClass.create(AtomAddNodeTemplate.class);
 
     @Input
-    ValueNode array;
+    AddressNode address;
     @Input
     ValueNode inc;
 
-    public AtomicAddNodeTemplate(ValueNode array, ValueNode inc, JavaKind javaKind) {
-        super(TYPE, StampFactory.forKind(javaKind));
-        this.array = array;
+    public AtomAddNodeTemplate(AddressNode addressNode, ValueNode inc, JavaKind kind) {
+        super(TYPE, StampFactory.forKind(kind));
+        this.address = addressNode;
         this.inc = inc;
     }
 
@@ -56,7 +56,8 @@ public class AtomicAddNodeTemplate extends FixedWithNextNode implements LIRLower
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLAssembler.OCLUnaryIntrinsic.ATOMIC_ADD, tool.getLIRKind(stamp), gen.operand(inc))));
+        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.AtomOperation(OCLAssembler.OCLUnaryOp.CAST_TO_INT, tool.getLIRKind(stamp), gen.operand(address), (OCLUnary.MemoryAccess) gen.operand(
+                address), OCLAssembler.OCLUnaryIntrinsic.ATOM_ADD, gen.operand(inc))));
         gen.setResult(this, result);
     }
 }
