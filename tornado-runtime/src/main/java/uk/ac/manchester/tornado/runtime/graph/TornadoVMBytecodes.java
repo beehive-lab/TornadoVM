@@ -204,6 +204,16 @@ public enum TornadoVMBytecodes {
      */
     ON_DEVICE((byte) 25),
 
+    /**
+     * Add a reference to this (as in Java `this`) to be used as an argument in a kernel.
+     *
+     * <p>
+     * Format:
+     * <code>
+     * PUSH_REFERENCE_THIS(obj)
+     * </code>
+     * </p>
+     */
     PUSH_REFERENCE_THIS((byte) 26);
 
     final byte value;

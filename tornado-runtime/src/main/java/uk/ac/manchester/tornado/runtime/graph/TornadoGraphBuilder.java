@@ -81,7 +81,6 @@ public class TornadoGraphBuilder {
         graph.add(thisNode);
         context.addUse(thisNode);
         args[argIndex] = thisNode;
-        //persistNode.addValue((ObjectNode) arg);
     }
 
     private static void createOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
