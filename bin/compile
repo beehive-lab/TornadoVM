@@ -160,7 +160,7 @@ def build_levelzero_jni_lib(rebuild=False):
     if (rebuild or build):
 
         os.chdir(levelzero_jni)
-        
+
         ## Switch branch to the tagged version
         subprocess.run(
             [
@@ -298,7 +298,10 @@ def build_tornadovm(args, backend_profiles):
         else:
             isWinCmdOrBat = False
 
-        process = ["mvn", "-T1.5C", "-Dstyle.color=always"]
+        if args.mavenSingleThreaded:
+            process = ["mvn", "-T1", "-Dstyle.color=always"]
+        else:
+            process = ["mvn", "-T1.5C", "-Dstyle.color=always"]
         if args.polyglot:
             process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
         else:
@@ -392,6 +395,13 @@ def parse_args():
         help="To enable interoperability with Truffle Programming Languages."
     )
     parser.add_argument(
+        "--mvn_single_threaded",
+        action="store_true",
+        dest="mavenSingleThreaded",
+        default=False,
+        help="To build with maven while using one thread."
+    )
+    parser.add_argument(
         "--rebuild",
         action="store_true",
         dest="rebuild",
@@ -406,7 +416,7 @@ def parse_args():
 def check_tornadoSDK():
     """
     Check if TORNADO_SDK env variable is loaded. It exits the compilation if it is not
-    declared. 
+    declared.
     """
     print("Checking TORNADO_SDK env variable ................ ",  end='')
     try:
