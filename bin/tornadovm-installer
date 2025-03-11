@@ -256,7 +256,7 @@ class TornadoInstaller:
                     command = "nmake /f Makefile.mak " + mavenSingleThreadedOption
         else:
             if all(s == "" for s in [polyglotOption, mavenSingleThreadedOption]):
-                        command = "make " + makeJDK + " " + backend
+                command = "make " + makeJDK + " " + backend
             else:
                 if polyglotOption:
                     command = "make " + polyglotOption
