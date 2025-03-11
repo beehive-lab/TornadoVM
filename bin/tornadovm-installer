@@ -253,7 +253,7 @@ class TornadoInstaller:
                 if polyglotOption:
                     command = "nmake /f Makefile.mak " + polyglotOption
                 if mavenSingleThreadedOption:
-                    command = "nmake /f Makefile.mak " + mavenSingleThreadedOption
+                    command = "nmake /f Makefile.mak " + mavenSingleThreadedOption + " " + backend 
         else:
             if all(s == "" for s in [polyglotOption, mavenSingleThreadedOption]):
                 command = "make " + makeJDK + " " + backend
@@ -261,7 +261,7 @@ class TornadoInstaller:
                 if polyglotOption:
                     command = "make " + polyglotOption
                 if mavenSingleThreadedOption:
-                    command = "make " + mavenSingleThreadedOption
+                    command = "make " + mavenSingleThreadedOption + " " + backend
         os.system(command)
 
     def createSourceFile(self):
