@@ -200,6 +200,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestMatMulWithByteArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestRMSNormLayer"),
+    TestEntry("uk.ac.manchester.tornado.unittests.llm.TestSoftMaxLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestConcat"),
