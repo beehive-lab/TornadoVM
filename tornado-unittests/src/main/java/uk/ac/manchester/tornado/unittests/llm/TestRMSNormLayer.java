@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.compute;
+package uk.ac.manchester.tornado.unittests.llm;
 
 import static org.junit.Assert.assertEquals;
 
@@ -64,11 +64,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  *
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.compute.LLMFusedKernelsTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.llm.TestRMSNormLayer
  * </code>
  */
 
-public class TestLLMFusedKernels extends TornadoTestBase {
+public class TestRMSNormLayer extends TornadoTestBase {
 
     public static FloatArray matmul(FloatArray weights, FloatArray x, FloatArray out, int dim0, int dim1) {
         IntStream.range(0, dim0).forEach(i -> {
@@ -189,9 +189,9 @@ public class TestLLMFusedKernels extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, size, eps, x, reduce) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, localSize, weight) //
-                .task("t0", TestLLMFusedKernels::reduceSquareSums, context, x, reduce) //
-                .task("t1", TestLLMFusedKernels::finalSum, context, reduce, size, eps) //
-                .task("t2", TestLLMFusedKernels::normalizeAndScale, context, rnsOutput, x, weight, reduce, size, eps) //
+                .task("t0", TestRMSNormLayer::reduceSquareSums, context, x, reduce) //
+                .task("t1", TestRMSNormLayer::finalSum, context, reduce, size, eps) //
+                .task("t2", TestRMSNormLayer::normalizeAndScale, context, rnsOutput, x, weight, reduce, size, eps) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, rnsOutput); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -246,10 +246,10 @@ public class TestLLMFusedKernels extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("fused") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, size, eps, x, reduce, weights) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, localSize, state) //
-                .task("reduce", TestLLMFusedKernels::reduceSquareSums, context, x, reduce) //
-                .task("sum", TestLLMFusedKernels::finalSum, context, reduce, size, eps) //
-                .task("ns", TestLLMFusedKernels::normalizeAndScale, context, rnsOutput, x, state, reduce, size, eps) //
-                .task("mv", TestLLMFusedKernels::matrixVector, context, weights, rnsOutput, outputLogits, size, size) //
+                .task("reduce", TestRMSNormLayer::reduceSquareSums, context, x, reduce) //
+                .task("sum", TestRMSNormLayer::finalSum, context, reduce, size, eps) //
+                .task("ns", TestRMSNormLayer::normalizeAndScale, context, rnsOutput, x, state, reduce, size, eps) //
+                .task("mv", TestRMSNormLayer::matrixVector, context, weights, rnsOutput, outputLogits, size, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputLogits); //
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -269,8 +269,6 @@ public class TestLLMFusedKernels extends TornadoTestBase {
         for (int i = 0; i < outputSeqLogits.getSize(); i++) {
             float expected = outputSeqLogits.get(i);           // Expected value from the sequential output
             float actual = outputLogits.get(i);               // Actual value from the RNS output
-
-            //                assertEquals("Mismatch at index " + i, expected, actual, 1f); // Allow some tolerance
         }
 
     }
