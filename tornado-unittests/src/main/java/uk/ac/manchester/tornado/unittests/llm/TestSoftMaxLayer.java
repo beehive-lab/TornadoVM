@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.llm;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -30,9 +32,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import static org.junit.Assert.assertEquals;
-
 
 /**
  * <p>
@@ -164,7 +163,7 @@ public class TestSoftMaxLayer extends TornadoTestBase {
     }
 
     // Step 5: Normalize
-    public static void normalize(KernelContext context, FloatArray expOutput, FloatArray result, FloatArray totalSum) {
+    public static void normal(KernelContext context, FloatArray expOutput, FloatArray result, FloatArray totalSum) {
         int globalIdx = context.globalIdx;
         float sum = totalSum.get(0);
 
@@ -221,7 +220,7 @@ public class TestSoftMaxLayer extends TornadoTestBase {
                 .task("finalizeMax", TestSoftMaxLayer::finalizeMax, context, maxValues, numGroups)
                 .task("expAndSum", TestSoftMaxLayer::computeExpAndPartialSums, context, input, expValues, sumValues, maxValues)
                 .task("calculateSum", TestSoftMaxLayer::calculateTotalSum, context, sumValues, numGroups)
-                .task("normalize", TestSoftMaxLayer::normalize, context, expValues, output, sumValues)
+                .task("normalize", TestSoftMaxLayer::normal, context, expValues, output, sumValues)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
         //@formatter:on
 
