@@ -115,8 +115,8 @@ public class TestChainOfGridSchedulers extends TornadoTestBase {
         // formatter: off
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg1, itg2)) {
 
-            executionPlan.withGridScheduler(gridScheduler1).withGraph(0).execute(); // Execute TaskGraph 1
-            executionPlan.withGridScheduler(gridScheduler2).withGraph(1).execute(); // Execute TaskGraph 2
+            executionPlan.withGraph(0).withGridScheduler(gridScheduler1).execute(); // Execute TaskGraph 1
+            executionPlan.withGraph(1).withGridScheduler(gridScheduler2).execute(); // Execute TaskGraph 2
         }
         // formatter: off
 
