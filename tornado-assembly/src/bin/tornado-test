@@ -205,6 +205,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestSlice"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestBuildFromByteBuffers"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestSharedBuffers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestChainOfGridSchedulers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
