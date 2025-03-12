@@ -18,7 +18,10 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -30,8 +33,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * How to run?
@@ -82,16 +83,11 @@ public class TestChainOfGridSchedulers extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         // formatter: off
-        TaskGraph tg1 = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)
-                .task("vectorAdd", TestChainOfGridSchedulers::vectorAdd, context, a, b, c1)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c1);
+        TaskGraph tg1 = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b).task("vectorAdd", TestChainOfGridSchedulers::vectorAdd, context, a, b, c1).transferToHost(
+                DataTransferMode.EVERY_EXECUTION, c1);
 
-
-        TaskGraph tg2 = new TaskGraph("s1")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)
-                .task("vectorMul", TestChainOfGridSchedulers::vectorMul, context, a, b, c2)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c2);
+        TaskGraph tg2 = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b).task("vectorMul", TestChainOfGridSchedulers::vectorMul, context, a, b, c2).transferToHost(
+                DataTransferMode.EVERY_EXECUTION, c2);
 
         // Create kernel context
         // Task Graph 1: Vector Addition
@@ -107,7 +103,6 @@ public class TestChainOfGridSchedulers extends TornadoTestBase {
         GridScheduler gridScheduler2 = new GridScheduler("s1.vectorMul", worker2);
         // formatter: on
 
-
         // Create immutable task graphs
         ImmutableTaskGraph itg1 = tg1.snapshot();
         ImmutableTaskGraph itg2 = tg2.snapshot();
@@ -119,7 +114,6 @@ public class TestChainOfGridSchedulers extends TornadoTestBase {
             executionPlan.withGraph(1).withGridScheduler(gridScheduler2).execute(); // Execute TaskGraph 2
         }
         // formatter: off
-
 
         // Verify results for TaskGraph 1 (Vector Addition)
         for (int i = 0; i < size; i++) {
