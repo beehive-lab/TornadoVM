@@ -133,12 +133,6 @@ public class OpenCL {
         }
     }
 
-    public static OCLTornadoDevice defaultDevice() {
-        final int platformIndex = Integer.parseInt(Tornado.getProperty("tornado.opencl.platform", "0"));
-        final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.opencl.device", "0"));
-        return new OCLTornadoDevice(platformIndex, deviceIndex);
-    }
-
     /**
      * Execute an OpenCL code compiled by Tornado on the target device
      *
