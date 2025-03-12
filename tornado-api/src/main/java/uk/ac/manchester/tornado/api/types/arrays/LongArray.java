@@ -118,6 +118,7 @@ public final class LongArray extends TornadoNativeArray {
     public static LongArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / LONG_BYTES);
+        ensureMultipleOfElementSize(byteSize, LONG_BYTES);
         LongArray longArray = new LongArray(numElements);
         MemorySegment.copy(segment, 0, longArray.segment, longArray.baseIndex * LONG_BYTES, byteSize);
         return longArray;

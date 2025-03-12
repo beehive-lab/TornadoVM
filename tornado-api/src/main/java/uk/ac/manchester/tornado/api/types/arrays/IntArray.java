@@ -117,6 +117,7 @@ public final class IntArray extends TornadoNativeArray {
     public static IntArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / INT_BYTES);
+        ensureMultipleOfElementSize(byteSize, INT_BYTES);
         IntArray intArray = new IntArray(numElements);
         MemorySegment.copy(segment, 0, intArray.segment, intArray.baseIndex * INT_BYTES, byteSize);
         return intArray;

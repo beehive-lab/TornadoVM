@@ -119,6 +119,7 @@ public final class ShortArray extends TornadoNativeArray {
     public static ShortArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
         int numElements = (int) (byteSize / SHORT_BYTES);
+        ensureMultipleOfElementSize(byteSize, SHORT_BYTES);
         ShortArray shortArray = new ShortArray(numElements);
         MemorySegment.copy(segment, 0, shortArray.segment, shortArray.baseIndex * SHORT_BYTES, byteSize);
         return shortArray;

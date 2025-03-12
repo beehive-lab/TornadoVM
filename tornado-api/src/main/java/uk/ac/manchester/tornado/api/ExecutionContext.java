@@ -17,6 +17,11 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+
 /**
  * Generic interface for TornadoVM to implement a Thread-Context API. This
  * interface allows the client to implement barriers, allocate memory in local
@@ -87,4 +92,44 @@ public interface ExecutionContext {
      * @return double[]
      */
     double[] allocateDoubleLocalArray(int size);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(int* address, int val);
+     */
+    void atomicAdd(IntArray array, int index, int val);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(int* address, int val);
+     */
+    void atomicAdd(int[] array, int index, int val);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(long* address, long val);
+     */
+    void atomicAdd(LongArray array, int index, long val);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(float* address, float val);
+     */
+    void atomicAdd(FloatArray array, int index, float val);
+
+    /**
+     * Method used to read a memory address by using the array and the index,
+     * then add the value of val to it, and write the result back to the same address.
+     * <p>
+     * PTX equivalent: atomicAdd(double* address, double val);
+     */
+    void atomicAdd(DoubleArray array, int index, double val);
 }

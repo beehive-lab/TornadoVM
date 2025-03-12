@@ -448,6 +448,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXNullaryOp STU = new PTXNullaryOp("stu");
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
         public static final PTXNullaryOp CVTA = new PTXNullaryOp(CONVERT_ADDRESS);
+        public static final PTXNullaryOp ATOM = new PTXNullaryOp("atom");
 
         protected PTXNullaryOp(String opcode) {
             this(opcode, false);

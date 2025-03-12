@@ -31,9 +31,9 @@ import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatformInterface;
 
 public class SPIRVOpenCLPlatform implements SPIRVPlatform {
 
-    private TornadoPlatformInterface oclPlatform;
+    private final TornadoPlatformInterface oclPlatform;
     private OCLContextInterface context;
-    private List<SPIRVDevice> spirvDevices;
+    private final List<SPIRVDevice> spirvDevices;
 
     public SPIRVOpenCLPlatform(int platformIndex, TornadoPlatformInterface oclPlatform) {
         this.oclPlatform = oclPlatform;

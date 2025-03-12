@@ -27,9 +27,11 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
@@ -51,23 +53,25 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
+    private final Access access;
+    private final int sizeOfType;
 
-    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = INIT_VALUE;
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        logger = new TornadoLogger(this.getClass());
-    }
-
-    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize) {
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        logger = new TornadoLogger(this.getClass());
+        this.access = access;
+        this.logger = new TornadoLogger(this.getClass());
+        this.sizeOfType = sizeOfType;
+        if (sizeOfType <= 0) {
+            throw new TornadoRuntimeException("Invalid size of type " + sizeOfType);
+        }
+    }
+
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
+        this(deviceContext, INIT_VALUE, batchSize, access, sizeOfType);
     }
 
     @Override
@@ -171,15 +175,15 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
         MemorySegment segment = getSegmentWithHeader(reference);
 
         if (batchSize <= 0 && segment != null) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
         if (bufferSize <= 0) {
@@ -194,7 +198,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        deviceContext.getBufferProvider().markBufferReleased(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -205,7 +209,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        return deviceContext.getBufferProvider().deallocate(access);
     }
 
     @Override
@@ -231,6 +235,19 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void setIntBuffer(int[] arr) {
         XPUBuffer.super.setIntBuffer(arr);
+    }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        if (!(srcPointer instanceof PTXMemorySegmentWrapper oclMemorySegmentWrapper)) {
+            throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
+        }
+        this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return sizeOfType;
     }
 
 }

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -217,10 +217,22 @@ public class TornadoOptions {
      * It enables inlining during Java bytecode parsing. Default is False.
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
+
     /**
-     * Use Level Zero or OpenCL as the SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero". The default option is "opencl".
+     * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero". The first in the list is set to the
+     * default one.
+     *
+     * <p>
+     * <ul>
+     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
+     *   <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
+     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes, being
+     *   OpenCL the first in the list (default).
+     * *</ul>
+     * </p>
      */
-    public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "opencl");
+    public static final String SPIRV_INSTALLED_RUNTIMES = getProperty("tornado.spirv.runtimes", "opencl,levelzero");
+
     /**
      * Check I/O parameters for every task within a task-graph.
      */
@@ -349,6 +361,10 @@ public class TornadoOptions {
         return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
 
+    public static boolean isUpsReaderEnabled() {
+        return UPS_IP_ADDRESS != null;
+    }
+
     /**
      * Set Loop unrolling factor. Default is set to 4.
      */
@@ -413,6 +429,8 @@ public class TornadoOptions {
      * Enable out-of-order execution. False by default.
      */
     public static final boolean ENABLE_OOO_EXECUTION = getBooleanValue("tornado.ooo-execution.enable", FALSE);
+
+    public static final String UPS_IP_ADDRESS = getProperty("tornado.ups.ip", null);
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be

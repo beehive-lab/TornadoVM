@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
@@ -685,6 +686,24 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
+     * Tag a set of objects to be used directly from the device. It requires
+     * objects to be tagged as persisted objects from a previous taskgraph.
+     * This method ensures that the specified objects are consumed from the device
+     * and are not copied from the host.
+     *
+     * @param uniqueTaskGraphName
+     *     A unique identifier for the task graph.
+     * @param objects
+     *     List of Java objects (usually arrays) to be consumed from the device.
+     * @return {@link TaskGraph}
+     */
+    @Override
+    public TaskGraph consumeFromDevice(String uniqueTaskGraphName, Object... objects) {
+        taskGraphImpl.consumeFromDevice(uniqueTaskGraphName, objects);
+        return this;
+    }
+
+    /**
      * Tag a set of objects (Java objects) to be transferred from the device to the
      * host after the execution completes. There are two modes:
      *
@@ -711,6 +730,26 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph transferToHost(final int mode, Object... objects) {
         taskGraphImpl.transferToHost(mode, objects);
+        return this;
+    }
+
+    /**
+     * Tags a set of objects to persist on the device without transferring them
+     * back to the host after execution.
+     *
+     * <p>
+     * This method marks the objects as available on the device for future taskGraph
+     * executions without redundant data transfers. Data is not transferred to
+     * the host unless explicitly requested via the execution plan.
+     * </p>
+     *
+     * @param objects
+     *     List of Java objects (usually arrays) to persist on the device.
+     * @return {@link TaskGraph}
+     */
+    @Override
+    public TaskGraph persistOnDevice(Object... objects) {
+        taskGraphImpl.transferToHost(DataTransferMode.UNDER_DEMAND, objects);
         return this;
     }
 
@@ -854,10 +893,6 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl.getProfileLog();
     }
 
-    public Collection<?> getOutputs() {
-        return taskGraphImpl.getOutputs();
-    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraphImpl.enableProfiler(profilerMode);
     }
@@ -905,4 +940,22 @@ public class TaskGraph implements TaskGraphInterface {
     long getCurrentDeviceMemoryUsage() {
         return taskGraphImpl.getCurrentDeviceMemoryUsage();
     }
+
+
+    void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc) {
+        taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
+    }
+
+    void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
+        taskGraphImpl.updatePersistedObjectState(taskGraphSrc);
+    }
+
+    public Collection<?> getOutputs() {
+        return taskGraphImpl.getOutputs();
+    }
+
+    TornadoTaskGraphInterface getTaskGraphImpl() {
+        return taskGraphImpl;
+    }
+
 }

@@ -24,13 +24,15 @@
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 
 public class PTXDoubleArrayWrapper extends PTXArrayWrapper<double[]> {
     private long setSubRegionSize;
 
-    public PTXDoubleArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Double);
+    public PTXDoubleArrayWrapper(PTXDeviceContext deviceContext, Access access) {
+        super(deviceContext, JavaKind.Double, access);
     }
 
     /**
@@ -99,5 +101,10 @@ public class PTXDoubleArrayWrapper extends PTXArrayWrapper<double[]> {
     @Override
     public void setIntBuffer(int[] arr) {
         super.setIntBuffer(arr);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return PTXKind.F64.getSizeInBytes();
     }
 }

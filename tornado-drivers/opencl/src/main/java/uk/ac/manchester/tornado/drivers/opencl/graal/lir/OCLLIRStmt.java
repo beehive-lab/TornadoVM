@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020-2022, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020-2022, 2024, 2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -109,6 +109,38 @@ public class OCLLIRStmt {
         }
     }
 
+    @Opcode("CONVERT_HALF")
+    public static class ConvertHalfToFloatStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertHalfToFloatStmt> TYPE = LIRInstructionClass.create(ConvertHalfToFloatStmt.class);
+
+        @Def
+        protected Value floatValue;
+        @Use
+        protected Value halfValue;
+
+        public ConvertHalfToFloatStmt(Value floatValue, Value halfValue) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, floatValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("convert_float((float) ");
+            asm.emitValue(crb, halfValue);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("VADD_HALF")
     public static class VectorAddHalfStmt extends AbstractInstruction {
 
@@ -150,6 +182,80 @@ public class OCLLIRStmt {
             } else {
                 asm.emitValue(crb, y);
             }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("ADD_HALF")
+    public static class AddHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<AddHalfStmt> TYPE = LIRInstructionClass.create(AddHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public AddHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, x);
+            asm.space();
+            asm.emitSymbol("+");
+            asm.space();
+            asm.emitValue(crb, y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("SUB_HALF")
+    public static class SubHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<SubHalfStmt> TYPE = LIRInstructionClass.create(SubHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public SubHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, x);
+            asm.space();
+            asm.emitSymbol("-");
+            asm.space();
+            asm.emitValue(crb, y);
             asm.delimiter();
             asm.eol();
         }
@@ -203,6 +309,43 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("MULT_HALF")
+    public static class MultHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MultHalfStmt> TYPE = LIRInstructionClass.create(MultHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public MultHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, x);
+            asm.space();
+            asm.emitSymbol("*");
+            asm.space();
+            asm.emitValue(crb, y);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("VMULT_HALF")
     public static class VectorMultHalfStmt extends AbstractInstruction {
 
@@ -244,6 +387,43 @@ public class OCLLIRStmt {
             } else {
                 asm.emitValue(crb, y);
             }
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("DIV_HALF")
+    public static class DivHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<DivHalfStmt> TYPE = LIRInstructionClass.create(DivHalfStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value x;
+        @Use
+        protected Value y;
+
+        public DivHalfStmt(Value result, Value x, Value y) {
+            super(TYPE);
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, x);
+            asm.space();
+            asm.emitSymbol("/");
+            asm.space();
+            asm.emitValue(crb, y);
             asm.delimiter();
             asm.eol();
         }

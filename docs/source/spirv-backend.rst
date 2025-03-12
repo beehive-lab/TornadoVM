@@ -1,4 +1,4 @@
-SPIR-V Devices
+\SPIR-V Devices
 ====================================
 
 SPIR-V makes use of the `Intel Level Zero API <https://spec.oneapi.io/level-zero/latest/index.html>`__.
@@ -69,7 +69,7 @@ TornadoVM/Java Options for SPIR-V:
 
 - ``-Dtornado.spirv.version=1.2``: Modify the minimum version supported. By default is 1.2. However, developers can change this value. Note that the generated code might not work, as TornadoVM requires at least 1.2.
 
-- ``-Dtornado.spirv.dispatcher=opencl``: It sets the runtime to dispatch SPIR-V kernels. Allowed values are: ``opencl`` and ``levelzero``.
+- ``-Dtornado.spirv.runtimes=opencl,levelzero``: It sets the list of supported runtimes to dispatch SPIR-V. Allowed values are: ``opencl`` and ``levelzero``. They are separated by a comma, and the first in the list is taken as default. 
 
 - ``-Dtornado.spirv.levelzero.extended.memory=True``: It uses Level Zero extended memory mode. It is set to ``true`` by default.
 

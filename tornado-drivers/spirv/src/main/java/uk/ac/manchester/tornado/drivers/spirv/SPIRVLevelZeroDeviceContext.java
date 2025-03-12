@@ -29,5 +29,4 @@ public class SPIRVLevelZeroDeviceContext extends SPIRVDeviceContext {
         super(device, context);
         this.spirvContext = context;
     }
-
 }

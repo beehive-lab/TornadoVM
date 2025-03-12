@@ -24,16 +24,18 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 public class SPIRVLongArrayWrapper extends SPIRVArrayWrapper<long[]> {
 
-    public SPIRVLongArrayWrapper(SPIRVDeviceContext device, long batchSize) {
-        super(device, JavaKind.Long, batchSize);
+    public SPIRVLongArrayWrapper(SPIRVDeviceContext device, long batchSize, Access access) {
+        super(device, JavaKind.Long, batchSize, access);
     }
 
-    protected SPIRVLongArrayWrapper(final long[] array, final SPIRVDeviceContext device, long batchSize) {
-        super(array, device, JavaKind.Long, batchSize);
+    protected SPIRVLongArrayWrapper(final long[] array, final SPIRVDeviceContext device, long batchSize, Access access) {
+        super(array, device, JavaKind.Long, batchSize, access);
     }
 
     @Override
@@ -54,5 +56,10 @@ public class SPIRVLongArrayWrapper extends SPIRVArrayWrapper<long[]> {
     @Override
     protected int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return SPIRVKind.OP_TYPE_INT_64.getSizeInBytes();
     }
 }

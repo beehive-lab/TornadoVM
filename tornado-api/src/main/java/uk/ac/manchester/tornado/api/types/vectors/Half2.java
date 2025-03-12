@@ -152,7 +152,7 @@ public final class Half2 implements TornadoVectorsInterface<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
+        return String.format(fmt, getX().getFloat32(), getY().getFloat32());
     }
 
     @Override

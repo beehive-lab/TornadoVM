@@ -308,6 +308,30 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void setSystemPowerConsumption(ProfilerType systemPowerConsumptionType, String taskID, long powerConsumption) {
+        if (!taskPowerMetrics.containsKey(taskID)) {
+            taskPowerMetrics.put(taskID, new HashMap<>());
+        }
+        if (powerConsumption > 0) {
+            taskPowerMetrics.get(taskID).put(systemPowerConsumptionType, Long.toString(powerConsumption));
+        } else {
+            taskPowerMetrics.get(taskID).put(systemPowerConsumptionType, "n/a");
+        }
+    }
+
+    @Override
+    public void setSystemVoltage(ProfilerType systemPowerVoltageType, String taskID, long voltage) {
+        if (!taskPowerMetrics.containsKey(taskID)) {
+            taskPowerMetrics.put(taskID, new HashMap<>());
+        }
+        if (voltage > 0) {
+            taskPowerMetrics.get(taskID).put(systemPowerVoltageType, Float.toString(voltage));
+        } else {
+            taskPowerMetrics.get(taskID).put(systemPowerVoltageType, "n/a");
+        }
+    }
+
+    @Override
     public synchronized void sum(ProfilerType acc, long value) {
         long sum = getTimer(acc) + value;
         profilerTime.put(acc, sum);

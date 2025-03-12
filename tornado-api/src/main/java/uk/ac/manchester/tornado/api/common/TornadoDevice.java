@@ -43,9 +43,9 @@ public interface TornadoDevice {
      *     {@link DeviceBufferState}
      * @return an event ID
      */
-    long allocate(Object object, long batchSize, DeviceBufferState state);
+    long allocate(Object object, long batchSize, DeviceBufferState state, Access access);
 
-    long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states);
+    long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses);
 
     long deallocate(DeviceBufferState state);
 
@@ -194,10 +194,12 @@ public interface TornadoDevice {
 
     Object getAtomic();
 
+    @Deprecated
     void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics);
 
     TornadoVMBackendType getTornadoVMBackend();
 
     boolean isSPIRVSupported();
 
+    void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset);
 }

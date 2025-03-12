@@ -24,17 +24,18 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import jdk.vm.ci.meta.JavaKind;
-
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
 
-    public OCLIntArrayWrapper(OCLDeviceContext device, long batchSize) {
-        super(device, JavaKind.Int, batchSize);
+    public OCLIntArrayWrapper(OCLDeviceContext device, long batchSize, Access access) {
+        super(device, JavaKind.Int, batchSize, access);
     }
 
-    protected OCLIntArrayWrapper(int[] array, final OCLDeviceContext device, long batchSize) {
-        super(array, device, JavaKind.Int, batchSize);
+    protected OCLIntArrayWrapper(int[] array, final OCLDeviceContext device, long batchSize, Access access) {
+        super(array, device, JavaKind.Int, batchSize, access);
     }
 
     @Override
@@ -55,6 +56,11 @@ public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
     @Override
     protected int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.enqueueWriteBuffer(executionPlanId, bufferId, offset, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    public int getSizeOfType() {
+        return OCLKind.INT.getSizeInBytes();
     }
 
 }

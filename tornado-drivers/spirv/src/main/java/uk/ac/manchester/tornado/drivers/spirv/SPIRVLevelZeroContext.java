@@ -28,10 +28,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
+import uk.ac.manchester.tornado.drivers.opencl.natives.NativeCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -127,7 +129,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     }
 
     @Override
-    public long allocateMemory(int deviceIndex, long numBytes) {
+    public long allocateMemory(int deviceIndex, long numBytes, Access access) {
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
         LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDeviceRuntime();
         ZeDeviceMemAllocDescriptor deviceMemAllocDesc = createDeviceDescription();
@@ -588,6 +590,16 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             if (table.size() == 0) {
                 commmandQueueTable.remove(executionPlanId);
             }
+        }
+    }
+
+    @Override
+    public long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long destBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest) {
+        LevelZeroByteBuffer deviceBuffer = deviceBufferMap.get(srcBuffer);
+        if (offset == 0) {
+            return NativeCommandQueue.mapOnDeviceMemoryRegion(destBuffer, deviceBuffer.getPtrBuffer());
+        } else {
+            throw new TornadoRuntimeException("mapOnDeviceMemoryRegion with offset not supported");
         }
     }
 }

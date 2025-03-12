@@ -169,23 +169,24 @@ public class OpenCL {
             XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(tornadoDevice);
 
             switch (access) {
-                case READ_WRITE:
-                case READ_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                case READ_WRITE -> {
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_WRITE);
                     tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
-                    break;
-                case WRITE_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
-                    break;
-                default:
-                    break;
+                }
+                case READ_ONLY -> {
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_ONLY);
+                    tornadoDevice.ensurePresent(executionContextId, object, deviceState, null, 0, 0);
+                }
+                case WRITE_ONLY -> tornadoDevice.allocate(object, 0, deviceState, Access.WRITE_ONLY);
+                default -> {
+                }
             }
             states.add(deviceState);
         }
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionContextId, numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionContextId, numArgs, Access.NONE);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values

@@ -33,14 +33,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueueTable;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCLBlocking;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
@@ -108,11 +107,26 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public long allocateMemory(int deviceIndex, long numBytes) {
+    public long allocateMemory(int deviceIndex, long numBytes, Access access) {
         if (oclContext instanceof OCLContext oclContext) {
-            return oclContext.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, numBytes).getBuffer();
+            long oclMemFlags = getOCLMemFlagForAccess(access);
+            return oclContext.createBuffer(oclMemFlags, numBytes).getBuffer();
         } else {
             throw new RuntimeException("Unimplemented: " + oclContext.getClass());
+        }
+    }
+
+    private static long getOCLMemFlagForAccess(Access access) {
+        switch (access) {
+            case READ_ONLY:
+                return OCLMemFlags.CL_MEM_READ_ONLY;
+            case WRITE_ONLY:
+                return OCLMemFlags.CL_MEM_WRITE_ONLY;
+            case READ_WRITE:
+                return OCLMemFlags.CL_MEM_READ_WRITE;
+            default:
+                // if access has not been deducted by sketcher set it as RW
+                return OCLMemFlags.CL_MEM_READ_WRITE;
         }
     }
 
@@ -298,5 +312,11 @@ public class SPIRVOCLContext extends SPIRVContext {
             }
             executionIDs.remove(executionPlanId);
         }
+    }
+
+    @Override
+    public long mapOnDeviceMemoryRegion(long executionPlanId, int deviceIndex, long dstBuffer, long srcBuffer, long offset, int sizeOfType, long sizeSource, long sizeDest) {
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId, deviceIndex);
+        return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), dstBuffer, srcBuffer, offset, sizeOfType, sizeSource, sizeDest);
     }
 }

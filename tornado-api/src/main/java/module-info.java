@@ -50,4 +50,6 @@ module tornado.api {
     opens uk.ac.manchester.tornado.api.types.tensors;
     opens uk.ac.manchester.tornado.api.types;
     opens uk.ac.manchester.tornado.api.runtime;
+    exports uk.ac.manchester.tornado.api.plan.types;
+    opens uk.ac.manchester.tornado.api.plan.types;
 }

@@ -24,6 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getJavaKindFromValueLayoutClass;
+import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.ATAN2;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMAX;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMIN;
@@ -59,6 +61,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
@@ -73,6 +76,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
@@ -99,6 +103,7 @@ public class SPIRVGraphBuilderPlugins {
         }
 
         registerCompilerIntrinsicsPlugins(invocationPlugins);
+        registerFP16ConversionPlugins(invocationPlugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(invocationPlugins);
 
@@ -110,7 +115,7 @@ public class SPIRVGraphBuilderPlugins {
 
         SPIRVHalfFloatPlugins.registerPlugins(plugins, invocationPlugins);
         // Register plugins for Off-Heap Arrays with Panama
-        registerMemoryAccessPlugins(invocationPlugins);
+        registerMemoryAccessPlugins(plugins);
     }
 
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
@@ -361,61 +366,80 @@ public class SPIRVGraphBuilderPlugins {
         });
     }
 
+    private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, Float.class);
+        r.register(new InvocationPlugin("float16ToFloat", short.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
+                SPIRVConvertHalfToFloat convertHalfToFloat = new SPIRVConvertHalfToFloat(halfValue);
+                b.addPush(JavaKind.Float, convertHalfToFloat);
+                return true;
+            }
+        });
+    }
+
     private static void registerTornadoVMIntrinsicsPlugins(Plugins plugins) {
         if (TornadoOptions.DEBUG) {
             Logger.traceRuntime(Logger.BACKEND.SPIRV, "SPIRV Registering VM Intrinsics Plugins - pending");
         }
     }
 
-    public static Class<?> getValueLayoutClass(Class k) {
-        if (k == int.class) {
-            return ValueLayout.OfInt.class;
-        } else if (k == double.class) {
-            return ValueLayout.OfDouble.class;
-        } else if (k == float.class) {
-            return ValueLayout.OfFloat.class;
-        } else if (k == long.class) {
-            return ValueLayout.OfLong.class;
-        } else if (k == boolean.class) {
-            return ValueLayout.OfBoolean.class;
-        } else if (k == byte.class) {
-            return ValueLayout.OfByte.class;
-        } else if (k == char.class) {
-            return ValueLayout.OfChar.class;
-        } else if (k == short.class) {
-            return ValueLayout.OfShort.class;
-        } else {
-            throw new TornadoRuntimeException("Class type " + k + " not supported.");
-        }
-    }
+    private static void registerMemoryAccessPlugins(final Plugins ps) {
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                // "MemorySegment.getAtIndex(ValueLayout, long)"
+                if (!MemorySegment.class.getName().equals(method.getDeclaringClass().toJavaName())) {
+                    return false;
+                }
+                if (!"getAtIndex".equals(method.getName())) {
+                    return false;
+                }
+                if (args.length != 3) {
+                    throw new TornadoRuntimeException("Expecting 3 arguments for getAtIndex but got " + args.length);
+                }
+                ValueNode receiver = args[0];
+                ValueNode layout = args[1];
+                ValueNode index = args[2];
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, MemorySegment.class);
+                Class valueLayoutClass = getValueLayoutClass(layout);
+                JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
 
-        for (JavaKind kind : JavaKind.values()) {
-            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                r.register(new InvocationPlugin("getAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                        b.addPush(kind, readNode);
-                        return true;
-                    }
-                });
-                r.register(new InvocationPlugin("setAtIndex", InvocationPlugin.Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
-                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                        b.add(writeNode);
-                        return true;
-                    }
-                });
+                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
             }
-        }
+        });
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                // "MemorySegment.setAtIndex(ValueLayout, long, kind)"
+                if (!MemorySegment.class.getName().equals(method.getDeclaringClass().toJavaName())) {
+                    return false;
+                }
+                if (!"setAtIndex".equals(method.getName())) {
+                    return false;
+                }
+                if (args.length != 4) {
+                    throw new TornadoRuntimeException("Expecting 4 arguments for setAtIndex but got " + args.length);
+                }
+                ValueNode receiver = args[0];
+                ValueNode layout = args[1];
+                ValueNode index = args[2];
+                ValueNode value = args[3];
+
+                Class valueLayoutClass = getValueLayoutClass(layout);
+                JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
+
+                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
     }
 
 }

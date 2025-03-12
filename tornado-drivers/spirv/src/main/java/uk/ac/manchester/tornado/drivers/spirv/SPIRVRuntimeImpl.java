@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2024-2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -43,8 +45,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  */
 public class SPIRVRuntimeImpl {
 
-    private final String ERROR_PLATFORM_NOT_IMPLEMENTED = "SPIR-V Runtime Implementation not supported: " + TornadoOptions.SPIRV_DISPATCHER + " \nUse \"opencl\" or \"levelzero\"";
-
     private List<SPIRVPlatform> platforms;
     private static SPIRVRuntimeImpl instance;
 
@@ -59,21 +59,24 @@ public class SPIRVRuntimeImpl {
         init();
     }
 
+    private String printErrorPlatformNotImplemented(String spirvPlatform) {
+        return "SPIR-V Runtime Implementation not supported: " + spirvPlatform + " \nUse \"opencl\" or \"levelzero\"";
+    }
+
+    private SPIRVDispatcher instantiateDispatcher(String runtimeName) {
+        if (runtimeName.equalsIgnoreCase("opencl")) {
+            return new SPIRVOpenCLDriver();
+        } else if (runtimeName.equalsIgnoreCase("levelzero")) {
+            return new SPIRVLevelZeroDriver();
+        } else {
+            throw new TornadoRuntimeException(printErrorPlatformNotImplemented(runtimeName));
+        }
+    }
+
     private synchronized void init() {
         if (platforms == null) {
-            SPIRVDispatcher[] dispatchers = new SPIRVDispatcher[SPIRVRuntimeType.values().length];
-            SPIRVDispatcher levelZeroDriver = new SPIRVLevelZeroDriver();
-            SPIRVDispatcher openCLDriver = new SPIRVOpenCLDriver();
-            int index = 0;
-            if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("opencl")) {
-                dispatchers[index++] = openCLDriver;
-                dispatchers[index] = levelZeroDriver;
-            } else if (TornadoOptions.SPIRV_DISPATCHER.equalsIgnoreCase("levelzero")) {
-                dispatchers[index++] = levelZeroDriver;
-                dispatchers[index] = openCLDriver;
-            } else {
-                throw new TornadoRuntimeException(ERROR_PLATFORM_NOT_IMPLEMENTED);
-            }
+            String[] listOfRuntimes = TornadoOptions.SPIRV_INSTALLED_RUNTIMES.split(",");
+            List<SPIRVDispatcher> dispatchers = Arrays.stream(listOfRuntimes).map(this::instantiateDispatcher).toList();
 
             platforms = new ArrayList<>();
             for (SPIRVDispatcher dispatcher : dispatchers) {

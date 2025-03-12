@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,10 +44,12 @@ public class IncAtomicNode extends NodeAtomic implements LIRLowerable {
 
     @Input
     ValueNode atomicNode;
+    OCLUnary.AtomicOperator atomicOperator;
 
-    public IncAtomicNode(ValueNode atomicValue) {
+    public IncAtomicNode(ValueNode atomicValue, OCLUnary.AtomicOperator atomicOperator) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.atomicNode = atomicValue;
+        this.atomicOperator = atomicOperator;
     }
 
     @Override
@@ -78,11 +80,12 @@ public class IncAtomicNode extends NodeAtomic implements LIRLowerable {
 
             int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
 
-            OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
+            OCLUnary.IntrinsicAtomicOperator intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicOperator( //
                     OCLAssembler.OCLUnaryIntrinsic.ATOMIC_INC, //
                     tool.getLIRKind(stamp), //
                     generator.operand(atomicNode), //
-                    indexFromGlobal);
+                    indexFromGlobal, //
+                    atomicOperator);
 
             OCLLIRStmt.AssignStmt assignStmt = new OCLLIRStmt.AssignStmt(result, intrinsicAtomicAdd);
             tool.append(assignStmt);

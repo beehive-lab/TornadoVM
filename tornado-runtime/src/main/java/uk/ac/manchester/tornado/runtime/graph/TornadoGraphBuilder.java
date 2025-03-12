@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -70,6 +71,15 @@ public class TornadoGraphBuilder {
         graph.add(allocateNode);
         context.addUse(allocateNode);
         args[argIndex] = allocateNode;
+        persistNode.addValue((ObjectNode) arg);
+    }
+
+    private static void createOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
+        final OnDeviceObjectNode onDeviceObjectNode = new OnDeviceObjectNode(context);
+        onDeviceObjectNode.setValue((ObjectNode) arg);
+        graph.add(onDeviceObjectNode);
+        context.addUse(onDeviceObjectNode);
+        args[argIndex] = onDeviceObjectNode;
         persistNode.addValue((ObjectNode) arg);
     }
 
@@ -112,6 +122,7 @@ public class TornadoGraphBuilder {
         final List<Object> constants = executionContext.getConstants();
         final List<Object> objects = executionContext.getObjects();
 
+
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
         for (int i = 0; i < constants.size(); i++) {
             constantNodes[i] = new ConstantNode(i);
@@ -140,15 +151,23 @@ public class TornadoGraphBuilder {
 
                 final AbstractNode arg = objectNodes[variableIndex];
                 if (!(arg instanceof ContextOpNode)) {
+                    final ObjectNode objectNode = (ObjectNode) arg;
+                    final LocalObjectState state = states.get(objectNode.getIndex());
+
                     if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
+                    }  else if (state.isOnDevice()) {
+                        createOnDeviceNode(context, graph, arg, args, argIndex, persist);
                     } else {
-                        final ObjectNode objectNode = (ObjectNode) arg;
-                        final LocalObjectState state = states.get(objectNode.getIndex());
-                        if (state.isStreamIn()) {
+                       if (state.isStreamIn()) {
                             createStreamInNode(context, graph, objectNode, args, argIndex, persist);
                         } else {
-                            createCopyInNode(context, graph, arg, args, argIndex, persist);
+                            if (!state.isUnderDemand()) {
+                                createCopyInNode(context, graph, arg, args, argIndex, persist);
+                            } else {
+                                // if it is under demand, we only need to allocate the buffer
+                                createAllocateNode(context, graph, arg, args, argIndex, persist);
+                            }
                         }
                     }
                 } else {
@@ -159,22 +178,25 @@ public class TornadoGraphBuilder {
                 }
 
                 final AbstractNode nextAccessNode;
+                assert accesses != null;
                 if (accesses[argIndex] == Access.WRITE_ONLY || accesses[argIndex] == Access.READ_WRITE) {
                     final DependentReadNode depRead = new DependentReadNode(context);
                     final ObjectNode value;
-                    if (objectNodes[variableIndex] instanceof ObjectNode) {
-                        value = (ObjectNode) objectNodes[variableIndex];
-                    } else if (objectNodes[variableIndex] instanceof DependentReadNode) {
-                        value = ((DependentReadNode) objectNodes[variableIndex]).getValue();
+                    if (objectNodes[variableIndex] instanceof ObjectNode objectNode) {
+                        value = objectNode;
+                    } else if (objectNodes[variableIndex] instanceof DependentReadNode dependentRead) {
+                        value = dependentRead.getValue();
                         if (states.get(variableIndex).isForcedStreamIn()) {
                             createStreamInNode(context, graph, value, args, argIndex, persist);
                         }
-                    } else if (objectNodes[variableIndex] instanceof CopyInNode) {
-                        value = ((CopyInNode) objectNodes[variableIndex]).getValue();
-                    } else if (objectNodes[variableIndex] instanceof AllocateNode) {
-                        value = ((AllocateNode) objectNodes[variableIndex]).getValue();
-                    } else if (objectNodes[variableIndex] instanceof StreamInNode) {
-                        value = ((StreamInNode) objectNodes[variableIndex]).getValue();
+                    } else if (objectNodes[variableIndex] instanceof CopyInNode copyInNode) {
+                        value = copyInNode.getValue();
+                    } else if (objectNodes[variableIndex] instanceof AllocateNode allocateNode) {
+                        value = allocateNode.getValue(); }
+                    else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
+                        value = onDeviceObjectNode.getValue();
+                    } else if (objectNodes[variableIndex] instanceof StreamInNode streamInNode) {
+                        value = streamInNode.getValue();
                     } else {
                         throw new TornadoRuntimeException("Invalid graph node in TornadoGraph builder for node: " + objectNodes[variableIndex].getClass().getName());
                     }
@@ -221,11 +243,14 @@ public class TornadoGraphBuilder {
                 TornadoXPUDevice deviceForTask = executionContext.getDeviceForTask(taskIndex);
                 context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(deviceForTask), deviceForTask));
 
+
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
 
-                if (task instanceof CompilableTask) {
-                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+
+
+                if (task instanceof CompilableTask compilableTask) {
+                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));
                     Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
                     accesses = sketch.getArgumentsAccess();
                 } else {
@@ -238,17 +263,17 @@ public class TornadoGraphBuilder {
 
         for (int i = 0; i < states.size(); i++) {
             if (states.get(i).isStreamOut()) {
-                if (objectNodes[i] instanceof DependentReadNode) {
-                    final DependentReadNode readNode = (DependentReadNode) objectNodes[i];
+                if (objectNodes[i] instanceof DependentReadNode dependentRead) {
+                    final DependentReadNode readNode = dependentRead;
                     context = readNode.getContext();
                     final CopyOutNode copyOutNode = new CopyOutNode(context);
                     copyOutNode.setValue(readNode);
                     graph.add(copyOutNode);
                     context.addUse(copyOutNode);
                 }
-            } else if (states.get(i).isStreamIn() && objectNodes[i] instanceof ObjectNode) {
+            } else if (states.get(i).isStreamIn() && objectNodes[i] instanceof ObjectNode objectNode) {
                 final StreamInNode streamInNode = new StreamInNode(context);
-                streamInNode.setValue((ObjectNode) objectNodes[i]);
+                streamInNode.setValue(objectNode);
                 graph.add(streamInNode);
                 assert context != null;
                 context.addUse(streamInNode);
@@ -263,24 +288,44 @@ public class TornadoGraphBuilder {
         ContextOpNode dependencyNode = (ContextOpNode) graph.getNode(dependencyIndex);
         for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
             ContextOpNode node = (ContextOpNode) graph.getNode(i);
-            if (node instanceof CopyInNode || node instanceof AllocateNode || node instanceof StreamInNode) {
-                ObjectNode objectNode;
-                if (node instanceof CopyInNode) {
-                    objectNode = ((CopyInNode) node).getValue();
-                } else if (node instanceof AllocateNode) {
-                    objectNode = ((AllocateNode) node).getValue();
-                } else {
-                    objectNode = ((StreamInNode) node).getValue();
-                }
+            if (node instanceof CopyInNode || node instanceof AllocateNode || node instanceof StreamInNode || node instanceof OnDeviceObjectNode) {
+
+                ObjectNode objectNode = getObjectNodeFromNode(node);
+
                 ContextNode contextNode = node.getContext();
-                DeallocateNode deallocateNode = new DeallocateNode(contextNode);
-                deallocateNode.setValue(objectNode);
-                deallocateNode.setDependent(dependencyNode);
-                graph.add(deallocateNode);
-                contextNode.addUse(deallocateNode);
+
+                Object targetObject = objects.get(objectNode.getIndex());
+
+                // Check if the target object is marked as persistent in the execution context.
+                boolean isPersistedObject = executionContext.getPersistedObjects().contains(targetObject);
+
+                // If the object is NOT persistent, proceed with de-allocation. Prevents dealloc for Under_Demand objects
+                if (!isPersistedObject) {
+                    DeallocateNode deallocateNode = new DeallocateNode(contextNode);
+                    deallocateNode.setValue(objectNode);
+                    deallocateNode.setDependent(dependencyNode);
+                    graph.add(deallocateNode);
+                    contextNode.addUse(deallocateNode);
+                }
             }
         }
 
         return graph;
+    }
+
+    /**
+     * Helper method to extract the ObjectNode from a ContextOpNode instance.
+     */
+    private static ObjectNode getObjectNodeFromNode(ContextOpNode node) {
+        if (node instanceof CopyInNode copyInNode) {
+            return copyInNode.getValue();
+        } else if (node instanceof AllocateNode allocateNode) {
+            return allocateNode.getValue();
+        } else if (node instanceof StreamInNode streamInNode) {
+            return streamInNode.getValue();
+        } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
+            return  onDeviceObjectNode.getValue();
+        }
+        throw new IllegalArgumentException("Unknown node type: " + node.getClass());
     }
 }

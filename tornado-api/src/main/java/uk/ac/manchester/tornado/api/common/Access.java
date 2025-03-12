@@ -21,7 +21,7 @@ package uk.ac.manchester.tornado.api.common;
  * Enum used to specify the accesses of parameters passed on
  * {@link uk.ac.manchester.tornado.api.common.TornadoFunctions.Task}. Note that
  * we use the {@link #position} field in the
- * {@link uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher#mergeAccessses}
+ * {@link uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher#mergeAccesses}
  * method to combine different accesses.
  */
 public enum Access {

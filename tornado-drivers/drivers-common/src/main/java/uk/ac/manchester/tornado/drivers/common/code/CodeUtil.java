@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.drivers.common.code;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -33,7 +34,12 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.TargetDescription;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+
+import java.lang.foreign.ValueLayout;
 
 public class CodeUtil {
 
@@ -123,6 +129,42 @@ public class CodeUtil {
                 case 64 -> JavaKind.Long;
                 default -> throw new IllegalArgumentException("Unsupported integer bit size: " + bitSize);
             };
+        }
+    }
+
+    public static JavaKind getJavaKindFromValueLayoutClass(Class valueLayout) {
+        if (valueLayout == ValueLayout.OfInt.class) {
+            return JavaKind.Int;
+        } else if (valueLayout == ValueLayout.OfDouble.class) {
+            return JavaKind.Double;
+        } else if (valueLayout == ValueLayout.OfFloat.class) {
+            return JavaKind.Float;
+        } else if (valueLayout == ValueLayout.OfLong.class) {
+            return JavaKind.Long;
+        } else if (valueLayout == ValueLayout.OfBoolean.class) {
+            return JavaKind.Boolean;
+        } else if (valueLayout == ValueLayout.OfByte.class) {
+            return JavaKind.Byte;
+        } else if (valueLayout == ValueLayout.OfChar.class) {
+            return JavaKind.Char;
+        } else if (valueLayout == ValueLayout.OfShort.class) {
+            return JavaKind.Short;
+        } else {
+            throw new TornadoRuntimeException("Class type " + valueLayout + " not supported.");
+        }
+    }
+
+    public static Class getValueLayoutClass(ValueNode valueLayoutFieldNode) {
+        if (!(valueLayoutFieldNode instanceof LoadFieldNode loadFieldNode)) {
+            throw new TornadoRuntimeException("Expected a LoadFieldNode but got " + valueLayoutFieldNode.getClass().getSimpleName());
+        }
+        ResolvedJavaField fieldNode = loadFieldNode.field();
+
+        String className = fieldNode.getType().toJavaName();
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new TornadoRuntimeException("Class type " + className + " not found.");
         }
     }
 

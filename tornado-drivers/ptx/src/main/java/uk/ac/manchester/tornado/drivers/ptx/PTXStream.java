@@ -30,6 +30,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.ptx.nstream.NativePTXStream;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -364,5 +365,10 @@ public class PTXStream {
 
     public boolean isDestroy() {
         return isDestroy;
+    }
+
+    public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset) {
+        final int sizeofType = 4;
+        return NativePTXStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeofType);
     }
 }

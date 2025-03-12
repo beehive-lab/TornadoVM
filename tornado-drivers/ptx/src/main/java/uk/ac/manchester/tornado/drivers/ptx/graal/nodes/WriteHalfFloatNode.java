@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,7 +22,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
@@ -34,13 +33,11 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.ptx.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
-import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
 
 @NodeInfo
 public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerable {
@@ -54,7 +51,7 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
     private ValueNode valueNode;
 
     public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
-        super(TYPE, StampFactory.forKind(JavaKind.Short));
+        super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
         this.valueNode = valueNode;
     }

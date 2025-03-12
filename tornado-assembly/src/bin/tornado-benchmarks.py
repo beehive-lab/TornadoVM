@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ import argparse
 import os
 import subprocess
 import sys
+import time
 
 try:
     __JAVA_HOME__ = os.environ["JAVA_HOME"]
@@ -61,8 +62,10 @@ if __JAVA_VERSION__ != JDK_8_VERSION:
 __RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
+__SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
-__SKIP_PARALLEL__ = " -Dtornado.enable=False "
+__ENERGY_MONITOR_INTERVAL__ = " -Denergy.monitor.interval="
+__DUMP_ENERGY_METRICS_TO_DIRECTORY__ = " -Ddump.energy.metrics.to.directory="
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __ENABLE_PROFILER__ = " --enableProfiler "
@@ -94,7 +97,6 @@ __BENCHMARKS__ = [
     "juliaset",
 ]
 
-
 ## ========================================================================================
 ## Dimensions
 ## ========================================================================================
@@ -116,6 +118,8 @@ __DIMENSIONS__ = {
     "dft": "1",
     "juliaset": "2"
 }
+
+
 ## ========================================================================================
 
 
@@ -128,10 +132,10 @@ __MAX_ITERATIONS__ = 131
 ITERATIONS = __MAX_ITERATIONS__
 allSizes = {
     "montecarlo": [
-        [512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576],
-        [__MAX_ITERATIONS__],
+        [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 1048576],
+        ["getSize()"],
     ],
-    "nbody": [[512, 1024, 2048, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
+    "nbody": [[512, 1024, 2048, 4096, 16384, 32768], ["getSize()"]],
     "saxpy": [
         [
             512,
@@ -140,7 +144,7 @@ allSizes = {
             4096,
             8192,
             16384,
-            32798,
+            32768,
             65536,
             131072,
             262144,
@@ -149,16 +153,16 @@ allSizes = {
             2097152,
             4194304,
         ],
-        [__MAX_ITERATIONS__],
+        ["getSize()"],
     ],
-    "sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
+    "sgemm": [[128, 256, 512, 1024, 2048], ["getSize()"]],
     "blackscholes": [
-        [512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304],
-        [__MAX_ITERATIONS__],
+        [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 1048576, 4194304],
+        ["getSize()"],
     ],
-    "dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
-    "blurFilter": [[256, 512, 1024, 2048, 8192, 16384], [__MAX_ITERATIONS__]],
-    "juliaset": [[512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
+    "dft": [[256, 512, 1024, 2048, 4096, 8192], ["getSize()"]],
+    "blurFilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
+    "juliaset": [[512, 1024, 2048, 4096, 8192], ["getSize()"]],
 }
 
 mediumSizes = {
@@ -173,7 +177,7 @@ mediumSizes = {
             4096,
             8192,
             16384,
-            32798,
+            32768,
             65536,
             131072,
             262144,
@@ -183,8 +187,8 @@ mediumSizes = {
         ],
         ["getSize()"],
     ],
-    "sgemm": [[128, 256, 512, 1024, 2048], ["getSize()"]],
-    "blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], ["getSize()"]],
+    "sgemm": [[128, 256, 512, 1024], ["getSize()"]],
+    "blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
     "dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
     "blurFilter": [[256, 512, 1024, 2048], ["getSize()"]],
     "juliaset": [[512, 1024, 2048, 4096], ["getSize()"]],
@@ -195,22 +199,26 @@ mediumSizes = {
 def composeAllOptions(args):
     jvm_options = __JVM_FLAGS__
     tornado_options = ""
+    if args.skip_tornadovm:
+        jvm_options = jvm_options + __SKIP_TORNADOVM__ + " "
     if args.skip_serial:
-        jvm_options = jvm_options + __SKIP_SERIAL__
-    if args.skip_parallel:
-        jvm_options = jvm_options + __SKIP_PARALLEL__
+        jvm_options = jvm_options + __SKIP_SERIAL__ + " "
+    if args.delay_energy_interval:
+        jvm_options = jvm_options + __ENERGY_MONITOR_INTERVAL__ + str(args.delay_energy_interval) + " "
+    if args.dump_energy_table_dir:
+        jvm_options = jvm_options + __DUMP_ENERGY_METRICS_TO_DIRECTORY__ + args.dump_energy_table_dir + " "
     if args.validate:
-        jvm_options = jvm_options + __VALIDATE__
+        jvm_options = jvm_options + __VALIDATE__ + " "
     if args.skip_devices != None:
         jvm_options = jvm_options + __SKIP_DEVICES__ + args.skip_devices + " "
     if args.profiler:
         tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler + " "
     if args.jvmFlags != None:
-        jvm_options = jvm_options + args.jvmFlags
+        jvm_options = jvm_options + args.jvmFlags + " "
     if args.tornadoThreadScheduler == True:
-        jvm_options = jvm_options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__
+        jvm_options = jvm_options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ + " "
     if args.spirvOptimizer:
-        jvm_options = jvm_options + __ENABLE_SPIRV_OPTIMIZER__
+        jvm_options = jvm_options + __ENABLE_SPIRV_OPTIMIZER__ + " "
     return jvm_options, tornado_options
 
 
@@ -221,9 +229,15 @@ def printBenchmarks(indent=""):
 
 
 def runBenchmarksFullCoverage(args):
+    if args.benchmark and args.benchmark not in allSizes:
+        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+        return
     jvm_options, tornado_options = composeAllOptions(args)
     for key in allSizes.keys():
+        if args.benchmark and key != args.benchmark:
+            continue
         for size in allSizes[key][0]:
+            numIterations = eval(allSizes[key][1][0])
             command = (
                     __TORNADO_COMMAND__
                     + tornado_options
@@ -234,7 +248,7 @@ def runBenchmarksFullCoverage(args):
                     + ' --params="'
                     + key
                     + " "
-                    + str(allSizes[key][1][0])
+                    + str(numIterations)
                     + " "
                     + str(size)
             )
@@ -243,12 +257,18 @@ def runBenchmarksFullCoverage(args):
             command += '"'
             print(command)
             os.system(command)
+            time.sleep(args.delay_interval)
 
 
 def runMediumConfiguration(args):
+    if args.benchmark and args.benchmark not in allSizes:
+        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+        return
     jvm_options, tornado_options = composeAllOptions(args)
     print(tornado_options, jvm_options)
     for key in mediumSizes.keys():
+        if args.benchmark and key != args.benchmark:
+            continue
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
             command = (
@@ -270,6 +290,7 @@ def runMediumConfiguration(args):
             command += '"'
             print(command)
             os.system(command)
+            time.sleep(args.delay_interval)
 
 
 def runWithJMH(args):
@@ -283,11 +304,16 @@ def runWithJMH(args):
 
 
 def runDefaultSizePerBenchmark(args):
+    if args.benchmark and args.benchmark not in allSizes:
+        print(f"Error: '{args.benchmark}' does not match a valid key in allSizes. Please provide a valid benchmark.")
+        return
     printBenchmarks()
     jvm_options, tornado_options = composeAllOptions(args)
     print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
           jvm_options + Colors.RESET)
     for b in __BENCHMARKS__:
+        if args.benchmark and b != args.benchmark:
+            continue
         command = (
                 __TORNADO_COMMAND__
                 + tornado_options
@@ -337,18 +363,18 @@ def parseArguments():
         help="Run for all sizes in all devices. Including big data sizes",
     )
     parser.add_argument(
-        "--skipSequential",
+        "--skipTornadoVM",
+        action="store_true",
+        dest="skip_tornadovm",
+        default=False,
+        help="Skip TornadoVM parallel implementations",
+    )
+    parser.add_argument(
+        "--skipSerial",
         action="store_true",
         dest="skip_serial",
         default=False,
         help="Skip java version",
-    )
-    parser.add_argument(
-        "--skipParallel",
-        action="store_true",
-        dest="skip_parallel",
-        default=False,
-        help="Skip parallel version",
     )
     parser.add_argument(
         "--skipDevices",
@@ -358,9 +384,16 @@ def parseArguments():
         help="Skip devices. Provide a list of devices (e.g., 0,1)",
     )
     parser.add_argument(
+        "--benchmark",
+        action="store",
+        dest="benchmark",
+        default=None,
+        help="Run a specific BENCHMARK, as defined in the argument list",
+    )
+    parser.add_argument(
         "--printBenchmarks",
         action="store_true",
-        dest="benchmarks",
+        dest="print_benchmarks",
         default=False,
         help="Print the list of available benchmarks",
     )
@@ -404,7 +437,28 @@ def parseArguments():
         default=False,
         help="Print dimensions and sizes for all benchmarks",
     )
-    
+    parser.add_argument(
+        "--delayInterval",
+        type=float,
+        dest="delay_interval",
+        default=0.0,
+        help="Time interval (in seconds) to wait between execution of benchmarks. Default is 0 seconds.",
+    )
+    parser.add_argument(
+        "--delayEnergyInterval",
+        type=int,
+        dest="delay_energy_interval",
+        default=0,
+        help="Time interval (in milliseconds) for the thread that monitors energy to sleep. Default is 0 milliseconds.",
+    )
+    parser.add_argument(
+        "--dumpEnergyTable",
+        action="store",
+        dest="dump_energy_table_dir",
+        default=None,
+        help="Store the energy metric table in a specific directory",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -415,13 +469,14 @@ def printProperties():
         for size in sizes[0]:
             print(f"{benchmark}, dims={dims}, size={size}")
 
+
 def main():
     args = parseArguments()
     global ITERATIONS
     if args.iterations > 0:
         ITERATIONS = args.iterations
 
-    if args.benchmarks:
+    if args.print_benchmarks:
         printBenchmarks()
     elif args.full:
         runBenchmarksFullCoverage(args)

@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAI
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -69,8 +70,8 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
         }
     }
 
-    public XPUBuffer createAtomicsBuffer(final int[] array) {
-        return new AtomicsBuffer(array, deviceContext);
+    public XPUBuffer createAtomicsBuffer(final int[] array, Access access) {
+        return new AtomicsBuffer(array, deviceContext, access);
     }
 
     /**
@@ -100,7 +101,7 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
     void allocateAtomicRegion() {
         if (this.atomicsRegion == -1) {
             this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
-                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
+                    atomicRegionSize()).getBuffer();
         }
     }
 
@@ -109,5 +110,9 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
             deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegion);
             this.atomicsRegion = -1;
         }
+    }
+
+    public static long atomicRegionSize() {
+        return INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL;
     }
 }

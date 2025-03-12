@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -33,24 +33,33 @@ import jdk.vm.ci.meta.RawConstant;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedGuardNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.FloatDivNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.ValueProxyNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
+import uk.ac.manchester.tornado.drivers.spirv.graal.HalfFloatStamp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.DivHalfNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.AddHalfNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.MultHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVConvertHalfToFloat;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SubHalfNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
@@ -114,7 +123,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
                 if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
                     NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
-                    ValueNode valueInput = newHalfFloatInstance.getValue();
+                    ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
                     deleteFixed(newHalfFloatInstance);
@@ -159,6 +168,13 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         replaceMultHalfFloatNodes(graph);
         replaceDivHalfFloatNodes(graph);
 
+        for (LoadFieldNode loadFieldNode : graph.getNodes().filter(LoadFieldNode.class)) {
+            // if the field loaded is from the HalfFloat class for the FP16->FP32 conversion, replace it
+            if (loadFieldNode.usages().filter(SPIRVConvertHalfToFloat.class).isNotEmpty()) {
+                replaceFieldAccess(loadFieldNode);
+            }
+        }
+
         // add after the loadindexedvector nodes the marker node to fix the offset of its read
 
         for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
@@ -197,6 +213,63 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
     }
 
+    private static void replaceFieldAccess(LoadFieldNode loadFieldNode) {
+        // remove the FixGuardNode associated with the loading of the field
+        if (loadFieldNode.predecessor() instanceof FixedGuardNode) {
+            FixedGuardNode fixedGuardNode = (FixedGuardNode) loadFieldNode.predecessor();
+            deleteFixed(fixedGuardNode);
+        }
+        ArrayList<Node> nodesToBeDeleted = new ArrayList<>();
+        nodesToBeDeleted.add(loadFieldNode);
+        // iterate the inputs of the LoadFieldNode until you reach the node to replace it
+        Node replacement = identifyFieldReplacement(loadFieldNode.object(), nodesToBeDeleted);
+        loadFieldNode.replaceAtUsages(replacement);
+        //delete obsolete nodes
+        for (Node toBeDeleted : nodesToBeDeleted) {
+            if (toBeDeleted instanceof FixedNode) {
+                deleteFixed(toBeDeleted);
+            } else {
+                toBeDeleted.safeDelete();
+            }
+        }
+    }
+    private static Node identifyFieldReplacement(Node input, ArrayList<Node> nodesToBeDeleted) {
+        // the replacement is expected to be either the read node of a half value, or a phi node in case of accumulation
+        if (input instanceof ReadHalfFloatNode || input instanceof ValuePhiNode) {
+            return input;
+        }
+        if (input instanceof PiNode || input instanceof IsNullNode) {
+            nodesToBeDeleted.add(input);
+        }
+        Node replacement = null;
+        for (Node iterativeInputs : input.inputs()) {
+            replacement = identifyFieldReplacement(iterativeInputs, nodesToBeDeleted);
+            if (replacement != null) { // if the replacement node was found, stop the recursion
+                return replacement;
+            }
+        }
+        return replacement;
+    }
+
+    /**
+     * This function receives a half float value and, if it is a constant, it encapsulates it in a {@code HalfFloatConstantNode}.
+     * Otherwise, the input value is returned.
+     *
+     * @param halfFloatValue The half float value.
+     * @param graph The Structured Graph.
+     * @return The half float value, either as is, or in the form of the {@code HalfFloatConstantNode}.
+     */
+    private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
+        if (halfFloatValue instanceof ConstantNode) {
+            ConstantNode floatValue = (ConstantNode) halfFloatValue;
+            HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
+            graph.addWithoutUnique(halfFloatConstantNode);
+            return halfFloatConstantNode;
+        } else {
+            return halfFloatValue;
+        }
+    }
+
     private static ValueNode replaceAdd(AddHalfFloatNode addHalfFloatNode, StructuredGraph graph) {
         boolean isVectorOperation = isVectorOp(addHalfFloatNode.getX(), addHalfFloatNode.getY());
         ValueNode addNode;
@@ -206,7 +279,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             addNode = new VectorAddHalfNode(addX, addY);
             graph.addWithoutUnique(addNode);
         } else {
-            addNode = new AddNode(addX, addY);
+            addNode = new AddHalfNode(addX, addY);
             graph.addWithoutUnique(addNode);
         }
 
@@ -244,7 +317,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             subNode = new VectorSubHalfNode(subX, subY);
             graph.addWithoutUnique(subNode);
         } else {
-            subNode = new SubNode(subX, subY);
+            subNode = new SubHalfNode(subX, subY);
             graph.addWithoutUnique(subNode);
         }
         subHalfFloatNode.replaceAtUsages(subNode);
@@ -276,7 +349,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             multNode = new VectorMultHalfNode(multX, multY);
             graph.addWithoutUnique(multNode);
         } else {
-            multNode = new MulNode(multX, multY);
+            multNode = new MultHalfNode(multX, multY);
             graph.addWithoutUnique(multNode);
         }
         multHalfFloatNode.replaceAtUsages(multNode);
@@ -295,7 +368,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         ValueNode divX = getHalfOperand(divHalfFloatNode.getX(), graph, isVectorOperation);
         ValueNode divY = getHalfOperand(divHalfFloatNode.getY(), graph, isVectorOperation);
 
-        FloatDivNode divNode = new FloatDivNode(divX, divY);
+        DivHalfNode divNode = new DivHalfNode(divX, divY);
         graph.addWithoutUnique(divNode);
 
         divHalfFloatNode.replaceAtUsages(divNode);
@@ -306,6 +379,36 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
         for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
             replaceDiv(divHalfFloatNode, graph);
+        }
+    }
+
+    /**
+     * Since the compiler treats half float values as Objects by default,
+     * this function examines if the stamp of a {@code ValuePhiNode} is an Object stamp,
+     * and if it is, it replaces the node with a new {@code ValuePhiNode} with a {@code HalfFloatStamp}.
+     * It is safe to assume that the Object stamp corresponds to a half value and not another
+     * Object type, because the functions that invoke it are operating only on half float related nodes.
+     *
+     * @param phiNode The {@code ValuePhiNode} to be examined.
+     * @param graph The Structured Graph.
+     * @return The {@code ValuePhiNode} with the {@code HalfFloatStamp}, or the existing {@code ValuePhiNode}.
+     */
+    private static ValuePhiNode replacePhi(ValuePhiNode phiNode, StructuredGraph graph) {
+        if (phiNode.getStackKind().isObject()) {
+            ValueNode[] values = new ValueNode[phiNode.valueCount()];
+            phiNode.values().toArray(values);
+            ValuePhiNode halfPhiNode = new ValuePhiNode(new HalfFloatStamp(), phiNode.merge(), values);
+            graph.addWithoutUnique(halfPhiNode);
+            if (phiNode.usages().filter(ValueProxyNode.class).isNotEmpty()) {
+                ValueProxyNode proxy = phiNode.usages().filter(ValueProxyNode.class).first();
+                proxy.replaceAtUsages(phiNode);
+                proxy.safeDelete();
+            }
+            phiNode.replaceAtUsages(halfPhiNode);
+            phiNode.safeDelete();
+            return halfPhiNode;
+        } else {
+            return phiNode;
         }
     }
 
@@ -331,6 +434,8 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             halfOperand = replaceSub((SubHalfFloatNode) operand, graph);
         } else if (operand instanceof DivHalfFloatNode) {
             halfOperand = replaceDiv((DivHalfFloatNode) operand, graph);
+        } else if (operand instanceof ValuePhiNode) {
+            halfOperand = replacePhi((ValuePhiNode) operand, graph);
         } else {
             halfOperand = operand;
         }

@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
 /**
  * Executor Class to dispatch Tornado Task-Graphs. An executor plan
@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 class TornadoExecutor {
 
     private final List<ImmutableTaskGraph> immutableTaskGraphList;
+    private List<ImmutableTaskGraph> subgraphList;
 
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
@@ -185,14 +186,13 @@ class TornadoExecutor {
         return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
     }
 
-    List<Object> getOutputs() {
-        List<Object> outputs = new ArrayList<>();
-        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
-        return outputs;
-    }
-
     void withThreadInfo() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
+    }
+
+    List<Object> getOutputs() { List<Object> outputs = new ArrayList<>();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
+        return outputs;
     }
 
     void withoutThreadInfo() {
@@ -222,4 +222,88 @@ class TornadoExecutor {
     long getCurrentDeviceMemoryUsage() {
         return immutableTaskGraphList.stream().mapToLong(ImmutableTaskGraph::getCurrentDeviceMemoryUsage).sum();
     }
+
+    void selectGraph(int graphIndex) {
+        if (subgraphList == null) {
+            subgraphList = new ArrayList<>();
+            immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
+        }
+        processPersistentStates(graphIndex);
+        immutableTaskGraphList.clear();
+        Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
+    }
+
+    /**
+     * Processes the persistent states of a specified subgraph.
+     *
+     * @param graphIndex The index of the subgraph to process.
+     */
+    private void processPersistentStates(int graphIndex) {
+        // Validate that the graphIndex is within bounds of subgraphList
+        if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
+             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
+        }
+
+        // Retrieve the list of persisted task names from the specified subgraph
+        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex)
+                .getTaskGraph()
+                .taskGraphImpl
+                .getPersistedTaskToObjectsMap()
+                .keySet());
+
+        // Determine the safe iteration limit to avoid IndexOutOfBoundsException
+        int limit = Math.min(graphIndex, namesList.size());
+
+        // Iterate over the namesList and update the persisted object state
+        for (int idx = 0; idx < limit; idx++) {
+            String key = namesList.get(idx);
+            subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
+        }
+    }
+
+
+    private ImmutableTaskGraph getGraph(int graphIndex) {
+        if (graphIndex < immutableTaskGraphList.size()) {
+            return immutableTaskGraphList.get(graphIndex);
+        } else {
+            throw new TornadoRuntimeException("TaskGraph index #" + graphIndex + " does not exist in current executor");
+        }
+    }
+
+    private ImmutableTaskGraph getGraphByName(String uniqueName) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
+                return immutableTaskGraph;
+            }
+        }
+        throw new TornadoRuntimeException("TaskGraph with name " + uniqueName + " does not exist in current executor");
+    }
+
+    void selectAll() {
+        if (subgraphList == null) {
+            return;
+        }
+        immutableTaskGraphList.clear();
+        subgraphList.forEach(g -> Collections.addAll(immutableTaskGraphList, g));
+        subgraphList = null;
+    }
+
+    void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, int fromGraphIndex, int toGraphIndex) {
+        // Be sure to update the whole list of graphs
+        selectAll();
+
+        // Guard checks
+        if (immutableTaskGraphList.size() < 2) {
+            throw new TornadoRuntimeException("MapOnDeviceMemoryRegion needs at least two task graphs");
+        } else if (immutableTaskGraphList.size() < fromGraphIndex) {
+            throw new TornadoRuntimeException("TaskGraph index #" + fromGraphIndex + " does not exist in current executor");
+        } else if (immutableTaskGraphList.size() < toGraphIndex) {
+            throw new TornadoRuntimeException("TaskGraph index #" + toGraphIndex + " does not exist in current executor");
+        }
+        // Identify the task-graphs to take for the update operation
+        ImmutableTaskGraph taskGraphSrc = getGraph(fromGraphIndex);
+        ImmutableTaskGraph taskGraphDest = getGraph(toGraphIndex);
+        taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
+    }
+
 }

@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.Collection;
-
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
+
+import java.util.Collection;
 
 /**
  * A {@link TaskGraph} is encapsulated in this class and all actions over a task
@@ -72,6 +72,10 @@ public class ImmutableTaskGraph {
 
     void transferToHost(Object object, long offset, long partialCopySize) {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
+    }
+
+    TaskGraph getTaskGraph() {
+        return taskGraph;
     }
 
     long getTotalTime() {
@@ -162,12 +166,12 @@ public class ImmutableTaskGraph {
         return taskGraph.getDevice();
     }
 
-    Collection<?> getOutputs() {
-        return taskGraph.getOutputs();
-    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
+    }
+
+    Collection<?> getOutputs() {
+        return taskGraph.getOutputs();
     }
 
     void withConcurrentDevices() {
@@ -213,4 +217,13 @@ public class ImmutableTaskGraph {
     long getCurrentDeviceMemoryUsage() {
         return taskGraph.getCurrentDeviceMemoryUsage();
     }
+
+    void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
+    void updatePersistedObjectState(ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
 }
