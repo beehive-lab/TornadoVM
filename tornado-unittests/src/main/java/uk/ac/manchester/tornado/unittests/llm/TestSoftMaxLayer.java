@@ -96,14 +96,14 @@ public class TestSoftMaxLayer extends TornadoTestBase {
      * @param maxResult
      *     The output array to store the maximum values for each work group
      */
-    public static void findMax(KernelContext context, FloatArray input, FloatArray maxResult) {
+    public static void findMax(KernelContext context, FloatArray input, FloatArray maxResult, int localWorkgroupSize) {
         int globalIdx = context.globalIdx;       // Global thread ID
         int localIdx = context.localIdx;         // Local thread ID within the work group
         int localGroupSize = context.localGroupSizeX;  // Size of the work group
         int groupID = context.groupIdx;          // Work group ID
 
         // Allocate local memory for the reduction operation
-        float[] localMax = context.allocateFloatLocalArray(256);
+        float[] localMax = context.allocateFloatLocalArray(localWorkgroupSize);
 
         // Initialize local memory with this thread's value or negative infinity if out of bounds
         if (globalIdx < input.getSize()) {
@@ -169,14 +169,14 @@ public class TestSoftMaxLayer extends TornadoTestBase {
      * @param maxValue
      *     The array containing the global maximum value in its first element
      */
-    public static void computeExpAndPartialSums(KernelContext context, FloatArray input, FloatArray expOutput, FloatArray partialSums, FloatArray maxValue) {
+    public static void computeExpAndPartialSums(KernelContext context, FloatArray input, FloatArray expOutput, FloatArray partialSums, FloatArray maxValue, int localWorkGroupSize) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx;
 
         // Allocate local memory for sum reduction
-        float[] localSums = context.allocateFloatLocalArray(256);
+        float[] localSums = context.allocateFloatLocalArray(localWorkGroupSize);
 
         // Get the global maximum value (computed in the previous kernel)
         float max = maxValue.get(0);
@@ -292,8 +292,6 @@ public class TestSoftMaxLayer extends TornadoTestBase {
         // Compute expected output using sequential implementation
         expectedOutput = softmaxSequential(input, size);
 
-        // Configure parallel execution
-
         // Set up worker grid for parallel kernels
         WorkerGrid worker = new WorkerGrid1D(size);
         worker.setGlobalWork(size, 1, 1);
@@ -317,11 +315,11 @@ public class TestSoftMaxLayer extends TornadoTestBase {
         //@formatter:off
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, maxValues, sumValues)
                 // Step 1: Find maximum values in each work group
-                .task("findMax", TestSoftMaxLayer::findMax, context, input, maxValues)
+                .task("findMax", TestSoftMaxLayer::findMax, context, input, maxValues, localSize)
                 // Step 2: Find global maximum
                 .task("finalizeMax", TestSoftMaxLayer::finalizeMax, context, maxValues, numGroups)
                 // Step 3: Compute exponentials and partial sums
-                .task("expAndSum", TestSoftMaxLayer::computeExpAndPartialSums, context, input, expValues, sumValues, maxValues)
+                .task("expAndSum", TestSoftMaxLayer::computeExpAndPartialSums, context, input, expValues, sumValues, maxValues, localSize)
                 // Step 4: Calculate total sum
                 .task("calculateSum", TestSoftMaxLayer::calculateTotalSum, context, sumValues, numGroups)
                 // Step 5: Normalize to get final softmax probabilities

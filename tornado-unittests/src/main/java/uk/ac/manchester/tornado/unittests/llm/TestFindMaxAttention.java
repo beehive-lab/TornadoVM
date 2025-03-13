@@ -97,7 +97,7 @@ public class TestFindMaxAttention extends TornadoTestBase {
      * @param maxValues
      *     The output array to store maximum values for each head
      */
-    public static void findMaxAttentionScores(KernelContext context, int pos, int seqLen, FloatArray attScores, FloatArray maxValues) {
+    public static void findMaxAttentionScores(KernelContext context, int pos, int seqLen, FloatArray attScores, FloatArray maxValues, int localWorkgroupSize) {
         int globalId = context.globalIdx;  // Global thread ID
         int localId = context.localIdx;    // Thread ID within work group
         int workGroupSize = context.localGroupSizeX;  // Work group size
@@ -108,7 +108,7 @@ public class TestFindMaxAttention extends TornadoTestBase {
 
         // Check if this thread should process a head (don't exceed numHeads)
         if (h < maxValues.getSize()) {
-            float[] maxReduction = context.allocateFloatLocalArray(128);
+            float[] maxReduction = context.allocateFloatLocalArray(localWorkgroupSize);
 
             // Attention scores offset for this head
             int attOffset = h * seqLen;
@@ -146,7 +146,7 @@ public class TestFindMaxAttention extends TornadoTestBase {
      *     If there's an error in the Tornado execution plan
      */
     @Test
-    public void testMultiHeadAttention() throws TornadoExecutionPlanException {
+    public void testFindMaxAttentionScores() throws TornadoExecutionPlanException {
         // Define the problem configuration
         final int numHeads = 16;        // Number of attention heads
         final int seqLen = 2048;        // Sequence length
@@ -186,7 +186,7 @@ public class TestFindMaxAttention extends TornadoTestBase {
         //@formatter:off
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, attScores)
                 .task("findMaxAttentionScores", TestFindMaxAttention::findMaxAttentionScores,
-                        context, pos, seqLen, attScores, maxValues)
+                        context, pos, seqLen, attScores, maxValues, localSize)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, maxValues);
         //@formatter:on
 
@@ -200,7 +200,6 @@ public class TestFindMaxAttention extends TornadoTestBase {
         for (int h = 0; h < numHeads; h++) {
             float expected = expectedMaxValues.get(h);
             float actual = maxValues.get(h);
-            //            System.out.printf("Head %d: Expected=%f, Actual=%f%n", h, expected, actual);
             assertEquals("Mismatch at head " + h, expected, actual, 1e-5f);
         }
 
