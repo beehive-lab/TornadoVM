@@ -186,7 +186,9 @@ public class TestFindMaxAttention extends TornadoTestBase {
         //@formatter:off
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, attScores)
                 .task("findMaxAttentionScores", TestFindMaxAttention::findMaxAttentionScores,
-                        context, pos, seqLen, attScores, maxValues, localSize)
+                        context, pos, 
+                        seqLen, attScores, 
+                        maxValues, localSize)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, maxValues);
         //@formatter:on
 
