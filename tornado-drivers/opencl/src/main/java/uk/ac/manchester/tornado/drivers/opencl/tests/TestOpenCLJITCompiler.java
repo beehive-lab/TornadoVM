@@ -166,7 +166,7 @@ public class TestOpenCLJITCompiler {
         Arrays.fill(b, 10);
         long executionPlanId = 0;
 
-        OCLTornadoDevice tornadoDevice = OpenCL.defaultDevice();
+        OCLTornadoDevice tornadoDevice = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getBackend(OCLBackendImpl.class).getDefaultDevice();
 
         MetaCompilation compileMethod = compileMethod(executionPlanId, TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 

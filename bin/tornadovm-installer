@@ -245,11 +245,23 @@ class TornadoInstaller:
         ## 3. TORNADO_SDK
         os.environ["TORNADO_SDK"] = self.env["TORNADO_SDK"]
 
-    def compileTornadoVM(self, makeJDK, backend, polyglotOption):
+    def compileTornadoVM(self, makeJDK, backend, polyglotOption, mavenSingleThreadedOption):
         if os.name == 'nt':
-            command = "nmake /f Makefile.mak " + makeJDK + " " + backend + " " + polyglotOption
+            if all(s == "" for s in [polyglotOption, mavenSingleThreadedOption]):
+                command = "nmake /f Makefile.mak " + makeJDK + " " + backend
+            else:
+                if polyglotOption:
+                    command = "nmake /f Makefile.mak " + polyglotOption
+                if mavenSingleThreadedOption:
+                    command = "nmake /f Makefile.mak " + mavenSingleThreadedOption + " " + backend 
         else:
-            command = "make " + makeJDK + " " + backend + " " + polyglotOption
+            if all(s == "" for s in [polyglotOption, mavenSingleThreadedOption]):
+                command = "make " + makeJDK + " " + backend
+            else:
+                if polyglotOption:
+                    command = "make " + polyglotOption
+                if mavenSingleThreadedOption:
+                    command = "make " + mavenSingleThreadedOption + " " + backend
         os.system(command)
 
     def createSourceFile(self):
@@ -324,6 +336,13 @@ class TornadoInstaller:
             polyglotOption = ""
         return polyglotOption
 
+    def composeMavenSingleThreadedOption(self, args, makeJDK):
+        if args.mavenSingleThreaded:
+            mavenSingleThreadedOption = "mvn-single-threaded-" + makeJDK
+        else:
+            mavenSingleThreadedOption = ""
+        return mavenSingleThreadedOption
+
     def check_or_install_python_modules(self):
         command = "pip3 install -r bin/tornadoDepModules.txt"
         os.system(command)
@@ -347,6 +366,7 @@ class TornadoInstaller:
             makeJDK = "graal-jdk-21"
             polyglotOption = self.composePolyglotOption(args)
 
+        mavenSingleThreadedOption = self.composeMavenSingleThreadedOption(args, makeJDK)
         if args.javaHome != None:
             directoryPostfix = args.javaHome.split(os.sep)[-1]
         else:
@@ -365,7 +385,7 @@ class TornadoInstaller:
             self.env["JAVA_HOME"] = args.javaHome
 
         self.setEnvironmentVariables()
-        self.compileTornadoVM(makeJDK, backend, polyglotOption)
+        self.compileTornadoVM(makeJDK, backend, polyglotOption, mavenSingleThreadedOption)
         self.createSourceFile()
 
 
@@ -441,6 +461,13 @@ def parseArguments():
         dest="polyglot",
         default=None,
         help="To enable interoperability with Truffle Programming Languages.",
+    )
+    parser.add_argument(
+        "--mvn_single_threaded",
+        action="store_true",
+        dest="mavenSingleThreaded",
+        default=None,
+        help="To build with maven while using one thread.",
     )
     args = parser.parse_args()
 

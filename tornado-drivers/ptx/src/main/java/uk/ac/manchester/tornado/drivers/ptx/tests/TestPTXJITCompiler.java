@@ -163,7 +163,7 @@ public class TestPTXJITCompiler {
         Arrays.fill(b, 10);
         final long executionPlanId = 0;
 
-        PTXTornadoDevice tornadoDevice = PTX.defaultDevice();
+        PTXTornadoDevice tornadoDevice = (PTXTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getBackend(PTXBackendImpl.class).getDefaultDevice();
 
         MetaCompilation compileMethod = compileMethod(executionPlanId, TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
