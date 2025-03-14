@@ -129,6 +129,51 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         }
     }
 
+    /**
+     * Parallel reduction in TornadoVM using Local Memory.
+     *
+     * @param context
+     *     {@link KernelContext}
+     * @param a
+     *     input array
+     * @param b
+     *     output array
+     */
+    private static void doubleReductionAddLocalMemory(KernelContext context, DoubleArray a, DoubleArray b, int blockDim) {
+
+        // Access to the global thread-id
+        int globalIdx = context.globalIdx;
+
+        // Access to the local thread-id (id within the work-group)
+        int localIdx = context.localIdx;
+
+        // Obtain the number of threads per work-group
+        int localGroupSize = context.localGroupSizeX;
+
+        // Obtain the group-ID
+        int groupID = context.groupIdx;
+
+        // Allocate an array in local memory (using the OpenCL terminology), or shared
+        // memory with NVIDIA PTX.
+        double[] localA = context.allocateDoubleLocalArray(blockDim);
+
+        // Copy data from global memory to local memory.
+        localA[localIdx] = a.get(globalIdx);
+
+        // Compute the reduction in local memory
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] += localA[localIdx + stride];
+            }
+        }
+
+        // Copy result of the full reduction within the work-group into global memory.
+        if (localIdx == 0) {
+            b.set(groupID, localA[0]);
+        }
+    }
+
     public static double computeMaxSequential(DoubleArray input) {
         double acc = 0;
         for (int i = 0; i < input.getSize(); i++) {
@@ -257,7 +302,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testDoubleReductionsAddLocalMemory() throws TornadoExecutionPlanException {
+    public void testDoubleReductionsAddLocalMemory01() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         DoubleArray input = new DoubleArray(size);
@@ -272,6 +317,42 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionAddLocalMemory, context, input, reduce) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
+
+        // Final SUM
+        double finalSum = 0;
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum += reduce.get(i);
+        }
+
+        assertEquals(sequential, finalSum, 0);
+    }
+
+    @Test
+    public void testDoubleReductionsAddLocalMemory02() throws TornadoExecutionPlanException {
+        final int size = 1024;
+        final int localSize = 256;
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
+        double sequential = computeAddSequential(input);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsDoublesKernelContext::doubleReductionAddLocalMemory, context, input, reduce, localSize) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);

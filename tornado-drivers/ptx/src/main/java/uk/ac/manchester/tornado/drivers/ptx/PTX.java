@@ -80,11 +80,6 @@ public class PTX {
         return platform;
     }
 
-    public static PTXTornadoDevice defaultDevice() {
-        final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.ptx.device", "0"));
-        return new PTXTornadoDevice(deviceIndex);
-    }
-
     public static void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode openCLCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
