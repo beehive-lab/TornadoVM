@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -179,36 +178,6 @@ public class TestMultiHeadAttention extends TornadoTestBase {
             attScores.set(attOffset + t, normalizedValue);
         }
     }
-
-    /**
-     * Compute weighted sum of values based on attention weights
-     */
-    //    public static void computeWeightedSum(KernelContext context, int pos, int seqLen, FloatArray attScores, FloatArray valueCache, FloatArray output, int kvDim, int kvMul, int headSize, int loff) {
-    //        int h = context.groupIdx;         // Head index
-    //        int threadId = context.localIdx;  // Thread ID within work group
-    //        int blockDim = context.localGroupSizeX;  // Work group size
-    //
-    //        // Attention scores offset for this head
-    //        int attOffset = h * seqLen;
-    //
-    //        // Output offset for this head
-    //        int outputOffset = h * headSize;
-    //
-    //        // Calculate weighted sum for each head dimension
-    //        for (int i = threadId; i < headSize; i += blockDim) {
-    //            float val = 0.0f;
-    //            for (int t = 0; t <= pos; t++) {
-    //                // Get the value vector for this head and timestep
-    //                int valueOffset = loff + t * kvDim + (h / kvMul) * headSize;
-    //
-    //                // Get the attention weight for this timestep
-    //                float a = attScores.get(attOffset + t);
-    //
-    //                val += a * valueCache.get(valueOffset + i);
-    //            }
-    //            output.set(outputOffset + i, val);
-    //        }
-    //    }
 
     public static void computeWeightedSum(KernelContext context, int pos, int seqLen, FloatArray attScores, FloatArray valueCache, FloatArray output, int kvDim, int kvMul, int headSize, int loff) {
         int h = context.groupIdx;         // Head index
@@ -740,207 +709,6 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         }
     }
 
-    /**
-     * Test to debug the full multi-head attention implementation.
-     * This uses multiple heads and checks intermediate outputs at each step.
-     */
-    @Ignore
-    public void testMultiHeadAttentionDebug() throws TornadoExecutionPlanException {
-        // Configuration parameters
-        final int numHeads = 4;  // Reduced number of heads for debugging
-        final int seqLen = 16;   // Smaller sequence length for easier debugging
-        final int pos = 15;      // Process entire sequence
-        final int threadsPerHead = 16; // Set to a power of 2
-        final int headSize = 32; // Smaller head size for debugging
-        final int kvDim = headSize * numHeads;
-        final int kvMul = 1;
-        final int loff = 0;
-        final int localSize = 16;  // Threads per work group
-
-        // Allocate data arrays
-        FloatArray query = new FloatArray(numHeads * headSize);
-        FloatArray keyCache = new FloatArray(seqLen * kvDim);
-        FloatArray valueCache = new FloatArray(seqLen * kvDim);
-        FloatArray attScores = new FloatArray(numHeads * seqLen);
-        FloatArray maxValues = new FloatArray(numHeads);
-        FloatArray expValues = new FloatArray(numHeads * seqLen);
-        FloatArray sumValues = new FloatArray(numHeads);
-        FloatArray output = new FloatArray(numHeads * headSize);
-
-        // Initialize with random but deterministic data
-        Random random = new Random(42);
-        for (int i = 0; i < query.getSize(); i++) {
-            query.set(i, random.nextFloat() * 2 - 1);
-        }
-        for (int i = 0; i < keyCache.getSize(); i++) {
-            keyCache.set(i, random.nextFloat() * 2 - 1);
-        }
-        for (int i = 0; i < valueCache.getSize(); i++) {
-            valueCache.set(i, random.nextFloat() * 2 - 1);
-        }
-
-        // Sequential reference implementation
-        FloatArray sequentialOutput = new FloatArray(numHeads * headSize);
-        TestMultiHeadAttention.multiHeadAttentionSequential(pos, seqLen, query.toHeapArray(), keyCache.toHeapArray(), valueCache.toHeapArray(), sequentialOutput.toHeapArray(), numHeads, kvDim, kvMul,
-                headSize, loff);
-
-        // Create kernel context
-        KernelContext context = new KernelContext();
-
-        // Set up task graphs for debugging
-        int globalSize = numHeads * localSize; // Ensure global size is multiple of local size
-
-        // Task Graph 1: Calculate attention scores
-        TaskGraph tg1 = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, query, keyCache).task("calculateScores", TestMultiHeadAttention::calculateAttentionScores, context, pos,
-                seqLen, query, keyCache, attScores, kvDim, kvMul, headSize, loff).transferToHost(DataTransferMode.EVERY_EXECUTION, attScores);
-
-        WorkerGrid worker1 = new WorkerGrid1D(globalSize);
-        worker1.setGlobalWork(globalSize, 1, 1);
-        worker1.setLocalWork(localSize, 1, 1);
-        GridScheduler gridScheduler1 = new GridScheduler("s0.calculateScores", worker1);
-
-        ImmutableTaskGraph itg1 = tg1.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg1)) {
-            executionPlan.withGridScheduler(gridScheduler1).execute();
-        }
-
-        // Compare intermediate attention score results
-        float[][] refAttScores = new float[numHeads][seqLen];
-        for (int h = 0; h < numHeads; h++) {
-            for (int t = 0; t <= pos; t++) {
-                float score = 0.0f;
-                for (int i = 0; i < headSize; i++) {
-                    score += query.get(h * headSize + i) * keyCache.get(loff + t * kvDim + (h / kvMul) * headSize + i);
-                }
-                score /= Math.sqrt(headSize);
-                refAttScores[h][t] = score;
-            }
-        }
-
-        // Verify attention scores
-        for (int h = 0; h < numHeads; h++) {
-            for (int t = 0; t <= pos; t++) {
-                float expected = refAttScores[h][t];
-                float actual = attScores.get(h * seqLen + t);
-                assertEquals("Attention score mismatch at head " + h + ", position " + t, expected, actual, Math.abs(expected * 1e-5f));
-            }
-        }
-
-        // Task Graph 2: Find maximum values
-        TaskGraph tg2 = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, attScores).task("findMax", TestMultiHeadAttention::findMaxAttentionScores, context, pos, seqLen,
-                attScores, maxValues, localSize).transferToHost(DataTransferMode.EVERY_EXECUTION, maxValues);
-
-        WorkerGrid worker2 = new WorkerGrid1D(globalSize);
-        worker2.setGlobalWork(globalSize, 1, 1);
-        worker2.setLocalWork(localSize, 1, 1);
-        GridScheduler gridScheduler2 = new GridScheduler("s1.findMax", worker2);
-
-        ImmutableTaskGraph itg2 = tg2.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg2)) {
-            executionPlan.withGridScheduler(gridScheduler2).execute();
-        }
-
-        // Calculate reference max values
-        float[] refMaxValues = new float[numHeads];
-        for (int h = 0; h < numHeads; h++) {
-            refMaxValues[h] = Float.NEGATIVE_INFINITY;
-            for (int t = 0; t <= pos; t++) {
-                refMaxValues[h] = Math.max(refMaxValues[h], refAttScores[h][t]);
-            }
-        }
-
-        // Verify max values
-        for (int h = 0; h < numHeads; h++) {
-            assertEquals("Max value mismatch for head " + h, refMaxValues[h], maxValues.get(h), Math.abs(refMaxValues[h] * 1e-5f));
-        }
-
-        // Task Graph 3: Calculate exponentials and sum
-        TaskGraph tg3 = new TaskGraph("s2").transferToDevice(DataTransferMode.FIRST_EXECUTION, attScores, maxValues).task("calculateExp", TestMultiHeadAttention::calculateExpAndSum, context, pos,
-                seqLen, attScores, maxValues, expValues, sumValues, localSize).transferToHost(DataTransferMode.EVERY_EXECUTION, expValues, sumValues);
-
-        WorkerGrid worker3 = new WorkerGrid1D(globalSize);
-        worker3.setGlobalWork(globalSize, 1, 1);
-        worker3.setLocalWork(localSize, 1, 1);
-        GridScheduler gridScheduler3 = new GridScheduler("s2.calculateExp", worker3);
-
-        ImmutableTaskGraph itg3 = tg3.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg3)) {
-            executionPlan.withGridScheduler(gridScheduler3).execute();
-        }
-
-        // Calculate reference exp values and sums
-        float[][] refExpValues = new float[numHeads][seqLen];
-        float[] refSumValues = new float[numHeads];
-
-        for (int h = 0; h < numHeads; h++) {
-            refSumValues[h] = 0.0f;
-            for (int t = 0; t <= pos; t++) {
-                refExpValues[h][t] = (float) Math.exp(refAttScores[h][t] - refMaxValues[h]);
-                refSumValues[h] += refExpValues[h][t];
-            }
-        }
-
-        // Verify exp values and sums
-        for (int h = 0; h < numHeads; h++) {
-            assertEquals("Sum value mismatch for head " + h, refSumValues[h], sumValues.get(h), Math.abs(refSumValues[h] * 1e-4f));
-
-            for (int t = 0; t <= pos; t++) {
-                assertEquals("Exp value mismatch at head " + h + ", position " + t, refExpValues[h][t], expValues.get(h * seqLen + t), Math.abs(refExpValues[h][t] * 1e-4f));
-            }
-        }
-
-        // Task Graph 4: Normalize softmax
-        TaskGraph tg4 = new TaskGraph("s3").transferToDevice(DataTransferMode.FIRST_EXECUTION, expValues, sumValues).task("normalize", TestMultiHeadAttention::normalizeSoftmax, context, pos, seqLen,
-                expValues, sumValues, attScores).transferToHost(DataTransferMode.EVERY_EXECUTION, attScores);
-
-        WorkerGrid worker4 = new WorkerGrid1D(globalSize);
-        worker4.setGlobalWork(globalSize, 1, 1);
-        worker4.setLocalWork(localSize, 1, 1);
-        GridScheduler gridScheduler4 = new GridScheduler("s3.normalize", worker4);
-
-        ImmutableTaskGraph itg4 = tg4.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg4)) {
-            executionPlan.withGridScheduler(gridScheduler4).execute();
-        }
-
-        // Calculate reference softmax values
-        float[][] refSoftmaxValues = new float[numHeads][seqLen];
-        for (int h = 0; h < numHeads; h++) {
-            for (int t = 0; t <= pos; t++) {
-                refSoftmaxValues[h][t] = refExpValues[h][t] / refSumValues[h];
-            }
-        }
-
-        // Verify softmax values
-        for (int h = 0; h < numHeads; h++) {
-            for (int t = 0; t <= pos; t++) {
-                assertEquals("Softmax value mismatch at head " + h + ", position " + t, refSoftmaxValues[h][t], attScores.get(h * seqLen + t), 1e-5f);
-            }
-        }
-
-        // Task Graph 5: Calculate weighted sum
-        TaskGraph tg5 = new TaskGraph("s4").transferToDevice(DataTransferMode.FIRST_EXECUTION, attScores, valueCache).task("weightedSum", TestMultiHeadAttention::computeWeightedSum, context, pos,
-                seqLen, attScores, valueCache, output, kvDim, kvMul, headSize, loff).transferToHost(DataTransferMode.EVERY_EXECUTION, output);
-
-        WorkerGrid worker5 = new WorkerGrid1D(globalSize);
-        worker5.setGlobalWork(globalSize, 1, 1);
-        worker5.setLocalWork(localSize, 1, 1);
-        GridScheduler gridScheduler5 = new GridScheduler("s4.weightedSum", worker5);
-
-        ImmutableTaskGraph itg5 = tg5.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg5)) {
-            executionPlan.withGridScheduler(gridScheduler5).execute();
-        }
-
-        // Verify final output
-        for (int h = 0; h < numHeads; h++) {
-            for (int i = 0; i < headSize; i++) {
-                assertEquals("Output value mismatch at head " + h + ", dimension " + i, sequentialOutput.get(h * headSize + i), output.get(h * headSize + i), Math.abs(sequentialOutput.get(
-                        h * headSize + i) * 1e-4f));
-            }
-        }
-    }
-
     @Test
     public void testMultiHeadAttentionFixed() throws TornadoExecutionPlanException {
         // Configuration parameters
@@ -982,8 +750,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
 
         // Sequential reference implementation
         float[] sequentialOutputArray = new float[numHeads * headSize];
-        multiHeadAttentionSequential(pos, seqLen, queryCopy, keyCacheCopy, valueCacheCopy,
-                sequentialOutputArray, numHeads, kvDim, kvMul, headSize, loff);
+        multiHeadAttentionSequential(pos, seqLen, queryCopy, keyCacheCopy, valueCacheCopy, sequentialOutputArray, numHeads, kvDim, kvMul, headSize, loff);
 
         // Convert to FloatArray for easier comparison
         FloatArray sequentialOutput = FloatArray.fromArray(sequentialOutputArray);
@@ -996,6 +763,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         // Set up task graphs for the pipeline test
         int globalSize = numHeads * localSize;
 
+        // @formatter:off
         // =====================================================================
         // IMPORTANT: We must use PERSIST_ON_DEVICE to maintain data on the GPU
         // =====================================================================
@@ -1004,14 +772,18 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         TaskGraph tg1 = new TaskGraph("s0")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, query, keyCache)
                 .task("calculateScores", TestMultiHeadAttention::calculateAttentionScores,
-                        context, pos, seqLen, query, keyCache, attScores, kvDim, kvMul, headSize, loff)
+                        context, pos, seqLen, 
+                        query, keyCache, attScores, 
+                        kvDim, kvMul, headSize, 
+                        loff)
                 .persistOnDevice(attScores);
 
         // Task Graph 2: Find maximum values
         TaskGraph tg2 = new TaskGraph("s1")
                 .consumeFromDevice(tg1.getTaskGraphName(), attScores)
                 .task("findMax", TestMultiHeadAttention::findMaxAttentionScores,
-                        context, pos, seqLen, attScores, maxValues, localSize)
+                        context, pos, seqLen, 
+                        attScores, maxValues, localSize)
                 .persistOnDevice(attScores, maxValues);
 
         // Task Graph 3: Calculate exponentials and sum
@@ -1036,6 +808,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
                         context, pos, seqLen, attScores, valueCache, output, kvDim, kvMul, headSize, loff)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
+        // @formatter:on
         // Set up worker grids and grid schedulers
         WorkerGrid worker1 = new WorkerGrid1D(globalSize);
         worker1.setGlobalWork(globalSize, 1, 1);
@@ -1081,9 +854,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         // Print comparison of results for head 0
         System.out.println("Comparison of results for head 0:");
         for (int i = 0; i < Math.min(headSize, 5); i++) {
-            System.out.printf("Dimension %d: Sequential=%.6f, Parallel=%.6f, Diff=%.9f%n",
-                    i, sequentialOutput.get(i), output.get(i),
-                    Math.abs(sequentialOutput.get(i) - output.get(i)));
+            System.out.printf("Dimension %d: Sequential=%.6f, Parallel=%.6f, Diff=%.9f%n", i, sequentialOutput.get(i), output.get(i), Math.abs(sequentialOutput.get(i) - output.get(i)));
         }
 
         // Verify results for all heads
@@ -1098,8 +869,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
                 float tolerance = Math.max(1e-5f, Math.abs(expected) * 1e-4f);
 
                 if (Math.abs(expected - actual) > tolerance) {
-                    System.out.printf("MISMATCH at head %d, dim %d: Expected %.9f, Got %.9f, Diff %.9f%n",
-                            h, i, expected, actual, Math.abs(expected - actual));
+                    System.out.printf("MISMATCH at head %d, dim %d: Expected %.9f, Got %.9f, Diff %.9f%n", h, i, expected, actual, Math.abs(expected - actual));
                     passed = false;
                 }
             }
@@ -1115,9 +885,203 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         for (int h = 0; h < numHeads; h++) {
             for (int i = 0; i < headSize; i++) {
                 int idx = h * headSize + i;
-                assertEquals(String.format("Output mismatch at head %d, dimension %d", h, i),
-                        sequentialOutput.get(idx), output.get(idx),
-                        Math.max(1e-5f, Math.abs(sequentialOutput.get(idx) * 1e-4f)));
+                assertEquals(String.format("Output mismatch at head %d, dimension %d", h, i), sequentialOutput.get(idx), output.get(idx), Math.max(1e-5f, Math.abs(sequentialOutput.get(idx) * 1e-4f)));
+            }
+        }
+    }
+
+    @Test
+    public void testMultiHeadAttentionLlamaEquivalence() throws TornadoExecutionPlanException {
+        // Configuration parameters similar to your code
+        final int numHeads = 4;
+        final int seqLen = 16;
+        final int pos = 15;
+        final int headSize = 32;
+        final int kvDim = headSize * numHeads;
+        final int kvMul = 1;
+        final int loff = 0;
+        final float sqrtHeadSize = (float) Math.sqrt(headSize);
+        final int localSize = 16;
+
+        // Allocate data arrays
+        FloatArray maxValues = new FloatArray(numHeads);
+        FloatArray expValues = new FloatArray(numHeads * seqLen);
+        FloatArray sumValues = new FloatArray(numHeads);
+        // Allocate data arrays
+        FloatArray query = new FloatArray(numHeads * headSize);
+        FloatArray keyCache = new FloatArray(seqLen * kvDim);
+        FloatArray valueCache = new FloatArray(seqLen * kvDim);
+        FloatArray attScores = new FloatArray(numHeads * seqLen);
+        FloatArray output = new FloatArray(numHeads * headSize);
+
+        // Initialize with random data (same as before)
+        Random random = new Random(42);
+        for (int i = 0; i < query.getSize(); i++) {
+            query.set(i, random.nextFloat() * 2 - 1);
+        }
+        for (int i = 0; i < keyCache.getSize(); i++) {
+            keyCache.set(i, random.nextFloat() * 2 - 1);
+        }
+        for (int i = 0; i < valueCache.getSize(); i++) {
+            valueCache.set(i, random.nextFloat() * 2 - 1);
+        }
+
+        // Reference implementation following your logic
+        FloatArray refOutput = new FloatArray(numHeads * headSize);
+
+        // For each head
+        for (int h = 0; h < numHeads; h++) {
+            int qOffset = h * headSize;
+            int attOffset = h * seqLen;
+
+            // Calculate attention scores
+            for (int t = 0; t <= pos; t++) {
+                int keyCacheOffset = t * kvDim + (h / kvMul) * headSize;
+                float score = 0.0f;
+                for (int i = 0; i < headSize; i++) {
+                    score += query.get(qOffset + i) * keyCache.get(keyCacheOffset + i);
+                }
+                score /= sqrtHeadSize;
+                attScores.set(attOffset + t, score);
+            }
+
+            // Softmax calculation
+            // First find max
+            float maxVal = Float.NEGATIVE_INFINITY;
+            for (int t = 0; t <= pos; t++) {
+                maxVal = Math.max(maxVal, attScores.get(attOffset + t));
+            }
+
+            // Calculate exp and sum
+            float sum = 0.0f;
+            for (int t = 0; t <= pos; t++) {
+                float expValue = (float) Math.exp(attScores.get(attOffset + t) - maxVal);
+                attScores.set(attOffset + t, expValue);
+                sum += expValue;
+            }
+
+            // Normalize
+            for (int t = 0; t <= pos; t++) {
+                attScores.set(attOffset + t, attScores.get(attOffset + t) / sum);
+            }
+
+            // Weighted sum into output
+            int xbOffset = h * headSize;
+            // Initialize output to zero
+            for (int i = 0; i < headSize; i++) {
+                refOutput.set(xbOffset + i, 0.0f);
+            }
+
+            // Accumulate weighted values
+            for (int t = 0; t <= pos; t++) {
+                int vOffset = t * kvDim + (h / kvMul) * headSize;
+                float a = attScores.get(attOffset + t);
+
+                for (int i = 0; i < headSize; i++) {
+                    refOutput.set(xbOffset + i, a * valueCache.get(vOffset + i) + refOutput.get(xbOffset + i));
+                }
+            }
+        }
+
+        // Create kernel context
+        KernelContext context = new KernelContext();
+
+        // Set up task graphs for the pipeline test
+        int globalSize = numHeads * localSize;
+
+        // @formatter:off
+        // =====================================================================
+        // IMPORTANT: We must use PERSIST_ON_DEVICE to maintain data on the GPU
+        // =====================================================================
+
+        // Task Graph 1: Calculate attention scores
+        TaskGraph tg1 = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, query, keyCache)
+                .task("calculateScores", TestMultiHeadAttention::calculateAttentionScores,
+                        context, pos, seqLen,
+                        query, keyCache, attScores,
+                        kvDim, kvMul, headSize,
+                        loff)
+                .persistOnDevice(attScores);
+
+        // Task Graph 2: Find maximum values
+        TaskGraph tg2 = new TaskGraph("s1")
+                .consumeFromDevice(tg1.getTaskGraphName(), attScores)
+                .task("findMax", TestMultiHeadAttention::findMaxAttentionScores,
+                        context, pos, seqLen,
+                        attScores, maxValues, localSize)
+                .persistOnDevice(attScores, maxValues);
+
+        // Task Graph 3: Calculate exponentials and sum
+        TaskGraph tg3 = new TaskGraph("s2")
+                .consumeFromDevice(tg2.getTaskGraphName(), attScores, maxValues)
+                .task("calculateExp", TestMultiHeadAttention::calculateExpAndSum,
+                        context, pos, seqLen, attScores, maxValues, expValues, sumValues, localSize)
+                .persistOnDevice(attScores, expValues, sumValues);
+
+        // Task Graph 4: Normalize softmax
+        TaskGraph tg4 = new TaskGraph("s3")
+                .consumeFromDevice(tg3.getTaskGraphName(), expValues, sumValues)
+                .task("normalize", TestMultiHeadAttention::normalizeSoftmax,
+                        context, pos, seqLen, expValues, sumValues, attScores)
+                .persistOnDevice(attScores);
+
+        // Task Graph 5: Calculate weighted sum
+        TaskGraph tg5 = new TaskGraph("s4")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, valueCache)
+                .consumeFromDevice(tg4.getTaskGraphName(), attScores)
+                .task("weightedSum", TestMultiHeadAttention::computeWeightedSum,
+                        context, pos, seqLen, attScores, valueCache, output, kvDim, kvMul, headSize, loff)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        // @formatter:on
+        // Set up worker grids and grid schedulers
+        WorkerGrid worker1 = new WorkerGrid1D(globalSize);
+        worker1.setGlobalWork(globalSize, 1, 1);
+        worker1.setLocalWork(localSize, 1, 1);
+        GridScheduler gridScheduler1 = new GridScheduler("s0.calculateScores", worker1);
+
+        WorkerGrid worker2 = new WorkerGrid1D(globalSize);
+        worker2.setGlobalWork(globalSize, 1, 1);
+        worker2.setLocalWork(localSize, 1, 1);
+        GridScheduler gridScheduler2 = new GridScheduler("s1.findMax", worker2);
+
+        WorkerGrid worker3 = new WorkerGrid1D(globalSize);
+        worker3.setGlobalWork(globalSize, 1, 1);
+        worker3.setLocalWork(localSize, 1, 1);
+        GridScheduler gridScheduler3 = new GridScheduler("s2.calculateExp", worker3);
+
+        WorkerGrid worker4 = new WorkerGrid1D(globalSize);
+        worker4.setGlobalWork(globalSize, 1, 1);
+        worker4.setLocalWork(localSize, 1, 1);
+        GridScheduler gridScheduler4 = new GridScheduler("s3.normalize", worker4);
+
+        WorkerGrid worker5 = new WorkerGrid1D(globalSize);
+        worker5.setGlobalWork(globalSize, 1, 1);
+        worker5.setLocalWork(localSize, 1, 1);
+        GridScheduler gridScheduler5 = new GridScheduler("s4.weightedSum", worker5);
+
+        // Create immutable task graphs
+        ImmutableTaskGraph itg1 = tg1.snapshot();
+        ImmutableTaskGraph itg2 = tg2.snapshot();
+        ImmutableTaskGraph itg3 = tg3.snapshot();
+        ImmutableTaskGraph itg4 = tg4.snapshot();
+        ImmutableTaskGraph itg5 = tg5.snapshot();
+
+        // Execute the pipeline
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg1, itg2, itg3, itg4, itg5)) {
+            executionPlan.withGraph(0).withGridScheduler(gridScheduler1).execute();
+            executionPlan.withGraph(1).withGridScheduler(gridScheduler2).execute();
+            executionPlan.withGraph(2).withGridScheduler(gridScheduler3).execute();
+            executionPlan.withGraph(3).withGridScheduler(gridScheduler4).execute();
+            executionPlan.withGraph(4).withGridScheduler(gridScheduler5).execute();
+        }
+
+        // Compare the results
+        for (int h = 0; h < numHeads; h++) {
+            for (int i = 0; i < headSize; i++) {
+                int idx = h * headSize + i;
+                assertEquals(refOutput.get(idx), output.get(idx), Math.max(1e-5f, Math.abs(refOutput.get(idx) * 1e-4f)));
             }
         }
     }
