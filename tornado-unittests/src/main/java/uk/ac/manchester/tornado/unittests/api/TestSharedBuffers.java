@@ -17,7 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -25,8 +28,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * How to run?
@@ -39,6 +40,20 @@ import static org.junit.Assert.assertEquals;
  */
 public class TestSharedBuffers extends TornadoTestBase {
     private static final int numElements = 16;
+
+    /**
+     * An empty utility method that performs no operations.
+     * Used to force buffer transfer to device to be consumed later.
+     *
+     * @param a
+     *     First integer array to be transferred to device
+     * @param b
+     *     Second integer array to be transferred to device
+     */
+    public static void empty(IntArray a, IntArray b) {
+        if (a.getSize() != b.getSize()) {
+        }
+    }
 
     @Test
     public void testSingleReadWriteSharedObject() throws TornadoExecutionPlanException {
@@ -127,6 +142,62 @@ public class TestSharedBuffers extends TornadoTestBase {
         }
     }
 
+    /**
+     * Tests buffer sharing and persistence between task graphs in Tornado.
+     * This test verifies that buffers can be properly copied to a device,
+     * persisted, and then consumed by a subsequent task graph.
+     *
+     * <p>The test executes two task graphs:
+     * <ol>
+     * <li>A "force copy" graph that transfers input and context buffers to the device
+     * without modifying them, and persists the input buffer</li>
+     * <li>A computation graph that consumes the persisted input buffer, re-transfers
+     * the context buffer, and performs an addition operation</li>
+     * </ol>
+     *
+     */
+    @Test
+    public void testForcedBufferCopy() throws TornadoExecutionPlanException {
+        // Create test arrays
+        IntArray inputBuffer = new IntArray(numElements);
+        IntArray contextBuffer = new IntArray(numElements);
+        IntArray outputBuffer = new IntArray(numElements);
+
+        // Initialize with test values
+        inputBuffer.init(25);
+        contextBuffer.init(5);
+
+        // Task Graph -1: Hack to force copy of buffers to the device
+        TaskGraph forceCopyGraph = new TaskGraph("forceCopyGraph") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputBuffer, contextBuffer) //
+                .task("emptyTask", TestSharedBuffers::empty, inputBuffer, contextBuffer) //
+                .persistOnDevice(inputBuffer); //
+
+        // Task Graph 0: Simplified main computation with single task
+        TaskGraph computeGraph = new TaskGraph("computeGraph")
+                // Consume the input buffer from previous graph
+                .consumeFromDevice(forceCopyGraph.getTaskGraphName(), inputBuffer)
+                // Re-transfer context buffer
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, contextBuffer)
+                // Simple task: add inputBuffer and contextBuffer to get outputBuffer
+                .task("addTask", TestHello::add, inputBuffer, contextBuffer, outputBuffer)
+                // Transfer results back to host
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputBuffer);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(forceCopyGraph.snapshot(), computeGraph.snapshot())) {
+            // Execute the forced copy graph first
+            executionPlan.withGraph(0).execute();
+
+            // Then execute the main computation graph
+            executionPlan.withGraph(1).execute();
+
+            // Verify results: inputBuffer + contextBuffer = 25 + 5 = 30
+            for (int i = 0; i < inputBuffer.getSize(); i++) {
+                assertEquals(30, outputBuffer.get(i));
+            }
+        }
+    }
+
     @Test
     public void testMultipleSharedObjects() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(numElements);
@@ -194,13 +265,12 @@ public class TestSharedBuffers extends TornadoTestBase {
         TaskGraph tg2 = new TaskGraph("s1") //
                 // Get arrays 'a' and 'b' from the first task graph (no new transfer needed)
                 .consumeFromDevice("s0", c) //
-                 //
+                //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, d) //
                 // Execute the add method (a + b = d), creating separate output in 'd'
                 .task("t1", TestHello::add, c, d, r) //
                 // Transfer results back to host memory after execution
                 .persistOnDevice(r);
-
 
         // Create third task graph named "s2"
         TaskGraph tg3 = new TaskGraph("s2") //
@@ -210,7 +280,6 @@ public class TestSharedBuffers extends TornadoTestBase {
                 .task("t1", TestHello::add, r, r, r) //
                 // Transfer results back to host memory after execution
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, r);
-
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot(), tg3.snapshot())) {
             // Execute the first graph (a + b = c)
