@@ -74,7 +74,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         KernelContext context = new KernelContext();
         GridScheduler grid = new GridScheduler();
         WorkerGrid worker = new WorkerGrid1D(16);
-        grid.setWorkerGrid("s0.t0", worker);
+        grid.addWorkerGrid("s0.t0", worker);
 
         IntArray data = new IntArray(16);
 
@@ -96,7 +96,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         KernelContext context = new KernelContext();
         GridScheduler grid = new GridScheduler();
         WorkerGrid worker = new WorkerGrid2D(16, 8);
-        grid.setWorkerGrid("s0.t0", worker);
+        grid.addWorkerGrid("s0.t0", worker);
 
         IntArray data = new IntArray(16);
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -117,7 +117,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         KernelContext context = new KernelContext();
         GridScheduler grid = new GridScheduler();
         WorkerGrid worker = new WorkerGrid3D(16, 8, 4);
-        grid.setWorkerGrid("s0.t0", worker);
+        grid.addWorkerGrid("s0.t0", worker);
 
         IntArray data = new IntArray(16);
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -137,7 +137,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         GridScheduler grid = new GridScheduler();
         WorkerGrid worker = new WorkerGrid1D(1024);
         worker.setLocalWork(8, 1, 1);
-        grid.setWorkerGrid("s0.t0", worker);
+        grid.addWorkerGrid("s0.t0", worker);
 
         IntArray data = new IntArray(1024);
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -158,7 +158,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         GridScheduler grid = new GridScheduler();
         WorkerGrid worker = new WorkerGrid2D(1024, 512);
         worker.setLocalWork(1, 8, 1);
-        grid.setWorkerGrid("s0.t0", worker);
+        grid.addWorkerGrid("s0.t0", worker);
 
         IntArray data = new IntArray(1024);
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -179,7 +179,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         GridScheduler grid = new GridScheduler();
         WorkerGrid worker = new WorkerGrid3D(1, 1, 1024);
         worker.setLocalWork(1, 1, 8);
-        grid.setWorkerGrid("s0.t0", worker);
+        grid.addWorkerGrid("s0.t0", worker);
 
         IntArray data = new IntArray(1024);
         TaskGraph taskGraph = new TaskGraph("s0") //

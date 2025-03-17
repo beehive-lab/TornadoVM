@@ -34,7 +34,7 @@ public class GridScheduler {
         gridTaskMap.put(taskName, workerGrid);
     }
 
-    public void setWorkerGrid(String taskName, WorkerGrid workerGrid) {
+    public void addWorkerGrid(String taskName, WorkerGrid workerGrid) {
         gridTaskMap.put(taskName, workerGrid);
     }
 
