@@ -52,6 +52,7 @@ public class GridScheduler {
      * 
      * @param taskName
      * @param workerGrid
+     * @since v1.1.0
      */
     public void addWorkerGrid(String taskName, WorkerGrid workerGrid) {
         gridTaskMap.put(taskName, workerGrid);
