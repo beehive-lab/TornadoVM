@@ -109,11 +109,12 @@ MONITOR_REGISTRY = {
 # ################################################################################################################
 
 class TestEntry:
-    def __init__(self, testName, testMethods=None, testParameters=None, monitorClass=None):
+    def __init__(self, testName, testMethods=None, testParameters=None, monitorClass=None, enableAssertions=None):
         self.testName = testName
         self.testMethods = testMethods
         self.testParameters = testParameters
         self.monitorClass = monitorClass
+        self.enableAssertions = enableAssertions
 
 
 ## List of classes to be tested. Include new unittest classes here
@@ -199,11 +200,15 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestMatMulWithByteArrays"),
-    TestEntry("uk.ac.manchester.tornado.unittests.llm.TestRMSNormLayer"),
+    TestEntry("uk.ac.manchester.tornado.unittests.llm.TestRNSNormLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestSoftMaxLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestFindMaxAttention"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestFusedLayer"),
-    TestEntry("uk.ac.manchester.tornado.unittests.llm.TestParallelFFNLayer"),
+
+    ## The TestParallelFFNLayer test is explicitly marked to run with the assertions disabled as it results in long compilation time
+    TestEntry("uk.ac.manchester.tornado.unittests.llm.TestParallelFFNLayer",
+              enableAssertions=False),
+
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestWeightedSum"),
     TestEntry("uk.ac.manchester.tornado.unittests.llm.TestMultiHeadAttention"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
@@ -666,7 +671,11 @@ def runTestTheWorld(options, args):
             for testParam in t.testParameters:
                 command += " " + testParam
 
-        command = TORNADO_CMD + " --jvm \"" + command + "\" "
+        ASSERTIONS_CMD = ""
+        if args.enable_assertions and t.enableAssertions is not False:
+            ASSERTIONS_CMD = ENABLE_ASSERTIONS
+
+        command = TORNADO_CMD + ASSERTIONS_CMD + " --jvm \"" + command + "\" "
 
         command = appendTestRunnerClassToCmd(command, args)
         command = command + " --params \"" + t.testName
@@ -786,10 +795,6 @@ def main():
         sys.exit(0)
     global javaVersion
     javaVersion = getJavaVersion()
-
-    if (args.enable_assertions):
-        global TORNADO_CMD
-        TORNADO_CMD += ENABLE_ASSERTIONS
 
     if (args.junit):
         runWithJUnit(args)
