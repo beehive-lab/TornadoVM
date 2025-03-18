@@ -330,14 +330,6 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("sqrt", Float.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Float, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SQRT, JavaKind.Float)));
-                return true;
-            }
-        });
-
         r.register(new InvocationPlugin("sqrt", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
