@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -72,7 +73,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
             }
 
             // Scale by sqrt(head_size)
-            score /= Math.sqrt(headSize);
+            score /= TornadoMath.sqrt(headSize);
 
             // Save the score to the attention buffer
             attScores.set(attOffset + t, score);
@@ -93,7 +94,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         // Find the maximum value for numerical stability
         float maxVal = Float.NEGATIVE_INFINITY;
         for (int t = threadId; t <= pos; t += blockDim) {
-            maxVal = Math.max(maxVal, attScores.get(attOffset + t));
+            maxVal = TornadoMath.max(maxVal, attScores.get(attOffset + t));
         }
 
         // Parallel reduction to find global maximum
@@ -103,7 +104,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         for (int stride = blockDim / 2; stride > 0; stride /= 2) {
             context.localBarrier();
             if (threadId < stride) {
-                maxReduction[threadId] = Math.max(maxReduction[threadId], maxReduction[threadId + stride]);
+                maxReduction[threadId] = TornadoMath.max(maxReduction[threadId], maxReduction[threadId + stride]);
             }
         }
 
@@ -129,7 +130,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         float expSum = 0.0f;
         for (int t = threadId; t <= pos; t += blockDim) {
             float score = attScores.get(attOffset + t);
-            float expValue = (float) Math.exp(score - maxVal);
+            float expValue = TornadoMath.exp(score - maxVal);
             expValues.set(expOffset + t, expValue);
             expSum += expValue;
         }
@@ -225,19 +226,19 @@ public class TestMultiHeadAttention extends TornadoTestBase {
                 for (int i = 0; i < headSize; i++) {
                     score += query[h * headSize + i] * keyCache[loff + t * kvDim + (h / kvMul) * headSize + i];
                 }
-                score /= Math.sqrt(headSize);
+                score /= TornadoMath.sqrt(headSize);
                 attScores[t] = score;
             }
 
             // Apply softmax
             float maxVal = Float.NEGATIVE_INFINITY;
             for (int t = 0; t <= pos; t++) {
-                maxVal = Math.max(maxVal, attScores[t]);
+                maxVal = TornadoMath.max(maxVal, attScores[t]);
             }
 
             float sum = 0.0f;
             for (int t = 0; t <= pos; t++) {
-                attScores[t] = (float) Math.exp(attScores[t] - maxVal);
+                attScores[t] = TornadoMath.exp(attScores[t] - maxVal);
                 sum += attScores[t];
             }
 
@@ -263,7 +264,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
             for (int j = 0; j < headSize; j++) {
                 score += query[j] * key[i * headSize + j];
             }
-            scores[i] = score / (float) Math.sqrt(headSize);
+            scores[i] = score / TornadoMath.sqrt(headSize);
         }
     }
 
@@ -605,20 +606,20 @@ public class TestMultiHeadAttention extends TornadoTestBase {
             for (int i = 0; i < headSize; i++) {
                 score += query.get(i) * keyCache.get(t * headSize + i);
             }
-            scores[t] = score / (float) Math.sqrt(headSize);
+            scores[t] = score / TornadoMath.sqrt(headSize);
         }
 
         // 2. Find max for numerical stability
         float maxVal = Float.NEGATIVE_INFINITY;
         for (int t = 0; t <= pos; t++) {
-            maxVal = Math.max(maxVal, scores[t]);
+            maxVal = TornadoMath.max(maxVal, scores[t]);
         }
 
         // 3. Compute exp and sum
         float sum = 0.0f;
         float[] expScores = new float[seqLen];
         for (int t = 0; t <= pos; t++) {
-            expScores[t] = (float) Math.exp(scores[t] - maxVal);
+            expScores[t] = TornadoMath.exp(scores[t] - maxVal);
             sum += expScores[t];
         }
 
