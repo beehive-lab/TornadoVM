@@ -177,7 +177,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.addWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -214,7 +214,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.addWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
