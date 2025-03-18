@@ -666,12 +666,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             Access objectAccessDest = Access.READ_WRITE;
             LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
-
             if (localStateDest == null) {
                 continue;
-                //                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
             }
-
             if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
                 throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta()
                         .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
