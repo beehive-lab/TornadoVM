@@ -68,7 +68,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 
-public class TestRMSNormLayer extends TornadoTestBase {
+public class TestRNSNormLayer extends TornadoTestBase {
 
     public static FloatArray matmul(FloatArray weights, FloatArray x, FloatArray out, int dim0, int dim1) {
         IntStream.range(0, dim0).forEach(i -> {
@@ -110,14 +110,11 @@ public class TestRMSNormLayer extends TornadoTestBase {
         }
     }
 
-    private static void finalSum(KernelContext context, FloatArray reduce, int size, float eps) {
-        int globalIdx = context.globalIdx;
-
+    private static void finalSum(FloatArray reduce, int size, float eps) {
         float sum = 0.0f;
-        if (globalIdx == 0) {
-            for (int i = 0; i < size; i++) {
-                sum += reduce.get(i);
-            }
+
+        for (int i = 0; i < size; i++) {
+            sum += reduce.get(i);
         }
 
         float ss = sum / (float) size;
@@ -189,9 +186,9 @@ public class TestRMSNormLayer extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, size, eps, x, reduce) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, localSize, weight) //
-                .task("t0", TestRMSNormLayer::reduceSquareSums, context, x, reduce) //
-                .task("t1", TestRMSNormLayer::finalSum, context, reduce, size, eps) //
-                .task("t2", TestRMSNormLayer::normalizeAndScale, context, rnsOutput, x, weight, reduce, size, eps) //
+                .task("t0", TestRNSNormLayer::reduceSquareSums, context, x, reduce) //
+                .task("t1", TestRNSNormLayer::finalSum, reduce, size, eps) //
+                .task("t2", TestRNSNormLayer::normalizeAndScale, context, rnsOutput, x, weight, reduce, size, eps) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, rnsOutput); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -246,10 +243,10 @@ public class TestRMSNormLayer extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("fused") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, size, eps, x, reduce, weights) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, localSize, state) //
-                .task("reduce", TestRMSNormLayer::reduceSquareSums, context, x, reduce) //
-                .task("sum", TestRMSNormLayer::finalSum, context, reduce, size, eps) //
-                .task("ns", TestRMSNormLayer::normalizeAndScale, context, rnsOutput, x, state, reduce, size, eps) //
-                .task("mv", TestRMSNormLayer::matrixVector, context, weights, rnsOutput, outputLogits, size, size) //
+                .task("reduce", TestRNSNormLayer::reduceSquareSums, context, x, reduce) //
+                .task("sum", TestRNSNormLayer::finalSum, reduce, size, eps) //
+                .task("ns", TestRNSNormLayer::normalizeAndScale, context, rnsOutput, x, state, reduce, size, eps) //
+                .task("mv", TestRNSNormLayer::matrixVector, context, weights, rnsOutput, outputLogits, size, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputLogits); //
 
         WorkerGrid worker = new WorkerGrid1D(size);
