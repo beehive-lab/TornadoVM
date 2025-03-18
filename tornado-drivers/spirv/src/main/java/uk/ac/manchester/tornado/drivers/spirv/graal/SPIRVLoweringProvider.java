@@ -82,6 +82,7 @@ import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.options.OptionValues;
 import jdk.graal.compiler.phases.util.Providers;
 import jdk.graal.compiler.replacements.DefaultJavaLoweringProvider;
+import jdk.graal.compiler.replacements.IdentityHashCodeSnippets;
 import jdk.graal.compiler.replacements.SnippetCounter;
 import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.word.LocationIdentity;
@@ -157,6 +158,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers) {
         super.initialize(options, factory, providers);
         initializeSnippets(options, providers);
+    }
+
+    @Override
+    protected IdentityHashCodeSnippets.Templates createIdentityHashCodeSnippets(OptionValues options, Providers providers) {
+        return null;
     }
 
     private void initializeSnippets(OptionValues options, Providers providers) {
@@ -424,6 +430,16 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public Integer smallestCompareWidth() {
         return null;
+    }
+
+    @Override
+    public boolean supportsBulkZeroingOfEden() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsBulkClearArray(JavaKind elementKind) {
+        return super.supportsBulkClearArray(elementKind);
     }
 
     @Override

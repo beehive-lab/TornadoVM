@@ -36,6 +36,7 @@ import java.util.Set;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -61,9 +62,10 @@ public class SPIRVArchitecture extends Architecture {
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
     public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
+    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
 
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder, SPIRVRuntimeType runtime) {
-        super(BACKEND_ARCHITECTURE + "@" + runtime.name(), wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
+        super(BACKEND_ARCHITECTURE + "@" + runtime.name(), wordKind, byteOrder, false, EMPTY, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
     }
 
     @Override
