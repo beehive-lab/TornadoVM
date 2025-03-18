@@ -186,8 +186,8 @@ public class TestFindMaxAttention extends TornadoTestBase {
         //@formatter:off
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, attScores)
                 .task("findMaxAttentionScores", TestFindMaxAttention::findMaxAttentionScores,
-                        context, pos, 
-                        seqLen, attScores, 
+                        context, pos,
+                        seqLen, attScores,
                         maxValues, localSize)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, maxValues);
         //@formatter:on
@@ -204,7 +204,5 @@ public class TestFindMaxAttention extends TornadoTestBase {
             float actual = maxValues.get(h);
             assertEquals("Mismatch at head " + h, expected, actual, 1e-5f);
         }
-
-        System.out.println("All results match! Test passed.");
     }
 }

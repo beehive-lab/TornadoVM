@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Test for the fused layer with RMSNorm and RoPE rotation in LLM.
  */
 public class TestFusedLayer extends TornadoTestBase {
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     /**
      * Compute sum of squares for RMSNorm
@@ -270,8 +270,6 @@ public class TestFusedLayer extends TornadoTestBase {
      */
     private void runSequentialImplementation(FloatArray xFloatSeq, FloatArray rmsWeights, FloatArray xbSeq, FloatArray qSeq, FloatArray kSeq, FloatArray vSeq, FloatArray wq, FloatArray wk,
             FloatArray wv, int dim, int kvDim, int headSize, int position, float rmsNormEps) {
-        System.out.println("Running sequential reference implementation...");
-
         // 1. RMSNorm
         rmsNormSequential(xFloatSeq, rmsWeights, xbSeq, rmsNormEps);
 
@@ -385,8 +383,6 @@ public class TestFusedLayer extends TornadoTestBase {
         final float rmsNormEps = 1e-5f; // RMSNorm epsilon
         final int localSize = 16;     // Worker threads per workgroup
 
-        System.out.println("Setting up test with dim=" + dim + ", headSize=" + headSize + ", numHeads=" + numHeads + ", numKVHeads=" + numKVHeads);
-
         // Create arrays
         FloatArray xFloat = new FloatArray(dim);      // Input state
         FloatArray xb = new FloatArray(dim);          // Normalized state
@@ -430,8 +426,6 @@ public class TestFusedLayer extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         // Set up task graph for the fused layer
-        System.out.println("Setting up fused layer task graph...");
-
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("fused")
             // Transfer all input arrays to device
@@ -491,12 +485,9 @@ public class TestFusedLayer extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Execute the fused layer
-        System.out.println("Executing fused layer task graph...");
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler).execute();
-            System.out.println("Execution completed successfully");
         } catch (Exception e) {
-            System.out.println("Exception during execution: " + e.getMessage());
             e.printStackTrace();
         }
 

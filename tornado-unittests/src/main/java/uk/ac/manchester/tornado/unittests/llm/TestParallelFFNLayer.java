@@ -280,8 +280,6 @@ public class TestParallelFFNLayer extends TornadoTestBase {
         final float rmsNormEps = 1e-5f;
         final int localSize = 8;
 
-        System.out.println("Creating arrays with dim=" + dim + ", hiddenDim=" + hiddenDim);
-
         // Input/output array
         FloatArray x = new FloatArray(dim);
 
@@ -334,16 +332,13 @@ public class TestParallelFFNLayer extends TornadoTestBase {
         }
 
         // Run sequential reference implementation
-        System.out.println("Running sequential reference implementation...");
         ffnLayerSequential(xSeq, wo, w1, w2, w3, rmsWeight, rmsNormEps, dim, hiddenDim);
-        System.out.println("Sequential implementation completed");
 
         // Create kernel context
         KernelContext context = new KernelContext();
 
         // @formatter:off
         // Create unified task graph with proper parallel implementation
-        System.out.println("Setting up parallel task graph...");
         TaskGraph taskGraph = new TaskGraph("ffn-layer")
             // Transfer all input arrays to device
             .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, temp, hidden, hidden2, wo, w1, w2, w3, rmsWeight, reduce)
@@ -380,12 +375,9 @@ public class TestParallelFFNLayer extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Execute the task graph
-        System.out.println("Executing parallel FFN layer...");
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler).execute();
-            System.out.println("Parallel execution completed successfully");
         } catch (Exception e) {
-            System.out.println("Exception during execution: " + e.getMessage());
             e.printStackTrace();
         }
 

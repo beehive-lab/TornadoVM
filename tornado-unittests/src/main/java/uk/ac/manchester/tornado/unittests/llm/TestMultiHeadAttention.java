@@ -47,6 +47,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestMultiHeadAttention extends TornadoTestBase {
 
+    private static final boolean DEBUG = false;
+
     /**
      * Calculate attention scores between query and key vectors
      */
@@ -98,7 +100,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         }
 
         // Parallel reduction to find global maximum
-        float[] maxReduction = context.allocateFloatLocalArray(workGroupSize); //TODO: ISSUES
+        float[] maxReduction = context.allocateFloatLocalArray(workGroupSize);
         maxReduction[threadId] = maxVal;
 
         for (int stride = blockDim / 2; stride > 0; stride /= 2) {
@@ -756,8 +758,6 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         // Convert to FloatArray for easier comparison
         FloatArray sequentialOutput = FloatArray.fromArray(sequentialOutputArray);
 
-        System.out.println("Executing integrated pipeline test...");
-
         // Create kernel context
         KernelContext context = new KernelContext();
 
@@ -773,9 +773,9 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         TaskGraph tg1 = new TaskGraph("s0")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, query, keyCache)
                 .task("calculateScores", TestMultiHeadAttention::calculateAttentionScores,
-                        context, pos, seqLen, 
-                        query, keyCache, attScores, 
-                        kvDim, kvMul, headSize, 
+                        context, pos, seqLen,
+                        query, keyCache, attScores,
+                        kvDim, kvMul, headSize,
                         loff)
                 .persistOnDevice(attScores);
 
@@ -783,7 +783,7 @@ public class TestMultiHeadAttention extends TornadoTestBase {
         TaskGraph tg2 = new TaskGraph("s1")
                 .consumeFromDevice(tg1.getTaskGraphName(), attScores)
                 .task("findMax", TestMultiHeadAttention::findMaxAttentionScores,
-                        context, pos, seqLen, 
+                        context, pos, seqLen,
                         attScores, maxValues, localSize)
                 .persistOnDevice(attScores, maxValues);
 
@@ -852,34 +852,36 @@ public class TestMultiHeadAttention extends TornadoTestBase {
             executionPlan.withGraph(4).withGridScheduler(gridScheduler5).execute();
         }
 
-        // Print comparison of results for head 0
-        System.out.println("Comparison of results for head 0:");
-        for (int i = 0; i < Math.min(headSize, 5); i++) {
-            System.out.printf("Dimension %d: Sequential=%.6f, Parallel=%.6f, Diff=%.9f%n", i, sequentialOutput.get(i), output.get(i), Math.abs(sequentialOutput.get(i) - output.get(i)));
-        }
+        if (DEBUG) {
+            // Print comparison of results for head 0
+            System.out.println("Comparison of results for head 0:");
+            for (int i = 0; i < Math.min(headSize, 5); i++) {
+                System.out.printf("Dimension %d: Sequential=%.6f, Parallel=%.6f, Diff=%.9f%n", i, sequentialOutput.get(i), output.get(i), Math.abs(sequentialOutput.get(i) - output.get(i)));
+            }
 
-        // Verify results for all heads
-        boolean passed = true;
-        for (int h = 0; h < numHeads; h++) {
-            for (int i = 0; i < headSize; i++) {
-                int idx = h * headSize + i;
-                float expected = sequentialOutput.get(idx);
-                float actual = output.get(idx);
+            // Verify results for all heads
+            boolean passed = true;
+            for (int h = 0; h < numHeads; h++) {
+                for (int i = 0; i < headSize; i++) {
+                    int idx = h * headSize + i;
+                    float expected = sequentialOutput.get(idx);
+                    float actual = output.get(idx);
 
-                // Use relative tolerance for large values, absolute tolerance for small values
-                float tolerance = Math.max(1e-5f, Math.abs(expected) * 1e-4f);
+                    // Use relative tolerance for large values, absolute tolerance for small values
+                    float tolerance = Math.max(1e-5f, Math.abs(expected) * 1e-4f);
 
-                if (Math.abs(expected - actual) > tolerance) {
-                    System.out.printf("MISMATCH at head %d, dim %d: Expected %.9f, Got %.9f, Diff %.9f%n", h, i, expected, actual, Math.abs(expected - actual));
-                    passed = false;
+                    if (Math.abs(expected - actual) > tolerance) {
+                        System.out.printf("MISMATCH at head %d, dim %d: Expected %.9f, Got %.9f, Diff %.9f%n", h, i, expected, actual, Math.abs(expected - actual));
+                        passed = false;
+                    }
                 }
             }
-        }
 
-        if (passed) {
-            System.out.println("All values match within tolerance!");
-        } else {
-            System.out.println("Some values don't match within tolerance!");
+            if (passed) {
+                System.out.println("All values match within tolerance!");
+            } else {
+                System.out.println("Some values don't match within tolerance!");
+            }
         }
 
         // Final formal assertions
