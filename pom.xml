@@ -237,7 +237,7 @@
                                     </path>
                                 </annotationProcessorPaths>
                                 <compilerArgs>
-                                    <arg>--enable-preview</arg>
+                                    <arg>--enable-native-access</arg>
                                     <arg>--add-modules</arg>
                                     <arg>ALL-SYSTEM</arg>
                                     <arg>--add-modules=jdk.incubator.vector</arg>
