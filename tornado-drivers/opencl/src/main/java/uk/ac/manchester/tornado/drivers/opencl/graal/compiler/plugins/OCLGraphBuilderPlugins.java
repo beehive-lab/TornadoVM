@@ -45,7 +45,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 import java.lang.foreign.MemorySegment;
-import jdk.vm.ci.meta.RawConstant;
+
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -77,6 +77,7 @@ import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
@@ -115,7 +116,6 @@ public class OCLGraphBuilderPlugins {
 
         registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
-        registerOpenCLBuiltinPlugins(plugins);
 
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
@@ -123,6 +123,7 @@ public class OCLGraphBuilderPlugins {
         registerKernelContextPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
+        registerOpenCLBuiltinPlugins(plugins);
         OCLVectorPlugins.registerPlugins(ps, plugins);
 
         // Register TornadoAtomicInteger
@@ -515,7 +516,7 @@ public class OCLGraphBuilderPlugins {
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
 
         Registration r = new Registration(plugins, java.lang.Math.class);
-        // We have to overwrite some of standard math plugins
+        // We have to overwrite some of the standard math plugins
         r.setAllowOverwrite(true);
         registerOpenCLOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);
