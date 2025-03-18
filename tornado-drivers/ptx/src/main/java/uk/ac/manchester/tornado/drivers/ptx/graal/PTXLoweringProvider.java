@@ -26,10 +26,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
-import jdk.graal.compiler.nodes.calc.AddNode;
-import jdk.graal.compiler.nodes.calc.LeftShiftNode;
-import jdk.graal.compiler.nodes.calc.SignExtendNode;
-import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.graal.compiler.core.common.memory.BarrierType;
@@ -56,10 +52,13 @@ import jdk.graal.compiler.nodes.PhiNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.UnwindNode;
 import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
 import jdk.graal.compiler.nodes.calc.BinaryArithmeticNode;
 import jdk.graal.compiler.nodes.calc.FloatConvertNode;
 import jdk.graal.compiler.nodes.calc.IntegerDivRemNode;
+import jdk.graal.compiler.nodes.calc.LeftShiftNode;
 import jdk.graal.compiler.nodes.calc.RemNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
 import jdk.graal.compiler.nodes.java.ArrayLengthNode;
 import jdk.graal.compiler.nodes.java.InstanceOfNode;
 import jdk.graal.compiler.nodes.java.LoadFieldNode;
@@ -80,7 +79,9 @@ import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.options.OptionValues;
 import jdk.graal.compiler.phases.util.Providers;
 import jdk.graal.compiler.replacements.DefaultJavaLoweringProvider;
+import jdk.graal.compiler.replacements.IdentityHashCodeSnippets;
 import jdk.graal.compiler.replacements.SnippetCounter;
+import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -153,6 +154,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         initializeSnippets(options, providers);
     }
 
+    @Override
+    protected IdentityHashCodeSnippets.Templates createIdentityHashCodeSnippets(OptionValues options, Providers providers) {
+        return null;
+    }
+
     private void initializeSnippets(OptionValues options, Providers providers) {
         this.gpuReduceSnippets = new PTXGPUReduceSnippets.Templates(options, providers);
     }
@@ -204,9 +210,13 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    public boolean supportsBulkZeroing() {
-        unimplemented();
+    public boolean supportsBulkZeroingOfEden() {
         return false;
+    }
+
+    @Override
+    public boolean supportsBulkClearArray(JavaKind elementKind) {
+        return super.supportsBulkClearArray(elementKind);
     }
 
     @Override
@@ -543,6 +553,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode offset = graph.unique(new AddNode(scaledIndex, ConstantNode.forIntegerKind(target.wordJavaKind, arrayBaseOffset, graph)));
         return graph.unique(new OffsetAddressNode(array, offset));
     }
+
     private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
         return graph.unique(new OffsetAddressNode(array, index));
     }

@@ -31,7 +31,9 @@ import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
+import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -52,6 +54,7 @@ public class PTXArchitecture extends Architecture {
     private static final int RETURN_ADDRESS_SIZE = 0;
     public static PTXParam KERNEL_CONTEXT;
     public static PTXParam[] abiRegisters;
+    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
 
     public static PTXBuiltInRegister ThreadIDX = new PTXBuiltInRegister("%tid.x");
     public static PTXBuiltInRegister ThreadIDY = new PTXBuiltInRegister("%tid.y");
@@ -70,7 +73,7 @@ public class PTXArchitecture extends Architecture {
     public static PTXBuiltInRegister GridDimZ = new PTXBuiltInRegister("%nctaid.z");
 
     public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
-        super("Tornado PTX", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
+        super("Tornado PTX", wordKind, byteOrder, false, EMPTY, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
 
         KERNEL_CONTEXT = new PTXParam(PTXAssemblerConstants.KERNEL_CONTEXT_NAME, 8, wordKind);
 
