@@ -609,7 +609,7 @@ def runTests(args):
     if (args.testClass != None):
         options = "--jvm \"" + options + "\" "
         ASSERTIONS_CMD = ""
-        if args.enable_assertions and t.enableAssertions is not False:
+        if args.enable_assertions:
             ASSERTIONS_CMD = ENABLE_ASSERTIONS
         cmd = TORNADO_CMD + ASSERTIONS_CMD + options
         command = appendTestRunnerClassToCmd(cmd, args)
