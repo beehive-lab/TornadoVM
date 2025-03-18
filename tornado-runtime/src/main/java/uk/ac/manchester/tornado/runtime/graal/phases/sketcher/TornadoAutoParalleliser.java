@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import jdk.graal.compiler.nodes.loop.Loop;
 import org.graalvm.collections.EconomicMap;
+
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.GraphState;
@@ -40,10 +42,8 @@ import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.ValuePhiNode;
 import jdk.graal.compiler.nodes.calc.IntegerLessThanNode;
 import jdk.graal.compiler.nodes.loop.InductionVariable;
-import jdk.graal.compiler.nodes.loop.LoopEx;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.phases.BasePhase;
-
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -77,7 +77,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
 
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
 
             // is single loop nest?
             for (int i = loops.size() - 1; i > 1; i--) {
@@ -89,7 +89,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
             int parallelDepth = 0;
             for (int i = 0; i < loops.size() && parallelDepth < 3; i++) {
-                final LoopEx current = loops.get(0);
+                final Loop current = loops.get(0);
                 final LoopBeginNode loopBegin = current.loopBegin();
                 final EconomicMap<Node, InductionVariable> ivMap = current.getInductionVariables();
 

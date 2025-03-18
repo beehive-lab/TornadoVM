@@ -30,7 +30,7 @@ import java.util.Optional;
 import jdk.graal.compiler.nodes.GraphState;
 import jdk.graal.compiler.nodes.LoopBeginNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.phases.Phase;
 
@@ -46,9 +46,9 @@ public class TornadoLoopCanonicalization extends Phase {
     protected void run(StructuredGraph graph) {
         if (graph.hasLoops()) {
             final LoopsData data = new TornadoLoopsData(graph);
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
             Collections.reverse(loops);
-            for (LoopEx loop : loops) {
+            for (Loop loop : loops) {
                 int numBackedges = loop.loopBegin().loopEnds().count();
                 if (numBackedges > 1) {
                     final LoopBeginNode loopBegin = loop.loopBegin();

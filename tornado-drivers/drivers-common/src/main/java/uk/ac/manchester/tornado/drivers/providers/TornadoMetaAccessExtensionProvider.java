@@ -24,8 +24,10 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -50,5 +52,10 @@ public class TornadoMetaAccessExtensionProvider implements MetaAccessExtensionPr
     @Override
     public boolean canVirtualize(ResolvedJavaType instanceType) {
         return true;
+    }
+
+    @Override
+    public ResolvedJavaField getStaticFieldForAccess(JavaConstant base, long offset, JavaKind accessKind) {
+        return null;
     }
 }

@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import jdk.graal.compiler.core.common.cfg.Loop;
+import jdk.graal.compiler.core.common.cfg.CFGLoop;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.graph.NodeMap;
 import jdk.graal.compiler.graph.iterators.NodeIterable;
@@ -49,6 +49,7 @@ import jdk.graal.compiler.nodes.extended.IntegerSwitchNode;
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlock> {
 
@@ -99,7 +100,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
 
     // Update a list of basic blocks to close. We add a block into the rvmEndBracket
     // list if the current block starts with a lookExitNode and the false successor
-    // of the dominator points to the loopExitNode followed by an end-node.
+    // of the dominator points to the LoopExitNode followed by an end-node.
     private void updateListEndBracketsForLoopExitNodes(HIRBlock block) {
         HIRBlock dom = block.getDominator();
         if (dom != null) {
@@ -309,7 +310,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
     }
 
     private boolean isComplexLoopCondition(HIRBlock block) {
-        Loop<HIRBlock> loop = block.getLoop();
+        CFGLoop<HIRBlock> loop = block.getLoop();
         LoopExitNode exitNode = block.getBeginNode() instanceof LoopExitNode ? (LoopExitNode) block.getBeginNode() : null;
 
         if (loop != null || exitNode != null) {
@@ -327,8 +328,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
 
     private boolean isBlockInABreak(HIRBlock block) {
         if (block.getBeginNode() instanceof LoopExitNode) {
-            LoopExitNode loopExitNode = (LoopExitNode) block.getBeginNode();
-            LoopBeginNode loopBeginNode = loopExitNode.loopBegin();
+            LoopExitNode LoopExitNode = (LoopExitNode) block.getBeginNode();
+            LoopBeginNode loopBeginNode = LoopExitNode.loopBegin();
             HIRBlock loopBeginBlock = loopBeginNode.graph().getLastSchedule().getNodeToBlockMap().get(loopBeginNode);
             for (int i = 0; i < block.getPredecessorCount(); i++) {
                 if (block.getPredecessorAt(i) == loopBeginBlock) {

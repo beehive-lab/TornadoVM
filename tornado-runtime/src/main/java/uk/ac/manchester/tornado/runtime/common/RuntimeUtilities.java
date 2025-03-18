@@ -45,7 +45,7 @@ import java.util.List;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.loop.BasicInductionVariable;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -368,10 +368,10 @@ public final class RuntimeUtilities {
         final LoopsData data = new TornadoLoopsData(graph);
         data.detectCountedLoops();
 
-        final List<LoopEx> loops = data.outerFirst();
+        final List<Loop> loops = data.outerFirst();
 
         List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
-        for (LoopEx loop : loops) {
+        for (Loop loop : loops) {
             for (ParallelRangeNode parRange : parRanges) {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {

@@ -31,7 +31,7 @@ import jdk.graal.compiler.nodes.GraphState;
 import jdk.graal.compiler.nodes.LoopBeginNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.ValueNode;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopFragmentInside;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.phases.BasePhase;
@@ -72,10 +72,10 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
 
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
 
-            for (LoopEx loopEx : loops) {
-                LoopFragmentInside inside = loopEx.inside();
+            for (Loop Loop : loops) {
+                LoopFragmentInside inside = Loop.inside();
                 NodeBitMap nodes = inside.nodes();
 
                 List<LoopBeginNode> snapshot = nodes.filter(LoopBeginNode.class).snapshot();

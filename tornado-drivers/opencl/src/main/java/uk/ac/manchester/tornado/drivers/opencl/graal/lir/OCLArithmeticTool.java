@@ -354,6 +354,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Variable emitMaskedLoad(LIRKind kind, Value address, Value mask, LIRFrameState state, MemoryOrderMode memoryOrder) {
+        return super.emitMaskedLoad(kind, address, mask, state, memoryOrder);
+    }
+
+    @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         guarantee(kind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", kind);
@@ -418,6 +423,126 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public void emitMaskedStore(LIRKind kind, Value address, Value mask, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
+        super.emitMaskedStore(kind, address, mask, input, state, memoryOrder);
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
+    }
+
+    @Override
+    public Value emitMathLog(Value input, boolean base10) {
+        return super.emitMathLog(input, base10);
+    }
+
+    @Override
+    public Value emitMathCos(Value input) {
+        return super.emitMathCos(input);
+    }
+
+    @Override
+    public Value emitMathSin(Value input) {
+        return super.emitMathSin(input);
+    }
+
+    @Override
+    public Value emitMathTan(Value input) {
+        return super.emitMathTan(input);
+    }
+
+    @Override
+    public Value emitMathTanh(Value input) {
+        return super.emitMathTanh(input);
+    }
+
+    @Override
+    public Value emitMathExp(Value input) {
+        return super.emitMathExp(input);
+    }
+
+    @Override
+    public Value emitMathPow(Value x, Value y) {
+        return super.emitMathPow(x, y);
+    }
+
+    @Override
+    public Value emitMathMax(Value x, Value y) {
+        return super.emitMathMax(x, y);
+    }
+
+    @Override
+    public Value emitMathMin(Value x, Value y) {
+        return super.emitMathMin(x, y);
+    }
+
+    @Override
+    public Value emitMathUnsignedMax(Value x, Value y) {
+        return super.emitMathUnsignedMax(x, y);
+    }
+
+    @Override
+    public Value emitMathUnsignedMin(Value x, Value y) {
+        return super.emitMathUnsignedMin(x, y);
+    }
+
+    @Override
+    public Value emitRound(Value operand, RoundingMode mode) {
+        return super.emitRound(operand, mode);
+    }
+
+    @Override
+    public Value emitRoundFloatToInteger(Value operand) {
+        return super.emitRoundFloatToInteger(operand);
+    }
+
+    @Override
+    public Value emitIntegerCompress(Value value, Value mask) {
+        return super.emitIntegerCompress(value, mask);
+    }
+
+    @Override
+    public Value emitIntegerExpand(Value value, Value mask) {
+        return super.emitIntegerExpand(value, mask);
+    }
+
+    @Override
+    public Value emitFloatIsInfinite(Value input) {
+        return super.emitFloatIsInfinite(input);
+    }
+
+    @Override
+    public Variable emitReverseBits(Value operand) {
+        return super.emitReverseBits(operand);
+    }
+
+    @Override
+    public Variable emitHalfFloatToFloat(Value operand) {
+        return super.emitHalfFloatToFloat(operand);
+    }
+
+    @Override
+    public Variable emitFloatToHalfFloat(Value operand) {
+        return super.emitFloatToHalfFloat(operand);
+    }
+
+    @Override
+    public Variable emitNormalizedUnsignedCompare(LIRKind compareKind, Value x, Value y) {
+        return super.emitNormalizedUnsignedCompare(compareKind, x, y);
+    }
+
+    @Override
+    public Value emitCountLeadingZeros(Value value) {
+        return super.emitCountLeadingZeros(value);
+    }
+
+    @Override
+    public Value emitCountTrailingZeros(Value value) {
+        return super.emitCountTrailingZeros(value);
     }
 
     @Override

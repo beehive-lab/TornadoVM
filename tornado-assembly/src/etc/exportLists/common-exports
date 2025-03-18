@@ -106,3 +106,4 @@
 --add-exports jdk.graal.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.common
 --add-exports jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.common
 --add-exports java.base/jdk.internal.foreign=tornado.drivers.opencl
+--add-exports jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.opencl

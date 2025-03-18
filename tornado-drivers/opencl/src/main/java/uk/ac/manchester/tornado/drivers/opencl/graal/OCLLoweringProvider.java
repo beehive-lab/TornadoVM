@@ -82,6 +82,7 @@ import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.options.OptionValues;
 import jdk.graal.compiler.phases.util.Providers;
 import jdk.graal.compiler.replacements.DefaultJavaLoweringProvider;
+import jdk.graal.compiler.replacements.IdentityHashCodeSnippets;
 import jdk.graal.compiler.replacements.SnippetCounter;
 import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.word.LocationIdentity;
@@ -161,6 +162,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         initializeSnippets(options, factory, providers);
     }
 
+    @Override
+    protected IdentityHashCodeSnippets.Templates createIdentityHashCodeSnippets(OptionValues options, Providers providers) {
+        return null;
+    }
+
     private void initializeSnippets(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers) {
         this.cpuReduceSnippets = new ReduceCPUSnippets.Templates(options, providers);
         this.gpuReduceSnippets = new ReduceGPUSnippets.Templates(options, providers);
@@ -219,8 +225,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    public boolean supportsBulkZeroing() {
-        unimplemented("OCLLoweringProvider::supportsBulkZeroing unimplemented");
+    public boolean supportsBulkZeroingOfEden() {
         return false;
     }
 

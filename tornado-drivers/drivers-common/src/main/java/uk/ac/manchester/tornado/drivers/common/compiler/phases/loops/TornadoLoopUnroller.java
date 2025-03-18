@@ -36,7 +36,7 @@ import jdk.graal.compiler.nodes.LoopBeginNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.debug.ControlFlowAnchorNode;
 import jdk.graal.compiler.nodes.loop.CountedLoopInfo;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.nodes.spi.CoreProviders;
 import jdk.graal.compiler.options.OptionValues;
@@ -53,7 +53,7 @@ public class TornadoLoopUnroller extends BasePhase<CoreProviders> {
         this.canonicalizer = canonicalizer;
     }
 
-    private static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
+    private static boolean shouldFullUnroll(OptionValues options, Loop loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
@@ -94,7 +94,7 @@ public class TornadoLoopUnroller extends BasePhase<CoreProviders> {
                 peeled = false;
                 final LoopsData dataCounted = new TornadoLoopsData(graph);
                 dataCounted.detectCountedLoops();
-                for (LoopEx loop : dataCounted.countedLoops()) {
+                for (Loop loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
                         getDebugContext().log("FullUnroll %s", loop);
                         LoopTransformations.fullUnroll(loop, providers, canonicalizer);

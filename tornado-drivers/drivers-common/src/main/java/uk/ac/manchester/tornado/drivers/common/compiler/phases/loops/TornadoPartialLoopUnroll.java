@@ -25,7 +25,7 @@ import java.util.Optional;
 
 import jdk.graal.compiler.nodes.GraphState;
 import jdk.graal.compiler.nodes.StructuredGraph;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopFragmentInside;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.phases.BasePhase;
@@ -57,7 +57,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
 
         canonicalizer.apply(graph, context);
         dataCounted.detectCountedLoops();
-        for (LoopEx loop : dataCounted.countedLoops()) {
+        for (Loop loop : dataCounted.countedLoops()) {
             int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
             if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {
                 LoopFragmentInside newSegment = loop.inside().duplicate();

@@ -131,7 +131,26 @@ public class CodeAnalysis {
             ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
             CompilationResult compilationResult = new CompilationResult(method.getSignature().toMethodDescriptor());
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
+
+//            GraalCompiler.Request request = new GraalCompiler.Request(method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory);
+//            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
+            // Create a Request object with the correct constructor
+            GraalCompiler.Request<CompilationResult> request = new GraalCompiler.Request<>(
+                    graph,
+                    method,
+                    providers,
+                    backend,
+                    graphBuilderPhase,
+                    optimizationsOpts,
+                    profilerInfo,
+                    suites,
+                    lirSuites,
+                    compilationResult,
+                    factory,
+                    false
+            );
+            request.execute();
+//            GraalCompiler.compile(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
             return backend.addInstalledCode(getDebugContext(), method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);

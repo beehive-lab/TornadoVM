@@ -40,6 +40,11 @@ public class OCLBarrierNode extends FixedWithNextNode implements LIRLowerable, M
 
     public static final NodeClass<OCLBarrierNode> TYPE = NodeClass.create(OCLBarrierNode.class);
 
+    @Override
+    public boolean killsInit() {
+        return false;
+    }
+
     public enum OCLMemFenceFlags {
         GLOBAL, LOCAL;
     }

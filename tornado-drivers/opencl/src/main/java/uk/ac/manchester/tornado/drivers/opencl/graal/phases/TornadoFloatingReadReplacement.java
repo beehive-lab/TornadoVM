@@ -30,13 +30,13 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
+import jdk.graal.compiler.core.common.cfg.CFGLoop;
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
 import org.graalvm.collections.Equivalence;
 import org.graalvm.collections.UnmodifiableMapCursor;
 import org.graalvm.word.LocationIdentity;
 
-import jdk.graal.compiler.core.common.cfg.Loop;
 import jdk.graal.compiler.debug.DebugCloseable;
 import jdk.graal.compiler.debug.GraalError;
 import jdk.graal.compiler.graph.Graph;
@@ -224,7 +224,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         }
 
         result = EconomicSet.create(Equivalence.DEFAULT);
-        for (Loop<HIRBlock> inner : loop.getChildren()) {
+        for (CFGLoop<HIRBlock> inner : loop.getChildren()) {
             result.addAll(processLoop((HIRLoop) inner, modifiedInLoops));
         }
 
@@ -248,7 +248,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
             modifiedInLoops = EconomicMap.create(Equivalence.IDENTITY);
             ControlFlowGraph cfg = ControlFlowGraph.newBuilder(graph).connectBlocks(true).computeLoops(true).computeFrequency(true).build();
 
-            for (Loop<?> l : cfg.getLoops()) {
+            for (CFGLoop<?> l : cfg.getLoops()) {
                 HIRLoop loop = (HIRLoop) l;
                 processLoop(loop, modifiedInLoops);
             }
