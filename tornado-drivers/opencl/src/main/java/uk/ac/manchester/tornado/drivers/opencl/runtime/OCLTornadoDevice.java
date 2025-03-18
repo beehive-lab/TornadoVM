@@ -80,6 +80,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLFieldBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLLongArrayWrapper;
@@ -87,7 +88,6 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLXPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -554,7 +554,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.HALF.getSizeInBytes());
             } else {
-                result = new OCLXPUBuffer(deviceContext, object, access);
+                result = new OCLFieldBuffer(deviceContext, object, access);
             }
         }
 

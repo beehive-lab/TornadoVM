@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFieldBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
@@ -68,7 +69,6 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVXPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -304,7 +304,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
                 return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access, nativeArray.getElementSize());
             } else {
                 // Possible a vector type, we encapsulate in an object
-                return new SPIRVXPUBuffer(deviceContext, object, access);
+                return new SPIRVFieldBuffer(deviceContext, object, access);
             }
         }
         return null;
