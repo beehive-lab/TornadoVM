@@ -224,10 +224,10 @@ public class TornadoOptions {
      *
      * <p>
      * <ul>
-     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
-     *   <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
-     *   <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes, being
-     *   OpenCL the first in the list (default).
+     * <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
+     * <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
+     * <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes, being
+     * OpenCL the first in the list (default).
      * *</ul>
      * </p>
      */
@@ -353,6 +353,15 @@ public class TornadoOptions {
     }
 
     /**
+     * Option to deallocate after the execution plan finishes. It frees all
+     * resources consumed by the execution plan, which can involved multiple
+     * task graphs.
+     */
+    public static boolean isDeallocateBufferEnabled() {
+        return getBooleanValue("tornado.deallocate.buffers", TRUE);
+    }
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      *
      * @return boolean.
@@ -458,5 +467,9 @@ public class TornadoOptions {
         String contextEmulatorIntelFPGA = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
         String contextEmulatorXilinxFPGA = System.getenv("XCL_EMULATION_MODE");
         return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
+    }
+
+    public static boolean cleanUpAtomicsSpace() {
+        return getBooleanValue("tornado.clean.atomics.space", FALSE);
     }
 }

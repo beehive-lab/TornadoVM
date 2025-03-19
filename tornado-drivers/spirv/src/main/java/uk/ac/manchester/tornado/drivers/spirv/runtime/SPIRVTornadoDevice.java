@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
@@ -347,7 +347,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             buffer = createNewBufferAllocation(object, batchSize, state, access);
         }
 
-        if (buffer.getClass() == AtomicsBuffer.class) {
+        if (buffer.getClass() == OCLAtomicsBuffer.class) {
             state.setAtomicRegion();
         }
         return state.getXPUBuffer().size();
@@ -361,7 +361,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
-        if (!TornadoOptions.isReusedBuffersEnabled()) {
+        if (TornadoOptions.isDeallocateBufferEnabled()) {
             deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
