@@ -372,7 +372,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
-        executionFrame.withPolicy(policy).withMode(mode);
+        executionFrame.setPolicy(policy).setMode(mode);
         return new WithDynamicReconfiguration(this, policy, mode);
     }
 
@@ -401,7 +401,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
-        executionFrame.withProfilerOn(profilerMode);
+        executionFrame.setProfilerMode(profilerMode);
         return new WithProfiler(this, profilerMode);
     }
 
@@ -411,7 +411,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withoutProfiler() {
-        executionFrame.withProfilerOff();
+        executionFrame.setProfilerOff();
         return new OffProfiler(this);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,17 +37,17 @@ public class ExecutorFrame {
         this.executionPlanId = id;
     }
 
-    public ExecutorFrame withPolicy(Policy policy) {
+    public ExecutorFrame setPolicy(Policy policy) {
         this.dynamicReconfigurationPolicy = policy;
         return this;
     }
 
-    public ExecutorFrame withMode(DRMode drMode) {
+    public ExecutorFrame setMode(DRMode drMode) {
         this.dynamicReconfigurationMode = drMode;
         return this;
     }
 
-    public ExecutorFrame withGridScheduler(GridScheduler gridScheduler) {
+    public ExecutorFrame setGridScheduler(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         return this;
     }
@@ -68,11 +68,11 @@ public class ExecutorFrame {
         return this.executionPlanId;
     }
 
-    public void withProfilerOn(ProfilerMode profilerMode) {
+    public void setProfilerMode(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
     }
 
-    public void withProfilerOff() {
+    public void setProfilerOff() {
         this.profilerMode = null;
     }
 
