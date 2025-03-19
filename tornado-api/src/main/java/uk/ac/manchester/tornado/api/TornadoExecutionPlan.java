@@ -347,7 +347,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         tornadoExecutor.withGridScheduler(gridScheduler);
-        executionFrame.withGridScheduler(gridScheduler);
+        executionFrame.setGridScheduler(gridScheduler);
         return new WithGridScheduler(this, gridScheduler);
     }
 
