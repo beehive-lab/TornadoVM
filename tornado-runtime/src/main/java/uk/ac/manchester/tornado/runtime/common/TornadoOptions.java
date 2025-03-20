@@ -469,6 +469,14 @@ public class TornadoOptions {
         return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
     }
 
+    /**
+     * Flag to signal to clean up the atomics area (as in accelerator's global memory) when the Execution Plan
+     * resource is closed. This is False by default, since this area is global for all kernels. In near future,
+     * we will change this to use a unique area per execution plan, and have the option to turn on and off
+     * this flag as needed.
+     * 
+     * @return boolean
+     */
     public static boolean cleanUpAtomicsSpace() {
         return getBooleanValue("tornado.clean.atomics.space", FALSE);
     }
