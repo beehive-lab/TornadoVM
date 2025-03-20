@@ -329,12 +329,12 @@ public class TornadoVMInterpreter {
                 final int eventId = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long batchThreads = bytecodeResult.getLong();
-                XPUExecutionFrame info = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
+                XPUExecutionFrame executionFrame = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
                 if (isWarmup) {
                     popArgumentsFromCall(numArgs);
                     continue;
                 }
-                lastEvent = executeLaunch(logBuilder, numArgs, eventId, taskIndex, batchThreads, offset, info);
+                lastEvent = executeLaunch(logBuilder, numArgs, eventId, taskIndex, batchThreads, offset, executionFrame);
             } else if (op == TornadoVMBytecodes.ADD_DEPENDENCY.value()) {
                 final int eventList = bytecodeResult.getInt();
                 if (isWarmup) {
@@ -669,7 +669,7 @@ public class TornadoVMInterpreter {
 
         boolean redeployOnDevice = graphExecutionContext.redeployOnDevice();
 
-        final KernelStackFrame callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, kernelStackFrame, interpreterDevice, redeployOnDevice);
+        final KernelStackFrame kernelStackFrame = resolveCallWrapper(callWrapperIndex, numArgs, this.kernelStackFrame, interpreterDevice, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
         final SchedulableTask task = taskExecutionContexts.get(taskIndex);
@@ -729,7 +729,7 @@ public class TornadoVMInterpreter {
                 throw new TornadoBailoutRuntimeException("[Internal Error] Unable to compile " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()));
             }
         }
-        return new XPUExecutionFrame(callWrapper, waitList);
+        return new XPUExecutionFrame(kernelStackFrame, waitList);
     }
 
     private void popArgumentsFromCall(int numArgs) {
@@ -797,6 +797,7 @@ public class TornadoVMInterpreter {
                     // Add a reference (arrays, vector types, panama regions)
                     stackFrame.addCallArgument(objectState.getXPUBuffer().toBuffer(), true);
                 } else {
+                    // Add the atomic buffer
                     atomicsArray = interpreterDevice.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                 }
             } else {

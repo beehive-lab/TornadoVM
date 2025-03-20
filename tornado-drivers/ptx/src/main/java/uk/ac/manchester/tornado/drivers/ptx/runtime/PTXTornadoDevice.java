@@ -328,7 +328,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
-        if (!TornadoOptions.isReusedBuffersEnabled()) {
+        if (TornadoOptions.isDeallocateBufferEnabled()) {
             deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
