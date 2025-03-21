@@ -267,8 +267,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -279,8 +278,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateLongLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -291,8 +289,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -303,8 +300,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateDoubleLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }

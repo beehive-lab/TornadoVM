@@ -432,6 +432,14 @@ public class TornadoMath {
         return (float) Math.acos(a);
     }
 
+    public static float acosh(float x) {
+        return (float) Math.log(x + Math.sqrt(x * x - 1));
+    }
+
+    public static double acosh(double x) {
+        return Math.log(x + Math.sqrt(x * x - 1));
+    }
+
     public static double acos(double a) {
         return Math.acos(a);
     }
@@ -442,6 +450,14 @@ public class TornadoMath {
 
     public static double asin(double a) {
         return Math.asin(a);
+    }
+
+    public static float asinh(float x) {
+        return (float) Math.log(x + Math.sqrt(x * x + 1));
+    }
+
+    public static double asinh(double x) {
+        return Math.log(x + Math.sqrt(x * x + 1));
     }
 
     public static float cos(float angle) {

@@ -45,7 +45,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 import java.lang.foreign.MemorySegment;
-import jdk.vm.ci.meta.RawConstant;
+
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -77,6 +77,7 @@ import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
@@ -115,7 +116,6 @@ public class OCLGraphBuilderPlugins {
 
         registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
-        registerOpenCLBuiltinPlugins(plugins);
 
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
@@ -123,6 +123,7 @@ public class OCLGraphBuilderPlugins {
         registerKernelContextPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
+        registerOpenCLBuiltinPlugins(plugins);
         OCLVectorPlugins.registerPlugins(ps, plugins);
 
         // Register TornadoAtomicInteger
@@ -314,8 +315,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateIntLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -326,8 +326,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateLongLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -338,8 +337,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateFloatLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -350,8 +348,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateDoubleLocalArray", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -519,7 +516,7 @@ public class OCLGraphBuilderPlugins {
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
 
         Registration r = new Registration(plugins, java.lang.Math.class);
-        // We have to overwrite some of standard math plugins
+        // We have to overwrite some of the standard math plugins
         r.setAllowOverwrite(true);
         registerOpenCLOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);

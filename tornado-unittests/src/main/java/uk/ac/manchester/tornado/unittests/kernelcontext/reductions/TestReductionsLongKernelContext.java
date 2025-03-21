@@ -92,6 +92,25 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         }
     }
 
+    public static void longReductionAddLocalMemory(KernelContext context, LongArray a, LongArray b, int blockDim) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(blockDim);
+        localA[localIdx] = a.get(globalIdx);
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] += localA[localIdx + stride];
+            }
+        }
+        if (localIdx == 0) {
+            b.set(groupID, localA[0]);
+        }
+    }
+
     public static long computeMaxSequential(LongArray input) {
         long acc = 0;
         for (int i = 0; i < input.getSize(); i++) {
@@ -217,7 +236,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
     }
 
     @Test
-    public void testLongReductionsAddLocalMemory() throws TornadoExecutionPlanException {
+    public void testLongReductionsAddLocalMemory01() throws TornadoExecutionPlanException {
         final int size = 1024;
         final int localSize = 256;
         LongArray input = new LongArray(size);
@@ -227,12 +246,49 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("taskGraph.t0", worker);
+        gridScheduler.addWorkerGrid("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddLocalMemory, context, input, reduce) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler) //
+                    .execute();
+        }
+
+        // Final SUM
+        long finalSum = 0;
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum += reduce.get(i);
+        }
+
+        assertEquals(sequential, finalSum, 0);
+    }
+
+    @Test
+    public void testLongReductionsAddLocalMemory02() throws TornadoExecutionPlanException {
+        final int size = 1024;
+        final int localSize = 256;
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
+        long sequential = computeAddSequential(input);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.addWorkerGrid("taskGraph.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsLongKernelContext::longReductionAddLocalMemory, context, input, reduce, localSize) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);

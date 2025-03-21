@@ -21,31 +21,68 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Class to store the thread grid configuration for a specific task in a Task-Graph.
+ */
 public class GridScheduler {
 
     private final ConcurrentHashMap<String, WorkerGrid> gridTaskMap;
 
+    /**
+     * Creates a new GridScheduler object with an empty grid task map.
+     */
     public GridScheduler() {
         gridTaskMap = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Creates a new GridScheduler with a specific task name and WorkerGrid. Task names must be unique
+     * for the whole execution plan that the grid scheduler will be attached to.
+     * 
+     * @param taskName
+     * @param workerGrid
+     */
     public GridScheduler(String taskName, WorkerGrid workerGrid) {
         gridTaskMap = new ConcurrentHashMap<>();
         gridTaskMap.put(taskName, workerGrid);
     }
 
-    public void setWorkerGrid(String taskName, WorkerGrid workerGrid) {
+    /**
+     * Adds a new WorkerGrid object to the grid scheduler for a specific task.
+     * 
+     * @param taskName
+     * @param workerGrid
+     * @since v1.1.0
+     */
+    public void addWorkerGrid(String taskName, WorkerGrid workerGrid) {
         gridTaskMap.put(taskName, workerGrid);
     }
 
+    /**
+     * Returns the WorkerGrid object associated with a given task name.
+     * 
+     * @param taskName
+     * @return
+     */
     public WorkerGrid get(String taskName) {
         return gridTaskMap.get(taskName);
     }
 
+    /**
+     * Checks if the grid scheduler contains a specific worker grid for a task.
+     *
+     * @param taskName
+     * @return boolean
+     */
     public boolean contains(String taskScheduleName, String taskName) {
         return gridTaskMap.containsKey(taskScheduleName + "." + taskName);
     }
 
+    /**
+     * It returns all task names associated with a grid scheduler.
+     * 
+     * @return
+     */
     public Set<String> keySet() {
         return gridTaskMap.keySet();
     }

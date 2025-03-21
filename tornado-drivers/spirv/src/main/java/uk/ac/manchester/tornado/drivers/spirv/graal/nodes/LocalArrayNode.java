@@ -30,8 +30,8 @@ import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -56,19 +56,19 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
     public static final NodeClass<LocalArrayNode> TYPE = NodeClass.create(LocalArrayNode.class);
 
     @Input
-    protected ConstantNode length;
+    protected ValueNode length;
 
     protected SPIRVArchitecture.SPIRVMemoryBase memoryBase;
     protected SPIRVKind elementKind;
 
-    public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
+    public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ValueNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryBase = memoryBase;
         this.length = length;
         this.elementKind = SPIRVKind.fromJavaKind(elementType.getJavaKind());
     }
 
-    public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, JavaKind elementType, ConstantNode length) {
+    public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, JavaKind elementType, ValueNode length) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.memoryBase = memoryBase;
         this.length = length;
@@ -79,7 +79,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         return memoryBase;
     }
 
-    public ConstantNode getLength() {
+    public ValueNode getLength() {
         return length;
     }
 

@@ -120,7 +120,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * If the {@code TornadoExecutionPlan} consists of multiple task-graphs, this function
      * updates the access type of the input and output data of each task-graph, as necessary.
      *
-     * @param immutableTaskGraphs The list of the immutable task-graphs in the {@code TornadoExecutionPlan}
+     * @param immutableTaskGraphs
+     *     The list of the immutable task-graphs in the {@code TornadoExecutionPlan}
      */
     private void updateAccess(ImmutableTaskGraph... immutableTaskGraphs) {
         if (immutableTaskGraphs.length > 1) {
@@ -196,6 +197,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withGraph(int graphIndex) {
         tornadoExecutor.selectGraph(graphIndex);
+        if (executionFrame.getGridScheduler() != null) {
+            tornadoExecutor.withGridScheduler(executionFrame.getGridScheduler());
+        }
         return new WithGraph(this, graphIndex);
     }
 
@@ -343,6 +347,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         tornadoExecutor.withGridScheduler(gridScheduler);
+        executionFrame.setGridScheduler(gridScheduler);
         return new WithGridScheduler(this, gridScheduler);
     }
 
@@ -367,7 +372,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
-        executionFrame.withPolicy(policy).withMode(mode);
+        executionFrame.setPolicy(policy).setMode(mode);
         return new WithDynamicReconfiguration(this, policy, mode);
     }
 
@@ -396,7 +401,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
-        executionFrame.withProfilerOn(profilerMode);
+        executionFrame.setProfilerMode(profilerMode);
         return new WithProfiler(this, profilerMode);
     }
 
@@ -406,7 +411,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withoutProfiler() {
-        executionFrame.withProfilerOff();
+        executionFrame.setProfilerOff();
         return new OffProfiler(this);
     }
 

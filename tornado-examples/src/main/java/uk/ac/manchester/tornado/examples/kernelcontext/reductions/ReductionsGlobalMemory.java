@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -24,10 +26,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-
-import java.util.stream.IntStream;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * <p>
@@ -83,7 +83,7 @@ public class ReductionsGlobalMemory {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.addWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //

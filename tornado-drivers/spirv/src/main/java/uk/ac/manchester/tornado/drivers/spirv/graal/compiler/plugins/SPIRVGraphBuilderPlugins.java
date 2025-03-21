@@ -190,8 +190,7 @@ public class SPIRVGraphBuilderPlugins {
         r.register(new InvocationPlugin(method, InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, constantNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }

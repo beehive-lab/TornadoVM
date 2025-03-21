@@ -59,7 +59,6 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == kind.getBitCount();
         this.operation = op;
     }
-    // @formatter:on
 
     public static ValueNode create(ValueNode value, SPIRVUnaryOperation op, JavaKind kind) {
         ValueNode c = tryConstantFold(value, op, kind);
@@ -84,10 +83,28 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         return result;
     }
 
+    private static double computeAcosh(double value) {
+        return Math.log(value + Math.sqrt(value * value - 1));
+    }
+
+    private static float computeAcosh(float value) {
+        return (float) Math.log(value + Math.sqrt(value * value - 1));
+    }
+
+    private static double computeAsinh(double value) {
+        return Math.log(value + Math.sqrt(value * value + 1));
+    }
+
+    private static float computeAsinh(float value) {
+        return (float) Math.log(value + Math.sqrt(value * value + 1));
+    }
+
     private static double doCompute(double value, SPIRVUnaryOperation op) {
         return switch (op) {
-            case ASIN -> Math.asin(value);
             case ACOS -> Math.acos(value);
+            case ACOSH -> computeAcosh(value);
+            case ASIN -> Math.asin(value);
+            case ASINH -> computeAsinh(value);
             case FABS -> Math.abs(value);
             case EXP -> Math.exp(value);
             case SQRT -> Math.sqrt(value);
@@ -102,8 +119,10 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
 
     private static float doCompute(float value, SPIRVUnaryOperation op) {
         return switch (op) {
-            case ASIN -> (float) Math.asin(value);
             case ACOS -> (float) Math.acos(value);
+            case ACOSH -> computeAcosh(value);
+            case ASIN -> (float) Math.asin(value);
+            case ASINH -> computeAsinh(value);
             case FABS -> Math.abs(value);
             case EXP -> (float) Math.exp(value);
             case SQRT -> (float) Math.sqrt(value);
@@ -140,12 +159,13 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-
         SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGen).getGen().getSpirvBuiltinTool();
         Value input = builder.operand(getValue());
         Value result = switch (operation()) {
-            case ASIN -> gen.genFloatASin(input);
             case ACOS -> gen.genFloatACos(input);
+            case ACOSH -> gen.genFloatACosh(input);
+            case ASIN -> gen.genFloatASin(input);
+            case ASINH -> gen.genFloatASinh(input);
             case CEIL -> gen.genFloatCeil(input);
             case FABS -> gen.genFloatAbs(input);
             case EXP -> gen.genFloatExp(input);

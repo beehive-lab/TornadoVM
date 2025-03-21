@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-public class CUDAXPUBuffer implements XPUBuffer {
+public class CUDAFieldBuffer implements XPUBuffer {
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
     private final Class<?> type;
@@ -72,7 +72,7 @@ public class CUDAXPUBuffer implements XPUBuffer {
     private final TornadoLogger logger;
     private Access access;
 
-    public CUDAXPUBuffer(final PTXDeviceContext device, Object object, Access access) {
+    public CUDAFieldBuffer(final PTXDeviceContext device, Object object, Access access) {
         this.type = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
@@ -139,7 +139,7 @@ public class CUDAXPUBuffer implements XPUBuffer {
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new CUDAXPUBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
+                wrappedField = new CUDAFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
             }
 
             if (wrappedField != null) {

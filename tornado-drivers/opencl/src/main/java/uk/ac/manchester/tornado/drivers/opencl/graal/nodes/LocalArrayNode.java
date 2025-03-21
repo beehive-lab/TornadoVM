@@ -29,8 +29,8 @@ import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -51,12 +51,12 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
     public static final NodeClass<LocalArrayNode> TYPE = NodeClass.create(LocalArrayNode.class);
 
     @Input
-    protected ConstantNode length;
+    protected ValueNode length;
     protected OCLArchitecture.OCLMemoryBase memoryRegister;
     protected OCLAssembler.OCLBinaryTemplate arrayTemplate;
     private OCLKind kind;
 
-    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ValueNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
@@ -64,7 +64,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
     }
 
-    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementKind, ConstantNode length) {
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementKind, ValueNode length) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.memoryRegister = memoryRegister;
         this.length = length;
@@ -76,7 +76,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         return memoryRegister;
     }
 
-    public ConstantNode getLength() {
+    public ValueNode getLength() {
         return length;
     }
 

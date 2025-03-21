@@ -25,6 +25,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -103,6 +104,31 @@ public class CodeGenTest extends TornadoTestBase {
             a.set(i, a.get(i) + 5);
         }
         a.set(0, 0);
+    }
+
+    public static void testLocalMemoryAllocation(KernelContext context, int localWorkGroupSize) {
+        int threadId = context.localIdx;  // Thread ID within work group
+        int blockDim = context.localGroupSizeX;  // Work group size
+
+        // Allocate local memory
+        float[] localArray = context.allocateFloatLocalArray(localWorkGroupSize);
+
+        // Initialize local memory with threadId (for testing purposes)
+        localArray[threadId] = threadId;
+
+        // Synchronize threads
+        context.localBarrier();
+
+        // Simple operation to validate memory access
+        if (threadId == 0) {
+            float sum = 0.0f;
+            for (int i = 0; i < blockDim; i++) {
+                sum += localArray[i];
+            }
+        }
+
+        // Synchronize again before exiting
+        context.localBarrier();
     }
 
     @Test
@@ -198,6 +224,20 @@ public class CodeGenTest extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(serial.get(i), a.get(i));
+        }
+    }
+
+    @Test
+    public void test06() throws TornadoExecutionPlanException {
+        KernelContext context = new KernelContext();
+        int localWorkGroupSize = 256;
+
+        TaskGraph taskGraph = new TaskGraph("localMemoryAllocation") //
+                .task("task", CodeGenTest::testLocalMemoryAllocation, context, localWorkGroupSize);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
         }
     }
 

@@ -33,8 +33,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-public class AtomicsBuffer implements XPUBuffer {
+public class OCLAtomicsBuffer implements XPUBuffer {
 
     private int[] atomicsList;
     private static final int OFFSET = 0;
@@ -42,9 +43,9 @@ public class AtomicsBuffer implements XPUBuffer {
     private long setSubRegionSize;
     private Access access;
 
-    private static final TornadoLogger logger = new TornadoLogger(AtomicsBuffer.class);
+    private static final TornadoLogger logger = new TornadoLogger(OCLAtomicsBuffer.class);
 
-    public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext, Access access) {
+    public OCLAtomicsBuffer(int[] arr, OCLDeviceContext deviceContext, Access access) {
         this.deviceContext = deviceContext;
         this.atomicsList = arr;
         this.access = access;
@@ -142,8 +143,13 @@ public class AtomicsBuffer implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        deviceContext.getMemoryManager().deallocateAtomicRegion();
-        return OCLMemoryManager.atomicRegionSize();
+        // Do not deallocate the global area for atomics by default since all
+        // atomics go to the same area
+        if (TornadoOptions.cleanUpAtomicsSpace()) {
+            deviceContext.getMemoryManager().deallocateAtomicRegion();
+            return OCLMemoryManager.atomicRegionSize();
+        }
+        return 0;
     }
 
 }

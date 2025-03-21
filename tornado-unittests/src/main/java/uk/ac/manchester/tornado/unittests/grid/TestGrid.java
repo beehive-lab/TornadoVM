@@ -199,7 +199,7 @@ public class TestGrid extends TornadoTestBase {
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
-        gridScheduler.setWorkerGrid("s0.t1", worker); // share the same worker
+        gridScheduler.addWorkerGrid("s0.t1", worker); // share the same worker
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
             executor.withGridScheduler(gridScheduler) //
