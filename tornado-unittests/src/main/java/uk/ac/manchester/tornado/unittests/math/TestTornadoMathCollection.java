@@ -1314,8 +1314,6 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     @Test
     public void testMathASinh() throws TornadoExecutionPlanException {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         FloatArray a = new FloatArray(size);
         FloatArray seqA = new FloatArray(size);
