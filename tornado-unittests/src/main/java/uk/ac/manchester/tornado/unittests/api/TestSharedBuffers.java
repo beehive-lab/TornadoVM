@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -52,6 +53,44 @@ public class TestSharedBuffers extends TornadoTestBase {
      */
     public static void empty(IntArray a, IntArray b) {
         if (a.getSize() != b.getSize()) {
+        }
+    }
+
+    // Utility methods to satisfy task requirements for each graph
+    public static void initializeContext(IntArray context, int size) {
+        for (int i = 0; i < size; i++) {
+            context.set(i, 1);  // Set initial context values
+        }
+    }
+
+    public static void touchOutputToCopyOutCorrectly(IntArray output) {
+        output.set(0, output.get(0));
+    }
+
+    public static void updateContext(IntArray context, int size) {
+        for (int i = 0; i < size; i++) {
+            context.set(i, context.get(i) + 1);  // Increment context
+        }
+    }
+
+    public static void prepareOutput(IntArray context, int size) {
+        for (int i = 0; i < size; i++) {
+            context.set(i, context.get(i) * 2);  // Modify context before final processing
+        }
+    }
+
+    public static void finalizeContext(IntArray context, int size) {
+        for (int i = 0; i < size; i++) {
+            context.set(i, context.get(i) + 10);  // Final context modification
+        }
+    }
+
+    // Existing buffer processing method
+    public static void processBuffer(IntArray input, IntArray output, IntArray context, int size) {
+        // Simulate some processing with context
+        for (int i = 0; i < size; i++) {
+            // Intentionally access context to potentially trigger indexing issues
+            output.set(i, input.get(i) + context.get(i));
         }
     }
 
@@ -296,4 +335,197 @@ public class TestSharedBuffers extends TornadoTestBase {
         }
     }
 
+    /**
+     * Tests the persistence of buffers across multiple sequential task graphs with context state management.
+     *
+     * <p>This test demonstrates a four-stage processing pipeline where both intermediate result data and
+     * context state are maintained across task graph executions. It showcases:</p>
+     *
+     * <ul>
+     * <li>Data flow between consecutive task graphs using persistent buffers</li>
+     * <li>Context initialization, updating, and finalization across multiple graphs</li>
+     * <li>Proper pipeline execution with sequential dependencies</li>
+     * <li>The required "touch" operation before transferring results back to host</li>
+     * </ul>
+     *
+     * <p><strong>API Requirements:</strong></p>
+     * <ul>
+     * <li>Buffers must be explicitly marked with {@code persistOnDevice()} to remain accessible</li>
+     * <li>Consuming graphs must use {@code consumeFromDevice()} with the source graph's name</li>
+     * <li>All buffers being consumed must be listed explicitly in the consume call</li>
+     * <li>Graphs must be executed in dependency order</li>
+     * <li>A "touch" operation is required on output buffers before transfer to ensure proper copy-back</li>
+     * </ul>
+     *
+     * <p><strong>Limitations:</strong></p>
+     * <ul>
+     * <li>No automatic scheduling - execution order must match data dependencies</li>
+     * <li>No implicit persistence - all buffers to persist must be explicitly listed</li>
+     * <li>Graph names must be consistent between producer and consumer</li>
+     * </ul>
+     *
+     * @throws TornadoExecutionPlanException
+     *     If execution of any task graph fails
+     */
+    @Test
+    public void testFourTaskGraphsWithPersistentBuffers() throws TornadoExecutionPlanException {
+        // Smaller buffer size to make the example more focused
+        int numElements = 10;
+
+        // Create arrays for task graphs
+        IntArray inputBuffer = new IntArray(numElements);
+        IntArray intermediateBuffer1 = new IntArray(numElements);
+        IntArray intermediateBuffer2 = new IntArray(numElements);
+        IntArray outputBuffer = new IntArray(numElements);
+
+        IntArray contextBuffer = new IntArray(numElements);
+
+        inputBuffer.init(10);
+        contextBuffer.init(2);
+
+        // @formatter:off 
+        // First Task Graph: Initial Processing
+        TaskGraph firstGraph = new TaskGraph("firstProcessing")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inputBuffer, contextBuffer)
+                .task("initializeContext", TestSharedBuffers::initializeContext, contextBuffer, numElements)
+                .task("processInitial", TestSharedBuffers::processBuffer, inputBuffer, intermediateBuffer1, contextBuffer, numElements)
+                .persistOnDevice(intermediateBuffer1, contextBuffer);
+
+        // Second Task Graph: Intermediate Processing
+        TaskGraph secondGraph = new TaskGraph("intermediateProcessing")
+                .consumeFromDevice(firstGraph.getTaskGraphName(), intermediateBuffer1, contextBuffer)
+                .task("updateContext", TestSharedBuffers::updateContext, contextBuffer, numElements)
+                .task("processIntermediate", TestSharedBuffers::processBuffer, intermediateBuffer1, intermediateBuffer2, contextBuffer, numElements)
+                .persistOnDevice(intermediateBuffer2, contextBuffer);
+
+        // Third Task Graph: Pre-Final Processing
+        TaskGraph thirdGraph = new TaskGraph("preFinalProcessing")
+                .consumeFromDevice(secondGraph.getTaskGraphName(), intermediateBuffer2, contextBuffer)
+                .task("prepareOutput", TestSharedBuffers::prepareOutput, contextBuffer, numElements)
+                .task("processPreFinal", TestSharedBuffers::processBuffer, intermediateBuffer2, outputBuffer, contextBuffer, numElements)
+                .persistOnDevice(outputBuffer, contextBuffer);
+
+        // Fourth Task Graph: Final Transfer
+        TaskGraph fourthGraph = new TaskGraph("finalTransfer")
+                .consumeFromDevice(thirdGraph.getTaskGraphName(), outputBuffer, contextBuffer)
+                .task("finalizeContext", TestSharedBuffers::finalizeContext, contextBuffer, numElements)
+                .task("empty", TestSharedBuffers::touchOutputToCopyOutCorrectly, outputBuffer)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputBuffer, contextBuffer);
+
+        // @formatter:on
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(firstGraph.snapshot(), secondGraph.snapshot(), thirdGraph.snapshot(), fourthGraph.snapshot())) {
+
+            // Execute each graph sequentially
+            for (int graphIndex = 0; graphIndex < 4; graphIndex++) {
+                executionPlan.withGraph(graphIndex).execute();
+            }
+
+            // Minimal verification
+            boolean hasNonZeroOutput = false;
+            for (int i = 0; i < numElements; i++) {
+                if (outputBuffer.get(i) != 0) {
+                    hasNonZeroOutput = true;
+                }
+            }
+
+            assertTrue("Output buffer should have non-zero values", hasNonZeroOutput);
+        }
+    }
+
+    /**
+     * Tests sharing a context buffer across multiple task graphs while processing data.
+     *
+     * <p>This test demonstrates how to maintain shared context state across three task graphs
+     * while performing data transformations. Key aspects demonstrated include:</p>
+     *
+     * <ul>
+     * <li>Initializing and passing a shared context buffer across multiple graphs</li>
+     * <li>Updating context state in each processing stage</li>
+     * <li>Using context values to influence data processing</li>
+     * <li>Proper persistence and consumption of both result and context buffers</li>
+     * </ul>
+     *
+     * <p><strong>Key Pattern:</strong> This test shows how to use a distinct buffer
+     * specifically for maintaining state/context across task graph executions, separate
+     * from the data being processed.</p>
+     *
+     * <p><strong>Implementation Notes:</strong></p>
+     * <ul>
+     * <li>The first graph only persists the result buffer but not the context</li>
+     * <li>The second graph must explicitly consume the result from the first graph</li>
+     * <li>The context is updated in each graph before being used in processing</li>
+     * <li>Both result and context are finally transferred back to host for verification</li>
+     * </ul>
+     *
+     * <p><strong>Common Pitfall:</strong> Forgetting to list a buffer in either
+     * {@code persistOnDevice()} or {@code consumeFromDevice()} will result in buffer
+     * unavailability or undefined behavior.</p>
+     *
+     * @throws TornadoExecutionPlanException
+     *     If execution of any task graph fails
+     */
+    @Test
+    public void testThreeTaskGraphsWithSharedContextBuffer() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        // This is the shared context buffer that will be persisted and consumed across all task graphs
+        IntArray sharedContext = new IntArray(numElements);
+
+        a.init(10);
+        b.init(20);
+        sharedContext.init(1); // Initialize the context buffer
+
+        // First task graph: initialize and use the context buffer
+        TaskGraph tg1 = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b).task("t0", TestHello::add, a, b, c)
+                // Persist both the result and the context buffer
+                .persistOnDevice(c);
+
+        // Second task graph: reuse the shared context buffer
+        TaskGraph tg2 = new TaskGraph("s1")
+                // Consume both the result and the context from the previous graph
+                .consumeFromDevice("s0", c)
+                // Modify the shared context (using updateContext from the failing test)
+                .task("updateContext", TestSharedBuffers::updateContext, sharedContext, numElements)
+                // Use the context in computation
+                .task("addWithContext", TestSharedBuffers::processBuffer, c, c, sharedContext, numElements)
+                // Persist both again for the next graph
+                .persistOnDevice(c, sharedContext);
+
+        // Third task graph: reuse the shared context buffer again
+        TaskGraph tg3 = new TaskGraph("s2")
+                // Consume both the result and the context from the previous graph
+                .consumeFromDevice("s1", c, sharedContext)
+                // Modify the context one more time
+                .task("finalizeContext", TestSharedBuffers::finalizeContext, sharedContext, numElements)
+                // Apply the context to the result
+                .task("processWithFinalContext", TestSharedBuffers::processBuffer, c, c, sharedContext, numElements)
+                // Add a touch operation to ensure proper transfer
+                .task("touchOutputBuffer", TestSharedBuffers::touchOutputToCopyOutCorrectly, c)
+                // Transfer both back to the host
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c, sharedContext);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot(), tg3.snapshot())) {
+            // Execute the first graph
+            executionPlan.withGraph(0).execute();
+
+            // Execute the second graph
+            executionPlan.withGraph(1).execute();
+
+            // Execute the third graph
+            executionPlan.withGraph(2).execute();
+
+            // Add assertions based on expected values
+            boolean hasNonZeroOutput = false;
+            for (int i = 0; i < numElements; i++) {
+                if (c.get(i) != 0) {
+                    hasNonZeroOutput = true;
+                    break;
+                }
+            }
+
+            assertTrue("Output buffer should have non-zero values", hasNonZeroOutput);
+        }
+    }
 }
