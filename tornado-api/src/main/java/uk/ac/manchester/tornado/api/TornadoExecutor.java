@@ -190,7 +190,8 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withThreadInfo);
     }
 
-    List<Object> getOutputs() { List<Object> outputs = new ArrayList<>();
+    List<Object> getOutputs() {
+        List<Object> outputs = new ArrayList<>();
         immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
         return outputs;
     }
@@ -236,20 +237,17 @@ class TornadoExecutor {
     /**
      * Processes the persistent states of a specified subgraph.
      *
-     * @param graphIndex The index of the subgraph to process.
+     * @param graphIndex
+     *     The index of the subgraph to process.
      */
     private void processPersistentStates(int graphIndex) {
         // Validate that the graphIndex is within bounds of subgraphList
         if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
-             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
+            throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
         }
 
         // Retrieve the list of persisted task names from the specified subgraph
-        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex)
-                .getTaskGraph()
-                .taskGraphImpl
-                .getPersistedTaskToObjectsMap()
-                .keySet());
+        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex).getTaskGraph().taskGraphImpl.getPersistedTaskToObjectsMap().keySet());
 
         // Determine the safe iteration limit to avoid IndexOutOfBoundsException
         int limit = Math.min(graphIndex, namesList.size());
@@ -260,7 +258,6 @@ class TornadoExecutor {
             subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
         }
     }
-
 
     private ImmutableTaskGraph getGraph(int graphIndex) {
         if (graphIndex < immutableTaskGraphList.size()) {
