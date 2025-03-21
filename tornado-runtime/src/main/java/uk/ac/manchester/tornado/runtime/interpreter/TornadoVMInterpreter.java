@@ -465,38 +465,31 @@ public class TornadoVMInterpreter {
                 allocCounter++;
             } else {
                 XPUDeviceBufferState state = resolveObjectState(arg);
-                // Add null check before accessing XPUBuffer's size
-                if (state != null && state.getXPUBuffer() != null) {
-                    preAllocatedSizes += state.getXPUBuffer().size();
-                }
+                preAllocatedSizes += state.getXPUBuffer().size();
             }
         }
 
         // total size of objects pre-allocated and current allocation
         long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses) + preAllocatedSizes;
 
-        // Dump printing after object allocation
+        // Dump printing after object allocation, so the XPU-Buffer is created,
+        // and we can query the size without having to use Java type analysis
+        // to obtain the size at this point. 
         if (TornadoOptions.PRINT_BYTECODES) {
             int objIndex = 0;
             for (XPUDeviceBufferState state : objectStates) {
-                // Add null check here too
-                if (state != null && state.getXPUBuffer() != null) {
-                    long size = state.getXPUBuffer().size();
-                    DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
-                }
+                long size = state.getXPUBuffer().size();
+                DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
                 objIndex++;
             }
         }
 
         graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
-        // Register allocations values in the profiler only if enabled
+        // Register allocations values in the profiler only if the profiler is enabled
         if (TornadoOptions.isProfilerEnabled()) {
             for (XPUDeviceBufferState objectState : objectStates) {
-                // Add null check here as well
-                if (objectState != null && objectState.getXPUBuffer() != null) {
-                    timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
-                }
+                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
             }
         }
         return -1;
