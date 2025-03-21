@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -61,7 +61,7 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatASinh(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: asinh(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASIN, LIRKind.value(input.getPlatformKind()), input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASINH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatASinpi(Value input) {
@@ -112,7 +112,6 @@ public class SPIRVBuiltinTool {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: cosh(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.COSH, LIRKind.value(input.getPlatformKind()), input);
     }
-
 
     public Value genFloatErfc(Value input) {
         unimplemented();

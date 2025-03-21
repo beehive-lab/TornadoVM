@@ -35,7 +35,9 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.CLAMP;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ABS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ACOS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ACOSH;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ASIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ASINH;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.CEIL;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.COS;
@@ -74,8 +76,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatACosh(Value input) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genAcosh: acosh(%s)", input);
+        return new OCLUnary.Intrinsic(ACOSH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatACospi(Value input) {
@@ -89,8 +91,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatASinh(Value input) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genAsinh: asinh(%s)", input);
+        return new OCLUnary.Intrinsic(ASINH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatASinpi(Value input) {

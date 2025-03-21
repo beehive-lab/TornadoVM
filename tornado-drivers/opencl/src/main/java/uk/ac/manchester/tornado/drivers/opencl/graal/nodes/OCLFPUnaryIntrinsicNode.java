@@ -84,10 +84,28 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         return result;
     }
 
+    private static double computeAcosh(double value) {
+        return Math.log(value + Math.sqrt(value * value - 1));
+    }
+
+    private static float computeAcosh(float value) {
+        return (float) Math.log(value + Math.sqrt(value * value - 1));
+    }
+
+    private static double computeAsinh(double value) {
+        return Math.log(value + Math.sqrt(value * value + 1));
+    }
+
+    private static float computeAsinh(float value) {
+        return (float) Math.log(value + Math.sqrt(value * value + 1));
+    }
+
     private static double doCompute(double value, Operation op) {
         return switch (op) {
             case ASIN -> Math.asin(value);
+            case ASINH -> computeAsinh(value);
             case ACOS -> Math.acos(value);
+            case ACOSH -> computeAcosh(value);
             case FABS -> Math.abs(value);
             case EXP -> Math.exp(value);
             case SQRT -> Math.sqrt(value);
@@ -101,7 +119,9 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     private static float doCompute(float value, Operation op) {
         return switch (op) {
             case ASIN -> (float) Math.asin(value);
+            case ASINH -> computeAsinh(value);
             case ACOS -> (float) Math.acos(value);
+            case ACOSH -> computeAcosh(value);
             case FABS -> Math.abs(value);
             case EXP -> (float) Math.exp(value);
             case SQRT -> (float) Math.sqrt(value);
@@ -138,7 +158,9 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
         Value input = builder.operand(getValue());
         Value result = switch (operation()) {
+            case ACOSH -> gen.genFloatACosh(input);
             case ASIN -> gen.genFloatASin(input);
+            case ASINH -> gen.genFloatASinh(input);
             case ACOS -> gen.genFloatACos(input);
             case ATAN -> gen.genFloatATan(input);
             case CEIL -> gen.genFloatCeil(input);
