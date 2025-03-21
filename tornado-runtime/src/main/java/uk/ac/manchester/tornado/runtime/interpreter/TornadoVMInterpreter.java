@@ -418,17 +418,40 @@ public class TornadoVMInterpreter {
         if (graphExecutionContext == null || object == null) {
             return false;
         }
-
         return graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).anyMatch(taskObjects -> taskObjects.contains(object));
     }
 
-    private int executeAlloc(StringBuilder logBuilder, int[] args, long sizeBatch) {
-        final int persistentObjects = graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).mapToInt(List::size).sum();
+    /**
+     * Counts and classifies objects in the args array by determining which objects are persistent
+     * and which need to be allocated.
+     *
+     * @param args
+     *     Array of object indices to process from the object store
+     * @return Information about objects to allocate including counts of persistent and non-persistent objects
+     */
+    private ObjectAllocationInfo countAndClassifyObjects(int[] args) {
+        // Count only persistent objects that are actually in the current args array
+        int persistentObjectsInArgs = 0;
+        for (int arg : args) {
+            Object dataObject = this.objects.get(arg);
+            if (isPersistentObject(dataObject)) {
+                persistentObjectsInArgs++;
+            }
+        }
 
-        int objectsToAlloc = args.length - persistentObjects; // alloc is only performed on new objects
-        Object[] objects = new Object[objectsToAlloc];
-        Access[] accesses = new Access[objectsToAlloc];
-        XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[objectsToAlloc];
+        // Calculate allocation based on non-persistent objects in args
+        int objectsToAlloc = args.length - persistentObjectsInArgs;
+
+        return new ObjectAllocationInfo(persistentObjectsInArgs, objectsToAlloc);
+    }
+
+    private int executeAlloc(StringBuilder logBuilder, int[] args, long sizeBatch) {
+        // Extract the counting and classification of objects into a separate method
+        ObjectAllocationInfo allocationInfo = countAndClassifyObjects(args);
+
+        Object[] objects = new Object[allocationInfo.objectsToAlloc];
+        Access[] accesses = new Access[allocationInfo.objectsToAlloc];
+        XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[allocationInfo.objectsToAlloc];
 
         int allocCounter = 0;
         long preAllocatedSizes = 0L;
@@ -441,31 +464,39 @@ public class TornadoVMInterpreter {
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
                 allocCounter++;
             } else {
-                preAllocatedSizes += resolveObjectState(arg).getXPUBuffer().size();
+                XPUDeviceBufferState state = resolveObjectState(arg);
+                // Add null check before accessing XPUBuffer's size
+                if (state != null && state.getXPUBuffer() != null) {
+                    preAllocatedSizes += state.getXPUBuffer().size();
+                }
             }
         }
 
         // total size of objects pre-allocated and current allocation
         long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses) + preAllocatedSizes;
 
-        // Dump printing after object allocation, so the XPU-Buffer is created,
-        // and we can query the size without having to use Java type analysis
-        // to obtain the size at this point. 
+        // Dump printing after object allocation
         if (TornadoOptions.PRINT_BYTECODES) {
             int objIndex = 0;
             for (XPUDeviceBufferState state : objectStates) {
-                long size = state.getXPUBuffer().size();
-                DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
+                // Add null check here too
+                if (state != null && state.getXPUBuffer() != null) {
+                    long size = state.getXPUBuffer().size();
+                    DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
+                }
                 objIndex++;
             }
         }
 
         graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
-        // Register allocations values in the profiler only if the profiler is enabled
+        // Register allocations values in the profiler only if enabled
         if (TornadoOptions.isProfilerEnabled()) {
             for (XPUDeviceBufferState objectState : objectStates) {
-                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                // Add null check here as well
+                if (objectState != null && objectState.getXPUBuffer() != null) {
+                    timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                }
             }
         }
         return -1;
@@ -792,13 +823,13 @@ public class TornadoVMInterpreter {
 
                 final DataObjectState globalState = resolveGlobalObjectState(argIndex);
                 final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
-
                 if (!isObjectInAtomicRegion(objectState, interpreterDevice, task)) {
                     // Add a reference (arrays, vector types, panama regions)
                     stackFrame.addCallArgument(objectState.getXPUBuffer().toBuffer(), true);
                 } else {
                     atomicsArray = interpreterDevice.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                 }
+
             } else {
                 TornadoInternalError.shouldNotReachHere();
             }
@@ -948,6 +979,29 @@ public class TornadoVMInterpreter {
 
     public void clearInstalledCode() {
         Arrays.fill(installedCodes, null);
+    }
+
+    /**
+     * Container class that holds information about object allocation counts.
+     * Used to track the number of persistent objects and the number of objects
+     * that need to be allocated.
+     */
+    private static class ObjectAllocationInfo {
+        final int persistentObjectCount;
+        final int objectsToAlloc;
+
+        /**
+         * Creates a new object allocation information container.
+         *
+         * @param persistentObjectCount
+         *     Number of persistent objects that don't need allocation
+         * @param objectsToAlloc
+         *     Number of objects that need to be allocated
+         */
+        ObjectAllocationInfo(int persistentObjectCount, int objectsToAlloc) {
+            this.persistentObjectCount = persistentObjectCount;
+            this.objectsToAlloc = objectsToAlloc;
+        }
     }
 
     private static class XPUExecutionFrame {
