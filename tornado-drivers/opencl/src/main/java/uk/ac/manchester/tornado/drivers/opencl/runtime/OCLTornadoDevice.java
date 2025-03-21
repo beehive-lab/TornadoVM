@@ -595,7 +595,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
 
     private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState, Access access) {
         final XPUBuffer buffer;
-        TornadoInternalError.guarantee(deviceObjectState.isAtomicRegionPresent() || !deviceObjectState.hasObjectBuffer(), "A device memory leak might be occurring.");
+        TornadoInternalError.guarantee(deviceObjectState.isAtomicRegionPresent() || !deviceObjectState.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize, access);
         deviceObjectState.setXPUBuffer(buffer);
         buffer.allocate(object, batchSize, access);
