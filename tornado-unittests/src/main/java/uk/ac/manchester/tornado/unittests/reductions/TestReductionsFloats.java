@@ -248,6 +248,14 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
+    private static void sumSquareReduce(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 1.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + (input.get(i) * input.get(i)));
+        }
+    }
+
+
     private static void computeSum(final FloatArray values, @Reduce FloatArray result) {
         result.set(0, 0.0f);
         for (@Parallel int i = 0; i < values.getSize(); i++) {
@@ -315,6 +323,38 @@ public class TestReductionsFloats extends TornadoTestBase {
         FloatArray sequential = new FloatArray(1);
         sequential.init(1.0f);
         multiplyFloats(input, sequential);
+
+        // Check result
+        assertEquals(sequential.get(0), result.get(0), 0.1f);
+    }
+
+    @Test
+    public void testReduceSumSquares() throws TornadoExecutionPlanException {
+        FloatArray input = new FloatArray(SIZE);
+        FloatArray result = new FloatArray(1);
+        final int neutral = 1;
+        result.init(neutral);
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            input.set(i, 1.0f);
+        });
+
+        input.set(10, r.nextFloat());
+        input.set(12, r.nextFloat());
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsFloats::sumSquareReduce, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.execute();
+        }
+
+        FloatArray sequential = new FloatArray(1);
+        sequential.init(1.0f);
+        sumSquareReduce(input, sequential);
 
         // Check result
         assertEquals(sequential.get(0), result.get(0), 0.1f);
