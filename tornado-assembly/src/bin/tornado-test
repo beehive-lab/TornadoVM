@@ -600,7 +600,7 @@ def runTests(args):
         command = appendTestRunnerClassToCmd(cmd, args)
         command = command + " --params \"" + args.testClass + "\""
         print(command)
-        if (args.fast):
+        if (args.live_mode):
             os.system(command)
         else:
             runSingleCommand(command, args)
@@ -610,7 +610,7 @@ def runTests(args):
         end = time.time()
         print(Colors.CYAN)
 
-        if not args.fast and args.verbose:
+        if not args.live_mode and args.verbose:
             print(Colors.GREEN)
             print("==================================================")
             print(Colors.BLUE + "              Unit tests report " + Colors.GREEN)
@@ -667,11 +667,11 @@ def runTestTheWorld(options, args):
             for testMethod in t.testMethods:
                 testMethodCmd = command + "#" + testMethod + "\""
                 print(testMethodCmd)
-                if (args.fast):
+                if (args.live_mode):
                     os.system(testMethodCmd)
                 else:
                     stats, failedTests, segFaults = runCommandWithStats(testMethodCmd, stats, failedTests, segFaults, t.monitorClass)
-        elif (args.fast):
+        elif (args.live_mode):
             command += "\""
             os.system(command)
         else:
@@ -740,7 +740,7 @@ def parseArguments():
                         help="Enable the Debug mode in Tornado")
     parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False,
                         help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
-    parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
+    parser.add_argument('--live', "-l", action="store_true", dest="live_mode", default=False, help="Visualize output in live mode (no wait)")
     parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
                         help="Quick pass without stress memory and output for logs in a file.")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
