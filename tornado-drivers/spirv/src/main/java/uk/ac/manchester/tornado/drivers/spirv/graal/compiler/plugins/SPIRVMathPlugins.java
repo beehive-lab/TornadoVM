@@ -73,6 +73,22 @@ public class SPIRVMathPlugins {
 
     private static void registerFloatMath1Plugins(InvocationPlugins.Registration r, Class<?> type, JavaKind kind) {
 
+        r.register(new InvocationPlugin("acosh", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.ACOSH, kind)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("asinh", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.ASINH, kind)));
+                return true;
+            }
+        });
+
         r.register(new InvocationPlugin("sqrt", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {

@@ -653,8 +653,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
-        List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap()
-                .get(graphSrc.taskGraphName);
+        List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
         for (Object objectToSync : objectsToSync) {
             Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
@@ -667,14 +666,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             Access objectAccessDest = Access.READ_WRITE;
             LocalObjectState localStateDest = executionContext.getLocalStateObject(objectToSync, objectAccessDest);
-
             if (localStateDest == null) {
                 continue;
-//                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not a persistent object in the task graph " + taskGraphSrc.getTaskGraphName());
             }
-
             if (!graphSrc.meta().getXPUDevice().equals(executionContext.meta().getXPUDevice())) {
-                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta().getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
+                throw new TornadoRuntimeException("[ERROR] Object " + objectsToSync + " is not on the same device pesisted and consumed: " + graphSrc.meta()
+                        .getXPUDevice() + " " + " vs " + executionContext.meta().getXPUDevice());
             }
 
             DataObjectState dataObjectStateDest = localStateDest.getDataObjectState();
@@ -1677,12 +1674,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void checkGridSchedulerNames() {
         Set<String> gridTaskNames = gridScheduler.keySet();
-        for (String gridName : gridTaskNames) {
-            if (!isTaskNamePresent(gridName)) {
-                throw new TornadoRuntimeException("[ERROR] Grid scheduler with name " + gridName + " not found in the Task-Graph");
-            }
+        boolean found = gridTaskNames.stream().anyMatch(this::isTaskNamePresent);
+        if (!found) {
+            throw new TornadoRuntimeException("[ERROR] Grid scheduler names: " + gridTaskNames + " -> not found in the Task-Graph");
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -2637,12 +2632,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return profilerMode;
     }
 
+    public record Tuple2(int threadWinnerIndex, Thread join) {
+    }
+
     // Timer implementation within the Task Schedule
     private interface Timer {
         long time();
-    }
-
-    public record Tuple2(int threadWinnerIndex, Thread join) {
     }
 
     private static class MilliSecTimer implements Timer {

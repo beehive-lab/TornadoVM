@@ -38,12 +38,13 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
 public class OCLMemoryManager implements TornadoMemoryProvider {
 
-    private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
+    private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 32;
     private static final int INTEGER_BYTES_SIZE = 4;
     private final OCLDeviceContext deviceContext;
     private Map<Long, OCLKernelStackFrame> oclKernelStackFrame = new ConcurrentHashMap<>();
-    private long constantPointer;
-    private long atomicsRegion = -1;
+    private long constantMemoryPointer;
+    private long NON_EXISTING_ADDRESS = -1;
+    private long atomicsRegionPointer = -1;
 
     public OCLMemoryManager(final OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -71,14 +72,14 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
     }
 
     public XPUBuffer createAtomicsBuffer(final int[] array, Access access) {
-        return new AtomicsBuffer(array, deviceContext, access);
+        return new OCLAtomicsBuffer(array, deviceContext, access);
     }
 
     /**
      * Allocate regions on the device.
      */
     public void allocateDeviceMemoryRegions() {
-        this.constantPointer = createBuffer(4, OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
+        this.constantMemoryPointer = createBuffer(4, OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
         allocateAtomicRegion();
     }
 
@@ -91,24 +92,23 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
     }
 
     long toConstantAddress() {
-        return constantPointer;
+        return constantMemoryPointer;
     }
 
     long toAtomicAddress() {
-        return atomicsRegion;
+        return atomicsRegionPointer;
     }
 
     void allocateAtomicRegion() {
-        if (this.atomicsRegion == -1) {
-            this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
-                    atomicRegionSize()).getBuffer();
+        if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
+            this.atomicsRegionPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, atomicRegionSize()).getBuffer();
         }
     }
 
     void deallocateAtomicRegion() {
-        if (this.atomicsRegion != -1) {
-            deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegion);
-            this.atomicsRegion = -1;
+        if (this.atomicsRegionPointer != NON_EXISTING_ADDRESS) {
+            deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegionPointer);
+            this.atomicsRegionPointer = NON_EXISTING_ADDRESS;
         }
     }
 

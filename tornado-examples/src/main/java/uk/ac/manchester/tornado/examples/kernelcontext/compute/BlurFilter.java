@@ -37,9 +37,9 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course CS344 in Udacity.
@@ -172,8 +172,8 @@ public class BlurFilter {
             long start = System.nanoTime();
             WorkerGrid workerGrid = new WorkerGrid2D(w, h);
             GridScheduler gridScheduler = new GridScheduler("blur.red", workerGrid);
-            gridScheduler.setWorkerGrid("blur.green", workerGrid);
-            gridScheduler.setWorkerGrid("blur.blue", workerGrid);
+            gridScheduler.addWorkerGrid("blur.green", workerGrid);
+            gridScheduler.addWorkerGrid("blur.blue", workerGrid);
             KernelContext context = new KernelContext();
             TaskGraph parallelFilter = new TaskGraph("blur") //
                     .transferToDevice(DataTransferMode.FIRST_EXECUTION, redChannel, greenChannel, blueChannel, filter) //

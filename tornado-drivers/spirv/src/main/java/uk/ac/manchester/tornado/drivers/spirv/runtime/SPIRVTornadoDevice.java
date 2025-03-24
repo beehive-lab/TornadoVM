@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackendImpl;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFieldBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
@@ -68,7 +69,6 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVXPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -304,7 +304,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
                 return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access, nativeArray.getElementSize());
             } else {
                 // Possible a vector type, we encapsulate in an object
-                return new SPIRVXPUBuffer(deviceContext, object, access);
+                return new SPIRVFieldBuffer(deviceContext, object, access);
             }
         }
         return null;
@@ -328,7 +328,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
-        TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+        TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize, access);
         state.setXPUBuffer(buffer);
         buffer.allocate(object, batchSize, access);
@@ -347,7 +347,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
             buffer = createNewBufferAllocation(object, batchSize, state, access);
         }
 
-        if (buffer.getClass() == AtomicsBuffer.class) {
+        if (buffer.getClass() == OCLAtomicsBuffer.class) {
             state.setAtomicRegion();
         }
         return state.getXPUBuffer().size();
@@ -361,7 +361,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
-        if (!TornadoOptions.isReusedBuffersEnabled()) {
+        if (TornadoOptions.isDeallocateBufferEnabled()) {
             deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);

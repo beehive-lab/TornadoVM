@@ -329,12 +329,12 @@ public class TornadoVMInterpreter {
                 final int eventId = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long batchThreads = bytecodeResult.getLong();
-                XPUExecutionFrame info = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
+                XPUExecutionFrame executionFrame = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventId, taskIndex, batchThreads);
                 if (isWarmup) {
                     popArgumentsFromCall(numArgs);
                     continue;
                 }
-                lastEvent = executeLaunch(logBuilder, numArgs, eventId, taskIndex, batchThreads, offset, info);
+                lastEvent = executeLaunch(logBuilder, numArgs, eventId, taskIndex, batchThreads, offset, executionFrame);
             } else if (op == TornadoVMBytecodes.ADD_DEPENDENCY.value()) {
                 final int eventList = bytecodeResult.getInt();
                 if (isWarmup) {
@@ -418,17 +418,40 @@ public class TornadoVMInterpreter {
         if (graphExecutionContext == null || object == null) {
             return false;
         }
-
         return graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).anyMatch(taskObjects -> taskObjects.contains(object));
     }
 
-    private int executeAlloc(StringBuilder logBuilder, int[] args, long sizeBatch) {
-        final int persistentObjects = graphExecutionContext.getPersistedTaskToObjectsMap().values().stream().filter(Objects::nonNull).mapToInt(List::size).sum();
+    /**
+     * Counts and classifies objects in the args array by determining which objects are persistent
+     * and which need to be allocated.
+     *
+     * @param args
+     *     Array of object indices to process from the object store
+     * @return Information about objects to allocate including counts of persistent and non-persistent objects
+     */
+    private ObjectAllocationInfo countAndClassifyObjects(int[] args) {
+        // Count only persistent objects that are actually in the current args array
+        int persistentObjectsInArgs = 0;
+        for (int arg : args) {
+            Object dataObject = this.objects.get(arg);
+            if (isPersistentObject(dataObject)) {
+                persistentObjectsInArgs++;
+            }
+        }
 
-        int objectsToAlloc = args.length - persistentObjects; // alloc is only performed on new objects
-        Object[] objects = new Object[objectsToAlloc];
-        Access[] accesses = new Access[objectsToAlloc];
-        XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[objectsToAlloc];
+        // Calculate allocation based on non-persistent objects in args
+        int objectsToAlloc = args.length - persistentObjectsInArgs;
+
+        return new ObjectAllocationInfo(persistentObjectsInArgs, objectsToAlloc);
+    }
+
+    private int executeAlloc(StringBuilder logBuilder, int[] args, long sizeBatch) {
+        // Extract the counting and classification of objects into a separate method
+        ObjectAllocationInfo allocationInfo = countAndClassifyObjects(args);
+
+        Object[] objects = new Object[allocationInfo.objectsToAlloc];
+        Access[] accesses = new Access[allocationInfo.objectsToAlloc];
+        XPUDeviceBufferState[] objectStates = new XPUDeviceBufferState[allocationInfo.objectsToAlloc];
 
         int allocCounter = 0;
         long preAllocatedSizes = 0L;
@@ -441,7 +464,8 @@ public class TornadoVMInterpreter {
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
                 allocCounter++;
             } else {
-                preAllocatedSizes += resolveObjectState(arg).getXPUBuffer().size();
+                XPUDeviceBufferState state = resolveObjectState(arg);
+                preAllocatedSizes += state.getXPUBuffer().size();
             }
         }
 
@@ -669,7 +693,7 @@ public class TornadoVMInterpreter {
 
         boolean redeployOnDevice = graphExecutionContext.redeployOnDevice();
 
-        final KernelStackFrame callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, kernelStackFrame, interpreterDevice, redeployOnDevice);
+        final KernelStackFrame kernelStackFrame = resolveCallWrapper(callWrapperIndex, numArgs, this.kernelStackFrame, interpreterDevice, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
         final SchedulableTask task = taskExecutionContexts.get(taskIndex);
@@ -729,7 +753,7 @@ public class TornadoVMInterpreter {
                 throw new TornadoBailoutRuntimeException("[Internal Error] Unable to compile " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()));
             }
         }
-        return new XPUExecutionFrame(callWrapper, waitList);
+        return new XPUExecutionFrame(kernelStackFrame, waitList);
     }
 
     private void popArgumentsFromCall(int numArgs) {
@@ -792,13 +816,14 @@ public class TornadoVMInterpreter {
 
                 final DataObjectState globalState = resolveGlobalObjectState(argIndex);
                 final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
-
                 if (!isObjectInAtomicRegion(objectState, interpreterDevice, task)) {
                     // Add a reference (arrays, vector types, panama regions)
                     stackFrame.addCallArgument(objectState.getXPUBuffer().toBuffer(), true);
                 } else {
+                    // Add the atomic buffer
                     atomicsArray = interpreterDevice.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                 }
+
             } else {
                 TornadoInternalError.shouldNotReachHere();
             }
@@ -948,6 +973,17 @@ public class TornadoVMInterpreter {
 
     public void clearInstalledCode() {
         Arrays.fill(installedCodes, null);
+    }
+
+    /**
+     * Container class that holds information about object allocation counts.
+     * Used to track the number of persistent objects and the number of objects
+     * that need to be allocated.
+     *
+     * @param persistentObjectCount Number of persistent objects that don't need allocation
+     * @param objectsToAlloc Number of objects that need to be allocated
+     */
+    public record ObjectAllocationInfo(int persistentObjectCount, int objectsToAlloc) {
     }
 
     private static class XPUExecutionFrame {

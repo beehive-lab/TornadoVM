@@ -246,7 +246,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("taskGraph.t0", worker);
+        gridScheduler.addWorkerGrid("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
@@ -283,7 +283,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("taskGraph.t0", worker);
+        gridScheduler.addWorkerGrid("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //

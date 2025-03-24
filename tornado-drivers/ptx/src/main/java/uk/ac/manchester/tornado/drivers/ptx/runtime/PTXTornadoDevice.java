@@ -69,7 +69,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.ptx.mm.CUDAXPUBuffer;
+import uk.ac.manchester.tornado.drivers.ptx.mm.CUDAFieldBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
@@ -279,7 +279,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             } else if (object instanceof HalfFloatArray) {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S16.getSizeInBytes());
             } else {
-                result = new CUDAXPUBuffer(getDeviceContext(), object, access);
+                result = new CUDAFieldBuffer(getDeviceContext(), object, access);
             }
         }
 
@@ -307,7 +307,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
-            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize, access);
             state.setXPUBuffer(buffer);
             buffer.allocate(object, batchSize, access);
@@ -328,7 +328,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         }
 
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
-        if (!TornadoOptions.isReusedBuffersEnabled()) {
+        if (TornadoOptions.isDeallocateBufferEnabled()) {
             deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);

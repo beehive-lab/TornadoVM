@@ -220,9 +220,9 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s02.t0", worker);
-        gridScheduler.setWorkerGrid("s02.t1", worker);
-        gridScheduler.setWorkerGrid("s02.t2", worker);
+        gridScheduler.addWorkerGrid("s02.t0", worker);
+        gridScheduler.addWorkerGrid("s02.t1", worker);
+        gridScheduler.addWorkerGrid("s02.t2", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s02") //
@@ -265,8 +265,8 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s03.t1", worker);
-        gridScheduler.setWorkerGrid("s03.t2", worker);
+        gridScheduler.addWorkerGrid("s03.t1", worker);
+        gridScheduler.addWorkerGrid("s03.t2", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s03") //
@@ -309,8 +309,8 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s04.t0", worker);
-        gridScheduler.setWorkerGrid("s04.t1", worker);
+        gridScheduler.addWorkerGrid("s04.t0", worker);
+        gridScheduler.addWorkerGrid("s04.t1", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s04") //
@@ -354,8 +354,8 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         WorkerGrid workerT0 = new WorkerGrid1D(size);
         WorkerGrid workerT1 = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s05.t0", workerT0);
-        gridScheduler.setWorkerGrid("s05.t1", workerT1);
+        gridScheduler.addWorkerGrid("s05.t0", workerT0);
+        gridScheduler.addWorkerGrid("s05.t1", workerT1);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s05") //

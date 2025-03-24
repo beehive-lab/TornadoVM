@@ -724,7 +724,9 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic TANH = new OCLUnaryIntrinsic("tanh");
         public static final OCLUnaryIntrinsic ATAN = new OCLUnaryIntrinsic("atan");
         public static final OCLUnaryIntrinsic ASIN = new OCLUnaryIntrinsic("asin");
+        public static final OCLUnaryIntrinsic ASINH = new OCLUnaryIntrinsic("asinh");
         public static final OCLUnaryIntrinsic ACOS = new OCLUnaryIntrinsic("acos");
+        public static final OCLUnaryIntrinsic ACOSH = new OCLUnaryIntrinsic("acosh");
         public static final OCLUnaryIntrinsic SINPI = new OCLUnaryIntrinsic("sinpi");
         public static final OCLUnaryIntrinsic COSPI = new OCLUnaryIntrinsic("cospi");
 

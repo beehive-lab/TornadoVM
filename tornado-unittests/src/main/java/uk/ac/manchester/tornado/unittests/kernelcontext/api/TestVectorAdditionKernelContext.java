@@ -116,7 +116,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.addWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -150,7 +150,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.addWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -184,7 +184,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.addWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
