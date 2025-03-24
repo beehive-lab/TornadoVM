@@ -307,7 +307,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
         if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
-            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize, access);
             state.setXPUBuffer(buffer);
             buffer.allocate(object, batchSize, access);

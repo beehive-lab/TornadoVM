@@ -328,7 +328,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
 
     private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
-        TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+        TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
         buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize, access);
         state.setXPUBuffer(buffer);
         buffer.allocate(object, batchSize, access);
