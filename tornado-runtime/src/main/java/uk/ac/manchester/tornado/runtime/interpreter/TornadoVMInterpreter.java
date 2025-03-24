@@ -978,23 +978,11 @@ public class TornadoVMInterpreter {
      * Container class that holds information about object allocation counts.
      * Used to track the number of persistent objects and the number of objects
      * that need to be allocated.
+     *
+     * @param persistentObjectCount Number of persistent objects that don't need allocation
+     * @param objectsToAlloc Number of objects that need to be allocated
      */
-    private static class ObjectAllocationInfo {
-        final int persistentObjectCount;
-        final int objectsToAlloc;
-
-        /**
-         * Creates a new object allocation information container.
-         *
-         * @param persistentObjectCount
-         *     Number of persistent objects that don't need allocation
-         * @param objectsToAlloc
-         *     Number of objects that need to be allocated
-         */
-        ObjectAllocationInfo(int persistentObjectCount, int objectsToAlloc) {
-            this.persistentObjectCount = persistentObjectCount;
-            this.objectsToAlloc = objectsToAlloc;
-        }
+    public record ObjectAllocationInfo(int persistentObjectCount, int objectsToAlloc) {
     }
 
     private static class XPUExecutionFrame {
