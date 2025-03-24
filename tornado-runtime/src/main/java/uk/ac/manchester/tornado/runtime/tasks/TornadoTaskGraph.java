@@ -2632,12 +2632,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return profilerMode;
     }
 
+    public record Tuple2(int threadWinnerIndex, Thread join) {
+    }
+
     // Timer implementation within the Task Schedule
     private interface Timer {
         long time();
-    }
-
-    public record Tuple2(int threadWinnerIndex, Thread join) {
     }
 
     private static class MilliSecTimer implements Timer {
