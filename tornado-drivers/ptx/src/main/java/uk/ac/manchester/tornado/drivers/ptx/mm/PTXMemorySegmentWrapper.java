@@ -239,10 +239,10 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
-        if (!(srcPointer instanceof PTXMemorySegmentWrapper oclMemorySegmentWrapper)) {
-            throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of OCLMemorySegmentWrapper: " + srcPointer);
+        if (!(srcPointer instanceof PTXMemorySegmentWrapper ptxMemorySegmentWrapper)) {
+            throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of PTXMemorySegmentWrapper: " + srcPointer);
         }
-        this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset);
+        this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, ptxMemorySegmentWrapper.bufferId, offset, sizeOfType);
     }
 
     @Override
