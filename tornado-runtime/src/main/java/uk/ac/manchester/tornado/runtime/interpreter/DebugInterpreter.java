@@ -44,12 +44,13 @@ class DebugInterpreter {
         appendLogBuilder(verbose, logBuilder);
     }
 
-    static void logDeallocObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder) {
-        String verbose = String.format("bc: %s[0x%x] %s on %s", //
-                InterpreterUtilities.debugHighLightBC("DEALLOC"), //
+    static void logDeallocObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder, boolean materializeDealloc) {
+        String verbose = String.format("bc: %s[0x%x] %s [Status: %s] on %s", //
+                materializeDealloc ? InterpreterUtilities.debugHighLightBC("DEALLOC") : InterpreterUtilities.debugHighLightNonExecBC("DEALLOC"), //
                 object.hashCode(), //
                 object, //
-                InterpreterUtilities.debugDeviceBC(interpreterDevice));
+                InterpreterUtilities.debugHighLightNonExecBC(materializeDealloc ? "Freed" : "Persisted"), //
+                InterpreterUtilities.debugDeviceBC(interpreterDevice)); //
         appendLogBuilder(verbose, logBuilder);
     }
 

@@ -498,13 +498,13 @@ public class TornadoVMInterpreter {
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
         Object object = objects.get(objectIndex);
 
-        if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
-            DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList);
-        }
-
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         long spaceDeallocated = interpreterDevice.deallocate(objectState);
         // Update current device area use
+        if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
+            boolean materializeDealloc = spaceDeallocated == 0;
+            DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList, materializeDealloc);
+        }
         graphExecutionContext.setCurrentDeviceMemoryUsage(graphExecutionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
         return -1;
     }
