@@ -89,7 +89,7 @@ public class TornadoVMBytecodeBuilder {
         if (node instanceof AllocateMultipleBuffersNode allocateMultipleBuffersNode) {
             bitcodeASM.allocate(allocateMultipleBuffersNode.getValues(), batchSize);
         } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
-            bitcodeASM.onDevice(onDeviceObjectNode.getIndex(), dependencyBC, offset, batchSize); 
+            bitcodeASM.onDevice(onDeviceObjectNode.getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof CopyInNode copyInNode) {
             bitcodeASM.transferToDeviceOnce(copyInNode.getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode allocateNode) {
