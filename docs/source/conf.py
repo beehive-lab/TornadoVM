@@ -3,11 +3,11 @@
 # -- Project information
 
 project = "TornadoVM"
-copyright = "2013-2024, APT Group, Department of Computer Science"
+copyright = "2013-2025, APT Group, Department of Computer Science"
 author = "The University of Manchester"
 
-release = "v1.0.10"
-version = "v1.0.10"
+release = "v1.1.0"
+version = "v1.1.0"
 
 # -- General configuration
 

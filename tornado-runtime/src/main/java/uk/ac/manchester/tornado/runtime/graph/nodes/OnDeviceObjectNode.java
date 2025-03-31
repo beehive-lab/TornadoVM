@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,23 +28,27 @@ import java.util.Collections;
 import java.util.List;
 
 public class OnDeviceObjectNode extends ContextOpNode {
-    public OnDeviceObjectNode(ContextNode context) {
-        super(context);
-    }
-
     private ObjectNode value;
 
-    public void setValue(ObjectNode object) {
-        value = object;
+    public OnDeviceObjectNode(ContextNode context) {
+        super(context);
     }
 
     public ObjectNode getValue() {
         return value;
     }
 
+    public void setValue(ObjectNode object) {
+        value = object;
+    }
+
     @Override
     public String toString() {
-        return String.format("[%d]: on-device object %d", id,  value.getIndex());
+        if (value == null) {
+            return String.format("[%d]: on-device object (value not set)", id);
+        } else {
+            return String.format("[%d]: on-device object %d", id, value.getIndex());
+        }
     }
 
     @Override

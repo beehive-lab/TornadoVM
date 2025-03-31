@@ -367,8 +367,7 @@ public class PTXStream {
         return isDestroy;
     }
 
-    public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset) {
-        final int sizeofType = 4;
+    public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType) {
         return NativePTXStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeofType);
     }
 }
