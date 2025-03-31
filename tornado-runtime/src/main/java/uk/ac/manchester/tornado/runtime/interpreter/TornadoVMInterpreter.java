@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -102,6 +103,9 @@ public class TornadoVMInterpreter {
 
     private GridScheduler gridScheduler;
 
+    private HashMap<Object, Integer> currentBatchNumberPerObject = new HashMap<>();
+    private HashMap<Object, Integer> totalEvenBatchesPerObject = new HashMap<>();
+
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
     /**
@@ -149,6 +153,7 @@ public class TornadoVMInterpreter {
         logger.debug("created %d event lists", events.length);
         objectAccesses = graphExecutionContext.getObjectsAccesses();
         objects = graphExecutionContext.getObjects();
+        initBatchDataStructures(graphExecutionContext);
         dataObjectStates = new DataObjectState[objects.size()];
         fetchGlobalStates();
 
@@ -160,6 +165,18 @@ public class TornadoVMInterpreter {
         logger.debug("interpreter for device %s is ready to go", device.toString());
 
         this.bytecodeResult.mark();
+    }
+
+    private void initBatchDataStructures(TornadoExecutionContext context) {
+        long batchSize = context.getBatchSize();
+        if (batchSize != -1) {
+            BatchConfiguration batchConfiguration = BatchConfiguration.computeChunkSizes(context, batchSize);
+            int totalChunks = batchConfiguration.getTotalChunks();
+            for (Object object : objects) {
+                totalEvenBatchesPerObject.put(object, totalChunks);
+                currentBatchNumberPerObject.put(object, 0);
+            }
+        }
     }
 
     public void setTimeProfiler(TornadoProfiler tornadoProfiler) {
@@ -470,12 +487,19 @@ public class TornadoVMInterpreter {
         }
 
         // total size of objects pre-allocated and current allocation
-        long allocationsTotalSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses) + preAllocatedSizes;
+        long allocationSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
+        long allocationsTotalSize = allocationSize + preAllocatedSizes;
+        if (sizeBatch != 0) {
+            for (Object object : objects) {
+                int previousBatch = currentBatchNumberPerObject.get(object);
+                currentBatchNumberPerObject.replace(object, previousBatch, ++previousBatch);
+            }
+        }
 
         // Dump printing after object allocation, so the XPU-Buffer is created,
         // and we can query the size without having to use Java type analysis
         // to obtain the size at this point. 
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.PRINT_BYTECODES && allocationSize > 0) {
             int objIndex = 0;
             for (XPUDeviceBufferState state : objectStates) {
                 long size = state.getXPUBuffer().size();
@@ -487,7 +511,7 @@ public class TornadoVMInterpreter {
         graphExecutionContext.setCurrentDeviceMemoryUsage(allocationsTotalSize);
 
         // Register allocations values in the profiler only if the profiler is enabled
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (TornadoOptions.isProfilerEnabled() && allocationSize > 0) {
             for (XPUDeviceBufferState objectState : objectStates) {
                 timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
             }
@@ -497,6 +521,15 @@ public class TornadoVMInterpreter {
 
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
         Object object = objects.get(objectIndex);
+
+        if (!currentBatchNumberPerObject.isEmpty() && !currentBatchNumberPerObject.isEmpty()) {
+            int currentBatchNumber = currentBatchNumberPerObject.get(object);
+            int totalNumberOfBatches = totalEvenBatchesPerObject.get(object);
+
+            if (currentBatchNumber < totalNumberOfBatches) {
+                return -1;
+            }
+        }
 
         if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
             DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList);
