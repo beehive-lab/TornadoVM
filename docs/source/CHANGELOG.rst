@@ -5,6 +5,50 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+
+TornadoVM 1.1.0
+---------------
+31/03/25
+
+Improvements
+~~~~~~~~~~~~
+
+- `#620 <https://github.com/beehive-lab/TornadoVM/pull/620>`_: Support of computation with mixed precision ``FP16`` to  ``FP32`` for matrix operations.
+- `#622 <https://github.com/beehive-lab/TornadoVM/pull/622>`_: New API to allow buffer mapping between two different buffers on the hardware accelerator.
+- `#624 <https://github.com/beehive-lab/TornadoVM/pull/624>`_: Enhanced TornadoVM profiler with correct information for the ``UNDER_DEMAND`` transfer to host data. 
+- `#627 <https://github.com/beehive-lab/TornadoVM/pull/627>`_: New feature to persist data on the hardware accelerator, and consume data already allocated on the hardware accelerator.
+- `#630 <https://github.com/beehive-lab/TornadoVM/pull/630>`_: Support for atomics using the kernel API for OpenCL and PTX backends. 
+- `#636 <https://github.com/beehive-lab/TornadoVM/pull/636>`_: TornadoVM bytecode logging improved. 
+- `#642 <https://github.com/beehive-lab/TornadoVM/pull/642>`_: Math functions extended: ``acosh`` and ``asinh`` supported for OpenCL and SPIR-V.
+- `#645 <https://github.com/beehive-lab/TornadoVM/pull/645>`_: Memory deallocations improved. Action by default when closing the ``TornadoExecutionPlan`` resource.
+
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#625 <https://github.com/beehive-lab/TornadoVM/pull/625>`_: Documentation to build on RISC-V updated.
+- `#632 <https://github.com/beehive-lab/TornadoVM/pull/632>`_: Add maven build with Single thread.
+- `#633 <https://github.com/beehive-lab/TornadoVM/pull/633>`_: Add tests for running multiple task graphs with different grid schedulers. 
+- `#638 <https://github.com/beehive-lab/TornadoVM/pull/638>`_: Add tests to check force copy in buffers and persist buffers on the hardware accelerator.
+- `#640 <https://github.com/beehive-lab/TornadoVM/pull/640>`_: Rename XPUFuffer to FieldBuffer for all backends.
+- `#649 <https://github.com/beehive-lab/TornadoVM/pull/649>`_: Update the fast mode to live mode for testing.
+- `#654 <https://github.com/beehive-lab/TornadoVM/pull/654>`_: Add loop condition test in white list.
+
+
+Bug Fixes 
+~~~~~~~~~~~~
+
+- `#626 <https://github.com/beehive-lab/TornadoVM/pull/626>`_: Fix data accessors when using the ``UNDER_DEMAND`` transfer to host innovation from the task-graph. 
+- `#628 <https://github.com/beehive-lab/TornadoVM/pull/628>`_: Device filtering API fixed to use device type and device names. 
+- `#635 <https://github.com/beehive-lab/TornadoVM/pull/635>`_: Update nodes for local memory to be subtype of ``ValueNode`` instead of ``ConstantNode`` in the TornadoVM IR.
+- `#639 <https://github.com/beehive-lab/TornadoVM/pull/639>`_: Fix subgraph execution when combining with the ``GridScheduler``.
+- `#644 <https://github.com/beehive-lab/TornadoVM/pull/644>`_: Fix TornadoVM execution frame setter.
+- `#646 <https://github.com/beehive-lab/TornadoVM/pull/646>`_: Fix shared memory buffers across task-graphs when no new allocation is present as new parameters for the following task-graphs.
+- `#647 <https://github.com/beehive-lab/TornadoVM/pull/647>`_: Fix ``UNDER_DEMAND`` invocation for the batch processor mode and read-write arrays.
+- `#651 <https://github.com/beehive-lab/TornadoVM/pull/651>`_: Fix memory mapping regions for the PTX Backend.
+- `#653 <https://github.com/beehive-lab/TornadoVM/pull/653>`_: Object repetition with shared buffers on ``ON_DEVICE`` bytecodes.
+
+
 TornadoVM 1.0.10
 ---------------
 31/01/25
