@@ -71,6 +71,23 @@ public abstract class TornadoBufferProvider {
         return bufferAccesses;
     }
 
+    public boolean reuseBufferForBatchProcessing(long batchSize, Access access, int numberOfBuffersForAccessType) {
+        boolean matchFound = false;
+        if (!usedBuffers.get(access).isEmpty()) {
+            for (BufferContainer bufferContainer : usedBuffers.get(access)) {
+                if (usedBuffers.get(access).size() < numberOfBuffersForAccessType) {
+                    return false;
+                }
+                long size = bufferContainer.size;
+                matchFound = (size == batchSize + 24);
+                if (matchFound) {
+                    logger.debug("Reuse buffer %s from the used-list for batch processing. Batch Size = %s, Access = %s %n", bufferContainer, batchSize, access);
+                }
+            }
+        }
+        return matchFound;
+    }
+
     protected abstract long allocateBuffer(long size, Access access);
 
     protected abstract void releaseBuffer(long buffer);

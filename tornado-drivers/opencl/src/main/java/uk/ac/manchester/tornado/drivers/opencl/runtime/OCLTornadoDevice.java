@@ -587,8 +587,17 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         }
         long allocatedSpace = 0L;
         for (int i = 0; i < objects.length; i++) {
-            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
-            allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            if (batchSize != 0 ) {
+                int numberOfBuffersForAccessType = distinctAccesses.get(accesses[i]);
+                // if there are no buffers available in the used-list to reuse, allocate new ones
+                if (!bufferProvider.reuseBufferForBatchProcessing(batchSize, accesses[i], numberOfBuffersForAccessType)) {
+                    logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
+                    allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+                }
+            } else {
+                logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
+                allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            }
         }
         return allocatedSpace;
     }
