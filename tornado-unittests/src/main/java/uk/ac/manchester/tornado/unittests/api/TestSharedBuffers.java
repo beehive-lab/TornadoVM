@@ -280,6 +280,48 @@ public class TestSharedBuffers extends TornadoTestBase {
     }
 
     @Test
+    public void testMultipleSharedObjectsEmptyConsume() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+        IntArray d = new IntArray(numElements);
+
+        a.init(10);
+        b.init(20);
+
+        // Create first task graph named "s0"
+        TaskGraph tg1 = new TaskGraph("s0") //
+                // Transfer arrays 'a' and 'b' to the device only on first execution
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                // Execute the add method (a + b = c)
+                .task("t0", TestHello::add, a, b, c) //
+                // Keep arrays 'a' and 'b' on the device memory for later use
+                .persistOnDevice(a, b);
+
+        // Create second task graph named "s1"
+        TaskGraph tg2 = new TaskGraph("s1") //
+                // Get arrays 'a' and 'b' from the first task graph (no new transfer needed)
+                .consumeFromDevice(a, b) //
+                // Execute the add method (a + b = d), creating separate output in 'd'
+                .task("t1", TestHello::add, a, b, d) //
+                // Transfer results back to host memory after execution
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+            // Execute the first graph (a + b = c)
+            executionPlan.withGraph(0).execute();
+
+            // Execute the second graph (a + b = d)
+            executionPlan.withGraph(1).execute();
+
+            // Verify results: for each element, check if value is 30
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(30, d.get(i)); // Expected: 10 + 20 = 30
+            }
+        }
+    }
+
+    @Test
     public void testThreeTaskGraphsWithSharedBuffers() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(numElements);
         IntArray b = new IntArray(numElements);
@@ -315,6 +357,62 @@ public class TestSharedBuffers extends TornadoTestBase {
         TaskGraph tg3 = new TaskGraph("s2") //
                 // Get arrays 'a' and 'b' from the first task graph (no new transfer needed)
                 .consumeFromDevice("s1", r) //
+                // Execute the add method (a + b = d), creating separate output in 'd'
+                .task("t1", TestHello::add, r, r, r) //
+                // Transfer results back to host memory after execution
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, r);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot(), tg3.snapshot())) {
+            // Execute the first graph (a + b = c)
+            executionPlan.withGraph(0).execute();
+            // Execute the second graph (a + b = d)
+            executionPlan.withGraph(1).execute();
+            // Execute the second graph (a + b = d)
+            executionPlan.withGraph(2).execute();
+
+            // Verify results: for each element, check if value is 30
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(70, r.get(i)); // Expected: 35 + 35 = 70
+            }
+        }
+    }
+
+    @Test
+    public void testThreeTaskGraphsWithSharedBuffersEmptyConsume() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+        IntArray d = new IntArray(numElements);
+        IntArray r = new IntArray(numElements);
+
+        a.init(10);
+        b.init(20);
+        d.init(5);
+
+        // Create first task graph named "s0"
+        TaskGraph tg1 = new TaskGraph("s0") //
+                // Transfer arrays 'a' and 'b' to the device only on first execution
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                // Execute the add method (a + b = c)
+                .task("t0", TestHello::add, a, b, c) //
+                // Keep arrays 'a' and 'b' on the device memory for later use
+                .persistOnDevice(c);
+
+        // Create second task graph named "s1"
+        TaskGraph tg2 = new TaskGraph("s1") //
+                // Get arrays 'a' and 'b' from the first task graph (no new transfer needed)
+                .consumeFromDevice(c) //
+                //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, d) //
+                // Execute the add method (a + b = d), creating separate output in 'd'
+                .task("t1", TestHello::add, c, d, r) //
+                // Transfer results back to host memory after execution
+                .persistOnDevice(r);
+
+        // Create third task graph named "s2"
+        TaskGraph tg3 = new TaskGraph("s2") //
+                // Get arrays 'a' and 'b' from the first task graph (no new transfer needed)
+                .consumeFromDevice(r) //
                 // Execute the add method (a + b = d), creating separate output in 'd'
                 .task("t1", TestHello::add, r, r, r) //
                 // Transfer results back to host memory after execution
@@ -507,14 +605,17 @@ public class TestSharedBuffers extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c, sharedContext);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot(), tg3.snapshot())) {
-            // Execute the first graph
-            executionPlan.withGraph(0).execute();
 
-            // Execute the second graph
-            executionPlan.withGraph(1).execute();
+            for (int i = 0; i < 20000; i++) {
+                executionPlan.withGraph(0).execute();
 
-            // Execute the third graph
-            executionPlan.withGraph(2).execute();
+                // Execute the second graph
+                executionPlan.withGraph(1).execute();
+
+                // Execute the third graph
+                executionPlan.withGraph(2).execute();
+
+            } // Execute the first graph
 
             // Add assertions based on expected values
             boolean hasNonZeroOutput = false;
