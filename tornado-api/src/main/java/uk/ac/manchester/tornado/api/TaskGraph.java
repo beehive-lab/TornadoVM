@@ -703,6 +703,13 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+    @Override
+    public TaskGraph consumeFromDevice(Object... objects) {
+        taskGraphImpl.consumeFromDevice(objects);
+        return this;
+    }
+
+
     /**
      * Tag a set of objects (Java objects) to be transferred from the device to the
      * host after the execution completes. There are two modes:

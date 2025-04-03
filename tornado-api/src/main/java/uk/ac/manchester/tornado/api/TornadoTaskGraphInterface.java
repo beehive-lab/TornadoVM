@@ -76,6 +76,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void consumeFromDevice(String uniqueTaskGraphName, Object... objects);
 
+    void consumeFromDevice(Object... objects);
+
     void dump();
 
     void warmup(ExecutorFrame executionPackage);
