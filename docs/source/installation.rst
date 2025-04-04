@@ -631,7 +631,7 @@ Then, download the script to apply the patch for the OpenCL backend:
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/748f71a1871f3bf839c8889a31c09c55f6969186/apply-riscv-patch.sh
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/f91c67f43e4da14eb80b79e88441604d9c6ba829/apply-riscv-patch.sh
    bash apply-riscv-patch.sh 
 
 
@@ -642,7 +642,7 @@ If you want to enable both OpenCL and SPIR-V backends, use the following patch:
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/748f71a1871f3bf839c8889a31c09c55f6969186/apply-riscv-spirv-patch.sh
+   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/f91c67f43e4da14eb80b79e88441604d9c6ba829/apply-riscv-spirv-patch.sh
    bash apply-riscv-spirv-patch.sh
 
 
