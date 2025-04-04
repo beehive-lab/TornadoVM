@@ -642,7 +642,7 @@ If you want to enable both OpenCL and SPIR-V backends, use the following patch:
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/f91c67f43e4da14eb80b79e88441604d9c6ba829/apply-riscv-spirv-patch.sh
+   https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/8b96300b487d7aa510038022b9e9fa174d51b6b1/apply-riscv-spirv-patch.sh
    bash apply-riscv-spirv-patch.sh
 
 
