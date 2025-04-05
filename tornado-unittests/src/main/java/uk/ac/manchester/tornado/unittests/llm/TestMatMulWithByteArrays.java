@@ -19,9 +19,13 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.unittests.compute;
+package uk.ac.manchester.tornado.unittests.llm;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -36,9 +40,6 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 /**
  * Test to check the infinity values are properly replaced for code gen.
  *
@@ -47,65 +48,11 @@ import static org.junit.Assert.assertFalse;
  * </p>
  *
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.compute.MMwithBytes
+ * tornado-test -V uk.ac.manchester.tornado.unittests.llm.MMwithBytes
  * </code>
  *
  */
-public class MMwithBytes extends TornadoTestBase {
-
-    @Test
-    public void testMatrixMultiplicationWithBytes() throws TornadoExecutionPlanException {
-
-        // Define matrix/vector dimensions
-        final int dim = 128;  // example dimension, adjust as necessary
-        final int numRows = 1024; // example number of rows for ByteArray
-
-        // Initialize input data
-        ByteArray byteArrayWeights = new ByteArray(numRows * (2 + 32)); // dim + 2 bytes for scale per row
-        FloatArray inputVector = new FloatArray(dim);
-        FloatArray outputVector = new FloatArray(numRows);
-
-        // Populate the ByteArray with dummy quantized weights and scales
-        for (int i = 0; i < numRows; i++) {
-            int offset = i * (2 + 32);
-            byteArrayWeights.set(offset, (byte) 0);          // scale byte 1
-            byteArrayWeights.set(offset + 1, (byte) 0);      // scale byte 2
-            for (int j = 2; j < 2 + 32; j++) {
-                byteArrayWeights.set(offset + j, (byte) ((i * 3f) * 255 - 128)); // random quantized values
-            }
-        }
-
-        // Populate the input vector with random floats
-        for (int i = 0; i < dim; i++) {
-            inputVector.set(i, (float) Math.random());
-        }
-
-        // Expected output should be initialized to zero
-        outputVector.init(0.0f);
-
-        // Create the execution plan
-        WorkerGrid workerGrid = new WorkerGrid1D(numRows);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-        workerGrid.setGlobalWork(numRows, 1, 1);
-        workerGrid.setLocalWork(32, 1, 1);
-
-        // Define the TaskGraph for matrix multiplication
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, byteArrayWeights, inputVector).task("t0", MMwithBytes::matmulTornado, new KernelContext(),
-                byteArrayWeights, inputVector, outputVector, dim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputVector);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withGridScheduler(gridScheduler).execute();
-        }
-
-        // Validation: Manually check output values or use precomputed expected output
-        // For simplicity, check that no NaNs or Infinity are in the result
-        for (int i = 0; i < numRows; i++) {
-            float result = outputVector.get(i);
-            assertFalse("Output contains NaN at index " + i, Float.isNaN(result));
-            assertFalse("Output contains Infinity at index " + i, Float.isInfinite(result));
-        }
-    }
+public class TestMatMulWithByteArrays extends TornadoTestBase {
 
     public static void matmulTornado(KernelContext context, ByteArray thisx, FloatArray that, FloatArray out, int dim1) {
         final int blockSize = 32; // Assuming this is the block size used in quantization
@@ -183,6 +130,74 @@ public class MMwithBytes extends TornadoTestBase {
         }
     }
 
+    public static void negativeInfinity(FloatArray negativeInfinityArray) {
+        for (@Parallel int i = 0; i < negativeInfinityArray.getSize(); i++) {
+            if (negativeInfinityArray.get(i) != Float.NEGATIVE_INFINITY) {
+                negativeInfinityArray.set(i, Float.POSITIVE_INFINITY);
+            }
+        }
+    }
+
+    public static void negativeInfinityAssignment(FloatArray x) {
+        for (@Parallel int i = 0; i < x.getSize(); i++) {
+            x.set(i, Float.NEGATIVE_INFINITY);
+        }
+    }
+
+    @Test
+    public void testMatrixMultiplicationWithBytes() throws TornadoExecutionPlanException {
+
+        // Define matrix/vector dimensions
+        final int dim = 128;  // example dimension, adjust as necessary
+        final int numRows = 1024; // example number of rows for ByteArray
+
+        // Initialize input data
+        ByteArray byteArrayWeights = new ByteArray(numRows * (2 + 32)); // dim + 2 bytes for scale per row
+        FloatArray inputVector = new FloatArray(dim);
+        FloatArray outputVector = new FloatArray(numRows);
+
+        // Populate the ByteArray with dummy quantized weights and scales
+        for (int i = 0; i < numRows; i++) {
+            int offset = i * (2 + 32);
+            byteArrayWeights.set(offset, (byte) 0);          // scale byte 1
+            byteArrayWeights.set(offset + 1, (byte) 0);      // scale byte 2
+            for (int j = 2; j < 2 + 32; j++) {
+                byteArrayWeights.set(offset + j, (byte) ((i * 3f) * 255 - 128)); // random quantized values
+            }
+        }
+
+        // Populate the input vector with random floats
+        for (int i = 0; i < dim; i++) {
+            inputVector.set(i, (float) Math.random());
+        }
+
+        // Expected output should be initialized to zero
+        outputVector.init(0.0f);
+
+        // Create the execution plan
+        WorkerGrid workerGrid = new WorkerGrid1D(numRows);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        workerGrid.setGlobalWork(numRows, 1, 1);
+        workerGrid.setLocalWork(32, 1, 1);
+
+        // Define the TaskGraph for matrix multiplication
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, byteArrayWeights, inputVector).task("t0", TestMatMulWithByteArrays::matmulTornado,
+                new KernelContext(), byteArrayWeights, inputVector, outputVector, dim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputVector);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        }
+
+        // Validation: Manually check output values or use precomputed expected output
+        // For simplicity, check that no NaNs or Infinity are in the result
+        for (int i = 0; i < numRows; i++) {
+            float result = outputVector.get(i);
+            assertFalse("Output contains NaN at index " + i, Float.isNaN(result));
+            assertFalse("Output contains Infinity at index " + i, Float.isInfinite(result));
+        }
+    }
+
     @Test
     public void testPositiveInfinity() throws TornadoExecutionPlanException {
         final int n = 1024;
@@ -190,8 +205,8 @@ public class MMwithBytes extends TornadoTestBase {
 
         positiveInfinityArray.init(Float.POSITIVE_INFINITY);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, positiveInfinityArray).task("t0", MMwithBytes::positiveInfinity, positiveInfinityArray)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, positiveInfinityArray);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, positiveInfinityArray).task("t0", TestMatMulWithByteArrays::positiveInfinity,
+                positiveInfinityArray).transferToHost(DataTransferMode.EVERY_EXECUTION, positiveInfinityArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
@@ -204,14 +219,6 @@ public class MMwithBytes extends TornadoTestBase {
         }
     }
 
-    public static void negativeInfinity(FloatArray negativeInfinityArray) {
-        for (@Parallel int i = 0; i < negativeInfinityArray.getSize(); i++) {
-            if (negativeInfinityArray.get(i) != Float.NEGATIVE_INFINITY) {
-                negativeInfinityArray.set(i, Float.POSITIVE_INFINITY);
-            }
-        }
-    }
-
     @Test
     public void testNegativeInfinity() throws TornadoExecutionPlanException {
         final int n = 1024;
@@ -219,8 +226,8 @@ public class MMwithBytes extends TornadoTestBase {
 
         negativeInfinityArray.init(Float.NEGATIVE_INFINITY);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", MMwithBytes::negativeInfinity, negativeInfinityArray)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", TestMatMulWithByteArrays::negativeInfinity,
+                negativeInfinityArray).transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
@@ -233,12 +240,6 @@ public class MMwithBytes extends TornadoTestBase {
         }
     }
 
-    public static void negativeInfinityAssignment(FloatArray x) {
-        for (@Parallel int i = 0; i < x.getSize(); i++) {
-            x.set(i, Float.NEGATIVE_INFINITY);
-        }
-    }
-
     @Test
     public void testNegativeInfinityAssignment() throws TornadoExecutionPlanException {
         final int n = 1024;
@@ -246,8 +247,8 @@ public class MMwithBytes extends TornadoTestBase {
 
         negativeInfinityArray.init(2f);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", MMwithBytes::negativeInfinityAssignment, negativeInfinityArray)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", TestMatMulWithByteArrays::negativeInfinityAssignment,
+                negativeInfinityArray).transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
