@@ -229,11 +229,24 @@ class TornadoExecutor {
             subgraphList = new ArrayList<>();
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
+        // Validate that the graphIndex is within bounds of subgraphList
+        System.out.println("S-pre " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName());
+        setLastExecutedGraph(subgraphList.get(graphIndex));
+
         processPersistentStates(graphIndex);
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
+
+        System.out.println("S-after " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName());
     }
 
+    private void setLastExecutedGraph(ImmutableTaskGraph  lastExecutedGraph) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(lastExecutedGraph));
+
+    }
+//    private void setLastExecutedGraph(int graphIndex) {
+//        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(getGraph(graphIndex)));
+//    }
     /**
      * Processes the persistent states of a specified subgraph.
      *

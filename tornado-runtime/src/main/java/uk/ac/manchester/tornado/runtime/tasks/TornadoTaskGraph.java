@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
@@ -175,9 +176,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
     private List<Object> streamInObjects;
-    private List<Object> persistentObjects;
 
     private Map<TornadoTaskGraph, List<Object>> taskToPersistentObjectMap;
+    private TornadoTaskGraphInterface lastExecutedTaskGraph;
 
     private Set<Object> argumentsLookUp;
 
@@ -230,6 +231,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         inputModesObjects = new ArrayList<>();
         outputModeObjects = new ArrayList<>();
         taskToPersistentObjectMap = new HashMap<>();
+        lastExecutedTaskGraph = null;
     }
 
     static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
@@ -412,6 +414,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.outputModeObjects = Collections.unmodifiableList(this.outputModeObjects);
         newTaskGraph.taskToPersistentObjectMap = Collections.unmodifiableMap(this.taskToPersistentObjectMap);
 
+        newTaskGraph.lastExecutedTaskGraph = this.lastExecutedTaskGraph;
+
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
 
@@ -573,6 +577,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 }
             }
         }
+    }
+
+    @Override
+    public void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph) {
+        this.lastExecutedTaskGraph = lastExecutedTaskGraph;
+    }
+
+    @Override
+    public TornadoTaskGraphInterface getLastExecutedTaskGraph() {
+        return lastExecutedTaskGraph;
     }
 
     @Override
@@ -1119,6 +1133,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             argumentsLookUp.add(parameter);
         }
+    }
+
+    @Override
+    public void consumeFromDevice(Object... objects) {
+
     }
 
     private boolean isANumber(Object parameter) {

@@ -140,4 +140,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void updateObjectAccess();
 
+    void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph);
+
+    TornadoTaskGraphInterface getLastExecutedTaskGraph();
+
 }

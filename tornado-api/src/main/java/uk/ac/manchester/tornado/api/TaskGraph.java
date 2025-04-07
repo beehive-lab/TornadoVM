@@ -956,12 +956,20 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.updatePersistedObjectState(taskGraphSrc);
     }
 
+    void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph) {
+        taskGraphImpl.setLastExecutedTaskGraph(lastExecutedTaskGraph);
+    }
+
     public Collection<?> getOutputs() {
         return taskGraphImpl.getOutputs();
     }
 
     TornadoTaskGraphInterface getTaskGraphImpl() {
         return taskGraphImpl;
+    }
+
+    TornadoTaskGraphInterface getLastExecutedTask() {
+        return taskGraphImpl.getLastExecutedTaskGraph();
     }
 
 }

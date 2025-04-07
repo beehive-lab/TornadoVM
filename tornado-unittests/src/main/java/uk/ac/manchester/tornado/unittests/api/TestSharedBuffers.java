@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -424,8 +425,9 @@ public class TestSharedBuffers extends TornadoTestBase {
             // Execute the second graph (a + b = d)
             executionPlan.withGraph(1).execute();
             // Execute the second graph (a + b = d)
-            executionPlan.withGraph(2).execute();
+            TornadoExecutionResult executionResult = executionPlan.withGraph(2).execute();
 
+            System.out.println(executionResult.isReady());
             // Verify results: for each element, check if value is 30
             for (int i = 0; i < a.getSize(); i++) {
                 assertEquals(70, r.get(i)); // Expected: 35 + 35 = 70
@@ -530,38 +532,6 @@ public class TestSharedBuffers extends TornadoTestBase {
         }
     }
 
-    /**
-     * Tests sharing a context buffer across multiple task graphs while processing data.
-     *
-     * <p>This test demonstrates how to maintain shared context state across three task graphs
-     * while performing data transformations. Key aspects demonstrated include:</p>
-     *
-     * <ul>
-     * <li>Initializing and passing a shared context buffer across multiple graphs</li>
-     * <li>Updating context state in each processing stage</li>
-     * <li>Using context values to influence data processing</li>
-     * <li>Proper persistence and consumption of both result and context buffers</li>
-     * </ul>
-     *
-     * <p><strong>Key Pattern:</strong> This test shows how to use a distinct buffer
-     * specifically for maintaining state/context across task graph executions, separate
-     * from the data being processed.</p>
-     *
-     * <p><strong>Implementation Notes:</strong></p>
-     * <ul>
-     * <li>The first graph only persists the result buffer but not the context</li>
-     * <li>The second graph must explicitly consume the result from the first graph</li>
-     * <li>The context is updated in each graph before being used in processing</li>
-     * <li>Both result and context are finally transferred back to host for verification</li>
-     * </ul>
-     *
-     * <p><strong>Common Pitfall:</strong> Forgetting to list a buffer in either
-     * {@code persistOnDevice()} or {@code consumeFromDevice()} will result in buffer
-     * unavailability or undefined behavior.</p>
-     *
-     * @throws TornadoExecutionPlanException
-     *     If execution of any task graph fails
-     */
     @Test
     public void testThreeTaskGraphsWithSharedContextBuffer() throws TornadoExecutionPlanException {
         IntArray a = new IntArray(numElements);
