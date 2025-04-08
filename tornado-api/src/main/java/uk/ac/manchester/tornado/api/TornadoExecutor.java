@@ -262,24 +262,6 @@ class TornadoExecutor {
         }
     }
 
-    private ImmutableTaskGraph getGraphByName(String uniqueName) {
-        // First try to find in subgraphList if it exists
-        if (subgraphList != null) {
-            for (ImmutableTaskGraph immutableTaskGraph : subgraphList) {
-                if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
-                    return immutableTaskGraph;
-                }
-            }
-        }
-        // Fallback to immutableTaskGraphList
-        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-            if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
-                return immutableTaskGraph;
-            }
-        }
-        throw new TornadoRuntimeException("TaskGraph with name " + uniqueName + " does not exist in current executor");
-    }
-
     void selectAll() {
         if (subgraphList == null) {
             return;
