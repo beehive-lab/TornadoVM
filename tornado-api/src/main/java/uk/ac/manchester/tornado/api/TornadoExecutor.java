@@ -230,23 +230,38 @@ class TornadoExecutor {
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
         // Validate that the graphIndex is within bounds of subgraphList
+        if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
+            throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
+        }
+        
         System.out.println("S-pre " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName() + " soize " + subgraphList.size());
-        setLastExecutedGraph(subgraphList.get(graphIndex));
-
-        processPersistentStates(graphIndex);
+        
+        // Store the selected graph before clearing the list
+        ImmutableTaskGraph selectedGraph = subgraphList.get(graphIndex);
+        
+        // Clear and update the immutableTaskGraphList
         immutableTaskGraphList.clear();
-        Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
-
-        System.out.println("S-after " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName()+ " soize " + subgraphList.size());
+        Collections.addAll(immutableTaskGraphList, selectedGraph);
+        
+        // Set the last executed graph after updating the list
+        setLastExecutedGraph(selectedGraph);
+        
+        // Process persistent states
+        processPersistentStates(graphIndex);
+        
+        System.out.println("S-after " + selectedGraph.getLastExecutedTaskGraphName() + " soize " + subgraphList.size());
     }
 
-    private void setLastExecutedGraph(ImmutableTaskGraph  lastExecutedGraph) {
+    private void setLastExecutedGraph(ImmutableTaskGraph lastExecutedGraph) {
+        // Set the last executed task graph for all task graphs in the list
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(lastExecutedGraph));
-
+        
+        // Also update the subgraphList if it exists
+        if (subgraphList != null) {
+            subgraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(lastExecutedGraph));
+        }
     }
-//    private void setLastExecutedGraph(int graphIndex) {
-//        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(getGraph(graphIndex)));
-//    }
+
     /**
      * Processes the persistent states of a specified subgraph.
      *
@@ -259,16 +274,21 @@ class TornadoExecutor {
             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
         }
 
+        // Get the current graph
+        ImmutableTaskGraph currentGraph = subgraphList.get(graphIndex);
+        
         // Retrieve the list of persisted task names from the specified subgraph
-        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex).getTaskGraph().taskGraphImpl.getPersistedTaskToObjectsMap().keySet());
+        List<String> namesList = new ArrayList<>(currentGraph.getTaskGraph().taskGraphImpl.getPersistedTaskToObjectsMap().keySet());
 
-        // Determine the safe iteration limit to avoid IndexOutOfBoundsException
-        int limit = Math.min(graphIndex, namesList.size());
-
-        // Iterate over the namesList and update the persisted object state
-        for (int idx = 0; idx < limit; idx++) {
-            String key = namesList.get(idx);
-            subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
+        // Process each persisted task
+        for (String key : namesList) {
+            try {
+                ImmutableTaskGraph persistedGraph = getGraphByName(key);
+                currentGraph.updatePersistedObjectState(persistedGraph);
+            } catch (TornadoRuntimeException e) {
+                // Log warning but continue processing other tasks
+                System.out.println("Warning: Could not find persisted task graph '" + key + "': " + e.getMessage());
+            }
         }
     }
 
@@ -281,6 +301,15 @@ class TornadoExecutor {
     }
 
     private ImmutableTaskGraph getGraphByName(String uniqueName) {
+        // First try to find in subgraphList if it exists
+        if (subgraphList != null) {
+            for (ImmutableTaskGraph immutableTaskGraph : subgraphList) {
+                if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
+                    return immutableTaskGraph;
+                }
+            }
+        }
+        // Fallback to immutableTaskGraphList
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
                 return immutableTaskGraph;

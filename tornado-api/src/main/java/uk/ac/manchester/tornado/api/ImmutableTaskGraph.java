@@ -235,9 +235,8 @@ public class ImmutableTaskGraph {
         if (taskGraph.getLastExecutedTask() != null) {
             return taskGraph.getLastExecutedTask().getTaskGraphName();
         } else {
-            return "First executed task is this ";
+            return taskGraph.getTaskGraphName();
         }
-
     }
 
 }
