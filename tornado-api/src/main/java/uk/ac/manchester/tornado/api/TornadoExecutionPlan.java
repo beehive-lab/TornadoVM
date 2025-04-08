@@ -124,7 +124,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *     The list of the immutable task-graphs in the {@code TornadoExecutionPlan}
      */
     private void updateAccess(ImmutableTaskGraph... immutableTaskGraphs) {
-        System.out.println("CCC UPDATE ACCESS!!");
         if (immutableTaskGraphs.length > 1) {
             for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphs) {
                 TaskGraph taskGraph = immutableTaskGraph.getTaskGraph();
@@ -182,6 +181,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this.getTraceExecutionPlan());
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
         planResults.add(executionResult);
+        tornadoExecutor.updateLastExecutedTaskGraph();
         return executionResult;
     }
 
