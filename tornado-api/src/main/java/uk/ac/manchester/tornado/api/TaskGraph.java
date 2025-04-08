@@ -703,11 +703,11 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
-    @Override
-    public TaskGraph consumeFromDevice(Object... objects) {
-        taskGraphImpl.consumeFromDevice(objects);
-        return this;
-    }
+//    @Override
+//    public TaskGraph consumeFromDevice(Object... objects) {
+//        taskGraphImpl.consumeFromDevice(objects);
+//        return this;
+//    }
 
 
     /**

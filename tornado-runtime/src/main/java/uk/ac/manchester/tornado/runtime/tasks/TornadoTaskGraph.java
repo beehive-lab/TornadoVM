@@ -1135,10 +1135,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    @Override
-    public void consumeFromDevice(Object... objects) {
-
-    }
+//    @Override
+//    public void consumeFromDevice(Object... objects) {
+//
+//    }
 
     private boolean isANumber(Object parameter) {
         return parameter instanceof Number;

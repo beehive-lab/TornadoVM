@@ -230,14 +230,14 @@ class TornadoExecutor {
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
         // Validate that the graphIndex is within bounds of subgraphList
-        System.out.println("S-pre " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName());
+        System.out.println("S-pre " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName() + " soize " + subgraphList.size());
         setLastExecutedGraph(subgraphList.get(graphIndex));
 
         processPersistentStates(graphIndex);
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
 
-        System.out.println("S-after " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName());
+        System.out.println("S-after " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName()+ " soize " + subgraphList.size());
     }
 
     private void setLastExecutedGraph(ImmutableTaskGraph  lastExecutedGraph) {
