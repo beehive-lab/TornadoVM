@@ -40,6 +40,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void setDevice(TornadoDevice device);
 
+    void updatePersistedObjectState();
+
     void setDevice(String taskName, TornadoDevice device);
 
     TornadoDevice getDeviceForTask(String id);
@@ -136,12 +138,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
 
-    void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc);
-
     void updateObjectAccess();
 
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph);
-
-    TornadoTaskGraphInterface getLastExecutedTaskGraph();
 
 }

@@ -61,7 +61,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
@@ -585,11 +584,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public TornadoTaskGraphInterface getLastExecutedTaskGraph() {
-        return lastExecutedTaskGraph;
-    }
-
-    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -666,20 +660,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
 
     @Override
-    public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
-        if (taskGraphSrc == null) {
+    public void updatePersistedObjectState() {
+        if (this.lastExecutedTaskGraph == null) {
+            //this indicates that this is the first task-graph executed
             return;
         }
-
+        
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) this.lastExecutedTaskGraph;
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
         if (objectsToSync == null) {
             objectsToSync = executionContext.getPersistedObjects();
-//            for (Object object : objectsToSync) {
-//                System.out.println("Obj to sync " + object.toString());
-////                executionContext.addPersistedObject(this.taskGraphName, object);
-//            }
             executionContext.addPersistedObject(this.taskGraphName, objectsToSync);
         }
 
@@ -1667,7 +1658,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // and other resources (e.g., Level Zero Command Lists).
         executionContext.setExecutionPlanId(executionPlanId);
 
-        updatePersistedObjectState(this.getLastExecutedTaskGraph());
+        updatePersistedObjectState();
 
         TornadoTaskGraphInterface reduceTaskGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {
