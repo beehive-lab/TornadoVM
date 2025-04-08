@@ -951,10 +951,6 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
-    void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
-        taskGraphImpl.updatePersistedObjectState(taskGraphSrc);
-    }
-
     void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph) {
         taskGraphImpl.setLastExecutedTaskGraph(lastExecutedTaskGraph);
     }
@@ -966,9 +962,4 @@ public class TaskGraph implements TaskGraphInterface {
     TornadoTaskGraphInterface getTaskGraphImpl() {
         return taskGraphImpl;
     }
-
-    TornadoTaskGraphInterface getLastExecutedTask() {
-        return taskGraphImpl.getLastExecutedTaskGraph();
-    }
-
 }

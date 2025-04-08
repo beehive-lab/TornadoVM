@@ -223,20 +223,8 @@ public class ImmutableTaskGraph {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
 
-    void updatePersistedObjectState(ImmutableTaskGraph taskGraphSrc) {
-        taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
-    }
-
     void setLastExecutedTaskGraph(ImmutableTaskGraph lastExecutedTaskGraph) {
         taskGraph.setLastExecutedTaskGraph(lastExecutedTaskGraph.taskGraph.taskGraphImpl);
-    }
-
-    String getLastExecutedTaskGraphName() {
-        if (taskGraph.getLastExecutedTask() != null) {
-            return taskGraph.getLastExecutedTask().getTaskGraphName();
-        } else {
-            return taskGraph.getTaskGraphName();
-        }
     }
 
 }

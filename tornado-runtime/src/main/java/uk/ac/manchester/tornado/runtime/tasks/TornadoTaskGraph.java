@@ -664,10 +664,24 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+
     @Override
     public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
-        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
+        if (taskGraphSrc == null) {
+            return;
+        }
+
+        TornadoTaskGraph graphSrc = (TornadoTaskGraph) this.lastExecutedTaskGraph;
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
+
+        if (objectsToSync == null) {
+            objectsToSync = executionContext.getPersistedObjects();
+//            for (Object object : objectsToSync) {
+//                System.out.println("Obj to sync " + object.toString());
+////                executionContext.addPersistedObject(this.taskGraphName, object);
+//            }
+            executionContext.addPersistedObject(this.taskGraphName, objectsToSync);
+        }
 
         for (Object objectToSync : objectsToSync) {
             Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
@@ -1124,6 +1138,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // the accessor is set to READ_WRITE because the object is UNDER_DEMAND
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             executionContext.addPersistedObject(sourceTaskGraphName, parameter);
+            executionContext.addPersistedObject(parameter);
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 if (!argumentsLookUp.contains(parameter)) {
@@ -1135,7 +1150,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-//    @Override
+    @Override
+    public void consumeFromDevice(Object... objects) {
+        for (Object parameter : objects) {
+            if (parameter == null) {
+                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in task-graph " + executionContext.getId());
+            } else if (parameter instanceof Number) {
+                throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in task-graph " + executionContext.getId());
+            }
+
+            // the accessor is set to READ_WRITE because the object is UNDER_DEMAND
+            executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
+            executionContext.addPersistedObject(parameter);
+
+            if (TornadoOptions.isReusedBuffersEnabled()) {
+                if (!argumentsLookUp.contains(parameter)) {
+                    lockObjectsInMemory(parameter);
+                }
+            }
+
+            argumentsLookUp.add(parameter);
+        }
+    }
+
+    //    @Override
 //    public void consumeFromDevice(Object... objects) {
 //
 //    }
@@ -1629,6 +1667,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // and other resources (e.g., Level Zero Command Lists).
         executionContext.setExecutionPlanId(executionPlanId);
 
+        updatePersistedObjectState(this.getLastExecutedTaskGraph());
+
         TornadoTaskGraphInterface reduceTaskGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {
             reduceTaskGraph = analyzeSkeletonAndRun();
@@ -1971,7 +2011,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
+        if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == java.lang.Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (DEBUG) {
