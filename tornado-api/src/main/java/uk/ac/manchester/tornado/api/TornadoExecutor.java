@@ -47,6 +47,17 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }
 
+    void updateLastExecutedTaskGraph() {
+        ImmutableTaskGraph last = immutableTaskGraphList.getLast();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(immutableTaskGraphList.getLast()));
+
+        if (subgraphList != null) {
+            for (ImmutableTaskGraph immutableTaskGraph : subgraphList) {
+                immutableTaskGraph.setLastExecutedTaskGraph(last);
+            }
+        }
+    }
+
     void withGridScheduler(GridScheduler gridScheduler) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
     }
@@ -233,63 +244,14 @@ class TornadoExecutor {
         if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
         }
-        
-        System.out.println("S-pre " + subgraphList.get(graphIndex).getLastExecutedTaskGraphName() + " soize " + subgraphList.size());
-        
+
         // Store the selected graph before clearing the list
         ImmutableTaskGraph selectedGraph = subgraphList.get(graphIndex);
         
         // Clear and update the immutableTaskGraphList
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, selectedGraph);
-        
-        // Set the last executed graph after updating the list
-        setLastExecutedGraph(selectedGraph);
-        
-        // Process persistent states
-        processPersistentStates(graphIndex);
-        
-        System.out.println("S-after " + selectedGraph.getLastExecutedTaskGraphName() + " soize " + subgraphList.size());
-    }
 
-    private void setLastExecutedGraph(ImmutableTaskGraph lastExecutedGraph) {
-        // Set the last executed task graph for all task graphs in the list
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(lastExecutedGraph));
-        
-        // Also update the subgraphList if it exists
-        if (subgraphList != null) {
-            subgraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(lastExecutedGraph));
-        }
-    }
-
-    /**
-     * Processes the persistent states of a specified subgraph.
-     *
-     * @param graphIndex
-     *     The index of the subgraph to process.
-     */
-    private void processPersistentStates(int graphIndex) {
-        // Validate that the graphIndex is within bounds of subgraphList
-        if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
-            throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
-        }
-
-        // Get the current graph
-        ImmutableTaskGraph currentGraph = subgraphList.get(graphIndex);
-        
-        // Retrieve the list of persisted task names from the specified subgraph
-        List<String> namesList = new ArrayList<>(currentGraph.getTaskGraph().taskGraphImpl.getPersistedTaskToObjectsMap().keySet());
-
-        // Process each persisted task
-        for (String key : namesList) {
-            try {
-                ImmutableTaskGraph persistedGraph = getGraphByName(key);
-                currentGraph.updatePersistedObjectState(persistedGraph);
-            } catch (TornadoRuntimeException e) {
-                // Log warning but continue processing other tasks
-                System.out.println("Warning: Could not find persisted task graph '" + key + "': " + e.getMessage());
-            }
-        }
     }
 
     private ImmutableTaskGraph getGraph(int graphIndex) {
