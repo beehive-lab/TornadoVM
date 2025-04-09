@@ -64,7 +64,7 @@ public class TestSharedBuffers extends TornadoTestBase {
         }
     }
 
-    public static void touchOutputToCopyOutCorrectly(IntArray output) {
+    public static void forcePropagate(IntArray output) {
         output.set(0, output.get(0));
     }
 
@@ -87,9 +87,7 @@ public class TestSharedBuffers extends TornadoTestBase {
     }
 
     public static void processBuffer(IntArray input, IntArray output, IntArray context, int size) {
-        // Simulate some processing with context
         for (int i = 0; i < size; i++) {
-            // Intentionally access context to potentially trigger indexing issues
             output.set(i, input.get(i) + context.get(i));
         }
     }
@@ -472,7 +470,7 @@ public class TestSharedBuffers extends TornadoTestBase {
         TaskGraph fourthGraph = new TaskGraph("finalTransfer")
                 .consumeFromDevice(thirdGraph.getTaskGraphName(), outputBuffer, contextBuffer)
                 .task("finalizeContext", TestSharedBuffers::finalizeContext, contextBuffer, numElements)
-                .task("empty", TestSharedBuffers::touchOutputToCopyOutCorrectly, outputBuffer)
+                .task("empty", TestSharedBuffers::forcePropagate, outputBuffer)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputBuffer, contextBuffer);
 
         // @formatter:on
@@ -532,8 +530,8 @@ public class TestSharedBuffers extends TornadoTestBase {
                 .task("finalizeContext", TestSharedBuffers::finalizeContext, sharedContext, numElements)
                 // Apply the context to the result
                 .task("processWithFinalContext", TestSharedBuffers::processBuffer, c, c, sharedContext, numElements)
-                // Add a touch operation to ensure proper transfer
-                .task("touchOutputBuffer", TestSharedBuffers::touchOutputToCopyOutCorrectly, c)
+                // Add a force propagation operation to ensure proper transfer
+                .task("forcePropagate", TestSharedBuffers::forcePropagate, c)
                 // Transfer both back to the host
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c, sharedContext);
 
