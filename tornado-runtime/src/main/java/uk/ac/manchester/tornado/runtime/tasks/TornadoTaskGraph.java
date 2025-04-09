@@ -658,14 +658,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-
     @Override
     public void updatePersistedObjectState() {
         if (this.lastExecutedTaskGraph == null) {
             //this indicates that this is the first task-graph executed
             return;
         }
-        
+
         TornadoTaskGraph graphSrc = (TornadoTaskGraph) this.lastExecutedTaskGraph;
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
 
@@ -1163,11 +1162,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             argumentsLookUp.add(parameter);
         }
     }
-
-    //    @Override
-//    public void consumeFromDevice(Object... objects) {
-//
-//    }
 
     private boolean isANumber(Object parameter) {
         return parameter instanceof Number;
