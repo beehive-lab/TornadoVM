@@ -502,7 +502,7 @@ public class TornadoVMInterpreter {
         long spaceDeallocated = interpreterDevice.deallocate(objectState);
         // Update current device area use
         if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
-            boolean materializeDealloc = spaceDeallocated == 0;
+            boolean materializeDealloc = spaceDeallocated != 0;
             DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList, materializeDealloc);
         }
         graphExecutionContext.setCurrentDeviceMemoryUsage(graphExecutionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
