@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.runtime;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
@@ -185,7 +183,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
             } else {
-                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable), taskMeta);
+                result = new PTXCompilationResult(PTXCodeUtil.buildKernelName(resolvedMethod.getName(), executable), taskMeta);
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -206,7 +204,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {
         final PTXDeviceContext deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
-        String functionName = buildKernelName(executable.getEntryPoint(), executable);
+        String functionName = PTXCodeUtil.buildKernelName(executable.getEntryPoint(), executable);
         if (deviceContext.isCached(executionPlanId, executable.getEntryPoint(), executable)) {
             return deviceContext.getInstalledCode(executionPlanId, functionName);
         }
@@ -239,7 +237,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             methodName = resolvedMethod.getName();
         }
-        String functionName = buildKernelName(methodName, task);
+        String functionName = PTXCodeUtil.buildKernelName(methodName, task);
         return getDeviceContext().getInstalledCode(executionPlanId, functionName);
     }
 

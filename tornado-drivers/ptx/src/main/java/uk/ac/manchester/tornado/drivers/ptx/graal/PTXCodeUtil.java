@@ -51,7 +51,6 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 public class PTXCodeUtil {
 
     private static final String PACKAGE_PANAMA_TYPES = "uk_ac_manchester_tornado_api_types_";
-
     private static final String PACKAGE_PANAMA_COLLECTION = "uk_ac_manchester_tornado_api_types_collections_";
     private static final String PTX_HEADER_FORMAT = PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" + PTXAssemblerConstants.TARGET_ARCH + " %s \n" + PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
 
@@ -152,10 +151,26 @@ public class PTXCodeUtil {
         sb.append(arg.hashCode());
     }
 
-    public static String buildKernelName(String methodName, SchedulableTask task) {
-        StringBuilder sb = new StringBuilder(task.getId().replaceAll("[.\\-]", "_"));
+    private static StringBuilder sanitiseTaskID(String methodName, SchedulableTask task) {
+        StringBuilder sb = new StringBuilder();
+        String taskNameID = task.getId();
+        for (int i = 0; i < taskNameID.length(); i++) {
+            char c = taskNameID.charAt(i);
+            if (i == 0 && Character.isDigit(c)) {
+                sb.append('_');
+                sb.append(c);
+            } else if (Character.isLetterOrDigit(c)) {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
         sb.append('_').append(methodName);
+        return sb;
+    }
 
+    public static String buildKernelName(String methodName, SchedulableTask task) {
+        StringBuilder sb = sanitiseTaskID(methodName, task);
         for (Object arg : task.getArguments()) {
             sb.append('_');
             Class<?> argClass = arg.getClass();
@@ -171,11 +186,15 @@ public class PTXCodeUtil {
                 emitSignatureForGenericParameter(sb, arg);
             }
         }
+
         // If the batch number is greater than 0 append the name
         if (task.getBatchNumber() > 0) {
             sb.append("_").append(task.getBatchNumber());
         }
-        return sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "").replaceAll(PACKAGE_PANAMA_COLLECTION, "").replaceAll("&", "").toLowerCase();
+        return sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "") //
+                .replaceAll(PACKAGE_PANAMA_COLLECTION, "") //
+                .replaceAll("&", "") //
+                .toLowerCase();
     }
 
     public static byte[] getCodeWithAttachedPTXHeader(byte[] targetCode, PTXBackend backend) {

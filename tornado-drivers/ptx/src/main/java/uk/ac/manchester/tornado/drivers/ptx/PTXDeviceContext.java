@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.isBoxedPrimitive;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -47,6 +46,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
@@ -377,7 +377,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     @Override
     public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
         PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
-        return ptxCodeCache.isCached(buildKernelName(methodName, task));
+        return ptxCodeCache.isCached(PTXCodeUtil.buildKernelName(methodName, task));
     }
 
     public void destroyStream(long executionPlanId) {
