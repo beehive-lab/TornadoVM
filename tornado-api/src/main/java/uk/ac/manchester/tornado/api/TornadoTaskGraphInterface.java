@@ -138,4 +138,5 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void updateObjectAccess();
 
+    boolean isGridRegistered();
 }

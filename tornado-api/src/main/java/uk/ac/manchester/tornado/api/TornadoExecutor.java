@@ -47,8 +47,13 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }
 
-    void withGridScheduler(GridScheduler gridScheduler) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
+    boolean withGridScheduler(GridScheduler gridScheduler) {
+        boolean checkGridRegistered = false;
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.withGridScheduler(gridScheduler);
+            checkGridRegistered |= immutableTaskGraph.isGridRegistered();
+        }
+        return checkGridRegistered;
     }
 
     void warmup(ExecutorFrame executorFrame) {
@@ -303,4 +308,15 @@ class TornadoExecutor {
         taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
+    boolean checkAllTaskGraphsForGridScheduler() {
+        if (subgraphList == null) {
+            return false;
+        }
+        for (ImmutableTaskGraph immutableTaskGraph : subgraphList) {
+            if (immutableTaskGraph.isGridRegistered()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
