@@ -45,7 +45,9 @@ public class TestIntegers extends TornadoTestBase {
         IntArray a = new IntArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", TestKernels::copyTestZero, a) //
+                // use an odd task-id to check that the task is compiled correctly.
+                // task-name only affects the generated kernel name in the PTX backend.
+                .task("t,@", TestKernels::copyTestZero, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
