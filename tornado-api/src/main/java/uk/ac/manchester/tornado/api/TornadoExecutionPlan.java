@@ -346,7 +346,14 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
-        tornadoExecutor.withGridScheduler(gridScheduler);
+        boolean isGridRegistered = tornadoExecutor.withGridScheduler(gridScheduler);
+        if (!isGridRegistered) {
+            // check for the whole set of task-graphs
+            isGridRegistered = tornadoExecutor.checkAllTaskGraphsForGridScheduler();
+            if (!isGridRegistered) {
+                throw new TornadoRuntimeException("[ERROR] GridScheduler Name not registered in any task-graph");
+            }
+        }
         executionFrame.setGridScheduler(gridScheduler);
         return new WithGridScheduler(this, gridScheduler);
     }
