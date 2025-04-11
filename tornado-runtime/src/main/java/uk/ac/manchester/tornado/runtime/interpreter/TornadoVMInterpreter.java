@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -395,6 +396,10 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.PRINT_BYTECODES) {
             System.out.println(logBuilder);
+        }
+
+        if (!TornadoOptions.DUMP_BYTECODES.isBlank()) {
+            RuntimeUtilities.writeBytecodeToFile(logBuilder);
         }
 
         return barrier;

@@ -113,6 +113,11 @@ public class TornadoOptions {
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
 
     /**
+     * Option to dump TornadoVM Internal Bytecodes into a file.
+     */
+    public static final String DUMP_BYTECODES = getProperty("tornado.dump.bytecodes.dir", "");
+
+    /**
      * Option to enable experimental and new option for performing automatic full
      * reductions.
      */
