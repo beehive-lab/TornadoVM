@@ -41,7 +41,7 @@ __TORNADOVM_DUMP_PROFILER__ = " -Dtornado.profiler=True -Dtornado.log.profiler=T
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 __TORNADOVM_ENABLE_CONCURRENT__DEVICES__ = " -Dtornado.concurrent.devices=True "
-__TORNADOVM_DUMP_BYTECODES_DIR__ = " -Dtornado.dump.bytecodes.dir="
+__TORNADOVM_DUMP_BYTECODES_DIR__ = " -Dtornado.print.bytecodes=True -Dtornado.dump.bytecodes.dir="
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that
