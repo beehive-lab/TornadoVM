@@ -41,6 +41,7 @@ __TORNADOVM_DUMP_PROFILER__ = " -Dtornado.profiler=True -Dtornado.log.profiler=T
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 __TORNADOVM_ENABLE_CONCURRENT__DEVICES__ = " -Dtornado.concurrent.devices=True "
+__TORNADOVM_DUMP_BYTECODES_DIR__ = " -Dtornado.dump.bytecodes.dir="
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that
@@ -214,6 +215,9 @@ class TornadoVMRunnerTool():
 
         if (args.printBytecodes):
             tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__
+
+        if (args.dump_bytecodes_dir != None):
+            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_BYTECODES_DIR__ + args.dump_bytecodes_dir + " "
 
         if (args.enableConcurrentDevices):
             tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_CONCURRENT__DEVICES__
@@ -473,6 +477,7 @@ def parseArguments():
     parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
                         help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
     parser.add_argument("--intellijinit", action="store_true", dest="intellijinit", default=False, help="Generate internal xml files for IntelliJ IDE")
+    parser.add_argument('--dumpBC', action="store", dest="dump_bytecodes_dir", default=None, help="Dump the TornadoVM bytecodes to a directory")
     parser.add_argument("param1", nargs="?")
     parser.add_argument("param2", nargs="?")
     parser.add_argument("param3", nargs="?")
