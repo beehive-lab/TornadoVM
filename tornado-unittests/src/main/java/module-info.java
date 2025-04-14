@@ -5,6 +5,7 @@ open module tornado.unittests {
     requires java.desktop;
     requires jdk.incubator.vector;
     requires com.microsoft.onnxruntime;
+    requires jdk.unsupported;
 
     exports uk.ac.manchester.tornado.unittests;
     exports uk.ac.manchester.tornado.unittests.api;
