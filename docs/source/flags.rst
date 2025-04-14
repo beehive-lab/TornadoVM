@@ -49,6 +49,8 @@ Debugging and Logging
    ``-Dtornado.printKernel=true``                    Prints generated OpenCL/PTX/SPIR-V kernels.
    ``-Dtornado.print.kernel.dir=FILENAME``           Saves generated kernels to the specified file.
    ``-Dtornado.threadInfo=true``                     Displays the number of threads used.
+   ``-Dtornado.print.bytecodes=true``                Prints TornadoVM Internal Bytecodes to stdout.
+   ``-Dtornado.dump.bytecodes.dir=FILENAME``         Dumps TornadoVM Internal Bytecodes to the specified file.
    ================================================  ============================================================================
 
 Profiling
