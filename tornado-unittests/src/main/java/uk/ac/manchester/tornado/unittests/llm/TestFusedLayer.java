@@ -461,25 +461,25 @@ public class TestFusedLayer extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler();
 
         // Set up worker grids for each task
-        gridScheduler.setWorkerGrid("fused.reduce", dimWorker);
-        gridScheduler.setWorkerGrid("fused.sum", singleWorker);
-        gridScheduler.setWorkerGrid("fused.ns", dimWorker);
+        gridScheduler.addWorkerGrid("fused.reduce", dimWorker);
+        gridScheduler.addWorkerGrid("fused.sum", singleWorker);
+        gridScheduler.addWorkerGrid("fused.ns", dimWorker);
 
         // Set up projection workers with correct dimensions
-        gridScheduler.setWorkerGrid("fused.matmul1", dimWorker);    // For Query (dim)
+        gridScheduler.addWorkerGrid("fused.matmul1", dimWorker);    // For Query (dim)
 
         // Use specific worker grids for K and V that match their actual sizes
         WorkerGrid kvDimWorker = new WorkerGrid1D(kvDim);
         kvDimWorker.setGlobalWork(kvDim, 1, 1);
         kvDimWorker.setLocalWork(Math.min(kvDim, localSize), 1, 1);
-        gridScheduler.setWorkerGrid("fused.matmul2", kvDimWorker);  // For Key (kvDim)
-        gridScheduler.setWorkerGrid("fused.matmul3", kvDimWorker);  // For Value (kvDim)
+        gridScheduler.addWorkerGrid("fused.matmul2", kvDimWorker);  // For Key (kvDim)
+        gridScheduler.addWorkerGrid("fused.matmul3", kvDimWorker);  // For Value (kvDim)
 
         // Set up RoPE worker with the right dimension
         WorkerGrid ropeWorker = new WorkerGrid1D(dim / 2);
         ropeWorker.setGlobalWork(dim / 2, 1, 1);
         ropeWorker.setLocalWork(Math.min(dim / 2, localSize), 1, 1);
-        gridScheduler.setWorkerGrid("fused.rope", ropeWorker);
+        gridScheduler.addWorkerGrid("fused.rope", ropeWorker);
 
         // Create execution plan
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

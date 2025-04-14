@@ -178,8 +178,8 @@ public class TestRNSNormLayer extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
-        gridScheduler.setWorkerGrid("s0.t1", new WorkerGrid1D(1));
-        gridScheduler.setWorkerGrid("s0.t2", worker);
+        gridScheduler.addWorkerGrid("s0.t1", new WorkerGrid1D(1));
+        gridScheduler.addWorkerGrid("s0.t2", worker);
 
         KernelContext context = new KernelContext();
 
@@ -253,9 +253,9 @@ public class TestRNSNormLayer extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         GridScheduler gridScheduler = new GridScheduler("fused.reduce", worker);
-        gridScheduler.setWorkerGrid("fused.sum", new WorkerGrid1D(1));
-        gridScheduler.setWorkerGrid("fused.ns", worker);
-        gridScheduler.setWorkerGrid("fused.mv", worker);
+        gridScheduler.addWorkerGrid("fused.sum", new WorkerGrid1D(1));
+        gridScheduler.addWorkerGrid("fused.ns", worker);
+        gridScheduler.addWorkerGrid("fused.mv", worker);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {

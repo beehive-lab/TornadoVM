@@ -254,21 +254,21 @@ public class TestParallelFFNLayer extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler();
 
         // Set up model dimension workers
-        gridScheduler.setWorkerGrid("ffn-layer.matmul1", dimWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.residual1", dimWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.reduce", dimWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.ns", dimWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.residual2", dimWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.matmul1", dimWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.residual1", dimWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.reduce", dimWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.ns", dimWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.residual2", dimWorker);
 
         // Set up hidden dimension workers
-        gridScheduler.setWorkerGrid("ffn-layer.projection1", hiddenWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.projection3", hiddenWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.silu", hiddenWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.multiply", hiddenWorker);
-        gridScheduler.setWorkerGrid("ffn-layer.projection2", dimWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.projection1", hiddenWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.projection3", hiddenWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.silu", hiddenWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.multiply", hiddenWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.projection2", dimWorker);
 
         // Set up single thread worker for final sum
-        gridScheduler.setWorkerGrid("ffn-layer.sum", singleWorker);
+        gridScheduler.addWorkerGrid("ffn-layer.sum", singleWorker);
         return gridScheduler;
     }
 

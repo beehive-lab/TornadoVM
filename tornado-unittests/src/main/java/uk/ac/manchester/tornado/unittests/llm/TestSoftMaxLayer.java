@@ -302,10 +302,10 @@ public class TestSoftMaxLayer extends TornadoTestBase {
 
         // Configure the grid scheduler to assign appropriate worker grids to each task
         GridScheduler gridScheduler = new GridScheduler("s0.findMax", worker);
-        gridScheduler.setWorkerGrid("s0.finalizeMax", singleThreadWorker);
-        gridScheduler.setWorkerGrid("s0.expAndSum", worker);
-        gridScheduler.setWorkerGrid("s0.calculateSum", singleThreadWorker);
-        gridScheduler.setWorkerGrid("s0.normalize", worker);
+        gridScheduler.addWorkerGrid("s0.finalizeMax", singleThreadWorker);
+        gridScheduler.addWorkerGrid("s0.expAndSum", worker);
+        gridScheduler.addWorkerGrid("s0.calculateSum", singleThreadWorker);
+        gridScheduler.addWorkerGrid("s0.normalize", worker);
 
         // Create kernel context
         KernelContext context = new KernelContext();

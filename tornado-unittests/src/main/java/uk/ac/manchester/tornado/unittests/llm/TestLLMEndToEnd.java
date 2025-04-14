@@ -969,45 +969,45 @@ public class TestLLMEndToEnd {
         ropeWorker.setLocalWork(Math.min(128, config.dim / 2), 1, 1);
 
         // Scheduler 0: RMSNorm
-        tornadoForwardScheduler.setWorkerGrid("rmsnorm.reduce", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("rmsnorm.sum", singleWorker);
-        tornadoForwardScheduler.setWorkerGrid("rmsnorm.normalize", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("rmsnorm.reduce", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("rmsnorm.sum", singleWorker);
+        tornadoForwardScheduler.addWorkerGrid("rmsnorm.normalize", dimWorker);
 
         // Scheduler 1: QKV
-        tornadoForwardScheduler.setWorkerGrid("qkv.qmatmul", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("qkv.kmatmul", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("qkv.vmatmul", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("qkv.qmatmul", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("qkv.kmatmul", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("qkv.vmatmul", dimWorker);
 
         // Scheduler 2: RoPE
-        tornadoForwardScheduler.setWorkerGrid("rotation.rope", ropeWorker);
+        tornadoForwardScheduler.addWorkerGrid("rotation.rope", ropeWorker);
 
         // Scheduler 3: Attention
-        tornadoForwardScheduler.setWorkerGrid("attention.scores", headsWorker);
-        tornadoForwardScheduler.setWorkerGrid("attention.max", headsWorker);
-        tornadoForwardScheduler.setWorkerGrid("attention.expsum", headsWorker);
-        tornadoForwardScheduler.setWorkerGrid("attention.normalize", headsWorker);
-        tornadoForwardScheduler.setWorkerGrid("attention.weighted-sum", headsWorker);
+        tornadoForwardScheduler.addWorkerGrid("attention.scores", headsWorker);
+        tornadoForwardScheduler.addWorkerGrid("attention.max", headsWorker);
+        tornadoForwardScheduler.addWorkerGrid("attention.expsum", headsWorker);
+        tornadoForwardScheduler.addWorkerGrid("attention.normalize", headsWorker);
+        tornadoForwardScheduler.addWorkerGrid("attention.weighted-sum", headsWorker);
 
         // Scheduler 4: FFN
-        tornadoForwardScheduler.setWorkerGrid("ffn.matmul1", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.residual1", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.reduceFFN", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.sum", singleWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.ns", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.projcectOne", hiddenDimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.projectionThree", hiddenDimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.silu", hiddenDimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.multiply", hiddenDimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.projectionTwo", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("ffn.residual2", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.matmul1", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.residual1", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.reduceFFN", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.sum", singleWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.ns", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.projcectOne", hiddenDimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.projectionThree", hiddenDimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.silu", hiddenDimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.multiply", hiddenDimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.projectionTwo", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("ffn.residual2", dimWorker);
 
         // Scheduler 5: Final RMSNorm
-        tornadoForwardScheduler.setWorkerGrid("finalrms.reduceRMS", dimWorker);
-        tornadoForwardScheduler.setWorkerGrid("finalrms.sum", singleWorker);
-        tornadoForwardScheduler.setWorkerGrid("finalrms.normalize", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("finalrms.reduceRMS", dimWorker);
+        tornadoForwardScheduler.addWorkerGrid("finalrms.sum", singleWorker);
+        tornadoForwardScheduler.addWorkerGrid("finalrms.normalize", dimWorker);
 
         // Scheduler 6: Logits
-        tornadoForwardScheduler.setWorkerGrid("logits.projection", vocabWorker);
+        tornadoForwardScheduler.addWorkerGrid("logits.projection", vocabWorker);
 
         return tornadoForwardScheduler;
     }
