@@ -22,6 +22,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
+import static uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray.ARRAY_HEADER;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 import java.util.ArrayList;
@@ -71,6 +72,18 @@ public abstract class TornadoBufferProvider {
         return bufferAccesses;
     }
 
+    /**
+     * This function is invoked before the allocation with batch processing takes place.
+     * It iterates over the list of used buffers, and if a buffer with the same
+     * access type and size has already been allocated, it returns true to signify that
+     * this buffer can be reused for this batch. Otherwise, it returns false.
+     *
+     * @param batchSize The size of the current batch
+     * @param access The access type of the object (READ-ONLY, WRITE-ONLY, READ-WRITE)
+     * @param numberOfBuffersForAccessType The number of buffers that are required to be allocated for this access type
+     *
+     * @return True if a buffer to reuse is available, or false otherwise.
+     */
     public boolean reuseBufferForBatchProcessing(long batchSize, Access access, int numberOfBuffersForAccessType) {
         boolean matchFound = false;
         if (!usedBuffers.get(access).isEmpty()) {
@@ -79,7 +92,7 @@ public abstract class TornadoBufferProvider {
                     return false;
                 }
                 long size = bufferContainer.size;
-                matchFound = (size == batchSize + 24);
+                matchFound = (size == batchSize + ARRAY_HEADER);
                 if (matchFound) {
                     logger.debug("Reuse buffer %s from the used-list for batch processing. Batch Size = %s, Access = %s %n", bufferContainer, batchSize, access);
                 }

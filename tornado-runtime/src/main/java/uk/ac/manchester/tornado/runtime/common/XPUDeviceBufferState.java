@@ -36,6 +36,7 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     private boolean bufferHasContent;
     private boolean lockBuffer;
     private long partialSize;
+    private boolean reuseBuffer = false;
 
     @Override
     public void setXPUBuffer(XPUBuffer value) {
@@ -106,6 +107,16 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     @Override
     public long getPartialCopySize() {
         return this.partialSize;
+    }
+
+    @Override
+    public boolean isBufferReused() {
+        return reuseBuffer;
+    }
+
+    @Override
+    public void markBufferAsReused() {
+        reuseBuffer = true;
     }
 
     public XPUDeviceBufferState createSnapshot() {

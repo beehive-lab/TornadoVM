@@ -313,19 +313,24 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            if (batchSize != 0 ) {
-                int numberOfBuffersForAccessType = distinctAccesses.get(accesses[i]);
-                // if there are no buffers available in the used-list to reuse, allocate new ones
-                if (!bufferProvider.reuseBufferForBatchProcessing(batchSize, accesses[i], numberOfBuffersForAccessType)) {
-                    logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
-                    allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
-                }
-            } else {
+            if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses)) {
                 logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
                 allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
             }
+
         }
         return allocatedSpace;
+    }
+
+    private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses) {
+        if (batchSize != 0) {
+            int numberOfBuffersForAccessType = distinctAccesses.get(access);
+            // if there is a buffer available in the used-list with the same access type, reuse it
+            if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

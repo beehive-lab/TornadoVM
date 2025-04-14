@@ -489,21 +489,18 @@ public class TornadoVMInterpreter {
         // total size of objects pre-allocated and current allocation
         long allocationSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
         long allocationsTotalSize = allocationSize + preAllocatedSizes;
-        if (sizeBatch != 0) {
-            for (Object object : objects) {
-                int previousBatch = currentBatchNumberPerObject.get(object);
-                currentBatchNumberPerObject.replace(object, previousBatch, ++previousBatch);
-            }
-        }
+        increaseBatchNumber(sizeBatch);
 
         // Dump printing after object allocation, so the XPU-Buffer is created,
         // and we can query the size without having to use Java type analysis
         // to obtain the size at this point. 
-        if (TornadoOptions.PRINT_BYTECODES && allocationSize > 0) {
+        if (TornadoOptions.PRINT_BYTECODES) {
             int objIndex = 0;
             for (XPUDeviceBufferState state : objectStates) {
                 long size = state.getXPUBuffer().size();
-                DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
+                if (!state.isBufferReused()) {
+                    DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
+                }
                 objIndex++;
             }
         }
@@ -517,6 +514,15 @@ public class TornadoVMInterpreter {
             }
         }
         return -1;
+    }
+
+    private void increaseBatchNumber(long sizeBatch) {
+        if (sizeBatch != 0) {
+            for (Object object : objects) {
+                int previousBatch = currentBatchNumberPerObject.get(object);
+                currentBatchNumberPerObject.replace(object, previousBatch, ++previousBatch);
+            }
+        }
     }
 
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
