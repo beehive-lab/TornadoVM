@@ -226,4 +226,7 @@ public class ImmutableTaskGraph {
         taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
     }
 
+    boolean isGridRegistered() {
+        return taskGraph.isGridRegistered();
+    }
 }

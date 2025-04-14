@@ -957,4 +957,7 @@ public class TaskGraph implements TaskGraphInterface {
         return taskGraphImpl;
     }
 
+    public boolean isGridRegistered() {
+        return taskGraphImpl.isGridRegistered();
+    }
 }
