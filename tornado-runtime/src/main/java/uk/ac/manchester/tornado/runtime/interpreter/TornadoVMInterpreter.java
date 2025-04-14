@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -414,6 +415,10 @@ public class TornadoVMInterpreter {
             System.out.println(logBuilder);
         }
 
+        if (!TornadoOptions.DUMP_BYTECODES.isBlank()) {
+            RuntimeUtilities.writeBytecodeToFile(logBuilder);
+        }
+
         return barrier;
     }
 
@@ -541,7 +546,7 @@ public class TornadoVMInterpreter {
         long spaceDeallocated = interpreterDevice.deallocate(objectState);
         // Update current device area use
         if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
-            boolean materializeDealloc = spaceDeallocated == 0;
+            boolean materializeDealloc = spaceDeallocated != 0;
             DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList, materializeDealloc);
         }
         graphExecutionContext.setCurrentDeviceMemoryUsage(graphExecutionContext.getCurrentDeviceMemoryUsage() - spaceDeallocated);
