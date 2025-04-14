@@ -90,19 +90,15 @@ Performance & Scheduling
 .. table::
    :align: left
 
-   ================================================================  ========================================================
+   ================================================================  ==============================================================================
    Flag                                                              Description
-   ================================================================  ========================================================
-   ``-Dtornado.ns.time=true``                                        Uses nanoseconds for timing instead of milliseconds.
+   ================================================================  ==============================================================================
+   ``-Dtornado.ns.time=true``                                        Uses nanoseconds for timing instead of milliseconds (default: true).
    ``-Ds0.t0.global.workgroup.size=X,Y,Z``                           Sets custom global workgroup size.
    ``-Ds0.t0.local.workgroup.size=X,Y,Z``                            Sets custom local workgroup size.
-   ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices.
-                                                                     Requires task-specific device selection (e.g., ``-Ds0.t0.device=0:0``).
-   ``-Dtornado.opencl.userelative=true``                             Enables relative addressing (e.g., for DMA on FPGAs).
-   ``-Dtornado.opencl.blocking=true``                                Forces blocking mode for OpenCL API calls.
-   ``-Dtornado.opencl.compiler.options=LIST``                        Passes compiler options to OpenCL runtime.
+   ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices (default: false).
    ``-Dtornado.{ptx,opencl}.priority=X``                             Sets driver priority (default: PTX=1, OpenCL=0).
-   ================================================================  ========================================================
+   ================================================================  ==============================================================================
 
 Precompiled and FPGA Options
 ----------------------------
@@ -127,14 +123,14 @@ Optimizations
 .. table::
    :align: left
 
-   ================================================================  ============================================================
+   ================================================================  ===================================================================================================
    Flag                                                              Description
-   ================================================================  ============================================================
+   ================================================================  ===================================================================================================
    ``-Dtornado.enable.fma=true``                                     Enables fused multiply-add (default: true). May cause issues on some platforms.
-   ``-Dtornado.enable.mathOptimizations=true``                       Enables math simplifications (e.g., ``1/sqrt(x)`` → ``rsqrt``).
-   ``-Dtornado.experimental.partial.unroll=true``                    Enables loop partial unrolling. Use ``-Dtornado.partial.unroll.factor=FACTOR``.
-   ``-Dtornado.enable.nativeFunctions=false``                        Enables native math functions (default: false).
-   ================================================================  ============================================================
+   ``-Dtornado.enable.mathOptimizations=true``                       Enables math simplifications (e.g., ``1/sqrt(x)`` → ``rsqrt``) (default: true).
+   ``-Dtornado.experimental.partial.unroll=true``                    Enables loop partial unrolling (default: false). Use ``-Dtornado.partial.unroll.factor=FACTOR``.
+   ``-Dtornado.enable.nativeFunctions=true``                         Enables native math functions (default: false).
+   ================================================================  ===================================================================================================
 
 Level Zero (SPIR-V Specific)
 ----------------------------
