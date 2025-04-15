@@ -231,7 +231,7 @@ __TEST_THE_WORLD__ = [
               testMethods=["testVirtualDeviceKernel"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.print.kernel=True",
+                  "-Dtornado.printKernel=True",
                   "-Dtornado.virtual.device=True",
                   "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
@@ -356,7 +356,7 @@ __MAIN_TORNADO_JUNIT_MODULE__ = " junit/"
 __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
-__PRINT_OPENCL_KERNEL__ = "-Dtornado.print.kernel=True "
+__PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 __TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
 __THREAD_INFO__ = "-Dtornado.threadInfo=True "
@@ -746,7 +746,8 @@ def parseArguments():
                         help="Enable the Debug mode in Tornado")
     parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False,
                         help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
-    parser.add_argument('--live', "-l", action="store_true", dest="live_mode", default=False, help="Visualize output in live mode (no wait)")
+    parser.add_argument('--live', "-l", action="store_true", dest="live_mode", default=False,
+                        help="Visualize output in live mode (no wait)")
     parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
                         help="Quick pass without stress memory and output for logs in a file.")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")

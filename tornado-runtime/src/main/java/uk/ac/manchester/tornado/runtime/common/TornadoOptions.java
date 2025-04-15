@@ -77,7 +77,7 @@ public class TornadoOptions {
     /**
      * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA PTX or SPIR-V) from the TornadoVM JIT Compiler.
      */
-    public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.print.kernel", FALSE);
+    public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.printKernel", FALSE);
 
     /**
      * Priority of the PTX Backend. The higher the number, the more priority over
