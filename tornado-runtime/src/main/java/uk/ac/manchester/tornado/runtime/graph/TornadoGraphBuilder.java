@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.PersistedObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -75,6 +76,15 @@ public class TornadoGraphBuilder {
     }
 
     private static void createOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
+        final OnDeviceObjectNode onDeviceObjectNode = new OnDeviceObjectNode(context);
+        onDeviceObjectNode.setValue((ObjectNode) arg);
+        graph.add(onDeviceObjectNode);
+        context.addUse(onDeviceObjectNode);
+        args[argIndex] = onDeviceObjectNode;
+        persistNode.addValue((ObjectNode) arg);
+    }
+
+    private static void createPersistOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
         final OnDeviceObjectNode onDeviceObjectNode = new OnDeviceObjectNode(context);
         onDeviceObjectNode.setValue((ObjectNode) arg);
         graph.add(onDeviceObjectNode);
@@ -300,7 +310,12 @@ public class TornadoGraphBuilder {
                 boolean isPersistedObject = executionContext.getPersistedObjects().contains(targetObject);
 
                 // If the object is NOT persistent, proceed with de-allocation. Prevents dealloc for Under_Demand objects
-                if (!isPersistedObject) {
+                if (isPersistedObject) {
+                    PersistedObjectNode persistNode = new PersistedObjectNode(contextNode);
+                    persistNode.setValue(objectNode);
+                    graph.add(persistNode);
+                    contextNode.addUse(persistNode);
+                } else {
                     DeallocateNode deallocateNode = new DeallocateNode(contextNode);
                     deallocateNode.setValue(objectNode);
                     deallocateNode.setDependent(dependencyNode);

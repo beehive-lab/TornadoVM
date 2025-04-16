@@ -63,6 +63,15 @@ class DebugInterpreter {
         appendLogBuilder(verbose, logBuilder);
     }
 
+    static void logPersistedObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder) {
+        String verbose = String.format("bc: %s[0x%x] %s on %s", //
+                InterpreterUtilities.debugHighLightBC("PERSIST_BUFFER"), //
+                object.hashCode(), //
+                object, //
+                InterpreterUtilities.debugDeviceBC(interpreterDevice));
+        appendLogBuilder(verbose, logBuilder);
+    }
+
     static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoXPUDevice deviceForInterpreter, //
             long sizeObject, long sizeBatch, long offset, final int eventList, StringBuilder logBuilder) {
 
