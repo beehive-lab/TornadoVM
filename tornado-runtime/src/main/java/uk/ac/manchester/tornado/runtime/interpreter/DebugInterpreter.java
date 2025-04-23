@@ -45,7 +45,7 @@ class DebugInterpreter {
     }
 
     static void logDeallocObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder, boolean materializeDealloc) {
-        String verbose = String.format("bc: %s[0x%x] %s [Status: %s] on %s", //
+        String verbose = String.format("bc: %s[0x%x] %s [Status:%s] on %s", //
                 materializeDealloc ? InterpreterUtilities.debugHighLightBC("DEALLOC") : InterpreterUtilities.debugHighLightNonExecBC("DEALLOC"), //
                 object.hashCode(), //
                 object, //
@@ -66,11 +66,15 @@ class DebugInterpreter {
     static void logTransferToDeviceOnce(List<Integer> allEvents, Object object, TornadoXPUDevice deviceForInterpreter, //
             long sizeObject, long sizeBatch, long offset, final int eventList, StringBuilder logBuilder) {
 
-        String coloredText = allEvents != null //
+        boolean executed = allEvents != null;
+
+        String transferStatus = executed ? "Transferred" : "Present";
+
+        String coloredText = executed //
                 ? InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") //
                 : InterpreterUtilities.debugHighLightNonExecBC("TRANSFER_HOST_TO_DEVICE_ONCE"); //
 
-        String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d]", //
+        String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, batchSize=%d, offset=%d [event list=%d], [Status:%s] ", //
                 coloredText, //
                 object.hashCode(), //
                 object, //
@@ -78,7 +82,8 @@ class DebugInterpreter {
                 sizeObject, // 
                 sizeBatch, //
                 offset, //
-                eventList);
+                eventList, //
+                InterpreterUtilities.debugHighLightNonExecBC(transferStatus));
 
         appendLogBuilder(verbose, logBuilder);
     }
