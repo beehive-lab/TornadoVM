@@ -350,6 +350,13 @@ public class TornadoOptions {
     }
 
     /**
+     * Option for logging the TornadoVM Bytecodes when printing in console is enabled or dumping them into a file.
+     */
+    public static boolean LOG_BYTECODES() {
+        return TornadoOptions.PRINT_BYTECODES || !TornadoOptions.DUMP_BYTECODES.isBlank();
+    }
+
+    /**
      * Option to reuse device buffers every time a task-graph is executed. True by
      * default.
      */
