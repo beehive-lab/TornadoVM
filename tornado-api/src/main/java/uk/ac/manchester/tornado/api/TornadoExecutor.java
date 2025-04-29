@@ -56,6 +56,17 @@ class TornadoExecutor {
         return checkGridRegistered;
     }
 
+    void updateLastExecutedTaskGraph() {
+        ImmutableTaskGraph last = immutableTaskGraphList.getLast();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(immutableTaskGraphList.getLast()));
+
+        if (subgraphList != null) {
+            for (ImmutableTaskGraph immutableTaskGraph : subgraphList) {
+                immutableTaskGraph.setLastExecutedTaskGraph(last);
+            }
+        }
+    }
+
     void warmup(ExecutorFrame executorFrame) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.warmup(executorFrame));
     }
@@ -251,17 +262,13 @@ class TornadoExecutor {
             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
         }
 
-        // Retrieve the list of persisted task names from the specified subgraph
-        List<String> namesList = new ArrayList<>(subgraphList.get(graphIndex).getTaskGraph().taskGraphImpl.getPersistedTaskToObjectsMap().keySet());
+        // Store the selected graph before clearing the list
+        ImmutableTaskGraph selectedGraph = subgraphList.get(graphIndex);
 
-        // Determine the safe iteration limit to avoid IndexOutOfBoundsException
-        int limit = Math.min(graphIndex, namesList.size());
+        // Clear and update the immutableTaskGraphList
+        immutableTaskGraphList.clear();
+        Collections.addAll(immutableTaskGraphList, selectedGraph);
 
-        // Iterate over the namesList and update the persisted object state
-        for (int idx = 0; idx < limit; idx++) {
-            String key = namesList.get(idx);
-            subgraphList.get(graphIndex).updatePersistedObjectState(getGraphByName(key));
-        }
     }
 
     private ImmutableTaskGraph getGraph(int graphIndex) {

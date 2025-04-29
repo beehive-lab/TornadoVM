@@ -175,9 +175,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
     private List<Object> streamInObjects;
-    private List<Object> persistentObjects;
 
     private Map<TornadoTaskGraph, List<Object>> taskToPersistentObjectMap;
+    private TornadoTaskGraphInterface lastExecutedTaskGraph;
 
     private Set<Object> argumentsLookUp;
 
@@ -412,6 +412,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.outputModeObjects = Collections.unmodifiableList(this.outputModeObjects);
         newTaskGraph.taskToPersistentObjectMap = Collections.unmodifiableMap(this.taskToPersistentObjectMap);
 
+        newTaskGraph.lastExecutedTaskGraph = this.lastExecutedTaskGraph;
+
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
 
@@ -581,6 +583,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void setLastExecutedTaskGraph(TornadoTaskGraphInterface lastExecutedTaskGraph) {
+        this.lastExecutedTaskGraph = lastExecutedTaskGraph;
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -656,9 +663,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void updatePersistedObjectState(TornadoTaskGraphInterface taskGraphSrc) {
-        TornadoTaskGraph graphSrc = (TornadoTaskGraph) taskGraphSrc;
+    public void updatePersistedObjectState() {
+        if (this.lastExecutedTaskGraph == null) {
+            //this indicates that this is the first task-graph executed
+            return;
+        }
+
+        TornadoTaskGraph graphSrc = (TornadoTaskGraph) this.lastExecutedTaskGraph;
         List<Object> objectsToSync = executionContext.getPersistedTaskToObjectsMap().get(graphSrc.taskGraphName);
+
+        if (objectsToSync == null) {
+            objectsToSync = executionContext.getPersistedObjects();
+            executionContext.addPersistedObject(this.taskGraphName, objectsToSync);
+        }
 
         for (Object objectToSync : objectsToSync) {
             Access objectAccessSrc = graphSrc.getObjectAccess(objectToSync);
@@ -1115,6 +1132,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // the accessor is set to READ_WRITE because the object is UNDER_DEMAND
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             executionContext.addPersistedObject(sourceTaskGraphName, parameter);
+            executionContext.addPersistedObject(parameter);
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 if (!argumentsLookUp.contains(parameter)) {
@@ -1125,6 +1143,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             argumentsLookUp.add(parameter);
         }
     }
+
+    @Override
+    public void consumeFromDevice(Object... objects) {
+        for (Object parameter : objects) {
+            if (parameter == null) {
+                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in task-graph " + executionContext.getId());
+            } else if (parameter instanceof Number) {
+                throw new TornadoRuntimeException("[ERROR] Invalid object type (Number) passed into streamIn() in task-graph " + executionContext.getId());
+            }
+
+            // the accessor is set to READ_WRITE because the object is UNDER_DEMAND
+            executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
+            executionContext.addPersistedObject(parameter);
+
+            if (TornadoOptions.isReusedBuffersEnabled()) {
+                if (!argumentsLookUp.contains(parameter)) {
+                    lockObjectsInMemory(parameter);
+                }
+            }
+
+            argumentsLookUp.add(parameter);
+        }
+    }
+
 
     private boolean isANumber(Object parameter) {
         return parameter instanceof Number;
@@ -1614,6 +1656,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // This is used to create/obtain low-level command queues from the driver
         // and other resources (e.g., Level Zero Command Lists).
         executionContext.setExecutionPlanId(executionPlanId);
+
+        updatePersistedObjectState();
 
         TornadoTaskGraphInterface reduceTaskGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {

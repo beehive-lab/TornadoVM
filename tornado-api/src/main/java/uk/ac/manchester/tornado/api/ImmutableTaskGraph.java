@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 
+
 /**
  * A {@link TaskGraph} is encapsulated in this class and all actions over a task
  * graph are coded from this class. For instance, execution.
@@ -222,8 +223,8 @@ public class ImmutableTaskGraph {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
 
-    void updatePersistedObjectState(ImmutableTaskGraph taskGraphSrc) {
-        taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
+    void setLastExecutedTaskGraph(ImmutableTaskGraph lastExecutedTaskGraph) {
+        taskGraph.setLastExecutedTaskGraph(lastExecutedTaskGraph.taskGraph.taskGraphImpl);
     }
 
     boolean isGridRegistered() {
