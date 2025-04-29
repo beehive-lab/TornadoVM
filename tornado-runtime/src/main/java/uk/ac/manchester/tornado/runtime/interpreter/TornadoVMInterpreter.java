@@ -344,9 +344,6 @@ public class TornadoVMInterpreter {
             } else if (op == TornadoVMBytecodes.ON_DEVICE.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
                 if (isWarmup) {
                     continue;
                 }
@@ -354,13 +351,10 @@ public class TornadoVMInterpreter {
             } else if (op == TornadoVMBytecodes.PERSIST.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
                 if (isWarmup) {
                     continue;
                 }
-                lastEvent = persist(logBuilder, objectIndex, eventId);
+                lastEvent = executePersist(logBuilder, objectIndex, eventId);
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
                 final int eventId = bytecodeResult.getInt();
                 final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
@@ -528,7 +522,7 @@ public class TornadoVMInterpreter {
         return -1;
     }
 
-    private int persist(StringBuilder logBuilder, final int objectIndex, final int eventId) {
+    private int executePersist(StringBuilder logBuilder, final int objectIndex, final int eventId) {
         Object object = objects.get(objectIndex);
         if (TornadoOptions.PRINT_BYTECODES) {
             DebugInterpreter.logPersistedObject(object, interpreterDevice, logBuilder);

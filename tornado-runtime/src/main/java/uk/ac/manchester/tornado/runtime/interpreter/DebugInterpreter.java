@@ -56,7 +56,7 @@ class DebugInterpreter {
 
     static void logOnDeviceObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder) {
         String verbose = String.format("bc: %s[0x%x] %s on %s", //
-                InterpreterUtilities.debugHighLightBC("ON_DEVICE_BUFFER"), //
+                InterpreterUtilities.debugHighLightBC("ON_DEVICE"), //
                 object.hashCode(), //
                 object, //
                 InterpreterUtilities.debugDeviceBC(interpreterDevice));
@@ -65,7 +65,7 @@ class DebugInterpreter {
 
     static void logPersistedObject(Object object, TornadoXPUDevice interpreterDevice, StringBuilder logBuilder) {
         String verbose = String.format("bc: %s[0x%x] %s on %s", //
-                InterpreterUtilities.debugHighLightBC("PERSIST_BUFFER"), //
+                InterpreterUtilities.debugHighLightBC("PERSIST"), //
                 object.hashCode(), //
                 object, //
                 InterpreterUtilities.debugDeviceBC(interpreterDevice));

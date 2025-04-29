@@ -90,7 +90,7 @@ public class TornadoVMBytecodeBuilder {
         if (node instanceof AllocateMultipleBuffersNode allocateMultipleBuffersNode) {
             bitcodeASM.allocate(allocateMultipleBuffersNode.getValues(), batchSize);
         } else if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
-            bitcodeASM.onDevice(onDeviceObjectNode.getValue().getIndex(), dependencyBC, offset, batchSize);
+            bitcodeASM.onDevice(onDeviceObjectNode.getValue().getIndex(), dependencyBC);
         } else if (node instanceof CopyInNode copyInNode) {
             bitcodeASM.transferToDeviceOnce(copyInNode.getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode allocateNode) {
@@ -103,7 +103,7 @@ public class TornadoVMBytecodeBuilder {
         } else if (node instanceof DeallocateNode deallocateNode) {
             bitcodeASM.deallocate((deallocateNode.getValue().getIndex()));
         } else if (node instanceof PersistedObjectNode persistedObjectNode) {
-            bitcodeASM.persist(persistedObjectNode.getValue().getIndex(), dependencyBC, offset, batchSize);
+            bitcodeASM.persist(persistedObjectNode.getValue().getIndex(), dependencyBC);
         } else if (node instanceof TaskNode taskNodee) {
             final TaskNode taskNode = taskNodee;
             bitcodeASM.launch(taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
@@ -206,20 +206,16 @@ public class TornadoVMBytecodeBuilder {
             }
         }
 
-        public void onDevice(int object, int dep, long offset, long size) {
+        public void onDevice(int object, int dep) {
             buffer.put(TornadoVMBytecodes.ON_DEVICE.value);
             buffer.putInt(object);
             buffer.putInt(dep);
-            buffer.putLong(offset);
-            buffer.putLong(size);
         }
 
-        public void persist(int object, int dep, long offset, long size) {
+        public void persist(int object, int dep) {
             buffer.put(TornadoVMBytecodes.PERSIST.value);
             buffer.putInt(object);
             buffer.putInt(dep);
-            buffer.putLong(offset);
-            buffer.putLong(size);
         }
 
         public void deallocate(int object) {

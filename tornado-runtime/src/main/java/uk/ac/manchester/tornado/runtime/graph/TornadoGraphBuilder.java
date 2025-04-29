@@ -84,15 +84,6 @@ public class TornadoGraphBuilder {
         persistNode.addValue((ObjectNode) arg);
     }
 
-    private static void createPersistOnDeviceNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
-        final OnDeviceObjectNode onDeviceObjectNode = new OnDeviceObjectNode(context);
-        onDeviceObjectNode.setValue((ObjectNode) arg);
-        graph.add(onDeviceObjectNode);
-        context.addUse(onDeviceObjectNode);
-        args[argIndex] = onDeviceObjectNode;
-        persistNode.addValue((ObjectNode) arg);
-    }
-
     private static void createCopyInNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleBuffersNode persistNode) {
         final CopyInNode copyInNode = new CopyInNode(context);
         copyInNode.setValue((ObjectNode) arg);
