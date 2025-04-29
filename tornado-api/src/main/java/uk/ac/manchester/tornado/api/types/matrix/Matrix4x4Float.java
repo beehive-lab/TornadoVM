@@ -58,11 +58,11 @@ public final class Matrix4x4Float implements TornadoMatrixInterface<FloatBuffer>
         return j + (i * COLUMNS);
     }
 
-    private float get(int index) {
+    public float get(int index) {
         return storage.get(index);
     }
 
-    private void set(int index, float value) {
+    public void set(int index, float value) {
         storage.set(index, value);
     }
 

@@ -96,13 +96,44 @@ public class TestGridScheduler {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withGridScheduler(gridScheduler) //
-                    .execute();
+            executionPlan.withGridScheduler(gridScheduler).execute();
         }
 
         // Final SUM
         float finalSum = tornadoC.get(0);
         assertEquals(sequential, finalSum, 0);
+    }
+
+    @Test
+    public void testMultiTaskGraphs() throws TornadoExecutionPlanException {
+        final int size = 1024;
+
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, 2));
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(1, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+
+        TaskGraph tg1 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, size) //
+                .task("t0", TestGridScheduler::vectorAddFloat, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        TaskGraph tg2 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, size) //
+                .task("t1", TestGridScheduler::vectorAddFloat, a, b, output) //
+                .task("t2", TestGridScheduler::vectorAddFloat, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(tg1.snapshot(), tg2.snapshot())) {
+            executionPlan.withGraph(0).withGridScheduler(gridScheduler).execute();
+
+            executionPlan.withGraph(1).execute();
+        }
     }
 
     @Test

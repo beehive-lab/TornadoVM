@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv.runtime;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -310,9 +311,23 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         return null;
     }
 
+    private HashMap<Access, Integer> getNumOfDistinctAccess(Access[] accesses) {
+        HashMap<Access, Integer> distinctAccesses = new HashMap<>();
+        for (Access access : accesses) {
+            if (distinctAccesses.containsKey(access)) {
+                int numOfAccesses = distinctAccesses.get(access);
+                distinctAccesses.replace(access, numOfAccesses, numOfAccesses + 1);
+            } else {
+                distinctAccesses.put(access, 1);
+            }
+        }
+        return distinctAccesses;
+    }
+
     @Override
     public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
+        HashMap<Access, Integer> distinctAccesses = getNumOfDistinctAccess(accesses);
         for (Access access : accesses) {
             if (!bufferProvider.isNumFreeBuffersAvailable(objects.length, access)) {
                 bufferProvider.resetBuffers(access);
@@ -320,10 +335,24 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
         }
         long allocatedSpace = 0;
         for (int i = 0; i < objects.length; i++) {
-            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
-            allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses)) {
+                logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
+                allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            }
+
         }
         return allocatedSpace;
+    }
+
+    private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses) {
+        if (batchSize != 0) {
+            int numberOfBuffersForAccessType = distinctAccesses.get(access);
+            // if there is a buffer available in the used-list with the same access type, reuse it
+            if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private XPUBuffer createNewBufferAllocation(Object object, long batchSize, DeviceBufferState state, Access access) {

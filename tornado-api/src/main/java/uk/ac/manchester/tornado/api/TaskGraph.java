@@ -962,4 +962,8 @@ public class TaskGraph implements TaskGraphInterface {
     TornadoTaskGraphInterface getTaskGraphImpl() {
         return taskGraphImpl;
     }
+
+    public boolean isGridRegistered() {
+        return taskGraphImpl.isGridRegistered();
+    }
 }

@@ -230,7 +230,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         inputModesObjects = new ArrayList<>();
         outputModeObjects = new ArrayList<>();
         taskToPersistentObjectMap = new HashMap<>();
-        lastExecutedTaskGraph = null;
     }
 
     static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
@@ -576,6 +575,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isGridRegistered() {
+        return checkGridSchedulerNames();
     }
 
     @Override
@@ -1163,6 +1167,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+
     private boolean isANumber(Object parameter) {
         return parameter instanceof Number;
     }
@@ -1716,12 +1721,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return false;
     }
 
-    private void checkGridSchedulerNames() {
+    private boolean checkGridSchedulerNames() {
         Set<String> gridTaskNames = gridScheduler.keySet();
-        boolean found = gridTaskNames.stream().anyMatch(this::isTaskNamePresent);
-        if (!found) {
-            throw new TornadoRuntimeException("[ERROR] Grid scheduler names: " + gridTaskNames + " -> not found in the Task-Graph");
-        }
+        return gridTaskNames.stream().anyMatch(this::isTaskNamePresent);
     }
 
     @SuppressWarnings("unchecked")

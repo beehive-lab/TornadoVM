@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.api.math.TornadoMath.rotate;
 import static uk.ac.manchester.tornado.api.types.vectors.Float4.add;
 
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
@@ -45,7 +45,7 @@ public final class GraphicsKernels {
     public static void rotateVector(VectorFloat3 output, Matrix4x4Float m, VectorFloat3 input) {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
             final Float3 x = input.get(i);
-            final Float3 y = rotate(m, x);
+            final Float3 y = TornadoMath.rotate(m, x);
             output.set(i, y);
         }
     }
@@ -62,7 +62,7 @@ public final class GraphicsKernels {
         for (@Parallel int i = 0; i < output.Y(); i++) {
             for (@Parallel int j = 0; j < output.X(); j++) {
                 final Float3 x = input.get(j, i);
-                final Float3 y = rotate(m, x);
+                final Float3 y = TornadoMath.rotate(m, x);
                 output.set(j, i, y);
             }
         }
@@ -73,7 +73,7 @@ public final class GraphicsKernels {
             final int j = index % output.X();
             final int i = index / output.X();
             final Float3 x = input.get(j, i);
-            final Float3 y = rotate(m, x);
+            final Float3 y = TornadoMath.rotate(m, x);
             output.set(j, i, y);
         });
     }

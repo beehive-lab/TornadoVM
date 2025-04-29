@@ -39,4 +39,8 @@ public interface DeviceBufferState {
 
     long getPartialCopySize();
 
+    boolean isBufferReused();
+
+    void markBufferAsReused();
+
 }

@@ -227,4 +227,7 @@ public class ImmutableTaskGraph {
         taskGraph.setLastExecutedTaskGraph(lastExecutedTaskGraph.taskGraph.taskGraphImpl);
     }
 
+    boolean isGridRegistered() {
+        return taskGraph.isGridRegistered();
+    }
 }

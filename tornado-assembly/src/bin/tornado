@@ -35,12 +35,13 @@ __TORNADOVM_FULLDEBUG__ = __TORNADOVM_DEBUG__ + "-Dtornado.fullDebug=True -Ddump
 __TORNADOVM_THREAD_INFO__ = " -Dtornado.threadInfo=True "
 __TORNADOVM_IGV__ = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __TORNADOVM__IGV_LOW_TIER = " -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
-__TORNADOVM_PRINT_KERNEL__ = " -Dtornado.print.kernel=True "
+__TORNADOVM_PRINT_KERNEL__ = " -Dtornado.printKernel=True "
 __TORNADOVM_PRINT_BC__ = " -Dtornado.print.bytecodes=True "
 __TORNADOVM_DUMP_PROFILER__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 __TORNADOVM_ENABLE_CONCURRENT__DEVICES__ = " -Dtornado.concurrent.devices=True "
+__TORNADOVM_DUMP_BYTECODES_DIR__ = " -Dtornado.print.bytecodes=True -Dtornado.dump.bytecodes.dir="
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that
@@ -139,11 +140,12 @@ class TornadoVMRunnerTool():
 
     def getJavaVersion(self):
         if os.name == 'nt':
-            versionCommand = subprocess.Popen(shlex.split('"' + self.commands["java"] + '"' + " -version"), stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE, shell=True)
+            versionCommand = subprocess.Popen(shlex.split('"' + self.commands["java"] + '"' + " -version"),
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE, shell=True)
         else:
             versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE)
+                                              stderr=subprocess.PIPE)
         stdout, stderr = versionCommand.communicate()
         matchJVMVersion = re.search(r"version \"\d+", str(stderr))
         matchGraal = re.search(r"GraalVM", str(stderr))
@@ -214,6 +216,9 @@ class TornadoVMRunnerTool():
 
         if (args.printBytecodes):
             tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__
+
+        if (args.dump_bytecodes_dir != None):
+            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_BYTECODES_DIR__ + args.dump_bytecodes_dir + " "
 
         if (args.enableConcurrentDevices):
             tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_CONCURRENT__DEVICES__
@@ -472,7 +477,10 @@ def parseArguments():
     parser.add_argument("application", nargs="?")
     parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
                         help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
-    parser.add_argument("--intellijinit", action="store_true", dest="intellijinit", default=False, help="Generate internal xml files for IntelliJ IDE")
+    parser.add_argument("--intellijinit", action="store_true", dest="intellijinit", default=False,
+                        help="Generate internal xml files for IntelliJ IDE")
+    parser.add_argument('--dumpBC', action="store", dest="dump_bytecodes_dir", default=None,
+                        help="Dump the TornadoVM bytecodes to a directory")
     parser.add_argument("param1", nargs="?")
     parser.add_argument("param2", nargs="?")
     parser.add_argument("param3", nargs="?")
@@ -494,7 +502,7 @@ def parseArguments():
         sys.exit(0)
 
     args = parser.parse_args()
-    return args 
+    return args
 
 
 if __name__ == "__main__":

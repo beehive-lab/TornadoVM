@@ -623,6 +623,20 @@ First, install the dependencies:
    sudo ln -s libOpenCL.so.1 libOpenCL.so
 
 
+Configure a new Python environment:
+
+.. code:: bash
+
+   python -m venv /path/to/venv
+
+
+Activate the new Python environment:
+
+.. code:: bash
+
+   source /path/to/venv/bin/activate 
+
+
 OpenCL backend only
 ~~~~~~~~~~~~~~~~~~~
 
@@ -631,8 +645,11 @@ Then, download the script to apply the patch for the OpenCL backend:
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/748f71a1871f3bf839c8889a31c09c55f6969186/apply-riscv-patch.sh
-   bash apply-riscv-patch.sh 
+   cd tornadovm 
+   git clone https://github.com/beehive-lab/tornadovm-riscv-patch.git
+   
+   ## Build for OpenCL only
+   bash tornadovm-riscv-patch/apply-riscv-patch-opencl.sh 
 
 
 SPIR-V + OpenCL backends
@@ -642,11 +659,11 @@ If you want to enable both OpenCL and SPIR-V backends, use the following patch:
 
 .. code:: bash
 
-   wget https://gist.githubusercontent.com/jjfumero/c191f7e69a653c4f59f238d5856201aa/raw/748f71a1871f3bf839c8889a31c09c55f6969186/apply-riscv-spirv-patch.sh
-   bash apply-riscv-spirv-patch.sh
+   bash tornadovm-riscv-patch/apply-riscv-patch-spirv.sh 
+   
 
-
-Run TornadoVM:
+Run TornadoVM for RISC-V
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
@@ -657,7 +674,7 @@ Run TornadoVM:
    Driver: OpenCL
       Total number of OpenCL devices  : 1
       Tornado device=0:0  (DEFAULT)
-        OPENCL --  [ComputeAorta] -- RefSi G1 RV64
+        OPENCL --  [ComputeAorta] -- RefSi G1 RV64    << RISC-V CPU 
                 Global Memory Size: 2.0 GB
                 Local Memory Size: 256.0 KB
                 Workgroup Dimensions: 3

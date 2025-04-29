@@ -47,6 +47,15 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(executionPackage));
     }
 
+    boolean withGridScheduler(GridScheduler gridScheduler) {
+        boolean checkGridRegistered = false;
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.withGridScheduler(gridScheduler);
+            checkGridRegistered |= immutableTaskGraph.isGridRegistered();
+        }
+        return checkGridRegistered;
+    }
+
     void updateLastExecutedTaskGraph() {
         ImmutableTaskGraph last = immutableTaskGraphList.getLast();
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setLastExecutedTaskGraph(immutableTaskGraphList.getLast()));
@@ -56,10 +65,6 @@ class TornadoExecutor {
                 immutableTaskGraph.setLastExecutedTaskGraph(last);
             }
         }
-    }
-
-    void withGridScheduler(GridScheduler gridScheduler) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withGridScheduler(gridScheduler));
     }
 
     void warmup(ExecutorFrame executorFrame) {
@@ -240,6 +245,18 @@ class TornadoExecutor {
             subgraphList = new ArrayList<>();
             immutableTaskGraphList.forEach(g -> Collections.addAll(subgraphList, g));
         }
+        processPersistentStates(graphIndex);
+        immutableTaskGraphList.clear();
+        Collections.addAll(immutableTaskGraphList, subgraphList.get(graphIndex));
+    }
+
+    /**
+     * Processes the persistent states of a specified subgraph.
+     *
+     * @param graphIndex
+     *     The index of the subgraph to process.
+     */
+    private void processPersistentStates(int graphIndex) {
         // Validate that the graphIndex is within bounds of subgraphList
         if (graphIndex < 0 || graphIndex >= subgraphList.size()) {
             throw new TornadoRuntimeException("Error: graphIndex out of bounds: " + graphIndex);
@@ -247,7 +264,7 @@ class TornadoExecutor {
 
         // Store the selected graph before clearing the list
         ImmutableTaskGraph selectedGraph = subgraphList.get(graphIndex);
-        
+
         // Clear and update the immutableTaskGraphList
         immutableTaskGraphList.clear();
         Collections.addAll(immutableTaskGraphList, selectedGraph);
@@ -260,6 +277,15 @@ class TornadoExecutor {
         } else {
             throw new TornadoRuntimeException("TaskGraph index #" + graphIndex + " does not exist in current executor");
         }
+    }
+
+    private ImmutableTaskGraph getGraphByName(String uniqueName) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            if (immutableTaskGraph.getTaskGraph().getTaskGraphName().equals(uniqueName)) {
+                return immutableTaskGraph;
+            }
+        }
+        throw new TornadoRuntimeException("TaskGraph with name " + uniqueName + " does not exist in current executor");
     }
 
     void selectAll() {
@@ -289,4 +315,15 @@ class TornadoExecutor {
         taskGraphDest.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc);
     }
 
+    boolean checkAllTaskGraphsForGridScheduler() {
+        if (subgraphList == null) {
+            return false;
+        }
+        for (ImmutableTaskGraph immutableTaskGraph : subgraphList) {
+            if (immutableTaskGraph.isGridRegistered()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
