@@ -78,9 +78,6 @@ import uk.ac.manchester.tornado.unittests.slam.utils.Renderer;
  */
 public class GraphicsTests extends TornadoTestBase {
     // CHECKSTYLE:OFF
-
-    private static final float INVALID = -2;
-
     private static void testPhiNode(ImageFloat3 vertices, ImageFloat depths, Matrix4x4Float invK) {
         final float depth = depths.get(0, 0);
         final Float3 pix = new Float3(0, 0, 1f);
@@ -207,10 +204,10 @@ public class GraphicsTests extends TornadoTestBase {
                     if (length(surfNorm) != 0) {
                         normal = normalise(surfNorm);
                     } else {
-                        normal = new Float3(INVALID, 0f, 0f);
+                        normal = new Float3(Constants.INVALID, 0f, 0f);
                     }
                 } else {
-                    normal = new Float3(INVALID, 0f, 0f);
+                    normal = new Float3(Constants.INVALID, 0f, 0f);
                     position = new Float3();
                 }
 

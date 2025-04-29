@@ -3,142 +3,157 @@
 TornadoVM Flags
 ===============
 
-There is a number of runtime flags and compiler flags to enable experimental features, as well as fine and coarse grain profiling in the context of TornadoVM.
+TornadoVM provides runtime and compiler flags to enable experimental features, tuning, and profiling. These flags fall into two categories:
 
-**Note:** for the following examples ``s0`` represents an arbitrary task-graph, as well as ``t0`` represents a given task's name.
+1. **JVM Flags** (passed with the `-D` prefix via the `--jvm` option)
+2. **TornadoVM CLI Flags** (passed directly to the `tornado` Python wrapper)
 
-All flags needs Java prefix of ``-D``. An example of tornado using a flag is the following:
+.. note::
+   In the examples below, ``s0`` refers to a task graph and ``t0`` to a specific task within that graph.
 
-``$ tornado --jvm "-Dtornado.fullDebug=true" -m tornado.examples/uk.ac.manchester.examples.compute.Montecarlo 1024``
+Example Usage
+-------------
 
-List of TornadoVM Flags:
+.. code-block:: bash
+
+   $ tornado --jvm "-Dtornado.fullDebug=true" -m tornado.examples/uk.ac.manchester.examples.compute.Montecarlo 1024
+
+Debugging and Logging
+---------------------
+
+**CLI Flags**
+
+.. table::
+   :align: left
+
+   =======================  ============================================================================
+   Flag                     Description
+   =======================  ============================================================================
+   ``--fullDebug``          Enables full debug mode (maps to ``-Dtornado.fullDebug=true``).
+   ``--debug``              Enables basic debug output such as compilation status and device info.
+   ``--printKernel``        Prints generated OpenCL/PTX/SPIR-V kernels.
+   ``--threadInfo``         Displays the number of threads used.
+   ``--devices``            Lists available hardware devices.
+   =======================  ============================================================================
+
+**JVM Flags**
+
+.. table::
+   :align: left
+
+   ================================================  ============================================================================
+   Flag                                              Description
+   ================================================  ============================================================================
+   ``-Dtornado.fullDebug=true``                      Enables full debug output including bytecode and runtime internals.
+   ``-Dtornado.fpgaDumpLog=true``                    Dumps FPGA HLS compilation logs.
+   ``-Dtornado.printKernel=true``                    Prints generated OpenCL/PTX/SPIR-V kernels.
+   ``-Dtornado.print.kernel.dir=FILENAME``           Saves generated kernels to the specified file.
+   ``-Dtornado.threadInfo=true``                     Displays the number of threads used.
+   ``-Dtornado.print.bytecodes=true``                Prints TornadoVM Internal Bytecodes to stdout.
+   ``-Dtornado.dump.bytecodes.dir=FILENAME``         Dumps TornadoVM Internal Bytecodes to the specified file.
+   ================================================  ============================================================================
+
+Profiling
+---------
+
+**CLI Flags**
+
+.. table::
+   :align: left
+
+   ==============================  =============================================================================
+   Flag                            Description
+   ==============================  =============================================================================
+   ``--enableProfiler console``    Prints profiling metrics as JSON to stdout.
+   ``--enableProfiler silent``     Collects profiling metrics internally (see TornadoVM Profiler API).
+   ``--dumpProfiler FILENAME``     Saves profiling output to the specified file.
+   ==============================  =============================================================================
+
+**JVM Flags**
+
+.. table::
+   :align: left
+
+   ================================================  ============================================================
+   Flag                                              Description
+   ================================================  ============================================================
+   ``-Dtornado.profiler=true``                       Enables profiling and prints metrics as JSON to sdout.
+   ``-Dtornado.log.profiler=true``                   Collects profiling metrics internally for logging.
+   ``-Dtornado.profiler.dump.dir=FILENAME``          Saves profiling output to the specified file.
+   ================================================  ============================================================
+
+Performance & Scheduling
 ------------------------
 
--  | ``-Dtornado.fullDebug=true``:
-   | Enables full debugging log to be output in the. command line.
+**JVM Flags**
 
--  | ``--printKernel``:
-   | Print the generated OpenCL/PTX kernel in the command line.
+.. table::
+   :align: left
 
--  | ``--threadInfo``:
-   | Print the information about the number of parallel threads used.
+   ================================================================  ==============================================================================
+   Flag                                                              Description
+   ================================================================  ==============================================================================
+   ``-Dtornado.ns.time=true``                                        Uses nanoseconds for timing instead of milliseconds (default: true).
+   ``-Ds0.t0.global.workgroup.size=X,Y,Z``                           Sets custom global workgroup size.
+   ``-Ds0.t0.local.workgroup.size=X,Y,Z``                            Sets custom local workgroup size.
+   ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices (default: false).
+   ``-Dtornado.{ptx,opencl}.priority=X``                             Sets driver priority (default: PTX=1, OpenCL=0).
+   ================================================================  ==============================================================================
 
--  | ``--debug``:
-   | Print minor debug information such as compilation status, generated code and device information. 
+Precompiled and FPGA Options
+----------------------------
 
--  | ``--fullDebug``:
-   | In addition to the information dumped by the basic debug, the full debug mode also dumps information about the TornadoVM bytecode, and internal runtime status. This option is mainly used for development of TornadoVM. 
+**JVM Flags**
 
--  | ``--devices``:
-   | Output a list of all available devices on the current system.
+.. table::
+   :align: left
 
--  | ``-Dtornado.ns.time=true``:
-   | Converts the time to units to nanoseconds instead of milliseconds.
-
--  ``-Dtornado.{ptx,opencl}.priority=X``: Allows to define a driver
-   priority. The drivers are sorted in descending order based on their
-   priority. By default, the ``PTX driver`` has priority ``1`` and the
-   ``OpenCL driver`` has priority ``0``.
-
--  | ``-Ds0.t0.global.workgroup.size=XXX,XXX,XXX``:
-   | Allows to define global worksizes (problem sizes).
-
--  | ``-Ds0.t0.local.workgroup.size=XXX,XXX,``:
-   | Allows to define custom local workgroup configuration and overwrite
-     the default values provided by the TornadoScheduler.
-
--  | ``-Dtornado.profiling.enable=true``:
-   | Enable profilling for OpenCL/CUDA events such as kernel times and
-     data tranfers.
-
--  | ``-Dtornado.opencl.userelative=true``:
-   | Enable usage of relative addresses which is a prerequisite for
-     using DMA tranfers on Altera/Intel FPGAs. Nonetheless, this flag
-     can be used for any OpenCL device.
-
--  ``-Dtornado.precompiled.binary=PATH``: Provides the location of the
-   bistream or pre-generated OpenCL (.cl) kernel.
-
--  ``-Dtornado.fpga.conf.file=FILE``: Provides the absolute path of the
-   FPGA configuation file.
-
--  ``-Dtornado.fpgaDumpLog=true``: Dumps the log information from the
-   HLS compilation to the command prompt.
-
--  | ``-Dtornado.opencl.blocking=true``:
-   | Allows to force OpenCL API blocking calls.
-
--  | ``--enableProfiler console``:
-   | It enables profiler information such as ``COPY_IN``, ``COPY_OUT``,
-     compilation time, total time, etc. This flag is disabled by
-     default. TornadoVM will print by STDOUT a JSON string containing
-     all profiler metrics related to the execution of each
-     task-schedule.
-
--  ``--enableProfiler silent``: It enables profiler information such as
-   ``COPY_IN``, ``COPY_OUT``, compilation time, total time, etc. This
-   flag is disabled by default. The profiler information is stored
-   internally and it can be queried using the `TornadoVM Profiler
-   API <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java>`__.
-
--  | ``--dumpProfiler FILENAME``:
-   | It enables profiler information such as ``COPY_IN``, ``COPY_OUT``,
-     compilation time, total time, etc. This flag is disabled by
-     default. TornadoVM will save the profiler information in the
-     ``FILENAME`` after the execution of each task-schedule.
-
--  | ``-Dtornado.opencl.compiler.options=LIST_OF_OPTIONS``:
-   | It allows to pass the compile options specified by the OpenCL
-     ``CLBuildProgram``
-     `specification <https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html>`__
-     to TornadoVM at runtime. By default it doesn’t enable any.
--  | ``-Dtornado.concurrent.devices=true``:
-   | Allows to run a TaskGraph in multiple devices concurrently. The user
-     needs explicitly to define the device for each task, otherwise all
-     tasks will run on the default device. For instance,
-     ``-Ds0.t0.device=0:0 -Ds0.t1.device=0:1``.
-
+   ================================================  ============================================================
+   Flag                                              Description
+   ================================================  ============================================================
+   ``-Dtornado.precompiled.binary=PATH``             Path to precompiled kernel or FPGA bitstream.
+   ``-Dtornado.fpga.conf.file=FILE``                 Path to the FPGA configuration file.
+   ================================================  ============================================================
 
 Optimizations
-'''''''''''''
+-------------
 
--  | ``-Dtornado.enable.fma=True``:
-   | It enables Fused-Multiply-Add optimizations. This option is enabled
-     by default. However, for some platforms, such as the Xilinx FPGA
-     using SDAccel 2018.2 and OpenCL 1.0, this option must be disabled
-     as it causes runtime errors. See issue on
-     `Github <https://github.com/beehive-lab/TornadoVM/issues/24>`__.
+**JVM Flags**
 
--  ``-Dtornado.enable.mathOptimizations``: It enables math
-   optimizations. For instance, ``1/sqrt(x)`` is transformed into
-   ``rsqrt`` instruction for the corresponding backend (OpenCL, SPIRV
-   and PTX). It is enabled by default.
+.. table::
+   :align: left
 
--  ``-Dtornado.experimental.partial.unroll=True``: It enables the
-   compiler to force partial unroll on counted loops with a factor of 2.
-   The unroll factor can be configured with the
-   ``tornado.partial.unroll.factor=FACTOR`` that the FACTOR value can
-   take integer values up to 32.
+   ================================================================  ===================================================================================================
+   Flag                                                              Description
+   ================================================================  ===================================================================================================
+   ``-Dtornado.enable.fma=true``                                     Enables fused multiply-add (default: true). May cause issues on some platforms.
+   ``-Dtornado.enable.mathOptimizations=true``                       Enables math simplifications (e.g., ``1/sqrt(x)`` → ``rsqrt``) (default: true).
+   ``-Dtornado.experimental.partial.unroll=true``                    Enables loop partial unrolling (default: false). Use ``-Dtornado.partial.unroll.factor=FACTOR``.
+   ``-Dtornado.enable.nativeFunctions=true``                         Enables native math functions (default: false).
+   ================================================================  ===================================================================================================
 
--  ``-Dtornado.enable.nativeFunctions=False``: It enables the
-   utilization of native mathematical functions, in case that the
-   selected backend (OpenCL, PTX, SPIR-V) supports native functions. This
-   option is disabled by default.
+Level Zero (SPIR-V Specific)
+----------------------------
 
-Level Zero
-''''''''''
+**JVM Flags**
 
--  ``-Dtornado.spirv.levelzero.alignment=64``: Memory alignment (in
-   bytes) for Level Zero buffers. It is set to 64 by default.
+.. table::
+   :align: left
 
--  ``-Dtornado.spirv.levelzero.thread.dispatcher=True``: If it is
-   enabled, it uses the Level Zero suggested thread block for the thread
-   dispatcher. True by default.
+   ================================================================  ==================================================================================================================
+   Flag                                                              Description
+   ================================================================  ==================================================================================================================
+   ``-Dtornado.spirv.levelzero.alignment=64``                        Sets memory alignment (in bytes) for Level Zero buffers (default: 64).
+   ``-Dtornado.spirv.levelzero.thread.dispatcher=true``              Uses Level Zero’s thread block suggestion (default: true).
+   ``-Dtornado.spirv.loadstore=false``                               Optimizes Loads/Stores and simplifies the generated SPIR-V binary (experimental - default: false).
+   ``-Dtornado.spirv.levelzero.memoryAlloc.shared=false``            Enables shared memory buffers (default: false).
+   ================================================================  ==================================================================================================================
 
--  ``-Dtornado.spirv.loadstore=False``: It optimizes Loads/Stores and
-   simplifies the generated SPIR-V binary. This option is still
-   experimental. It is set to ``False`` by default.
+Notes
+-----
 
--  ``-Dtornado.spirv.levelzero.memoryAlloc.shared=False``: If it is
-   enabled, then it uses shared memory buffers between the accelerator
-   and the host. It is set to false by default.
+All Java flags (those beginning with ``-Dtornado.``) are defined in the ``TornadoOptions.java`` file.
+
+TornadoVM CLI flags (those beginning with ``--``) are mapped to Java flags by the Python interface for ease of use.
+For example, ``--printKernel`` maps internally to ``-Dtornado.printKernel=true``.
+

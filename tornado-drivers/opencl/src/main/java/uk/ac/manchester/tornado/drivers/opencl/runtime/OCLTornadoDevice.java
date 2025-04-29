@@ -585,12 +585,28 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 bufferProvider.resetBuffers(access);
             }
         }
+
         long allocatedSpace = 0L;
         for (int i = 0; i < objects.length; i++) {
-            logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
-            allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses, states[i])) {
+                logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
+                allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            }
+
         }
         return allocatedSpace;
+    }
+
+    private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, HashMap<Access, Integer> distinctAccesses, DeviceBufferState state) {
+        if (batchSize != 0) {
+            int numberOfBuffersForAccessType = distinctAccesses.get(access);
+            // if there is a buffer available in the used-list with the same access type, reuse it
+            if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
+                state.markBufferAsReused();
+                return true;
+            }
+        }
+        return false;
     }
 
     private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState, Access access) {

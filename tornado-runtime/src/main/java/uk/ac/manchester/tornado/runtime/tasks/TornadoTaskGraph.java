@@ -576,6 +576,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public boolean isGridRegistered() {
+        return checkGridSchedulerNames();
+    }
+
+    @Override
     public long getTotalBytesTransferred() {
         return getProfilerValue(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES) + getProfilerValue(TOTAL_COPY_OUT_SIZE_BYTES);
     }
@@ -1672,12 +1677,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return false;
     }
 
-    private void checkGridSchedulerNames() {
+    private boolean checkGridSchedulerNames() {
         Set<String> gridTaskNames = gridScheduler.keySet();
-        boolean found = gridTaskNames.stream().anyMatch(this::isTaskNamePresent);
-        if (!found) {
-            throw new TornadoRuntimeException("[ERROR] Grid scheduler names: " + gridTaskNames + " -> not found in the Task-Graph");
-        }
+        return gridTaskNames.stream().anyMatch(this::isTaskNamePresent);
     }
 
     @SuppressWarnings("unchecked")
