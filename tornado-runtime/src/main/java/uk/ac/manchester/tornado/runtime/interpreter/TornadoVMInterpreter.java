@@ -275,7 +275,7 @@ public class TornadoVMInterpreter {
         initWaitEventList();
 
         StringBuilder logBuilder = null;
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             logBuilder = new StringBuilder();
             logBuilder.append(InterpreterUtilities.debugHighLightHelper("Interpreter instance running bytecodes for: ")).append(interpreterDevice).append(InterpreterUtilities.debugHighLightHelper(
                     " Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
@@ -362,13 +362,17 @@ public class TornadoVMInterpreter {
             } else if (op == TornadoVMBytecodes.ON_DEVICE.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
-                final long offset = bytecodeResult.getLong();
-                final long sizeBatch = bytecodeResult.getLong();
-                final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
                 if (isWarmup) {
                     continue;
                 }
                 lastEvent = executeOnDevice(logBuilder, objectIndex, eventId);
+            } else if (op == TornadoVMBytecodes.PERSIST.value()) {
+                final int objectIndex = bytecodeResult.getInt();
+                final int eventId = bytecodeResult.getInt();
+                if (isWarmup) {
+                    continue;
+                }
+                lastEvent = executePersist(logBuilder, objectIndex, eventId);
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
                 final int eventId = bytecodeResult.getInt();
                 final int[] waitList = (useDependencies && eventId != -1) ? events[eventId] : null;
@@ -377,7 +381,7 @@ public class TornadoVMInterpreter {
                 }
                 lastEvent = executeBarrier(logBuilder, eventId, waitList);
             } else if (op == TornadoVMBytecodes.END.value()) {
-                if (!isWarmup && TornadoOptions.PRINT_BYTECODES) {
+                if (!isWarmup && TornadoOptions.LOG_BYTECODES()) {
                     logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
                 }
                 break;
@@ -499,7 +503,7 @@ public class TornadoVMInterpreter {
         // Dump printing after object allocation, so the XPU-Buffer is created,
         // and we can query the size without having to use Java type analysis
         // to obtain the size at this point. 
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             int objIndex = 0;
             for (XPUDeviceBufferState state : objectStates) {
                 long size = state.getXPUBuffer().size();
@@ -545,7 +549,7 @@ public class TornadoVMInterpreter {
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         long spaceDeallocated = interpreterDevice.deallocate(objectState);
         // Update current device area use
-        if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
+        if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             boolean materializeDealloc = spaceDeallocated != 0;
             DebugInterpreter.logDeallocObject(object, interpreterDevice, tornadoVMBytecodeList, materializeDealloc);
         }
@@ -555,8 +559,17 @@ public class TornadoVMInterpreter {
 
     private int executeOnDevice(StringBuilder logBuilder, final int objectIndex, final int eventId) {
         Object object = objects.get(objectIndex);
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             DebugInterpreter.logOnDeviceObject(object, interpreterDevice, logBuilder);
+        }
+        resetEventIndexes(eventId);
+        return -1;
+    }
+
+    private int executePersist(StringBuilder logBuilder, final int objectIndex, final int eventId) {
+        Object object = objects.get(objectIndex);
+        if (TornadoOptions.PRINT_BYTECODES) {
+            DebugInterpreter.logPersistedObject(object, interpreterDevice, logBuilder);
         }
         resetEventIndexes(eventId);
         return -1;
@@ -580,7 +593,7 @@ public class TornadoVMInterpreter {
         }
         resetEventIndexes(eventId);
 
-        if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
+        if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             long sizeObject = objectState.getXPUBuffer().size();
             DebugInterpreter.logTransferToDeviceOnce(allEvents, object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
@@ -612,7 +625,7 @@ public class TornadoVMInterpreter {
 
         resetEventIndexes(eventId);
 
-        if (TornadoOptions.PRINT_BYTECODES && isNotObjectAtomic(object)) {
+        if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             long sizeObject = objectState.getXPUBuffer().size();
             DebugInterpreter.logTransferToDeviceAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
@@ -642,7 +655,7 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             long sizeObject = objectState.getXPUBuffer().size();
             DebugInterpreter.logTransferToHostAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
@@ -676,7 +689,7 @@ public class TornadoVMInterpreter {
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             long sizeOfObject = objectState.getXPUBuffer().size();
             DebugInterpreter.logTransferToHostAlwaysBlocking(object, interpreterDevice, logBuilder, sizeOfObject, sizeBatch, offset, eventId);
         }
@@ -885,13 +898,13 @@ public class TornadoVMInterpreter {
                     timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
                 }
             }
-            if (TornadoOptions.PRINT_BYTECODES) {
+            if (TornadoOptions.LOG_BYTECODES()) {
                 DebugInterpreter.logStreamInAtomic(bufferAtomics, interpreterDevice, eventId, logBuilder);
 
             }
         }
 
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, offset, eventId, logBuilder);
         }
 
@@ -922,7 +935,7 @@ public class TornadoVMInterpreter {
 
     private void executeDependency(StringBuilder logBuilder, int lastEvent, int eventId) {
         if (useDependencies && lastEvent != -1) {
-            if (TornadoOptions.PRINT_BYTECODES) {
+            if (TornadoOptions.LOG_BYTECODES()) {
                 DebugInterpreter.logAddDependency(lastEvent, eventId, logBuilder);
             }
             TornadoInternalError.guarantee(eventsIndexes[eventId] < events[eventId].length, "event list is too small");
@@ -932,7 +945,7 @@ public class TornadoVMInterpreter {
     }
 
     private int executeBarrier(StringBuilder logBuilder, int eventId, int[] waitList) {
-        if (TornadoOptions.PRINT_BYTECODES) {
+        if (TornadoOptions.LOG_BYTECODES()) {
             DebugInterpreter.logBarrier(eventId, logBuilder);
         }
 
@@ -1024,8 +1037,10 @@ public class TornadoVMInterpreter {
      * Used to track the number of persistent objects and the number of objects
      * that need to be allocated.
      *
-     * @param persistentObjectCount Number of persistent objects that don't need allocation
-     * @param objectsToAlloc Number of objects that need to be allocated
+     * @param persistentObjectCount
+     *     Number of persistent objects that don't need allocation
+     * @param objectsToAlloc
+     *     Number of objects that need to be allocated
      */
     public record ObjectAllocationInfo(int persistentObjectCount, int objectsToAlloc) {
     }

@@ -203,8 +203,19 @@ public enum TornadoVMBytecodes {
      * ON_DEVICE(obj,dest)
      * </code>
      */
-    ON_DEVICE((byte) 25);
+    ON_DEVICE((byte) 25),
 
+
+    /**
+     * Persist a buffer on a device.
+     * <p>
+     * Format:
+     *
+     * <code>
+     * PERSIST(obj,dest)
+     * </code>
+     */
+    PERSIST((byte) 26);
 
     final byte value;
 

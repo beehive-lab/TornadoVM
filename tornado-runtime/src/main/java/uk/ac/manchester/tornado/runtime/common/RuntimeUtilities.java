@@ -499,19 +499,30 @@ public final class RuntimeUtilities {
     }
 
     public static void writeBytecodeToFile(StringBuilder logBuilder) {
-        if (TornadoOptions.PRINT_BYTECODES) {
-            String filePath = getFilePath();
-
-            // Use existing method to write to file, with append set to true
-            try (FileWriter fw = new FileWriter(filePath, true)) {
-                BufferedWriter bw = new BufferedWriter(fw);
-                bw.write(logBuilder.toString());
-                bw.flush();
-            } catch (IOException e) {
-                new TornadoLogger().error("unable to dump bytecodes: ", e.getMessage());
-                throw new RuntimeException("unable to dump bytecodes: " + e.getMessage());
-            }
+        String filePath = getFilePath();
+        try (FileWriter fw = new FileWriter(filePath, true)) {
+            BufferedWriter bw = new BufferedWriter(fw);
+            // Clean ANSI escape sequences before writing
+            String cleanedString = removeAnsiEscapeCodes(logBuilder.toString());
+            bw.write(cleanedString);
+            bw.flush();
+        } catch (IOException e) {
+            new TornadoLogger().error("unable to dump bytecodes: ", e.getMessage());
+            throw new RuntimeException("unable to dump bytecodes: " + e.getMessage());
         }
+    }
+
+    /**
+     * Removes ANSI escape sequences from the input string.
+     *
+     * @param input
+     *     String potentially containing ANSI escape codes
+     * @return String with all ANSI escape sequences removed
+     */
+    private static String removeAnsiEscapeCodes(String input) {
+        // Pattern to match ANSI escape sequences
+        // This matches the most common escape codes, beginning with ESC [ and ending with m
+        return input.replaceAll("\u001B\\[[;\\d]*m", "");
     }
 
     private static String getFilePath() {
