@@ -326,8 +326,8 @@ Selected publications can be found [here](https://tornadovm.readthedocs.io/en/la
 This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html).
 In addition, it has been supported by the following EU & UKRI grants (most recent first):
 
-- EU Horizon Europe & UKRI [AERO 101092850](https://cordis.europa.eu/project/id/101092850).
-- EU Horizon Europe & UKRI [INCODE 101093069](https://cordis.europa.eu/project/id/101093069).
+- EU Horizon Europe & UKRI [AERO 101092850](https://aero-project.eu/).
+- EU Horizon Europe & UKRI [P2CODE 101093069](https://p2code-project.eu/).
 - EU Horizon Europe & UKRI [ENCRYPT 101070670](https://encrypt-project.eu).
 - EU Horizon Europe & UKRI [TANGO 101070052](https://tango-project.eu).
 - EU Horizon 2020 [ELEGANT 957286](https://www.elegant-h2020.eu/).
