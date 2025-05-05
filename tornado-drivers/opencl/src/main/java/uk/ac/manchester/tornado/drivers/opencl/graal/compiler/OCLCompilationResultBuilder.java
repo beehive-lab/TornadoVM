@@ -452,19 +452,34 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
             IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
             HIRBlock blockTrueBranch = getBlockTrueBranch(basicBlock);
-            if (isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
-                    || (isCurrentHIRBlockAFalseBranch(ifNode, basicBlock) //
-                            && isTrueBranchALoopExitNode(ifNode) //
-                            && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
-                for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
-                    HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
-                    if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
-                        pending.put(basicBlock, successor);
-                        rescheduleBasicBlock(basicBlock, visitor, visited, pending);
+            // implement rescheduling for condition if nodes
+            if (isNotLoopBeginIf(ifNode)) {
+                boolean shouldReschedule =  isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
+                        || (isCurrentHIRBlockAFalseBranch(ifNode, basicBlock) //
+                        && isTrueBranchALoopExitNode(ifNode) //
+                        && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch));
+
+                if (shouldReschedule) {
+                    for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
+                        HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
+                        if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
+                            pending.put(basicBlock, successor);
+                            rescheduleBasicBlock(basicBlock, visitor, visited, pending);
+                        }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * This function examines if a given {@code IfNode} is generated for a condition or if it is part of the loop logic (LoopBegin -> If).
+     *
+     * @param ifNode The {@code IfNode} to be examined.
+     * @return true if the {@code IfNode} is not associated with the loop iteration, false otherwise.
+     */
+    private boolean isNotLoopBeginIf(IfNode ifNode) {
+        return !(ifNode.predecessor() instanceof LoopBeginNode);
     }
 
     private void traverseControlFlowGraph(HIRBlock basicBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
