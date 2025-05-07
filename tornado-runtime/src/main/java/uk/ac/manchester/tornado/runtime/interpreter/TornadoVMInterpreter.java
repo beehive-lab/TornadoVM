@@ -275,7 +275,7 @@ public class TornadoVMInterpreter {
         initWaitEventList();
 
         StringBuilder logBuilder = null;
-        if (TornadoOptions.LOG_BYTECODES()) {
+        if (TornadoOptions.LOG_BYTECODES() && !isWarmup) {
             logBuilder = new StringBuilder();
             logBuilder.append(InterpreterUtilities.debugHighLightHelper("Interpreter instance running bytecodes for: ")).append(interpreterDevice).append(InterpreterUtilities.debugHighLightHelper(
                     " Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
