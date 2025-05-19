@@ -641,7 +641,7 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
         // Perform parallel reduction within the work group
         for (int stride = (groupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
+            context.globalBarrier();
             if (lid < stride) {
                 localX[lid] += localX[lid + stride];
             }
