@@ -260,13 +260,15 @@ public class TransformerKernelsTest extends TornadoTestBase {
         // Initialize data
         fillRandomData(input, -2.0f, 2.0f);
 
+
+        output.init( 0.0f);
         // Run sequential version
         reductionOneBlockSequential(outputSeq, input, size, ermsNorm);
 
         // Set up TornadoVM execution
-        WorkerGrid worker = new WorkerGrid1D(1);
+        WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler scheduler = new GridScheduler("s0.t0", worker);
-        worker.setLocalWork(1, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input)
@@ -275,12 +277,18 @@ public class TransformerKernelsTest extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withGridScheduler(scheduler).execute();
-        }
-
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(scheduler).execute();
         // Verify results
+
+        for (int i = 0; i < output.getSize(); i++) {
+            System.out.println("output[" + i + "] = " + output.get(i));
+            System.out.println("outputSeq[" + i + "] = " + outputSeq.get(i));
+//            assertEquals(outputSeq.get(i), output.get(i), DELTA);
+        }
         assertEquals(outputSeq.get(0), output.get(0), DELTA);
+
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -640,8 +648,8 @@ public class TransformerKernelsTest extends TornadoTestBase {
         }
 
         // Perform parallel reduction within the work group
-        for (int stride = (groupSize / 2); stride > 0; stride /= 2) {
-            context.globalBarrier();
+        for (int stride = (groupSize / 2); stride > 0; stride /=     2) {
+            context.localBarrier();
             if (lid < stride) {
                 localX[lid] += localX[lid + stride];
             }
@@ -657,7 +665,7 @@ public class TransformerKernelsTest extends TornadoTestBase {
         if (gid == 0) {
             // Combine partial sums from all workgroups
             float ss = 0.0f;
-            for (int i = 1; i <= (size / localMemSize); i++) {  // Assuming 8 workgroups
+            for (int i = 1; i < output.getSize(); i++) {  // Assuming 8 workgroups
                 ss += output.get(i);
             }
 
@@ -1130,6 +1138,160 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
         // Verify results
         assertEquals(outputSeq.get(0), output.get(0), DELTA);
+    }
+
+    @Test
+    public void testReductionOneBlockTwoStepApproach() throws TornadoExecutionPlanException {
+        final int size = 1024;
+        final int localSize = 128; // Work group size
+        final int numWorkGroups = size / localSize;
+        final float ermsNorm = 1e-5f;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray output = new FloatArray(numWorkGroups + 1); // +1 for final result
+        FloatArray outputSeq = new FloatArray(numWorkGroups + 1);
+
+        // Initialize data with random values
+        fillRandomData(input, -2.0f, 2.0f);
+
+        output.init(0.0f);
+
+        // Run sequential version for comparison
+        reductionOneBlockSequentialX(outputSeq, input, size, ermsNorm);
+
+        // Set up TornadoVM execution - first kernel (partial sums)
+        WorkerGrid worker1 = new WorkerGrid1D(size);
+        GridScheduler scheduler1 = new GridScheduler("s0.t0", worker1);
+        worker1.setLocalWork(localSize, 1, 1);
+
+        // Set up TornadoVM execution - second kernel (final reduction)
+        WorkerGrid worker2 = new WorkerGrid1D(1); // Single thread for final reduction
+        GridScheduler scheduler2 = new GridScheduler("s0.t1", worker2);
+        worker2.setLocalWork(1, 1, 1);
+
+        scheduler2.addWorkerGrid("s0.t0", worker1);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, output)
+                // First kernel: compute partial sums
+                .task("t0", TransformerKernelsTest::reductionPartialSums, new KernelContext(),
+                        output, input, size, localSize)
+                // Second kernel: compute final reduction
+                .task("t1", TransformerKernelsTest::reductionFinalNormalization, new KernelContext(),
+                        output, size, ermsNorm)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute with multiple schedulers
+        executionPlan
+                .withGridScheduler(scheduler2) // For second kernel
+                .execute();
+
+        // Verify results
+        System.out.println("Final result: output[0] = " + output.get(0) + ", outputSeq[0] = " + outputSeq.get(0));
+        assertEquals(outputSeq.get(0), output.get(0), DELTA);
+
+        // Optionally verify partial sums if needed
+        for (int i = 1; i < output.getSize(); i++) {
+            System.out.println("Partial sum " + i + ": output[" + i + "] = " + output.get(i) +
+                    ", outputSeq[" + i + "] = " + outputSeq.get(i));
+        }
+
+        executionPlan.freeDeviceMemory();
+    }
+
+    // First kernel - Computes partial sums for each workgroup
+    public static void reductionPartialSums(KernelContext context, FloatArray output, FloatArray x,
+            int size, int localMemSize) {
+        int gid = context.globalIdx;
+        int lid = context.localIdx;
+        int groupId = context.groupIdx;
+        int groupSize = context.localGroupSizeX;
+
+        // Allocate local memory with the provided size
+        float[] localX = context.allocateFloatLocalArray(localMemSize);
+
+        // Load input value and compute square
+        if (gid < size) {
+            localX[lid] = x.get(gid);
+            localX[lid] = localX[lid] * localX[lid];
+        } else {
+            localX[lid] = 0.0f;
+        }
+
+        // Perform parallel reduction within the work group
+        for (int stride = (groupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (lid < stride) {
+                localX[lid] += localX[lid + stride];
+            }
+        }
+
+        // Each workgroup stores its partial sum in a different location
+        if (lid == 0) {
+            // Store the partial sum from each workgroup
+            output.set(groupId + 1, localX[0]);
+        }
+    }
+
+    // Second kernel - Combines partial sums and computes final normalization
+    public static void reductionFinalNormalization(KernelContext context, FloatArray output,
+            int size, float ermsNorm) {
+        int gid = context.globalIdx;
+
+        // Only one thread needs to perform this calculation
+        if (gid == 0) {
+            // Combine partial sums from all workgroups
+            float ss = 0.0f;
+            for (int i = 1; i < output.getSize(); i++) {  // Fixed bounds to avoid out of bounds
+                ss += output.get(i);
+            }
+
+            ss /= size;
+            ss += ermsNorm;
+            ss = 1.0f / TornadoMath.sqrt(ss);
+            output.set(0, ss);  // Store the final scale factor
+        }
+    }
+
+    // Sequential version for comparison (unchanged)
+    public static void reductionOneBlockSequentialX(FloatArray output, FloatArray x, int size, float ermsNorm) {
+        float sum = 0.0f;
+
+        // Compute sum of squares
+        for (int i = 0; i < size; i++) {
+            float val = x.get(i);
+            sum += val * val;
+        }
+
+        // Compute normalization factor
+        sum /= size;
+        sum += ermsNorm;
+        sum = 1.0f / (float) Math.sqrt(sum);
+
+        // Store result
+        output.set(0, sum);
+
+        // For comparison with parallel version, also store partial sums
+        int localSize = 128;
+        int numWorkGroups = size / localSize;
+
+        for (int g = 0; g < numWorkGroups; g++) {
+            float partialSum = 0.0f;
+            int start = g * localSize;
+            int end = start + localSize;
+
+            for (int i = start; i < end; i++) {
+                if (i < size) {
+                    float val = x.get(i);
+                    partialSum += val * val;
+                }
+            }
+
+            output.set(g + 1, partialSum);
+        }
     }
 
 
