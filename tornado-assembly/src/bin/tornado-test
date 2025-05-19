@@ -202,6 +202,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.MMwithBytes"),
+    TestEntry("uk.ac.manchester.tornado.unittests.compute.TransformerKernelsTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestConcat"),
@@ -294,6 +295,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm1DKernelContext",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
+    "uk.ac.manchester.tornado.unittests.compute.TransformerKernelsTest#testReductionOneBlockWithLayer",
 
     ## Inconsistent timing metrics for data Transfers, triggering difference in copy once vs copy always
     "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
