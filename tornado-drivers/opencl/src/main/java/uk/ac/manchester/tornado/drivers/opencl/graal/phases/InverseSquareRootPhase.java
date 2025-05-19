@@ -31,9 +31,13 @@ import org.graalvm.compiler.nodes.calc.FloatDivNode;
 import org.graalvm.compiler.nodes.calc.SqrtNode;
 import org.graalvm.compiler.phases.Phase;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.RSqrtNode;
 
 public class InverseSquareRootPhase extends Phase {
+    private static final String ONE = "1.0";
+    private static final String SQRT = "SQRT";
+
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
@@ -45,16 +49,30 @@ public class InverseSquareRootPhase extends Phase {
 
             // The combination is 1/sqrt(x)
             if (floatDivisionNode.getX() instanceof ConstantNode constant) {
-                if ((constant.getValue().toValueString().equals("1.0")) && (floatDivisionNode.getY() instanceof SqrtNode intrinsicNode)) {
-                    ValueNode n = intrinsicNode.getValue();
-                    RSqrtNode rsqrtNode = new RSqrtNode(n);
-                    graph.addOrUnique(rsqrtNode);
-                    intrinsicNode.removeUsage(floatDivisionNode);
-                    if (intrinsicNode.hasNoUsages()) {
-                        intrinsicNode.safeDelete();
+                if ((constant.getValue().toValueString().equals(ONE))) {
+                    if ((floatDivisionNode.getY() instanceof SqrtNode intrinsicNode)) {
+                        ValueNode n = intrinsicNode.getValue();
+                        RSqrtNode rsqrtNode = new RSqrtNode(n);
+                        graph.addOrUnique(rsqrtNode);
+                        intrinsicNode.removeUsage(floatDivisionNode);
+                        if (intrinsicNode.hasNoUsages()) {
+                            intrinsicNode.safeDelete();
+                        }
+                        floatDivisionNode.replaceAtUsages(rsqrtNode);
+                        floatDivisionNode.safeDelete();
+                    } else if ((floatDivisionNode.getY() instanceof OCLFPUnaryIntrinsicNode OCLFPUnaryIntrinsicNode)) {
+                        if (OCLFPUnaryIntrinsicNode.getOperation().equals(SQRT)) {
+                            ValueNode n = OCLFPUnaryIntrinsicNode.getValue();
+                            RSqrtNode rsqrtNode = new RSqrtNode(n);
+                            graph.addOrUnique(rsqrtNode);
+                            OCLFPUnaryIntrinsicNode.removeUsage(floatDivisionNode);
+                            if (OCLFPUnaryIntrinsicNode.hasNoUsages()) {
+                                OCLFPUnaryIntrinsicNode.safeDelete();
+                            }
+                            floatDivisionNode.replaceAtUsages(rsqrtNode);
+                            floatDivisionNode.safeDelete();
+                        }
                     }
-                    floatDivisionNode.replaceAtUsages(rsqrtNode);
-                    floatDivisionNode.safeDelete();
                 }
             }
         });
