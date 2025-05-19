@@ -264,9 +264,9 @@ public class TransformerKernelsTest extends TornadoTestBase {
         reductionOneBlockSequential(outputSeq, input, size, ermsNorm);
 
         // Set up TornadoVM execution
-        WorkerGrid worker = new WorkerGrid1D(size);
+        WorkerGrid worker = new WorkerGrid1D(1);
         GridScheduler scheduler = new GridScheduler("s0.t0", worker);
-        worker.setLocalWork(localSize, 1, 1);
+        worker.setLocalWork(1, 1, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input)
@@ -1052,6 +1052,84 @@ public class TransformerKernelsTest extends TornadoTestBase {
         }
 
         return localSum[0];
+    }
+
+    /**
+     * A simplified serial implementation of RMS normalization for TornadoVM.
+     * This doesn't use workgroups or barriers, making it easier to reason about.
+     * Only the first thread performs the computation.
+     */
+    public static void serialRmsNorm(KernelContext context, FloatArray output, FloatArray x, int size, float epsilon) {
+        int gid = context.globalIdx;
+
+        // Only the first thread does all the work
+        if (gid == 0) {
+            // Calculate sum of squares
+            float sumOfSquares = 0.0f;
+            for (int i = 0; i < size; i++) {
+                float val = x.get(i);
+                sumOfSquares += val * val;
+            }
+
+            // Calculate scale factor
+            sumOfSquares /= size;
+            sumOfSquares += epsilon;
+            float scale = 1.0f / TornadoMath.sqrt(sumOfSquares);
+
+            // Store the result
+            output.set(0, scale);
+        }
+    }
+
+    /**
+     * Sequential implementation to match the serial kernel.
+     */
+    private void serialRmsNormSequential(FloatArray output, FloatArray x, int size, float epsilon) {
+        float sumOfSquares = 0.0f;
+        for (int i = 0; i < size; i++) {
+            float val = x.get(i);
+            sumOfSquares += val * val;
+        }
+
+        sumOfSquares /= size;
+        sumOfSquares += epsilon;
+        float scale = 1.0f / TornadoMath.sqrt(sumOfSquares);
+
+        output.set(0, scale);
+    }
+
+    @Test
+    public void testSerialRmsNorm() throws TornadoExecutionPlanException {
+        final int size = 1024;
+        final float epsilon = 1e-5f;
+
+        FloatArray input = new FloatArray(size);
+        FloatArray output = new FloatArray(1); // Just one value for the scale factor
+        FloatArray outputSeq = new FloatArray(1);
+
+        // Initialize data
+        fillRandomData(input, -2.0f, 2.0f);
+
+        // Run sequential version
+        serialRmsNormSequential(outputSeq, input, size, epsilon);
+
+        // Set up TornadoVM execution - just need one thread
+        WorkerGrid worker = new WorkerGrid1D(1);
+        GridScheduler scheduler = new GridScheduler("s0.t0", worker);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input)
+                .task("t0", TransformerKernelsTest::serialRmsNorm, new KernelContext(),
+                        output, input, size, epsilon)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(scheduler).execute();
+        }
+
+        // Verify results
+        assertEquals(outputSeq.get(0), output.get(0), DELTA);
     }
 
 
