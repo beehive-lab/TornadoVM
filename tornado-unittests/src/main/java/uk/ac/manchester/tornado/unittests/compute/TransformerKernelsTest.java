@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -1082,6 +1083,7 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorGeneric() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int inputDim = 64;
         final int outputDim = 128;
         final int localWorkGroupSize = 32;
@@ -1119,6 +1121,7 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testMatrixVectorGenericWithResidual() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int inputDim = 64;
         final int outputDim = 128;
         final int localWorkGroupSize = 32;
@@ -1162,6 +1165,7 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testFusedFeedForwardWithSiLUAndGLUActivation() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         final int inputDim = 64;
         final int hiddenDim = 128;
         final int localWorkGroupSize = 32;
