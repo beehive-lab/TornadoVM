@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.ArrayList;
@@ -14,7 +31,14 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
-public class MatrixVectorBenchmark {
+/**
+ * </p>
+ * <code>
+ * $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+ * </code>
+ *
+ */
+public class MatrixVectorRowMajor {
 
     private static final float DELTA = 1e-4f;
     private static final int WARM_UP_ITERATIONS = 20;
@@ -124,10 +148,11 @@ public class MatrixVectorBenchmark {
         int outputDim = 2048; // Default output dimension (rows)
 
         // Parse command line arguments if provided
-        if (args.length >= 2) {
+        if (args.length >= 3) {
             try {
                 inputDim = Integer.parseInt(args[0]);
                 outputDim = Integer.parseInt(args[1]);
+                int localWorkGroupSize = Integer.parseInt(args[2]);
             } catch (NumberFormatException e) {
                 System.err.println("Error parsing dimensions. Using defaults.");
             }
@@ -164,13 +189,14 @@ public class MatrixVectorBenchmark {
         GridScheduler scheduler = new GridScheduler("s0.t0", worker);
         worker.setLocalWork(LOCAL_WORK_GROUP_SIZE, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights).task("t0", MatrixVectorBenchmark::matrixVectorGeneric, new KernelContext(), input,
-                outputParallel, weights, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE).transferToHost(DataTransferMode.EVERY_EXECUTION, outputParallel);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights)
+                .task("t0", MatrixVectorRowMajor::matrixVectorGeneric, new KernelContext(), input, outputParallel, weights, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputParallel);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        TaskGraph taskGraphPure = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights).task("t0", MatrixVectorBenchmark::matrixVectorParallel, input,
-                outputPureTornado, weights, inputDim, outputDim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputPureTornado);
+        TaskGraph taskGraphPure = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights)
+                .task("t0", MatrixVectorRowMajor::matrixVectorParallel, input, outputPureTornado, weights, inputDim, outputDim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputPureTornado);
 
         ImmutableTaskGraph immutableTaskGraphParallel = taskGraphPure.snapshot();
 
@@ -248,7 +274,7 @@ public class MatrixVectorBenchmark {
 
             if (error2 > DELTA) {
                 if (errorCount2 < 5) {
-                    System.out.printf("[@parallel] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n", i, outputSeq.get(i), outputPureTornado.get(i), error);
+                    System.out.printf("[@Parallel] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n", i, outputSeq.get(i), outputPureTornado.get(i), error);
                 }
                 errorCount2++;
                 isValid = false;
@@ -282,30 +308,30 @@ public class MatrixVectorBenchmark {
         System.out.printf("Matrix size: %d x %d\n", outputDim, inputDim);
 
         System.out.println("Sequential Implementation:");
-        System.out.printf("  Average time: %.3f ms\n", (double) statsSeq.getAverage() / 1_000_000);
+        System.out.printf("  Average time: %.3f ms\n", statsSeq.getAverage() / 1_000_000);
         System.out.printf("  Min time: %.3f ms\n", (double) statsSeq.getMin() / 1_000_000);
         System.out.printf("  Max time: %.3f ms\n", (double) statsSeq.getMax() / 1_000_000);
         System.out.printf("  Performance: %.2f GFLOP/s\n", seqGFlops);
 
         System.out.println("Parallel Implementation (TornadoVM):");
-        System.out.printf("  Average time: %.3f ms\n", (double) statsParallel.getAverage() / 1_000_000);
+        System.out.printf("  Average time: %.3f ms\n", statsParallel.getAverage() / 1_000_000);
         System.out.printf("  Min time: %.3f ms\n", (double) statsParallel.getMin() / 1_000_000);
         System.out.printf("  Max time: %.3f ms\n", (double) statsParallel.getMax() / 1_000_000);
         System.out.printf("  Performance: %.2f GFLOP/s\n", parallelGFlops);
 
         System.out.println("Pure TornadoVM @Parallel Implementation (TornadoVM):");
-        System.out.printf("  Average time: %.3f ms\n", (double) pureTornadoStats.getAverage() / 1_000_000);
+        System.out.printf("  Average time: %.3f ms\n", pureTornadoStats.getAverage() / 1_000_000);
         System.out.printf("  Min time: %.3f ms\n", (double) pureTornadoStats.getMin() / 1_000_000);
         System.out.printf("  Max time: %.3f ms\n", (double) pureTornadoStats.getMax() / 1_000_000);
         System.out.printf("  Performance: %.2f GFLOP/s\n", pureTornadoGFlops);
 
         double speedup = statsSeq.getAverage() / statsParallel.getAverage();
-        System.out.printf("\nSpeedup: kernel-context vs java %.2fx\n", speedup);
+        System.out.printf("\nSpeedup: KernelContext vs Java %.2fx\n", speedup);
 
         double speedup2 = statsSeq.getAverage() / pureTornadoStats.getAverage();
-        System.out.printf("\nSpeedup: @parallel vs java %.2fx\n", speedup2);
+        System.out.printf("\nSpeedup: @Parallel vs Java %.2fx\n", speedup2);
 
         double speedup3 = pureTornadoStats.getAverage() / statsParallel.getAverage();
-        System.out.printf("\nSpeedup: kernel-context vs @parallel %.2fx\n", speedup3);
+        System.out.printf("\nSpeedup: KernelContext vs @Parallel %.2fx\n", speedup3);
     }
 }
