@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -31,12 +31,16 @@ import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatDivNode;
+import org.graalvm.compiler.nodes.calc.SqrtNode;
 import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.RSqrtNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 
 public class InverseSquareRootPhase extends Phase {
+    private static final String ONE = "1.0";
+    private static final String SQRT = "SQRT";
+
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
@@ -47,11 +51,9 @@ public class InverseSquareRootPhase extends Phase {
         graph.getNodes().filter(FloatDivNode.class).forEach(floatDivisionNode -> {
 
             // The combination is 1/sqrt(x)
-            if (floatDivisionNode.getX() instanceof ConstantNode) {
-                ConstantNode constant = (ConstantNode) floatDivisionNode.getX();
-                if ((constant.getValue().toValueString().equals("1.0")) && (floatDivisionNode.getY() instanceof SPIRVFPUnaryIntrinsicNode)) {
-                    SPIRVFPUnaryIntrinsicNode intrinsicNode = (SPIRVFPUnaryIntrinsicNode) floatDivisionNode.getY();
-                    if (intrinsicNode.getIntrinsicOperation() == SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.SQRT) {
+            if (floatDivisionNode.getX() instanceof ConstantNode constant) {
+                if ((constant.getValue().toValueString().equals(ONE))) {
+                    if ((floatDivisionNode.getY() instanceof SqrtNode intrinsicNode)) {
                         ValueNode n = intrinsicNode.getValue();
                         RSqrtNode rsqrtNode = new RSqrtNode(n);
                         graph.addOrUnique(rsqrtNode);
@@ -61,6 +63,18 @@ public class InverseSquareRootPhase extends Phase {
                         }
                         floatDivisionNode.replaceAtUsages(rsqrtNode);
                         floatDivisionNode.safeDelete();
+                    } else if ((floatDivisionNode.getY() instanceof SPIRVFPUnaryIntrinsicNode spirvfpUnaryIntrinsicNode)) {
+                        if (spirvfpUnaryIntrinsicNode.getOperation().equals(SQRT)) {
+                            ValueNode n = spirvfpUnaryIntrinsicNode.getValue();
+                            RSqrtNode rsqrtNode = new RSqrtNode(n);
+                            graph.addOrUnique(rsqrtNode);
+                            spirvfpUnaryIntrinsicNode.removeUsage(floatDivisionNode);
+                            if (spirvfpUnaryIntrinsicNode.hasNoUsages()) {
+                                spirvfpUnaryIntrinsicNode.safeDelete();
+                            }
+                            floatDivisionNode.replaceAtUsages(rsqrtNode);
+                            floatDivisionNode.safeDelete();
+                        }
                     }
                 }
             }

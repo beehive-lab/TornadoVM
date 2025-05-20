@@ -198,6 +198,93 @@ public class TestMath extends TornadoTestBase {
         }
     }
 
+    /**
+     * Test that verifies the InverseSquareRootPhase optimization replaces 1.0/sqrt(x) with rsqrt(x).
+     */
+    public static void testInverseSquareRootJavaMath(DoubleArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            // This pattern (1.0 / Math.sqrt(x)) should be recognized and optimized to rsqrt(x)
+            a.set(i, 1.0 / Math.sqrt(a.get(i)));
+        }
+    }
+
+    public static void testInverseSquareRootTornadoMath(DoubleArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            // This pattern (1.0 / Math.sqrt(x)) should be recognized and optimized to rsqrt(x)
+            a.set(i, 1.0 / TornadoMath.sqrt(a.get(i)));
+        }
+    }
+
+
+    @Test
+    public void testOptimizedInverseSquareRoot() throws TornadoExecutionPlanException {
+        final int size = 128;
+        DoubleArray data = new DoubleArray(size);
+        DoubleArray seq = new DoubleArray(size);
+
+        // Initialize with positive random values to avoid sqrt of negative numbers
+        IntStream.range(0, size).parallel().forEach(i -> {
+            double value = Math.random() + 0.1; // Ensure positive values
+            data.set(i, value);
+            seq.set(i, value);
+        });
+
+        // Create and execute the task graph that should trigger the optimization
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data)
+                .task("t0", TestMath::testInverseSquareRootTornadoMath, data)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            // Execute the optimized version
+            executionPlan.execute();
+        }
+
+        // Execute the sequential version for comparison
+        testInverseSquareRootTornadoMath(seq);
+
+        // Compare results
+        for (int i = 0; i < size; i++) {
+            assertEquals(data.get(i), seq.get(i), 0.01);
+        }
+    }
+
+    @Test
+    public void testOptimizedInverseSquareRootJavaMath() throws TornadoExecutionPlanException {
+        final int size = 128;
+        DoubleArray data = new DoubleArray(size);
+        DoubleArray seq = new DoubleArray(size);
+
+        // Initialize with positive random values to avoid sqrt of negative numbers
+        IntStream.range(0, size).parallel().forEach(i -> {
+            double value = Math.random() + 0.1; // Ensure positive values
+            data.set(i, value);
+            seq.set(i, value);
+        });
+
+        // Create and execute the task graph that should trigger the optimization
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data)
+                .task("t0", TestMath::testInverseSquareRootJavaMath, data)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            // Execute the optimized version
+            executionPlan.execute();
+        }
+
+        // Execute the sequential version for comparison
+        testInverseSquareRootJavaMath(seq);
+
+        // Compare results
+        for (int i = 0; i < size; i++) {
+            assertEquals(data.get(i), seq.get(i), 0.01);
+        }
+    }
+
+
     @Test
     public void testMathCos() throws TornadoExecutionPlanException {
         final int size = 128;
