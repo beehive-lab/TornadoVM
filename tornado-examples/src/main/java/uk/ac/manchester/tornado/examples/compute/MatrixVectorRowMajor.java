@@ -41,8 +41,8 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 public class MatrixVectorRowMajor {
 
     private static final float DELTA = 1e-4f;
-    private static final int WARM_UP_ITERATIONS = 20;
-    private static final int BENCHMARK_ITERATIONS = 60;
+    private static final int WARM_UP_ITERATIONS = 140;
+    private static final int BENCHMARK_ITERATIONS = 120;
     private static final int LOCAL_WORK_GROUP_SIZE = 128; // Number of threads per workgroup
     private static final Random random = new Random(42); // Fixed seed for reproducibility
 
@@ -251,10 +251,7 @@ public class MatrixVectorRowMajor {
         System.out.println("Validating results...");
         boolean isValid = true;
         float maxError = 0.0f;
-        int errorCount = 0;
-
         float maxError2 = 0.0f;
-        int errorCount2 = 0;
 
         for (int i = 0; i < outputDim; i++) {
             float error = Math.abs(outputSeq.get(i) - outputParallel.get(i));
@@ -264,18 +261,12 @@ public class MatrixVectorRowMajor {
             maxError2 = Math.max(maxError2, error2);
 
             if (error > DELTA) {
-                if (errorCount < 5) {
-                    System.out.printf("[KernelContext] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n", i, outputSeq.get(i), outputParallel.get(i), error);
-                }
-                errorCount++;
+                System.out.printf("[KernelContext] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n", i, outputSeq.get(i), outputParallel.get(i), error);
                 isValid = false;
             }
 
             if (error2 > DELTA) {
-                if (errorCount2 < 5) {
-                    System.out.printf("[@Parallel] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n", i, outputSeq.get(i), outputPureTornado.get(i), error);
-                }
-                errorCount2++;
+                System.out.printf("[@Parallel] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n", i, outputSeq.get(i), outputPureTornado.get(i), error);
                 isValid = false;
             }
         }
@@ -283,10 +274,8 @@ public class MatrixVectorRowMajor {
         if (isValid) {
             System.out.println("Validation PASSED ✓");
         } else {
-            System.out.println("[KernelContext] Validation FAILED ✗ - " + errorCount + " errors detected.");
             System.out.println("[KernelContext] Maximum error: " + maxError);
 
-            System.out.println("[@Parallel] Validation FAILED ✗ - " + errorCount2 + " errors detected.");
             System.out.println("[@Parallel] Maximum error: " + maxError2);
         }
 
