@@ -94,7 +94,7 @@ public class MatrixVectorRowMajor {
         if (rowId >= d) {
             return;
         }
-        float sum = matrixVectorRowMajorOptimized(context, localSize, x, w, n, d);
+        float sum = matrixVectorRowMajorOptimized(context, localSize, x, w, n);
 
         // Thread 0 in each workgroup writes the final result
         if (localId == 0) {
@@ -105,7 +105,7 @@ public class MatrixVectorRowMajor {
     /**
      * Helper method to compute the dot product for a single row in an optimized way
      */
-    public static float matrixVectorRowMajorOptimized(KernelContext context, int localSize, FloatArray x, FloatArray w, int n, int d) {
+    public static float matrixVectorRowMajorOptimized(KernelContext context, int localSize, FloatArray x, FloatArray w, int n) {
         int rowId = context.groupIdx;
         int localId = context.localIdx;
 
@@ -189,14 +189,13 @@ public class MatrixVectorRowMajor {
         GridScheduler scheduler = new GridScheduler("s0.t0", worker);
         worker.setLocalWork(LOCAL_WORK_GROUP_SIZE, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights)
-                .task("t0", MatrixVectorRowMajor::matrixVectorGeneric, new KernelContext(), input, outputParallel, weights, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputParallel);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights).task("t0", MatrixVectorRowMajor::matrixVectorGeneric, new KernelContext(), input,
+                outputParallel, weights, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE).transferToHost(DataTransferMode.EVERY_EXECUTION, outputParallel);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        TaskGraph taskGraphPure = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights)
-                .task("t0", MatrixVectorRowMajor::matrixVectorParallel, input, outputPureTornado, weights, inputDim, outputDim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputPureTornado);
+        TaskGraph taskGraphPure = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights).task("t0", MatrixVectorRowMajor::matrixVectorParallel, input,
+                outputPureTornado, weights, inputDim, outputDim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputPureTornado);
 
         ImmutableTaskGraph immutableTaskGraphParallel = taskGraphPure.snapshot();
 
@@ -262,7 +261,7 @@ public class MatrixVectorRowMajor {
             maxError = Math.max(maxError, error);
 
             float error2 = Math.abs(outputSeq.get(i) - outputPureTornado.get(i));
-            maxError2 = Math.max(maxError, error);
+            maxError2 = Math.max(maxError2, error2);
 
             if (error > DELTA) {
                 if (errorCount < 5) {
@@ -287,8 +286,8 @@ public class MatrixVectorRowMajor {
             System.out.println("[KernelContext] Validation FAILED ✗ - " + errorCount + " errors detected.");
             System.out.println("[KernelContext] Maximum error: " + maxError);
 
-            System.out.println("[@paralle] Validation FAILED ✗ - " + errorCount2 + " errors detected.");
-            System.out.println("[@parallel] Maximum error: " + maxError2);
+            System.out.println("[@Parallel] Validation FAILED ✗ - " + errorCount2 + " errors detected.");
+            System.out.println("[@Parallel] Maximum error: " + maxError2);
         }
 
         // Compute and report performance statistics
