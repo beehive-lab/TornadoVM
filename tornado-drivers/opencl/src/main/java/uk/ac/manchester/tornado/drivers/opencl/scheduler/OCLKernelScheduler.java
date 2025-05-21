@@ -69,12 +69,14 @@ public abstract class OCLKernelScheduler {
         if (TornadoOptions.isProfilerEnabled()) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
-            meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
-                    ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
-                    : -1);
-            meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
-                    ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
-                    : -1);
+            if (TornadoOptions.isUpsReaderEnabled()) {
+                meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
+                        ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
+                        : -1);
+                meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
+                        ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
+                        : -1);
+            }
 
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);
