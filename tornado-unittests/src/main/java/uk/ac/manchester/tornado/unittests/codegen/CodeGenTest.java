@@ -24,17 +24,22 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -129,6 +134,140 @@ public class CodeGenTest extends TornadoTestBase {
 
         // Synchronize again before exiting
         context.localBarrier();
+    }
+
+    public static void processHeadsFlashAttention(
+            KernelContext context,
+            FloatArray q,
+            FloatArray key_cache,
+            FloatArray value_cache,
+            FloatArray xb,
+            int nHeads,
+            int headSize,
+            int kvDim,
+            int kvMul,
+            IntArray positionHolder,
+            int layer,
+            int contextLength) {
+
+        // Thread and workgroup information
+        int tid = context.localIdx;
+        int gid = context.globalIdx; // gid is not actively used in the core logic here
+        int h = context.groupIdx;  // Each workgroup processes one head
+        int localSize = context.localGroupSizeX;
+
+        // Early exit if this workgroup is beyond our head count
+        // This relies on the kernel being launched with nHeads workgroups.
+        if (h >= nHeads) return;
+
+        int pos = positionHolder.get(0);
+        int loff = layer * contextLength * kvDim;
+        int kvHeadIdx = h / kvMul;
+        int BLOCK_SIZE_C = 4;
+
+        // Allocate shared memory for tiled computation
+        float[] q_shared = context.allocateFloatLocalArray(headSize);
+        float[] k_tile = context.allocateFloatLocalArray(BLOCK_SIZE_C * headSize);
+        float[] v_tile = context.allocateFloatLocalArray(BLOCK_SIZE_C * headSize);
+        float[] s_tile = context.allocateFloatLocalArray(BLOCK_SIZE_C);
+        float[] shared_tile_max_holder = context.allocateFloatLocalArray(1); // FIX: For broadcasting tile max
+
+        // Thread-local accumulators for online softmax
+        float maxScore = Float.NEGATIVE_INFINITY;
+        float sumExp = 0.0f;
+
+        // Thread-local output accumulation
+        float[] output = new float[headSize];
+        for (int i = 0; i < headSize; i++) {
+            output[i] = 0.0f;
+        }
+
+        // Load query vector into shared memory
+        for (int i = tid; i < headSize; i += localSize) {
+            q_shared[i] = q.get(h * headSize + i);
+        }
+
+        context.localBarrier();
+
+        // Process sequence in tiles
+        for (int tileC = 0; tileC <= pos; tileC += BLOCK_SIZE_C) {
+            int tileEnd = Math.min(tileC + BLOCK_SIZE_C - 1, pos);
+
+            // Load key and value vectors for this tile
+            // Each thread loads a portion of the K and V vectors for the tile
+            for (int tIdxInSeq = tileC + tid; tIdxInSeq <= tileEnd; tIdxInSeq += localSize) {
+                int k_v_idx_in_tile = tIdxInSeq - tileC; // 0, 1, 2, or 3 for this tile
+                int tileMemOffset = k_v_idx_in_tile * headSize;
+                for (int d = 0; d < headSize; d++) {
+                    int kvCacheAbsolutePos = tIdxInSeq;
+                    int kvOffset = loff + kvCacheAbsolutePos * kvDim + kvHeadIdx * headSize + d;
+                    k_tile[tileMemOffset + d] = key_cache.get(kvOffset);
+                    v_tile[tileMemOffset + d] = value_cache.get(kvOffset);
+                }
+            }
+
+            context.localBarrier();
+
+            // Compute attention scores for this tile
+            // Each thread computes one score for the tile
+            for (int tIdxInSeq = tileC + tid; tIdxInSeq <= tileEnd; tIdxInSeq += localSize) {
+                int score_idx_in_tile = tIdxInSeq - tileC; // 0, 1, 2, or 3 for this tile
+
+                float score = 0.0f;
+                for (int d = 0; d < headSize; d++) {
+                    score += q_shared[d] * k_tile[score_idx_in_tile * headSize + d];
+                }
+                score /= TornadoMath.sqrt(headSize);
+                s_tile[score_idx_in_tile] = score;
+            }
+
+            context.localBarrier();
+
+            // Find max score in this tile (all threads compute it redundantly over the small s_tile)
+            float tileLocalMax = Float.NEGATIVE_INFINITY;
+            for (int i = 0; i <= tileEnd - tileC; i++) { // Iterate over valid scores in s_tile
+                if (s_tile[i] > tileLocalMax) {
+                    tileLocalMax = s_tile[i];
+                }
+            }
+
+            // Broadcast max to all threads via shared memory
+            if (tid == 0) {
+                shared_tile_max_holder[0] = tileLocalMax; // FIX: Use dedicated holder
+            }
+            context.localBarrier();
+            float currentTileMax = shared_tile_max_holder[0]; // FIX: Read from dedicated holder
+
+            // Determine if we need to rescale previous results
+            float newMax = Math.max(maxScore, currentTileMax);
+            if (newMax != maxScore && maxScore != Float.NEGATIVE_INFINITY) {
+                float scale = TornadoMath.exp(maxScore - newMax);
+                sumExp *= scale;
+                for (int d = 0; d < headSize; d++) {
+                    output[d] *= scale;
+                }
+            }
+            maxScore = newMax;
+
+            // Process each key-value pair using original scores from s_tile
+            // All threads iterate over all scores in the current tile
+            for (int t_idx_in_s_tile = 0; t_idx_in_s_tile <= tileEnd - tileC; t_idx_in_s_tile++) {
+                // s_tile[t_idx_in_s_tile] now correctly refers to the original score
+                float expScore = TornadoMath.exp(s_tile[t_idx_in_s_tile] - maxScore);
+                sumExp += expScore;
+
+                for (int d = 0; d < headSize; d++) {
+                    output[d] += expScore * v_tile[t_idx_in_s_tile * headSize + d];
+                }
+            }
+            context.localBarrier(); // Ensure all threads finish with s_tile, k_tile, v_tile before next tile load
+        }
+
+        // Normalize and write final results
+        float normFactor = (sumExp > 0.0f) ? (1.0f / sumExp) : 0.0f; // Avoid division by zero, return 0 if sumExp is 0
+        for (int d = tid; d < headSize; d += localSize) {
+            xb.set(h * headSize + d, output[d] * normFactor);
+        }
     }
 
     @Test
@@ -239,6 +378,71 @@ public class CodeGenTest extends TornadoTestBase {
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.execute();
         }
+    }
+
+    @Test
+    public void testFlashAttention() throws TornadoExecutionPlanException {
+        final int dim = 2048;
+        final int nHeads = 32;
+        final int headSize = 64;
+        final int numKVHeads = 8;
+        final int kvMul = nHeads / numKVHeads; // Grouped Query Attention factor
+        final int kvDim = headSize * numKVHeads;
+        final int seqLen = 128;
+        final int pos = 16;       // Current sequence position
+        final int layer = 0;
+
+        // Initialize input and output data
+        FloatArray query = new FloatArray(dim);
+        FloatArray keyCache = new FloatArray(seqLen * kvDim);
+        FloatArray valueCache = new FloatArray(seqLen * kvDim);
+        FloatArray output = new FloatArray(dim);
+        FloatArray attentionWeights = new FloatArray(nHeads * (pos + 1));
+        IntArray positionAndLayer = new IntArray(2); // Store position and layer indices
+
+        // Initialize query vector with test values
+        for (int i = 0; i < dim; i++) {
+            query.set(i, 0.01f * i);
+        }
+
+        // Initialize key and value caches
+        for (int i = 0; i < seqLen * kvDim; i++) {
+            keyCache.set(i, 0.005f * i);
+            valueCache.set(i, 0.005f * i);
+        }
+
+        // Clear output buffer
+        for (int i = 0; i < dim; i++) {
+            output.set(i, 0.0f);
+        }
+
+        // Set position and layer indices
+        positionAndLayer.set(0, pos);
+        positionAndLayer.set(1, layer);
+
+        WorkerGrid parallelAttentionWorker = new WorkerGrid1D(nHeads);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", parallelAttentionWorker);
+        parallelAttentionWorker.setGlobalWork(nHeads * 4, 1, 1);
+        parallelAttentionWorker.setLocalWork(4, 1, 1);
+
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION,
+                        query, keyCache, valueCache, output, attentionWeights, positionAndLayer)
+                .task("t0", CodeGenTest::processHeadsFlashAttention,context,
+                        query, keyCache, valueCache, output,
+                        nHeads, headSize, kvDim, kvMul,
+                        positionAndLayer,0, 512)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler)
+                    .execute();
+        }
+
     }
 
 }
