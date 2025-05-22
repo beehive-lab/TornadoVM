@@ -1,6 +1,8 @@
 # TornadoVM
 
-![TornadoVM version](https://img.shields.io/badge/version-1.1.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+![TornadoVM version](https://img.shields.io/badge/version-1.1.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)[[![TornadoVM DeepWiki](https://img.shields.io/badge/TornadoVM-DeepWiki-blue)](https://deepwiki.com/beehive-lab/TornadoVM)
+
+
 
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
