@@ -301,6 +301,18 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                  */
                 closeBlock(block);
                 incrementClosedLoops(loopBeginBlock);
+            } else {
+                // This case is encountered in the uk.ac.manchester.tornado.unittests.codegen.CodeGenTest#testFlashAttention unittest
+                LoopBeginNode loopBeginNode = (LoopBeginNode) loopBeginBlock.getBeginNode();
+                if (loopBeginNode.loopExits().count() == 1) {
+                    // if there is only one exit for the loop
+                    LoopExitNode loopExitNode = loopBeginNode.loopExits().first();
+                    // if the exit is followed by and IfNode the loop will not close, so close it here
+                    if (loopExitNode.next() instanceof IfNode) {
+                        closeBlock(block);
+                        incrementClosedLoops(loopBeginBlock);
+                    }
+                }
             }
         } else {
             closeBlock(block);
