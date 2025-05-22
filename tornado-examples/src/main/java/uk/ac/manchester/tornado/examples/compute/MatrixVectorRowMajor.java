@@ -82,7 +82,7 @@ public class MatrixVectorRowMajor {
     }
 
     /**
-     * Optimized parallel implementation using workgroup-based approach
+     * Optimized implementation using KernelContext API with a row major approach
      */
     public static void matrixVectorGeneric(KernelContext context, FloatArray x, FloatArray hb, FloatArray w, int n, int d, int localWorkGroupSize) {
         // One row per workgroup (not per thread)
@@ -180,8 +180,8 @@ public class MatrixVectorRowMajor {
 
         // Arrays for timing measurements
         ArrayList<Long> sequentialTimers = new ArrayList<>();
+        ArrayList<Long> kernelContextTimers = new ArrayList<>();
         ArrayList<Long> parallelTimers = new ArrayList<>();
-        ArrayList<Long> pureTornadoTimers = new ArrayList<>();
 
         // Set up TornadoVM execution
         System.out.println("Setting up TornadoVM execution...");
@@ -194,8 +194,10 @@ public class MatrixVectorRowMajor {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        TaskGraph taskGraphPure = new TaskGraph("s1").transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights).task("t0", MatrixVectorRowMajor::matrixVectorParallel, input,
-                outputPureTornado, weights, inputDim, outputDim).transferToHost(DataTransferMode.EVERY_EXECUTION, outputPureTornado);
+        TaskGraph taskGraphPure = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weights) //
+                .task("t0", MatrixVectorRowMajor::matrixVectorParallel, input, outputPureTornado, weights, inputDim, outputDim) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputPureTornado); //
 
         ImmutableTaskGraph immutableTaskGraphParallel = taskGraphPure.snapshot();
 
@@ -237,14 +239,14 @@ public class MatrixVectorRowMajor {
             long start = System.nanoTime();
             executionPlan.withGridScheduler(scheduler).execute();
             long end = System.nanoTime();
-            parallelTimers.add(end - start);
+            kernelContextTimers.add(end - start);
         }
 
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
             long start = System.nanoTime();
             executionPlan2.execute();
             long end = System.nanoTime();
-            pureTornadoTimers.add(end - start);
+            parallelTimers.add(end - start);
         }
 
         // Validate results
@@ -281,15 +283,15 @@ public class MatrixVectorRowMajor {
 
         // Compute and report performance statistics
         LongSummaryStatistics statsSeq = sequentialTimers.stream().mapToLong(Long::longValue).summaryStatistics();
+        LongSummaryStatistics statsKernelContext = kernelContextTimers.stream().mapToLong(Long::longValue).summaryStatistics();
         LongSummaryStatistics statsParallel = parallelTimers.stream().mapToLong(Long::longValue).summaryStatistics();
-        LongSummaryStatistics pureTornadoStats = pureTornadoTimers.stream().mapToLong(Long::longValue).summaryStatistics();
 
         // Calculate GFLOP/s (2*inputDim operations per output element)
         long flopsPerRow = 2L * inputDim; // multiply + add for each element
         long totalFlops = flopsPerRow * outputDim;
         double seqGFlops = (totalFlops * 1e-9) / (statsSeq.getAverage() * 1e-9);
+        double kernelContextGFlops = (totalFlops * 1e-9) / (statsKernelContext.getAverage() * 1e-9);
         double parallelGFlops = (totalFlops * 1e-9) / (statsParallel.getAverage() * 1e-9);
-        double pureTornadoGFlops = (totalFlops * 1e-9) / (pureTornadoStats.getAverage() * 1e-9);
 
         System.out.println("\nPerformance Results:");
         System.out.println("====================");
@@ -302,24 +304,24 @@ public class MatrixVectorRowMajor {
         System.out.printf("  Performance: %.2f GFLOP/s\n", seqGFlops);
 
         System.out.println("Parallel Implementation (TornadoVM):");
+        System.out.printf("  Average time: %.3f ms\n", statsKernelContext.getAverage() / 1_000_000);
+        System.out.printf("  Min time: %.3f ms\n", (double) statsKernelContext.getMin() / 1_000_000);
+        System.out.printf("  Max time: %.3f ms\n", (double) statsKernelContext.getMax() / 1_000_000);
+        System.out.printf("  Performance: %.2f GFLOP/s\n", kernelContextGFlops);
+
+        System.out.println("Pure TornadoVM @Parallel Implementation (TornadoVM):");
         System.out.printf("  Average time: %.3f ms\n", statsParallel.getAverage() / 1_000_000);
         System.out.printf("  Min time: %.3f ms\n", (double) statsParallel.getMin() / 1_000_000);
         System.out.printf("  Max time: %.3f ms\n", (double) statsParallel.getMax() / 1_000_000);
         System.out.printf("  Performance: %.2f GFLOP/s\n", parallelGFlops);
 
-        System.out.println("Pure TornadoVM @Parallel Implementation (TornadoVM):");
-        System.out.printf("  Average time: %.3f ms\n", pureTornadoStats.getAverage() / 1_000_000);
-        System.out.printf("  Min time: %.3f ms\n", (double) pureTornadoStats.getMin() / 1_000_000);
-        System.out.printf("  Max time: %.3f ms\n", (double) pureTornadoStats.getMax() / 1_000_000);
-        System.out.printf("  Performance: %.2f GFLOP/s\n", pureTornadoGFlops);
-
-        double speedup = statsSeq.getAverage() / statsParallel.getAverage();
+        double speedup = statsSeq.getAverage() / statsKernelContext.getAverage();
         System.out.printf("\nSpeedup: KernelContext vs Java %.2fx\n", speedup);
 
-        double speedup2 = statsSeq.getAverage() / pureTornadoStats.getAverage();
+        double speedup2 = statsSeq.getAverage() / statsParallel.getAverage();
         System.out.printf("\nSpeedup: @Parallel vs Java %.2fx\n", speedup2);
 
-        double speedup3 = pureTornadoStats.getAverage() / statsParallel.getAverage();
+        double speedup3 = statsParallel.getAverage() / statsKernelContext.getAverage();
         System.out.printf("\nSpeedup: KernelContext vs @Parallel %.2fx\n", speedup3);
     }
 }
