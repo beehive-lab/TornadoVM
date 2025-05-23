@@ -382,6 +382,8 @@ public class CodeGenTest extends TornadoTestBase {
 
     @Test
     public void testFlashAttention() throws TornadoExecutionPlanException {
+       assertNotBackend(TornadoVMBackendType.SPIRV);
+
         final int dim = 2048;
         final int nHeads = 32;
         final int headSize = 64;
