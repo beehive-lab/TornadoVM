@@ -140,8 +140,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL = 3;
     private static final boolean TIME_IN_NANOSECONDS = TornadoOptions.TIME_IN_NANOSECONDS;
-    private static final String TASK_GRAPH_PREFIX = "DYNRECONF_TASK_GRAPH_";
-    private static final String PARALLEL_TASK_GRAPH_PREFIX = "PARALLEL_MODE_DYNRECONF_TASK_GRAPH_";
+    public static final String GENERATED_TASK_GRAPH_PREFIX = "__GENERATED_TASK_GRAPH__";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
 
     private static final boolean USE_GLOBAL_TASK_CACHE = false;
@@ -149,10 +148,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final String RESET = "\u001B[0m";
     private static final String RED = "\u001B[31m";
     private static final String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
-
-    private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
-    private static final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
-    private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
 
@@ -1689,7 +1684,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         updatePersistedObjectState();
 
         TornadoTaskGraphInterface reduceTaskGraph = null;
-        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_GRAPH_PREFIX))) {
+        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(GENERATED_TASK_GRAPH_PREFIX))) {
             reduceTaskGraph = analyzeSkeletonAndRun();
         }
 
@@ -1938,7 +1933,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (int i = 0; i < numDevices; i++) {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
-                String newTaskScheduleName = PARALLEL_TASK_GRAPH_PREFIX + taskScheduleNumber;
+                String newTaskScheduleName = GENERATED_TASK_GRAPH_PREFIX + taskScheduleNumber;
                 TaskGraph task = new TaskGraph(newTaskScheduleName);
 
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
@@ -2049,7 +2044,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private TornadoExecutionPlan recompileExecutionPlan(int deviceWinnerIndex) {
         // Force re-compilation in device <deviceWinnerIndex>
-        String newTaskScheduleName = TASK_GRAPH_PREFIX + deviceWinnerIndex;
+        String newTaskScheduleName = GENERATED_TASK_GRAPH_PREFIX + deviceWinnerIndex;
         TaskGraph taskToCompile = new TaskGraph(newTaskScheduleName);
         performStreamInObject(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
         for (TaskPackage taskPackage : taskPackages) {
@@ -2155,7 +2150,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // Running sequentially for all the devices
         for (int taskNumber = 0; taskNumber < numDevices; taskNumber++) {
-            String newTaskScheduleName = TASK_GRAPH_PREFIX + taskNumber;
+            String newTaskScheduleName = GENERATED_TASK_GRAPH_PREFIX + taskNumber;
             TaskGraph task = new TaskGraph(newTaskScheduleName);
 
             for (StreamingObject streamingObject : inputModesObjects) {
@@ -2729,8 +2724,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private record CompileInfo(boolean compile, boolean updateDevice) {
-
     }
+
+    private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
+    private static final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
+    private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
 
     /**
      * Class that keeps the history of executions based on their data sizes. It has a sorted map
