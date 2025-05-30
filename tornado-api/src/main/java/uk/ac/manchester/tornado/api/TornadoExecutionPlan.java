@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
+import uk.ac.manchester.tornado.api.plan.types.WithAoTCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
@@ -48,7 +49,6 @@ import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
 import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
-import uk.ac.manchester.tornado.api.plan.types.WithWarmUp;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
@@ -222,9 +222,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *
      * @return {@link TornadoExecutionPlan}
      */
-    public TornadoExecutionPlan withWarmUp() {
-        tornadoExecutor.warmup(executionFrame);
-        return new WithWarmUp(this);
+    public TornadoExecutionPlan withAoTCompilation() {
+        tornadoExecutor.withAoTCompilation(executionFrame);
+        return new WithAoTCompilation(this);
     }
 
     /**

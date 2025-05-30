@@ -67,8 +67,8 @@ class TornadoExecutor {
         }
     }
 
-    void warmup(ExecutorFrame executorFrame) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.warmup(executorFrame));
+    void withAoTCompilation(ExecutorFrame executorFrame) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withAoTCompilation(executorFrame));
     }
 
     void withBatch(String batchSize) {
