@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.phases.util.Providers;
@@ -138,7 +139,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private static final boolean EXPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
-    private static final int PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL = 3;
     private static final boolean TIME_IN_NANOSECONDS = TornadoOptions.TIME_IN_NANOSECONDS;
     public static final String GENERATED_TASK_GRAPH_PREFIX = "__GENERATED_TASK_GRAPH__";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
@@ -151,7 +151,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
 
-    private static final int MAX_ITERATIONS_DYNAMIC_RECONFIGURATION_SEQUENTIAL = 100;
+    private static final int ITERATIONS_WARMUP_DYNAMIC_RECONFIGURATION_LOOP = 100;
+    private static final int ITERATIONS_WARMUP_DYNAMIC_RECONFIGURATION_PERF = 3;
 
     private static ConcurrentHashMap<Integer, TornadoExecutionPlan> globalExecutionPlanIndex = new ConcurrentHashMap<>();
     private static int baseGlobalIndex = 0;
@@ -1913,7 +1914,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             if (policy == Policy.PERFORMANCE) {
                 // Warm up for the PERFORMANCE policy
-                for (int k = 0; k < MAX_ITERATIONS_DYNAMIC_RECONFIGURATION_SEQUENTIAL; k++) {
+                for (int i = 0; i < ITERATIONS_WARMUP_DYNAMIC_RECONFIGURATION_LOOP; i++) {
                     runAllTasksJavaSequential();
                 }
             }
@@ -1921,6 +1922,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             final long start = timer.time();
             runAllTasksJavaSequential();
             final long endSequentialCode = timer.time();
+
             if (DEBUG) {
                 System.out.println("Seq finished: " + Thread.currentThread().getName());
             }
@@ -1954,7 +1956,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
                 if (policy == Policy.PERFORMANCE) {
                     // first warm up
-                    for (int k = 0; k < PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL; k++) {
+                    for (int k = 0; k < ITERATIONS_WARMUP_DYNAMIC_RECONFIGURATION_PERF; k++) {
                         executor.execute();
                     }
                 }
@@ -1977,6 +1979,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     }
 
+    private void join(Thread[] threads) {
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                throw new TornadoDynamicReconfigurationException(e);
+            }
+        }
+    }
+
     private void runScheduleWithParallelEvaluationMode(Policy policy) throws InterruptedException {
 
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
@@ -1985,11 +1997,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // In the near future it will be an API call to modify this value. 
         TornadoBackend tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getBackend(DEFAULT_DRIVER_INDEX);
         int numAccelerators = tornadoDriver.getNumDevices();
-
         long masterThreadID = Thread.currentThread().threadId();
 
         // One additional threads is reserved for sequential CPU execution
         final int numThreads = numAccelerators + 1;
+
         Thread[] threads = new Thread[numThreads];
         long[] totalTimers = new long[numThreads];
 
@@ -2000,9 +2012,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         setUpParallelExecutionPlans(numAccelerators, threads, timer, policy, totalTimers);
 
         // run all threads
-        for (int i = 0; i < numThreads; i++) {
-            threads[i].start();
-        }
+        IntStream.range(0, numThreads).forEach(i -> threads[i].start());
 
         // Define the winner, based on the first thread to finish
         if (policy == Policy.LATENCY) {
@@ -2011,18 +2021,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             winnerThread.thread.join();
 
             // add the winner configuration into the table
-            policyTimeTable.put(Policy.LATENCY, winnerThread.threadWinnerIndex);
-        } else {
-            // JOIN operation for the `PERFORMANCE` and `END_TO_END` policies.
-            for (Thread t : threads) {
-                try {
-                    t.join();
-                } catch (InterruptedException e) {
-                    throw new TornadoDynamicReconfigurationException(e);
-                }
-            }
+            policyTimeTable.put(policy, winnerThread.threadWinnerIndex);
+            return;
         }
 
+        // JOIN operation for the `PERFORMANCE` and `END_TO_END` policies.
+        join(threads);
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) //
                 && (masterThreadID == Thread.currentThread().threadId())) {
 
@@ -2037,29 +2041,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void runSequential() {
-        for (TaskPackage taskPackage : taskPackages) {
-            runSequentialCodeInThread(taskPackage);
-        }
+        taskPackages.forEach(this::runSequentialCodeInThread);
     }
 
     private TornadoExecutionPlan recompileExecutionPlan(int deviceWinnerIndex) {
-        // Force re-compilation in device <deviceWinnerIndex>
+        // Force re-compilation for the device <deviceWinnerIndex>
         String newTaskScheduleName = GENERATED_TASK_GRAPH_PREFIX + deviceWinnerIndex;
         TaskGraph taskToCompile = new TaskGraph(newTaskScheduleName);
         performStreamInObject(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
-        for (TaskPackage taskPackage : taskPackages) {
-            String taskID = taskPackage.getId();
-            TornadoRuntimeProvider.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
-            taskToCompile.addTask(taskPackage);
-        }
+        taskPackages.forEach(taskToCompile::addTask);
         performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, taskToCompile, streamOutObjects);
         return new TornadoExecutionPlan(taskToCompile.snapshot());
     }
 
     private void runTaskGraphParallelSelected(int deviceWinnerIndex) {
-        for (TaskPackage taskPackage : taskPackages) {
-            TornadoRuntimeProvider.setProperty(this.getTaskGraphName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
-        }
         if (DEBUG) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
@@ -2074,11 +2069,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 executionPlansIndexes.put(deviceWinnerIndex, executionPlan);
             }
         }
-        executionPlan.execute();
+        TornadoDevice device = TornadoExecutionPlan.getDevice(DEFAULT_DRIVER_INDEX, deviceWinnerIndex);
+        executionPlan.withDevice(device) //
+                .execute();
     }
 
     private TornadoTaskGraphInterface runDynamicReconfigurationInParallelMode(Policy policy) throws InterruptedException {
-        if (policyTimeTable.get(policy) == null) {
+        if (!policyTimeTable.containsKey(policy) || policyTimeTable.get(policy) == null) {
             runScheduleWithParallelEvaluationMode(policy);
         } else {
             // Run with the winner device
@@ -2135,7 +2132,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void runSequentialTaskGraph(Policy policy, Timer timer, long[] totalTimers, int indexSequential) {
         if (policy == Policy.PERFORMANCE) {
-            for (int k = 0; k < MAX_ITERATIONS_DYNAMIC_RECONFIGURATION_SEQUENTIAL; k++) {
+            for (int k = 0; k < ITERATIONS_WARMUP_DYNAMIC_RECONFIGURATION_LOOP; k++) {
                 runAllTasksJavaSequential();
             }
         }
@@ -2185,7 +2182,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             executor.withDevice(device);
 
             if (policy == Policy.PERFORMANCE) {
-                for (int k = 0; k < PERFORMANCE_WARMUP_DYNAMIC_RECONF_PARALLEL; k++) {
+                for (int k = 0; k < ITERATIONS_WARMUP_DYNAMIC_RECONFIGURATION_PERF; k++) {
                     executor.execute();
                 }
             }

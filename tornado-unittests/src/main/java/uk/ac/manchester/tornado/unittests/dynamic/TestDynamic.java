@@ -28,7 +28,6 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -51,12 +50,6 @@ public class TestDynamic extends TornadoTestBase {
     public static void compute2(IntArray a, IntArray b) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
             b.set(i, a.get(i) * 10);
-        }
-    }
-
-    public static void saxpy(float alpha, FloatArray x, FloatArray y) {
-        for (@Parallel int i = 0; i < y.getSize(); i++) {
-            y.set(i, alpha * x.get(i));
         }
     }
 
