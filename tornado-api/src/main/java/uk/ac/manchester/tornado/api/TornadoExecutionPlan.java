@@ -605,5 +605,4 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public void mapOnDeviceMemoryRegion(Object destTornadoArray, Object srcTornadoArray, long offset, int fromGraphIndex, int toGraphIndex) {
         tornadoExecutor.mapOnDeviceMemoryRegion(destTornadoArray, srcTornadoArray, offset, fromGraphIndex, toGraphIndex);
     }
-
 }
