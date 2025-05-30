@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -327,4 +328,30 @@ class TornadoExecutor {
         return false;
     }
 
+    public void withWarmUp(long milliseconds, ExecutorFrame executorFrame) throws InterruptedException {
+        AtomicBoolean run = new AtomicBoolean(true);
+
+        // If iterations takes more than the specified amount of milliseconds,
+        // the next run is stopped. This means that the amount if milliseconds
+        // specified is "at least" the time that the warm-up will take.
+        Thread warmUpThread = new Thread(() -> {
+            while (run.get()) {
+                execute(executorFrame);
+            }
+        });
+
+        Thread controllerThread = new Thread(() -> {
+            try {
+                Thread.sleep(milliseconds);
+            } catch (InterruptedException e) {
+                throw new TornadoRuntimeException(e);
+            }
+            run.set(false);
+        });
+        warmUpThread.start();
+        controllerThread.start();
+
+        warmUpThread.join();
+        controllerThread.join();
+    }
 }

@@ -2,7 +2,7 @@
 # vim: set tasbstop=4
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2023, 2025, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -162,6 +162,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.warmup.TestWarmUp"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestInitDataTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),

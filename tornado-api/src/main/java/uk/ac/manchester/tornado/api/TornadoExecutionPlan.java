@@ -605,4 +605,26 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public void mapOnDeviceMemoryRegion(Object destTornadoArray, Object srcTornadoArray, long offset, int fromGraphIndex, int toGraphIndex) {
         tornadoExecutor.mapOnDeviceMemoryRegion(destTornadoArray, srcTornadoArray, offset, fromGraphIndex, toGraphIndex);
     }
+
+    /**
+     * This function allows developers to warm up the whole execution plan before running it. This covers
+     * copy in and out data, compiling all tasks and executing all tasks once for the specified amount
+     * of time.
+     * 
+     * @param milliseconds
+     *     Amount of time in milliseconds to warm up the execution plan. This amount means that the
+     *     execution plan will run, at least for the specified amount of time. if the tasks within the task-graphs
+     *     takes longer to execute, in a second run, the code will not be dispatched.
+     * @return {@link TornadoExecutionPlan}
+     * 
+     * @throws {@link
+     *     InterruptedException}
+     */
+    public TornadoExecutionPlan withWarmUp(long milliseconds) throws InterruptedException {
+        if (milliseconds < 0) {
+            throw new TornadoRuntimeException("[ERROR] Warm-up time cannot be negative");
+        }
+        tornadoExecutor.withWarmUp(milliseconds, executionFrame);
+        return this;
+    }
 }
