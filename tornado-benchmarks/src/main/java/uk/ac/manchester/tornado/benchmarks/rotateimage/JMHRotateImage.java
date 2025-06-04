@@ -88,7 +88,7 @@ public class JMHRotateImage {
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withAoTCompilation();
+            executor.withPreCompilation();
         }
     }
 

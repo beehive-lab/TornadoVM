@@ -16,6 +16,7 @@
  *
  */
 module tornado.api {
+    requires jmh.core;
     exports uk.ac.manchester.tornado.api;
     exports uk.ac.manchester.tornado.api.annotations;
     exports uk.ac.manchester.tornado.api.common;

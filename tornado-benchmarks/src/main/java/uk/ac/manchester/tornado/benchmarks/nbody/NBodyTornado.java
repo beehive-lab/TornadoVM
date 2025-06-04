@@ -85,7 +85,7 @@ public class NBodyTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withAoTCompilation();
+        executionPlan.withPreCompilation();
     }
 
     @Override
@@ -133,9 +133,9 @@ public class NBodyTornado extends BenchmarkDriver {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withAoTCompilation();
+        executionPlan.withPreCompilation();
 
-        TornadoExecutionResult executionResult = executionPlan.withAoTCompilation() //
+        TornadoExecutionResult executionResult = executionPlan.withPreCompilation() //
                 .withDevice(device) //
                 .execute();
 

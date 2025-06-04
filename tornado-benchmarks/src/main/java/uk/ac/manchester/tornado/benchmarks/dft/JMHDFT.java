@@ -84,7 +84,7 @@ public class JMHDFT {
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withAoTCompilation();
+            executor.withPreCompilation();
         }
     }
 

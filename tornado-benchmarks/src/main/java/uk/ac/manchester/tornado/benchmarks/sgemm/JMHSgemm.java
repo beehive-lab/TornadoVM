@@ -90,7 +90,7 @@ public class JMHSgemm {
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withAoTCompilation();
+            executor.withPreCompilation();
 
         }
     }

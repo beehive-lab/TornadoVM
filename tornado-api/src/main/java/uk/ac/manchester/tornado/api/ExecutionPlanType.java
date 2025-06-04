@@ -23,7 +23,6 @@ import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
-import uk.ac.manchester.tornado.api.plan.types.WithAoTCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
@@ -35,17 +34,20 @@ import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
 import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUpIterations;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUpTime;
 
 public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
         permits OffConcurrentDevices, OffMemoryLimit, OffPrintKernel, OffProfiler, //
-        OffThreadInfo, WithAllGraphs, WithBatch, WithClearProfiles, WithCompilerFlags,  //
+        OffThreadInfo, WithAllGraphs, WithPreCompilation, WithBatch, WithClearProfiles, WithCompilerFlags, //
         WithConcurrentDevices, WithDefaultScheduler, WithDevice, WithDynamicReconfiguration, //
-        WithFreeDeviceMemory, WithGraph, WithGridScheduler, WithMemoryLimit, WithPrintKernel, //
-        WithProfiler, WithResetDevice, WithThreadInfo, WithAoTCompilation { //
+        WithFreeDeviceMemory, WithGraph, WithGridScheduler, WithMemoryLimit, WithPrintKernel, WithProfiler, //
+        WithResetDevice, WithThreadInfo, WithWarmUpIterations, WithWarmUpTime { //
 
     public ExecutionPlanType(TornadoExecutionPlan parentNode) {
 

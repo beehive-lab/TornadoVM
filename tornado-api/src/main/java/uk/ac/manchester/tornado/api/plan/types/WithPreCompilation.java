@@ -20,14 +20,14 @@ package uk.ac.manchester.tornado.api.plan.types;
 import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithAoTCompilation extends ExecutionPlanType {
+public final class WithPreCompilation extends ExecutionPlanType {
 
-    public WithAoTCompilation(TornadoExecutionPlan parent) {
+    public WithPreCompilation(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return super.toString() + "\n -> withAoTCompilation ";
+        return super.toString() + "\n -> withPreCompilation ";
     }
 }

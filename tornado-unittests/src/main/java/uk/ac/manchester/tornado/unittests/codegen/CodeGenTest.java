@@ -296,7 +296,7 @@ public class CodeGenTest extends TornadoTestBase {
                 .task("t0", CodeGenTest::badCascadeKernel2);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withAoTCompilation();
+            executionPlan.withPreCompilation();
         }
     }
 
@@ -310,7 +310,7 @@ public class CodeGenTest extends TornadoTestBase {
                 .task("t0", CodeGenTest::badCascadeKernel3);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withAoTCompilation();
+            executionPlan.withPreCompilation();
         }
     }
 
@@ -325,7 +325,7 @@ public class CodeGenTest extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withAoTCompilation();
+            executionPlan.withPreCompilation();
         }
     }
 

@@ -58,11 +58,36 @@ public class TestWarmUp extends TornadoTestBase {
 
             // Warmup for 1 second
             long startTime = System.currentTimeMillis();
-            plan.withWarmUp(1000);
+            plan.withWarmUpTime(1000);
             long endTime = System.currentTimeMillis();
 
             // 5ms of tolerance 
             Assert.assertTrue((endTime - startTime > 1000) && (endTime - startTime < 1005));
+
+            // Run one more time after the warmup
+            plan.withProfiler(ProfilerMode.CONSOLE).execute();
+        }
+    }
+
+    @Test
+    public void test02() throws TornadoExecutionPlanException, InterruptedException {
+        TaskGraph taskGraph = new TaskGraph("foo");
+
+        FloatArray input = new FloatArray(1024);
+        FloatArray output = new FloatArray(1024);
+        input.init(0.1f);
+
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("bar", (FloatArray in, FloatArray out) -> {
+                    for (@Parallel int i = 0; i < in.getSize(); i++) {
+                        out.set(i, in.get(i) * 2);
+                    }
+                }, input, output).transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+
+            // Warmup for 1000 iterations
+            plan.withWarmUpIterations(1000);
 
             // Run one more time after the warmup
             plan.withProfiler(ProfilerMode.CONSOLE).execute();

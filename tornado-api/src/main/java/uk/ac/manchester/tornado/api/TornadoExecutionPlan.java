@@ -33,7 +33,6 @@ import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
-import uk.ac.manchester.tornado.api.plan.types.WithAoTCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
@@ -45,10 +44,13 @@ import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
 import uk.ac.manchester.tornado.api.plan.types.WithResetDevice;
 import uk.ac.manchester.tornado.api.plan.types.WithThreadInfo;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUpIterations;
+import uk.ac.manchester.tornado.api.plan.types.WithWarmUpTime;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
@@ -222,9 +224,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      *
      * @return {@link TornadoExecutionPlan}
      */
-    public TornadoExecutionPlan withAoTCompilation() {
-        tornadoExecutor.withAoTCompilation(executionFrame);
-        return new WithAoTCompilation(this);
+    public TornadoExecutionPlan withPreCompilation() {
+        tornadoExecutor.withPreCompilation(executionFrame);
+        return new WithPreCompilation(this);
     }
 
     /**
@@ -612,19 +614,37 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * of time.
      * 
      * @param milliseconds
-     *     Amount of time in milliseconds to warm up the execution plan. This amount means that the
-     *     execution plan will run, at least for the specified amount of time. if the tasks within the task-graphs
+     *     Amount of time to warm up the execution plan. This amount means that the execution plan will run,
+     *     at least for the specified amount of time. if the tasks within the task-graphs
      *     takes longer to execute, in a second run, the code will not be dispatched.
      * @return {@link TornadoExecutionPlan}
      * 
      * @throws {@link
      *     InterruptedException}
      */
-    public TornadoExecutionPlan withWarmUp(long milliseconds) throws InterruptedException {
+    public TornadoExecutionPlan withWarmUpTime(long milliseconds) throws InterruptedException {
         if (milliseconds < 0) {
             throw new TornadoRuntimeException("[ERROR] Warm-up time cannot be negative");
         }
-        tornadoExecutor.withWarmUp(milliseconds, executionFrame);
-        return this;
+        tornadoExecutor.withWarmUpTime(milliseconds, executionFrame);
+        return new WithWarmUpTime(this, milliseconds);
+    }
+
+    /**
+     * This function allows developers to warm up the whole execution plan before running it. This covers
+     * copy in and out data, compiling all tasks and executing all tasks once for the specified amount
+     * of time.
+     *
+     * @param iterations
+     *     Number of iterations to run the whole execution plan as warm-up.
+     * @return {@link TornadoExecutionPlan}
+     *
+     */
+    public TornadoExecutionPlan withWarmUpIterations(int iterations) {
+        if (iterations < 0) {
+            throw new TornadoRuntimeException("[ERROR] Warm-up time cannot be negative");
+        }
+        tornadoExecutor.withWarmUpIterations(iterations, executionFrame);
+        return new WithWarmUpIterations(this, iterations);
     }
 }

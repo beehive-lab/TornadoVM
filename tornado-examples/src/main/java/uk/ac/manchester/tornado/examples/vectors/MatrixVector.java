@@ -108,7 +108,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withAoTCompilation();
+        executionPlan.withDevice(device).withPreCompilation();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();
@@ -158,7 +158,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withAoTCompilation();
+        executionPlan.withDevice(device).withPreCompilation();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();

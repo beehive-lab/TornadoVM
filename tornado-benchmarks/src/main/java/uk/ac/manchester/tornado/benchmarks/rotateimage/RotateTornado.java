@@ -74,7 +74,7 @@ public class RotateTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withAoTCompilation();
+        executionPlan.withPreCompilation();
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -68,8 +69,8 @@ class TornadoExecutor {
         }
     }
 
-    void withAoTCompilation(ExecutorFrame executorFrame) {
-        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withAoTCompilation(executorFrame));
+    void withPreCompilation(ExecutorFrame executorFrame) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withPreCompilation(executorFrame));
     }
 
     void withBatch(String batchSize) {
@@ -328,7 +329,7 @@ class TornadoExecutor {
         return false;
     }
 
-    public void withWarmUp(long milliseconds, ExecutorFrame executorFrame) throws InterruptedException {
+    public void withWarmUpTime(long milliseconds, ExecutorFrame executorFrame) throws InterruptedException {
         AtomicBoolean run = new AtomicBoolean(true);
 
         // If iterations takes more than the specified amount of milliseconds,
@@ -353,5 +354,9 @@ class TornadoExecutor {
 
         warmUpThread.join();
         controllerThread.join();
+    }
+
+    public void withWarmUpIterations(int iterations, ExecutorFrame executorFrame) {
+        IntStream.range(0, iterations).mapToObj(i -> executorFrame).forEach(this::execute);
     }
 }

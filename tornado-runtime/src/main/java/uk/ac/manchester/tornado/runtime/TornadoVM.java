@@ -197,8 +197,8 @@ public class TornadoVM {
         executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
     }
 
-    public void withAoTCompilation() {
-        executeActionOnInterpreters(TornadoVMInterpreter::withAoTCompilation);
+    public void withPreCompilation() {
+        executeActionOnInterpreters(TornadoVMInterpreter::withPreCompilation);
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {

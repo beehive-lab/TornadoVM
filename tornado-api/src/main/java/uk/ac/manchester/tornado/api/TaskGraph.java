@@ -804,8 +804,8 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.execute(executionPackage).waitOn();
     }
 
-    void withAoTCompilation(ExecutorFrame executionPackage) {
-        taskGraphImpl.withAoTCompilation(executionPackage);
+    void withPreCompilation(ExecutorFrame executionPackage) {
+        taskGraphImpl.withPreCompilation(executionPackage);
     }
 
     void dumpProfiles() {

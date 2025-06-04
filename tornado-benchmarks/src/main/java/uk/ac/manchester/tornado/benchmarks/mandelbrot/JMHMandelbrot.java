@@ -69,7 +69,7 @@ public class JMHMandelbrot {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withAoTCompilation();
+            executor.withPreCompilation();
         }
     }
 
