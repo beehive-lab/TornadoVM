@@ -330,7 +330,7 @@ public class TestAPI extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp() //
+            executionPlan.withPreCompilation() //
                     .execute();
         }
 

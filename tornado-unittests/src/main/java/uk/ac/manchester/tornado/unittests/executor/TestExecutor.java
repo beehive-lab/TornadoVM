@@ -85,7 +85,7 @@ public class TestExecutor extends TornadoTestBase {
 
             // 4. Add optimizations to the execution plan
             executionPlan.withProfiler(ProfilerMode.SILENT) //
-                    .withWarmUp() //
+                    .withPreCompilation() //
                     .withDevice(defaultDevice) //
                     .withDefaultScheduler();
 
@@ -278,7 +278,7 @@ public class TestExecutor extends TornadoTestBase {
             GridScheduler grid = new GridScheduler("s0.t0", workerGrid);
 
             // Testing multiple functions to invoke the print logic plan later
-            var trace = executionPlan.withWarmUp() //
+            var trace = executionPlan.withPreCompilation() //
                     .withDevice(device) //
                     .withGridScheduler(grid) //
                     .withThreadInfo() //

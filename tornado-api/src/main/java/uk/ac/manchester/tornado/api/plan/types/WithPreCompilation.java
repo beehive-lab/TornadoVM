@@ -20,14 +20,14 @@ package uk.ac.manchester.tornado.api.plan.types;
 import uk.ac.manchester.tornado.api.ExecutionPlanType;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 
-public final class WithWarmUp extends ExecutionPlanType {
+public final class WithPreCompilation extends ExecutionPlanType {
 
-    public WithWarmUp(TornadoExecutionPlan parent) {
+    public WithPreCompilation(TornadoExecutionPlan parent) {
         super(parent);
     }
 
     @Override
     public String toString() {
-        return super.toString() + "\n -> withWarmUp ";
+        return super.toString() + "\n -> withPreCompilation ";
     }
 }

@@ -53,7 +53,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        executionPlan.withPreCompilation();
     }
 
     @Override

@@ -71,7 +71,7 @@ public class DotTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        executionPlan.withPreCompilation();
 
     }
 

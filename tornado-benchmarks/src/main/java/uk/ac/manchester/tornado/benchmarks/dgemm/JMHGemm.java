@@ -88,7 +88,7 @@ public class JMHGemm {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withWarmUp();
+            executor.withPreCompilation();
         }
     }
 

@@ -869,7 +869,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void compileTaskToOpenCL() {
-        vm.warmup();
+        vm.withPreCompilation();
     }
 
     /**
@@ -1158,7 +1158,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
-    public void warmup(ExecutorFrame executionPackage) {
+    public void withPreCompilation(ExecutorFrame executionPackage) {
         setupProfiler();
         getDevice().getDeviceContext().setResetToFalse();
         timeProfiler.clean();
@@ -1166,7 +1166,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         compileComputeGraphToTornadoVMBytecode();
         executionPlanId = executionPackage.getExecutionPlanId();
         executionContext.setExecutionPlanId(executionPlanId);
-        vm.warmup();
+        vm.withPreCompilation();
 
         if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuilder(), this.getId());

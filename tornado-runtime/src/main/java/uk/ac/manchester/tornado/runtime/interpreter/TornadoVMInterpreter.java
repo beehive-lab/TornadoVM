@@ -253,7 +253,7 @@ public class TornadoVMInterpreter {
         }
     }
 
-    public void warmup() {
+    public void withPreCompilation() {
         execute(true);
         finishedWarmup = true;
     }

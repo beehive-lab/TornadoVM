@@ -110,7 +110,7 @@ public class MatrixMultiplication2D {
         long end;
         TornadoDeviceType deviceType;
         try (TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executor.withWarmUp();
+            executor.withPreCompilation();
 
             // 1. Warm up Tornado
             for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

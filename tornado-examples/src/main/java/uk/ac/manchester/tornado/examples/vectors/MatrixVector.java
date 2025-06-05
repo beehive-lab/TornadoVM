@@ -26,13 +26,13 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
@@ -108,7 +108,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withWarmUp();
+        executionPlan.withDevice(device).withPreCompilation();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();
@@ -158,7 +158,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withDevice(device).withWarmUp();
+        executionPlan.withDevice(device).withPreCompilation();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();
@@ -186,7 +186,7 @@ public class MatrixVector {
         IntStream.range(0, size).parallel().forEach(i -> {
             float sum = 0.0f;
             for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum +=  matrix.get(i, j) * vector.get(j);
+                sum += matrix.get(i, j) * vector.get(j);
             }
             output.set(i, sum);
         });

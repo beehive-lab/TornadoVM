@@ -84,7 +84,7 @@ public class JMHConvolveArray {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withDefaultScheduler().withWarmUp();
+            executor.withDefaultScheduler().withPreCompilation();
         }
     }
 

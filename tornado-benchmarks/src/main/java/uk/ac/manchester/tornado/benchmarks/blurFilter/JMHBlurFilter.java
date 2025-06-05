@@ -111,7 +111,7 @@ public class JMHBlurFilter {
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withDefaultScheduler().withWarmUp();
+            executor.withDefaultScheduler().withPreCompilation();
         }
     }
 

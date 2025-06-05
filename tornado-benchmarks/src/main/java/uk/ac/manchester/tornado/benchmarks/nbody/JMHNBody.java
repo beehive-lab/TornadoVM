@@ -101,7 +101,7 @@ public class JMHNBody {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, posSeq, velSeq);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withWarmUp();
+            executor.withPreCompilation();
         }
     }
 

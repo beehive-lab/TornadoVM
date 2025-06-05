@@ -185,7 +185,7 @@ public class TestMatrices extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < a.length; i++) {
@@ -229,7 +229,7 @@ public class TestMatrices extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < a.length; i++) {

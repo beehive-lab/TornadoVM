@@ -70,7 +70,7 @@ public class JMHMontecarlo {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.withWarmUp();
+            executionPlan.withPreCompilation();
         }
     }
 

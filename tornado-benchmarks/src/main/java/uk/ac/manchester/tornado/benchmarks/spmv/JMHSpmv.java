@@ -78,7 +78,7 @@ public class JMHSpmv {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withWarmUp();
+            executor.withPreCompilation();
         }
     }
 

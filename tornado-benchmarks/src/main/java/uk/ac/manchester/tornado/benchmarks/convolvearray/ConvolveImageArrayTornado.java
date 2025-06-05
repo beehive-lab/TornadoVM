@@ -69,7 +69,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        executionPlan.withPreCompilation();
     }
 
     @Override

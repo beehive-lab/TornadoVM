@@ -181,10 +181,6 @@ public class TornadoVM {
         Arrays.stream(tornadoVMInterpreters).forEach(action::accept);
     }
 
-    public void clearInstalledCode() {
-        executeActionOnInterpreters(TornadoVMInterpreter::clearInstalledCode);
-    }
-
     public void dumpProfiles() {
         executeActionOnInterpreters(TornadoVMInterpreter::dumpProfiles);
     }
@@ -201,8 +197,8 @@ public class TornadoVM {
         executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
     }
 
-    public void warmup() {
-        executeActionOnInterpreters(TornadoVMInterpreter::warmup);
+    public void withPreCompilation() {
+        executeActionOnInterpreters(TornadoVMInterpreter::withPreCompilation);
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {

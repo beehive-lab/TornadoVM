@@ -57,7 +57,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, hue, brightness);
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        executionPlan.withPreCompilation();
     }
 
     @Override

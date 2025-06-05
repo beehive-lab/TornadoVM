@@ -69,7 +69,7 @@ public class DFTTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.snapshot();
         executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp();
+        executionPlan.withPreCompilation();
     }
 
     @Override
@@ -79,7 +79,7 @@ public class DFTTornado extends BenchmarkDriver {
         FloatArray outImagTor = new FloatArray(size);
 
         executionPlan.withDevice(device) //
-                .withWarmUp() //
+                .withPreCompilation() //
                 .execute();
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);

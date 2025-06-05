@@ -85,7 +85,7 @@ public class JMHRotateVector {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutionPlan(immutableTaskGraph);
-            executor.withWarmUp();
+            executor.withPreCompilation();
         }
     }
 

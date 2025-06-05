@@ -405,7 +405,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withDevice(device).withWarmUp();
+            executionPlan.withDevice(device).withPreCompilation();
 
             for (int i = 0; i < WARMUP; i++) {
                 executionPlan.execute();
@@ -451,7 +451,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withDevice(device).withWarmUp();
+            executionPlan.withDevice(device).withPreCompilation();
 
             for (int i = 0; i < WARMUP; i++) {
                 executionPlan.execute();
@@ -499,7 +499,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withDevice(device).withWarmUp();
+            executionPlan.withDevice(device).withPreCompilation();
 
             for (int i = 0; i < WARMUP; i++) {
                 executionPlan.execute();
@@ -547,7 +547,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withDevice(device).withWarmUp();
+            executionPlan.withDevice(device).withPreCompilation();
 
             for (int i = 0; i < WARMUP; i++) {
                 executionPlan.execute();
@@ -637,7 +637,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().withDevice(device);
+            executionPlan.withPreCompilation().withDevice(device);
 
             for (int i = 0; i < WARMUP; i++) {
                 executionPlan.execute();

@@ -154,7 +154,7 @@ public class NBody {
                 .transferToHost(DataTransferMode.UNDER_DEMAND, posTornadoVM, velTornadoVM);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph).withWarmUp();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph).withPreCompilation();
 
         resultsIterations = new StringBuffer();
 

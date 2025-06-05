@@ -79,7 +79,7 @@ public class TestFails extends TornadoTestBase {
         TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // How to provoke the failure
-        executionPlanPlan.withWarmUp().execute();
+        executionPlanPlan.withPreCompilation().execute();
         reset();
         executionPlanPlan.execute();
     }

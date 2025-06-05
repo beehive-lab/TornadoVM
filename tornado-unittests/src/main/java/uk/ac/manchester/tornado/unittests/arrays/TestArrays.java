@@ -187,7 +187,7 @@ public class TestArrays extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < N; i++) {
@@ -209,7 +209,7 @@ public class TestArrays extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < N; i++) {
@@ -232,7 +232,7 @@ public class TestArrays extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < N; i++) {
@@ -255,7 +255,7 @@ public class TestArrays extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < N; i++) {
@@ -286,7 +286,7 @@ public class TestArrays extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp().execute();
+            executionPlan.withPreCompilation().execute();
         }
 
         for (int i = 0; i < N; i++) {

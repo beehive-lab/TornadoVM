@@ -73,7 +73,7 @@ public class DgemmTornado extends BenchmarkDriver {
                 .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
         executionPlan = new TornadoExecutionPlan(taskGraph.snapshot());
-        executionPlan.withWarmUp();
+        executionPlan.withPreCompilation();
     }
 
     @Override

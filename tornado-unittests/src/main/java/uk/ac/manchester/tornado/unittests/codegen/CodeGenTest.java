@@ -136,19 +136,8 @@ public class CodeGenTest extends TornadoTestBase {
         context.localBarrier();
     }
 
-    public static void processHeadsFlashAttention(
-            KernelContext context,
-            FloatArray q,
-            FloatArray key_cache,
-            FloatArray value_cache,
-            FloatArray xb,
-            int nHeads,
-            int headSize,
-            int kvDim,
-            int kvMul,
-            IntArray positionHolder,
-            int layer,
-            int contextLength) {
+    public static void processHeadsFlashAttention(KernelContext context, FloatArray q, FloatArray key_cache, FloatArray value_cache, FloatArray xb, int nHeads, int headSize, int kvDim, int kvMul,
+            IntArray positionHolder, int layer, int contextLength) {
 
         // Thread and workgroup information
         int tid = context.localIdx;
@@ -158,7 +147,8 @@ public class CodeGenTest extends TornadoTestBase {
 
         // Early exit if this workgroup is beyond our head count
         // This relies on the kernel being launched with nHeads workgroups.
-        if (h >= nHeads) return;
+        if (h >= nHeads)
+            return;
 
         int pos = positionHolder.get(0);
         int loff = layer * contextLength * kvDim;
@@ -306,7 +296,7 @@ public class CodeGenTest extends TornadoTestBase {
                 .task("t0", CodeGenTest::badCascadeKernel2);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp();
+            executionPlan.withPreCompilation();
         }
     }
 
@@ -320,7 +310,7 @@ public class CodeGenTest extends TornadoTestBase {
                 .task("t0", CodeGenTest::badCascadeKernel3);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp();
+            executionPlan.withPreCompilation();
         }
     }
 
@@ -335,7 +325,7 @@ public class CodeGenTest extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withWarmUp();
+            executionPlan.withPreCompilation();
         }
     }
 
@@ -382,7 +372,7 @@ public class CodeGenTest extends TornadoTestBase {
 
     @Test
     public void testFlashAttention() throws TornadoExecutionPlanException {
-       assertNotBackend(TornadoVMBackendType.SPIRV);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int dim = 2048;
         final int nHeads = 32;
@@ -429,20 +419,14 @@ public class CodeGenTest extends TornadoTestBase {
 
         KernelContext context = new KernelContext();
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION,
-                        query, keyCache, valueCache, output, attentionWeights, positionAndLayer)
-                .task("t0", CodeGenTest::processHeadsFlashAttention,context,
-                        query, keyCache, valueCache, output,
-                        nHeads, headSize, kvDim, kvMul,
-                        positionAndLayer,0, 512)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, query, keyCache, valueCache, output, attentionWeights, positionAndLayer).task("t0",
+                CodeGenTest::processHeadsFlashAttention, context, query, keyCache, valueCache, output, nHeads, headSize, kvDim, kvMul, positionAndLayer, 0, 512).transferToHost(
+                        DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.withGridScheduler(gridScheduler)
-                    .execute();
+            executionPlan.withGridScheduler(gridScheduler).execute();
         }
 
     }

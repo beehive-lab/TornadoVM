@@ -68,7 +68,7 @@ public class JMHHilbert {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, hilbertMatrix); //
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlan.withWarmUp();
+            executionPlan.withPreCompilation();
         }
     }
 
