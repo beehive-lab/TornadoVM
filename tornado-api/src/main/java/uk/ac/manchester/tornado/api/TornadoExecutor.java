@@ -366,6 +366,6 @@ class TornadoExecutor {
     }
 
     public void withWarmUpIterations(int iterations, ExecutorFrame executorFrame) {
-        IntStream.range(0, iterations).forEach(_ -> runForWarmUp(executorFrame));
+        IntStream.range(0, iterations).forEach(iteration -> runForWarmUp(executorFrame));
     }
 }
