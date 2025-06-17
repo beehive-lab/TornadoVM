@@ -359,12 +359,13 @@ class TornadoExecutor {
     private void runForWarmUp(ExecutorFrame executorFrame) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> {
             immutableTaskGraph.execute(executorFrame);
+            // Update state for all task-graphs within the execution plan
             ImmutableTaskGraph last = immutableTaskGraphList.getLast();
             immutableTaskGraphList.forEach(itg -> itg.setLastExecutedTaskGraph(last));
         });
     }
 
     public void withWarmUpIterations(int iterations, ExecutorFrame executorFrame) {
-        IntStream.range(0, iterations).mapToObj(_ -> executorFrame).forEach(this::runForWarmUp);
+        IntStream.range(0, iterations).forEach(_ -> runForWarmUp(executorFrame));
     }
 }
