@@ -357,17 +357,17 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     public PTXLIROp genBinaryExpr(PTXBinaryOp op, LIRKind lirKind, Value x, Value y) {
         return new PTXBinary.Expr(op, lirKind, x, y);
     }
-    
+
     public Value emitMultiplyAdd(Value op1, Value op2, Value op3) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitMultiplyAdd op1=%s op2=%s op3=%s", op1, op2, op3);
         LIRKind resultKind = LIRKind.combine(op1, op2, op3);
         Variable result = getGen().newVariable(resultKind);
         PTXTernaryOp op;
-        if (TornadoOptions.FAST_MATH_OPTIMIZATIONS)
+        if (TornadoOptions.FAST_MATH_OPTIMIZATIONS) {
             op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXTernaryOp.MAD : PTXTernaryOp.MAD_LO;
-        else
+        } else {
             op = PTXTernaryOp.FMA;
-
+        }
         getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(op, resultKind, op1, op2, op3)));
         return result;
     }
