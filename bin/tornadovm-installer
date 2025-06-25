@@ -21,7 +21,17 @@ try:
     from rich.console import Console
 except ImportError:
     import subprocess
-    subprocess.check_call(["pip", "install", "rich"])
+    import sys
+
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "rich"])
+    except subprocess.CalledProcessError:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip3", "install", "rich"])
+        except subprocess.CalledProcessError:
+            print("[ERROR] Could not install 'rich'. Please install it manually.")
+            sys.exit(1)
+
     from rich.console import Console
 
 console = Console()
@@ -96,7 +106,7 @@ class TornadoInstaller:
         url = config.CMAKE[self.osPlatform][self.hardware]
         if url is None:
             if self.hardware == "riscv64": return
-            console.print(f"[MISSING DEPENDENCY] CMake not configured for {self.osPlatform}/{self.hardware}", style="bold orange"); sys.exit(0)
+            console.print(f"[MISSING DEPENDENCY] CMake not configured for {self.osPlatform}/{self.hardware}", style="yellow"); sys.exit(0)
 
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.dependenciesDirName, fileName)
@@ -114,7 +124,7 @@ class TornadoInstaller:
 
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
-        if url is None: console.print(f"[MISSING DEPENDENCY] Maven not configured for {self.osPlatform}/{self.hardware}", style="bold orange"); sys.exit(0)
+        if url is None: console.print(f"[MISSING DEPENDENCY] Maven not configured for {self.osPlatform}/{self.hardware}", style="yellow"); sys.exit(0)
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.dependenciesDirName, fileName)
         if not os.path.exists(fullPath): wget.download(url, fullPath)
@@ -130,7 +140,7 @@ class TornadoInstaller:
 
     def downloadJDK(self, jdk):
         url = config.JDK[jdk][self.osPlatform][self.hardware]
-        if url is None: console.print(f"[MISSING DEPENDENCY] The url of JDK {jdk} is not configured", style="bold orange"); sys.exit(0)
+        if url is None: console.print(f"[MISSING DEPENDENCY] The url of JDK {jdk} is not configured", style="yellow"); sys.exit(0)
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.workDirName, fileName)
         if not os.path.exists(fullPath):
@@ -257,7 +267,7 @@ class TornadoInstaller:
                     if "21" in output:
                         matched_jdk = "graal-jdk-21" if "GraalVM" in output else "jdk21"
                 except Exception as e:
-                    console.print(f"[WARNING] Could not determine JDK version: {e}", style="orange")
+                    console.print(f"[WARNING] Could not determine JDK version: {e}", style="yellow")
             if matched_jdk:
                 console.print(f"[INFO] Detected JDK match: {matched_jdk}", style="green")
                 jdk_keyword = matched_jdk
@@ -265,16 +275,16 @@ class TornadoInstaller:
 
                 # Check if polyglot was requested but the JDK is not GraalVM
                 if args.polyglot and "graal" not in matched_jdk.lower():
-                    console.print(f"[WARNING] Polyglot option requested, but JAVA_HOME is not a GraalVM JDK.", style="orange")
+                    console.print(f"[WARNING] Polyglot option requested, but JAVA_HOME is not a GraalVM JDK.", style="yellow")
                     response = input("Do you want to switch to GraalVM and download it? (y/n): ").strip().lower()
                     if response == "y":
                         jdk_keyword = "graal-jdk-21"
                         download_jdk = True
                     else:
-                        console.print(f"[WARNING] Polyglot requires GraalVM. Exiting.", style="orange")
+                        console.print(f"[WARNING] Polyglot requires GraalVM. Exiting.", style="yellow")
                         sys.exit(1)
             else:
-                console.print(f"[WARNING] JAVA_HOME does not match a supported JDK.", style="orange")
+                console.print(f"[WARNING] JAVA_HOME does not match a supported JDK.", style="yellow")
                 download_jdk, jdk_keyword = self.selectJDKFromMenu()
         return download_jdk, jdk_keyword
 
@@ -285,7 +295,7 @@ class TornadoInstaller:
             if input("Maven not found. Download locally? (y/n): ").strip().lower() == "y":
                 download_mvn = True
             else:
-                console.print(f"[WARNING] Maven required. Exiting.", style="orange"); sys.exit(1)
+                console.print(f"[WARNING] Maven required. You can add Maven in your PATH and try again.", style="yellow"); sys.exit(1)
         else:
             console.print(f"[INFO] Maven found at: {mvn_path}", style="green")
         return download_mvn
@@ -300,12 +310,12 @@ class TornadoInstaller:
                 if version.parse(out.splitlines()[0].split()[-1]) >= version.parse("3.25.2"):
                     cmake_valid = True
             except Exception as e:
-                console.print(f"[WARNING] Could not determine CMake version: {e}", style="orange")
+                console.print(f"[WARNING] Could not determine CMake version: {e}", style="yellow")
         if not cmake_valid:
             if input("CMake not found or too old. Download locally? (y/n): ").strip().lower() == "y":
                 download_cmake = True
             else:
-                console.print(f"[WARNING] CMake required. Exiting.", style="orange"); sys.exit(1)
+                console.print(f"[WARNING] CMake required. You can add CMake in your PATH and try again.", style="yellow"); sys.exit(1)
         else:
             console.print(f"[INFO] CMake found at: {cmake_path}", style="green")
         return download_cmake
