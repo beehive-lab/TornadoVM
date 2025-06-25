@@ -70,6 +70,7 @@ __SUPPORTED_JDKS__ = [
 ]
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
 
+
 class TornadoInstaller:
     def __init__(self):
         self.workDirName = ""
@@ -85,7 +86,8 @@ class TornadoInstaller:
         types = {"x86_64": "x86_64", "amd64": "x86_64", "arm64": "arm64", "aarch64": "arm64", "riscv64": "riscv64"}
         return types[platform.machine().lower()]
 
-    def processFileName(self, url): return os.path.basename(url)
+    def processFileName(self, url):
+        return os.path.basename(url)
 
     def setWorkDir(self, jdk):
         self.workDirName = os.path.join(__DIRECTORY_DEPENDENCIES__, f"TornadoVM-{jdk}")
@@ -95,7 +97,8 @@ class TornadoInstaller:
         self.dependenciesDirName = os.path.join(__DIRECTORY_DEPENDENCIES__)
         os.makedirs(self.dependenciesDirName, exist_ok=True)
 
-    def getCurrentDirectory(self): return os.getcwd()
+    def getCurrentDirectory(self):
+        return os.getcwd()
 
     def getTLDName(self, ar):
         names = ar.namelist() if os.name == 'nt' else ar.getnames()
@@ -106,7 +109,9 @@ class TornadoInstaller:
         url = config.CMAKE[self.osPlatform][self.hardware]
         if url is None:
             if self.hardware == "riscv64": return
-            console.print(f"[MISSING DEPENDENCY] CMake not configured for {self.osPlatform}/{self.hardware}", style="yellow"); sys.exit(0)
+            console.print(f"[MISSING DEPENDENCY] CMake not configured for {self.osPlatform}/{self.hardware}",
+                          style="yellow");
+            sys.exit(0)
 
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.dependenciesDirName, fileName)
@@ -120,11 +125,14 @@ class TornadoInstaller:
             extraPath = os.path.join("CMake.app", "Contents") if self.osPlatform == config.__APPLE__ else ""
             self.env["PATH"].append(os.path.join(tld, extraPath, "bin"))
         except Exception as e:
-            console.print(f"[ERROR] Unpacking failed for CMake: {e}", style="bold red"); sys.exit(0)
+            console.print(f"[ERROR] Unpacking failed for CMake: {e}", style="bold red");
+            sys.exit(0)
 
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
-        if url is None: console.print(f"[MISSING DEPENDENCY] Maven not configured for {self.osPlatform}/{self.hardware}", style="yellow"); sys.exit(0)
+        if url is None: console.print(
+            f"[MISSING DEPENDENCY] Maven not configured for {self.osPlatform}/{self.hardware}",
+            style="yellow"); sys.exit(0)
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.dependenciesDirName, fileName)
         if not os.path.exists(fullPath): wget.download(url, fullPath)
@@ -136,29 +144,35 @@ class TornadoInstaller:
             ar.close()
             self.env["PATH"].append(os.path.join(tld, "bin"))
         except Exception as e:
-            console.print(f"[ERROR] Unpacking failed for Maven: {e}", style="bold red"); sys.exit(0)
+            console.print(f"[ERROR] Unpacking failed for Maven: {e}", style="bold red");
+            sys.exit(0)
 
     def downloadJDK(self, jdk):
         url = config.JDK[jdk][self.osPlatform][self.hardware]
-        if url is None: console.print(f"[MISSING DEPENDENCY] The url of JDK {jdk} is not configured", style="yellow"); sys.exit(0)
+        if url is None: console.print(f"[MISSING DEPENDENCY] The url of JDK {jdk} is not configured",
+                                      style="yellow"); sys.exit(0)
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.workDirName, fileName)
         if not os.path.exists(fullPath):
-            try: wget.download(url, fullPath)
+            try:
+                wget.download(url, fullPath)
             except:
                 import urllib3
                 r = urllib3.PoolManager().request('GET', url)
-                with open(fullPath, 'wb') as f: f.write(r.data)
+                with open(fullPath, 'wb') as f:
+                    f.write(r.data)
         try:
             ar = zipfile.ZipFile(fullPath, 'r') if os.name == 'nt' else tarfile.open(fullPath, "r:gz")
             tld = os.path.join(self.getCurrentDirectory(), self.workDirName, self.getTLDName(ar))
             if not os.path.exists(tld):
                 ar.extractall(self.workDirName, numeric_owner=(os.name != 'nt'))
             ar.close()
-            suffix = os.path.join("Contents", "Home") if self.osPlatform == config.__APPLE__ and "zulu" not in jdk else ""
+            suffix = os.path.join("Contents",
+                                  "Home") if self.osPlatform == config.__APPLE__ and "zulu" not in jdk else ""
             self.env["JAVA_HOME"] = os.path.join(tld, suffix)
         except Exception as e:
-            console.print(f"[ERROR] Unpacking failed for JDK: {e}", style="bold red"); sys.exit(0)
+            console.print(f"[ERROR] Unpacking failed for JDK: {e}", style="bold red");
+            sys.exit(0)
 
     def setEnvironmentVariables(self):
         os.environ["PATH"] = os.pathsep.join(self.env["PATH"]) + os.pathsep + os.environ["PATH"]
@@ -176,16 +190,26 @@ class TornadoInstaller:
 
     def createSourceFile(self):
         console.print(f"[INFO] Creating environment setup script...", style="green")
-        allPaths = os.pathsep.join(self.env["PATH"])
+        paths = self.env["PATH"]
+        allPaths = ""
+        for p in paths:
+            allPaths = allPaths + p + os.pathsep
+
         if os.name == 'nt':
-            path = os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
-            dist = os.path.join(os.environ["TORNADO_SDK"], "bin", "dist")
-            content = (
-                f"set JAVA_HOME={os.environ['JAVA_HOME']}\n"
-                f"set PATH={allPaths}{path}{os.pathsep}{dist}{os.pathsep}%PATH%\n"
-                f"set TORNADO_SDK={os.environ['TORNADO_SDK']}\n"
+            binariesDistribution = os.path.join(os.environ["TORNADO_SDK"], "bin", "dist")
+            cutils.runPyInstaller(os.getcwd(), os.environ["TORNADO_SDK"])
+            fileContent = "set JAVA_HOME=" + os.environ["JAVA_HOME"] + "\n"
+            levelZeroPath = os.path.join(os.getcwd(), "level-zero", "build", "bin", "Release")
+            fileContent = fileContent + "set PATH=" + allPaths + levelZeroPath + os.pathsep + binariesDistribution + os.pathsep + "%PATH%" + "\n"
+            fileContent = (
+                    fileContent + "set TORNADO_SDK=" + os.environ["TORNADO_SDK"] + "\n"
             )
-            with open("setvars.cmd", "w") as f: f.write(content)
+            f = open("setvars.cmd", "w")
+            f.write(fileContent)
+            f.close()
+
+            print("........................................[ok]")
+            print(" ")
             console.print(f"[INFO] Run with: setvars.cmd", style="green")
         else:
             content = (
@@ -193,7 +217,10 @@ class TornadoInstaller:
                 f"export PATH={allPaths}:$PATH\n"
                 f"export TORNADO_SDK={os.environ['TORNADO_SDK']}\n"
             )
-            with open("setvars.sh", "w") as f: f.write(content)
+            with open("setvars.sh", "w") as f:
+                f.write(content)
+            print("........................................[ok]")
+            print(" ")
             console.print(f"[INFO] Run with: source setvars.sh", style="green")
 
     def composeBackendOption(self, args):
@@ -204,7 +231,8 @@ class TornadoInstaller:
                 sys.exit(0)
         return "BACKEND=" + ",".join(backends)
 
-    def check_or_install_python_modules(self): os.system("pip3 install -r bin/tornadoDepModules.txt")
+    def check_or_install_python_modules(self):
+        os.system("pip3 install -r bin/tornadoDepModules.txt")
 
     def downloadDependencies(self, download_jdk, jdk_keyword, download_cmake, download_mvn):
         self.check_or_install_python_modules()
@@ -235,9 +263,24 @@ class TornadoInstaller:
                 jdk_keyword = __SUPPORTED_JDKS__[choice - 1]
                 download_jdk = True
             else:
-                console.print(f"[ERROR] Invalid choice. Exiting.", style="bold red"); sys.exit(1)
+                console.print(f"[ERROR] Invalid choice. Exiting.", style="bold red");
+                sys.exit(1)
         except ValueError:
-            console.print(f"[ERROR] Invalid input. Exiting.", style="bold red"); sys.exit(1)
+            console.print(f"[ERROR] Invalid input. Exiting.", style="bold red");
+            sys.exit(1)
+        return download_jdk, jdk_keyword
+
+    def checkJDKForPolyglot(self, args, download_jdk, jdk_keyword):
+        if args.polyglot:
+            if not jdk_keyword or "graal" not in jdk_keyword.lower():
+                console.print("[ERROR] Polyglot requires GraalVM. Please select GraalVM JDK.", style="bold red")
+                download = input("Download and use GraalVM JDK? (y/n): ").strip().lower()
+                if download == "y":
+                    jdk_keyword = "graal-jdk-21"
+                    download_jdk = True
+                else:
+                    console.print("[ERROR] GraalVM required for polyglot. Exiting.", style="bold red")
+                    sys.exit(1)
         return download_jdk, jdk_keyword
 
     def checkDownloadJDK(self, args):
@@ -245,44 +288,48 @@ class TornadoInstaller:
         self.env["JAVA_HOME"] = java_home
         if not java_home:
             console.print(f"[INFO] JAVA_HOME is not set.", style="yellow")
-            print()
+            print(" ")
             console.print(f"You have two options to proceed:", style="yellow")
             console.print(f"[1] Use an already installed compatible JDK by setting JAVA_HOME.", style="yellow")
             console.print(f"[2] Automatically download and install a supported JDK distribution.", style="yellow")
-            print()
+            print(" ")
             choice = int(input("Enter the number of your choice (1 or 2): ").strip())
             if choice == 1:
                 sys.exit(1)
             elif choice == 2:
                 download_jdk, jdk_keyword = self.selectJDKFromMenu()
+                download_jdk, jdk_keyword = self.checkJDKForPolyglot(args, download_jdk, jdk_keyword)
             else:
-                console.print(f"[ERROR] Invalid choice. Exiting.", style="bold red"); sys.exit(1)
+                console.print(f"[ERROR] Invalid choice. Exiting.", style="bold red");
+                sys.exit(1)
         else:
             console.print(f"[INFO] JAVA_HOME is set to: {java_home}", style="green")
             matched_jdk = None
-            java_exec = os.path.join(java_home, "bin", "java")
+            if self.osPlatform == config.__WINDOWS__:
+                java_exec = os.path.join(java_home, "bin", "java.exe")
+            else:
+                java_exec = os.path.join(java_home, "bin", "java")
             if os.path.exists(java_exec):
                 try:
                     output = subprocess.check_output([java_exec, "-version"], stderr=subprocess.STDOUT, text=True)
-                    if "21" in output:
-                        matched_jdk = "graal-jdk-21" if "GraalVM" in output else "jdk21"
+                    console.print(output, style="yellow")
+                    output_lower = output.lower()
+                    if "21" in output and "graalvm" in output_lower:
+                        matched_jdk = "graal-jdk-21"
+                        console.print("[INFO] Detected GraalVM JDK 21 from JAVA_HOME.", style="yellow")
+                    elif "21" in output:
+                        matched_jdk = "jdk21"
+                        console.print("[INFO] Detected standard JDK 21 from JAVA_HOME.", style="yellow")
+                    else:
+                        console.print("[WARN] Detected JDK is not compatible with TornadoVM.", style="yellow")
                 except Exception as e:
                     console.print(f"[WARNING] Could not determine JDK version: {e}", style="yellow")
             if matched_jdk:
                 console.print(f"[INFO] Detected JDK match: {matched_jdk}", style="green")
-                jdk_keyword = matched_jdk
+                jdk_keyword = matched_jdk.lower()
                 download_jdk = False
 
-                # Check if polyglot was requested but the JDK is not GraalVM
-                if args.polyglot and "graal" not in matched_jdk.lower():
-                    console.print(f"[WARNING] Polyglot option requested, but JAVA_HOME is not a GraalVM JDK.", style="yellow")
-                    response = input("Do you want to switch to GraalVM and download it? (y/n): ").strip().lower()
-                    if response == "y":
-                        jdk_keyword = "graal-jdk-21"
-                        download_jdk = True
-                    else:
-                        console.print(f"[WARNING] Polyglot requires GraalVM. Exiting.", style="yellow")
-                        sys.exit(1)
+                download_jdk, jdk_keyword = self.checkJDKForPolyglot(args, download_jdk, jdk_keyword)
             else:
                 console.print(f"[WARNING] JAVA_HOME does not match a supported JDK.", style="yellow")
                 download_jdk, jdk_keyword = self.selectJDKFromMenu()
@@ -295,7 +342,9 @@ class TornadoInstaller:
             if input("Maven not found. Download locally? (y/n): ").strip().lower() == "y":
                 download_mvn = True
             else:
-                console.print(f"[WARNING] Maven required. You can add Maven in your PATH and try again.", style="yellow"); sys.exit(1)
+                console.print(f"[WARNING] Maven required. You can add Maven in your PATH and try again.",
+                              style="yellow");
+                sys.exit(1)
         else:
             console.print(f"[INFO] Maven found at: {mvn_path}", style="green")
         return download_mvn
@@ -306,8 +355,12 @@ class TornadoInstaller:
         cmake_path = which("cmake")
         if cmake_path:
             try:
-                out = subprocess.check_output(["cmake", "--version"], text=True)
-                if version.parse(out.splitlines()[0].split()[-1]) >= version.parse("3.25.2"):
+                if self.osPlatform == config.__WINDOWS__:
+                    out = subprocess.check_output(["cmake.exe", "--version"], text=True)
+                else:
+                    out = subprocess.check_output(["cmake", "--version"], text=True)
+                raw_version = out.splitlines()[0].split()[-1].split("-")[0]
+                if version.parse(raw_version) >= version.parse("3.25.2"):
                     cmake_valid = True
             except Exception as e:
                 console.print(f"[WARNING] Could not determine CMake version: {e}", style="yellow")
@@ -315,14 +368,19 @@ class TornadoInstaller:
             if input("CMake not found or too old. Download locally? (y/n): ").strip().lower() == "y":
                 download_cmake = True
             else:
-                console.print(f"[WARNING] CMake required. You can add CMake in your PATH and try again.", style="yellow"); sys.exit(1)
+                console.print(f"[WARNING] CMake required. You can add CMake in your PATH and try again.",
+                              style="yellow");
+                sys.exit(1)
         else:
             console.print(f"[INFO] CMake found at: {cmake_path}", style="green")
         return download_cmake
 
+
 def composePolyglotOption(args): return "polyglot" if args.polyglot else ""
 
+
 def composeMavenSingleThreadedOption(args, jdk): return f"mvn-single-threaded-{jdk}" if args.mavenSingleThreaded else ""
+
 
 def checkBackends():
     valid_backends = {"opencl", "ptx", "spirv"}
@@ -334,6 +392,7 @@ def checkBackends():
     if not selected_backends.issubset(valid_backends):
         console.print("[ERROR] Invalid backend(s) specified. Choose from: opencl, ptx, spirv", style="bold red")
         sys.exit(1)
+
 
 def listSupportedJDKs():
     descriptions = [
@@ -353,6 +412,7 @@ List of supported JDKs for TornadoVM {__VERSION__}
     for idx, (jdk, desc) in enumerate(zip(__SUPPORTED_JDKS__, descriptions), start=1):
         console.print(f"  [{idx}] {jdk:<18} : {desc}", style="green")
 
+
 def determine_make_jdk(args):
     if (jdk_keyword and "graal" in jdk_keyword.lower()):
         polyglot_option = composePolyglotOption(args)
@@ -360,23 +420,30 @@ def determine_make_jdk(args):
     else:
         return "jdk21", ""
 
+
 def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
-    parser.add_argument("--polyglot", action="store_true", dest="polyglot", default=None, help="Enable Truffle Interoperability with GraalVM")
-    parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None, help="Use Maven with one thread")
+    parser.add_argument("--polyglot", action="store_true", dest="polyglot", default=None,
+                        help="Enable Truffle Interoperability with GraalVM")
+    parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None,
+                        help="Use Maven with one thread")
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parseArguments()
     if args.version:
-        console.print(__VERSION__, style="green"); sys.exit(0)
+        console.print(__VERSION__, style="green");
+        sys.exit(0)
     if args.listJDKs:
-        listSupportedJDKs(); sys.exit(0)
+        listSupportedJDKs();
+        sys.exit(0)
 
     if sys.version_info < (3, 6):
-        console.print("[ERROR] Python 3.6+ is required.", style="bold red"); sys.exit(1)
+        console.print("[ERROR] Python 3.6+ is required.", style="bold red");
+        sys.exit(1)
 
     installer = TornadoInstaller()
     download_jdk, jdk_keyword = installer.checkDownloadJDK(args)
@@ -386,7 +453,6 @@ if __name__ == "__main__":
     checkBackends()
     makeJDK, polyglotOption = determine_make_jdk(args)
     mavenSingleThreadedOption = composeMavenSingleThreadedOption(args, makeJDK)
-
 
     installer.downloadDependencies(download_jdk, jdk_keyword, download_cmake, download_mvn)
     installer.install(args, makeJDK, polyglotOption, mavenSingleThreadedOption)
