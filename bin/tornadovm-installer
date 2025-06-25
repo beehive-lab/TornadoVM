@@ -17,7 +17,13 @@
 # limitations under the License.
 #
 
-from rich.console import Console
+try:
+    from rich.console import Console
+except ImportError:
+    import subprocess
+    subprocess.check_call(["pip", "install", "rich"])
+    from rich.console import Console
+
 console = Console()
 
 jdk_keyword = None
