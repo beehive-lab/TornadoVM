@@ -225,8 +225,19 @@ class TornadoInstaller:
         java_home = os.environ.get("JAVA_HOME")
         self.env["JAVA_HOME"] = java_home
         if not java_home:
-            print("[INFO] JAVA_HOME is not set.")
-            download_jdk, jdk_keyword = self.selectJDKFromMenu()
+            print(f"[INFO] JAVA_HOME is not set.")
+            print()
+            print(f"You have two options to proceed:")
+            print(f"[1] Use an already installed compatible JDK by setting JAVA_HOME.")
+            print(f"[2] Automatically download and install a supported JDK distribution.")
+            print()
+            choice = int(input("Enter the number of your choice (1 or 2): ").strip())
+            if choice == 1:
+                sys.exit(1)
+            elif choice == 2:
+                self.selectJDKFromMenu()
+            else:
+                print(f"Invalid choice. Exiting."); sys.exit(1)
         else:
             print(f"[INFO] JAVA_HOME is set to: {java_home}")
             matched_jdk = None
@@ -347,6 +358,13 @@ if __name__ == "__main__":
 
     if sys.version_info < (3, 6):
         print("[ERROR] Python 3.6+ is required."); sys.exit(1)
+
+    from rich.console import Console
+    console = Console()
+
+    console.print("[INFO] Installation started", style="green")
+    console.print("[WARN] Missing optional dependency", style="yellow")
+    console.print("[ERROR] Installation failed", style="bold red")
 
     installer = TornadoInstaller()
     download_jdk, jdk_keyword = installer.checkDownloadJDK(args)
