@@ -224,11 +224,7 @@ class TornadoInstaller:
             console.print(f"[INFO] Run with: source setvars.sh", style="green")
 
     def composeBackendOption(self, args):
-        backends = args.backend.replace(" ", "").lower().split(",")
-        for b in backends:
-            if b not in __SUPPORTED_BACKENDS__:
-                console.print(f"[ERROR] Unsupported backend: {b}", style="bold red")
-                sys.exit(0)
+        backends = checkValidBackends(args.backend)
         return "BACKEND=" + ",".join(backends)
 
     def check_or_install_python_modules(self):
@@ -273,9 +269,16 @@ class TornadoInstaller:
     def checkJDKForPolyglot(self, args, download_jdk, jdk_keyword):
         if args.polyglot:
             if not jdk_keyword or "graal" not in jdk_keyword.lower():
-                console.print("[ERROR] Polyglot requires GraalVM. Please select GraalVM JDK.", style="bold red")
-                download = input("Download and use GraalVM JDK? (y/n): ").strip().lower()
-                if download == "y":
+                console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
+                print(" ")
+                console.print(f"You have two options to proceed:", style="yellow")
+                console.print(f"[1] Use an already installed GraalVM JDK by setting JAVA_HOME.", style="yellow")
+                console.print(f"[2] Automatically download and install a GraalVM JDK distribution.", style="yellow")
+                print(" ")
+                choice = int(input("Enter the number of your choice (1 or 2): ").strip())
+                if choice == 1:
+                    sys.exit(1)
+                elif choice == 2:
                     jdk_keyword = "graal-jdk-21"
                     download_jdk = True
                 else:
@@ -325,7 +328,7 @@ class TornadoInstaller:
                 except Exception as e:
                     console.print(f"[WARNING] Could not determine JDK version: {e}", style="yellow")
             if matched_jdk:
-                console.print(f"[INFO] Detected JDK match: {matched_jdk}", style="green")
+                console.print(f"[INFO] Detected match to a TornadoVM JDK profile: {matched_jdk}", style="green")
                 jdk_keyword = matched_jdk.lower()
                 download_jdk = False
 
@@ -381,17 +384,30 @@ def composePolyglotOption(args): return "polyglot" if args.polyglot else ""
 
 def composeMavenSingleThreadedOption(args, jdk): return f"mvn-single-threaded-{jdk}" if args.mavenSingleThreaded else ""
 
+def checkValidBackends(backends):
+    # Remove whitespace and split by comma
+    selected_backends = {b.strip() for b in backends.split(",")}
 
-def checkBackends():
-    valid_backends = {"opencl", "ptx", "spirv"}
+    for b in selected_backends:
+        if b not in __SUPPORTED_BACKENDS__:
+            console.print("[ERROR] Invalid backend(s) specified. Choose from: opencl, ptx, spirv", style="bold red")
+            sys.exit(1)
+
+    return selected_backends
+
+def assertBackendsForApple(selected_backends):
+    if platform.system().lower() == config.__APPLE__ and len(selected_backends) > 1:
+        console.print("[WARNING] Multiple backends on macOS may cause an issue. Note that OpenCL is the only backend tested on macOS, though it has been deprecated by Apple.", style="yellow")
+        if input(f"Are you sure you want to proceed with the selected backends: ({selected_backends})? (y/n): ").strip().lower() != "y":
+            args.backend = input("Enter backends (opencl, ptx, spirv): ").strip().lower()
+        checkValidBackends(args.backend)
+
+def selectBackends():
     args.backend = input("Enter backends (opencl, ptx, spirv): ").strip().lower()
 
     # Remove whitespace and split by comma
-    selected_backends = {b.strip() for b in args.backend.split(",")}
-
-    if not selected_backends.issubset(valid_backends):
-        console.print("[ERROR] Invalid backend(s) specified. Choose from: opencl, ptx, spirv", style="bold red")
-        sys.exit(1)
+    selected_backends = checkValidBackends(args.backend)
+    assertBackendsForApple(selected_backends)
 
 
 def listSupportedJDKs():
@@ -450,7 +466,7 @@ if __name__ == "__main__":
     download_mvn = installer.checkDownloadMaven()
     download_cmake = installer.checkDownloadCmake()
 
-    checkBackends()
+    selectBackends()
     makeJDK, polyglotOption = determine_make_jdk(args)
     mavenSingleThreadedOption = composeMavenSingleThreadedOption(args, makeJDK)
 
