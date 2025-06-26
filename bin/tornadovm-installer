@@ -109,8 +109,8 @@ class TornadoInstaller:
         url = config.CMAKE[self.osPlatform][self.hardware]
         if url is None:
             if self.hardware == "riscv64": return
-            console.print(f"[MISSING DEPENDENCY] CMake not configured for {self.osPlatform}/{self.hardware}",
-                          style="yellow");
+            console.print(f"[ERROR] CMake not configured for {self.osPlatform}/{self.hardware}. Try to install it in your PATH",
+                          style="bold red");
             sys.exit(0)
 
         fileName = self.processFileName(url)
@@ -131,8 +131,8 @@ class TornadoInstaller:
     def downloadMaven(self):
         url = config.MAVEN[self.osPlatform][self.hardware]
         if url is None: console.print(
-            f"[MISSING DEPENDENCY] Maven not configured for {self.osPlatform}/{self.hardware}",
-            style="yellow"); sys.exit(0)
+            f"[ERROR] Maven not configured for {self.osPlatform}/{self.hardware}. Try to install it in your PATH",
+            style="bold red"); sys.exit(0)
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.dependenciesDirName, fileName)
         if not os.path.exists(fullPath): wget.download(url, fullPath)
@@ -149,8 +149,8 @@ class TornadoInstaller:
 
     def downloadJDK(self, jdk):
         url = config.JDK[jdk][self.osPlatform][self.hardware]
-        if url is None: console.print(f"[MISSING DEPENDENCY] The url of JDK {jdk} is not configured",
-                                      style="yellow"); sys.exit(0)
+        if url is None: console.print(f"[ERROR] The url of JDK {jdk} is not configured in TornadoVM. Try to set JAVA_HOME.",
+                                      style="bold red"); sys.exit(0)
         fileName = self.processFileName(url)
         fullPath = os.path.join(self.workDirName, fileName)
         if not os.path.exists(fullPath):
@@ -345,8 +345,8 @@ class TornadoInstaller:
             if input("Maven not found. Download locally? (y/n): ").strip().lower() == "y":
                 download_mvn = True
             else:
-                console.print(f"[WARNING] Maven required. You can add Maven in your PATH and try again.",
-                              style="yellow");
+                console.print(f"[ERROR] Maven required. You can add Maven in your PATH and try again.",
+                              style="bold red");
                 sys.exit(1)
         else:
             console.print(f"[INFO] Maven found at: {mvn_path}", style="green")
@@ -371,8 +371,8 @@ class TornadoInstaller:
             if input("CMake not found or too old. Download locally? (y/n): ").strip().lower() == "y":
                 download_cmake = True
             else:
-                console.print(f"[WARNING] CMake required. You can add CMake in your PATH and try again.",
-                              style="yellow");
+                console.print(f"[ERROR] CMake required. You can add CMake in your PATH and try again.",
+                              style="bold red");
                 sys.exit(1)
         else:
             console.print(f"[INFO] CMake found at: {cmake_path}", style="green")
@@ -385,29 +385,39 @@ def composePolyglotOption(args): return "polyglot" if args.polyglot else ""
 def composeMavenSingleThreadedOption(args, jdk): return f"mvn-single-threaded-{jdk}" if args.mavenSingleThreaded else ""
 
 def checkValidBackends(backends):
-    # Remove whitespace and split by comma
-    selected_backends = {b.strip() for b in backends.split(",")}
-
-    for b in selected_backends:
+    for b in backends:
         if b not in __SUPPORTED_BACKENDS__:
             console.print("[ERROR] Invalid backend(s) specified. Choose from: opencl, ptx, spirv", style="bold red")
             sys.exit(1)
 
-    return selected_backends
-
-def assertBackendsForApple(selected_backends):
-    if platform.system().lower() == config.__APPLE__ and len(selected_backends) > 1:
-        console.print("[WARNING] Multiple backends on macOS may cause an issue. Note that OpenCL is the only backend tested on macOS, though it has been deprecated by Apple.", style="yellow")
-        if input(f"Are you sure you want to proceed with the selected backends: ({selected_backends})? (y/n): ").strip().lower() != "y":
-            args.backend = input("Enter backends (opencl, ptx, spirv): ").strip().lower()
-        checkValidBackends(args.backend)
+    return backends
 
 def selectBackends():
-    args.backend = input("Enter backends (opencl, ptx, spirv): ").strip().lower()
+    while True:
+        console.print("\n[bold]Select the backend(s) to install:[/bold]")
+        for idx, backend in enumerate(__SUPPORTED_BACKENDS__, 1):
+            console.print(f"  {idx}. {backend}")
 
-    # Remove whitespace and split by comma
-    selected_backends = checkValidBackends(args.backend)
-    assertBackendsForApple(selected_backends)
+        console.print("You can select more than one by typing the numbers separated by commas (e.g., 1, 2, 3).", style="cyan")
+
+        try:
+            choices = input("Your selection: ").strip()
+            selected_backend_indices = {int(choice.strip()) for choice in choices.split(",")}
+            selected_backends = {__SUPPORTED_BACKENDS__[i - 1] for i in selected_backend_indices if 1 <= i <= len(__SUPPORTED_BACKENDS__)}
+            if not selected_backends:
+                raise ValueError
+        except (ValueError, IndexError):
+            console.print("[ERROR] Invalid selection. Please enter valid number(s) from the list.", style="bold red")
+            continue
+
+        # Handle macOS-specific warning
+        if platform.system().lower() == config.__APPLE__ and (len(selected_backends) > 1 or selected_backends != {"opencl"}):
+            console.print("[WARNING] Multiple backends on macOS may cause issues. OpenCL is the only tested backend.", style="yellow")
+            confirm = input(f"Are you sure you want to proceed with the selected backends: ({', '.join(selected_backends)})? (y/n): ").strip().lower()
+            if confirm != "y":
+                continue  # Loop again for re-selection
+
+        return selected_backends
 
 
 def listSupportedJDKs():
@@ -466,7 +476,7 @@ if __name__ == "__main__":
     download_mvn = installer.checkDownloadMaven()
     download_cmake = installer.checkDownloadCmake()
 
-    selectBackends()
+    args.backend = selectBackends()
     makeJDK, polyglotOption = determine_make_jdk(args)
     mavenSingleThreadedOption = composeMavenSingleThreadedOption(args, makeJDK)
 
