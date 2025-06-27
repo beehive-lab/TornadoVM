@@ -623,13 +623,13 @@ class TornadoInstaller:
         return config
 
 def parseArguments():
-    parser = argparse.ArgumentParser(description="TornadoVM Installer Tool")
+    parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU/FPGA drivers")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
     parser.add_argument("--polyglot", action="store_true", dest="polyglot", default=None,
                         help="Enable Truffle Interoperability with GraalVM")
     parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None,
-                        help="Use Maven with one thread")
+                        help="Run Maven in single-threaded mode")
     return parser.parse_args()
 
 class UserInterface:
