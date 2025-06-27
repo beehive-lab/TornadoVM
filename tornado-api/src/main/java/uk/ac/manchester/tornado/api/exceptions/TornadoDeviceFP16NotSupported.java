@@ -19,15 +19,8 @@ package uk.ac.manchester.tornado.api.exceptions;
 
 public class TornadoDeviceFP16NotSupported extends RuntimeException {
 
-    private final String message;
-
     public TornadoDeviceFP16NotSupported(final String msg) {
-        message = msg;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
+        super(msg);
     }
 
 }

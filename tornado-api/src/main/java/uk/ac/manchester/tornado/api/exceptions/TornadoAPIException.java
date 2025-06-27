@@ -19,16 +19,7 @@ package uk.ac.manchester.tornado.api.exceptions;
 
 public class TornadoAPIException extends RuntimeException {
 
-    private final String message;
-    private final Exception e;
-
     public TornadoAPIException(final String msg, Exception e) {
-        message = msg;
-        this.e = e;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
+        super(msg, e);
     }
 }
