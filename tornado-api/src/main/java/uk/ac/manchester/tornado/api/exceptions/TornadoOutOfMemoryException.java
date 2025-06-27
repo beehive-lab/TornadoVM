@@ -17,17 +17,14 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
+import java.io.Serial;
+
 public class TornadoOutOfMemoryException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 8861358557469551291L;
-    private final String message;
 
     public TornadoOutOfMemoryException(final String msg) {
-        message = msg;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
+        super(msg);
     }
 }

@@ -17,23 +17,19 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
+import java.io.Serial;
+
 public class TornadoFailureException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = -7515308573010965892L;
-    private final String message;
 
     public TornadoFailureException(final String msg) {
-        message = msg;
+        super(msg);
     }
 
     public TornadoFailureException(Exception e) {
-        message = e.getMessage();
-        this.initCause(e.getCause());
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
+        super(e);
     }
 
 }
