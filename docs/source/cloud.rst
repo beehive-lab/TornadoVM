@@ -35,14 +35,14 @@ Pre-requisites:
       $ cd /home/centos
       $ git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 
-1. Install TornadoVM as a CentOS user. The Xilinx FPGA is not exposed to simple users.
+1. Install TornadoVM with the OpenCL backend, as a CentOS user. The Xilinx FPGA is not exposed to simple users.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
    $ git clone https://github.com/beehive-lab/TornadoVM.git
    $ cd TornadoVM
-   $ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
+   $ ./bin/tornadovm-installer
    $ source setvars.env
 
 2. Follow these steps to get access to the Xilinx FPGA.
