@@ -337,7 +337,7 @@ class TornadoExecutor {
         // specified is "at least" the time that the warm-up will take.
         Thread warmUpThread = new Thread(() -> {
             while (run.get()) {
-                execute(executorFrame);
+                runForWarmUp(executorFrame);
             }
         });
 
@@ -356,7 +356,16 @@ class TornadoExecutor {
         controllerThread.join();
     }
 
+    private void runForWarmUp(ExecutorFrame executorFrame) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> {
+            immutableTaskGraph.execute(executorFrame);
+            // Update state for all task-graphs within the execution plan
+            ImmutableTaskGraph last = immutableTaskGraphList.getLast();
+            immutableTaskGraphList.forEach(itg -> itg.setLastExecutedTaskGraph(last));
+        });
+    }
+
     public void withWarmUpIterations(int iterations, ExecutorFrame executorFrame) {
-        IntStream.range(0, iterations).mapToObj(i -> executorFrame).forEach(this::execute);
+        IntStream.range(0, iterations).forEach(iteration -> runForWarmUp(executorFrame));
     }
 }
