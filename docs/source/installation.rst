@@ -78,7 +78,7 @@ Additionally, this installation type will automatically trigger all dependencies
                               Run Maven in single-threaded mode
 
 
-Windows example: to build TornadoVM we recommend using a virtual Python environment (`venv`) to automatically install and import a missing ``wget`` Python module. Otherwise, the installer fails to install and import ``wget`` and reports an error. Although the installer works fine on the second try, using a `venv` from the start is a smarter approach:
+Windows example: to build TornadoVM we recommend using a virtual Python environment (`venv`) to automatically install and import a missing ``wget`` Python module. Otherwise, the installer fails to install and import ``wget`` and reports an error. Although the installer works fine on the second try, using a `venv` from the start is the recommended approach:
 
 .. code-block:: bash
 
