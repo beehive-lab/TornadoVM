@@ -22,6 +22,9 @@ mvn-single-threaded-jdk21:
 mvn-single-threaded-graal-jdk-21:
 	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
 
+mvn-single-threaded-polyglot:
+	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
+
 ptx:
 	python bin\compile --jdk graal-jdk-21 --backend ptx,opencl
 

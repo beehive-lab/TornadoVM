@@ -64,44 +64,21 @@ Additionally, this installation type will automatically trigger all dependencies
 
 .. code-block:: bash
 
-    $ ./bin/tornadovm-installer
-      usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
-                           [--polyglot]
+    $ ./bin/tornadovm-installer --help
+      usage: tornadovm-installer [-h] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded]
 
       TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
 
       options:
-        -h, --help           show this help message and exit
-        --version            Print version of TornadoVM
-        --jdk JDK            Select one of the supported JDKs. Use --listJDKs option to see all supported ones.
-        --backend BACKEND    Select the backend to install: { opencl, ptx, spirv }
-        --listJDKs           List all JDK supported versions
-        --javaHome JAVAHOME  Use a JDK from a user directory
-        --polyglot           To enable interoperability with Truffle Programming Languages.
+        -h, --help            show this help message and exit
+        --version             Print version
+        --listJDKs            List supported JDKs
+        --polyglot            Enable Truffle Interoperability with GraalVM
+        --mvn_single_threaded
+                              Run Maven in single-threaded mode
 
 
-**Note:** Select the desired backend with the ``--backend`` option:
-  * ``opencl``: Enables the OpenCL backend (it requires OpenCL drivers and OpenCL SDK installed)
-  * ``ptx``: Enables the PTX backend (it requires NVIDIA Driver and the CUDA SDK)
-  * ``spirv``: Enables the SPIRV backend (it requires Intel Level Zero drivers)
-
-
-For example, to build TornadoVM with GraalVM (JDK21) for all backends:
-
-.. code-block:: bash
-
-  ## Install with Graal for JDK 21 using PTX, OpenCL and SPIRV backends
-  ./bin/tornadovm-installer --jdk graal-jdk-21  --backend opencl,ptx,spirv
-
-
-Another example: to build TornadoVM with OpenJDK 21 for the OpenCL and PTX backends:
-
-.. code-block:: bash
-
-  ./bin/tornadovm-installer --jdk jdk21 --backend opencl,ptx
-
-
-Windows example: to build TornadoVM with GraalVM and all supported backends (mind backslash and quotes):
+Windows example: to build TornadoVM we recommend using a virtual Python environment (`venv`) to automatically install and import a missing ``wget`` Python module. Otherwise, the installer fails to install and import ``wget`` and reports an error. Although the installer works fine on the second try, using a `venv` from the start is the recommended approach:
 
 .. code-block:: bash
 
@@ -113,12 +90,7 @@ Windows example: to build TornadoVM with GraalVM and all supported backends (min
   python -m venv .venv
   .venv\Scripts\activate.bat
 
-  python bin\tornadovm-installer --jdk graal-jdk-21 --backend opencl,ptx,spirv
-
-
-**Notes on Windows:**
-
-- The installer must run in a virtual Python environment (`venv`) to automatically install and import a missing ``wget`` Python module. Otherwise, the installer fails to install and import ``wget`` and reports an error. Although the installer works fine on the second try, using a `venv` from the start is a smarter approach.
+  python bin\tornadovm-installer
 
 - Running the TornadoVM test suite on Windows requires using ``nmake`` which is part of Visual Studio:
 
@@ -172,7 +144,13 @@ For example, using JDK 21 for all backends:
 
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
-   bin/tornadovm-installer --jdk jdk21 --backend opencl,ptx,spirv
+   bin/tornadovm-installer
+   Select the backend(s) to install:
+     1. opencl
+     2. spirv
+     3. ptx
+   You can select more than one by typing the numbers separated by commas (e.g., 1, 2, 3).
+   Your selection: 1, 2, 3
    source setvars.sh
 
 
@@ -220,7 +198,13 @@ Download and install TornadoVM. Note that, in OSx Apple M1/M2/M3 chip, the only 
 
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
-   bin/tornadovm-installer --jdk graal-jdk-21 --backend opencl
+   bin/tornadovm-installer
+   Select the backend(s) to install:
+     1. opencl
+     2. spirv
+     3. ptx
+   You can select more than one by typing the numbers separated by commas (e.g., 1, 2, 3).
+   Your selection: 1
    source setvars.sh
 
 
@@ -338,14 +322,14 @@ The installation script downloads the following dependencies:
 
 - Java
 - Maven
-- cmake
+- CMake
 
 .. code:: bash
 
    python -m venv .venv
    .venv\Scripts\activate.bat
    .\bin\windowsMicrosoftStudioTools2022.cmd
-   python bin\tornadovm-installer --jdk jdk21 --backend=opencl 
+   python bin\tornadovm-installer
    setvars.cmd
 
 
@@ -510,14 +494,7 @@ Clone and build TornadoVM:
    git clone https://github.com/beehive-lab/TornadoVM.git tornado
    cd tornado
 
-  ## Install OpenCL only
-   ./bin/tornadovm-installer --jdk jdk21 --backend=opencl
-
-   ## Install OpenCL and PTX
-   ./bin/tornadovm-installer --jdk jdk21 --backend=opencl,ptx
-
-   ## Install All backends:
-   ./bin/tornadovm-installer --jdk jdk21 --backend=opencl,ptx,spirv
+   ./bin/tornadovm-installer
 
 
 Finally enable environment:
