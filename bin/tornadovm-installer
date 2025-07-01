@@ -126,6 +126,7 @@ class InstallationConfig:
     polyglot: bool = False
     maven_single_threaded: bool = False
     java_home: Optional[str] = None
+    non_interactive: bool = False
 
     def __post_init__(self):
         if self.backends is None:
@@ -544,6 +545,7 @@ class TornadoInstaller:
             config.download_jdk, config.jdk_keyword = self._handle_jdk_selection()
 
         # Validate polyglot requirements
+        config.non_interactive = args.nonInteractive
         if args.polyglot:
             config = self._validate_polyglot_config(config)
 
@@ -596,31 +598,34 @@ class TornadoInstaller:
         """Validate and adjust configuration for polyglot support."""
         if not config.jdk_keyword or "graal" not in config.jdk_keyword.lower():
             self.console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
-            self.console.print("You have two options to proceed:", style="yellow")
-            self.console.print("[1] Use an already installed GraalVM JDK by setting JAVA_HOME.", style="green")
-            self.console.print("[2] Let the installer automatically download and configure a compatible GraalVM JDK distribution.", style="green")
-            self.console.print("    Upon successful build, the installer will also generate an environment setup script", style="green")
-            self.console.print("    that configures JAVA_HOME and other necessary variables for future use.\n", style="green")
-
-            try:
-                choice = int(input("Enter the number of your choice (1 or 2): ").strip())
-                if choice == 1:
-                    self.console.print("👉 You selected option [1].", style="bold")
-                    self.console.print("Now you should either:", style="yellow")
-                    self.console.print("- export JAVA_HOME manually in your terminal", style="yellow")
-                    self.console.print("- OR set it permanently in your shell profile (e.g. ~/.bashrc, ~/.zshrc, or ~/.profile)", style="yellow")
-                    self.console.print("\nExample:", style="dim")
-                    self.console.print("export JAVA_HOME=/path/to/your/jdk", style="green")
-                    self.console.print("\nOnce JAVA_HOME is set correctly, re-run this installer.", style="yellow")
-                    sys.exit(0)
-                elif choice == 2:
-                    config.jdk_keyword = "graal-jdk-21"
-                    config.download_jdk = True
-                else:
-                    raise ValueError("Invalid choice")
-            except ValueError:
-                self.console.print("[ERROR] Invalid choice. Exiting.", style="bold red")
+            if config.non_interactive:
                 sys.exit(1)
+            else:
+                self.console.print("You have two options to proceed:", style="yellow")
+                self.console.print("[1] Use an already installed GraalVM JDK by setting JAVA_HOME.", style="green")
+                self.console.print("[2] Let the installer automatically download and configure a compatible GraalVM JDK distribution.", style="green")
+                self.console.print("    Upon successful build, the installer will also generate an environment setup script", style="green")
+                self.console.print("    that configures JAVA_HOME and other necessary variables for future use.\n", style="green")
+
+                try:
+                    choice = int(input("Enter the number of your choice (1 or 2): ").strip())
+                    if choice == 1:
+                        self.console.print("👉 You selected option [1].", style="bold")
+                        self.console.print("Now you should either:", style="yellow")
+                        self.console.print("- export JAVA_HOME manually in your terminal", style="yellow")
+                        self.console.print("- OR set it permanently in your shell profile (e.g. ~/.bashrc, ~/.zshrc, or ~/.profile)", style="yellow")
+                        self.console.print("\nExample:", style="dim")
+                        self.console.print("export JAVA_HOME=/path/to/your/jdk", style="green")
+                        self.console.print("\nOnce JAVA_HOME is set correctly, re-run this installer.", style="yellow")
+                        sys.exit(0)
+                    elif choice == 2:
+                        config.jdk_keyword = "graal-jdk-21"
+                        config.download_jdk = True
+                    else:
+                        raise ValueError("Invalid choice")
+                except ValueError:
+                    self.console.print("[ERROR] Invalid choice. Exiting.", style="bold red")
+                    sys.exit(1)
 
         return config
 
