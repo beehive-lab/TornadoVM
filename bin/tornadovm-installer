@@ -631,7 +631,11 @@ class TornadoInstaller:
 
 def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU/FPGA drivers")
-    parser.add_argument("--jdk", action="store", dest="jdk", default=None, help="Select one of the supported JDKs. Use --listJDKs option to see all supported ones")
+    parser.add_argument("--jdk", action="store", dest="jdk", default=None,
+                        help=(
+                            "Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). "
+                            "Run with --listJDKs to view all available JDK keywords."
+                        ))
     parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
@@ -646,6 +650,7 @@ class UserInterface:
     """Handles user interactions."""
 
     def __init__(self, console: Console, system_info: SystemInfo):
+        self.args = args
         self.console = console
         self.system_info = system_info
 
@@ -756,9 +761,14 @@ class UserInterface:
             "Install TornadoVM with SapMachine OpenJDK 21",
             "Install TornadoVM with Liberica OpenJDK 21 (Only option for RISC-V 64)"
         ]
-        self.console.print(f"""List of supported JDKs for TornadoVM {__VERSION__}""", style="green")
+
+        self.console.print(f"List of supported JDKs for TornadoVM {__VERSION__}", style="green")
+
+        numbered = not getattr(args, "listJDKs", False)
+
         for idx, (jdk, desc) in enumerate(zip(__SUPPORTED_JDKS__, descriptions), start=1):
-            console.print(f"  [{idx}] {jdk:<18} : {desc}", style="green")
+            prefix = f"[{idx}] " if numbered else ""
+            self.console.print(f"  {prefix}{jdk:<18} : {desc}", style="green")
 
 if __name__ == "__main__":
     args = parseArguments()
