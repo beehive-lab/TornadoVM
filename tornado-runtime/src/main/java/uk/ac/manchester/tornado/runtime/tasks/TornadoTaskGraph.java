@@ -159,7 +159,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
     private MetaReduceCodeAnalysis analysisTaskGraph;
     private TornadoExecutionContext executionContext;
-    private byte[] highLevelCode = new byte[2048];
+    private byte[] highLevelCode = new byte[8192];
     private ByteBuffer hlBuffer;
     private TornadoVMBytecodeBuilder bytecodeBuilder;
     private long batchSizeBytes = -1;

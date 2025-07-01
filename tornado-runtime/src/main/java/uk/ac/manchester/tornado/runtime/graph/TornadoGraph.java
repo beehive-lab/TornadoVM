@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
  */
 public class TornadoGraph {
 
-    private static final int INITIAL_SIZE = 256;
+    private static final int INITIAL_SIZE = 1024;
 
     private AbstractNode[] nodes;
     private BitSet valid;
