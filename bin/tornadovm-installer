@@ -538,6 +538,8 @@ class TornadoInstaller:
             config.java_home = java_home
             config.jdk_keyword = matched_jdk
             config.download_jdk = False
+        elif args.jdk:
+            config.download_jdk, config.jdk_keyword = self.ui.select_jdk_from_console(args)
         else:
             config.download_jdk, config.jdk_keyword = self._handle_jdk_selection()
 
@@ -547,17 +549,17 @@ class TornadoInstaller:
 
         # Check other dependencies
         config.download_maven = not self.validator.check_maven()
-        if config.download_maven:
+        if config.download_maven and not args.nonInteractive:
             if input("Maven not found. Download locally? (y/n): ").strip().lower() != "y":
                 raise ConfigurationError("Maven is required")
 
         config.download_cmake = not self.validator.check_cmake()
-        if config.download_cmake:
+        if config.download_cmake and not args.nonInteractive:
             if input("CMake not found or too old. Download locally? (y/n): ").strip().lower() != "y":
                 raise ConfigurationError("CMake is required")
 
         # Set other options
-        config.backends = self.ui.select_backends()
+        config.backends = self.ui.select_backends(args)
         config.polyglot = args.polyglot
         config.maven_single_threaded = args.mavenSingleThreaded
 
@@ -624,12 +626,15 @@ class TornadoInstaller:
 
 def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU/FPGA drivers")
+    parser.add_argument("--jdk", action="store", dest="jdk", default=None, help="Select one of the supported JDKs. Use --listJDKs option to see all supported ones")
+    parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
     parser.add_argument("--polyglot", action="store_true", dest="polyglot", default=None,
                         help="Enable Truffle Interoperability with GraalVM")
     parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None,
                         help="Run Maven in single-threaded mode")
+    parser.add_argument("--non-interactive", action="store_true", dest="nonInteractive", help="Download and install dependencies without user interaction")
     return parser.parse_args()
 
 class UserInterface:
@@ -638,6 +643,16 @@ class UserInterface:
     def __init__(self, console: Console, system_info: SystemInfo):
         self.console = console
         self.system_info = system_info
+
+    def select_jdk_from_console(self, args: argparse.Namespace) -> Tuple[bool, str]:
+        # If --jdk is provided
+        if getattr(args, "jdk", None):
+            selected_jdk = args.jdk.strip().lower()
+            if selected_jdk in __SUPPORTED_JDKS__:
+                return True, selected_jdk
+            else:
+                self.console.print(f"[ERROR] Unsupported JDK key '{selected_jdk}'. Supported options are: {', '.join(__SUPPORTED_JDKS__.keys())}", style="bold red")
+                sys.exit(1)
 
     def select_jdk(self) -> Tuple[bool, str]:
         """Let user select a JDK from the menu."""
@@ -653,8 +668,25 @@ class UserInterface:
             self.console.print("[ERROR] Invalid input. Exiting.", style="bold red")
             sys.exit(1)
 
-    def select_backends(self) -> List[str]:
-        """Let user select backend(s)."""
+    def select_backends(self, args: argparse.Namespace) -> List[str]:
+        """Select backend(s), using CLI args if provided, otherwise prompt interactively."""
+        # Check if --backend was provided
+        if getattr(args, "backend", None):
+            # Normalize and split the string
+            selected_backends = [b.strip() for b in args.backend.split(",") if b.strip()]
+
+            # Check if all provided backends are supported
+            unsupported = [b for b in selected_backends if b not in __SUPPORTED_BACKENDS__]
+            if unsupported:
+                self.console.print(f"[ERROR] Unsupported backends specified in --backend: {', '.join(unsupported)}", style="bold red")
+                sys.exit(1)
+
+            if self._validate_backend_selection(selected_backends):
+                return selected_backends
+
+            self.console.print("[WARNING] Backend selection via --backend failed validation for your system. Try again:", style="yellow")
+
+        # Interactive fallback
         while True:
             self.console.print("\n[bold]Select the backend(s) to install:[/bold]")
             for idx, backend in enumerate(__SUPPORTED_BACKENDS__, 1):
@@ -666,12 +698,16 @@ class UserInterface:
             )
 
             try:
-                choices = input("Your selection: ").strip()
-                selected_indices = {int(choice.strip()) for choice in choices.split(",")}
-                selected_backends = [
-                    __SUPPORTED_BACKENDS__[i - 1] for i in selected_indices
-                    if 1 <= i <= len(__SUPPORTED_BACKENDS__)
-                ]
+                choices = input("Your selection: ").strip().lower()
+
+                if choices == "all":
+                    selected_backends = __SUPPORTED_BACKENDS__
+                else:
+                    selected_indices = {int(choice.strip()) for choice in choices.split(",")}
+                    invalid_indices = [i for i in selected_indices if i < 1 or i > len(__SUPPORTED_BACKENDS__)]
+                    if invalid_indices:
+                        raise ValueError(f"Invalid index/indices: {', '.join(map(str, invalid_indices))}")
+                    selected_backends = [__SUPPORTED_BACKENDS__[i - 1] for i in selected_indices]
 
                 if not selected_backends:
                     raise ValueError("No valid backends selected")
