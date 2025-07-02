@@ -126,7 +126,7 @@ class InstallationConfig:
     polyglot: bool = False
     maven_single_threaded: bool = False
     java_home: Optional[str] = None
-    non_interactive: bool = False
+    auto_deps: bool = False
 
     def __post_init__(self):
         if self.backends is None:
@@ -540,23 +540,23 @@ class TornadoInstaller:
             config.jdk_keyword = matched_jdk
             config.download_jdk = False
         elif args.jdk:
-            config.download_jdk, config.jdk_keyword = self.ui.select_jdk_from_console(args)
+            config.download_jdk, config.jdk_keyword = self.ui.select_jdk_from_arg(args)
         else:
             config.download_jdk, config.jdk_keyword = self._handle_jdk_selection()
 
         # Validate polyglot requirements
-        config.non_interactive = args.nonInteractive
+        config.auto_deps = args.autoDependencies
         if args.polyglot:
             config = self._validate_polyglot_config(config)
 
         # Check other dependencies
         config.download_maven = not self.validator.check_maven()
-        if config.download_maven and not args.nonInteractive:
+        if config.download_maven and not args.autoDependencies:
             if input("Maven not found. Download locally? (y/n): ").strip().lower() != "y":
                 raise ConfigurationError("Maven is required")
 
         config.download_cmake = not self.validator.check_cmake()
-        if config.download_cmake and not args.nonInteractive:
+        if config.download_cmake and not args.autoDependencies:
             if input("CMake not found or too old. Download locally? (y/n): ").strip().lower() != "y":
                 raise ConfigurationError("CMake is required")
 
@@ -598,7 +598,7 @@ class TornadoInstaller:
         """Validate and adjust configuration for polyglot support."""
         if not config.jdk_keyword or "graal" not in config.jdk_keyword.lower():
             self.console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
-            if config.non_interactive:
+            if config.auto_deps:
                 sys.exit(1)
             else:
                 self.console.print("You have two options to proceed:", style="yellow")
@@ -643,7 +643,7 @@ def parseArguments():
                         help="Enable Truffle Interoperability with GraalVM")
     parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None,
                         help="Run Maven in single-threaded mode")
-    parser.add_argument("--non-interactive", action="store_true", dest="nonInteractive", help="Download and install dependencies without user interaction")
+    parser.add_argument("--auto-deps", action="store_true", dest="autoDependencies", help="Automatic download and use any missing dependencies")
     return parser.parse_args()
 
 class UserInterface:
@@ -654,7 +654,7 @@ class UserInterface:
         self.console = console
         self.system_info = system_info
 
-    def select_jdk_from_console(self, args: argparse.Namespace) -> Tuple[bool, str]:
+    def select_jdk_from_arg(self, args: argparse.Namespace) -> Tuple[bool, str]:
         # If --jdk is provided
         if getattr(args, "jdk", None):
             selected_jdk = args.jdk.strip().lower()

@@ -65,7 +65,7 @@ Additionally, this installation type will automatically trigger all dependencies
 .. code-block:: bash
 
     $ ./bin/tornadovm-installer --help
-      usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--non-interactive]
+      usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
       TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
 
@@ -78,7 +78,7 @@ Additionally, this installation type will automatically trigger all dependencies
         --polyglot            Enable Truffle Interoperability with GraalVM
         --mvn_single_threaded
                               Run Maven in single-threaded mode
-        --non-interactive     Download and install dependencies without user interaction
+        --auto-deps           Automatic download and use any missing dependencies
 
 
 Windows example: to build TornadoVM we recommend using a virtual Python environment (`venv`) to automatically install and import a missing ``wget`` Python module. Otherwise, the installer fails to install and import ``wget`` and reports an error. Although the installer works fine on the second try, using a `venv` from the start is the recommended approach:
