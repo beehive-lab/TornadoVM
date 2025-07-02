@@ -597,10 +597,12 @@ class TornadoInstaller:
     def _validate_polyglot_config(self, config: InstallationConfig) -> InstallationConfig:
         """Validate and adjust configuration for polyglot support."""
         if not config.jdk_keyword or "graal" not in config.jdk_keyword.lower():
-            self.console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
             if config.auto_deps:
-                sys.exit(1)
+                self.console.print("[WARNING] Polyglot requires GraalVM. You have enabled auto-deps, thus the script will download and use the GraalVM JDK.", style="yellow")
+                config.jdk_keyword = "graal-jdk-21"
+                config.download_jdk = True
             else:
+                self.console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
                 self.console.print("You have two options to proceed:", style="yellow")
                 self.console.print("[1] Use an already installed GraalVM JDK by setting JAVA_HOME.", style="green")
                 self.console.print("[2] Let the installer automatically download and configure a compatible GraalVM JDK distribution.", style="green")
