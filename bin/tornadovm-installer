@@ -694,7 +694,11 @@ class UserInterface:
             if self._validate_backend_selection(selected_backends):
                 return selected_backends
 
-            self.console.print("[WARNING] Backend selection via --backend failed validation for your system. Try again:", style="yellow")
+            if args.autoDependencies:
+                self.console.print(f"[WARNING] Backend selection via --backend failed validation for your system. Try again:", style="yellow")
+            else:
+                self.console.print(f"[ERROR] Not valid backend for your system. Select a supported backend and try again", style="bold red")
+                sys.exit(1)
 
         # Interactive fallback
         while True:
