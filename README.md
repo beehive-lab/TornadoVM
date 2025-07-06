@@ -31,18 +31,21 @@ In Linux and macOS, TornadoVM can be installed automatically with
 the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
 
 ```bash
-$ ./bin/tornadovm-installer
-usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
+$ ./bin/tornadovm-installer --help
+usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
 TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
 
-optional arguments:
-  -h, --help           show this help message and exit
-  --version            Print version of TornadoVM
-  --jdk JDK            Select one of the supported JDKs. Use --listJDKs option to see all supported ones.
-  --backend BACKEND    Select the backend to install: { opencl, ptx, spirv }
-  --listJDKs           List all JDK supported versions
-  --javaHome JAVAHOME  Use a JDK from a user directory
+options:
+  -h, --help            show this help message and exit
+  --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
+  --backend BACKEND     Select the backend to install: { opencl, ptx, spirv }
+  --version             Print version
+  --listJDKs            List supported JDKs
+  --polyglot            Enable Truffle Interoperability with GraalVM
+  --mvn_single_threaded
+                        Run Maven in single-threaded mode
+  --auto-deps           Automatic download and use any missing dependencies
 ```
 
 **NOTE** Select the desired backend:
