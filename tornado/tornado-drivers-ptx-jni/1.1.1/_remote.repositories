@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Mon Jul 07 12:16:48 EEST 2025
+tornado-drivers-ptx-jni-1.1.1-sources.jar>=
+tornado-drivers-ptx-jni-1.1.1.jar>=
+tornado-drivers-ptx-jni-1.1.1.pom>=

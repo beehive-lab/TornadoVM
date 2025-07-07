@@ -14,13 +14,13 @@ To include the latest version in your project:
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
 
    </dependencies>
@@ -28,6 +28,7 @@ To include the latest version in your project:
 
 ## Versions available
 
+* 1.1.1
 * 1.1.0
 * 1.0.10
 * 1.0.9
