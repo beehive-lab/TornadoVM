@@ -85,7 +85,7 @@ Windows example: to build TornadoVM we recommend using a virtual Python environm
 
 .. code-block:: bash
 
-  rem invoke the Microsoft Visual Studio Tool Terminal 
+  rem invoke the Microsoft Visual Studio Tool Terminal
   .\bin\windowsMicrosoftStudioTools2022.cmd
 
   rem create and activate a virtual environment
@@ -120,7 +120,7 @@ On Windows by using:
 
 .. _installation_linux:
 
-Installation for Linux 
+Installation for Linux
 =======================
 
 Download dependencies (Red Hat-based):
@@ -140,7 +140,7 @@ Download dependencies (Ubuntu-based):
 Install the driver/s. Download the required driver/s from the hardware vendor as well as the required SDKs (e.g. CUDA for NVIDIA GPUs).
 
 
-Once the drivers and SDK are installed, download and build TornadoVM. 
+Once the drivers and SDK are installed, download and build TornadoVM.
 For example, using JDK 21 for all backends:
 
 .. code:: bash
@@ -157,7 +157,7 @@ For example, using JDK 21 for all backends:
    source setvars.sh
 
 
-Check the installation: 
+Check the installation:
 
 .. code:: bash
 
@@ -194,7 +194,7 @@ Download dependencies:
    brew install maven
 
 
-Download and install TornadoVM. Note that, in OSx Apple M1/M2/M3 chip, the only backend supported is OpenCL. 
+Download and install TornadoVM. Note that, in OSx Apple M1/M2/M3 chip, the only backend supported is OpenCL.
 
 
 .. code:: bash
@@ -211,7 +211,7 @@ Download and install TornadoVM. Note that, in OSx Apple M1/M2/M3 chip, the only 
    source setvars.sh
 
 
-Check the installation: 
+Check the installation:
 
 .. code:: bash
 
@@ -230,7 +230,7 @@ To recompile TornadoVM after an update:
 .. code:: bash
 
    source setvars.sh
-   make 
+   make
 
 
 
@@ -292,10 +292,10 @@ Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for T
 3. Install Visual Studio Community 2022 and Python (use the Windows installer for each of those)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- `Visual Studio Community 2022 <https://visualstudio.microsoft.com/vs/community/>`_. 
+- `Visual Studio Community 2022 <https://visualstudio.microsoft.com/vs/community/>`_.
 - `Python3 for Windows <https://www.python.org/downloads/windows/>`_.
 
-If you have not configured Visual Studio 2022 to use C++, you may need to install it using the Visual Studio Installer. 
+If you have not configured Visual Studio 2022 to use C++, you may need to install it using the Visual Studio Installer.
 In this case, enable the following packages:
 
 - MSVC C++ x86/64 build tools (latest)
@@ -317,7 +317,7 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 Hereafter, the directory with the source code will be referred as ``<TornadoVM>``.
 
 
-5. Configure/Compile the TornadoVM Project 
+5. Configure/Compile the TornadoVM Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -336,7 +336,7 @@ The installation script downloads the following dependencies:
    setvars.cmd
 
 
-And TornadoVM is ready to be used. If you want to recompile with a different backend: 
+And TornadoVM is ready to be used. If you want to recompile with a different backend:
 
 .. code:: bash
 
@@ -573,7 +573,7 @@ Run tests:
 
 .. code:: bash
 
-   tornado-test -V 
+   tornado-test -V
 
 
 To run individual tests:
@@ -587,12 +587,12 @@ To run individual tests:
 Installation for RISC-V RVV 1.0 on Linux
 ========================================
 
-The RISC-V port is experimental, but users can try it on real RISC-V hardware. 
+The RISC-V port is experimental, but users can try it on real RISC-V hardware.
 The following instructions have been tested on Linux Bianbu OS 2.0 and 2.1 on a Bananapi F3 SBC and Sipeed Lichee PI 3A.
 
-The installation requires a patch that disables the `cmake-maven` plugin for the native OpenCL part due to unsupported port for RISC-V. 
+The installation requires a patch that disables the `cmake-maven` plugin for the native OpenCL part due to unsupported port for RISC-V.
 
-We have pushed a script that automatically applies the patch and builds TornadoVM to run on RISC-V. 
+We have pushed a script that automatically applies the patch and builds TornadoVM to run on RISC-V.
 
 
 First, install the dependencies:
@@ -614,7 +614,7 @@ Activate the new Python environment:
 
 .. code:: bash
 
-   source /path/to/venv/bin/activate 
+   source /path/to/venv/bin/activate
 
 
 OpenCL backend only
@@ -625,11 +625,11 @@ Then, download the script to apply the patch for the OpenCL backend:
 
 .. code:: bash
 
-   cd tornadovm 
+   cd tornadovm
    git clone https://github.com/beehive-lab/tornadovm-riscv-patch.git
-   
+
    ## Build for OpenCL only
-   bash tornadovm-riscv-patch/apply-riscv-patch-opencl.sh 
+   bash tornadovm-riscv-patch/apply-riscv-patch-opencl.sh
 
 
 SPIR-V + OpenCL backends
@@ -639,8 +639,8 @@ If you want to enable both OpenCL and SPIR-V backends, use the following patch:
 
 .. code:: bash
 
-   bash tornadovm-riscv-patch/apply-riscv-patch-spirv.sh 
-   
+   bash tornadovm-riscv-patch/apply-riscv-patch-spirv.sh
+
 
 Run TornadoVM for RISC-V
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -648,13 +648,13 @@ Run TornadoVM for RISC-V
 .. code:: bash
 
    source setvars.sh
-   tornado --devices 
+   tornado --devices
 
    Number of Tornado drivers: 1
    Driver: OpenCL
       Total number of OpenCL devices  : 1
       Tornado device=0:0  (DEFAULT)
-        OPENCL --  [ComputeAorta] -- RefSi G1 RV64    << RISC-V CPU 
+        OPENCL --  [ComputeAorta] -- RefSi G1 RV64    << RISC-V CPU
                 Global Memory Size: 2.0 GB
                 Local Memory Size: 256.0 KB
                 Workgroup Dimensions: 3
@@ -729,13 +729,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
    </dependencies>
 
@@ -746,6 +746,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ==================
 
+* 1.1.1
 * 1.1.0
 * 1.0.10
 * 1.0.9
