@@ -61,7 +61,7 @@ tornadoReq.check_python_dependencies()
 
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
-__VERSION__ = "v1.1.1"
+__VERSION__ = "v1.1.2-dev"
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
     config.__GRAALVM21__,

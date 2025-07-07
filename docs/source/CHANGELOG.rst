@@ -7,7 +7,7 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
-TornadoVM 1.1.0
+TornadoVM 1.1.1
 ---------------
 07/07/25
 
