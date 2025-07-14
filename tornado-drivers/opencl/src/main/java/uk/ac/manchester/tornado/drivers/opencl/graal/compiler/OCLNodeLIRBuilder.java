@@ -31,13 +31,16 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.util.Collection;
 import java.util.List;
 
+import jdk.vm.ci.meta.PlatformKind;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -59,6 +62,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
@@ -72,6 +76,8 @@ import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.CompareNode;
+import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
 import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
@@ -559,6 +565,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit(loopExitNode);
         } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
             emitShortCircuitOrNode(shortCircuitOrNode);
+        } else if (node instanceof ConditionalNode conditionalNode) {
+            emitConditionalNode(conditionalNode);
         } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
             // ignore emit-action
         } else {
@@ -594,12 +602,63 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitShortCircuitOrNode(ShortCircuitOrNode node) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitShortCircuitOrNode: %s, (X: %s - isNegated: %s) || (Y: %s - isNegated: %s)", node, node.getX(), node.isXNegated(), node.getY(), node
+                .isYNegated());
+
         LIRKind lirKind = LIRKind.value(OCLKind.BOOL);
         final Variable result = gen.newVariable(lirKind);
-        final Value x = operandOrConjunction(node.getX());
-        final Value y = operandOrConjunction(node.getY());
-        append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.LOGICAL_OR, lirKind, x, y)));
+
+        final Value x = getProcessedOperand(node.getX(), node.isXNegated());
+        final Value y = getProcessedOperand(node.getY(), node.isYNegated());
+
+        Value orExpr = new OCLBinary.Expr(OCLBinaryOp.LOGICAL_OR, lirKind, x, y);
+        append(new AssignStmt(result, orExpr));
         setResult(node, result);
+    }
+
+    private Value getProcessedOperand(LogicNode operand, boolean isNegated) {
+        return isNegated ? emitNegatedLogicNode(operand) : operandOrConjunction(operand);
+    }
+
+    public void emitConditionalNode(ConditionalNode conditional) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitConditionalNode: %s", conditional);
+        Value tVal = operand(conditional.trueValue());
+        Value fVal = operand(conditional.falseValue());
+        setResult(conditional, emitConditional(conditional.condition(), tVal, fVal));
+    }
+
+    @Override
+    public Variable emitConditional(LogicNode node, Value trueValue, Value falseValue) {
+        if (node instanceof IsNullNode) {
+            IsNullNode isNullNode = (IsNullNode) node;
+            LIRKind kind = gen.getLIRKind(isNullNode.getValue().stamp(NodeView.DEFAULT));
+            Value nullValue = gen.emitConstant(kind, isNullNode.nullConstant());
+            return gen.emitConditionalMove(kind.getPlatformKind(), operand(isNullNode.getValue()), nullValue, Condition.EQ, false, trueValue, falseValue);
+        } else if (node instanceof CompareNode) {
+            CompareNode compare = (CompareNode) node;
+            PlatformKind kind = gen.getLIRKind(compare.getX().stamp(NodeView.DEFAULT)).getPlatformKind();
+            return gen.emitConditionalMove(kind, operand(compare.getX()), operand(compare.getY()), compare.condition().asCondition(), compare.unorderedIsTrue(), trueValue, falseValue);
+        } else if (node instanceof LogicConstantNode) {
+            return gen.emitMove(((LogicConstantNode) node).getValue() ? trueValue : falseValue);
+        } else if (node instanceof IntegerTestNode) {
+            IntegerTestNode test = (IntegerTestNode) node;
+            return gen.emitIntegerTestMove(operand(test.getX()), operand(test.getY()), trueValue, falseValue);
+        } else if (node instanceof ShortCircuitOrNode orNode) {
+            if (!((operand(orNode)).getValueKind() instanceof LIRKind)) {
+                throw new GraalError("Expected LIRKind, but got: " + (operand(orNode)).getValueKind());
+            }
+            LIRKind lirKind = (LIRKind) (operand(orNode)).getValueKind();
+            Value orValue = operand(orNode);
+
+            return gen.emitConditionalMove(lirKind.getPlatformKind(), //
+                    orValue, gen.emitConstant(lirKind, JavaConstant.forBoolean(true)), //
+                    Condition.EQ,   //
+                    false,          //
+                    trueValue,      //
+                    falseValue);    //
+        } else {
+            throw GraalError.unimplemented(node.toString());
+        }
     }
 
     private void emitLoopExit(LoopExitNode node) {
