@@ -98,8 +98,8 @@ public class TestShortCircuits {
         testArr.init(-1);
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.runShortCircuitAndNode", workerGrid);  // Attach the worker to the Grid
-        KernelContext context = new KernelContext();             // Create a context
+        GridScheduler gridScheduler = new GridScheduler("s0.runShortCircuitAndNode", workerGrid);
+        KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) //
@@ -108,8 +108,6 @@ public class TestShortCircuits {
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withGridScheduler(gridScheduler).execute();
-        } catch (TornadoInternalError e) {
-            System.out.println(e.getMessage());
         } catch (TornadoExecutionPlanException e) {
             throw new RuntimeException(e);
         }
