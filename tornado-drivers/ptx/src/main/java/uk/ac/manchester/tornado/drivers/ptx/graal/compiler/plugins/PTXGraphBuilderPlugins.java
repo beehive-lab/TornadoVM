@@ -81,11 +81,14 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
@@ -111,6 +114,7 @@ public class PTXGraphBuilderPlugins {
         PTXHalfFloatPlugin.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(ps);
         registerKernelContextPlugins(plugins);
+        registerQuantizationUtilsPlugins(plugins);
     }
 
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
@@ -120,6 +124,18 @@ public class PTXGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
                 PTXConvertHalfToFloat convertHalfToFloat = new PTXConvertHalfToFloat(halfValue);
                 b.addPush(JavaKind.Float, convertHalfToFloat);
+                return true;
+            }
+        });
+    }
+
+    private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, QuantizationUtils.class);
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, Int8Array.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode vectorA, ValueNode vectorB, ValueNode accumulator, ValueNode offset) {
+                Dp4aNode dp4aOp = new Dp4aNode(vectorA, vectorB, accumulator, offset);
+                b.addPush(JavaKind.Int, dp4aOp);
                 return true;
             }
         });

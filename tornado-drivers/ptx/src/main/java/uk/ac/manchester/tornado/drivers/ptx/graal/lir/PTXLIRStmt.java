@@ -50,7 +50,6 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 
 import java.nio.charset.StandardCharsets;
 
-import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -79,6 +78,134 @@ public class PTXLIRStmt {
         }
 
         public abstract void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm);
+    }
+
+    @Opcode("DP4A")
+    public static class Dp4aStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aStmt> TYPE = LIRInstructionClass.create(Dp4aStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value int8_a_base;
+        @Def
+        protected Value load_four_int8_bytes_a;
+        @Use
+        protected Value int8_b_base;
+        @Def
+        protected Value load_four_int8_bytes_b;
+        @Use
+        protected Value accumulator_c;
+        @Use
+        protected Value offset;
+        @Def
+        protected Value cnv_offset;
+        @Def
+        protected Value add_header_offset;
+        @Def
+        protected Value offseted_address_a;
+        @Def
+        protected Value offseted_address_b;
+
+        protected int header_size;
+
+        public Dp4aStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value int8_b_base, Value load_four_int8_bytes_b, Value accumulator_c, Value offset, Value cnv_offset, Value add_header_offset, Value offseted_address_a, Value offseted_address_b, int header_size) {
+            super(TYPE);
+            this.result = result;
+            this.int8_a_base = int8_a_base;
+            this.load_four_int8_bytes_a = load_four_int8_bytes_a;
+            this.int8_b_base = int8_b_base;
+            this.load_four_int8_bytes_b = load_four_int8_bytes_b;
+            this.accumulator_c = accumulator_c;
+            this.offset = offset;
+            this.cnv_offset = cnv_offset;
+            this.add_header_offset = add_header_offset;
+            this.offseted_address_a = offseted_address_a;
+            this.offseted_address_b = offseted_address_b;
+            this.header_size = header_size;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // instructions to calculate dp4a: dp4a.s32.s32 result, a, b, c;
+
+            // add header bytes to offset
+            asm.emitSymbol(TAB);
+            asm.emitSymbol("add.s32 ");
+            asm.emitValue(add_header_offset);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitConstant(header_size);
+            asm.delimiter();
+            asm.eol();
+
+            // convert offset to u64
+            asm.emitSymbol(TAB);
+            asm.emit("cvt.u64.s32 ");
+            asm.emitValue(cnv_offset);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(add_header_offset);
+            asm.delimiter();
+            asm.eol();
+
+            //add offset to base address of buffer a
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64 ");
+            asm.emitValue(offseted_address_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(int8_a_base);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(cnv_offset);
+            asm.delimiter();
+            asm.eol();
+
+            // load from offseted address of buffer a
+            asm.emitSymbol(TAB);
+            asm.emit("ld.global.s32 ");
+            asm.emitValue(load_four_int8_bytes_a);
+            asm.emitSymbol(COMMA + SPACE + "[");
+            asm.emitValue(offseted_address_a);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            //add offset to base address of buffer b
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64 ");
+            asm.emitValue(offseted_address_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(int8_b_base);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(cnv_offset);
+            asm.delimiter();
+            asm.eol();
+
+            // load from offseted address of buffer b
+            asm.emitSymbol(TAB);
+            asm.emit("ld.global.s32 ");
+            asm.emitValue(load_four_int8_bytes_b);
+            asm.emitSymbol(COMMA + SPACE + "[");
+            asm.emitValue(offseted_address_b);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            // perform dp4a
+            asm.emitSymbol(TAB);
+            asm.emit("dp4a.s32.s32 ");
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(load_four_int8_bytes_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(load_four_int8_bytes_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(accumulator_c);
+            asm.delimiter();
+            asm.eol();
+        }
+
     }
 
     @Opcode("DIVHALF")
