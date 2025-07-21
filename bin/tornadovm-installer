@@ -388,16 +388,19 @@ class BuildManager:
         os.system(cmd)
 
     def _determine_make_options(self, config: InstallationConfig) -> Tuple[str, str]:
-        """Determine make target and polyglot option."""
+        # Common prefix for single-threaded Maven runs
+        prefix = "mvn-single-threaded-" if config.maven_single_threaded else ""
+
+        # Decide the suffix make target and polyglot option.
         if config.jdk_keyword and "graal" in config.jdk_keyword.lower():
             if config.polyglot:
-                if config.maven_single_threaded:
-                    return "mvn-single-threaded-polyglot"
-                else:
-                    return "polyglot"
+                suffix = "polyglot"
             else:
-                return "graal-jdk-21"
-        return "jdk21"
+                suffix = "graal-jdk-21"
+        else:
+            suffix = "jdk21"
+
+        return f"{prefix}{suffix}"
 
     def _get_backend_option(self, backends: List[str]) -> str:
         """Get backend option string."""
