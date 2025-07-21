@@ -1,6 +1,6 @@
 # TornadoVM
 
-![TornadoVM version](https://img.shields.io/badge/version-1.1.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+![TornadoVM version](https://img.shields.io/badge/version-1.1.1-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
@@ -20,7 +20,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 1.1.0 - 31/03/2025 :
+**Latest Release:** TornadoVM 1.1.1 - 07/07/2025 :
 See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
@@ -31,18 +31,21 @@ In Linux and macOS, TornadoVM can be installed automatically with
 the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
 
 ```bash
-$ ./bin/tornadovm-installer
-usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
+$ ./bin/tornadovm-installer --help
+usage: tornadovm-installer [-h] [--jdk JDK] [--backend BACKEND] [--version] [--listJDKs] [--polyglot] [--mvn_single_threaded] [--auto-deps]
 
 TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
 
-optional arguments:
-  -h, --help           show this help message and exit
-  --version            Print version of TornadoVM
-  --jdk JDK            Select one of the supported JDKs. Use --listJDKs option to see all supported ones.
-  --backend BACKEND    Select the backend to install: { opencl, ptx, spirv }
-  --listJDKs           List all JDK supported versions
-  --javaHome JAVAHOME  Use a JDK from a user directory
+options:
+  -h, --help            show this help message and exit
+  --jdk JDK             Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). Run with --listJDKs to view all available JDK keywords.
+  --backend BACKEND     Select the backend to install: { opencl, ptx, spirv }
+  --version             Print version
+  --listJDKs            List supported JDKs
+  --polyglot            Enable Truffle Interoperability with GraalVM
+  --mvn_single_threaded
+                        Run Maven in single-threaded mode
+  --auto-deps           Automatic download and use any missing dependencies
 ```
 
 **NOTE** Select the desired backend:
@@ -129,13 +132,13 @@ public class Compute {
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
 
-        // Create a task-graph with multiple tasks. Each task points to an exising Java method 
+        // Create a task-graph with multiple tasks. Each task points to an exising Java method
         // that can be accelerated on a GPU/FPGA
         TaskGraph taskGraph = new TaskGraph("myCompute")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
                 .task("mxm", Compute::mxmLoop, A, B, C, size)             // Each task points to an existing Java method
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
-        
+
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
 
@@ -146,7 +149,7 @@ public class Compute {
             TorandoExecutionResult executionResult = executionPlan.execute();
 
         } catch (TornadoExecutionPlanException e) {
-            // handle exception 
+            // handle exception
             // ...
         }
     }
@@ -182,7 +185,7 @@ public class Compute {
         GridScheduler gridScheduler = new GridScheduler("myCompute.mxm", workerGrid);  // Attach the worker to the Grid
         KernelContext context = new KernelContext();             // Create a context
         workerGrid.setLocalWork(16, 16, 1);                      // Set the local-group size
-  
+
         TaskGraph taskGraph = new TaskGraph("myCompute")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
                 .task("mxm", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
@@ -199,9 +202,9 @@ public class Compute {
                         .withGridScheduler(gridScheduler)
                         .execute();
         } catch (TornadoExecutionPlanException e) {
-            // handle exception 
+            // handle exception
             // ...
-        }    
+        }
     }
 }
 ```
@@ -261,12 +264,12 @@ You can import the TornadoVM API by setting this the following dependency in the
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 </dependencies>
 ```
@@ -377,4 +380,4 @@ Each Java TornadoVM module is licensed as follows:
 | Tornado-Benchmarks             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
 | Tornado-Examples               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
 | Tornado-Matrices               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-|                                |                                                                                                                                                                  | 
+|                                |                                                                                                                                                                  |

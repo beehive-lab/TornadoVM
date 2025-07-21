@@ -5,6 +5,52 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+CHANGELOG
+
+TornadoVM 1.1.1
+---------------
+07/07/25
+
+Improvements
+~~~~~~~~~~~~
+
+- `#657 <https://github.com/beehive-lab/TornadoVM/pull/657>`_: Optimize to reuse the allocated buffers for batch processing.
+- `#659 <https://github.com/beehive-lab/TornadoVM/pull/659>`_: Fixed object state to be the one from the last executed TaskGraph.
+- `#660 <https://github.com/beehive-lab/TornadoVM/pull/660>`_: New ``PERSIST`` bytecode to improve object lifecycle tracking.
+- `#661 <https://github.com/beehive-lab/TornadoVM/pull/661>`_: Saving the TornadoVM Bytecodes in a log file.
+- `#660 <https://github.com/beehive-lab/TornadoVM/pull/669>`_: Distinguish the data transfer mode when logging the execution of the ``TRANSFER_TO_DEVICE_ONCE`` Bytecode.
+- `#667 <https://github.com/beehive-lab/TornadoVM/pull/667>`_: Update documentation of the TornadoVM flags.
+- `#670 <https://github.com/beehive-lab/TornadoVM/pull/670>`_: Refactoring of the ``Matrix4x4Float`` type.
+- `#674 <https://github.com/beehive-lab/TornadoVM/pull/674>`_: Updated project links in ``README``.
+- `#675 <https://github.com/beehive-lab/TornadoVM/pull/675>`_: Avoid rescheduling ``IfNodes`` used for loop-bound evaluation.
+- `#676 <https://github.com/beehive-lab/TornadoVM/pull/676>`_: Added unit-tests for Transformer Compute Kernels.
+- `#679 <https://github.com/beehive-lab/TornadoVM/pull/679>`_: Added Matrix-Vector Row-Major compute example.
+- `#683 <https://github.com/beehive-lab/TornadoVM/pull/683>`_: Mark flash attention unittest unsupported for SPIR-V.
+- `#684 <https://github.com/beehive-lab/TornadoVM/pull/684>`_: Performance improvements for processing with Dynamic Reconfiguration.
+- `#685 <https://github.com/beehive-lab/TornadoVM/pull/685>`_: Dynamic reconfiguration refactored.
+- `#686 <https://github.com/beehive-lab/TornadoVM/pull/686>`_: New API Functions for warmup.
+- `#693 <https://github.com/beehive-lab/TornadoVM/pull/693>`_: Disabling fast math to support FMA in PTX.
+- `#695 <https://github.com/beehive-lab/TornadoVM/pull/695>`_: Update ``tornadovm-installer`` script to be interactive.
+- `#696 <https://github.com/beehive-lab/TornadoVM/pull/696>`_:  Increase sizes for auxiliary data structures related with the number of Tasks in a TaskGraph.
+- `#697 <https://github.com/beehive-lab/TornadoVM/pull/697>`_: Added auto-deps mode in ``tornadovm-installer`` and restored backend and jdk console arguments.
+- `#698 <https://github.com/beehive-lab/TornadoVM/pull/698>`_: Update tornadovm-installer changes in README.
+
+
+Compatibility
+~~~~~~~~~~~~
+- `#668 <https://github.com/beehive-lab/TornadoVM/pull/668>`_: Updated build instructions for RISC-V systems.
+
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#664 <https://github.com/beehive-lab/TornadoVM/pull/664>`_:  Fix kernel name in PTX with sanitizer check.
+- `#666 <https://github.com/beehive-lab/TornadoVM/pull/666>`_: Fix GridScheduler for execution plans that have multiple TaskGraphs.
+- `#671 <https://github.com/beehive-lab/TornadoVM/pull/671>`_: Fix ANSI espace characters for logging TornadoVM Bytecodes.
+- `#677 <https://github.com/beehive-lab/TornadoVM/pull/677>`_: Fix 1.0/sqrt(x) replacement with native rsqrt(x) function.
+- `#678 <https://github.com/beehive-lab/TornadoVM/pull/678>`_: Fix profiling on macOS systems, regarding accessing UPS metrics.
+- `#681 <https://github.com/beehive-lab/TornadoVM/pull/681>`_: Fix closing bracket for flash attention.
+- `#688 <https://github.com/beehive-lab/TornadoVM/pull/688>`_: Fix state after warmup phase.
 
 TornadoVM 1.1.0
 ---------------
@@ -15,10 +61,10 @@ Improvements
 
 - `#620 <https://github.com/beehive-lab/TornadoVM/pull/620>`_: Support of computation with mixed precision ``FP16`` to  ``FP32`` for matrix operations.
 - `#622 <https://github.com/beehive-lab/TornadoVM/pull/622>`_: New API to allow buffer mapping between two different buffers on the hardware accelerator.
-- `#624 <https://github.com/beehive-lab/TornadoVM/pull/624>`_: Enhanced TornadoVM profiler with correct information for the ``UNDER_DEMAND`` transfer to host data. 
+- `#624 <https://github.com/beehive-lab/TornadoVM/pull/624>`_: Enhanced TornadoVM profiler with correct information for the ``UNDER_DEMAND`` transfer to host data.
 - `#627 <https://github.com/beehive-lab/TornadoVM/pull/627>`_: New feature to persist data on the hardware accelerator, and consume data already allocated on the hardware accelerator.
-- `#630 <https://github.com/beehive-lab/TornadoVM/pull/630>`_: Support for atomics using the kernel API for OpenCL and PTX backends. 
-- `#636 <https://github.com/beehive-lab/TornadoVM/pull/636>`_: TornadoVM bytecode logging improved. 
+- `#630 <https://github.com/beehive-lab/TornadoVM/pull/630>`_: Support for atomics using the kernel API for OpenCL and PTX backends.
+- `#636 <https://github.com/beehive-lab/TornadoVM/pull/636>`_: TornadoVM bytecode logging improved.
 - `#642 <https://github.com/beehive-lab/TornadoVM/pull/642>`_: Math functions extended: ``acosh`` and ``asinh`` supported for OpenCL and SPIR-V.
 - `#645 <https://github.com/beehive-lab/TornadoVM/pull/645>`_: Memory deallocations improved. Action by default when closing the ``TornadoExecutionPlan`` resource.
 
@@ -28,18 +74,18 @@ Compatibility
 
 - `#625 <https://github.com/beehive-lab/TornadoVM/pull/625>`_: Documentation to build on RISC-V updated.
 - `#632 <https://github.com/beehive-lab/TornadoVM/pull/632>`_: Add maven build with Single thread.
-- `#633 <https://github.com/beehive-lab/TornadoVM/pull/633>`_: Add tests for running multiple task graphs with different grid schedulers. 
+- `#633 <https://github.com/beehive-lab/TornadoVM/pull/633>`_: Add tests for running multiple task graphs with different grid schedulers.
 - `#638 <https://github.com/beehive-lab/TornadoVM/pull/638>`_: Add tests to check force copy in buffers and persist buffers on the hardware accelerator.
 - `#640 <https://github.com/beehive-lab/TornadoVM/pull/640>`_: Rename XPUFuffer to FieldBuffer for all backends.
 - `#649 <https://github.com/beehive-lab/TornadoVM/pull/649>`_: Update the fast mode to live mode for testing.
 - `#654 <https://github.com/beehive-lab/TornadoVM/pull/654>`_: Add loop condition test in white list.
 
 
-Bug Fixes 
+Bug Fixes
 ~~~~~~~~~~~~
 
-- `#626 <https://github.com/beehive-lab/TornadoVM/pull/626>`_: Fix data accessors when using the ``UNDER_DEMAND`` transfer to host innovation from the task-graph. 
-- `#628 <https://github.com/beehive-lab/TornadoVM/pull/628>`_: Device filtering API fixed to use device type and device names. 
+- `#626 <https://github.com/beehive-lab/TornadoVM/pull/626>`_: Fix data accessors when using the ``UNDER_DEMAND`` transfer to host innovation from the task-graph.
+- `#628 <https://github.com/beehive-lab/TornadoVM/pull/628>`_: Device filtering API fixed to use device type and device names.
 - `#635 <https://github.com/beehive-lab/TornadoVM/pull/635>`_: Update nodes for local memory to be subtype of ``ValueNode`` instead of ``ConstantNode`` in the TornadoVM IR.
 - `#639 <https://github.com/beehive-lab/TornadoVM/pull/639>`_: Fix subgraph execution when combining with the ``GridScheduler``.
 - `#644 <https://github.com/beehive-lab/TornadoVM/pull/644>`_: Fix TornadoVM execution frame setter.
@@ -56,7 +102,7 @@ TornadoVM 1.0.10
 Improvements
 ~~~~~~~~~~~~
 
-- `#608 <https://github.com/beehive-lab/TornadoVM/pull/608>`_: Selective execution with multiple SPIR-V runtimes (either OpenCL, Intel Level Zero, or both) to unlock execution on RISC-V systems. 
+- `#608 <https://github.com/beehive-lab/TornadoVM/pull/608>`_: Selective execution with multiple SPIR-V runtimes (either OpenCL, Intel Level Zero, or both) to unlock execution on RISC-V systems.
 - `#611 <https://github.com/beehive-lab/TornadoVM/pull/611>`_: Support of ``HalfFloat`` for Matrix Types (``FP16`` -> ``FP16``).
 
 Compatibility
@@ -65,15 +111,15 @@ Compatibility
 - `#607 <https://github.com/beehive-lab/TornadoVM/pull/607>`_: WSL installation and configuration updated for WSL Ubuntu 24 LTS and Windows 11.
 - `#609 <https://github.com/beehive-lab/TornadoVM/pull/609>`_: Documentation and patch for RISC-V64 updated.
 - `#610 <https://github.com/beehive-lab/TornadoVM/pull/610>`_: Maven dependency updated
-- `#612 <https://github.com/beehive-lab/TornadoVM/pull/612>`_: Re-enable colours in maven builds on Linux. 
+- `#612 <https://github.com/beehive-lab/TornadoVM/pull/612>`_: Re-enable colours in maven builds on Linux.
 
-Bug Fixes 
+Bug Fixes
 ~~~~~~~~~~~~
 
 - `#606 <https://github.com/beehive-lab/TornadoVM/pull/606>`_: Fix data sizes in benchmark suite.
 - `#613 <https://github.com/beehive-lab/TornadoVM/pull/613>`_: Fix code formatter.
-- `#614 <https://github.com/beehive-lab/TornadoVM/pull/614>`_: Fix flags for the benchmark pipeline in Jenkins. 
-- `#615 <https://github.com/beehive-lab/TornadoVM/pull/615>`_: Fix code style based on the formatter. 
+- `#614 <https://github.com/beehive-lab/TornadoVM/pull/614>`_: Fix flags for the benchmark pipeline in Jenkins.
+- `#615 <https://github.com/beehive-lab/TornadoVM/pull/615>`_: Fix code style based on the formatter.
 - `#616 <https://github.com/beehive-lab/TornadoVM/pull/616>`_: Fix atomics for the Kernel API and the OpenCL backend.
 
 
@@ -85,12 +131,12 @@ Improvements
 ~~~~~~~~~~~~
 
 - `#573 <https://github.com/beehive-lab/TornadoVM/pull/573>`_: Enhanced output of unit-tests with a summary  of pass-rates and fail-rates.
-- `#576 <https://github.com/beehive-lab/TornadoVM/pull/576>`_: Extended support for 3D matrices. 
-- `#580 <https://github.com/beehive-lab/TornadoVM/pull/580>`_: Extended debug information for execution plans. 
-- `#584 <https://github.com/beehive-lab/TornadoVM/pull/584>`_: Added helper menu for the ``tornado`` launcher script when no arguments are passed. 
-- `#589 <https://github.com/beehive-lab/TornadoVM/pull/589>`_: Enable partial loop unrolling for all backends. 
-- `#594 <https://github.com/beehive-lab/TornadoVM/pull/594>`_: Added RISC-V 64 CPU port support to run OpenCL with vector instructions RVV 1.0 (using the Codeplay OCK Toolkit). 
-- `#598 <https://github.com/beehive-lab/TornadoVM/pull/598>`_: OpenCL low-level buffers tagged as read, write and read/write based on the data dependency analysis. 
+- `#576 <https://github.com/beehive-lab/TornadoVM/pull/576>`_: Extended support for 3D matrices.
+- `#580 <https://github.com/beehive-lab/TornadoVM/pull/580>`_: Extended debug information for execution plans.
+- `#584 <https://github.com/beehive-lab/TornadoVM/pull/584>`_: Added helper menu for the ``tornado`` launcher script when no arguments are passed.
+- `#589 <https://github.com/beehive-lab/TornadoVM/pull/589>`_: Enable partial loop unrolling for all backends.
+- `#594 <https://github.com/beehive-lab/TornadoVM/pull/594>`_: Added RISC-V 64 CPU port support to run OpenCL with vector instructions RVV 1.0 (using the Codeplay OCK Toolkit).
+- `#598 <https://github.com/beehive-lab/TornadoVM/pull/598>`_: OpenCL low-level buffers tagged as read, write and read/write based on the data dependency analysis.
 - `#601 <https://github.com/beehive-lab/TornadoVM/pull/601>`_: Feature to select an immutable task graph to execute from a multi-task graph execution plan.
 
 
@@ -98,26 +144,26 @@ Compatibility
 ~~~~~~~~~~~~~
 
 - `#570 <https://github.com/beehive-lab/TornadoVM/pull/570>`_:  Extended timeout for all suite of unit-tests.
-- `#579 <https://github.com/beehive-lab/TornadoVM/pull/579>`_: Removed legacy JDK 8 and JDK11 build options from the TornadoVM installer. 
-- `#582 <https://github.com/beehive-lab/TornadoVM/pull/582>`_: Restored tornado runner scripts for IntellIJ. 
-- `#583 <https://github.com/beehive-lab/TornadoVM/pull/583>`_: Automatic generation of IDE IntelliJ configuration runner files from the TornadoVM command. 
+- `#579 <https://github.com/beehive-lab/TornadoVM/pull/579>`_: Removed legacy JDK 8 and JDK11 build options from the TornadoVM installer.
+- `#582 <https://github.com/beehive-lab/TornadoVM/pull/582>`_: Restored tornado runner scripts for IntellIJ.
+- `#583 <https://github.com/beehive-lab/TornadoVM/pull/583>`_: Automatic generation of IDE IntelliJ configuration runner files from the TornadoVM command.
 - `#597 <https://github.com/beehive-lab/TornadoVM/pull/597>`_: Updated white-list of unit-test and checkstyle improved.
 
 
 Bug Fixes
 ~~~~~~~~~
 
-- `#571 <https://github.com/beehive-lab/TornadoVM/pull/571>`_: Fix issues with bracket closing for if/loops conditions. 
-- `#572 <https://github.com/beehive-lab/TornadoVM/pull/572>`_: Fix for printing default execution plans (execution plans with default parameters). 
-- `#575 <https://github.com/beehive-lab/TornadoVM/pull/575>`_: Fix the Level Zero version used for building the SPIR-V backend. 
+- `#571 <https://github.com/beehive-lab/TornadoVM/pull/571>`_: Fix issues with bracket closing for if/loops conditions.
+- `#572 <https://github.com/beehive-lab/TornadoVM/pull/572>`_: Fix for printing default execution plans (execution plans with default parameters).
+- `#575 <https://github.com/beehive-lab/TornadoVM/pull/575>`_: Fix the Level Zero version used for building the SPIR-V backend.
 - `#577 <https://github.com/beehive-lab/TornadoVM/pull/577>`_: Fix checkstyle.
 - `#587 <https://github.com/beehive-lab/TornadoVM/pull/587>`_: Fix thread scheduler for new NVIDIA Drivers.
-- `#592 <https://github.com/beehive-lab/TornadoVM/pull/592>`_: Fix ``Float.POSITIVE_INFINITY`` and ``Float.NEGATIVE_INFINITIVE`` constants for the OpenCL, CUDA and SPIR-V backends. 
-- `#596 <https://github.com/beehive-lab/TornadoVM/pull/596>`_: Fix extra closing bracket during the code-generation for the FPGAs. 
+- `#592 <https://github.com/beehive-lab/TornadoVM/pull/592>`_: Fix ``Float.POSITIVE_INFINITY`` and ``Float.NEGATIVE_INFINITIVE`` constants for the OpenCL, CUDA and SPIR-V backends.
+- `#596 <https://github.com/beehive-lab/TornadoVM/pull/596>`_: Fix extra closing bracket during the code-generation for the FPGAs.
 - Remove the intermediate CUDA pinned memory regions in the JNI code: `link <https://github.com/beehive-lab/TornadoVM/commit/9c3f8ce7eb917f30788710b390c07a072ecc49fb>`_
-- Fix bitwise negation operations for the PTX backend:  `link <https://github.com/beehive-lab/TornadoVM/commit/0db1cd3e7fd90accd737ca2bfd6d2450c40f3713>`_ 
-- ``GetBackendImpl::getAllDevices`` thread-safe: `link <https://github.com/beehive-lab/TornadoVM/commit/0d4425264ffe0633ea79c8aba91233591059d3fd>`_ 
-- Check size elements for memory segments: `link <https://github.com/beehive-lab/TornadoVM/commit/4360385156236bb2397debeea65fedea349c6bca>`_. 
+- Fix bitwise negation operations for the PTX backend:  `link <https://github.com/beehive-lab/TornadoVM/commit/0db1cd3e7fd90accd737ca2bfd6d2450c40f3713>`_
+- ``GetBackendImpl::getAllDevices`` thread-safe: `link <https://github.com/beehive-lab/TornadoVM/commit/0d4425264ffe0633ea79c8aba91233591059d3fd>`_
+- Check size elements for memory segments: `link <https://github.com/beehive-lab/TornadoVM/commit/4360385156236bb2397debeea65fedea349c6bca>`_.
 
 
 TornadoVM 1.0.8
@@ -240,7 +286,7 @@ Improvements
 - `#402 <https://github.com/beehive-lab/TornadoVM/pull/402>`_: Support for TornadoNativeArrays from FFI buffers.
 - `#403 <https://github.com/beehive-lab/TornadoVM/pull/403>`_: Clean-up and refactoring for the code analysis of the loop-interchange.
 - `#405 <https://github.com/beehive-lab/TornadoVM/pull/405>`_: Disable Loop-Interchange for CPU offloading..
-- `#407 <https://github.com/beehive-lab/TornadoVM/pull/407>`_: Debugging OpenCL Kernels builds improved. 
+- `#407 <https://github.com/beehive-lab/TornadoVM/pull/407>`_: Debugging OpenCL Kernels builds improved.
 - `#410 <https://github.com/beehive-lab/TornadoVM/pull/410>`_: CPU block scheduler disabled by default and option to switch between different thread-schedulers added.
 - `#418 <https://github.com/beehive-lab/TornadoVM/pull/418>`_: TornadoOptions and TornadoLogger improved.
 - `#423 <https://github.com/beehive-lab/TornadoVM/pull/423>`_: MxM using ns instead of ms to report performance.
@@ -252,10 +298,10 @@ Improvements
 Compatibility
 ~~~~~~~~~~~~~~~~~~
 
-- `#409 <https://github.com/beehive-lab/TornadoVM/pull/409>`_: Guidelines to build the documentation. 
+- `#409 <https://github.com/beehive-lab/TornadoVM/pull/409>`_: Guidelines to build the documentation.
 - `#411 <https://github.com/beehive-lab/TornadoVM/pull/411>`_: Windows installer improved.
 - `#412 <https://github.com/beehive-lab/TornadoVM/pull/412>`_: Python installer improved to check download all Python dependencies before the main installer.
-- `#413 <https://github.com/beehive-lab/TornadoVM/pull/413>`_: Improved documentation for installing all configurations of backends and OS. 
+- `#413 <https://github.com/beehive-lab/TornadoVM/pull/413>`_: Improved documentation for installing all configurations of backends and OS.
 - `#424 <https://github.com/beehive-lab/TornadoVM/pull/424>`_: Use Generic GPU Scheduler for some older NVIDIA Drivers for the OpenCL runtime.
 - `#430 <https://github.com/beehive-lab/TornadoVM/pull/430>`_: Improved the installer by checking  that the TornadoVM environment is loaded upfront.
 
@@ -265,14 +311,14 @@ Bug Fixes
 - `#400 <https://github.com/beehive-lab/TornadoVM/pull/400>`_: Fix batch computation when the global thread indexes are used to compute the outputs.
 - `#414 <https://github.com/beehive-lab/TornadoVM/pull/414>`_: Recover Test-Field unit-tests using Panama types.
 - `#415 <https://github.com/beehive-lab/TornadoVM/pull/415>`_: Check style errors fixed.
-- `#416 <https://github.com/beehive-lab/TornadoVM/pull/416>`_: FPGA execution with multiple tasks in a task-graph fixed. 
+- `#416 <https://github.com/beehive-lab/TornadoVM/pull/416>`_: FPGA execution with multiple tasks in a task-graph fixed.
 - `#417 <https://github.com/beehive-lab/TornadoVM/pull/417>`_: Lazy-copy out fixed for Java fields.
 - `#420 <https://github.com/beehive-lab/TornadoVM/pull/420>`_: Fix Mandelbrot example.
 - `#421 <https://github.com/beehive-lab/TornadoVM/pull/421>`_: OpenCL 2D thread-scheduler fixed for NVIDIA GPUs.
 - `#422 <https://github.com/beehive-lab/TornadoVM/pull/422>`_: Compilation for NVIDIA Jetson Nano fixed.
 - `#426 <https://github.com/beehive-lab/TornadoVM/pull/426>`_: Fix Logger for all backends.
 - `#428 <https://github.com/beehive-lab/TornadoVM/pull/428>`_: Math cos/sin operations supported for vector types.
-- `#431 <https://github.com/beehive-lab/TornadoVM/pull/431>`_: Jenkins files fixed. 
+- `#431 <https://github.com/beehive-lab/TornadoVM/pull/431>`_: Jenkins files fixed.
 
 
 
@@ -334,16 +380,16 @@ Compatibility
 ~~~~~~~~~~~~~~~~~~
 
 - `#351 <https://github.com/beehive-lab/TornadoVM/pull/351>`_: Compatibility of TornadoVM Native Arrays with the Java Vector API.
-- `#352 <https://github.com/beehive-lab/TornadoVM/pull/352>`_: Refactor memory limit to take into account primitive types and wrappers. 
+- `#352 <https://github.com/beehive-lab/TornadoVM/pull/352>`_: Refactor memory limit to take into account primitive types and wrappers.
 - `#354 <https://github.com/beehive-lab/TornadoVM/pull/354>`_: Add DFT-sample benchmark in FP32.
-- `#356 <https://github.com/beehive-lab/TornadoVM/pull/356>`_: Initial support for Windows 11 using Visual Studio Development tools. 
+- `#356 <https://github.com/beehive-lab/TornadoVM/pull/356>`_: Initial support for Windows 11 using Visual Studio Development tools.
 - `#361 <https://github.com/beehive-lab/TornadoVM/pull/361>`_: Compatibility with the SPIR-V toolkit v0.0.4.
-- `#366 <https://github.com/beehive-lab/TornadoVM/pull/363>`_: Level Zero JNI Dependency updated to 0.1.3. 
+- `#366 <https://github.com/beehive-lab/TornadoVM/pull/363>`_: Level Zero JNI Dependency updated to 0.1.3.
 
 Bug Fixes
 ~~~~~~~~~~~~~~~~~~
 
-- `#346 <https://github.com/beehive-lab/TornadoVM/pull/346>`_: Computation of local-work group sizes for the Level Zero/SPIR-V backend fixed. 
+- `#346 <https://github.com/beehive-lab/TornadoVM/pull/346>`_: Computation of local-work group sizes for the Level Zero/SPIR-V backend fixed.
 - `#360 <https://github.com/beehive-lab/TornadoVM/pull/358>`_: Fix native tests to check the JIT compiler for each backend.
 - `#355 <https://github.com/beehive-lab/TornadoVM/pull/355>`_: Fix custom exceptions when a driver/device is not found.
 
