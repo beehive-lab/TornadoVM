@@ -570,11 +570,11 @@ public class TestConditionals extends TornadoTestBase {
 
         // When using the kernel-parallel API, we need to create a Grid and a Worker
         WorkerGrid workerGrid = new WorkerGrid1D(8);    // Create a 1D Worker
-        GridScheduler gridScheduler = new GridScheduler("myCompute.mxm", workerGrid);  // Attach the worker to the Grid
+        GridScheduler gridScheduler = new GridScheduler("testConditionalShortCircuit.kernel", workerGrid);  // Attach the worker to the Grid
         KernelContext context = new KernelContext();             // Create a context
 
-        TaskGraph taskGraph = new TaskGraph("myCompute").transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) // Transfer data from host to device only in the first execution
-                .task("mxm", TestConditionals::testShortCircuit, context, testArr)   // Each task points to an existing Java method
+        TaskGraph taskGraph = new TaskGraph("testConditionalShortCircuit").transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) // Transfer data from host to device only in the first execution
+                .task("kernel", TestConditionals::testShortCircuit, context, testArr)   // Each task points to an existing Java method
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArr);     // Transfer data from device to host
 
         // Create an immutable task-graph

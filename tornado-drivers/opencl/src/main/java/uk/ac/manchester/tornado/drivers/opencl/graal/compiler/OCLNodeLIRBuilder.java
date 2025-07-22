@@ -649,11 +649,11 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             IntegerTestNode test = (IntegerTestNode) node;
             return gen.emitIntegerTestMove(operand(test.getX()), operand(test.getY()), trueValue, falseValue);
         } else if (node instanceof ShortCircuitOrNode orNode) {
-            if (!((operand(orNode)).getValueKind() instanceof LIRKind)) {
-                throw new GraalError("Expected LIRKind, but got: " + (operand(orNode)).getValueKind());
+            Value orValue = operand(orNode);
+            if (!(orValue.getValueKind() instanceof LIRKind)) {
+                throw new GraalError("Expected LIRKind, but got: " + orValue.getValueKind());
             }
             LIRKind lirKind = (LIRKind) (operand(orNode)).getValueKind();
-            Value orValue = operand(orNode);
 
             return gen.emitConditionalMove(lirKind.getPlatformKind(), //
                     orValue, gen.emitConstant(lirKind, JavaConstant.forBoolean(true)), //

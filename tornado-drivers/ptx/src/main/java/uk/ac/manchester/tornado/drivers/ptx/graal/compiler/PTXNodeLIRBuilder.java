@@ -390,11 +390,11 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             IntegerTestNode test = (IntegerTestNode) node;
             return gen.emitIntegerTestMove(operand(test.getX()), operand(test.getY()), trueValue, falseValue);
         } else if (node instanceof ShortCircuitOrNode orNode) {
-            if (!((operand(orNode)).getValueKind() instanceof LIRKind)) {
-                throw new GraalError("Expected LIRKind, but got: " + (operand(orNode)).getValueKind());
+            Value orValue = operand(orNode);
+            if (!(orValue.getValueKind() instanceof LIRKind)) {
+                throw new GraalError("Expected LIRKind, but got: " + orValue.getValueKind());
             }
             LIRKind lirKind = (LIRKind) (operand(orNode)).getValueKind();
-            Value orValue = operand(orNode);
 
             return gen.emitConditionalMove(lirKind.getPlatformKind(), //
                     orValue, gen.emitConstant(lirKind, JavaConstant.forBoolean(true)), //
@@ -562,9 +562,9 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_NE, boolLirKind, andRes, new ConstantValue(boolLirKind, PrimitiveConstant.INT_0))));
         } else if (node instanceof ShortCircuitOrNode) {
             final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.BITWISE_AND, boolLirKind, x, y)));
+            final Value notX = gen.getArithmetic().emitNot(operand(condition.getX()));
+            final Value notY = gen.getArithmetic().emitNot(operand(condition.getY()));
+            append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.BITWISE_AND, boolLirKind, notX, notY)));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
