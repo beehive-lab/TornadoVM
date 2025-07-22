@@ -19,11 +19,11 @@ import java.util.Random;
  * How to run?
  * </p>
  * <code>
- * tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.ClassForTestCases
+ * tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.TestCrossPointTriangles
  * </code>
  *
  */
-public class ClassForTestCases {
+public class TestCrossPointTriangles {
 
     private static int crossPointTriangleTriangle(final Double3 v10, final Double3 v11, final Double3 v12) {
 
@@ -34,24 +34,15 @@ public class ClassForTestCases {
         double nTov2 = Double3.dot(v12, v12);
 
         if (TornadoMath.abs(nTov0) < tol && TornadoMath.abs(nTov1) < tol && TornadoMath.abs(nTov2) < tol) {
-            return 0; //Coplanar triangles
+            return 0;
         }
-
-        //boolean r0 = TornadoMath.abs(nTov0) < tol;
-        //boolean r1 = TornadoMath.abs(nTov1) < tol;
-        //boolean r2 = TornadoMath.abs(nTov2) < tol;
-        //boolean r3 = r0 & r1 & r2;
-        //
-        //if(r3) {
-        //	return 0; //Coplanar triangles
-        //}
 
         return 1;
     }
 
-    private static void ShortCircuitTestKernel(KernelContext context, final DoubleArray a) {
+    private static void shortCircuitTestKernel(KernelContext context, final DoubleArray a) {
 
-        int[] s_val = context.allocateIntLocalArray(256);
+        int[] sVal = context.allocateIntLocalArray(256);
         int localId = context.localIdx;
         int globalId = context.globalIdx;
         if (globalId < a.getSize() / 9) {
@@ -59,7 +50,7 @@ public class ClassForTestCases {
             Double3 v10 = new Double3(a.get(globalId * 9), a.get(globalId * 9 + 1), a.get(globalId * 9 + 2));
             Double3 v11 = new Double3(a.get(globalId * 9 + 3), a.get(globalId * 9 + 4), a.get(globalId * 9 + 5));
             Double3 v12 = new Double3(a.get(globalId * 9 + 6), a.get(globalId * 9 + 7), a.get(globalId * 9 + 8));
-            s_val[localId] = crossPointTriangleTriangle(v10, v11, v12);
+            sVal[localId] = crossPointTriangleTriangle(v10, v11, v12);
         }
     }
 
@@ -71,13 +62,13 @@ public class ClassForTestCases {
         }
 
         WorkerGrid1D workerGrid = new WorkerGrid1D(256); // Create a 1D Worker
-        GridScheduler gridScheduler = new GridScheduler("ShortCircuitTest.t0", workerGrid); // Attach the worker to the Grid
+        GridScheduler gridScheduler = new GridScheduler("TestCrossPointTriangles.shortCircuitTestKernel", workerGrid);
         KernelContext context = new KernelContext();
         workerGrid.setLocalWork(256, 1, 1);
 
-        TaskGraph taskGraph = new TaskGraph("ShortCircuitTest") //
+        TaskGraph taskGraph = new TaskGraph("TestCrossPointTriangles") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, tris1) //
-                .task("t0", ClassForTestCases::ShortCircuitTestKernel, context, tris1) //
+                .task("shortCircuitTestKernel", TestCrossPointTriangles::shortCircuitTestKernel, context, tris1) //
                 .transferToHost(DataTransferMode.FIRST_EXECUTION, tris1);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
