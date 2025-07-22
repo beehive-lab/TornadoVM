@@ -375,19 +375,16 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public Variable emitConditional(LogicNode node, Value trueValue, Value falseValue) {
-        if (node instanceof IsNullNode) {
-            IsNullNode isNullNode = (IsNullNode) node;
+        if (node instanceof IsNullNode isNullNode) {
             LIRKind kind = gen.getLIRKind(isNullNode.getValue().stamp(NodeView.DEFAULT));
             Value nullValue = gen.emitConstant(kind, isNullNode.nullConstant());
             return gen.emitConditionalMove(kind.getPlatformKind(), operand(isNullNode.getValue()), nullValue, Condition.EQ, false, trueValue, falseValue);
-        } else if (node instanceof CompareNode) {
-            CompareNode compare = (CompareNode) node;
+        } else if (node instanceof CompareNode compare) {
             PlatformKind kind = gen.getLIRKind(compare.getX().stamp(NodeView.DEFAULT)).getPlatformKind();
             return gen.emitConditionalMove(kind, operand(compare.getX()), operand(compare.getY()), compare.condition().asCondition(), compare.unorderedIsTrue(), trueValue, falseValue);
-        } else if (node instanceof LogicConstantNode) {
-            return gen.emitMove(((LogicConstantNode) node).getValue() ? trueValue : falseValue);
-        } else if (node instanceof IntegerTestNode) {
-            IntegerTestNode test = (IntegerTestNode) node;
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            return gen.emitMove(logicConstant.getValue() ? trueValue : falseValue);
+        } else if (node instanceof IntegerTestNode test) {
             return gen.emitIntegerTestMove(operand(test.getX()), operand(test.getY()), trueValue, falseValue);
         } else if (node instanceof ShortCircuitOrNode orNode) {
             Value orValue = operand(orNode);
@@ -525,45 +522,37 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         LIRKind intLirKind = LIRKind.value(PTXKind.S32);
         LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
 
-        if (node instanceof FloatEqualsNode) {
-            final FloatEqualsNode condition = (FloatEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        if (node instanceof FloatEqualsNode floatEqualsNode) {
+            final Value x = operand(floatEqualsNode.getX());
+            final Value y = operand(floatEqualsNode.getY());
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_NE, intLirKind, x, y)));
-        } else if (node instanceof FloatLessThanNode) {
-            final FloatLessThanNode condition = (FloatLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatLessThanNode floatLessThanNode) {
+            final Value x = operand(floatLessThanNode.getX());
+            final Value y = operand(floatLessThanNode.getY());
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_GE, intLirKind, x, y)));
-        } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerBelowNode integerBelowNode) {
+            final Value x = operand(integerBelowNode.getX());
+            final Value y = operand(integerBelowNode.getY());
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_GE, boolLirKind, x, y)));
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
+            final Value x = operand(integerEqualsNode.getX());
+            final Value y = operand(integerEqualsNode.getY());
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_NE, boolLirKind, x, y)));
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerLessThanNode integerLessThanNode) {
+            final Value x = operand(integerLessThanNode.getX());
+            final Value y = operand(integerLessThanNode.getY());
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_GE, boolLirKind, x, y)));
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
+        } else if (node instanceof IsNullNode isNullNode) {
+            final Value value = operand(isNullNode.getValue());
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER))));
-        } else if (node instanceof IntegerTestNode) {
-            final IntegerTestNode testNode = (IntegerTestNode) node;
+        } else if (node instanceof IntegerTestNode testNode) {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             Value andRes = gen.getArithmetic().emitAnd(x, y);
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_NE, boolLirKind, andRes, new ConstantValue(boolLirKind, PrimitiveConstant.INT_0))));
-        } else if (node instanceof ShortCircuitOrNode) {
-            final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
-            final Value notX = gen.getArithmetic().emitNot(operand(condition.getX()));
-            final Value notY = gen.getArithmetic().emitNot(operand(condition.getY()));
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            final Value notX = gen.getArithmetic().emitNot(operand(shortCircuitOrNode.getX()));
+            final Value notY = gen.getArithmetic().emitNot(operand(shortCircuitOrNode.getY()));
             append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.BITWISE_AND, boolLirKind, notX, notY)));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
@@ -574,50 +563,41 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private Variable emitLogicNode(final LogicNode node) {
-        // Value result = null;
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(PTXKind.S32);
         LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
         Variable pred = getGen().newVariable(LIRKind.value(PTXKind.PRED));
-        if (node instanceof FloatEqualsNode) {
-            final FloatEqualsNode condition = (FloatEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        if (node instanceof FloatEqualsNode floatEqualsNode) {
+            final Value x = operand(floatEqualsNode.getX());
+            final Value y = operand(floatEqualsNode.getY());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, intLirKind, x, y)));
-        } else if (node instanceof FloatLessThanNode) {
-            final FloatLessThanNode condition = (FloatLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatLessThanNode floatLessThanNode) {
+            final Value x = operand(floatLessThanNode.getX());
+            final Value y = operand(floatLessThanNode.getY());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
-        } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerBelowNode integerBelowNode) {
+            final Value x = operand(integerBelowNode.getX());
+            final Value y = operand(integerBelowNode.getY());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
+            final Value x = operand(integerEqualsNode.getX());
+            final Value y = operand(integerEqualsNode.getY());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, intLirKind, x, y)));
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerLessThanNode integerLessThanNode) {
+            final Value x = operand(integerLessThanNode.getX());
+            final Value y = operand(integerLessThanNode.getY());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
+        } else if (node instanceof IsNullNode isNullNode) {
+            final Value value = operand(isNullNode.getValue());
             unimplemented("Logic: IsNullNode");
-        } else if (node instanceof IntegerTestNode) {
-            final IntegerTestNode testNode = (IntegerTestNode) node;
+        } else if (node instanceof IntegerTestNode testNode) {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             Value andRes = gen.getArithmetic().emitAnd(x, y);
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, boolLirKind, andRes, new ConstantValue(boolLirKind, PrimitiveConstant.INT_0))));
-        } else if (node instanceof ShortCircuitOrNode) {
-            final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
-            final Value x = getProcessedOperand(condition.getX(), condition.isXNegated());
-            final Value y = getProcessedOperand(condition.getY(), condition.isYNegated());
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            final Value x = getProcessedOperand(shortCircuitOrNode.getX(), shortCircuitOrNode.isXNegated());
+            final Value y = getProcessedOperand(shortCircuitOrNode.getY(), shortCircuitOrNode.isYNegated());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.BITWISE_OR, boolLirKind, x, y)));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
