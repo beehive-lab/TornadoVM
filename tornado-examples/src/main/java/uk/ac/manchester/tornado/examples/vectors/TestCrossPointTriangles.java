@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package uk.ac.manchester.tornado.examples.vectors;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -5,10 +22,14 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 
@@ -55,6 +76,13 @@ public class TestCrossPointTriangles {
     }
 
     public static void main() throws TornadoExecutionPlanException {
+
+        TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+        TornadoVMBackendType backendType = runtime.getBackendType(0);
+        switch (backendType) {
+            case SPIRV -> throw new TornadoRuntimeException("Backend not supported");
+        }
+
         DoubleArray tris1 = new DoubleArray(9 * 256);
         Random random = new Random();
         for (int i = 0; i < tris1.getSize(); i++) {
