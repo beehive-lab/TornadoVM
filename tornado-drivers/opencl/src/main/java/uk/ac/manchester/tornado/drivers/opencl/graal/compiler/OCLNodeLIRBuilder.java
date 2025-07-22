@@ -390,10 +390,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value y = operand(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, intLirKind, x, y);
         } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
+            final IntegerBelowNode integerBelowNode = (IntegerBelowNode) node;
+            final Value x = operand(integerBelowNode.getX());
+            final Value y = operand(integerBelowNode.getY());
+
+            Value cond1 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)));
+            Value cond2 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
+
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, cond1, cond2);
         } else if (node instanceof IntegerEqualsNode) {
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
             final Value x = operand(condition.getX());
