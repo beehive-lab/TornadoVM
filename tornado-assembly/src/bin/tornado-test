@@ -680,8 +680,7 @@ def runTestTheWorld(options, args):
                 if (args.live_mode):
                     os.system(testMethodCmd)
                 else:
-                    stats, failedTests, segFaults = runCommandWithStats(testMethodCmd, stats, failedTests, segFaults,
-                                                                        t.monitorClass)
+                    stats, failedTests, segFaults = runCommandWithStats(testMethodCmd, stats, failedTests, segFaults, t.monitorClass)
         elif (args.live_mode):
             command += "\""
             os.system(command)
