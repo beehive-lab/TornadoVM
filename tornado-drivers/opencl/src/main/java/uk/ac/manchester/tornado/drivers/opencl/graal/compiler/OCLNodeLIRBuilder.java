@@ -306,7 +306,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private Value emitNegatedLogicNode(final LogicNode node) {
         Value result;
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegatedLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
         if (node instanceof LogicalEqualsNode) {
@@ -343,6 +343,11 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
+        } else if (node instanceof ShortCircuitOrNode) {
+            final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
+            final Value x = operandOrConjunction(condition.getX());
+            final Value y = operandOrConjunction(condition.getY());
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, x, y);
         } else if (node instanceof IntegerTestNode) {
             final IntegerTestNode testNode = (IntegerTestNode) node;
             final Value x = operand(testNode.getX());
@@ -657,7 +662,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     trueValue,      //
                     falseValue);    //
         } else {
-            throw GraalError.unimplemented(node.toString());
+            throw unimplemented(node.toString());
         }
     }
 
