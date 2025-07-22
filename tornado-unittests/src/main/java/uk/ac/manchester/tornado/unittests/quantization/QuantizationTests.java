@@ -31,7 +31,7 @@ public class QuantizationTests extends TornadoTestBase {
 
     public static void performDP4A(Int8Array a, Int8Array b, IntArray result) {
         for (@Parallel int i = 0; i < result.getSize(); i++) {
-            int dot = QuantizationUtils.dp4a(a, b, 0, i * 4);
+            int dot = QuantizationUtils.dp4a(a, i * 4, b, i * 4,0);
             result.set(i, dot);
         }
     }

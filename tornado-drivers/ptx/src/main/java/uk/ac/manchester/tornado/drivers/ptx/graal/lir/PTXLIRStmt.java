@@ -98,11 +98,17 @@ public class PTXLIRStmt {
         @Use
         protected Value accumulator_c;
         @Use
-        protected Value offset;
+        protected Value offset_a;
         @Def
-        protected Value cnv_offset;
+        protected Value cnv_offset_a;
         @Def
-        protected Value add_header_offset;
+        protected Value add_header_offset_a;
+        @Use
+        protected Value offset_b;
+        @Def
+        protected Value cnv_offset_b;
+        @Def
+        protected Value add_header_offset_b;
         @Def
         protected Value offseted_address_a;
         @Def
@@ -110,7 +116,7 @@ public class PTXLIRStmt {
 
         protected int header_size;
 
-        public Dp4aStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value int8_b_base, Value load_four_int8_bytes_b, Value accumulator_c, Value offset, Value cnv_offset, Value add_header_offset, Value offseted_address_a, Value offseted_address_b, int header_size) {
+        public Dp4aStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value int8_b_base, Value load_four_int8_bytes_b, Value accumulator_c, Value offset_a, Value cnv_offset_a, Value add_header_offset_a, Value offset_b, Value cnv_offset_b, Value add_header_offset_b, Value offseted_address_a, Value offseted_address_b, int header_size) {
             super(TYPE);
             this.result = result;
             this.int8_a_base = int8_a_base;
@@ -118,9 +124,12 @@ public class PTXLIRStmt {
             this.int8_b_base = int8_b_base;
             this.load_four_int8_bytes_b = load_four_int8_bytes_b;
             this.accumulator_c = accumulator_c;
-            this.offset = offset;
-            this.cnv_offset = cnv_offset;
-            this.add_header_offset = add_header_offset;
+            this.offset_a = offset_a;
+            this.cnv_offset_a = cnv_offset_a;
+            this.add_header_offset_a = add_header_offset_a;
+            this.offset_b = offset_b;
+            this.cnv_offset_b = cnv_offset_b;
+            this.add_header_offset_b = add_header_offset_b;
             this.offseted_address_a = offseted_address_a;
             this.offseted_address_b = offseted_address_b;
             this.header_size = header_size;
@@ -130,23 +139,23 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             // instructions to calculate dp4a: dp4a.s32.s32 result, a, b, c;
 
-            // add header bytes to offset
+            // add header bytes to offset of a
             asm.emitSymbol(TAB);
             asm.emitSymbol("add.s32 ");
-            asm.emitValue(add_header_offset);
+            asm.emitValue(add_header_offset_a);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(offset);
+            asm.emitValue(offset_a);
             asm.emitSymbol(COMMA + SPACE);
             asm.emitConstant(header_size);
             asm.delimiter();
             asm.eol();
 
-            // convert offset to u64
+            // convert offset of a to u64
             asm.emitSymbol(TAB);
             asm.emit("cvt.u64.s32 ");
-            asm.emitValue(cnv_offset);
+            asm.emitValue(cnv_offset_a);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(add_header_offset);
+            asm.emitValue(add_header_offset_a);
             asm.delimiter();
             asm.eol();
 
@@ -157,7 +166,7 @@ public class PTXLIRStmt {
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(int8_a_base);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(cnv_offset);
+            asm.emitValue(cnv_offset_a);
             asm.delimiter();
             asm.eol();
 
@@ -171,6 +180,26 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
+            // add header bytes to offset of b
+            asm.emitSymbol(TAB);
+            asm.emitSymbol("add.s32 ");
+            asm.emitValue(add_header_offset_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitConstant(header_size);
+            asm.delimiter();
+            asm.eol();
+
+            // convert offset of b to u64
+            asm.emitSymbol(TAB);
+            asm.emit("cvt.u64.s32 ");
+            asm.emitValue(cnv_offset_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(add_header_offset_b);
+            asm.delimiter();
+            asm.eol();
+
             //add offset to base address of buffer b
             asm.emitSymbol(TAB);
             asm.emit("add.u64 ");
@@ -178,7 +207,7 @@ public class PTXLIRStmt {
             asm.emitSymbol(COMMA + SPACE);
             asm.emitValue(int8_b_base);
             asm.emitSymbol(COMMA + SPACE);
-            asm.emitValue(cnv_offset);
+            asm.emitValue(cnv_offset_b);
             asm.delimiter();
             asm.eol();
 

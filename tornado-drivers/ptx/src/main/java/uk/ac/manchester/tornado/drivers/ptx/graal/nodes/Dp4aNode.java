@@ -30,16 +30,19 @@ public class Dp4aNode extends ValueNode implements LIRLowerable {
     private ValueNode c;
 
     @Input
-    private ValueNode offset;
+    private ValueNode offset_a;
+    @Input
+    private ValueNode offset_b;
 
     private static int HEADER_SIZE = (int) TornadoNativeArray.ARRAY_HEADER;
 
-    public Dp4aNode(ValueNode a, ValueNode b, ValueNode c, ValueNode offset) {
+    public Dp4aNode(ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode c) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.a = a;
         this.b = b;
         this.c = c;
-        this.offset = offset;
+        this.offset_a = offset_a;
+        this.offset_b = offset_b;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -48,9 +51,13 @@ public class Dp4aNode extends ValueNode implements LIRLowerable {
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
 
         // variables to calculate the offsets
-        Value offset_value = generator.operand(offset);
-        Variable cnv_offset = tool.newVariable(LIRKind.value(PTXKind.U64));
-        Variable add_header_offset = tool.newVariable(LIRKind.value(PTXKind.U32));
+        Value offset_a_value = generator.operand(offset_a);
+        Variable cnv_offset_a = tool.newVariable(LIRKind.value(PTXKind.U64));
+        Variable add_header_offset_a = tool.newVariable(LIRKind.value(PTXKind.U32));
+
+        Value offset_b_value = generator.operand(offset_b);
+        Variable cnv_offset_b = tool.newVariable(LIRKind.value(PTXKind.U64));
+        Variable add_header_offset_b = tool.newVariable(LIRKind.value(PTXKind.U32));
 
         // address variables for a
         Value base_address_int8_a = generator.operand(a);
@@ -65,7 +72,7 @@ public class Dp4aNode extends ValueNode implements LIRLowerable {
         // variable for accumulator
         Value accumulator_c = generator.operand(c);
 
-        tool.append(new PTXLIRStmt.Dp4aStmt(result, base_address_int8_a, load_four_int8_bytes_a, base_address_int8_b, load_four_int8_bytes_b, accumulator_c, offset_value, cnv_offset, add_header_offset, offseted_address_a, offseted_address_b, HEADER_SIZE));
+        tool.append(new PTXLIRStmt.Dp4aStmt(result, base_address_int8_a, load_four_int8_bytes_a, base_address_int8_b, load_four_int8_bytes_b, accumulator_c, offset_a_value, cnv_offset_a, add_header_offset_a, offset_b_value, cnv_offset_b, add_header_offset_b, offseted_address_a, offseted_address_b, HEADER_SIZE));
         generator.setResult(this, result);
     }
 
