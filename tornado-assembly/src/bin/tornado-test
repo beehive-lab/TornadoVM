@@ -200,6 +200,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestShortCircuits"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.MMwithBytes"),

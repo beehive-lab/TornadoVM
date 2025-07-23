@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -300,7 +300,26 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitConditionalMove");
+        if (left.getValueKind().equals(LIRKind.value(PTXKind.PRED))) {
+            return emitConditionalMovePred(left, unorderedIsTrue, trueValue, falseValue);
+        } else {
+            return emitConditionalMoveValue(left, right, cond, unorderedIsTrue, trueValue, falseValue);
+        }
+    }
+
+    public Variable emitConditionalMovePred(Value left, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitConditionalMovePred: (%s) ? %s : %s, unorderedIsTrue:%s", left, trueValue, falseValue, unorderedIsTrue);
+
+        LIRKind kind = LIRKind.combine(trueValue, falseValue);
+        Variable result = newVariable(kind);
+
+        append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind, trueValue, falseValue, left)));
+
+        return result;
+    }
+
+    public Variable emitConditionalMoveValue(Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitConditionalMoveValue: (%s %s %s) ? %s : %s, unorderedIsTrue:%s", left, cond.operator, right, trueValue, falseValue, unorderedIsTrue);
 
         LIRKind kind = LIRKind.combine(trueValue, falseValue);
         Variable predicate = newVariable(LIRKind.value(PTXKind.PRED));
@@ -317,13 +336,13 @@ public class PTXLIRGenerator extends LIRGenerator {
      * based on a bitwise and operation between two values.
      *
      * @param leftVal
-     *            the left value of a condition
+     *     the left value of a condition
      * @param right
-     *            the right value of a condition
+     *     the right value of a condition
      * @param trueValue
-     *            the true value to move in the result
+     *     the true value to move in the result
      * @param falseValue
-     *            the false value to move in the result
+     *     the false value to move in the result
      * @return Variable: reference to the variable that contains the result
      */
     @Override
