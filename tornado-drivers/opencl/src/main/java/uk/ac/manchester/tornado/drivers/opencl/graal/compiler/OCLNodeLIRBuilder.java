@@ -306,49 +306,43 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private Value emitNegatedLogicNode(final LogicNode node) {
         Value result;
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegatedLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
-        if (node instanceof LogicalEqualsNode) {
-            final LogicalEqualsNode condition = (LogicalEqualsNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        if (node instanceof LogicalEqualsNode logicalEqualsNode) {
+            final Value x = operandOrConjunction(logicalEqualsNode.getX());
+            final Value y = operandOrConjunction(logicalEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, x, y);
-        } else if (node instanceof FloatEqualsNode) {
-            final FloatEqualsNode condition = (FloatEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatEqualsNode floatEqualsNode) {
+            final Value x = operand(floatEqualsNode.getX());
+            final Value y = operand(floatEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_NOT_EQUAL, intLirKind, x, y);
-        } else if (node instanceof FloatLessThanNode) {
-            final FloatLessThanNode condition = (FloatLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatLessThanNode floatLessThanNode) {
+            final Value x = operand(floatLessThanNode.getX());
+            final Value y = operand(floatLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x, y);
-        } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-
+        } else if (node instanceof IntegerBelowNode integerBelowNode) {
+            final Value x = operand(integerBelowNode.getX());
+            final Value y = operand(integerBelowNode.getY());
             Value cond1 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)));
             Value cond2 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
-
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, cond1, cond2);
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
+            final Value x = operand(integerEqualsNode.getX());
+            final Value y = operand(integerEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, x, y);
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerLessThanNode integerLessThanNode) {
+            final Value x = operand(integerLessThanNode.getX());
+            final Value y = operand(integerLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
+        } else if (node instanceof IsNullNode isNullNode) {
+            final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
-        } else if (node instanceof IntegerTestNode) {
-            final IntegerTestNode testNode = (IntegerTestNode) node;
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
+            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, x, y);
+        } else if (node instanceof IntegerTestNode testNode) {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
@@ -397,10 +391,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final IntegerBelowNode integerBelowNode = (IntegerBelowNode) node;
             final Value x = operand(integerBelowNode.getX());
             final Value y = operand(integerBelowNode.getY());
-
             Value cond1 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)));
             Value cond2 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
-
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, cond1, cond2);
         } else if (node instanceof IntegerEqualsNode) {
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
@@ -637,26 +629,23 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public Variable emitConditional(LogicNode node, Value trueValue, Value falseValue) {
-        if (node instanceof IsNullNode) {
-            IsNullNode isNullNode = (IsNullNode) node;
+        if (node instanceof IsNullNode isNullNode) {
             LIRKind kind = gen.getLIRKind(isNullNode.getValue().stamp(NodeView.DEFAULT));
             Value nullValue = gen.emitConstant(kind, isNullNode.nullConstant());
             return gen.emitConditionalMove(kind.getPlatformKind(), operand(isNullNode.getValue()), nullValue, Condition.EQ, false, trueValue, falseValue);
-        } else if (node instanceof CompareNode) {
-            CompareNode compare = (CompareNode) node;
+        } else if (node instanceof CompareNode compare) {
             PlatformKind kind = gen.getLIRKind(compare.getX().stamp(NodeView.DEFAULT)).getPlatformKind();
             return gen.emitConditionalMove(kind, operand(compare.getX()), operand(compare.getY()), compare.condition().asCondition(), compare.unorderedIsTrue(), trueValue, falseValue);
-        } else if (node instanceof LogicConstantNode) {
-            return gen.emitMove(((LogicConstantNode) node).getValue() ? trueValue : falseValue);
-        } else if (node instanceof IntegerTestNode) {
-            IntegerTestNode test = (IntegerTestNode) node;
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            return gen.emitMove(logicConstant.getValue() ? trueValue : falseValue);
+        } else if (node instanceof IntegerTestNode test) {
             return gen.emitIntegerTestMove(operand(test.getX()), operand(test.getY()), trueValue, falseValue);
         } else if (node instanceof ShortCircuitOrNode orNode) {
-            if (!((operand(orNode)).getValueKind() instanceof LIRKind)) {
-                throw new GraalError("Expected LIRKind, but got: " + (operand(orNode)).getValueKind());
+            Value orValue = operand(orNode);
+            if (!(orValue.getValueKind() instanceof LIRKind)) {
+                throw new GraalError("Expected LIRKind, but got: " + orValue.getValueKind());
             }
             LIRKind lirKind = (LIRKind) (operand(orNode)).getValueKind();
-            Value orValue = operand(orNode);
 
             return gen.emitConditionalMove(lirKind.getPlatformKind(), //
                     orValue, gen.emitConstant(lirKind, JavaConstant.forBoolean(true)), //
@@ -665,7 +654,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     trueValue,      //
                     falseValue);    //
         } else {
-            throw GraalError.unimplemented(node.toString());
+            throw unimplemented(node.toString());
         }
     }
 

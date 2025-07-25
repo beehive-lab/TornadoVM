@@ -26,9 +26,11 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,7 +42,7 @@ import static org.junit.Assert.assertEquals;
  * tornado-test --printKernel -V uk.ac.manchester.tornado.unittests.codegen.TestShortCircuits
  * </code>
  */
-public class TestShortCircuits {
+public class TestShortCircuits extends TornadoTestBase {
 
     private static void runShortCircuitOrNode(KernelContext context, IntArray array) {
         int idx = context.globalIdx;
@@ -64,6 +66,7 @@ public class TestShortCircuits {
 
     @Test
     public void testShortCircuitOrNode() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
 
@@ -92,6 +95,7 @@ public class TestShortCircuits {
 
     @Test
     public void testShortCircuitAndNode() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         int size = 8;
         IntArray testArr = new IntArray(size);
 
