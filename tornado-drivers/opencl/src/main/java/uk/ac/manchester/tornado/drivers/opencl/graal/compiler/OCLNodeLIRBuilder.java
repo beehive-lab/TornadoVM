@@ -358,65 +358,53 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
-        if (node instanceof LogicalEqualsNode) {
-            final LogicalEqualsNode condition = (LogicalEqualsNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        if (node instanceof LogicalEqualsNode logicalEqualsNode) {
+            final Value x = operandOrConjunction(logicalEqualsNode.getX());
+            final Value y = operandOrConjunction(logicalEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
-        } else if (node instanceof LogicalOrNode) {
-            final LogicalOrNode condition = (LogicalOrNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        } else if (node instanceof LogicalOrNode logicalOrNode) {
+            final Value x = operandOrConjunction(logicalOrNode.getX());
+            final Value y = operandOrConjunction(logicalOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
-        } else if (node instanceof LogicalAndNode) {
-            final LogicalAndNode condition = (LogicalAndNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        } else if (node instanceof LogicalAndNode logicalAndNode) {
+            final Value x = operandOrConjunction(logicalAndNode.getX());
+            final Value y = operandOrConjunction(logicalAndNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, x, y);
-        } else if (node instanceof LogicalNotNode) {
-            final LogicalNotNode condition = (LogicalNotNode) node;
-            final Value value = operandOrConjunction(condition.getValue());
+        } else if (node instanceof LogicalNotNode logicalNotNode) {
+            final Value value = operandOrConjunction(logicalNotNode.getValue());
             result = getGen().getArithmetic().genUnaryExpr(OCLUnaryOp.LOGICAL_NOT, boolLirKind, value);
-        } else if (node instanceof FloatEqualsNode) {
-            final FloatEqualsNode condition = (FloatEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatEqualsNode floatEqualsNode) {
+            final Value x = operand(floatEqualsNode.getX());
+            final Value y = operand(floatEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_EQUAL, intLirKind, x, y);
-        } else if (node instanceof FloatLessThanNode) {
-            final FloatLessThanNode condition = (FloatLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatLessThanNode floatLessThanNode) {
+            final Value x = operand(floatLessThanNode.getX());
+            final Value y = operand(floatLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, intLirKind, x, y);
-        } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode integerBelowNode = (IntegerBelowNode) node;
+        } else if (node instanceof IntegerBelowNode integerBelowNode) {
             final Value x = operand(integerBelowNode.getX());
             final Value y = operand(integerBelowNode.getY());
             Value cond1 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)));
             Value cond2 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, cond1, cond2);
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
+            final Value x = operand(integerEqualsNode.getX());
+            final Value y = operand(integerEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerLessThanNode integerLessThanNode) {
+            final Value x = operand(integerLessThanNode.getX());
+            final Value y = operand(integerLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
+        } else if (node instanceof IsNullNode isNullNode) {
+            final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
-        } else if (node instanceof ShortCircuitOrNode) {
-            final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
+            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
-        } else if (node instanceof IntegerTestNode) {
-            final IntegerTestNode testNode = (IntegerTestNode) node;
-            final Value x = operand(testNode.getX());
-            final Value y = operand(testNode.getY());
+        } else if (node instanceof IntegerTestNode integerTestNode) {
+            final Value x = operand(integerTestNode.getX());
+            final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
