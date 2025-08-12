@@ -89,7 +89,7 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("testSigned") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) //
-                .task("testKernel01", TestSigned::testKernel01, context, testArr) //
+                .task("testKernel01", TestSignedComparisonsCodegen::testKernel01, context, testArr) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArr);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -113,7 +113,7 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("testSigned") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) //
-                .task("testKernel02", TestSigned::testKernel02, context, testArr) //
+                .task("testKernel02", TestSignedComparisonsCodegen::testKernel02, context, testArr) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArr);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -138,7 +138,7 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("testSigned") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) //
-                .task("testKernel03", TestSigned::testKernel03, context, testArr) //
+                .task("testKernel03", TestSignedComparisonsCodegen::testKernel03, context, testArr) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArr);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
@@ -160,7 +160,7 @@ public class TestSignedComparisonsCodegen extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("testSigned").transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) //
-                .task("testKernel04", TestSigned::testKernel04, context, testArr)   //
+                .task("testKernel04", TestSignedComparisonsCodegen::testKernel04, context, testArr)   //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArr);
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
