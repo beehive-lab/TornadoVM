@@ -55,6 +55,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.EndNode;
@@ -68,9 +69,11 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.SafepointNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -720,14 +723,85 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             append(new OCLLIRStmt.MarkRelocateInstruction());
         }
 
+        handleMergeAtEnd(end, curBlock);
+    }
+
+    /**
+     * Handles phi moves at a merge reachable from {@code end}. If the merge is immediately followed by
+     * a {@link ReturnNode} and the surrounding CFG matches a specific if-structure, this emits a direct
+     * return instead of the usual phi moves.
+     */
+    private void handleMergeAtEnd(final AbstractEndNode end, final HIRBlock curBlock) {
         final AbstractMergeNode merge = end.merge();
+        if (merge == null) {
+            return; // Nothing to do without a merge
+        }
+
+        // Fast path: merge immediately followed by a ReturnNode
+        if (merge instanceof MergeNode && merge.next() instanceof ReturnNode) {
+            final HIRBlock pdom2 = curBlock.getDominator(2);
+            final HIRBlock predecessorBlock = curBlock.getFirstPredecessor();
+
+            if (pdom2 != null && predecessorBlock != null && blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
+
+                // If the true-successor of the outer-if (pdom2) leads to the predecessor's Begin,
+                // we can directly emit a return and skip materializing phi moves here.
+                final IfNode outerIf = getFirstNode(pdom2, IfNode.class);
+                final BeginNode predBegin = getFirstNode(predecessorBlock, BeginNode.class);
+
+                if (outerIf.trueSuccessor() == predBegin) {
+                    gen.emitReturn(null, null);
+                    return;
+                }
+            }
+
+            // Fall through to normal phi emission if the special pattern doesn't match.
+            emitNonLoopPhiMoves(merge, end);
+            return;
+        }
+
+        // General case: merge not followed by ReturnNode
+        emitNonLoopPhiMoves(merge, end);
+    }
+
+    /**
+     * Emits assign statements for non-loop phis at {@code merge} using the value incoming along {@code end}.
+     * Skips loop header phis and collapsible phis.
+     */
+    private void emitNonLoopPhiMoves(final AbstractMergeNode merge, final AbstractEndNode end) {
         for (ValuePhiNode phi : merge.valuePhis()) {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
-                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                // (!loopPhi && not collapsible) || (value is a non-loop Phi needing a move)
+                if (((!phi.isLoopPhi()) && (phi.singleValueOrThis() == phi)) || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+
+                    final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
+                    append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                }
             }
         }
+    }
+
+    private boolean blockContainsIfNode(HIRBlock block) {
+        boolean hasIfNode = false;
+        if (block != null) {
+            for (FixedNode n : block.getNodes()) {
+                if (n instanceof IfNode) {
+                    hasIfNode = true;
+                    break;
+                }
+            }
+        }
+        return hasIfNode;
+    }
+
+    private static <T extends FixedNode> T getFirstNode(HIRBlock block, Class<T> type) {
+        for (FixedNode n : block.getNodes()) {
+            if (type.isInstance(n)) {
+                return type.cast(n);
+            }
+        }
+        return null;
     }
 
     public Value operandForPhi(ValuePhiNode phi) {
