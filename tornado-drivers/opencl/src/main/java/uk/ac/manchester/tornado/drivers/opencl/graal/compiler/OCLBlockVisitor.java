@@ -264,11 +264,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 HIRBlock[] successors = IntStream.range(0, block.getDominator().getSuccessorCount()).mapToObj(i -> block.getDominator().getSuccessorAt(i)).toArray(HIRBlock[]::new);
 
                 for (int index = 0; index < successors.length; index++) {
-                    if (successors[index] != block && successors[index].getBeginNode() instanceof LoopExitNode && successors[index].getEndNode() instanceof LoopEndNode) {
-                        closeBlock(successors[index]);
-                    } else {
-                        closeBlock(successors[index]);
-                    }
+                    closeBlock(successors[index]);
                 }
             } else if (isIfBlock(block.getDominator())) {
                 IfNode ifNode = (IfNode) block.getDominator().getEndNode();
