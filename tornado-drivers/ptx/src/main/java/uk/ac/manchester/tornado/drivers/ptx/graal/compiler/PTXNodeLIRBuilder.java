@@ -533,7 +533,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof IntegerBelowNode integerBelowNode) {
             final Value x = operand(integerBelowNode.getX());
             final Value y = operand(integerBelowNode.getY());
-            append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.SETP_GE, boolLirKind, x, y)));
+
+            Value cond1 = getGen().newVariable(LIRKind.value(PTXKind.PRED));
+            append(new AssignStmt(cond1, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)))));
+            Value cond2 = getGen().newVariable(LIRKind.value(PTXKind.PRED));
+            append(new AssignStmt(cond2, new PTXBinary.Expr(PTXBinaryOp.SETP_GE, boolLirKind, x, y)));
+            append(new AssignStmt(result, new PTXBinary.Expr(PTXBinaryOp.BITWISE_OR, boolLirKind, cond1, cond2)));
         } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
             final Value x = operand(integerEqualsNode.getX());
             final Value y = operand(integerEqualsNode.getY());
@@ -578,7 +583,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof IntegerBelowNode integerBelowNode) {
             final Value x = operand(integerBelowNode.getX());
             final Value y = operand(integerBelowNode.getY());
-            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
+
+            Value cond1 = getGen().newVariable(LIRKind.value(PTXKind.PRED));
+            append(new AssignStmt(cond1, new PTXBinary.Expr(PTXBinaryOp.SETP_GE, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)))));
+            Value cond2 = getGen().newVariable(LIRKind.value(PTXKind.PRED));
+            append(new AssignStmt(cond2, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, boolLirKind, x, y)));
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.BITWISE_AND, boolLirKind, cond1, cond2)));
         } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
             final Value x = operand(integerEqualsNode.getX());
             final Value y = operand(integerEqualsNode.getY());
