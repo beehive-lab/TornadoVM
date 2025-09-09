@@ -45,7 +45,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -88,6 +90,7 @@ import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.DP4APackedNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
@@ -131,7 +134,7 @@ public class PTXGraphBuilderPlugins {
 
     private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, QuantizationUtils.class);
-        r.register(new InvocationPlugin("dp4a", Int8Array.class, int.class, Int8Array.class, int.class, int.class) {
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
                 Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
@@ -139,6 +142,26 @@ public class PTXGraphBuilderPlugins {
                 return true;
             }
         });
+
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
+                System.out.println("REGISTER PACKED DP4A");
+                DP4APackedNode dp4aPackedOp = new DP4APackedNode(a, b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aPackedOp);
+                return true;
+            }
+        });
+
     }
 
     private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -323,6 +346,19 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
+    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+        r.register(new InvocationPlugin("allocateByteLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, size);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -337,6 +373,9 @@ public class PTXGraphBuilderPlugins {
 
         elementType = PTXKind.B64.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
+
+        elementType = PTXKind.S8.asJavaKind();
+        registerByteLocalArray(r, returnedJavaKind, elementType);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {

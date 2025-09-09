@@ -94,6 +94,15 @@ public interface ExecutionContext {
     double[] allocateDoubleLocalArray(int size);
 
     /**
+     * Array Allocation in Local Memory (OpenCL terminology).
+     *
+     * @param size
+     *     size of the byte-array.
+     * @return byte[]
+     */
+    byte[] allocateByteLocalArray(int size);
+
+    /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>

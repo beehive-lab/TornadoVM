@@ -62,6 +62,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
@@ -510,6 +511,9 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operandOrConjunction(condition.getX());
             final Value y = operandOrConjunction(condition.getY());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.BITWISE_OR, boolLirKind, x, y)));
+        } else if (node instanceof LogicConstantNode) {
+            LogicConstantNode logicConstantNode = (LogicConstantNode) node;
+            append(new PTXLIRStmt.EmitBoolStmt(logicConstantNode.getValue()));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
