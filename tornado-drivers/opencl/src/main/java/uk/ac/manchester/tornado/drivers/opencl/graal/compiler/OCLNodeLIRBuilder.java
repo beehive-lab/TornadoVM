@@ -31,13 +31,16 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.util.Collection;
 import java.util.List;
 
+import jdk.vm.ci.meta.PlatformKind;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -52,6 +55,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.EndNode;
@@ -59,19 +63,24 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.SafepointNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.CompareNode;
+import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
 import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
@@ -300,45 +309,43 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private Value emitNegatedLogicNode(final LogicNode node) {
         Value result;
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegatedLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
-        if (node instanceof LogicalEqualsNode) {
-            final LogicalEqualsNode condition = (LogicalEqualsNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        if (node instanceof LogicalEqualsNode logicalEqualsNode) {
+            final Value x = operandOrConjunction(logicalEqualsNode.getX());
+            final Value y = operandOrConjunction(logicalEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, x, y);
-        } else if (node instanceof FloatEqualsNode) {
-            final FloatEqualsNode condition = (FloatEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatEqualsNode floatEqualsNode) {
+            final Value x = operand(floatEqualsNode.getX());
+            final Value y = operand(floatEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_NOT_EQUAL, intLirKind, x, y);
-        } else if (node instanceof FloatLessThanNode) {
-            final FloatLessThanNode condition = (FloatLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatLessThanNode floatLessThanNode) {
+            final Value x = operand(floatLessThanNode.getX());
+            final Value y = operand(floatLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x, y);
-        } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerBelowNode integerBelowNode) {
+            final Value x = operand(integerBelowNode.getX());
+            final Value y = operand(integerBelowNode.getY());
+            Value cond1 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)));
+            Value cond2 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, cond1, cond2);
+        } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
+            final Value x = operand(integerEqualsNode.getX());
+            final Value y = operand(integerEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, x, y);
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerLessThanNode integerLessThanNode) {
+            final Value x = operand(integerLessThanNode.getX());
+            final Value y = operand(integerLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
+        } else if (node instanceof IsNullNode isNullNode) {
+            final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
-        } else if (node instanceof IntegerTestNode) {
-            final IntegerTestNode testNode = (IntegerTestNode) node;
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
+            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, x, y);
+        } else if (node instanceof IntegerTestNode testNode) {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
@@ -354,63 +361,53 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
-        if (node instanceof LogicalEqualsNode) {
-            final LogicalEqualsNode condition = (LogicalEqualsNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        if (node instanceof LogicalEqualsNode logicalEqualsNode) {
+            final Value x = operandOrConjunction(logicalEqualsNode.getX());
+            final Value y = operandOrConjunction(logicalEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
-        } else if (node instanceof LogicalOrNode) {
-            final LogicalOrNode condition = (LogicalOrNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        } else if (node instanceof LogicalOrNode logicalOrNode) {
+            final Value x = operandOrConjunction(logicalOrNode.getX());
+            final Value y = operandOrConjunction(logicalOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
-        } else if (node instanceof LogicalAndNode) {
-            final LogicalAndNode condition = (LogicalAndNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        } else if (node instanceof LogicalAndNode logicalAndNode) {
+            final Value x = operandOrConjunction(logicalAndNode.getX());
+            final Value y = operandOrConjunction(logicalAndNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, x, y);
-        } else if (node instanceof LogicalNotNode) {
-            final LogicalNotNode condition = (LogicalNotNode) node;
-            final Value value = operandOrConjunction(condition.getValue());
+        } else if (node instanceof LogicalNotNode logicalNotNode) {
+            final Value value = operandOrConjunction(logicalNotNode.getValue());
             result = getGen().getArithmetic().genUnaryExpr(OCLUnaryOp.LOGICAL_NOT, boolLirKind, value);
-        } else if (node instanceof FloatEqualsNode) {
-            final FloatEqualsNode condition = (FloatEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatEqualsNode floatEqualsNode) {
+            final Value x = operand(floatEqualsNode.getX());
+            final Value y = operand(floatEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_EQUAL, intLirKind, x, y);
-        } else if (node instanceof FloatLessThanNode) {
-            final FloatLessThanNode condition = (FloatLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof FloatLessThanNode floatLessThanNode) {
+            final Value x = operand(floatLessThanNode.getX());
+            final Value y = operand(floatLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, intLirKind, x, y);
-        } else if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerBelowNode integerBelowNode) {
+            final Value x = operand(integerBelowNode.getX());
+            final Value y = operand(integerBelowNode.getY());
+            Value cond1 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, gen.emitConstant(intLirKind, JavaConstant.forInt(0)));
+            Value cond2 = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_AND, boolLirKind, cond1, cond2);
+        } else if (node instanceof IntegerEqualsNode integerEqualsNode) {
+            final Value x = operand(integerEqualsNode.getX());
+            final Value y = operand(integerEqualsNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
+        } else if (node instanceof IntegerLessThanNode integerLessThanNode) {
+            final Value x = operand(integerLessThanNode.getX());
+            final Value y = operand(integerLessThanNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
+        } else if (node instanceof IsNullNode isNullNode) {
+            final Value value = operand(isNullNode.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
-        } else if (node instanceof ShortCircuitOrNode) {
-            final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
-            final Value x = operandOrConjunction(condition.getX());
-            final Value y = operandOrConjunction(condition.getY());
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            final Value x = operandOrConjunction(shortCircuitOrNode.getX());
+            final Value y = operandOrConjunction(shortCircuitOrNode.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
-        } else if (node instanceof IntegerTestNode) {
-            final IntegerTestNode testNode = (IntegerTestNode) node;
-            final Value x = operand(testNode.getX());
-            final Value y = operand(testNode.getY());
+        } else if (node instanceof IntegerTestNode integerTestNode) {
+            final Value x = operand(integerTestNode.getX());
+            final Value y = operand(integerTestNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
@@ -559,6 +556,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit(loopExitNode);
         } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
             emitShortCircuitOrNode(shortCircuitOrNode);
+        } else if (node instanceof ConditionalNode conditionalNode) {
+            emitConditionalNode(conditionalNode);
         } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
             // ignore emit-action
         } else {
@@ -594,12 +593,60 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitShortCircuitOrNode(ShortCircuitOrNode node) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitShortCircuitOrNode: %s, (X: %s - isNegated: %s) || (Y: %s - isNegated: %s)", node, node.getX(), node.isXNegated(), node.getY(), node
+                .isYNegated());
+
         LIRKind lirKind = LIRKind.value(OCLKind.BOOL);
         final Variable result = gen.newVariable(lirKind);
-        final Value x = operandOrConjunction(node.getX());
-        final Value y = operandOrConjunction(node.getY());
-        append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.LOGICAL_OR, lirKind, x, y)));
+
+        final Value x = getProcessedOperand(node.getX(), node.isXNegated());
+        final Value y = getProcessedOperand(node.getY(), node.isYNegated());
+
+        Value orExpr = new OCLBinary.Expr(OCLBinaryOp.LOGICAL_OR, lirKind, x, y);
+        append(new AssignStmt(result, orExpr));
         setResult(node, result);
+    }
+
+    private Value getProcessedOperand(LogicNode operand, boolean isNegated) {
+        return isNegated ? emitNegatedLogicNode(operand) : operandOrConjunction(operand);
+    }
+
+    public void emitConditionalNode(ConditionalNode conditional) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitConditionalNode: %s", conditional);
+        Value tVal = operand(conditional.trueValue());
+        Value fVal = operand(conditional.falseValue());
+        setResult(conditional, emitConditional(conditional.condition(), tVal, fVal));
+    }
+
+    @Override
+    public Variable emitConditional(LogicNode node, Value trueValue, Value falseValue) {
+        if (node instanceof IsNullNode isNullNode) {
+            LIRKind kind = gen.getLIRKind(isNullNode.getValue().stamp(NodeView.DEFAULT));
+            Value nullValue = gen.emitConstant(kind, isNullNode.nullConstant());
+            return gen.emitConditionalMove(kind.getPlatformKind(), operand(isNullNode.getValue()), nullValue, Condition.EQ, false, trueValue, falseValue);
+        } else if (node instanceof CompareNode compare) {
+            PlatformKind kind = gen.getLIRKind(compare.getX().stamp(NodeView.DEFAULT)).getPlatformKind();
+            return gen.emitConditionalMove(kind, operand(compare.getX()), operand(compare.getY()), compare.condition().asCondition(), compare.unorderedIsTrue(), trueValue, falseValue);
+        } else if (node instanceof LogicConstantNode logicConstant) {
+            return gen.emitMove(logicConstant.getValue() ? trueValue : falseValue);
+        } else if (node instanceof IntegerTestNode test) {
+            return gen.emitIntegerTestMove(operand(test.getX()), operand(test.getY()), trueValue, falseValue);
+        } else if (node instanceof ShortCircuitOrNode orNode) {
+            Value orValue = operand(orNode);
+            if (!(orValue.getValueKind() instanceof LIRKind)) {
+                throw new GraalError("Expected LIRKind, but got: " + orValue.getValueKind());
+            }
+            LIRKind lirKind = (LIRKind) (operand(orNode)).getValueKind();
+
+            return gen.emitConditionalMove(lirKind.getPlatformKind(), //
+                    orValue, gen.emitConstant(lirKind, JavaConstant.forBoolean(true)), //
+                    Condition.EQ,   //
+                    false,          //
+                    trueValue,      //
+                    falseValue);    //
+        } else {
+            throw unimplemented(node.toString());
+        }
     }
 
     private void emitLoopExit(LoopExitNode node) {
@@ -676,14 +723,85 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             append(new OCLLIRStmt.MarkRelocateInstruction());
         }
 
+        handleMergeAtEnd(end, curBlock);
+    }
+
+    /**
+     * Handles phi moves at a merge reachable from {@code end}. If the merge is immediately followed by
+     * a {@link ReturnNode} and the surrounding CFG matches a specific if-structure, this emits a direct
+     * return instead of the usual phi moves.
+     */
+    private void handleMergeAtEnd(final AbstractEndNode end, final HIRBlock curBlock) {
         final AbstractMergeNode merge = end.merge();
+        if (merge == null) {
+            return; // Nothing to do without a merge
+        }
+
+        // Fast path: merge immediately followed by a ReturnNode
+        if (merge instanceof MergeNode && merge.next() instanceof ReturnNode) {
+            final HIRBlock pdom2 = curBlock.getDominator(2);
+            final HIRBlock predecessorBlock = curBlock.getFirstPredecessor();
+
+            if (pdom2 != null && predecessorBlock != null && blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
+
+                // If the true-successor of the outer-if (pdom2) leads to the predecessor's Begin,
+                // we can directly emit a return and skip materializing phi moves here.
+                final IfNode outerIf = getFirstNode(pdom2, IfNode.class);
+                final BeginNode predBegin = getFirstNode(predecessorBlock, BeginNode.class);
+
+                if (outerIf.trueSuccessor() == predBegin) {
+                    gen.emitReturn(null, null);
+                    return;
+                }
+            }
+
+            // Fall through to normal phi emission if the special pattern doesn't match.
+            emitNonLoopPhiMoves(merge, end);
+            return;
+        }
+
+        // General case: merge not followed by ReturnNode
+        emitNonLoopPhiMoves(merge, end);
+    }
+
+    /**
+     * Emits assign statements for non-loop phis at {@code merge} using the value incoming along {@code end}.
+     * Skips loop header phis and collapsible phis.
+     */
+    private void emitNonLoopPhiMoves(final AbstractMergeNode merge, final AbstractEndNode end) {
         for (ValuePhiNode phi : merge.valuePhis()) {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
-                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                // (!loopPhi && not collapsible) || (value is a non-loop Phi needing a move)
+                if (((!phi.isLoopPhi()) && (phi.singleValueOrThis() == phi)) || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+
+                    final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
+                    append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                }
             }
         }
+    }
+
+    private boolean blockContainsIfNode(HIRBlock block) {
+        boolean hasIfNode = false;
+        if (block != null) {
+            for (FixedNode n : block.getNodes()) {
+                if (n instanceof IfNode) {
+                    hasIfNode = true;
+                    break;
+                }
+            }
+        }
+        return hasIfNode;
+    }
+
+    private static <T extends FixedNode> T getFirstNode(HIRBlock block, Class<T> type) {
+        for (FixedNode n : block.getNodes()) {
+            if (type.isInstance(n)) {
+                return type.cast(n);
+            }
+        }
+        return null;
     }
 
     public Value operandForPhi(ValuePhiNode phi) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,17 +19,24 @@
 package uk.ac.manchester.tornado.unittests.branching;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -190,6 +197,16 @@ public class TestConditionals extends TornadoTestBase {
                 }
             }
         }
+    }
+
+    private static void testShortCircuit(KernelContext context, IntArray array) {
+        int idx = context.globalIdx;
+
+        int i = 1 - idx;
+        int j = 1 + idx;
+
+        boolean isInBounds = i < array.getSize() && j < array.getSize();
+        array.set(idx, isInBounds ? 1 : 0);
     }
 
     @Test
@@ -544,5 +561,35 @@ public class TestConditionals extends TornadoTestBase {
         for (int i = 0; i < size * size; i++) {
             assertEquals(sequential.get(i), output.get(i));
         }
+    }
+
+    @Test
+    public void testConditionalShortCircuit() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+        IntArray testArr = new IntArray(8);
+
+        // When using the kernel-parallel API, we need to create a Grid and a Worker
+        WorkerGrid workerGrid = new WorkerGrid1D(8);    // Create a 1D Worker
+        GridScheduler gridScheduler = new GridScheduler("testConditionalShortCircuit.kernel", workerGrid);  // Attach the worker to the Grid
+        KernelContext context = new KernelContext();             // Create a context
+
+        TaskGraph taskGraph = new TaskGraph("testConditionalShortCircuit").transferToDevice(DataTransferMode.FIRST_EXECUTION, testArr) // Transfer data from host to device only in the first execution
+                .task("kernel", TestConditionals::testShortCircuit, context, testArr)   // Each task points to an existing Java method
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, testArr);     // Transfer data from device to host
+
+        // Create an immutable task-graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        // Create an execution plan from an immutable task-graph
+        boolean caughtInternalException = false;
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withGridScheduler(gridScheduler).execute();
+        } catch (TornadoInternalError e) {
+            System.out.println(e.getMessage());
+            caughtInternalException = true;
+        } catch (TornadoExecutionPlanException e) {
+            throw new RuntimeException(e);
+        }
+        assertFalse(caughtInternalException);
     }
 }

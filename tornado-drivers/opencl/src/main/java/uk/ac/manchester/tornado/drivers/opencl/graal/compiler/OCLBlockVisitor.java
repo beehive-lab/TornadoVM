@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
@@ -56,6 +57,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
     OCLAssembler asm;
     Set<HIRBlock> merges;
     Map<HIRBlock, Integer> closedLoops;
+    Map<HIRBlock, Boolean> openBlocks;
+    Map<HIRBlock, Boolean> closedBlocks;
     Set<HIRBlock> switches;
     Set<Node> switchClosed;
     HashMap<HIRBlock, Integer> pending;
@@ -70,6 +73,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
         switches = new HashSet<>();
         switchClosed = new HashSet<>();
         closedLoops = new HashMap<>();
+        openBlocks = new HashMap<>();
+        closedBlocks = new HashMap<>();
         pending = new HashMap<>();
         rmvEndBracket = new HashSet<>();
     }
@@ -97,7 +102,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
         asm.eolOn();
     }
 
-    // Update a list of basic blocks to close. We add a block into the rvmEndBracket
+    // Update a list of basic blocks to close. We add a block into the rmvEndBracket
     // list if the current block starts with a lookExitNode and the false successor
     // of the dominator points to the loopExitNode followed by an end-node.
     private void updateListEndBracketsForLoopExitNodes(HIRBlock block) {
@@ -125,6 +130,13 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                                 .getBeginNode() instanceof LoopExitNode)
                             rmvEndBracket.add(block);
                     }
+                }
+            } else {
+                // If this block is part of a merge and its dominator has not been closed yet,
+                // add it to the exception list instead of closing. This prevents emitting
+                // duplicate end-scope markers for blocks whose dominators are already finalized.
+                if (merges.contains(block) && !wasBlockAlreadyClosed(dom)) {
+                    rmvEndBracket.add(block);
                 }
             }
         }
@@ -174,6 +186,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
 
     @Override
     public HIRBlock enter(HIRBlock block) {
+        markBlockOpen(block);
         boolean isMerge = block.getBeginNode() instanceof MergeNode;
         if (isMerge) {
             asm.eolOn();
@@ -201,7 +214,10 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
     }
 
     private void closeBlock(HIRBlock block) {
-        asm.endScope(block.toString());
+        if (openBlocks.getOrDefault(block, false) && !wasBlockAlreadyClosed(block)) {
+            asm.endScope(block.toString());
+            markBlockClosed(block);
+        }
     }
 
     private void checkClosingBlockInsideIf(HIRBlock block, HIRBlock pdom) {
@@ -247,12 +263,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                  */
                 HIRBlock[] successors = IntStream.range(0, block.getDominator().getSuccessorCount()).mapToObj(i -> block.getDominator().getSuccessorAt(i)).toArray(HIRBlock[]::new);
 
-                int index = 0;
-                if (successors[index] == block) {
-                    index = 1;
-                }
-                if (successors[index].getBeginNode() instanceof LoopExitNode && successors[index].getEndNode() instanceof LoopEndNode) {
-                    closeBlock(block);
+                for (int index = 0; index < successors.length; index++) {
+                    closeBlock(successors[index]);
                 }
             } else if (isIfBlock(block.getDominator())) {
                 IfNode ifNode = (IfNode) block.getDominator().getEndNode();
@@ -278,13 +290,28 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
         }
     }
 
-    private boolean wasBlockAlreadyClosed(HIRBlock block) {
+    private boolean wasLoopBlockAlreadyClosed(HIRBlock block) {
         HIRBlock dominator = block.getDominator();
         if (dominator.getLoop() != null) {
             int closeCount = closedLoops.getOrDefault(dominator.getLoop().getHeader(), 0);
             return closeCount == dominator.getLoop().getLoopExits().size();
         }
         return false;
+    }
+
+    private boolean wasBlockAlreadyClosed(HIRBlock block) {
+        if (block != null) {
+            return closedBlocks.getOrDefault(block, false);
+        }
+        return false;
+    }
+
+    private void markBlockOpen(HIRBlock block) {
+        openBlocks.put(block, true);
+    }
+
+    private void markBlockClosed(HIRBlock block) {
+        closedBlocks.put(block, true);
     }
 
     private void incrementClosedLoops(HIRBlock loopBeginBlock) {
@@ -390,7 +417,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(block) && block.getPredecessorCount() > 2)) {
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
-                    if (!wasBlockAlreadyClosed(block) && !(!isComplexLoopCondition(block) && isBlockInABreak(block))) {
+                    if (!wasLoopBlockAlreadyClosed(block) && !(!isComplexLoopCondition(block) && isBlockInABreak(block))) {
                         if (!(rmvEndBracket.contains(block))) {
                             closeBlock(block);
                         }
@@ -401,7 +428,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
             } else {
                 checkClosingBlockInsideIf(block, pdom);
             }
-        } else if (block.getBeginNode() instanceof LoopExitNode && block.getBeginNode().successors().filter(ReturnNode.class).isNotEmpty() && !wasBlockAlreadyClosed(block)) {
+        } else if (block.getBeginNode() instanceof LoopExitNode && block.getBeginNode().successors().filter(ReturnNode.class).isNotEmpty() && !wasLoopBlockAlreadyClosed(block)) {
             closeBlock(block);
         } else {
             closeBranchBlock(block);
@@ -529,7 +556,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
 
     private void closeBranchBlock(HIRBlock block) {
         final HIRBlock dom = block.getDominator();
-        if ((dom != null && wasBlockAlreadyClosed(block)) || (block.isLoopEnd() && !(block.getBeginNode() instanceof LoopExitNode))) {
+        if ((dom != null && wasLoopBlockAlreadyClosed(block)) || (block.isLoopEnd() && !(block.getBeginNode() instanceof LoopExitNode))) {
             return;
         }
 
