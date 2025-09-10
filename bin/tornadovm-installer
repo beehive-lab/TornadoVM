@@ -50,14 +50,13 @@ from pathlib import Path
 from shutil import which
 from typing import Dict, List, Optional, Tuple, Union
 from abc import ABC, abstractmethod
-import wget
 import install_python_modules as tornadoReq
+tornadoReq.check_python_dependencies()
+import wget
 import config_utils as cutils
 import installer_config as config
 from packaging import version
 import textwrap
-
-tornadoReq.check_python_dependencies()
 
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
