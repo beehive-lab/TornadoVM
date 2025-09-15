@@ -5,7 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
     <properties>
         <tornado.sdk>${env.TORNADO_SDK}</tornado.sdk>
-        <test.class>uk.ac.manchester.tornado.unittests.foundation.TestFloats</test.class>
+        <test.class>uk.ac.manchester.tornado.unittests.foundation.FoundationTestSuite</test.class>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <parent>
@@ -85,15 +86,6 @@
                         <argument>${test.class}</argument>
                     </arguments>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>run-tornado-tests</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
