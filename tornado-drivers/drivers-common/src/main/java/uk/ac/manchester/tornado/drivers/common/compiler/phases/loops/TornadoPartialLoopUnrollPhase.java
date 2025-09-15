@@ -106,7 +106,7 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
     private StructuredGraph checkStatus(StructuredGraph graph, StructuredGraph snapshot, OptimizationStatus status) {
         return status != OptimizationStatus.SUCCESS ? snapshot : graph;
     }
-    
+
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
 
