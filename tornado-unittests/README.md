@@ -8,23 +8,23 @@ It contains a set of unit tests that can be run with Maven or with a custom Torn
 
 ```bash
 # Basic data types
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFloats
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestIntegers
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestDoubles
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestLong
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestShorts
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFloats
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestIntegers
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestDoubles
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestLong
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestShorts
 
 # Control flow and algorithms
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestIf
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.MultipleRuns
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestIf
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.MultipleRuns
 ```
 
 
 ### Debug and Profiling Options 
 
 ```bash
-mvn test -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFloats \
+mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFloats \
   -Dtornado.printKernel=True
 ```
 
