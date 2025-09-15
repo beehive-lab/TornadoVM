@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
 import java.util.Optional;
 
+import org.graalvm.compiler.loop.phases.LoopTransformations;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
@@ -58,24 +59,23 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
     }
 
     private static OptimizationStatus partialUnroll(StructuredGraph graph, MidTierContext context) {
-
         LoopsData dataCounted;
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
+        canonicalizer.apply(graph, context);
         try {
             dataCounted = new TornadoLoopsData(graph);
         } catch (NullPointerException nullPointerException) {
             return OptimizationStatus.ERROR;
         }
-
-        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
-
-        canonicalizer.apply(graph, context);
         dataCounted.detectCountedLoops();
         try {
             dataCounted.countedLoops().forEach(loop -> {
-                int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
-                if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {
-                    LoopFragmentInside loopBody = loop.inside().duplicate();
-                    loopBody.insertWithinAfter(loop, null);
+                if (LoopTransformations.isUnrollableLoop(loop)) {
+                    int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
+                    if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {
+                        LoopFragmentInside loopBody = loop.inside().duplicate();
+                        loopBody.insertWithinAfter(loop, null);
+                    }
                 }
             });
 
@@ -106,7 +106,7 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
     private StructuredGraph checkStatus(StructuredGraph graph, StructuredGraph snapshot, OptimizationStatus status) {
         return status != OptimizationStatus.SUCCESS ? snapshot : graph;
     }
-
+    
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
 
