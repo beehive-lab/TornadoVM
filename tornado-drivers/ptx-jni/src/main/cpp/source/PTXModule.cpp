@@ -125,30 +125,6 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
- * Method:    cuModuleLoad
- * Signature:
- */
-JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleLoad
-  (JNIEnv *env, jclass clazz) {
-    CUresult result;
-    CUmodule module;
-
-    /// FIXME: don't use hard coding, pass them from API instead.
-    result = cuModuleLoad(&module, "/home/ruiqi/TornadoVM/Tornado_experiments_dump/tornado_matmul1D_2.cubin");
-    LOG_PTX_AND_VALIDATE("cuModuleLoad", result);
-
-    /// FIXME
-    if (result != CUDA_SUCCESS) {
-        printf("Reading .cubin file failed! (%d)\n", result);
-        fflush(stdout);
-        jbyteArray error_array = env->NewByteArray(0);
-        return error_array;
-    }
-    return from_module(env, &module);
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Method:    cuModuleUnload
  * Signature: ([B)J
  */

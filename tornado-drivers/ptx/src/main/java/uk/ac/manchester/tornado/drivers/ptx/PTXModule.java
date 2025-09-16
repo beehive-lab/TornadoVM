@@ -33,7 +33,6 @@ public class PTXModule {
     public PTXModule(String name, byte[] source, String kernelFunctionName) {
         //moduleWrapper = cuModuleLoadData(source);
         moduleWrapper = cuModuleLoadDataEx(source);
-        //moduleWrapper = cuModuleLoad();
         this.source = source;
         this.kernelFunctionName = kernelFunctionName;
         maxBlockSize = -1;
@@ -43,8 +42,6 @@ public class PTXModule {
     private static native byte[] cuModuleLoadData(byte[] source);
 
     private static native byte[] cuModuleLoadDataEx(byte[] source);
-
-    private static native byte[] cuModuleLoad();
 
     private static native long cuModuleUnload(byte[] module);
 
