@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2023, 2024 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
 import java.util.Optional;
 
+import org.graalvm.compiler.loop.phases.LoopTransformations;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
@@ -58,24 +59,23 @@ public class TornadoPartialLoopUnrollPhase extends BasePhase<MidTierContext> {
     }
 
     private static OptimizationStatus partialUnroll(StructuredGraph graph, MidTierContext context) {
-
         LoopsData dataCounted;
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
+        canonicalizer.apply(graph, context);
         try {
             dataCounted = new TornadoLoopsData(graph);
         } catch (NullPointerException nullPointerException) {
             return OptimizationStatus.ERROR;
         }
-
-        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
-
-        canonicalizer.apply(graph, context);
         dataCounted.detectCountedLoops();
         try {
             dataCounted.countedLoops().forEach(loop -> {
-                int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
-                if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {
-                    LoopFragmentInside loopBody = loop.inside().duplicate();
-                    loopBody.insertWithinAfter(loop, null);
+                if (LoopTransformations.isUnrollableLoop(loop)) {
+                    int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
+                    if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {
+                        LoopFragmentInside loopBody = loop.inside().duplicate();
+                        loopBody.insertWithinAfter(loop, null);
+                    }
                 }
             });
 
