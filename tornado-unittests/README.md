@@ -5,6 +5,7 @@ It contains a set of unit tests that can be run with Maven or with a custom Torn
 
 
 ## Testing TornadoVM Unit Tests with Maven and JUnit Core
+Run any of the following commands from the `tornado-unittests` module.
 
 ```bash
 # Basic data types
