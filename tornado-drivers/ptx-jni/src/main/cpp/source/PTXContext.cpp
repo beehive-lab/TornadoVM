@@ -39,7 +39,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
     CUdevice *dev = (CUdevice *) cuDevice;
     CUcontext *ctx = static_cast<CUcontext *>(malloc(sizeof(CUcontext)));
     #if (__CUDACC_VER_MAJOR__ >= 13) || (CUDA_VERSION >= 13000)
-        // CUDA 13+
+        /* CUDA 13+, ctxCreateParams is left empty since the documentation for it is not
+           informative at this point. Thus it is left empty as per the latest CUDA examples.
+        */
         CUctxCreateParams ctxCreateParams = {};
         CUresult result = cuCtxCreate(ctx, &ctxCreateParams, CU_CTX_SCHED_YIELD, *dev);
     #else
