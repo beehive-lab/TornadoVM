@@ -49,5 +49,11 @@ def check_python_dependencies():
         subprocess.call(["pip3", "install", "wget"], stderr=subprocess.DEVNULL)
         import wget
 
+    try:
+        import packaging
+    except:
+        subprocess.call(["pip3", "install", "packaging"], stderr=subprocess.DEVNULL)
+        import packaging
+
     return 0
     
