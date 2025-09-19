@@ -3,6 +3,12 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <tornado.sdk>${env.TORNADO_SDK}</tornado.sdk>
+        <test.class>uk.ac.manchester.tornado.unittests.foundation.FoundationTestSuite</test.class>
+        <maven.test.skip>true</maven.test.skip>
+    </properties>
+
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
@@ -32,4 +38,55 @@
             <artifactId>lucene-core</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Skip the default test phase since we'll use exec plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M9</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+
+            <!-- Use exec plugin to run the working Java command -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <executable>${env.JAVA_HOME}/bin/java</executable>
+                    <arguments>
+                        <argument>-server</argument>
+                        <argument>-XX:+UnlockExperimentalVMOptions</argument>
+                        <argument>-XX:+EnableJVMCI</argument>
+                        <argument>-XX:-UseCompressedClassPointers</argument>
+                        <argument>--enable-preview</argument>
+                        <argument>-Djava.library.path=${env.TORNADO_SDK}/lib</argument>
+                        <argument>--module-path=.:${env.TORNADO_SDK}/share/java/tornado</argument>
+                        <argument>-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph</argument>
+                        <argument>-Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime</argument>
+                        <argument>-Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado</argument>
+                        <argument>-Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor</argument>
+                        <argument>-Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel</argument>
+                        <argument>--upgrade-module-path</argument>
+                        <argument>${tornado.sdk}/share/java/graalJars</argument>
+                        <argument>-XX:+UseParallelGC</argument>
+                        <argument>@${tornado.sdk}/etc/exportLists/common-exports</argument>
+                        <argument>@${tornado.sdk}/etc/exportLists/opencl-exports</argument>
+                        <argument>--add-modules</argument>
+                        <argument>ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl</argument>
+                        <argument>-cp</argument>
+                        <argument>${project.build.outputDirectory}</argument>
+                        <argument>-Xmx6g</argument>
+                        <argument>-Dtornado.recover.bailout=False</argument>
+                        <argument>org.junit.runner.JUnitCore</argument>
+                        <argument>${test.class}</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
