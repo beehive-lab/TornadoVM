@@ -55,5 +55,11 @@ def check_python_dependencies():
         subprocess.call(["pip3", "install", "packaging"], stderr=subprocess.DEVNULL)
         import packaging
 
+    try:
+        import streamlit
+    except:
+        subprocess.call(["pip3", "install", "streamlit"], stderr=subprocess.DEVNULL)
+        import streamlit
+
     return 0
     
