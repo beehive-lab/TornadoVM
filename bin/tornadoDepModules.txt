@@ -1,9 +1,0 @@
-requests
-tqdm
-urllib3
-wget
-black
-sphinx_rtd_theme
-pyinstaller
-psutil
-rich

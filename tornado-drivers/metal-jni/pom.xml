@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>tornado</groupId>
+        <artifactId>tornado</artifactId>
+        <version>1.1.2-dev</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>tornado-drivers-metal-jni</artifactId>
+    <packaging>jar</packaging>
+    <name>tornado-drivers-metal-jni (native libs)</name>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/mm</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <!-- Package native libs located in src/main/mm into a classifier-jar 'libs' -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-natives</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>libs</classifier>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                            <archive>
+                                <manifest>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                </manifest>
+                            </archive>
+                            <!-- resources from src/main/mm are packaged into the classifier jar -->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

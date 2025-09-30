@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.common.enums;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_BACKEND_PRIORITY;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_BACKEND_PRIORITY;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.SPIRV_BACKEND_PRIORITY;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.METAL_BACKEND_PRIORITY;
 
 /**
  * Used to prioritize one backend over another. The drivers will be sorted based
@@ -38,6 +39,7 @@ public enum TornadoBackends {
 
     PTX(PTX_BACKEND_PRIORITY, "implemented"), //
     OpenCL(OPENCL_BACKEND_PRIORITY, "implemented"), //
+    Metal(METAL_BACKEND_PRIORITY, "work in progress"), //
     SPIRV(SPIRV_BACKEND_PRIORITY, "implemented"); //
 
     private final int priority;

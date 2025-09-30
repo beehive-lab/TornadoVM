@@ -24,12 +24,12 @@ import subprocess
 import sys
 
 import install_python_modules as tornadoReq
-tornadoReq.check_python_dependencies()
+# tornadoReq.check_python_dependencies()
 
 import config_utils as cutils
 
 import update_paths as updp
-import pull_graal_jars
+# import pull_graal_jars
 
 
 __LEVEL_ZERO_JNI_VERSION__ = "0.1.5"
@@ -101,12 +101,11 @@ def should_handle_graal_jars(jdk):
 
 def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print("mvnw -Popencl-backend,ptx-backend,spirv-backend clean")
+    print("mvn -Popencl-backend,ptx-backend,spirv-backend,metal-backend clean")
 
     subprocess.run(
-        [mvn_cmd, "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
-        stdout=subprocess.PIPE, shell=is_win_or_bat()
-    )
+        ["mvn", "-Popencl-backend,ptx-backend,spirv-backend,metal-backend", "clean"],
+        stdout=subprocess.PIPE, shell=is_win_or_bat())
 
 
 def process_backends_as_mvn_profiles(selected_backends):
@@ -466,7 +465,7 @@ def main():
 
     maven_cleanup()
 
-    pull_graal_jars_if_needed(graal_jars_status)
+    # pull_graal_jars_if_needed(graal_jars_status)
 
     backend_profiles = process_backends_as_mvn_profiles(args.backend)
 

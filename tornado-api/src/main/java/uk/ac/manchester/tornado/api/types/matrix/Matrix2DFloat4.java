@@ -228,6 +228,10 @@ public final class Matrix2DFloat4 extends Matrix2DType implements TornadoMatrixI
         return numElements;
     }
 
+    public FloatArray getArray() {
+        return storage;
+    }
+
     @Override
     public long getNumBytes() {
         return storage.getNumBytesOfSegment();

@@ -337,6 +337,10 @@ public final class Float3 implements TornadoVectorsInterface<FloatBuffer> {
         return storage;
     }
 
+    public float[] getArray() {
+        return storage;
+    }
+
     @Override
     public long getNumBytes() {
         return NUM_ELEMENTS * 4;

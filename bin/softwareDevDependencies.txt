@@ -1,9 +1,0 @@
-requests
-tqdm
-urllib3
-wget
-black
-rstcheck
-pre-commit
-pyinstaller
-psutil

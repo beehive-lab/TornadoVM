@@ -17,6 +17,20 @@
 
     <profiles>
         <profile>
+            <id>metal-backend</id>
+            <activation>
+                <!-- Only activate the Metal backend profile on macOS hosts -->
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <modules>
+                <module>metal</module>
+                <module>metal-jni</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>opencl-backend</id>
             <activation>
                 <activeByDefault>false</activeByDefault>

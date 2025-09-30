@@ -59,11 +59,13 @@ __TORNADOVM_PROVIDERS__ = """\
 # ########################################################
 __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
+__METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __PTX_EXPORTS__ = "/etc/exportLists/ptx-exports"
 __SPIRV_EXPORTS__ = "/etc/exportLists/spirv-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
+__METAL_MODULE__ = "tornado.drivers.metal"
 
 # ########################################################
 # JAVA FLAGS
@@ -318,12 +320,14 @@ class TornadoVMRunnerTool():
 
         common = self.sdk + __COMMON_EXPORTS__
         opencl = self.sdk + __OPENCL_EXPORTS__
+        metal = self.sdk + __METAL_EXPORTS__
         ptx = self.sdk + __PTX_EXPORTS__
         spirv = self.sdk + __SPIRV_EXPORTS__
 
         if (self.isTruffleCommand):
             common = self.truffleCompatibleExports(common)
             opencl = self.truffleCompatibleExports(opencl)
+            metal = self.truffleCompatibleExports(metal)
             ptx = self.truffleCompatibleExports(ptx)
             spirv = self.truffleCompatibleExports(spirv)
 
@@ -337,6 +341,9 @@ class TornadoVMRunnerTool():
         if ("ptx-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + ptx + " "
             tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+        if ("metal-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + metal + " "
+            tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
