@@ -35,4 +35,5 @@ open module tornado.examples {
     exports uk.ac.manchester.tornado.examples.polyglot;
     exports uk.ac.manchester.tornado.examples.reductions;
     exports uk.ac.manchester.tornado.examples.vectors;
+    exports uk.ac.manchester.tornado.examples.tornadoinsight;
 }
