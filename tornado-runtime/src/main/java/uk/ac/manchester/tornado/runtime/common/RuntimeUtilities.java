@@ -506,7 +506,6 @@ public final class RuntimeUtilities {
         String filePath = getFilePath();
         try (FileWriter fw = new FileWriter(filePath, true);
              BufferedWriter bw = new BufferedWriter(fw)) {
-
             // Clean ANSI escape sequences before writing
             String cleanedString = removeAnsiEscapeCodes(logBuilder.toString());
             bw.write(cleanedString);
