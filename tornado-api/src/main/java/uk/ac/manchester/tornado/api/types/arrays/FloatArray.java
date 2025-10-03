@@ -47,17 +47,18 @@ public final class FloatArray extends TornadoNativeArray {
 
     private long segmentByteSize;
 
+    //--- Initialization
+
     /**
      * Constructs a new instance of the {@link FloatArray} that will store a user-specified number of elements.
      *
-     * @param numberOfElements
-     *     The number of elements in the array.
+     * @param numberOfElements The number of elements in the array.
      */
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / FLOAT_BYTES;
-        segmentByteSize = (long) numberOfElements * FLOAT_BYTES + arrayHeaderSize;
+        segmentByteSize = numberOfElements * FLOAT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
@@ -66,18 +67,44 @@ public final class FloatArray extends TornadoNativeArray {
     /**
      * Constructs a new {@link FloatArray} instance by concatenating the contents of the given array of {@link FloatArray} instances.
      *
-     * @param arrays
-     *     An array of {@link FloatArray} instances to be concatenated into the new instance.
+     * @param arrays An array of {@link FloatArray} instances to be concatenated into the new instance.
      */
     public FloatArray(FloatArray... arrays) {
         concat(arrays);
     }
 
     /**
+     * Concatenates multiple {@link FloatArray} instances into a single {@link FloatArray}.
+     *
+     * @param arrays Variable number of {@link FloatArray} objects to be concatenated.
+     * @return A new {@link FloatArray} instance containing all the elements of the input arrays,
+     * concatenated in the order they were provided.
+     */
+    public static FloatArray concat(FloatArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(FloatArray::getSize).sum();
+        FloatArray concatArray = new FloatArray(newSize);
+        long currentPositionBytes = 0;
+        for (FloatArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link FloatArray} class from an on-heap float array.
+     *
+     * @param values The on-heap float array to create the instance from.
+     * @return A new {@link FloatArray} instance, initialized with values of the on-heap float array.
+     */
+    public static FloatArray fromArray(float[] values) {
+        return createSegment(values);
+    }
+
+    /**
      * Internal method used to create a new instance of the {@link FloatArray} from on-heap data.
      *
-     * @param values
-     *     The on-heap float array to create the instance from.
+     * @param values The on-heap float array to create the instance from.
      * @return A new {@link FloatArray} instance, initialized with values of the on-heap float array.
      */
     private static FloatArray createSegment(float[] values) {
@@ -89,21 +116,9 @@ public final class FloatArray extends TornadoNativeArray {
     }
 
     /**
-     * Creates a new instance of the {@link FloatArray} class from an on-heap float array.
-     *
-     * @param values
-     *     The on-heap float array to create the instance from.
-     * @return A new {@link FloatArray} instance, initialized with values of the on-heap float array.
-     */
-    public static FloatArray fromArray(float[] values) {
-        return createSegment(values);
-    }
-
-    /**
      * Creates a new instance of the {@link FloatArray} class from a set of float values.
      *
-     * @param values
-     *     The float values to initialize the array with.
+     * @param values The float values to initialize the array with.
      * @return A new {@link FloatArray} instance, initialized with the given values.
      */
     public static FloatArray fromElements(float... values) {
@@ -113,8 +128,7 @@ public final class FloatArray extends TornadoNativeArray {
     /**
      * Creates a new instance of the {@link FloatArray} class from a {@link MemorySegment}.
      *
-     * @param segment
-     *     The {@link MemorySegment} containing the off-heap float data.
+     * @param segment The {@link MemorySegment} containing the off-heap float data.
      * @return A new {@link FloatArray} instance, initialized with the segment data.
      */
     public static FloatArray fromSegment(MemorySegment segment) {
@@ -122,15 +136,14 @@ public final class FloatArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / FLOAT_BYTES);
         ensureMultipleOfElementSize(byteSize, FLOAT_BYTES);
         FloatArray floatArray = new FloatArray(numElements);
-        MemorySegment.copy(segment, 0, floatArray.segment, (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, floatArray.segment, floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;
     }
 
     /**
      * Creates a new instance of the {@link FloatArray} class from a {@link FloatBuffer}.
      *
-     * @param buffer
-     *     The {@link FloatBuffer} containing the float data.
+     * @param buffer The {@link FloatBuffer} containing the float data.
      * @return A new {@link FloatArray} instance, initialized with the buffer data.
      */
     public static FloatArray fromFloatBuffer(FloatBuffer buffer) {
@@ -140,27 +153,13 @@ public final class FloatArray extends TornadoNativeArray {
         return floatArray;
     }
 
-    /**
-     * Converts the float data from off-heap to on-heap, by copying the values of a {@link FloatArray}
-     * instance into a new on-heap array.
-     *
-     * @return A new on-heap float array, initialized with the values stored in the {@link FloatArray} instance.
-     */
-    public float[] toHeapArray() {
-        float[] outputArray = new float[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
-        return outputArray;
-    }
+    //--- Access data
 
     /**
      * Sets the float value at a specified index of the {@link FloatArray} instance.
      *
-     * @param index
-     *     The index at which to set the float value.
-     * @param value
-     *     The float value to store at the specified index.
+     * @param index The index at which to set the float value.
+     * @param value The float value to store at the specified index.
      */
     public void set(int index, float value) {
         segment.setAtIndex(JAVA_FLOAT, baseIndex + index, value);
@@ -169,8 +168,7 @@ public final class FloatArray extends TornadoNativeArray {
     /**
      * Gets the float value stored at the specified index of the {@link FloatArray} instance.
      *
-     * @param index
-     *     The index of which to retrieve the float value.
+     * @param index The index of which to retrieve the float value.
      * @return
      */
     public float get(int index) {
@@ -185,21 +183,21 @@ public final class FloatArray extends TornadoNativeArray {
         init(0.0f);
     }
 
-    @Override
-    public int getElementSize() {
-        return FLOAT_BYTES;
-    }
-
     /**
      * Initializes all the elements of the {@link FloatArray} instance with a specified value.
      *
-     * @param value
-     *     The float value to initialize the {@link FloatArray} instance with.
+     * @param value The float value to initialize the {@link FloatArray} instance with.
      */
     public void init(float value) {
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_FLOAT, baseIndex + i, value);
         }
+    }
+
+    // -- access general info
+    @Override
+    public int getElementSize() {
+        return FLOAT_BYTES;
     }
 
     /**
@@ -210,26 +208,6 @@ public final class FloatArray extends TornadoNativeArray {
     @Override
     public int getSize() {
         return numberOfElements;
-    }
-
-    /**
-     * Returns the underlying {@link MemorySegment} of the {@link FloatArray} instance.
-     *
-     * @return The {@link MemorySegment} associated with the {@link FloatArray} instance.
-     */
-    @Override
-    public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
-    }
-
-    /**
-     * Returns the underlying {@link MemorySegment} of the {@link FloatArray} instance, including the header.
-     *
-     * @return The {@link MemorySegment} associated with the {@link FloatArray} instance.
-     */
-    @Override
-    public MemorySegment getSegmentWithHeader() {
-        return segment;
     }
 
     /**
@@ -253,60 +231,74 @@ public final class FloatArray extends TornadoNativeArray {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
+    // -- access data in different formats, on-heap, pure segment
+
     /**
-     * Factory method to initialize a {@link FloatArray}. This method can be invoked from a Task-Graph.
+     * Converts the float data from off-heap to on-heap, by copying the values of a {@link FloatArray}
+     * instance into a new on-heap array.
      *
-     * @param array
-     *     Input Array.
-     * @param value
-     *     The float value to initialize the {@code FloatArray} instance with.
+     * @return A new on-heap float array, initialized with the values stored in the {@link FloatArray} instance.
      */
-    public static void initialize(FloatArray array, float value) {
-        for (@Parallel int i = 0; i < array.getSize(); i++) {
-            array.set(i, value);
+    public float[] toHeapArray() {
+        float[] outputArray = new float[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
         }
+        return outputArray;
     }
 
     /**
-     * Concatenates multiple {@link FloatArray} instances into a single {@link FloatArray}.
+     * Returns the underlying {@link MemorySegment} of the {@link FloatArray} instance.
      *
-     * @param arrays
-     *     Variable number of {@link FloatArray} objects to be concatenated.
-     * @return A new {@link FloatArray} instance containing all the elements of the input arrays,
-     *     concatenated in the order they were provided.
+     * @return The {@link MemorySegment} associated with the {@link FloatArray} instance.
      */
-    public static FloatArray concat(FloatArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(FloatArray::getSize).sum();
-        FloatArray concatArray = new FloatArray(newSize);
-        long currentPositionBytes = 0;
-        for (FloatArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
+    @Override
+    public MemorySegment getSegment() {
+        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+    }
+
+    /**
+     * Returns the underlying {@link MemorySegment} of the {@link FloatArray} instance, including the header.
+     *
+     * @return The {@link MemorySegment} associated with the {@link FloatArray} instance.
+     */
+    @Override
+    public MemorySegment getSegmentWithHeader() {
+        return segment;
     }
 
     /**
      * Extracts a slice of elements from a given {@link FloatArray}, creating a new {@link FloatArray} instance.
      *
-     *
-     * @param offset
-     *     The starting index from which to begin the slice, inclusive.
-     * @param length
-     *     The number of elements to include in the slice.
+     * @param offset The starting index from which to begin the slice, inclusive.
+     * @param length The number of elements to include in the slice.
      * @return A new {@link FloatArray} instance representing the specified slice of the original array.
-     * @throws IllegalArgumentException
-     *     if the specified slice is out of the bounds of the original array.
+     * @throws IllegalArgumentException if the specified slice is out of the bounds of the original array.
      */
     public FloatArray slice(int offset, int length) {
         if (offset < 0 || length < 0 || offset + length > getSize()) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
-        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * FLOAT_BYTES;
-        long sliceByteLength = (long) length * FLOAT_BYTES;
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * FLOAT_BYTES;
+        long sliceByteLength = length * FLOAT_BYTES;
         MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
         FloatArray slice = fromSegment(sliceSegment);
         return slice;
+    }
+
+
+    // -- misc
+
+    /**
+     * Factory method to initialize a {@link FloatArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array Input Array.
+     * @param value The float value to initialize the {@code FloatArray} instance with.
+     */
+    public static void initialize(FloatArray array, float value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
     }
 }
