@@ -28,8 +28,6 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 public class ExecutorFrame {
 
     private final long executionPlanId;
-    private DRMode dynamicReconfigurationMode;
-    private Policy dynamicReconfigurationPolicy;
     private GridScheduler gridScheduler;
     private ProfilerMode profilerMode;
 
@@ -37,28 +35,12 @@ public class ExecutorFrame {
         this.executionPlanId = id;
     }
 
-    public ExecutorFrame setPolicy(Policy policy) {
-        this.dynamicReconfigurationPolicy = policy;
-        return this;
-    }
-
-    public ExecutorFrame setMode(DRMode drMode) {
-        this.dynamicReconfigurationMode = drMode;
-        return this;
-    }
 
     public ExecutorFrame setGridScheduler(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         return this;
     }
 
-    public Policy getDynamicReconfigurationPolicy() {
-        return dynamicReconfigurationPolicy;
-    }
-
-    public DRMode getDRMode() {
-        return dynamicReconfigurationMode;
-    }
 
     public GridScheduler getGridScheduler() {
         return gridScheduler;
