@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -1502,7 +1501,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 parameter instanceof ShortArray;
     }
 
-    private boolean checkAllArgumentsPerTask() {
+    private void checkAllArgumentsPerTask() {
 
         for (TaskPackage task : taskPackages) {
             Object[] taskParameters = task.getTaskParameters();
@@ -1518,7 +1517,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 }
             }
         }
-        return true;
     }
 
     private boolean checkForMemorySegmentAsTaskParameter(CompilableTask task) {
