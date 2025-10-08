@@ -17,9 +17,7 @@
  */
 package uk.ac.manchester.tornado.api.runtime;
 
-import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 
 /**

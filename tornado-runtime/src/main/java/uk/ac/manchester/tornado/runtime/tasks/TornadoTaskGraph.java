@@ -31,7 +31,6 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -45,13 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.phases.util.Providers;
@@ -59,10 +56,8 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoBackend;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -89,7 +84,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -133,11 +127,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
  */
 public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
-    /**
-     * Options for Dynamic Reconfiguration.
-     */
-    private static final boolean EXPERIMENTAL_MULTI_HOST_HEAP = false;
-    private static final int DEFAULT_DRIVER_INDEX = 0;
     public static final String GENERATED_TASK_GRAPH_PREFIX = "__GENERATED_TASK_GRAPH__";
 
     private static final String RESET = "\u001B[0m";
@@ -145,7 +134,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
-
 
     private MetaReduceCodeAnalysis analysisTaskGraph;
     private TornadoExecutionContext executionContext;
@@ -174,10 +162,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Set<Object> argumentsLookUp;
 
     private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
-
     private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
-    private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private StringBuilder bufferLogProfiler = new StringBuilder();
     private Graph compilationGraph;
     /**
@@ -1758,29 +1743,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
 
-    /**
-     * Experimental method to sync all objects when making a clone copy for all output objects per device.
-     *
-     * @param policy     input policy
-     * @param numDevices number of devices
-     */
-    private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
-        if (policyTimeTable.get(policy) < numDevices) {
-            // link output
-            int deviceWinnerIndex = policyTimeTable.get(policy);
-            ArrayList<Object> deviceOutputObjects = multiHeapManagerOutputs.get(deviceWinnerIndex);
-            for (int i = 0; i < streamOutObjects.size(); i++) {
-                @SuppressWarnings("unused") Object output = streamOutObjects.get(i);
-                output = deviceOutputObjects.get(i);
-            }
-
-            for (int i = 0; i < numDevices; i++) {
-                deviceOutputObjects = multiHeapManagerOutputs.get(i);
-            }
-        }
-    }
-
-
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void addInner(int type, Method method, ScheduleContext meta, String id, Object[] parameters) {
         switch (type) {
@@ -2017,25 +1979,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return profilerMode;
     }
 
-
-    // Timer implementation within the Task Schedule
-    private interface Timer {
-        long time();
-    }
-
-    private static class MilliSecTimer implements Timer {
-        @Override
-        public long time() {
-            return System.currentTimeMillis();
-        }
-    }
-
-    private static class NanoSecTimer implements Timer {
-        @Override
-        public long time() {
-            return System.nanoTime();
-        }
-    }
 
     private record CompileInfo(boolean compile, boolean updateDevice) {
     }
