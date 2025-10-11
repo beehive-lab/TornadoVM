@@ -1,2 +1,0 @@
-java @tornado-options-full.txt -cp tornado-examples/target/tornado-examples-1.1.2-dev-4a8b990.jar  uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
-

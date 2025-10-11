@@ -86,6 +86,12 @@ Featured use-cases:
 - [Java Ray-Tracer](https://github.com/Vinhixus/TornadoVM-Ray-Tracer): Java application accelerated with TornadoVM for
   real-time ray-tracing.
 
+Run your first TornadoVM program (adapt jar to point to your latest commit):
+
+```bash
+java @tornado-argfile -cp tornado-examples/target/tornado-examples-1.1.2-dev-6070d0e.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+```
+
 We also have a set
 of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples)
 that includes NBody, DFT, KMeans computation and matrix computations.
