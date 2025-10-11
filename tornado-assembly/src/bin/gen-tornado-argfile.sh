@@ -67,7 +67,7 @@ IFS=','
  # Read the comma-separated list into an array
 read -ra arr <<< "$BACKENDS"
 
-echo "# From: $(basename "$EXPORT_COMMON")"
+echo "# ===: $(basename "$EXPORT_COMMON") ==="
 strip_comments "$EXPORT_COMMON"
 echo
 
