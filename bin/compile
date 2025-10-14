@@ -426,6 +426,17 @@ def check_tornadoSDK():
         print("[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
         sys.exit(-1)
 
+def generate_argfile(backend):
+        """
+        Generate the argfile for your current build.
+        """
+        scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
+        current = os.getcwd()
+        os.chdir(scripts_dir)
+        print(os.getcwd())
+        subprocess.run(["gen-tornado-argfile.sh", backend])
+        os.chdir(current)
+
 
 def main():
     args = parse_args()
@@ -455,6 +466,8 @@ def main():
     post_installation_actions(
         backend_profiles, mvn_build_result, args.jdk, graal_jars_status
     )
+    generate_argfile(args.backend)
+
 
 
 if __name__ == "__main__":
