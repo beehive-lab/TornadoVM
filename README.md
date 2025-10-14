@@ -89,7 +89,7 @@ Featured use-cases:
 Run your first TornadoVM program (adapt jar to point to your latest commit):
 
 ```bash
-java @tornado-argfile -cp tornado-examples/target/tornado-examples-1.1.2-dev-6070d0e.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+java @tornado-options-full.txt -cp tornado-examples/target/tornado-examples-1.1.2-dev-6070d0e.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
 We also have a set
