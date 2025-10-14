@@ -17,8 +17,8 @@
 #
 
 #
-# gen-tornado-options.sh
-# Generate tornado-options-full.txt from tornado --printJavaFlags and export lists
+# gen-tornado-argfile.sh
+# Generate tornado-argfile from tornado --printJavaFlags and export lists
 #
 
 # Project root: go two levels up from $TORNADO_SDK (…/TornadoVM/bin/sdk -> …/TornadoVM)
