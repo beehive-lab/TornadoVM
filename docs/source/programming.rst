@@ -600,7 +600,7 @@ The next example illustrates this case with the ``PI`` computation.
 
 .. _dynamic_reconfiguration:
 
-Dynamic Reconfiguration [DEPRECATED use version =< 1.1.1]
+Dynamic Reconfiguration [Supported up to v1.1.1]
 ------------------------------
 
 
