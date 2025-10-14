@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
-import uk.ac.manchester.tornado.api.plan.types.WithDynamicReconfiguration;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
@@ -371,20 +370,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return new WithDefaultScheduler(this);
     }
 
-    /**
-     * Use the TornadoVM dynamic reconfiguration (akka live task migration) across
-     * visible devices.
-     *
-     * @param policy
-     *     {@link Policy}
-     * @param mode
-     *     {@link DRMode}
-     * @return {@link TornadoExecutionPlan}
-     */
-    public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
-        executionFrame.setPolicy(policy).setMode(mode);
-        return new WithDynamicReconfiguration(this, policy, mode);
-    }
 
     /**
      * Enable batch processing. TornadoVM will split the iteration space in smaller

@@ -218,36 +218,8 @@ public class Compute {
 Additionally, the two modes of expressing parallelism (kernel and loop parallelization) can be combined in the same task
 graph object.
 
-## 4. Dynamic Reconfiguration
 
-Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that
-TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches
-devices if it can detect that a specific device can yield better performance (compared to another).
-
-With the task-migration, the TornadoVM's approach is to only switch device if it detects an application can be executed
-faster
-than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can
-be seen as a complement to C2 and Graal JIT compilers. This is because there is no single hardware to best execute all
-workloads
-efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline
-applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise,
-it will stay on the CPU using the default compilers (C2 or Graal).
-
-To use the dynamic reconfiguration, you can execute using TornadoVM policies.
-For example:
-
-```java
-// TornadoVM will execute the code in the best accelerator.
-executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL)
-             .execute();
-```
-
-Further details and instructions on how to enable this feature can be found here.
-
-* Dynamic
-  reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
-
-## 5. How to Use TornadoVM in your Projects?
+## 4. How to Use TornadoVM in your Projects?
 
 To use TornadoVM, you need two components:
 
@@ -283,12 +255,12 @@ You can import the TornadoVM API by setting this the following dependency in the
 To run TornadoVM, you need to either install the TornadoVM extension for GraalVM/OpenJDK, or run with our
 Docker [images](https://github.com/beehive-lab/docker-tornado).
 
-## 6. Additional Resources
+## 5. Additional Resources
 
 [Here](https://tornadovm.readthedocs.io/en/latest/resources.html) you can find videos, presentations, tech-articles and
 artefacts describing TornadoVM, and how to use it.
 
-## 7. Academic Publications
+## 6. Academic Publications
 
 If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the initial FPGA support and CPU/GPU
 reductions), please use the following citation:
@@ -330,7 +302,7 @@ If you are using **Tornado 0.1** (Initial release), please use the following cit
 
 Selected publications can be found [here](https://tornadovm.readthedocs.io/en/latest/publications.html).
 
-## 8. Acknowledgments
+## 7. Acknowledgments
 
 This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html).
 In addition, it has been supported by the following EU & UKRI grants (most recent first):
@@ -348,7 +320,7 @@ Furthermore, TornadoVM has been supported by the following [EPSRC](https://www.u
 - [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/).
 - [AnyScale Apps EP/L000725/1](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/L000725/1).
 
-## 9. Contributions and Collaborations
+## 8. Contributions and Collaborations
 
 We welcome collaborations! Please see how to contribute to the project in the [CONTRIBUTING](CONTRIBUTING.md) page.
 
@@ -363,11 +335,11 @@ Alternatively, you can share a Google document with us.
 
 For Academic & Industry collaborations, please contact [here](https://www.tornadovm.org/contact-us).
 
-## 10. TornadoVM Team
+## 9. TornadoVM Team
 
 Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornadovm.org/about-us).
 
-## 11. Licenses Per Module
+## 10. Licenses Per Module
 
 To use TornadoVM, you can link the TornadoVM API to your application which is under [Apache 2](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2).
 
