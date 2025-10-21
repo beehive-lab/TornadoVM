@@ -1451,11 +1451,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
-        if (deviceState.isLockedBuffer()) {
-            List<Integer> events = device.streamIn(executionPlanId, object, 0, 0, deviceState, null);
-            if (events != null && !events.isEmpty()) {
-                return device.resolveEvent(executionPlanId, events.get(0));
-            }
+        List<Integer> events = device.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
+        if (events != null && !events.isEmpty()) {
+            return device.resolveEvent(executionPlanId, events.get(0));
         }
         return null;
     }
@@ -1467,11 +1465,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
         deviceState.setPartialCopySize(partialCopySize);
-        if (deviceState.isLockedBuffer()) {
-            List<Integer> events = device.streamIn(executionPlanId, object, 0, offset, deviceState, null);
-            if (events != null && !events.isEmpty()) {
-                return device.resolveEvent(executionPlanId, events.get(0));
-            }
+        List<Integer> events = device.ensurePresent(executionPlanId, object, deviceState, null, 0, offset);
+        if (events != null && !events.isEmpty()) {
+            return device.resolveEvent(executionPlanId, events.get(0));
         }
         return null;
     }
@@ -1482,11 +1478,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
-        if (deviceState.isLockedBuffer()) {
-            List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
-            if (events != null && !events.isEmpty()) {
-                return device.resolveEvent(executionPlanId, events.get(0));
-            }
+        List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
+        if (events != null && !events.isEmpty()) {
+            return device.resolveEvent(executionPlanId, events.get(0));
         }
         return null;
     }
