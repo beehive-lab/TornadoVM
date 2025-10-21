@@ -71,7 +71,103 @@ def should_handle_graal_jars(jdk):
     return jdk == "jdk21" and "GraalVM" not in java_version_output
 
 
-def maven_cleanup():
+def get_changed_modules():
+    """
+    Detects changed files using git and maps them to Maven modules.
+
+    Returns:
+        list: List of changed module names, or None if all modules should be built.
+    """
+    try:
+        # Get modified, added, and deleted files
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        if not result.stdout.strip():
+            print("No changes detected by git status")
+            return []
+
+        # Parse git status output
+        changed_files = []
+        for line in result.stdout.split('\n'):
+            if line.strip():
+                # Git status format: "XY filename" where X and Y are status codes
+                # Format is: 2 chars for status + 1 space + filename
+                # Handle both formats: with or without leading space
+                line = line.strip()
+                # Skip the status codes (first 2 chars) and the space
+                if len(line) > 3:
+                    file_path = line[2:].strip()
+                    changed_files.append(file_path)
+
+        # Also check for uncommitted changes in tracked files
+        diff_result = subprocess.run(
+            ["git", "diff", "--name-only", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        for file_path in diff_result.stdout.strip().split('\n'):
+            if file_path.strip() and file_path not in changed_files:
+                changed_files.append(file_path)
+
+        if not changed_files:
+            print("No changes detected")
+            return []
+
+        # Map files to modules
+        all_modules = [
+            "tornado-annotation",
+            "tornado-api",
+            "tornado-assembly",
+            "tornado-benchmarks",
+            "tornado-drivers",
+            "tornado-examples",
+            "tornado-matrices",
+            "tornado-runtime",
+            "tornado-unittests"
+        ]
+
+        changed_modules = set()
+        for file_path in changed_files:
+            for module in all_modules:
+                if file_path.startswith(module + "/"):
+                    changed_modules.add(module)
+                    break
+            # If file is in root (like pom.xml), rebuild all modules
+            if "/" not in file_path and file_path.endswith(".xml"):
+                print(f"Root build file changed ({file_path}), building all modules")
+                return None
+
+        changed_modules_list = sorted(list(changed_modules))
+
+        if changed_modules_list:
+            print(f"Detected changes in modules: {', '.join(changed_modules_list)}")
+        else:
+            print("Changes detected but not in any module directories")
+
+        return changed_modules_list
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error detecting changes with git: {e}")
+        print("Falling back to full build")
+        return None
+    except Exception as e:
+        print(f"Unexpected error detecting changes: {e}")
+        print("Falling back to full build")
+        return None
+
+
+def maven_cleanup(skip_clean=False):
+    if skip_clean:
+        print("Skipping maven clean for incremental build")
+        return
+
     print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
     if os.name == 'nt':
         isWinCmdOrBat = True
@@ -281,13 +377,14 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     return current
 
 
-def build_tornadovm(args, backend_profiles):
+def build_tornadovm(args, backend_profiles, changed_modules=None):
     """
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
         args (object): The arguments passed by the user. The JDK version as well as other options (e.g., if polyglot is used).
         backend_profiles (str): The processed backend options.
+        changed_modules (list): Optional list of modules to build. If None, builds all modules.
 
     Returns:
         CompletedProcess: Result of the Maven build process.
@@ -306,6 +403,19 @@ def build_tornadovm(args, backend_profiles):
             process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
         else:
             process.append(f"-P{args.jdk},{backend_profiles}")
+
+        # Add module selection for incremental builds
+        if changed_modules is not None and len(changed_modules) > 0:
+            modules_list = ",".join(changed_modules)
+            process.extend(["-pl", modules_list, "-am"])
+            print(f"Building modules: {modules_list} (and their dependencies)")
+        elif changed_modules is not None and len(changed_modules) == 0:
+            print("No modules to build (no changes detected)")
+            # Return a successful mock result
+            class MockResult:
+                returncode = 0
+            return MockResult()
+
         process.append("install")
         print(' '.join(process))
 
@@ -320,10 +430,10 @@ def build_tornadovm(args, backend_profiles):
         if result.returncode == 0:
             print("Maven build succeeded")
         else:
-            print("Maven clean failed. Error output:")
+            print("Maven build failed. Error output:")
             print(result.stderr)
     except subprocess.CalledProcessError as e:
-        print(f"Error running 'mvn clean': {e}")
+        print(f"Error running maven build: {e}")
         sys.exit(-1)
 
     return result
@@ -408,6 +518,13 @@ def parse_args():
         default=False,
         help="Enable pull and rebuild of the external dependencies."
     )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        dest="incremental",
+        default=False,
+        help="Build only modified modules based on git status (faster for development)."
+    )
 
     args = parser.parse_args()
     return args
@@ -445,7 +562,17 @@ def main():
 
     graal_jars_status = should_handle_graal_jars(args.jdk)
 
-    maven_cleanup()
+    # Detect changed modules if incremental build is requested
+    changed_modules = None
+    if args.incremental:
+        print("Incremental build mode enabled")
+        changed_modules = get_changed_modules()
+        if changed_modules is None:
+            print("Falling back to full build")
+            args.incremental = False
+
+    # Skip maven clean for incremental builds
+    maven_cleanup(skip_clean=args.incremental)
 
     pull_graal_jars_if_needed(graal_jars_status)
 
@@ -461,7 +588,11 @@ def main():
         # 2) Build the Level Zero JNI library
         build_levelzero_jni_lib(args.rebuild)
 
-    mvn_build_result = build_tornadovm(args, backend_profiles)
+    # Build TornadoVM (all modules or only changed ones)
+    if args.incremental and changed_modules is not None:
+        mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules)
+    else:
+        mvn_build_result = build_tornadovm(args, backend_profiles)
 
     post_installation_actions(
         backend_profiles, mvn_build_result, args.jdk, graal_jars_status

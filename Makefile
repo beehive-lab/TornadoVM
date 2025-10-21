@@ -7,6 +7,9 @@ BACKEND ?= opencl
 build jdk21:
 	bin/compile --jdk jdk21 --backend $(BACKEND)
 
+incremental:
+	bin/compile --jdk jdk21 --backend $(BACKEND) --incremental
+
 rebuild-deps-jdk21:
 	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
