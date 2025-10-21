@@ -1468,7 +1468,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
         deviceState.setPartialCopySize(partialCopySize);
         List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
-        deviceState.setPartialCopySize(TornadoXPUDevice.INIT_VALUE);
         if (events != null && !events.isEmpty()) {
             return device.resolveEvent(executionPlanId, events.get(0));
         }
