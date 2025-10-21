@@ -1467,9 +1467,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
         deviceState.setPartialCopySize(partialCopySize);
-        List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
-        if (events != null && !events.isEmpty()) {
-            return device.resolveEvent(executionPlanId, events.get(0));
+        if (deviceState.isLockedBuffer()) {
+            List<Integer> events = device.streamIn(executionPlanId, object, 0, offset, deviceState, null);
+            if (events != null && !events.isEmpty()) {
+                return device.resolveEvent(executionPlanId, events.get(0));
+            }
         }
         return null;
     }
@@ -1480,9 +1482,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
-        List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
-        if (events != null && !events.isEmpty()) {
-            return device.resolveEvent(executionPlanId, events.get(0));
+        if (deviceState.isLockedBuffer()) {
+            List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
+            if (events != null && !events.isEmpty()) {
+                return device.resolveEvent(executionPlanId, events.get(0));
+            }
         }
         return null;
     }
