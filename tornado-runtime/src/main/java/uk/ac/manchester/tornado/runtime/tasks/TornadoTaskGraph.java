@@ -1451,7 +1451,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final DataObjectState dataObjectState = localState.getDataObjectState();
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
-        List<Integer> events = device.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
+        // Use streamIn with batchSize=0 to force copy (ensurePresent won't copy if buffer has content)
+        List<Integer> events = device.streamIn(executionPlanId, object, 0, 0, deviceState, null);
         if (events != null && !events.isEmpty()) {
             return device.resolveEvent(executionPlanId, events.get(0));
         }
@@ -1465,7 +1466,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final TornadoXPUDevice device = meta().getXPUDevice();
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
         deviceState.setPartialCopySize(partialCopySize);
-        List<Integer> events = device.ensurePresent(executionPlanId, object, deviceState, null, 0, offset);
+        // Use streamIn with batchSize=0 to force copy (ensurePresent won't copy if buffer has content)
+        List<Integer> events = device.streamIn(executionPlanId, object, 0, offset, deviceState, null);
         if (events != null && !events.isEmpty()) {
             return device.resolveEvent(executionPlanId, events.get(0));
         }
