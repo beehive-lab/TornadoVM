@@ -1445,6 +1445,160 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    private Event syncObjectInnerToDevice(Object object) {
+        Access objectAccess = getObjectAccess(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
+        final DataObjectState dataObjectState = localState.getDataObjectState();
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
+        if (deviceState.isLockedBuffer()) {
+            List<Integer> events = device.streamIn(executionPlanId, object, 0, 0, deviceState, null);
+            if (events != null && !events.isEmpty()) {
+                return device.resolveEvent(executionPlanId, events.get(0));
+            }
+        }
+        return null;
+    }
+
+    private Event syncObjectInnerToDevice(Object object, long offset, long partialCopySize) {
+        Access objectAccess = getObjectAccess(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
+        final DataObjectState dataObjectState = localState.getDataObjectState();
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
+        deviceState.setPartialCopySize(partialCopySize);
+        List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
+        deviceState.setPartialCopySize(TornadoXPUDevice.INIT_VALUE);
+        if (events != null && !events.isEmpty()) {
+            return device.resolveEvent(executionPlanId, events.get(0));
+        }
+        return null;
+    }
+
+    private Event syncObjectInnerToDeviceLazy(Object object, long offset, long partialCopySize) {
+        Access objectAccess = getObjectAccess(object);
+        final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
+        final DataObjectState dataObjectState = localState.getDataObjectState();
+        final TornadoXPUDevice device = meta().getXPUDevice();
+        final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
+        List<Integer> events = device.streamIn(executionPlanId, object, partialCopySize, offset, deviceState, null);
+        if (events != null && !events.isEmpty()) {
+            return device.resolveEvent(executionPlanId, events.get(0));
+        }
+        return null;
+    }
+
+    private Event syncParameterToDevice(Object object) {
+        Event eventParameter = null;
+        if (batchSizeBytes != TornadoExecutionContext.INIT_VALUE) {
+            BatchConfiguration batchConfiguration = BatchConfiguration.computeChunkSizes(executionContext, batchSizeBytes);
+            long hostOffset = 0;
+            for (int i = 0; i < batchConfiguration.getTotalChunks(); i++) {
+                hostOffset = (batchSizeBytes * i);
+                eventParameter = syncObjectInnerToDeviceLazy(object, hostOffset, batchSizeBytes);
+            }
+            // Last chunk
+            if (batchConfiguration.getRemainingChunkSize() != 0) {
+                hostOffset += batchSizeBytes;
+                eventParameter = syncObjectInnerToDeviceLazy(object, hostOffset, batchConfiguration.getRemainingChunkSize());
+            }
+        } else {
+            eventParameter = syncObjectInnerToDevice(object);
+        }
+        if (eventParameter != null) {
+            eventParameter.waitOn();
+        }
+        return eventParameter;
+    }
+
+    private Event syncParameterToDevice(Object object, long offset, long partialCopySize) {
+        Event eventParameter = syncObjectInnerToDevice(object, offset, partialCopySize);
+        if (eventParameter != null) {
+            eventParameter.waitOn();
+        }
+        return eventParameter;
+    }
+
+    @Override
+    public void syncRuntimeTransferToDevice(Object... objects) {
+        if (vm == null) {
+            return;
+        }
+
+        List<Event> events = new ArrayList<>();
+        for (Object object : objects) {
+            if (DEBUG) {
+                new TornadoLogger().debug("Object " + object + " to be copied to device on DEMAND");
+            }
+            // Check if it is an argument captured by the scope (not in the parameter list).
+            if (!argumentsLookUp.contains(object)) {
+                syncField(object);
+            } else {
+                Event eventParameter = syncParameterToDevice(object);
+                events.add(eventParameter);
+            }
+        }
+
+        if (TornadoOptions.isProfilerEnabled()) {
+
+            /*
+             * Clean the profiler. It avoids the possibility of reporting the `execute`
+             * profiling information twice.
+             */
+            timeProfiler.clean();
+            for (int i = 0; i < events.size(); i++) {
+                Event eventParameter = events.get(i);
+                if (eventParameter == null) {
+                    continue;
+                }
+                long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME_SYNC);
+                eventParameter.waitForEvents(executionPlanId);
+                value += eventParameter.getElapsedTime();
+                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME_SYNC, value);
+                Access objectAccess = getObjectAccess(objects[i]);
+                LocalObjectState localState = executionContext.getLocalStateObject(objects[i], objectAccess);
+                XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_IN_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().size());
+            }
+            updateProfiler();
+        }
+    }
+
+    @Override
+    public void syncRuntimeTransferToDevice(Object object, long offset, long partialCopySize) {
+
+        if (vm == null) {
+            return;
+        }
+
+        Event event = null;
+        if (DEBUG) {
+            new TornadoLogger().debug(partialCopySize + " bytes of the object " + object + " to be copied to device on DEMAND from offset " + offset);
+        }
+
+        // Check if it is an argument captured by the scope (not in the parameter list).
+        if (!argumentsLookUp.contains(object)) {
+            syncField(object);
+        } else {
+            event = syncParameterToDevice(object, offset, partialCopySize);
+        }
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            timeProfiler.clean();
+            if (event != null) {
+                long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME_SYNC);
+                event.waitForEvents(executionPlanId);
+                value += event.getElapsedTime();
+                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME_SYNC, value);
+                Access objectAccess = getObjectAccess(object);
+                LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
+                XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_IN_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().size());
+                updateProfiler();
+            }
+        }
+    }
+
     @Override
     public String getId() {
         return meta().getId();

@@ -74,6 +74,14 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    void transferToDevice(Object... objects) {
+        taskGraph.syncRuntimeTransferToDevice(objects);
+    }
+
+    void transferToDevice(Object object, long offset, long partialCopySize) {
+        taskGraph.syncRuntimeTransferToDevice(object, offset, partialCopySize);
+    }
+
     TaskGraph getTaskGraph() {
         return taskGraph;
     }
