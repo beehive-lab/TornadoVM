@@ -165,15 +165,20 @@ def get_changed_modules():
 
 def clean_dist_for_incremental():
     """
-    Cleans the distribution directory for the current build to avoid permission issues
+    Cleans the entire dist directory to avoid permission issues
     during incremental builds with tornado-assembly.
+
+    The assembly plugin has updateOnly=true which can cause permission conflicts
+    when trying to update existing files. Cleaning the entire dist/ directory
+    ensures a fresh start for each incremental build.
     """
     try:
-        tornado_sdk = os.environ.get('TORNADO_SDK')
-        if tornado_sdk and os.path.exists(tornado_sdk):
-            print(f"Cleaning existing distribution: {tornado_sdk}")
+        dist_dir = os.path.join(os.getcwd(), 'dist')
+        if os.path.exists(dist_dir):
+            print(f"Cleaning distribution directory: {dist_dir}")
             import shutil
-            shutil.rmtree(tornado_sdk, ignore_errors=True)
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            print("Distribution directory cleaned successfully")
     except Exception as e:
         print(f"Warning: Could not clean distribution directory: {e}")
         print("Continuing with build...")
