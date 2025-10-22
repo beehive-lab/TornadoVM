@@ -163,6 +163,22 @@ def get_changed_modules():
         return None
 
 
+def clean_dist_for_incremental():
+    """
+    Cleans the distribution directory for the current build to avoid permission issues
+    during incremental builds with tornado-assembly.
+    """
+    try:
+        tornado_sdk = os.environ.get('TORNADO_SDK')
+        if tornado_sdk and os.path.exists(tornado_sdk):
+            print(f"Cleaning existing distribution: {tornado_sdk}")
+            import shutil
+            shutil.rmtree(tornado_sdk, ignore_errors=True)
+    except Exception as e:
+        print(f"Warning: Could not clean distribution directory: {e}")
+        print("Continuing with build...")
+
+
 def maven_cleanup(skip_clean=False):
     if skip_clean:
         print("Skipping maven clean for incremental build")
@@ -594,6 +610,8 @@ def main():
 
     # Build TornadoVM (all modules or only changed ones)
     if args.incremental and changed_modules is not None:
+        # Clean the existing distribution directory to avoid permission issues
+        clean_dist_for_incremental()
         mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules)
     else:
         mvn_build_result = build_tornadovm(args, backend_profiles)
