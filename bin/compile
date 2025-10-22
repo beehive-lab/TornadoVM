@@ -71,6 +71,42 @@ def should_handle_graal_jars(jdk):
     return jdk == "jdk21" and "GraalVM" not in java_version_output
 
 
+def should_rebuild_assembly(changed_modules):
+    """
+    Determines if the assembly (distribution) needs to be rebuilt based on
+    which modules have changed.
+
+    Strategy: Only skip assembly for tornado-unittests changes, since those
+    are typically run via maven or tornado-test, not the tornado command.
+    Examples and benchmarks often need to be run via tornado command, so
+    we rebuild assembly for those.
+
+    Args:
+        changed_modules (list): List of changed module names
+
+    Returns:
+        bool: True if assembly should be rebuilt, False otherwise
+    """
+    if not changed_modules:
+        return False
+
+    # Only skip assembly if ONLY tornado-unittests changed
+    # (unittests are run via tornado-test or maven, not the tornado launcher)
+    if len(changed_modules) == 1 and changed_modules[0] == "tornado-unittests":
+        print(f"Only tornado-unittests changed - skipping assembly for faster build")
+        print("Run tests with: tornado-test or mvn test")
+        return False
+
+    # For all other changes, rebuild assembly to ensure tornado command works
+    # This includes: runtime, api, drivers, examples, benchmarks, matrices, etc.
+    if changed_modules:
+        print(f"Changed modules: {', '.join(changed_modules)}")
+        print("Rebuilding assembly to update distribution")
+        return True
+
+    return False
+
+
 def get_changed_modules():
     """
     Detects changed files using git and maps them to Maven modules.
@@ -398,7 +434,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     return current
 
 
-def build_tornadovm(args, backend_profiles, changed_modules=None):
+def build_tornadovm(args, backend_profiles, changed_modules=None, include_assembly=True):
     """
     Builds TornadoVM with the specified JDK and backend options.
 
@@ -406,6 +442,7 @@ def build_tornadovm(args, backend_profiles, changed_modules=None):
         args (object): The arguments passed by the user. The JDK version as well as other options (e.g., if polyglot is used).
         backend_profiles (str): The processed backend options.
         changed_modules (list): Optional list of modules to build. If None, builds all modules.
+        include_assembly (bool): Whether to include tornado-assembly module in the build.
 
     Returns:
         CompletedProcess: Result of the Maven build process.
@@ -427,13 +464,19 @@ def build_tornadovm(args, backend_profiles, changed_modules=None):
 
         # Add module selection for incremental builds
         if changed_modules is not None and len(changed_modules) > 0:
-            # Always include tornado-assembly to ensure the distribution is updated
-            modules_with_assembly = changed_modules.copy()
-            if "tornado-assembly" not in modules_with_assembly:
-                modules_with_assembly.append("tornado-assembly")
-            modules_list = ",".join(modules_with_assembly)
+            modules_to_build = changed_modules.copy()
+
+            # Conditionally include tornado-assembly
+            if include_assembly and "tornado-assembly" not in modules_to_build:
+                modules_to_build.append("tornado-assembly")
+
+            modules_list = ",".join(modules_to_build)
             process.extend(["-pl", modules_list, "-am"])
-            print(f"Building modules: {','.join(changed_modules)} (and their dependencies, plus tornado-assembly)")
+
+            if include_assembly:
+                print(f"Building modules: {','.join(changed_modules)} (and their dependencies, plus tornado-assembly)")
+            else:
+                print(f"Building modules: {','.join(changed_modules)} (and their dependencies only)")
         elif changed_modules is not None and len(changed_modules) == 0:
             print("No modules to build (no changes detected)")
             # Return a successful mock result
@@ -550,6 +593,13 @@ def parse_args():
         default=False,
         help="Build only modified modules based on git status (faster for development)."
     )
+    parser.add_argument(
+        "--force-assembly",
+        action="store_true",
+        dest="forceAssembly",
+        default=False,
+        help="Force rebuild of assembly/distribution even for incremental builds."
+    )
 
     args = parser.parse_args()
     return args
@@ -615,16 +665,34 @@ def main():
 
     # Build TornadoVM (all modules or only changed ones)
     if args.incremental and changed_modules is not None:
-        # Clean the existing distribution directory to avoid permission issues
-        clean_dist_for_incremental()
-        mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules)
-    else:
-        mvn_build_result = build_tornadovm(args, backend_profiles)
+        # Determine if assembly needs to be rebuilt
+        rebuild_assembly = args.forceAssembly or should_rebuild_assembly(changed_modules)
 
-    post_installation_actions(
-        backend_profiles, mvn_build_result, args.jdk, graal_jars_status
-    )
-    generate_argfile(args.backend)
+        if args.forceAssembly:
+            print("Force assembly flag set - rebuilding distribution")
+
+        if rebuild_assembly:
+            # Clean the existing distribution directory to avoid permission issues
+            clean_dist_for_incremental()
+            mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules, include_assembly=True)
+            # Update paths and generate argfile since distribution changed
+            post_installation_actions(
+                backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+            )
+            generate_argfile(args.backend)
+        else:
+            # Build only changed modules, skip assembly
+            mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules, include_assembly=False)
+            print("\nSkipped distribution update - existing tornado command will work")
+            print("If you need to run updated code, the JARs are in each module's target/ directory")
+            print("Or run 'make' for a full rebuild with distribution update")
+    else:
+        # Full build
+        mvn_build_result = build_tornadovm(args, backend_profiles)
+        post_installation_actions(
+            backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+        )
+        generate_argfile(args.backend)
 
 
 

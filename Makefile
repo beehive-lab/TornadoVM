@@ -10,6 +10,9 @@ build jdk21:
 incremental:
 	bin/compile --jdk jdk21 --backend $(BACKEND) --incremental
 
+incremental-full:
+	bin/compile --jdk jdk21 --backend $(BACKEND) --incremental --force-assembly
+
 rebuild-deps-jdk21:
 	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
