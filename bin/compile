@@ -406,9 +406,13 @@ def build_tornadovm(args, backend_profiles, changed_modules=None):
 
         # Add module selection for incremental builds
         if changed_modules is not None and len(changed_modules) > 0:
-            modules_list = ",".join(changed_modules)
+            # Always include tornado-assembly to ensure the distribution is updated
+            modules_with_assembly = changed_modules.copy()
+            if "tornado-assembly" not in modules_with_assembly:
+                modules_with_assembly.append("tornado-assembly")
+            modules_list = ",".join(modules_with_assembly)
             process.extend(["-pl", modules_list, "-am"])
-            print(f"Building modules: {modules_list} (and their dependencies)")
+            print(f"Building modules: {','.join(changed_modules)} (and their dependencies, plus tornado-assembly)")
         elif changed_modules is not None and len(changed_modules) == 0:
             print("No modules to build (no changes detected)")
             # Return a successful mock result
