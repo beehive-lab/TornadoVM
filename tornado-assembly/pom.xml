@@ -138,7 +138,7 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <finalName>tornado-sdk</finalName>
                             <outputDirectory>${project.basedir}/../dist</outputDirectory>
-                            <updateOnly>true</updateOnly>
+                            <updateOnly>false</updateOnly>
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
@@ -161,6 +161,57 @@
                         </fileset>
                     </filesets>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>create-backend-file</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>python3</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>
+import os
+import glob
+
+# Find the SDK directory
+dist_path = os.path.join('${project.basedir}', '..', 'dist', 'tornado-sdk')
+sdk_dirs = glob.glob(os.path.join(dist_path, 'tornado-sdk-*'))
+
+if sdk_dirs:
+    sdk_dir = sdk_dirs[0]
+    backend_file_path = os.path.join(sdk_dir, 'etc', 'tornado.backend')
+
+    # Detect which backend profiles are active
+    backends = []
+    if os.path.exists(os.path.join(sdk_dir, 'lib', 'tornado-drivers-opencl-1.1.2-dev.jar')):
+        backends.append('opencl')
+    if os.path.exists(os.path.join(sdk_dir, 'lib', 'tornado-drivers-ptx-1.1.2-dev.jar')):
+        backends.append('ptx')
+    if os.path.exists(os.path.join(sdk_dir, 'lib', 'tornado-drivers-spirv-1.1.2-dev.jar')):
+        backends.append('spirv')
+
+    backend_str = ','.join(backends) if backends else 'opencl'
+
+    # Write the backend file
+    with open(backend_file_path, 'w') as f:
+        f.write('tornado.backends=' + backend_str)
+
+    print('Created tornado.backend with backends: ' + backend_str)
+else:
+    print('Warning: SDK directory not found')
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
