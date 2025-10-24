@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0 https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
+
+    <configuration>
+        <enabled>true</enabled>
+        <hashAlgorithm>SHA-256</hashAlgorithm>
+        <validateXml>true</validateXml>
+
+        <!-- Local cache only (no remote cache) -->
+        <local>
+            <maxBuildsCached>3</maxBuildsCached>
+        </local>
+
+        <projectVersioning adjustMetaInf="true"/>
+    </configuration>
+
+    <input>
+        <global>
+            <glob>
+                *.java,*.xml,*.properties,*.sh,*.py
+            </glob>
+        </global>
+    </input>
+
+    <executionControl>
+        <runAlways>
+            <plugins>
+                <!-- Always run tests -->
+                <plugin artifactId="maven-surefire-plugin"/>
+            </plugins>
+        </runAlways>
+        <reconcile>
+            <plugins>
+                <plugin artifactId="maven-compiler-plugin" goal="compile">
+                    <reconciles>
+                        <reconcile propertyName="source"/>
+                        <reconcile propertyName="target"/>
+                    </reconciles>
+                </plugin>
+            </plugins>
+        </reconcile>
+    </executionControl>
+</cache>
