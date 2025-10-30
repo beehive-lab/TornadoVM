@@ -215,11 +215,12 @@ def get_changed_modules():
 def clean_dist_for_incremental():
     """
     Cleans the entire dist directory to avoid permission issues
-    during incremental builds with tornado-assembly.
+    with the tornado-assembly plugin.
 
-    The assembly plugin has updateOnly=true which can cause permission conflicts
-    when trying to update existing files. Cleaning the entire dist/ directory
-    ensures a fresh start for each incremental build.
+    When using Maven build cache (no 'mvn clean'), the dist/ directory persists
+    between builds. The assembly plugin can encounter permission conflicts when
+    trying to update existing files. Cleaning the dist/ directory ensures a
+    fresh start for the assembly process.
     """
     try:
         dist_dir = os.path.join(os.getcwd(), 'dist')
@@ -670,7 +671,8 @@ def main():
             print("Falling back to full build")
             args.incremental = False
 
-    # Skip maven clean for incremental builds
+    # Run maven clean by default (same as master branch behavior)
+    # Only skip clean when --incremental flag is used
     maven_cleanup(skip_clean=args.incremental)
 
     pull_graal_jars_if_needed(graal_jars_status)
@@ -712,6 +714,8 @@ def main():
             print("Or run 'make' for a full rebuild with distribution update")
     else:
         # Full build
+        # Clean the existing distribution directory to avoid permission issues
+        clean_dist_for_incremental()
         mvn_build_result = build_tornadovm(args, backend_profiles)
         post_installation_actions(
             backend_profiles, mvn_build_result, args.jdk, graal_jars_status
