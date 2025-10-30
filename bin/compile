@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ import subprocess
 import sys
 
 import install_python_modules as tornadoReq
+
 tornadoReq.check_python_dependencies()
 
 import config_utils as cutils
@@ -31,9 +32,21 @@ import config_utils as cutils
 import update_paths as updp
 import pull_graal_jars
 
-
 __LEVEL_ZERO_JNI_VERSION__ = "0.1.4"
 __BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.4"
+
+
+def get_mvn_command():
+    """
+    Returns the appropriate Maven command (mvnw or mvnw.cmd) based on the operating system.
+
+    Returns:
+        str: The Maven wrapper command to use.
+    """
+    if os.name == 'nt':
+        return "./mvnw.cmd"
+    else:
+        return "./mvnw"
 
 
 def check_java_version():
@@ -94,7 +107,7 @@ def should_rebuild_assembly(changed_modules):
     # (unittests are run via tornado-test or maven, not the tornado launcher)
     if len(changed_modules) == 1 and changed_modules[0] == "tornado-unittests":
         print(f"Only tornado-unittests changed - skipping assembly for faster build")
-        print("Run tests with: tornado-test or mvn test")
+        print("Run tests with: tornado-test or mvnw test")
         return False
 
     # For all other changes, rebuild assembly to ensure tornado command works
@@ -177,7 +190,7 @@ def get_changed_modules():
                     break
             # If file is in root (like pom.xml), rebuild all modules
             if "/" not in file_path and file_path.endswith(".xml"):
-                print(f"Root build file changed ({file_path}), building all modules")
+                print(f"Root build file changed ({file_path}), building all modules ")
                 return None
 
         changed_modules_list = sorted(list(changed_modules))
@@ -225,13 +238,14 @@ def maven_cleanup(skip_clean=False):
         print("Skipping maven clean for incremental build")
         return
 
-    print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
+    mvn_cmd = get_mvn_command()
+    print(f"{mvn_cmd} -Popencl-backend,ptx-backend,spirv-backend clean")
     if os.name == 'nt':
         isWinCmdOrBat = True
     else:
         isWinCmdOrBat = False
     subprocess.run(
-        ["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
+        [mvn_cmd, "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
         stdout=subprocess.PIPE, shell=isWinCmdOrBat
     )
 
@@ -298,7 +312,7 @@ def build_levelzero_jni_lib(rebuild=False):
     """
     current = os.getcwd()
     levelzero_jni = "levelzero-jni"
-    build=False
+    build = False
     if not os.path.exists(levelzero_jni):
         ## clone only if directory does not exist
         subprocess.run(
@@ -308,7 +322,7 @@ def build_levelzero_jni_lib(rebuild=False):
                 "https://github.com/beehive-lab/levelzero-jni.git",
             ],
         )
-        build=True
+        build = True
 
     if (rebuild or build):
 
@@ -326,11 +340,12 @@ def build_levelzero_jni_lib(rebuild=False):
 
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", __LEVEL_ZERO_JNI_VERSION__])
+        mvn_cmd = get_mvn_command()
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
             isWinCmdOrBat = False
-        subprocess.run(["mvn", "clean", "install"], shell=isWinCmdOrBat)
+        subprocess.run([mvn_cmd, "clean", "install"], shell=isWinCmdOrBat)
 
         ## Build native library
         os.chdir("levelZeroLib")
@@ -339,8 +354,8 @@ def build_levelzero_jni_lib(rebuild=False):
             os.mkdir(levelzero_build_directory_cpp)
         os.chdir(levelzero_build_directory_cpp)
 
-        subprocess.run(["cmake", "..", ],)
-        subprocess.run(["cmake", "--build", ".", "--config", "Release"],)
+        subprocess.run(["cmake", "..", ], )
+        subprocess.run(["cmake", "--build", ".", "--config", "Release"], )
 
         os.chdir(current)
 
@@ -351,7 +366,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     """
     current = os.getcwd()
     spirv_tool_kit = "beehive-spirv-toolkit"
-    build=True
+    build = True
     if not os.path.exists(spirv_tool_kit):
         subprocess.run(
             [
@@ -376,12 +391,13 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
         )
 
         subprocess.run(["git", "pull", "origin", "master"])
+        mvn_cmd = get_mvn_command()
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
             isWinCmdOrBat = False
-        subprocess.run(["mvn", "clean", "package"], shell=isWinCmdOrBat)
-        subprocess.run(["mvn", "install"], shell=isWinCmdOrBat)
+        subprocess.run([mvn_cmd, "clean", "package"], shell=isWinCmdOrBat)
+        subprocess.run([mvn_cmd, "install"], shell=isWinCmdOrBat)
         os.chdir(current)
 
         level_zero_lib = "level-zero"
@@ -409,26 +425,26 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
         current, zeSharedLoader
     )
     os.environ["CPLUS_INCLUDE_PATH"] = (
-        os.path.join(current, "level-zero", "include")
-        + os.pathsep
-        + os.environ.get("CPLUS_INCLUDE_PATH", "")
+            os.path.join(current, "level-zero", "include")
+            + os.pathsep
+            + os.environ.get("CPLUS_INCLUDE_PATH", "")
     )
     os.environ["C_INCLUDE_PATH"] = (
-        os.path.join(current, "level-zero", "include")
-        + os.pathsep
-        + os.environ.get("C_INCLUDE_PATH", "")
+            os.path.join(current, "level-zero", "include")
+            + os.pathsep
+            + os.environ.get("C_INCLUDE_PATH", "")
     )
     if os.name == 'nt':
         os.environ["PATH"] = (
-            os.path.join(current, "level-zero", "build", "bin", "Release")
-            + os.pathsep
-            + os.environ.get("PATH", "")
+                os.path.join(current, "level-zero", "build", "bin", "Release")
+                + os.pathsep
+                + os.environ.get("PATH", "")
         )
     else:
         os.environ["LD_LIBRARY_PATH"] = (
-            os.path.join(current, "level-zero", "build", "lib")
-            + os.pathsep
-            + os.environ.get("LD_LIBRARY_PATH", "")
+                os.path.join(current, "level-zero", "build", "lib")
+                + os.pathsep
+                + os.environ.get("LD_LIBRARY_PATH", "")
         )
 
     return current
@@ -448,15 +464,16 @@ def build_tornadovm(args, backend_profiles, changed_modules=None, include_assemb
         CompletedProcess: Result of the Maven build process.
     """
     try:
+        mvn_cmd = get_mvn_command()
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
             isWinCmdOrBat = False
 
         if args.mavenSingleThreaded:
-            process = ["mvn", "-T1", "-Dstyle.color=always"]
+            process = [mvn_cmd, "-T1", "-Dstyle.color=always"]
         else:
-            process = ["mvn", "-T1.5C", "-Dstyle.color=always"]
+            process = [mvn_cmd, "-T1.5C", "-Dstyle.color=always"]
         if args.polyglot:
             process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
         else:
@@ -479,9 +496,11 @@ def build_tornadovm(args, backend_profiles, changed_modules=None, include_assemb
                 print(f"Building modules: {','.join(changed_modules)} (and their dependencies only)")
         elif changed_modules is not None and len(changed_modules) == 0:
             print("No modules to build (no changes detected)")
+
             # Return a successful mock result
             class MockResult:
                 returncode = 0
+
             return MockResult()
 
         process.append("install")
@@ -522,6 +541,7 @@ def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
         destination_file = os.path.join(graal_jars_dst_dir, file_name)
         if os.path.isfile(source_file):
             shutil.copy(source_file, destination_file)
+
 
 def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
     """
@@ -610,24 +630,26 @@ def check_tornadoSDK():
     Check if TORNADO_SDK env variable is loaded. It exits the compilation if it is not
     declared.
     """
-    print("Checking TORNADO_SDK env variable ................ ",  end='')
+    print("Checking TORNADO_SDK env variable ................ ", end='')
     try:
         os.environ['TORNADO_SDK']
         print("[OK]")
     except:
-        print("[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
+        print(
+            "[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
         sys.exit(-1)
 
+
 def generate_argfile(backend):
-        """
-        Generate the argfile for your current build.
-        """
-        scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
-        current = os.getcwd()
-        os.chdir(scripts_dir)
-        print(os.getcwd())
-        subprocess.run(["gen-tornado-argfile.sh", backend])
-        os.chdir(current)
+    """
+    Generate the argfile for your current build.
+    """
+    scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
+    current = os.getcwd()
+    os.chdir(scripts_dir)
+    print(os.getcwd())
+    subprocess.run(["gen-tornado-argfile.sh", backend])
+    os.chdir(current)
 
 
 def main():
@@ -693,7 +715,6 @@ def main():
             backend_profiles, mvn_build_result, args.jdk, graal_jars_status
         )
         generate_argfile(args.backend)
-
 
 
 if __name__ == "__main__":
