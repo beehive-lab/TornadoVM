@@ -609,8 +609,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = getProcessedOperand(shortCircuitOrNode.getX(), shortCircuitOrNode.isXNegated());
             final Value y = getProcessedOperand(shortCircuitOrNode.getY(), shortCircuitOrNode.isYNegated());
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.BITWISE_OR, boolLirKind, x, y)));
-        } else if (node instanceof LogicConstantNode) {
-            LogicConstantNode logicConstantNode = (LogicConstantNode) node;
+        } else if (node instanceof LogicConstantNode logicConstantNode) {
             Variable predicateVar = getGen().newVariable(LIRKind.value(PTXKind.PRED));
             append(new PTXLIRStmt.SetPredicateConstStmt(predicateVar, logicConstantNode.getValue()));
             setResult(node, predicateVar);

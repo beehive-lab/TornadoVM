@@ -97,6 +97,7 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (value) {
                 // If value is true, set predicate to always true
+                // Emits: setp.ne.u32 <result>, 1, 0;
                 asm.emitSymbol(TAB);
                 asm.emit("setp.ne.u32");
                 asm.emitSymbol(TAB);
@@ -111,6 +112,7 @@ public class PTXLIRStmt {
                 asm.eol();
             } else {
                 // else, if value is false, set it to always false
+                // Emits: setp.eq.u32 <result>, 1, 0;
                 asm.emitSymbol(TAB);
                 asm.emit("setp.eq.u32");
                 asm.emitSymbol(TAB);
