@@ -470,10 +470,12 @@ def build_tornadovm(args, backend_profiles, changed_modules=None, include_assemb
         else:
             isWinCmdOrBat = False
 
+        process = [mvn_cmd]
+        # Only override threading if single-threaded mode explicitly requested
+        # Default parallel build (-T1.5C) is configured in .mvn/maven.config
         if args.mavenSingleThreaded:
-            process = [mvn_cmd, "-T1", "-Dstyle.color=always"]
-        else:
-            process = [mvn_cmd, "-T1.5C", "-Dstyle.color=always"]
+            process.append("-T1")
+
         if args.polyglot:
             process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
         else:
