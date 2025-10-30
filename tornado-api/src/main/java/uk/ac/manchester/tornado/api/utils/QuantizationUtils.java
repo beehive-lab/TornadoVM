@@ -19,6 +19,11 @@ package uk.ac.manchester.tornado.api.utils;
 
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 
+/**
+ * Utility class providing operators for quantized data types. Currently, the functions
+ * implemented are compatible with 8-bit quantized models (e.g., Q8_0), but it will be extended
+ * as support is added for additional quantization formats and optimization strategies.
+ */
 public class QuantizationUtils {
 
     public static int dp4a(Int8Array a, long offset_a, Int8Array b, long offset_b, int c) {

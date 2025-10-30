@@ -50,7 +50,7 @@ public final class Int8Array extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT8_BYTES;
-        segmentByteSize = numberOfElements * INT8_BYTES + arrayHeaderSize;
+        segmentByteSize = (long) numberOfElements * INT8_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
