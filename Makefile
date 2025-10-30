@@ -46,10 +46,10 @@ xilinx_emulation:
 	emconfigutil --platform $(FPGA_PLATFORM) --nd $(NUM_OF_FPGA_DEVICES) --od $(JAVA_HOME)/bin
 
 checkstyle:
-	mvn checkstyle:check
+	./mvnw checkstyle:check
 
 clean:
-	mvn -Popencl-backend,ptx-backend,spirv-backend clean
+	./mvnw -Popencl-backend,ptx-backend,spirv-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
