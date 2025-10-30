@@ -9,7 +9,7 @@
 
         <!-- Local cache only (no remote cache) -->
         <local>
-            <maxBuildsCached>3</maxBuildsCached>
+            <maxBuildsCached>5</maxBuildsCached>
         </local>
 
         <projectVersioning adjustMetaInf="true"/>
@@ -18,7 +18,7 @@
     <input>
         <global>
             <glob>
-                *.java,*.xml,*.properties,*.sh,*.py
+                *.java,*.xml,*.properties,*.sh,*.py,*.c,*.cpp,*.h,*.hpp,*.cmake
             </glob>
         </global>
     </input>
