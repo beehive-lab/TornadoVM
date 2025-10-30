@@ -1,7 +1,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -13,11 +13,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
 @NodeInfo
 public class Dp4aNode extends ValueNode implements LIRLowerable {
@@ -55,31 +52,24 @@ public class Dp4aNode extends ValueNode implements LIRLowerable {
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
 
         if (b instanceof LocalArrayNode) {
-            
-            // variables for a
+            // variables for a (global memory)
             Value offset_a_value = generator.operand(offset_a);
-            Variable cnv_offset_a = tool.newVariable(LIRKind.value(PTXKind.U64));
             Variable add_header_offset_a = tool.newVariable(LIRKind.value(PTXKind.U64));
-
             Value base_address_int8_a = generator.operand(a);
             Variable offseted_address_a = tool.newVariable(LIRKind.value(PTXKind.U64));
             Variable load_four_int8_bytes_a = tool.newVariable(tool.getLIRKind(stamp));
 
-            // variables for b
-            Value localArrayB = generator.operand(b);
-            Variable load_four_int8_bytes_b = tool.newVariable(tool.getLIRKind(stamp));
+            // variables for b (local memory)
             Value offset_b_value = generator.operand(offset_b);
-            Variable cnv_offset_b = tool.newVariable(tool.getLIRKind(stamp));
+            Variable load_four_int8_bytes_b = tool.newVariable(tool.getLIRKind(stamp));
 
             // variable for accumulator
             Value accumulator_c = generator.operand(c);
-            PTXLIRGenerator ptxTool = (PTXLIRGenerator) tool;
 
+            Value headerVar = tool.emitConstant(LIRKind.value(PTXKind.U64), new RawConstant(HEADER_SIZE));
+            Value localArrayValue = generator.operand(b);
 
-            LocalArrayNode lo = (LocalArrayNode) b;
-            final Local[] locals = lo.graph().method().getLocalVariableTable().getLocalsAt(0);
-            PTXUnary.MemoryAccess memoryAccessLocal = new PTXUnary.MemoryAccess(locals[0].getName());
-            tool.append(new PTXLIRStmt.Dp4aStmt(result, base_address_int8_a, load_four_int8_bytes_a, offset_a_value, cnv_offset_a, add_header_offset_a, offseted_address_a, accumulator_c, offset_b_value, cnv_offset_b, load_four_int8_bytes_b, memoryAccessLocal, HEADER_SIZE));
+            tool.append(new PTXLIRStmt.Dp4aLocalMemoryStmt(result, base_address_int8_a, load_four_int8_bytes_a, offset_a_value, add_header_offset_a, offseted_address_a, accumulator_c, offset_b_value, load_four_int8_bytes_b, localArrayValue, headerVar));
             generator.setResult(this, result);
         } else {
             // variables to calculate the offsets
@@ -104,7 +94,8 @@ public class Dp4aNode extends ValueNode implements LIRLowerable {
             // variable for accumulator
             Value accumulator_c = generator.operand(c);
 
-            tool.append(new PTXLIRStmt.Dp4aStmt(result, base_address_int8_a, load_four_int8_bytes_a, base_address_int8_b, load_four_int8_bytes_b, accumulator_c, offset_a_value, cnv_offset_a, add_header_offset_a, offset_b_value, cnv_offset_b, add_header_offset_b, offseted_address_a, offseted_address_b, HEADER_SIZE));
+            Value headerVar = tool.emitConstant(LIRKind.value(PTXKind.U64), new RawConstant(HEADER_SIZE));
+            tool.append(new PTXLIRStmt.Dp4aStmt(result, base_address_int8_a, load_four_int8_bytes_a, base_address_int8_b, load_four_int8_bytes_b, accumulator_c, offset_a_value, cnv_offset_a, add_header_offset_a, offset_b_value, cnv_offset_b, add_header_offset_b, offseted_address_a, offseted_address_b, headerVar));
             generator.setResult(this, result);
         }
     }

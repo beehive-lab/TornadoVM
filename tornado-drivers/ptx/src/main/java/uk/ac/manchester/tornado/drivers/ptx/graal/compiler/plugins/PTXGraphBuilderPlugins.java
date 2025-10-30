@@ -155,7 +155,6 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
-                System.out.println("REGISTER PACKED DP4A");
                 DP4APackedNode dp4aPackedOp = new DP4APackedNode(a, b, accumulator);
                 graphBuilderContext.addPush(JavaKind.Int, dp4aPackedOp);
                 return true;

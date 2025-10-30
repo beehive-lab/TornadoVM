@@ -43,16 +43,4 @@ public class QuantizationUtils {
         return sum;
     }
 
-    /**
-     * DP4A instruction: 4-way dot product accumulate
-     */
-    public static int dp4a(byte w0, byte w1, byte w2, byte w3,
-                            byte a0, byte a1, byte a2, byte a3, int acc) {
-        acc += w0 * a0;
-        acc += w1 * a1;
-        acc += w2 * a2;
-        acc += w3 * a3;
-        return acc;
-    }
-
 }
