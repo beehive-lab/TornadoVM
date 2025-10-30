@@ -80,23 +80,50 @@ public class PTXLIRStmt {
         public abstract void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm);
     }
 
-    @Opcode("BOOL")
-    public static class EmitBoolStmt extends AbstractInstruction {
-        public static final LIRInstructionClass<EmitBoolStmt> TYPE = LIRInstructionClass.create(EmitBoolStmt.class);
+    @Opcode("SET_PRED_CONST")
+    public static class SetPredicateConstStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<SetPredicateConstStmt> TYPE = LIRInstructionClass.create(SetPredicateConstStmt.class);
 
-        boolean bool;
+        @Def protected Value result;
+        private final boolean value;
 
-        public EmitBoolStmt(boolean bool) {
+        public SetPredicateConstStmt(Value result, boolean value) {
             super(TYPE);
-            this.bool = bool;
+            this.result = result;
+            this.value = value;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-//            asm.emitSymbol(TAB);
-//            asm.emit(Boolean.toString(bool));
-//            asm.delimiter();
-//            asm.eol();
+            if (value) {
+                // If value is true, set predicate to always true
+                asm.emitSymbol(TAB);
+                asm.emit("setp.ne.u32");
+                asm.emitSymbol(TAB);
+                asm.emitValue(result);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("1");
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("0");
+                asm.delimiter();
+                asm.eol();
+            } else {
+                // else, if value is false, set it to always false
+                asm.emitSymbol(TAB);
+                asm.emit("setp.eq.u32");
+                asm.emitSymbol(TAB);
+                asm.emitValue(result);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("1");
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("0");
+                asm.delimiter();
+                asm.eol();
+            }
         }
     }
 
@@ -305,8 +332,7 @@ public class PTXLIRStmt {
         @Def
         protected Value header_size;
 
-        public Dp4aLocalMemoryStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value offset_a, Value add_header_offset_a, Value offseted_address_a, Value accumulator_c, Value offset_b, Value load_four_int8_bytes_b, Value local_array_base,
-                                   Value header_size) {
+        public Dp4aLocalMemoryStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value offset_a, Value add_header_offset_a, Value offseted_address_a, Value accumulator_c, Value offset_b, Value load_four_int8_bytes_b, Value local_array_base, Value header_size) {
             super(TYPE);
             this.result = result;
             this.int8_a_base = int8_a_base;
@@ -730,11 +756,7 @@ public class PTXLIRStmt {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
-           if (halfValue.getPlatformKind().toString().contains("s32")) {
-                asm.emit(CONVERT_RN + DOT + "f32" + DOT + "s32");
-            } else {
-                asm.emit(CONVERT + DOT + "f32" + DOT + "f16");
-            }
+            asm.emit(CONVERT + DOT + "f32" + DOT + "f16");
             asm.emitSymbol(SPACE);
             asm.emitValue(floatValue);
             asm.emitSymbol(COMMA + SPACE);
@@ -988,9 +1010,6 @@ public class PTXLIRStmt {
             // ld.u64 %rd9, [%rd8];
             loadOp.emit(crb, null);
             asm.emitSymbol(DOT);
-            if (address.getBase().memorySpace.getName().contains("shared")) {
-                int x = 0;
-            }
             asm.emit(address.getBase().memorySpace.getName());
             asm.emitSymbol(DOT);
             asm.emit(dest.getPlatformKind().toString());

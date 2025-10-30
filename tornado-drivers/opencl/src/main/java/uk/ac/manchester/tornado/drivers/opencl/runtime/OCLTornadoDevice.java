@@ -555,7 +555,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
             } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.HALF.getSizeInBytes());
             } else if (object instanceof Int8Array) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.HALF.getSizeInBytes());
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, access, OCLKind.CHAR.getSizeInBytes());
             } else {
                 result = new OCLFieldBuffer(deviceContext, object, access);
             }

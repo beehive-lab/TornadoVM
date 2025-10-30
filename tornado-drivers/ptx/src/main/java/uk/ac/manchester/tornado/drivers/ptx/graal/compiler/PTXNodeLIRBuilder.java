@@ -611,7 +611,10 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.BITWISE_OR, boolLirKind, x, y)));
         } else if (node instanceof LogicConstantNode) {
             LogicConstantNode logicConstantNode = (LogicConstantNode) node;
-            append(new PTXLIRStmt.EmitBoolStmt(logicConstantNode.getValue()));
+            // Don't emit the boolean directly - instead allocate a predicate and set it
+            Variable predicateVar = getGen().newVariable(LIRKind.value(PTXKind.PRED));
+            append(new PTXLIRStmt.SetPredicateConstStmt(predicateVar, logicConstantNode.getValue()));
+            setResult(node, predicateVar);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
