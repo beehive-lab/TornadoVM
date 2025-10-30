@@ -57,7 +57,7 @@ public final class FloatArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / FLOAT_BYTES;
-        segmentByteSize = numberOfElements * FLOAT_BYTES + arrayHeaderSize;
+        segmentByteSize = (long) numberOfElements * FLOAT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
@@ -122,7 +122,7 @@ public final class FloatArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / FLOAT_BYTES);
         ensureMultipleOfElementSize(byteSize, FLOAT_BYTES);
         FloatArray floatArray = new FloatArray(numElements);
-        MemorySegment.copy(segment, 0, floatArray.segment, floatArray.baseIndex * FLOAT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, floatArray.segment, (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;
     }
 
@@ -303,8 +303,8 @@ public final class FloatArray extends TornadoNativeArray {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
-        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * FLOAT_BYTES;
-        long sliceByteLength = length * FLOAT_BYTES;
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * FLOAT_BYTES;
+        long sliceByteLength = (long) length * FLOAT_BYTES;
         MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
         FloatArray slice = fromSegment(sliceSegment);
         return slice;

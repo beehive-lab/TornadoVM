@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,21 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.exceptions;
+package uk.ac.manchester.tornado.unittests.foundation;
 
-public class TornadoDynamicReconfigurationException extends RuntimeException {
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-    public TornadoDynamicReconfigurationException(final String msg) {
-        super(msg);
-    }
-
-    public TornadoDynamicReconfigurationException(Exception e) {
-        super(e);
-    }
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+        TestFloats.class,
+        TestIntegers.class,
+        TestDoubles.class,
+        TestLong.class,
+        TestShorts.class,
+        TestLinearAlgebra.class,
+        MultipleRuns.class
+})
+public class FoundationTestSuite {
+    // Empty class - just a holder for the annotations
 }
