@@ -546,12 +546,13 @@ def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
             shutil.copy(source_file, destination_file)
 
 
-def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
+def post_installation_actions(backend_profiles, selected_backends, mvn_build_result, jdk, graal_jars_status):
     """
     Performs post-installation actions.
 
     Args:
-        backend_profiles (str): The processed backend options.
+        backend_profiles (str): The processed backend options for Maven (e.g., "opencl-backend,ptx-backend").
+        selected_backends (str): The actual backend names (e.g., "opencl,ptx").
         mvn_build_result (CompletedProcess): Result of the Maven build process.
         jdk (str): The JDK version.
     """
@@ -559,10 +560,10 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
         # Update all PATHs
         updp.update_tornado_paths()
 
-        # Update the compiled backends file
+        # Update the compiled backends file with actual backend names (not Maven profile names)
         backend_file_path = os.path.join(f"{os.environ['TORNADO_SDK']}", "etc", "tornado.backend")
         with open(backend_file_path, "w") as backend_file:
-            backend_file.write(f"tornado.backends={backend_profiles}")
+            backend_file.write(f"tornado.backends={selected_backends}")
 
         # Place the Graal jars in the TornadoVM distribution only if the JDK 21 rule is used
         if graal_jars_status:
@@ -703,7 +704,7 @@ def main():
             mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules, include_assembly=True)
             # Update paths and generate argfile since distribution changed
             post_installation_actions(
-                backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+                backend_profiles, args.backend, mvn_build_result, args.jdk, graal_jars_status
             )
             generate_argfile(args.backend)
         else:
@@ -718,7 +719,7 @@ def main():
         clean_dist_for_incremental()
         mvn_build_result = build_tornadovm(args, backend_profiles)
         post_installation_actions(
-            backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+            backend_profiles, args.backend, mvn_build_result, args.jdk, graal_jars_status
         )
         generate_argfile(args.backend)
 
