@@ -105,6 +105,24 @@ Located at the repository root, this file contains:
 - Module path and upgrade paths
 - Extensive `--add-exports` and `--add-opens` declarations for Graal compiler internals
 
+### .mvn/maven.config
+Maven configuration file that applies to all Maven builds (both `./mvnw` and `bin/compile`):
+- **Parallel builds**: `-T1.5C` (1.5 threads per CPU core)
+- **Colored output**: `-Dstyle.color=always` for better readability
+- **Default profiles**: JDK 21 + OpenCL backend (can be overridden)
+- **Skip Javadoc**: `-Dmaven.javadoc.skip=true` for faster builds
+- **Fail fast**: `-Dfailfast=true` for quicker feedback during development
+- **Timestamps**: Shows build timestamps for performance tracking
+
+These settings are automatically applied. To override:
+```bash
+# Single-threaded build
+./mvnw -T1 install
+
+# Generate Javadocs
+./mvnw install -Dmaven.javadoc.skip=false
+```
+
 ### Module Structure
 Both approaches load these core TornadoVM modules:
 - `tornado.runtime` - Core runtime implementation
