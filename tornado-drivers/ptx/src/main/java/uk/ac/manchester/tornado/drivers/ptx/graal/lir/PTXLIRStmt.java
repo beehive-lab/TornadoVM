@@ -50,7 +50,6 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 
 import java.nio.charset.StandardCharsets;
 
-import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -79,6 +78,339 @@ public class PTXLIRStmt {
         }
 
         public abstract void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm);
+    }
+
+    @Opcode("SET_PRED_CONST")
+    public static class SetPredicateConstStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<SetPredicateConstStmt> TYPE = LIRInstructionClass.create(SetPredicateConstStmt.class);
+
+        @Def protected Value result;
+        private final boolean value;
+
+        public SetPredicateConstStmt(Value result, boolean value) {
+            super(TYPE);
+            this.result = result;
+            this.value = value;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            if (value) {
+                // If value is true, set predicate to always true
+                // Emits: setp.ne.u32 <result>, 1, 0;
+                asm.emitSymbol(TAB);
+                asm.emit("setp.ne.u32");
+                asm.emitSymbol(TAB);
+                asm.emitValue(result);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("1");
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("0");
+                asm.delimiter();
+                asm.eol();
+            } else {
+                // else, if value is false, set it to always false
+                // Emits: setp.eq.u32 <result>, 1, 0;
+                asm.emitSymbol(TAB);
+                asm.emit("setp.eq.u32");
+                asm.emitSymbol(TAB);
+                asm.emitValue(result);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("1");
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit("0");
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+    }
+
+    @Opcode("DP4APACKED")
+    public static class Dp4aPackedStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<Dp4aPackedStmt> TYPE = LIRInstructionClass.create(Dp4aPackedStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value a;
+        @Use
+        protected Value b;
+        @Use
+        protected Value c;
+
+        public Dp4aPackedStmt(Value result, Value a, Value b, Value c) {
+            super(TYPE);
+            this.result = result;
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit("dp4a.s32.s32 ");
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(c);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("DP4A")
+    public static class Dp4aStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aStmt> TYPE = LIRInstructionClass.create(Dp4aStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value int8_a_base;
+        @Def
+        protected Value load_four_int8_bytes_a;
+        @Use
+        protected Value int8_b_base;
+        @Def
+        protected Value load_four_int8_bytes_b;
+        @Use
+        protected Value accumulator_c;
+        @Use
+        protected Value offset_a;
+        @Def
+        protected Value cnv_offset_a;
+        @Def
+        protected Value add_header_offset_a;
+        @Use
+        protected Value offset_b;
+        @Def
+        protected Value cnv_offset_b;
+        @Def
+        protected Value add_header_offset_b;
+        @Def
+        protected Value offseted_address_a;
+        @Def
+        protected Value offseted_address_b;
+        @Def
+        protected Value header_size;
+
+        public Dp4aStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value int8_b_base, Value load_four_int8_bytes_b, Value accumulator_c, Value offset_a, Value cnv_offset_a, Value add_header_offset_a, Value offset_b, Value cnv_offset_b, Value add_header_offset_b, Value offseted_address_a, Value offseted_address_b, Value header_size) {
+            super(TYPE);
+            this.result = result;
+            this.int8_a_base = int8_a_base;
+            this.load_four_int8_bytes_a = load_four_int8_bytes_a;
+            this.int8_b_base = int8_b_base;
+            this.load_four_int8_bytes_b = load_four_int8_bytes_b;
+            this.accumulator_c = accumulator_c;
+            this.offset_a = offset_a;
+            this.cnv_offset_a = cnv_offset_a;
+            this.add_header_offset_a = add_header_offset_a;
+            this.offset_b = offset_b;
+            this.cnv_offset_b = cnv_offset_b;
+            this.add_header_offset_b = add_header_offset_b;
+            this.offseted_address_a = offseted_address_a;
+            this.offseted_address_b = offseted_address_b;
+            this.header_size = header_size;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // instructions to calculate dp4a: dp4a.s32.s32 result, a, b, c;
+
+            // add header bytes to offset of a
+            asm.emitSymbol(TAB);
+            asm.emitSymbol("add.u64 ");
+            asm.emitValue(add_header_offset_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(header_size);
+            asm.delimiter();
+            asm.eol();
+
+            //add offset to base address of buffer a
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64 ");
+            asm.emitValue(offseted_address_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(int8_a_base);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(add_header_offset_a);
+            asm.delimiter();
+            asm.eol();
+
+            // load from offseted address of buffer a
+            asm.emitSymbol(TAB);
+            asm.emit("ld.global.s32 ");
+            asm.emitValue(load_four_int8_bytes_a);
+            asm.emitSymbol(COMMA + SPACE + "[");
+            asm.emitValue(offseted_address_a);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            // add header bytes to offset of b
+            asm.emitSymbol(TAB);
+            asm.emitSymbol("add.u64 ");
+            asm.emitValue(add_header_offset_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(header_size);
+            asm.delimiter();
+            asm.eol();
+
+            //add offset to base address of buffer b
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64 ");
+            asm.emitValue(offseted_address_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(int8_b_base);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(add_header_offset_b);
+            asm.delimiter();
+            asm.eol();
+
+            // load from offseted address of buffer b
+            asm.emitSymbol(TAB);
+            asm.emit("ld.global.s32 ");
+            asm.emitValue(load_four_int8_bytes_b);
+            asm.emitSymbol(COMMA + SPACE + "[");
+            asm.emitValue(offseted_address_b);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            // perform dp4a
+            asm.emitSymbol(TAB);
+            asm.emit("dp4a.s32.s32 ");
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(load_four_int8_bytes_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(load_four_int8_bytes_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(accumulator_c);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("DP4A_LOCAL_MEMORY")
+    public static class Dp4aLocalMemoryStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<Dp4aLocalMemoryStmt> TYPE = LIRInstructionClass.create(Dp4aLocalMemoryStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value int8_a_base;
+        @Def
+        protected Value load_four_int8_bytes_a;
+        @Def
+        protected Value load_four_int8_bytes_b;
+        @Use
+        protected Value accumulator_c;
+        @Use
+        protected Value offset_a;
+        @Def
+        protected Value add_header_offset_a;
+        @Use
+        protected Value offset_b;
+        @Def
+        protected Value offseted_address_a;
+        @Use
+        protected Value local_array_base;
+        @Def
+        protected Value header_size;
+
+        public Dp4aLocalMemoryStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value offset_a, Value add_header_offset_a, Value offseted_address_a, Value accumulator_c, Value offset_b, Value load_four_int8_bytes_b, Value local_array_base, Value header_size) {
+            super(TYPE);
+            this.result = result;
+            this.int8_a_base = int8_a_base;
+            this.load_four_int8_bytes_a = load_four_int8_bytes_a;
+            this.offset_a = offset_a;
+            this.add_header_offset_a = add_header_offset_a;
+            this.offseted_address_a = offseted_address_a;
+            this.accumulator_c = accumulator_c;
+            this.offset_b = offset_b;
+            this.load_four_int8_bytes_b = load_four_int8_bytes_b;
+            this.local_array_base = local_array_base;
+            this.header_size = header_size;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // instructions to calculate dp4a: dp4a.s32.s32 result, a, b, c;
+
+            // add header bytes to offset of a
+            asm.emitSymbol(TAB);
+            asm.emitSymbol("add.u64 ");
+            asm.emitValue(add_header_offset_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(offset_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(header_size);
+            asm.delimiter();
+            asm.eol();
+
+            //add offset to base address of buffer a
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64 ");
+            asm.emitValue(offseted_address_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(int8_a_base);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(add_header_offset_a);
+            asm.delimiter();
+            asm.eol();
+
+            // load from offseted address of buffer a
+            asm.emitSymbol(TAB);
+            asm.emit("ld.global.s32 ");
+            asm.emitValue(load_four_int8_bytes_a);
+            asm.emitSymbol(COMMA + SPACE + "[");
+            asm.emitValue(offseted_address_a);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            // load from local memory
+            asm.emitSymbol(TAB);
+            asm.emit("ld.shared.s32 ");
+            asm.emitValue(load_four_int8_bytes_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(local_array_base);
+            asm.emitSymbol("[");
+            asm.emitValue(offset_b);
+            asm.emitSymbol("]");
+            asm.delimiter();
+            asm.eol();
+
+            // perform dp4a
+            asm.emitSymbol(TAB);
+            asm.emit("dp4a.s32.s32 ");
+            asm.emitValue(result);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(load_four_int8_bytes_a);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(load_four_int8_bytes_b);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(accumulator_c);
+            asm.delimiter();
+            asm.eol();
+        }
+
     }
 
     @Opcode("DIVHALF")
@@ -491,6 +823,8 @@ public class PTXLIRStmt {
             asm.eol();
         }
     }
+
+
 
     @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
