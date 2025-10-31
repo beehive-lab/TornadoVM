@@ -312,6 +312,102 @@ public class TestAPI extends TornadoTestBase {
         }
     }
 
+    /**
+     * Test lazy copy-in functionality. This test executes a task, modifies the data on the host,
+     * uses transferToDevice to copy modified data back to the device, and executes again.
+     */
+    @Test
+    public void testLazyCopyIn() throws TornadoExecutionPlanException {
+        final int N = 1024;
+        int size = 20;
+        IntArray data = new IntArray(N);
+
+        IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, size));
+
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
+
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            // First execution: data should be 20 + 1 = 21
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            executionResult.transferToHost(data);
+
+            for (int i = 0; i < N; i++) {
+                assertEquals(21, data.get(i));
+            }
+
+            // Modify data on the host
+            IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, 100));
+
+            // Transfer modified data to device using lazy copy-in
+            executionResult.transferToDevice(data);
+
+            // Second execution: data should be 100 + 1 = 101
+            executionResult = executionPlan.execute();
+            executionResult.transferToHost(data);
+
+            for (int i = 0; i < N; i++) {
+                assertEquals(101, data.get(i));
+            }
+        }
+    }
+
+    /**
+     * Test lazy partial copy-in functionality. This test uses DataRange to transfer
+     * a subset of the data from host to device.
+     */
+    @Test
+    public void testLazyPartialCopyIn() throws TornadoExecutionPlanException {
+        final int N = 1024;
+        int size = 20;
+        IntArray data = new IntArray(N);
+
+        IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, size));
+
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
+
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            // First execution: data should be 20 + 1 = 21
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            executionResult.transferToHost(data);
+
+            for (int i = 0; i < N; i++) {
+                assertEquals(21, data.get(i));
+            }
+
+            // Modify only the first half on the host
+            IntStream.range(0, N / 2).parallel().forEach(idx -> data.set(idx, 200));
+
+            // Transfer only the first half to device using partial copy-in
+            DataRange dataRange = new DataRange(data);
+            executionResult.transferToDevice(dataRange.withSize(N / 2));
+
+            // Second execution
+            executionResult = executionPlan.execute();
+            executionResult.transferToHost(data);
+
+            // First half should be 200 + 1 = 201
+            for (int i = 0; i < N / 2; i++) {
+                assertEquals(201, data.get(i));
+            }
+            // Second half should still be 21 + 1 = 22 (executed twice)
+            for (int i = N / 2; i < N; i++) {
+                assertEquals(22, data.get(i));
+            }
+        }
+    }
+
     @Test
     public void testWarmUp() throws TornadoExecutionPlanException {
         final int N = 128;
