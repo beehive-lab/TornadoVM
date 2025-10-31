@@ -100,7 +100,7 @@ def should_handle_graal_jars(jdk):
 
 def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
+    print("mvnw -Popencl-backend,ptx-backend,spirv-backend clean")
 
     subprocess.run(
         [mvn_cmd, "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
