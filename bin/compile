@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ import subprocess
 import sys
 
 import install_python_modules as tornadoReq
-
 tornadoReq.check_python_dependencies()
 
 import config_utils as cutils
@@ -32,8 +31,10 @@ import config_utils as cutils
 import update_paths as updp
 import pull_graal_jars
 
+
 __LEVEL_ZERO_JNI_VERSION__ = "0.1.4"
 __BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.4"
+
 
 
 def get_mvn_command():
@@ -47,7 +48,6 @@ def get_mvn_command():
         return "./mvnw.cmd"
     else:
         return "./mvnw"
-
 
 def check_java_version():
     """
@@ -84,163 +84,9 @@ def should_handle_graal_jars(jdk):
     return jdk == "jdk21" and "GraalVM" not in java_version_output
 
 
-def should_rebuild_assembly(changed_modules):
-    """
-    Determines if the assembly (distribution) needs to be rebuilt based on
-    which modules have changed.
-
-    Strategy: Only skip assembly for tornado-unittests changes, since those
-    are typically run via maven or tornado-test, not the tornado command.
-    Examples and benchmarks often need to be run via tornado command, so
-    we rebuild assembly for those.
-
-    Args:
-        changed_modules (list): List of changed module names
-
-    Returns:
-        bool: True if assembly should be rebuilt, False otherwise
-    """
-    if not changed_modules:
-        return False
-
-    # Only skip assembly if ONLY tornado-unittests changed
-    # (unittests are run via tornado-test or maven, not the tornado launcher)
-    if len(changed_modules) == 1 and changed_modules[0] == "tornado-unittests":
-        print(f"Only tornado-unittests changed - skipping assembly for faster build")
-        print("Run tests with: tornado-test or mvnw test")
-        return False
-
-    # For all other changes, rebuild assembly to ensure tornado command works
-    # This includes: runtime, api, drivers, examples, benchmarks, matrices, etc.
-    if changed_modules:
-        print(f"Changed modules: {', '.join(changed_modules)}")
-        print("Rebuilding assembly to update distribution")
-        return True
-
-    return False
-
-
-def get_changed_modules():
-    """
-    Detects changed files using git and maps them to Maven modules.
-
-    Returns:
-        list: List of changed module names, or None if all modules should be built.
-    """
-    try:
-        # Get modified, added, and deleted files
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        if not result.stdout.strip():
-            print("No changes detected by git status")
-            return []
-
-        # Parse git status output
-        changed_files = []
-        for line in result.stdout.split('\n'):
-            if line.strip():
-                # Git status format: "XY filename" where X and Y are status codes
-                # Format is: 2 chars for status + 1 space + filename
-                # Handle both formats: with or without leading space
-                line = line.strip()
-                # Skip the status codes (first 2 chars) and the space
-                if len(line) > 3:
-                    file_path = line[2:].strip()
-                    changed_files.append(file_path)
-
-        # Also check for uncommitted changes in tracked files
-        diff_result = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        for file_path in diff_result.stdout.strip().split('\n'):
-            if file_path.strip() and file_path not in changed_files:
-                changed_files.append(file_path)
-
-        if not changed_files:
-            print("No changes detected")
-            return []
-
-        # Map files to modules
-        all_modules = [
-            "tornado-annotation",
-            "tornado-api",
-            "tornado-assembly",
-            "tornado-benchmarks",
-            "tornado-drivers",
-            "tornado-examples",
-            "tornado-matrices",
-            "tornado-runtime",
-            "tornado-unittests"
-        ]
-
-        changed_modules = set()
-        for file_path in changed_files:
-            for module in all_modules:
-                if file_path.startswith(module + "/"):
-                    changed_modules.add(module)
-                    break
-            # If file is in root (like pom.xml), rebuild all modules
-            if "/" not in file_path and file_path.endswith(".xml"):
-                print(f"Root build file changed ({file_path}), building all modules ")
-                return None
-
-        changed_modules_list = sorted(list(changed_modules))
-
-        if changed_modules_list:
-            print(f"Detected changes in modules: {', '.join(changed_modules_list)}")
-        else:
-            print("Changes detected but not in any module directories")
-
-        return changed_modules_list
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error detecting changes with git: {e}")
-        print("Falling back to full build")
-        return None
-    except Exception as e:
-        print(f"Unexpected error detecting changes: {e}")
-        print("Falling back to full build")
-        return None
-
-
-def clean_dist_for_incremental():
-    """
-    Cleans the entire dist directory to avoid permission issues
-    with the tornado-assembly plugin.
-
-    When using Maven build cache (no 'mvn clean'), the dist/ directory persists
-    between builds. The assembly plugin can encounter permission conflicts when
-    trying to update existing files. Cleaning the dist/ directory ensures a
-    fresh start for the assembly process.
-    """
-    try:
-        dist_dir = os.path.join(os.getcwd(), 'dist')
-        if os.path.exists(dist_dir):
-            print(f"Cleaning distribution directory: {dist_dir}")
-            import shutil
-            shutil.rmtree(dist_dir, ignore_errors=True)
-            print("Distribution directory cleaned successfully")
-    except Exception as e:
-        print(f"Warning: Could not clean distribution directory: {e}")
-        print("Continuing with build...")
-
-
-def maven_cleanup(skip_clean=False):
-    if skip_clean:
-        print("Skipping maven clean for incremental build")
-        return
-
+def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print(f"{mvn_cmd} -Popencl-backend,ptx-backend,spirv-backend clean")
+    print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
     if os.name == 'nt':
         isWinCmdOrBat = True
     else:
@@ -313,7 +159,7 @@ def build_levelzero_jni_lib(rebuild=False):
     """
     current = os.getcwd()
     levelzero_jni = "levelzero-jni"
-    build = False
+    build=False
     if not os.path.exists(levelzero_jni):
         ## clone only if directory does not exist
         subprocess.run(
@@ -323,7 +169,7 @@ def build_levelzero_jni_lib(rebuild=False):
                 "https://github.com/beehive-lab/levelzero-jni.git",
             ],
         )
-        build = True
+        build=True
 
     if (rebuild or build):
 
@@ -339,9 +185,9 @@ def build_levelzero_jni_lib(rebuild=False):
             ],
         )
 
+        mvn_cmd = get_mvn_command()
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", __LEVEL_ZERO_JNI_VERSION__])
-        mvn_cmd = get_mvn_command()
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
@@ -355,8 +201,8 @@ def build_levelzero_jni_lib(rebuild=False):
             os.mkdir(levelzero_build_directory_cpp)
         os.chdir(levelzero_build_directory_cpp)
 
-        subprocess.run(["cmake", "..", ], )
-        subprocess.run(["cmake", "--build", ".", "--config", "Release"], )
+        subprocess.run(["cmake", "..", ],)
+        subprocess.run(["cmake", "--build", ".", "--config", "Release"],)
 
         os.chdir(current)
 
@@ -367,7 +213,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     """
     current = os.getcwd()
     spirv_tool_kit = "beehive-spirv-toolkit"
-    build = True
+    build=True
     if not os.path.exists(spirv_tool_kit):
         subprocess.run(
             [
@@ -391,8 +237,8 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             ],
         )
 
-        subprocess.run(["git", "pull", "origin", "master"])
         mvn_cmd = get_mvn_command()
+        subprocess.run(["git", "pull", "origin", "master"])
         if os.name == 'nt':
             isWinCmdOrBat = True
         else:
@@ -426,40 +272,38 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
         current, zeSharedLoader
     )
     os.environ["CPLUS_INCLUDE_PATH"] = (
-            os.path.join(current, "level-zero", "include")
-            + os.pathsep
-            + os.environ.get("CPLUS_INCLUDE_PATH", "")
+        os.path.join(current, "level-zero", "include")
+        + os.pathsep
+        + os.environ.get("CPLUS_INCLUDE_PATH", "")
     )
     os.environ["C_INCLUDE_PATH"] = (
-            os.path.join(current, "level-zero", "include")
-            + os.pathsep
-            + os.environ.get("C_INCLUDE_PATH", "")
+        os.path.join(current, "level-zero", "include")
+        + os.pathsep
+        + os.environ.get("C_INCLUDE_PATH", "")
     )
     if os.name == 'nt':
         os.environ["PATH"] = (
-                os.path.join(current, "level-zero", "build", "bin", "Release")
-                + os.pathsep
-                + os.environ.get("PATH", "")
+            os.path.join(current, "level-zero", "build", "bin", "Release")
+            + os.pathsep
+            + os.environ.get("PATH", "")
         )
     else:
         os.environ["LD_LIBRARY_PATH"] = (
-                os.path.join(current, "level-zero", "build", "lib")
-                + os.pathsep
-                + os.environ.get("LD_LIBRARY_PATH", "")
+            os.path.join(current, "level-zero", "build", "lib")
+            + os.pathsep
+            + os.environ.get("LD_LIBRARY_PATH", "")
         )
 
     return current
 
 
-def build_tornadovm(args, backend_profiles, changed_modules=None, include_assembly=True):
+def build_tornadovm(args, backend_profiles):
     """
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
         args (object): The arguments passed by the user. The JDK version as well as other options (e.g., if polyglot is used).
         backend_profiles (str): The processed backend options.
-        changed_modules (list): Optional list of modules to build. If None, builds all modules.
-        include_assembly (bool): Whether to include tornado-assembly module in the build.
 
     Returns:
         CompletedProcess: Result of the Maven build process.
@@ -482,30 +326,6 @@ def build_tornadovm(args, backend_profiles, changed_modules=None, include_assemb
         else:
             process.append(f"-P{args.jdk},{backend_profiles}")
 
-        # Add module selection for incremental builds
-        if changed_modules is not None and len(changed_modules) > 0:
-            modules_to_build = changed_modules.copy()
-
-            # Conditionally include tornado-assembly
-            if include_assembly and "tornado-assembly" not in modules_to_build:
-                modules_to_build.append("tornado-assembly")
-
-            modules_list = ",".join(modules_to_build)
-            process.extend(["-pl", modules_list, "-am"])
-
-            if include_assembly:
-                print(f"Building modules: {','.join(changed_modules)} (and their dependencies, plus tornado-assembly)")
-            else:
-                print(f"Building modules: {','.join(changed_modules)} (and their dependencies only)")
-        elif changed_modules is not None and len(changed_modules) == 0:
-            print("No modules to build (no changes detected)")
-
-            # Return a successful mock result
-            class MockResult:
-                returncode = 0
-
-            return MockResult()
-
         process.append("install")
         print(' '.join(process))
 
@@ -520,10 +340,10 @@ def build_tornadovm(args, backend_profiles, changed_modules=None, include_assemb
         if result.returncode == 0:
             print("Maven build succeeded")
         else:
-            print("Maven build failed. Error output:")
+            print("Maven clean failed. Error output:")
             print(result.stderr)
     except subprocess.CalledProcessError as e:
-        print(f"Error running maven build: {e}")
+        print(f"Error running 'mvn clean': {e}")
         sys.exit(-1)
 
     return result
@@ -545,14 +365,12 @@ def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
         if os.path.isfile(source_file):
             shutil.copy(source_file, destination_file)
 
-
-def post_installation_actions(backend_profiles, selected_backends, mvn_build_result, jdk, graal_jars_status):
+def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
     """
     Performs post-installation actions.
 
     Args:
-        backend_profiles (str): The processed backend options for Maven (e.g., "opencl-backend,ptx-backend").
-        selected_backends (str): The actual backend names (e.g., "opencl,ptx").
+        backend_profiles (str): The processed backend options.
         mvn_build_result (CompletedProcess): Result of the Maven build process.
         jdk (str): The JDK version.
     """
@@ -560,10 +378,10 @@ def post_installation_actions(backend_profiles, selected_backends, mvn_build_res
         # Update all PATHs
         updp.update_tornado_paths()
 
-        # Update the compiled backends file with actual backend names (not Maven profile names)
+        # Update the compiled backends file
         backend_file_path = os.path.join(f"{os.environ['TORNADO_SDK']}", "etc", "tornado.backend")
         with open(backend_file_path, "w") as backend_file:
-            backend_file.write(f"tornado.backends={selected_backends}")
+            backend_file.write(f"tornado.backends={backend_profiles}")
 
         # Place the Graal jars in the TornadoVM distribution only if the JDK 21 rule is used
         if graal_jars_status:
@@ -610,20 +428,6 @@ def parse_args():
         default=False,
         help="Enable pull and rebuild of the external dependencies."
     )
-    parser.add_argument(
-        "--incremental",
-        action="store_true",
-        dest="incremental",
-        default=False,
-        help="Build only modified modules based on git status (faster for development)."
-    )
-    parser.add_argument(
-        "--force-assembly",
-        action="store_true",
-        dest="forceAssembly",
-        default=False,
-        help="Force rebuild of assembly/distribution even for incremental builds."
-    )
 
     args = parser.parse_args()
     return args
@@ -634,26 +438,24 @@ def check_tornadoSDK():
     Check if TORNADO_SDK env variable is loaded. It exits the compilation if it is not
     declared.
     """
-    print("Checking TORNADO_SDK env variable ................ ", end='')
+    print("Checking TORNADO_SDK env variable ................ ",  end='')
     try:
         os.environ['TORNADO_SDK']
         print("[OK]")
     except:
-        print(
-            "[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
+        print("[ERROR] \n\t TORNADO_SDK env variable not defined\n\n \t Suggestion (Linux and OSx): run `source setvars.sh`\n \n \t Suggestion (Windows): run `setvars.cmd`\n"),
         sys.exit(-1)
 
-
 def generate_argfile(backend):
-    """
-    Generate the argfile for your current build.
-    """
-    scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
-    current = os.getcwd()
-    os.chdir(scripts_dir)
-    print(os.getcwd())
-    subprocess.run(["gen-tornado-argfile.sh", backend])
-    os.chdir(current)
+        """
+        Generate the argfile for your current build.
+        """
+        scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
+        current = os.getcwd()
+        os.chdir(scripts_dir)
+        print(os.getcwd())
+        subprocess.run(["gen-tornado-argfile.sh", backend])
+        os.chdir(current)
 
 
 def main():
@@ -663,18 +465,7 @@ def main():
 
     graal_jars_status = should_handle_graal_jars(args.jdk)
 
-    # Detect changed modules if incremental build is requested
-    changed_modules = None
-    if args.incremental:
-        print("Incremental build mode enabled")
-        changed_modules = get_changed_modules()
-        if changed_modules is None:
-            print("Falling back to full build")
-            args.incremental = False
-
-    # Run maven clean by default (same as master branch behavior)
-    # Only skip clean when --incremental flag is used
-    maven_cleanup(skip_clean=args.incremental)
+    maven_cleanup()
 
     pull_graal_jars_if_needed(graal_jars_status)
 
@@ -690,38 +481,13 @@ def main():
         # 2) Build the Level Zero JNI library
         build_levelzero_jni_lib(args.rebuild)
 
-    # Build TornadoVM (all modules or only changed ones)
-    if args.incremental and changed_modules is not None:
-        # Determine if assembly needs to be rebuilt
-        rebuild_assembly = args.forceAssembly or should_rebuild_assembly(changed_modules)
+    mvn_build_result = build_tornadovm(args, backend_profiles)
 
-        if args.forceAssembly:
-            print("Force assembly flag set - rebuilding distribution")
+    post_installation_actions(
+        backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+    )
+    generate_argfile(args.backend)
 
-        if rebuild_assembly:
-            # Clean the existing distribution directory to avoid permission issues
-            clean_dist_for_incremental()
-            mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules, include_assembly=True)
-            # Update paths and generate argfile since distribution changed
-            post_installation_actions(
-                backend_profiles, args.backend, mvn_build_result, args.jdk, graal_jars_status
-            )
-            generate_argfile(args.backend)
-        else:
-            # Build only changed modules, skip assembly
-            mvn_build_result = build_tornadovm(args, backend_profiles, changed_modules, include_assembly=False)
-            print("\nSkipped distribution update - existing tornado command will work")
-            print("If you need to run updated code, the JARs are in each module's target/ directory")
-            print("Or run 'make' for a full rebuild with distribution update")
-    else:
-        # Full build
-        # Clean the existing distribution directory to avoid permission issues
-        clean_dist_for_incremental()
-        mvn_build_result = build_tornadovm(args, backend_profiles)
-        post_installation_actions(
-            backend_profiles, args.backend, mvn_build_result, args.jdk, graal_jars_status
-        )
-        generate_argfile(args.backend)
 
 
 if __name__ == "__main__":
