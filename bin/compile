@@ -453,7 +453,7 @@ def generate_argfile(backend):
         current = os.getcwd()
         os.chdir(scripts_dir)
         print(os.getcwd())
-        subprocess.run(["python3", "gen-tornado-argfile.py", backend])
+        subprocess.run(["python3", "gen-tornado-argfile.py", backend], shell=is_win_or_bat())
         os.chdir(current)
 
 
