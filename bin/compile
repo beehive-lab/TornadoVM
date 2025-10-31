@@ -61,6 +61,7 @@ def is_win_or_bat():
         isWinCmdOrBat = True
     else:
         isWinCmdOrBat = False
+    return isWinCmdOrBat
 
 
 def check_java_version():
@@ -264,13 +265,11 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
 
     if os.name == 'nt':
         subprocess.run([os.path.join(level_zero_lib, "build", "bin", "Release", "zello_world")])
-    else:
-        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "zello_world")])
-
-    if os.name == 'nt':
         zeSharedLoader = os.path.join("level-zero", "build", "lib", "Release", "ze_loader.lib")
     else:
+        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "zello_world")])
         zeSharedLoader = os.path.join("level-zero", "build", "lib", "libze_loader.so")
+
 
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
         current, zeSharedLoader
