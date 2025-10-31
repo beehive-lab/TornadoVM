@@ -199,7 +199,7 @@ def build_levelzero_jni_lib(rebuild=False):
         mvn_cmd = get_mvn_command()
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", __LEVEL_ZERO_JNI_VERSION__])
-        subprocess.run([mvn_cmd, "clean", "install"], shell=iswinCmdOrBat())
+        subprocess.run([mvn_cmd, "clean", "install"], shell=is_win_or_bat())
 
         ## Build native library
         os.chdir("levelZeroLib")
@@ -247,8 +247,8 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
         mvn_cmd = get_mvn_command()
         subprocess.run(["git", "pull", "origin", "master"])
 
-        subprocess.run([mvn_cmd, "clean", "package"], shell=isWinCmdOrBat())
-        subprocess.run([mvn_cmd, "install"], shell=isWinCmdOrBat())
+        subprocess.run([mvn_cmd, "clean", "package"], shell=is_win_or_bat())
+        subprocess.run([mvn_cmd, "install"], shell=is_win_or_bat())
         os.chdir(current)
 
         level_zero_lib = "level-zero"
