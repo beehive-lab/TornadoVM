@@ -142,22 +142,6 @@ make                           # Full clean build every time
 bin/compile --jdk jdk21 --backend opencl
 ```
 
-**Faster incremental workflow:**
-```bash
-# Skip 'mvn clean' - only builds changed modules
-make incremental               # Faster for development
-bin/compile --jdk jdk21 --backend opencl --incremental
-```
-
-**When to use incremental:**
-- During active development on specific modules
-- When you want faster iteration cycles (skips `mvn clean`)
-
-**When NOT to use incremental:**
-- After pulling changes from git
-- When switching branches
-- Before committing/pushing code
-
 ### Using Additional JVM Options
 **Option 1:**
 ```bash
