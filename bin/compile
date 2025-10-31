@@ -32,8 +32,8 @@ import update_paths as updp
 import pull_graal_jars
 
 
-__LEVEL_ZERO_JNI_VERSION__ = "0.1.4"
-__BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.4"
+__LEVEL_ZERO_JNI_VERSION__ = "0.1.5"
+__BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.5"
 
 
 
