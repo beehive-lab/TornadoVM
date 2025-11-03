@@ -136,7 +136,7 @@
                         </goals>
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <finalName>tornado-sdk</finalName>
+                            <finalName>tornadovm-${project.version}-${tornado.backend}-${platform}</finalName>
                             <outputDirectory>${project.basedir}/../dist</outputDirectory>
                             <updateOnly>false</updateOnly>
                             <descriptors>

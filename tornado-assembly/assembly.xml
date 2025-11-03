@@ -5,9 +5,10 @@
     <formats>
         <format>dir</format>
         <format>tar.gz</format>
+        <format>zip</format>
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>tornado-sdk-${project.version}-${buildNumber}/</baseDirectory>
+    <baseDirectory>tornadovm-${project.version}-${tornado.backend}/</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>../</directory>

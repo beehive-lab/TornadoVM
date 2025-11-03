@@ -325,6 +325,20 @@ def build_tornadovm(args, backend_profiles):
         else:
             process.append(f"-P{args.jdk},{backend_profiles}")
 
+        # Determine backend variant for SDKMAN-compliant archive naming
+        backend_list = args.backend.split(",")
+        backend_list_sorted = sorted(backend_list)
+
+        # If all three backends, use "full"
+        if set(backend_list_sorted) == {"opencl", "ptx", "spirv"}:
+            backend_variant = "full"
+        else:
+            # Single backend or partial combination - use exact name(s)
+            backend_variant = "-".join(backend_list_sorted)
+
+        # Pass tornado.backend property to Maven for archive naming
+        process.append(f"-Dtornado.backend={backend_variant}")
+
         process.append("install")
         print(' '.join(process))
 
