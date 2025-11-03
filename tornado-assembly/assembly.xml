@@ -134,6 +134,15 @@
             </includes>
             <fileMode>0666</fileMode>
         </fileSet>
+        <fileSet>
+            <directory>../graalJars</directory>
+            <!-- Graal compiler JARs for JDK 21 -->
+            <outputDirectory>share/java/graalJars</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
     </fileSets>
     <moduleSets>
         <moduleSet>
