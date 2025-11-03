@@ -314,6 +314,12 @@ def build_tornadovm(args, backend_profiles):
     try:
         mvn_cmd = get_mvn_command()
 
+        # Create tornado.backend file in source before Maven assembly (for Windows compatibility)
+        # Maven filtering doesn't work reliably on Windows, so we pre-create the file
+        backend_template_path = os.path.join("tornado-assembly", "src", "etc", "tornado.backend")
+        with open(backend_template_path, "w") as backend_file:
+            backend_file.write(f"tornado.backends={backend_profiles}\n")
+
         process = [mvn_cmd]
         # Only override threading if single-threaded mode explicitly requested
         # Default parallel build (-T1.5C) is configured in .mvn/maven.config
@@ -338,9 +344,8 @@ def build_tornadovm(args, backend_profiles):
 
         # Pass properties to Maven
         # tornado.backend: for archive naming (e.g., "opencl", "full")
-        # tornado.backend.profiles: for tornado.backend file content (e.g., "opencl-backend")
+        # Note: tornado.backend.profiles not needed anymore since we pre-create the file
         process.append(f"-Dtornado.backend={backend_variant}")
-        process.append(f"-Dtornado.backend.profiles={backend_profiles}")
 
         process.append("install")
         print(' '.join(process))
@@ -394,8 +399,12 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
         # Update all PATHs
         updp.update_tornado_paths()
 
-        # Note: tornado.backend file is now created by Maven during assembly
-        # via resource filtering of tornado-assembly/src/etc/tornado.backend
+        # Create tornado.backend file in the extracted SDK
+        # Maven filtering should handle this, but as a fallback (especially on Windows), ensure it exists
+        backend_file_path = os.path.join(f"{os.environ['TORNADO_SDK']}", "etc", "tornado.backend")
+        os.makedirs(os.path.dirname(backend_file_path), exist_ok=True)
+        with open(backend_file_path, "w") as backend_file:
+            backend_file.write(f"tornado.backends={backend_profiles}\n")
 
         # Note: Graal JARs are now included by Maven assembly from graalJars/ directory
         # See tornado-assembly/assembly.xml for the fileSet configuration

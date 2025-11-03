@@ -52,7 +52,21 @@
             <includes>
                 <include>**/*</include>
             </includes>
+            <excludes>
+                <exclude>tornado.backend</exclude>
+            </excludes>
             <filtered>true</filtered>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0666</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/etc</directory>
+            <!-- tornado.backend file (pre-created by compile script, no filtering needed) -->
+            <outputDirectory>etc</outputDirectory>
+            <includes>
+                <include>tornado.backend</include>
+            </includes>
+            <filtered>false</filtered>
             <lineEnding>unix</lineEnding>
             <fileMode>0666</fileMode>
         </fileSet>
