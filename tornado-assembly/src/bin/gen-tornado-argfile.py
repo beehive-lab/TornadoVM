@@ -48,8 +48,23 @@ def get_tornado_flags():
         list: List of Java flags split by whitespace
     """
     try:
+        # Use the tornado script from TORNADO_SDK/bin instead of relying on PATH
+        tornado_sdk = os.environ.get("TORNADO_SDK")
+        if not tornado_sdk:
+            print("[ERROR] TORNADO_SDK environment variable not set")
+            sys.exit(1)
+
+        tornado_script = Path(tornado_sdk) / "bin" / "tornado"
+
+        # On Windows, we need to invoke Python explicitly since the script
+        # doesn't have a .py extension but is a Python script
+        if os.name == 'nt':  # Windows
+            cmd = ["python", str(tornado_script), "--printJavaFlags"]
+        else:  # Unix-like systems (Linux, macOS)
+            cmd = [str(tornado_script), "--printJavaFlags"]
+
         result = subprocess.run(
-            ["tornado", "--printJavaFlags"], capture_output=True, text=True, check=True
+            cmd, capture_output=True, text=True, check=True
         )
         flags_output = result.stdout.strip()
 
@@ -61,9 +76,11 @@ def get_tornado_flags():
         return flags_output.split()
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] Failed to run tornado --printJavaFlags: {e}")
+        print(f"[ERROR] stderr: {e.stderr if hasattr(e, 'stderr') else 'N/A'}")
         sys.exit(1)
-    except FileNotFoundError:
-        print("[ERROR] 'tornado' command not found. Make sure it's in your PATH.")
+    except FileNotFoundError as e:
+        print(f"[ERROR] Command not found: {e}")
+        print(f"[ERROR] tornado script path: {tornado_script}")
         sys.exit(1)
 
 
@@ -133,7 +150,8 @@ def generate_argfile(backends):
     tornado_sdk = os.environ.get("TORNADO_SDK")
     project_root = get_project_root()
 
-    output_file = project_root / "tornado-argfile"
+    # Generate argfile in SDK bin directory instead of project root
+    output_file = Path(tornado_sdk) / "tornado-argfile"
     export_paths = get_export_list_paths(tornado_sdk)
 
     # Clean old file
