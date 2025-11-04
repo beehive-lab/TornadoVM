@@ -171,6 +171,9 @@ def update_tornado_paths():
 
     sdk_path = os.path.join(os.getcwd(), outer_dir, inner_sdk_dir)
 
+    # Update TORNADO_SDK environment variable to point to the new SDK
+    os.environ['TORNADO_SDK'] = sdk_path
+
     # Create symbolic links 'bin' and 'sdk'
     if os.name == 'nt':
         subprocess.run(["mklink", "/j", os.path.join("bin", "bin"), os.path.join(sdk_path, "bin")], shell=True)

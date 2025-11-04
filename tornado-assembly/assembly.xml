@@ -33,16 +33,28 @@
         </fileSet>
         <fileSet>
             <directory>src/bin</directory>
-            <!-- tornado binaries -->
+            <!-- tornado scripts -->
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.sh</include>
                 <include>*.cmd</include>
                 <include>*.py</include>
-                <include>tornado*</include>
+                <include>tornado</include>
+                <include>tornado-test</include>
+                <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>
             <lineEnding>unix</lineEnding>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/bin</directory>
+            <!-- Windows executables (binary files - without line ending conversion) -->
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>*.exe</include>
+                <include>*.spec</include>
+            </includes>
             <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>

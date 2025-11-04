@@ -386,6 +386,60 @@ def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
         if os.path.isfile(source_file):
             shutil.copy(source_file, destination_file)
 
+def generate_setvars_files():
+    """
+    Generate setvars.cmd and setvars.sh files with the correct TORNADO_SDK path.
+
+    This function creates environment setup scripts at the project root that:
+    - Set TORNADO_SDK to the correct SDK location
+    - Add the SDK bin directory to PATH
+    - Preserve the current JAVA_HOME setting
+    """
+    project_root = os.getcwd()
+    tornado_sdk = os.environ.get('TORNADO_SDK')
+    java_home = os.environ.get('JAVA_HOME', '')
+
+    if not tornado_sdk:
+        print("Warning: TORNADO_SDK not set, skipping setvars file generation")
+        return
+
+    # Generate setvars.cmd for Windows
+    setvars_cmd_path = os.path.join(project_root, "setvars.cmd")
+    setvars_cmd_content = f"""@echo off
+REM TornadoVM Environment Setup Script (Windows)
+REM Generated automatically by the build process
+
+set JAVA_HOME={java_home}
+set TORNADO_SDK={tornado_sdk}
+set PATH=%TORNADO_SDK%\\bin;%PATH%
+"""
+
+    with open(setvars_cmd_path, 'w', newline='\r\n') as f:
+        f.write(setvars_cmd_content)
+
+    # Generate setvars.sh for Unix/Linux/Mac
+    setvars_sh_path = os.path.join(project_root, "setvars.sh")
+    setvars_sh_content = f"""#!/bin/bash
+# TornadoVM Environment Setup Script (Unix/Linux/Mac)
+# Generated automatically by the build process
+
+export JAVA_HOME="{java_home}"
+export TORNADO_SDK="{tornado_sdk}"
+export PATH="$TORNADO_SDK/bin:$PATH"
+"""
+
+    with open(setvars_sh_path, 'w', newline='\n') as f:
+        f.write(setvars_sh_content)
+
+    # Make setvars.sh executable on Unix systems
+    if os.name != 'nt':
+        os.chmod(setvars_sh_path, 0o755)
+
+    print(f"Generated environment setup scripts:")
+    print(f"  Windows: {setvars_cmd_path}")
+    print(f"  Unix:    {setvars_sh_path}")
+
+
 def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
     """
     Performs post-installation actions.
@@ -398,6 +452,9 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
     if mvn_build_result.returncode == 0:
         # Update all PATHs
         updp.update_tornado_paths()
+
+        # Generate setvars files with the correct SDK path
+        generate_setvars_files()
 
         # Create tornado.backend file in the extracted SDK
         # Maven filtering should handle this, but as a fallback (especially on Windows), ensure it exists
