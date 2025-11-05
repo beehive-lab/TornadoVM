@@ -107,7 +107,7 @@ class TornadoVMRunnerTool():
         self.setTruffleVars(env_vars)
 
         self.commands = {
-            "java": self.java_home + "/bin/java",
+            "java": os.path.join(self.java_home, "bin", "java"),
             "python": self.graalpy,
             "js": self.js,
             "node": self.node,
@@ -139,14 +139,24 @@ class TornadoVMRunnerTool():
                 setattr(self, attr, None)
 
     def getJavaVersion(self):
-        if os.name == 'nt':
-            versionCommand = subprocess.Popen(shlex.split('"' + self.commands["java"] + '"' + " -version"),
-                                              stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE, shell=True)
-        else:
-            versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE)
-        stdout, stderr = versionCommand.communicate()
+        try:
+            if os.name == 'nt':
+                versionCommand = subprocess.Popen('"' + self.commands["java"] + '"' + " -version",
+                                                  stdout=subprocess.PIPE,
+                                                  stderr=subprocess.PIPE, shell=True)
+            else:
+                versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
+                                                  stderr=subprocess.PIPE)
+            stdout, stderr = versionCommand.communicate()
+        except FileNotFoundError:
+            print("[ERROR] Cannot find Java.")
+            print(f"[ERROR] Please ensure JAVA_HOME is set correctly and that Java is accessible.")
+            print(f"[ERROR] Current JAVA_HOME: {self.java_home}")
+            print(f"[ERROR] Looking for Java at: {self.commands['java']}")
+            if os.name == 'nt':
+                print("[ERROR] On Windows, ensure %JAVA_HOME%\\bin is in your PATH.")
+            sys.exit(1)
+
         matchJVMVersion = re.search(r"version \"\d+", str(stderr))
         matchGraal = re.search(r"GraalVM", str(stderr))
         graalEnabled = False
