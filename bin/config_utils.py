@@ -24,7 +24,7 @@ def runPyInstaller(currentDirectory, tornadoSDKPath):
     os.chdir(path)
 
     ## List of scripts to compile
-    scripts = ["tornado", "tornado-test", "tornado-benchmarks.py"]
+    scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
     for s in scripts:
         print("creating " + s  + " binary ....  "),
         command = "pyinstaller " + s + " --onefile"
