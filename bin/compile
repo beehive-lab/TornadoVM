@@ -452,7 +452,7 @@ export PATH="$TORNADO_SDK/bin:$PATH"
     print(f"  Unix:    {setvars_sh_path}")
 
 
-def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
+def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status, backend):
     """
     Performs post-installation actions.
 
@@ -460,9 +460,10 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
         backend_profiles (str): The processed backend options.
         mvn_build_result (CompletedProcess): Result of the Maven build process.
         jdk (str): The JDK version.
+        backend (str): The backend string for argfile generation.
     """
     if mvn_build_result.returncode == 0:
-        # Update all PATHs
+        # Update all PATHs - this must run first to set TORNADO_SDK
         updp.update_tornado_paths()
 
         # Generate setvars files with the correct SDK path
@@ -477,6 +478,12 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
 
         # Note: Graal JARs are now included by Maven assembly from graalJars/ directory
         # See tornado-assembly/assembly.xml for the fileSet configuration
+
+        # Generate argfile after SDK is set up
+        generate_argfile(backend)
+
+        # Create SDK archives last, after all files (including argfile) are ready
+        package_sdk_archives()
 
         if os.name == 'nt':
             cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
@@ -533,6 +540,80 @@ def generate_argfile(backend):
         os.chdir(current)
 
 
+def package_sdk_archives():
+    """
+    Create zip and tar.gz archives of the SDK directory after all files are ready.
+    This runs after argfile generation to ensure it's included in the distribution.
+
+    The archives are created in the main dist/ directory with the structure:
+    - tornadovm-VERSION-BACKEND-PLATFORM-ARCH.tar.gz
+    - tornadovm-VERSION-BACKEND-PLATFORM-ARCH.zip
+
+    Each archive contains:
+    - tornadovm-VERSION-BACKEND/ (the SDK directory)
+    """
+    import tarfile
+    import zipfile
+    from pathlib import Path
+
+    tornado_sdk = os.environ.get('TORNADO_SDK')
+    if not tornado_sdk:
+        print("Warning: TORNADO_SDK not set, skipping archive creation")
+        return
+
+    # Get the SDK directory paths
+    # TORNADO_SDK = dist/tornadovm-X.Y.Z-BACKEND-PLATFORM-ARCH/tornadovm-X.Y.Z-BACKEND/
+    sdk_path = Path(tornado_sdk)
+    sdk_name = sdk_path.name  # e.g., tornadovm-1.1.2-dev-opencl
+    outer_dir = sdk_path.parent  # e.g., dist/tornadovm-1.1.2-dev-opencl-mac-aarch64
+    outer_dir_name = outer_dir.name  # e.g., tornadovm-1.1.2-dev-opencl-mac-aarch64
+    dist_dir = outer_dir.parent  # e.g., dist/
+
+    print(f"\nCreating SDK distribution archives...")
+    print(f"  SDK directory: {sdk_path}")
+    print(f"  Archive base name: {outer_dir_name}")
+    print(f"  Distribution directory: {dist_dir}")
+
+    # Verify argfile exists
+    argfile_path = sdk_path / "tornado-argfile"
+    if argfile_path.exists():
+        print(f"  ✓ tornado-argfile found and will be included")
+    else:
+        print(f"  ⚠ Warning: tornado-argfile not found at {argfile_path}")
+
+    # Change to the dist directory to create archives with correct structure
+    original_dir = os.getcwd()
+    os.chdir(dist_dir)
+
+    try:
+        # Use outer_dir_name for the archive names (includes platform-arch)
+        # but archive the inner sdk_name directory
+        tar_filename = f"{outer_dir_name}.tar.gz"
+        print(f"  Creating {tar_filename}...")
+        with tarfile.open(tar_filename, "w:gz") as tar:
+            # Add from outer_dir/sdk_name, archive as sdk_name/
+            tar.add(os.path.join(outer_dir_name, sdk_name), arcname=sdk_name)
+        print(f"  ✓ Created {tar_filename}")
+
+        # Create zip archive
+        zip_filename = f"{outer_dir_name}.zip"
+        print(f"  Creating {zip_filename}...")
+        with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            sdk_dir_to_archive = os.path.join(outer_dir_name, sdk_name)
+            for root, dirs, files in os.walk(sdk_dir_to_archive):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Calculate relative path from outer_dir_name/sdk_name to archive as sdk_name/
+                    rel_path = os.path.relpath(file_path, outer_dir_name)
+                    zipf.write(file_path, rel_path)
+        print(f"  ✓ Created {zip_filename}")
+
+        print(f"\n✓ SDK packaging complete! Archives created in {dist_dir}")
+
+    finally:
+        os.chdir(original_dir)
+
+
 def main():
     args = parse_args()
 
@@ -557,9 +638,8 @@ def main():
     mvn_build_result = build_tornadovm(args, backend_profiles)
 
     post_installation_actions(
-        backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+        backend_profiles, mvn_build_result, args.jdk, graal_jars_status, args.backend
     )
-    generate_argfile(args.backend)
 
 
 

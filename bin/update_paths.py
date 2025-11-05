@@ -30,24 +30,26 @@ def select_tornado_sdk(tornado_sdk_dir):
     1. SDK with 'full' backend (all backends included)
     2. Most recently modified SDK
 
-    The backend information is extracted from the archive filename:
-    - tornadovm-1.2.0-opencl-linux-amd64.tar.gz → backend: opencl
-    - tornadovm-1.2.0-full-linux-amd64.tar.gz → backend: full
+    The SDK can be identified by:
+    - Archive files: tornadovm-1.2.0-opencl-linux-amd64.tar.gz or .zip
+    - Directories: tornadovm-1.2.0-opencl-mac-aarch64/ (created by Maven assembly)
 
     Args:
         tornado_sdk_dir: Path to the directory containing SDK builds
 
     Returns:
-        str: Name of the selected SDK directory (extracted from archive filename)
+        str: Name of the selected SDK directory (base name without extensions)
 
     Raises:
-        FileNotFoundError: If no SDK archives are found
+        FileNotFoundError: If no SDK archives or directories are found
     """
-    # Get all archive files (zip or tar.gz) that start with 'tornadovm-'
+    # Get all items in dist directory
     all_items = os.listdir(tornado_sdk_dir)
 
-    # Find tornadovm archives
-    sdk_archives = []
+    # Find tornadovm archives and directories
+    sdk_candidates = []
+
+    # Check for archive files
     for item in all_items:
         if item.startswith('tornadovm-') and (item.endswith('.zip') or item.endswith('.tar.gz')):
             # Extract the base name (remove extension)
@@ -55,33 +57,44 @@ def select_tornado_sdk(tornado_sdk_dir):
                 base_name = item[:-7]  # Remove '.tar.gz'
             else:
                 base_name = item[:-4]  # Remove '.zip'
-            sdk_archives.append(base_name)
+            sdk_candidates.append(base_name)
 
-    # Remove duplicates (if both .zip and .tar.gz exist)
-    sdk_dirs = list(set(sdk_archives))
+    # Check for SDK directories (created by Maven assembly)
+    for item in all_items:
+        full_path = os.path.join(tornado_sdk_dir, item)
+        if item.startswith('tornadovm-') and os.path.isdir(full_path):
+            # This is a potential SDK directory
+            sdk_candidates.append(item)
+
+    # Remove duplicates (if both .zip and .tar.gz and dir exist)
+    sdk_dirs = list(set(sdk_candidates))
 
     if not sdk_dirs:
-        raise FileNotFoundError(f"No TornadoVM SDK archives found in '{tornado_sdk_dir}'")
+        raise FileNotFoundError(f"No TornadoVM SDK archives or directories found in '{tornado_sdk_dir}'")
 
-    # Helper function to get archive file modification time
-    def get_archive_mtime(base_name):
-        # Check for .tar.gz first, then .zip
+    # Helper function to get modification time (archive or directory)
+    def get_mtime(base_name):
+        # Check for .tar.gz first, then .zip, then directory
         tar_gz = os.path.join(tornado_sdk_dir, base_name + '.tar.gz')
         zip_file = os.path.join(tornado_sdk_dir, base_name + '.zip')
+        dir_path = os.path.join(tornado_sdk_dir, base_name)
+
         if os.path.exists(tar_gz):
             return os.path.getmtime(tar_gz)
         elif os.path.exists(zip_file):
             return os.path.getmtime(zip_file)
+        elif os.path.isdir(dir_path):
+            return os.path.getmtime(dir_path)
         return 0
 
     # Prefer 'full' backend if available
     full_backends = [d for d in sdk_dirs if '-full-' in d.lower()]
     if full_backends:
-        selected = max(full_backends, key=get_archive_mtime)
+        selected = max(full_backends, key=get_mtime)
         return selected
 
     # Otherwise, use the most recently modified
-    selected = max(sdk_dirs, key=get_archive_mtime)
+    selected = max(sdk_dirs, key=get_mtime)
     return selected
 
 
