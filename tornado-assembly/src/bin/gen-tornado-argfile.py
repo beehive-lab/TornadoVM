@@ -54,13 +54,24 @@ def get_tornado_flags():
             print("[ERROR] TORNADO_SDK environment variable not set")
             sys.exit(1)
 
-        tornado_script = Path(tornado_sdk) / "bin" / "tornado"
-
-        # On Windows, we need to invoke Python explicitly since the script
-        # doesn't have a .py extension but is a Python script
+        # On Windows, use the compiled tornado.exe executable if available,
+        # otherwise fall back to tornado.py with python
+        # On Unix-like systems, use the bash script
         if os.name == 'nt':  # Windows
-            cmd = ["python", str(tornado_script), "--printJavaFlags"]
+            tornado_exe = Path(tornado_sdk) / "bin" / "tornado.exe"
+            tornado_py = Path(tornado_sdk) / "bin" / "tornado.py"
+
+            if tornado_exe.exists():
+                tornado_script = tornado_exe
+                cmd = [str(tornado_script), "--printJavaFlags"]
+            elif tornado_py.exists():
+                tornado_script = tornado_py
+                cmd = [sys.executable, str(tornado_script), "--printJavaFlags"]
+            else:
+                print("[ERROR] Neither tornado.exe nor tornado.py found in TORNADO_SDK/bin")
+                sys.exit(1)
         else:  # Unix-like systems (Linux, macOS)
+            tornado_script = Path(tornado_sdk) / "bin" / "tornado"
             cmd = [str(tornado_script), "--printJavaFlags"]
 
         result = subprocess.run(
