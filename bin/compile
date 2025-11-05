@@ -536,8 +536,47 @@ def generate_argfile(backend):
         current = os.getcwd()
         os.chdir(scripts_dir)
         print(os.getcwd())
-        subprocess.run(["python3", "gen-tornado-argfile.py", backend], shell=is_win_or_bat())
-        os.chdir(current)
+
+        # Use 'python' on Windows, 'python3' on Unix-like systems
+        python_cmd = "python" if os.name == 'nt' else "python3"
+        gen_script = os.path.join(scripts_dir, "gen-tornado-argfile.py")
+
+        try:
+            if is_win_or_bat():
+                # On Windows with shell=True, pass as a single string
+                result = subprocess.run(
+                    f'{python_cmd} "{gen_script}" {backend}',
+                    shell=True,
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+            else:
+                # On Unix-like systems, pass as a list without shell
+                result = subprocess.run(
+                    [python_cmd, gen_script, backend],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+
+            # Print output for debugging
+            if result.stdout:
+                print(result.stdout)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+
+        except subprocess.CalledProcessError as e:
+            print(f"\n[ERROR] Failed to generate tornado-argfile")
+            print(f"[ERROR] Command: {e.cmd}")
+            print(f"[ERROR] Return code: {e.returncode}")
+            if e.stdout:
+                print(f"[ERROR] stdout: {e.stdout}")
+            if e.stderr:
+                print(f"[ERROR] stderr: {e.stderr}")
+            sys.exit(-1)
+        finally:
+            os.chdir(current)
 
 
 def package_sdk_archives():
@@ -577,9 +616,9 @@ def package_sdk_archives():
     # Verify argfile exists
     argfile_path = sdk_path / "tornado-argfile"
     if argfile_path.exists():
-        print(f"  ✓ tornado-argfile found and will be included")
+        print(f"  [OK] tornado-argfile found and will be included")
     else:
-        print(f"  ⚠ Warning: tornado-argfile not found at {argfile_path}")
+        print(f"  [WARNING] tornado-argfile not found at {argfile_path}")
 
     # Change to the dist directory to create archives with correct structure
     original_dir = os.getcwd()
@@ -593,7 +632,7 @@ def package_sdk_archives():
         with tarfile.open(tar_filename, "w:gz") as tar:
             # Add from outer_dir/sdk_name, archive as sdk_name/
             tar.add(os.path.join(outer_dir_name, sdk_name), arcname=sdk_name)
-        print(f"  ✓ Created {tar_filename}")
+        print(f"  [OK] Created {tar_filename}")
 
         # Create zip archive
         zip_filename = f"{outer_dir_name}.zip"
@@ -606,9 +645,9 @@ def package_sdk_archives():
                     # Calculate relative path from outer_dir_name/sdk_name to archive as sdk_name/
                     rel_path = os.path.relpath(file_path, outer_dir_name)
                     zipf.write(file_path, rel_path)
-        print(f"  ✓ Created {zip_filename}")
+        print(f"  [OK] Created {zip_filename}")
 
-        print(f"\n✓ SDK packaging complete! Archives created in {dist_dir}")
+        print(f"\n[OK] SDK packaging complete! Archives created in {dist_dir}")
 
     finally:
         os.chdir(original_dir)
