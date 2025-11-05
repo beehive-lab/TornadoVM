@@ -145,10 +145,20 @@ def update_tornado_paths():
 
     # Remove existing 'bin' and 'sdk' links
     for symlink in ["bin", "sdk"]:
-        try: ## hack to avoid Windows junction handling
-            os.unlink(symlink)
-        except FileNotFoundError:
-            pass
+        if os.path.exists(symlink) or os.path.islink(symlink):
+            try:
+                if os.name == 'nt':
+                    # On Windows, use rmdir for directory junctions
+                    if os.path.isdir(symlink):
+                        os.rmdir(symlink)
+                    else:
+                        os.unlink(symlink)
+                else:
+                    # On Unix-like systems, unlink works for both files and symlinks
+                    os.unlink(symlink)
+            except (FileNotFoundError, PermissionError, OSError):
+                # Ignore errors if the link cannot be removed
+                pass
 
     # Change back to the parent directory
     os.chdir("..")
