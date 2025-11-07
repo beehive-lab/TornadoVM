@@ -482,11 +482,12 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
         # Generate argfile after SDK is set up
         generate_argfile(backend)
 
-        # Create SDK archives last, after all files (including argfile) are ready
-        package_sdk_archives()
-
+        # On Windows, create executables before packaging
         if os.name == 'nt':
             cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
+
+        # Create SDK archives last, after all files (including argfile and Windows executables) are ready
+        package_sdk_archives()
 
     else:
         print("\nCompilation failed\n")
