@@ -91,6 +91,8 @@ class TornadoVMRunnerTool():
 
         try:
             self.java_home = os.environ["JAVA_HOME"]
+            # Strip any surrounding quotes that may have been included in the environment variable
+            self.java_home = self.java_home.strip('"').strip("'")
             if (platform.platform().startswith("MING")):
                 self.java_home = self.java_home.replace("\\", "/")
         except:
@@ -141,9 +143,10 @@ class TornadoVMRunnerTool():
     def getJavaVersion(self):
         try:
             if os.name == 'nt':
-                versionCommand = subprocess.Popen('"' + self.commands["java"] + '"' + " -version",
+                # Use list format to avoid issues with paths containing spaces
+                versionCommand = subprocess.Popen([self.commands["java"], "-version"],
                                                   stdout=subprocess.PIPE,
-                                                  stderr=subprocess.PIPE, shell=True)
+                                                  stderr=subprocess.PIPE)
             else:
                 versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
@@ -157,18 +160,24 @@ class TornadoVMRunnerTool():
                 print("[ERROR] On Windows, ensure %JAVA_HOME%\\bin is in your PATH.")
             sys.exit(1)
 
-        matchJVMVersion = re.search(r"version \"\d+", str(stderr))
+        # Try to match version format: version "21.x.x" or version "1.8.x"
+        matchJVMVersion = re.search(r'version\s+"?(\d+)(?:\.(\d+))?', str(stderr))
         matchGraal = re.search(r"GraalVM", str(stderr))
         graalEnabled = False
         if (matchGraal != None):
             graalEnabled = True
 
         if (matchJVMVersion != None):
-            version = matchJVMVersion.group(0).split("\"")
-            version = int(version[1])
+            major_version = int(matchJVMVersion.group(1))
+            # For older Java versions (1.8, 1.11), the real version is in the second group
+            if major_version == 1 and matchJVMVersion.group(2):
+                version = int(matchJVMVersion.group(2))
+            else:
+                version = major_version
             return version, graalEnabled
         else:
             print("[ERROR] JDK Version not found")
+            print(f"[DEBUG] Java version output was: {stderr.decode('utf-8', errors='ignore')}")
             sys.exit(0)
 
     def checkCompatibilityWithTornadoVM(self):
@@ -368,9 +377,10 @@ class TornadoVMRunnerTool():
             executionFlags = javaFlags
 
         if os.name == 'nt':
-            return '"' + self.cmd + '"' + executionFlags
+            # Properly quote the command path if it contains spaces
+            return '"' + self.cmd + '" ' + executionFlags
         else:
-            return self.cmd + executionFlags
+            return self.cmd + " " + executionFlags
 
     def truffleCompatibleExports(self, exportFile):
         data = Path(exportFile).read_text()
