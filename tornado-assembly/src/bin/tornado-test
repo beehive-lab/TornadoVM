@@ -375,7 +375,7 @@ __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 # ################################################################################################################
 
 if (os.name == 'nt'):
-    TORNADO_CMD = "python " + os.path.expandvars(r"%TORNADO_SDK%/bin/tornado").replace("\\", "/") + " "
+    TORNADO_CMD = os.path.expandvars(r"%TORNADO_SDK%/bin/tornado.exe").replace("\\", "/") + " "
 else:
     TORNADO_CMD = os.environ["TORNADO_SDK"] + "/bin/tornado "
 
