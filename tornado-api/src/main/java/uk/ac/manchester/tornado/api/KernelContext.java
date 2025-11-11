@@ -156,6 +156,19 @@ public class KernelContext implements ExecutionContext {
      *
      * @param size
      *     the size of the array
+     * @return byte[]: reference to the byte array
+     */
+    @Override
+    public byte[] allocateByteLocalArray(int size) {
+        return new byte[size];
+    }
+
+    /**
+     * It allocates a single dimensional array in local memory (known as shared
+     * memory in PTX).
+     *
+     * @param size
+     *     the size of the array
      * @return long[]: reference to the int array
      */
     @Override

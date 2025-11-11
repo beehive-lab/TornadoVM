@@ -138,7 +138,7 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <finalName>tornado-sdk</finalName>
                             <outputDirectory>${project.basedir}/../dist</outputDirectory>
-                            <updateOnly>true</updateOnly>
+                            <updateOnly>false</updateOnly>
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
@@ -162,6 +162,10 @@
                     </filesets>
                 </configuration>
             </plugin>
+            <!--
+                Note: tornado.backend file is created by bin/compile's post_installation_actions()
+                No need for additional Maven plugin to create it
+            -->
         </plugins>
     </build>
 </project>

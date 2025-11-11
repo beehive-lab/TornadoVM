@@ -99,9 +99,9 @@ public class TornadoOptions {
      */
     public static final boolean FPGA_EMULATION = isFPGAEmulation();
     /**
-     * Option to set the device maximum memory usage. It is set to 1GB by default.
+     * Option to set the device maximum memory usage. It is set to 4GB by default.
      */
-    public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "1GB"));
+    public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "4GB"));
     /**
      * Option to enable exceptions for the OpenCL generated code. This is
      * experimental.
