@@ -74,7 +74,7 @@ public class TornadoOptions {
      */
     public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);
 
-    /**
+    /**F
      * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA PTX or SPIR-V) from the TornadoVM JIT Compiler.
      */
     public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.printKernel", FALSE);
