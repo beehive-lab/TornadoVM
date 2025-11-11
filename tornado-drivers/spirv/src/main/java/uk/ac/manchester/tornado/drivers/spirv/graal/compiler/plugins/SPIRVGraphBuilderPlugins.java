@@ -24,6 +24,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getJavaKindFromValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getValueLayoutClass;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.ATAN2;
@@ -71,6 +72,8 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
+import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -116,6 +119,7 @@ public class SPIRVGraphBuilderPlugins {
         SPIRVHalfFloatPlugins.registerPlugins(plugins, invocationPlugins);
         // Register plugins for Off-Heap Arrays with Panama
         registerMemoryAccessPlugins(plugins);
+        registerQuantizationUtilsPlugins(invocationPlugins);
     }
 
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
@@ -375,6 +379,34 @@ public class SPIRVGraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, QuantizationUtils.class);
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
+                unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
+                return false;
+            }
+        });
+
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(Plugins plugins) {

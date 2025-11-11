@@ -85,8 +85,10 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
@@ -131,6 +133,7 @@ public class OCLGraphBuilderPlugins {
 
         OCLHalfFloatPlugins.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(ps);
+        registerQuantizationUtilsPlugins(plugins);
 
     }
 
@@ -449,6 +452,34 @@ public class OCLGraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, QuantizationUtils.class);
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                unimplemented("DP4A is a PTX instruction. It is not supported in OpenCL.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                unimplemented("DP4A is a PTX instruction. It is not supported in OpenCL.");
+                return false;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
+                unimplemented("DP4A is a PTX instruction. It is not supported in OpenCL.");
+                return false;
+            }
+        });
+
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {

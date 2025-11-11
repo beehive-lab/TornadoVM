@@ -58,7 +58,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / HALF_FLOAT_BYTES;
-        segmentByteSize = numberOfElements * HALF_FLOAT_BYTES + arrayHeaderSize;
+        segmentByteSize = (long) numberOfElements * HALF_FLOAT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
@@ -306,8 +306,8 @@ public final class HalfFloatArray extends TornadoNativeArray {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 
-        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset * HALF_FLOAT_BYTES;
-        long sliceByteLength = length * HALF_FLOAT_BYTES;
+        long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * HALF_FLOAT_BYTES;
+        long sliceByteLength = (long) length * HALF_FLOAT_BYTES;
         MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
         HalfFloatArray slice = fromSegment(sliceSegment);
         return slice;
