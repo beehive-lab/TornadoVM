@@ -81,18 +81,87 @@ if not exist "%TORNADO_SDK%" (
     exit /b 1
 )
 
+REM Validate TORNADO_SDK has a drive letter (must start with C:, D:, etc.)
+echo %TORNADO_SDK% | findstr /R /C:"^[A-Za-z]:" >nul
+if %errorlevel% neq 0 (
+    echo [ERROR] TORNADO_SDK must be an absolute path with a drive letter
+    echo.
+    echo Current value: %TORNADO_SDK%
+    echo.
+    echo The path must start with a drive letter like C:\ or D:\
+    echo Example: C:\Users\YourName\tornadovm\sdk
+    echo.
+    echo To fix this, update your TORNADO_SDK environment variable:
+    echo   1. Right-click "This PC" ^> Properties ^> Advanced system settings
+    echo   2. Click "Environment Variables"
+    echo   3. Edit TORNADO_SDK to include the drive letter
+    echo.
+    exit /b 1
+)
+
 REM Check backend dependencies (warnings only, non-critical)
 if exist "%TORNADO_SDK%\etc\tornado.backend" (
     findstr "opencl-backend" "%TORNADO_SDK%\etc\tornado.backend" >nul 2>nul
     if !errorlevel! equ 0 (
-        REM Check for OpenCL
-        where clinfo >nul 2>nul
-        if !errorlevel! neq 0 (
-            echo [WARNING] OpenCL backend is configured but OpenCL may not be installed
-            echo.
-            echo For NVIDIA GPUs: Install CUDA Toolkit from https://developer.nvidia.com/cuda-downloads
-            echo For Intel GPUs: Install Intel GPU drivers with OpenCL support
-            echo For AMD GPUs: Install AMD GPU drivers with OpenCL support
+        REM Check for OpenCL DLL and dependencies
+        set OPENCL_DLL=%TORNADO_SDK%\lib\tornado-opencl.dll
+        if exist "!OPENCL_DLL!" (
+            REM Use PowerShell to check DLL dependencies
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "$dll = '!OPENCL_DLL!'; try { Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class WinAPI { [DllImport(\"kernel32.dll\")] public static extern IntPtr LoadLibrary(string lpFileName); }'; $result = [WinAPI]::LoadLibrary($dll); if ($result -eq [IntPtr]::Zero) { exit 1 } else { exit 0 } } catch { exit 1 }" >nul 2>nul
+            if !errorlevel! neq 0 (
+                echo [ERROR] OpenCL backend DLL cannot be loaded - missing dependencies
+                echo.
+                echo The tornado-opencl.dll exists but has missing dependencies.
+                echo Common causes:
+                echo.
+
+                REM Check for specific missing DLLs
+                where nvidia-smi >nul 2>nul
+                if !errorlevel! neq 0 (
+                    echo   - NVIDIA drivers/CUDA Toolkit not installed
+                    echo     This OpenCL build requires NVIDIA libraries ^(nvml.dll^)
+                    echo.
+                    echo     Solution: Install NVIDIA CUDA Toolkit
+                    echo     Download from: https://developer.nvidia.com/cuda-downloads
+                    echo.
+                ) else (
+                    echo   - NVIDIA drivers installed but some DLLs are missing
+                    echo.
+                    REM Detect which DLL is missing using dumpbin or similar
+                    echo   Run this command to see which DLL is missing:
+                    echo   powershell "dumpbin /DEPENDENTS '%TORNADO_SDK%\lib\tornado-opencl.dll'"
+                    echo.
+                )
+
+                REM Detect GPU to provide better guidance
+                echo Detecting your GPU...
+                for /f "skip=1 tokens=*" %%G in ('wmic path win32_VideoController get name 2^>nul') do (
+                    set GPU_NAME=%%G
+                    if not "!GPU_NAME!"=="" (
+                        echo   Found GPU: !GPU_NAME!
+                    )
+                )
+                echo.
+
+                REM Check if OpenCL.dll exists in System32
+                if exist "%SystemRoot%\System32\OpenCL.dll" (
+                    echo   System OpenCL.dll: Found at %SystemRoot%\System32\OpenCL.dll
+                ) else (
+                    echo   System OpenCL.dll: NOT FOUND
+                    echo   You need to install OpenCL drivers for your GPU
+                )
+                echo.
+
+                echo Please ensure you have the correct GPU drivers installed:
+                echo   - NVIDIA GPU: Install CUDA Toolkit
+                echo   - Intel GPU: Install Intel Graphics drivers with OpenCL
+                echo   - AMD GPU: Install AMD drivers with OpenCL support
+                echo.
+                exit /b 1
+            )
+        ) else (
+            echo [WARNING] OpenCL backend configured but tornado-opencl.dll not found
+            echo Expected location: !OPENCL_DLL!
             echo.
         )
     )

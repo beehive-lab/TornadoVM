@@ -26,6 +26,9 @@ import subprocess
 import sys
 import idea_xml_utils as ideaUtils
 from pathlib import Path
+import shutil
+import ctypes
+import ctypes.util
 
 # ########################################################
 # FLAGS FOR TORNADOVM
@@ -78,6 +81,332 @@ __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
 
 
 # ########################################################
+# Windows Dependency Validation Functions
+# ########################################################
+def validate_tornado_sdk_path(sdk_path):
+    """Validate TORNADO_SDK has proper Windows path format with drive letter."""
+    if os.name == 'nt':
+        # Check if path starts with drive letter (e.g., C:, D:)
+        if not re.match(r'^[A-Za-z]:', sdk_path):
+            print("[ERROR] TORNADO_SDK path is missing drive letter")
+            print()
+            print(f"[INFO] Current TORNADO_SDK: {sdk_path}")
+            print()
+            print("[CAUSE] On Windows, paths must start with a drive letter (C:, D:, etc.)")
+            print("        Your path starts with a backslash instead of a drive letter.")
+            print()
+            print("[FIX] Update your TORNADO_SDK environment variable to include the drive letter:")
+            print("      Example: C:\\Users\\YourName\\tornadovm\\sdk")
+            print()
+            print("      Steps to fix:")
+            print("      1. Right-click 'This PC' > Properties > Advanced system settings")
+            print("      2. Click 'Environment Variables'")
+            print("      3. Edit TORNADO_SDK and add the drive letter (e.g., C:)")
+            print()
+            sys.exit(1)
+
+def check_dll_loadable(dll_path):
+    """Try to load a DLL and return True if successful."""
+    if os.name != 'nt':
+        return True
+    try:
+        # Try to load the DLL using ctypes
+        ctypes.WinDLL(dll_path)
+        return True
+    except OSError:
+        return False
+
+def get_gpu_info():
+    """Get GPU information on Windows. Returns list of GPU names or empty list."""
+    if os.name != 'nt':
+        return []
+    try:
+        result = subprocess.run(['wmic', 'path', 'win32_VideoController', 'get', 'name'],
+                              capture_output=True, text=True, timeout=5,
+                              creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            # Skip header line and filter empty lines
+            gpus = [line.strip() for line in lines[1:] if line.strip()]
+            return gpus
+    except Exception:
+        # Silently fail if wmic is not available or permission denied
+        pass
+    return []
+
+def check_nvidia_driver():
+    """Check if NVIDIA driver is installed."""
+    return shutil.which('nvidia-smi') is not None
+
+def validate_opencl_backend(sdk_path):
+    """Validate OpenCL backend dependencies on Windows."""
+    if os.name != 'nt':
+        return True
+
+    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
+
+    if not os.path.exists(opencl_dll):
+        print(f"[WARNING] OpenCL backend configured but tornado-opencl.dll not found")
+        print(f"[INFO] Expected location: {opencl_dll}")
+        print()
+        return False
+
+    # Try to load the DLL
+    if not check_dll_loadable(opencl_dll):
+        print("[ERROR] Cannot load OpenCL JNI library")
+        print()
+        print(f"[INFO] Library location: {opencl_dll}")
+        print()
+
+        # Detect GPU to provide better guidance
+        gpus = get_gpu_info()
+        if gpus:
+            print("[INFO] Detected GPU(s):")
+            for gpu in gpus:
+                print(f"       - {gpu}")
+            print()
+
+        # Check for NVIDIA drivers
+        has_nvidia_driver = check_nvidia_driver()
+
+        print("[CAUSE] Missing OpenCL drivers or dependencies")
+        print("        The OpenCL backend requires OpenCL 2.1+ drivers for GPUs/CPUs")
+        print("        or OpenCL 1.0+ for FPGAs.")
+        print()
+
+        # Check system OpenCL.dll (safe read-only operation)
+        system_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
+        try:
+            if os.path.exists(system_opencl):
+                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
+                print("       But tornado-opencl.dll cannot load due to missing dependencies")
+            else:
+                print("[INFO] System OpenCL.dll not found in Windows\\System32")
+                print("       OpenCL drivers are not installed")
+        except Exception:
+            # Silently skip if we can't check (permission issues)
+            pass
+        print()
+
+        print("[FIX] Install appropriate GPU drivers based on your hardware:")
+        print()
+        print("      For NVIDIA GPUs:")
+        print("      - GPU driver must match or exceed CUDA Toolkit version")
+        print("      - Download NVIDIA drivers (usually pre-installed on Windows)")
+        print("      - Install CUDA Toolkit 10.0+ (Windows requires 12.0+)")
+        print("      - Download from: https://developer.nvidia.com/cuda-downloads")
+        print()
+        print("      For Intel GPUs:")
+        print("      - Install Intel Graphics drivers with OpenCL support")
+        print("      - Download from: https://www.intel.com/content/www/us/en/download-center/home.html")
+        print("      - Or install Intel Compute Runtime")
+        print("      - Download from: https://github.com/intel/compute-runtime/releases")
+        print()
+        print("      For AMD GPUs:")
+        print("      - Install AMD drivers with OpenCL 2.1+ support")
+        print("      - Download from AMD website")
+        print()
+        print("      After installation:")
+        print("      1. Restart your terminal/IDE")
+        print("      2. Run tornado --devices to verify installation")
+        print()
+        sys.exit(1)
+
+    return True
+
+def validate_ptx_backend(sdk_path):
+    """Validate PTX backend dependencies on Windows."""
+    if os.name != 'nt':
+        return True
+
+    ptx_dll = os.path.join(sdk_path, 'lib', 'tornado-ptx.dll')
+
+    if not os.path.exists(ptx_dll):
+        print(f"[WARNING] PTX backend configured but tornado-ptx.dll not found")
+        print(f"[INFO] Expected location: {ptx_dll}")
+        print()
+        return False
+
+    # Try to load the DLL
+    if not check_dll_loadable(ptx_dll):
+        print("[ERROR] Cannot load PTX JNI library")
+        print()
+        print(f"[INFO] Library location: {ptx_dll}")
+        print()
+
+        # Detect GPU to provide better guidance
+        gpus = get_gpu_info()
+        if gpus:
+            print("[INFO] Detected GPU(s):")
+            for gpu in gpus:
+                print(f"       - {gpu}")
+                if "NVIDIA" not in gpu.upper():
+                    print("         (This is not an NVIDIA GPU - PTX requires NVIDIA)")
+            print()
+
+        # Check for NVIDIA drivers
+        has_nvidia_driver = check_nvidia_driver()
+
+        print("[CAUSE] Missing NVIDIA CUDA Toolkit or drivers")
+        print("        The PTX backend requires:")
+        print("        - NVIDIA GPU")
+        print("        - NVIDIA drivers (usually pre-installed on Windows)")
+        print("        - CUDA Toolkit 10.0+ (Windows requires 12.0+)")
+        print("        - GPU driver must match or exceed CUDA Toolkit version")
+        print()
+
+        if not has_nvidia_driver:
+            print("[FIX] Install NVIDIA CUDA Toolkit and drivers")
+            print("      Download from: https://developer.nvidia.com/cuda-downloads")
+            print()
+            print("      Installation steps:")
+            print("      1. Verify you have an NVIDIA GPU (check detected GPUs above)")
+            print("      2. Download CUDA Toolkit 12.0+ for Windows")
+            print("      3. Run the installer (includes NVIDIA drivers)")
+            print("      4. Restart your system")
+            print("      5. Verify installation: nvidia-smi")
+            print("      6. Run tornado --devices again")
+        else:
+            print("[INFO] NVIDIA drivers detected (nvidia-smi available)")
+            print()
+            print("[FIX] Reinstall or update NVIDIA CUDA Toolkit")
+            print("      The tornado-ptx.dll requires complete CUDA Toolkit installation")
+            print()
+            print("      1. Download CUDA Toolkit 12.0+ for Windows")
+            print("         From: https://developer.nvidia.com/cuda-downloads")
+            print("      2. Run the installer and select 'Custom' installation")
+            print("      3. Ensure all CUDA components are selected")
+            print("      4. Restart your system")
+            print("      5. Verify with: nvidia-smi")
+            print("      6. Run tornado --devices again")
+
+        print()
+        print("[NOTE] PTX backend is NVIDIA-specific")
+        print("       For non-NVIDIA GPUs, use OpenCL or SPIR-V backends instead")
+        print()
+        sys.exit(1)
+
+    return True
+
+def validate_spirv_backend(sdk_path):
+    """Validate SPIR-V backend dependencies on Windows."""
+    if os.name != 'nt':
+        return True
+
+    spirv_dll = os.path.join(sdk_path, 'lib', 'tornado-spirv.dll')
+
+    if not os.path.exists(spirv_dll):
+        print(f"[WARNING] SPIR-V backend configured but tornado-spirv.dll not found")
+        print(f"[INFO] Expected location: {spirv_dll}")
+        print()
+        return False
+
+    # Try to load the DLL
+    if not check_dll_loadable(spirv_dll):
+        print("[ERROR] Cannot load SPIR-V JNI library")
+        print()
+        print(f"[INFO] Library location: {spirv_dll}")
+        print()
+
+        # Detect GPU to provide better guidance
+        gpus = get_gpu_info()
+        if gpus:
+            print("[INFO] Detected GPU(s):")
+            for gpu in gpus:
+                print(f"       - {gpu}")
+            print()
+
+        print("[CAUSE] Missing Level Zero loader or Intel Compute Runtime")
+        print("        The SPIR-V backend requires:")
+        print("        - Intel Level Zero 1.2+ (recommended for Intel GPUs)")
+        print("        - Intel Compute Runtime (for OpenCL support)")
+        print("        - Supports Intel HD Graphics (integrated) and Intel ARC GPUs")
+        print()
+
+        # Check if ze_loader.dll exists in System32
+        system_root = os.environ.get('SystemRoot', 'C:\\Windows')
+        ze_loader = os.path.join(system_root, 'System32', 'ze_loader.dll')
+
+        try:
+            if os.path.exists(ze_loader):
+                print(f"[INFO] Level Zero loader found at: {ze_loader}")
+                print("       But additional dependencies may be missing")
+            else:
+                print("[INFO] Level Zero loader (ze_loader.dll) not found in System32")
+                print("       Level Zero runtime is not installed")
+        except Exception:
+            pass
+        print()
+
+        # Check system OpenCL.dll
+        system_opencl = os.path.join(system_root, 'System32', 'OpenCL.dll')
+        try:
+            if os.path.exists(system_opencl):
+                print(f"[INFO] System OpenCL.dll found at: {system_opencl}")
+            else:
+                print("[INFO] System OpenCL.dll not found")
+                print("       Intel Compute Runtime is likely not installed")
+        except Exception:
+            pass
+        print()
+
+        print("[FIX] Install Intel GPU drivers and runtime:")
+        print()
+        print("      Option 1: Install Intel Graphics drivers (recommended)")
+        print("      1. Download Intel Graphics drivers from:")
+        print("         https://www.intel.com/content/www/us/en/download-center/home.html")
+        print("      2. Run the installer")
+        print("      3. Restart your system")
+        print("      4. Run tornado --devices again")
+        print()
+        print("      Option 2: Install Intel Compute Runtime")
+        print("      1. Download from: https://github.com/intel/compute-runtime/releases")
+        print("      2. Install both Level Zero (1.2+) and OpenCL packages")
+        print("      3. Restart your system")
+        print("      4. Run tornado --devices again")
+        print()
+        print("[NOTE] SPIR-V backend works best with Intel GPUs")
+        print("       For NVIDIA GPUs, use PTX backend instead")
+        print("       For AMD GPUs, use OpenCL backend instead")
+        print()
+        sys.exit(1)
+
+    return True
+
+def validate_windows_dependencies(sdk_path):
+    """Run all Windows-specific dependency checks."""
+    if os.name != 'nt':
+        return
+
+    # Validate TORNADO_SDK path format
+    validate_tornado_sdk_path(sdk_path)
+
+    # Check if tornado.backend file exists and validate backends
+    backend_file = os.path.join(sdk_path, 'etc', 'tornado.backend')
+    if os.path.exists(backend_file):
+        try:
+            with open(backend_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+                # Validate each configured backend
+                if 'opencl-backend' in content:
+                    validate_opencl_backend(sdk_path)
+
+                if 'ptx-backend' in content:
+                    validate_ptx_backend(sdk_path)
+
+                if 'spirv-backend' in content:
+                    validate_spirv_backend(sdk_path)
+
+        except (OSError, PermissionError, IOError):
+            # Silently skip if we can't read the backend file
+            # This avoids errors due to permission issues
+            pass
+        except Exception:
+            # Catch any other unexpected errors
+            pass
+
+# ########################################################
 # TornadoVM Runner Tool
 # ########################################################
 class TornadoVMRunnerTool():
@@ -88,6 +417,9 @@ class TornadoVMRunnerTool():
         except:
             print("Please ensure the TORNADO_SDK environment variable is set correctly")
             sys.exit(0)
+
+        # Validate Windows-specific dependencies (path format, DLL dependencies, etc.)
+        validate_windows_dependencies(self.sdk)
 
         try:
             self.java_home = os.environ["JAVA_HOME"]
@@ -132,6 +464,18 @@ class TornadoVMRunnerTool():
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
+
+        # Check OpenCL drivers on Windows if OpenCL backend is installed
+        if (os.name == 'nt' and 'opencl-backend' in self.listOfBackends):
+            self.checkOpenCLDriversWindows()
+
+        # Check Visual C++ Runtime on Windows
+        if (os.name == 'nt'):
+            self.checkVCRuntimeWindows()
+
+        # Check NVML dependency on Windows for OpenCL backend
+        if (os.name == 'nt' and 'opencl-backend' in self.listOfBackends):
+            self.checkNVMLWindows()
 
     def setTruffleVars(self, env_vars):
         for var, attr in env_vars.items():
@@ -184,6 +528,239 @@ class TornadoVMRunnerTool():
         if (self.java_version != 21):
             print("TornadoVM supports only JDK version 21")
             sys.exit(0)
+
+    def checkOpenCLDriversWindows(self):
+        """Check if OpenCL drivers are installed on Windows"""
+        openCLInstalled = False
+
+        # Check for OpenCL.dll in System32
+        system32_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'OpenCL.dll')
+        syswow64_opencl = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'SysWOW64', 'OpenCL.dll')
+
+        if os.path.exists(system32_opencl) or os.path.exists(syswow64_opencl):
+            openCLInstalled = True
+
+        # Also check registry for OpenCL vendors
+        if not openCLInstalled:
+            try:
+                result = subprocess.run(
+                    ['powershell', '-Command',
+                     "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Khronos\\OpenCL\\Vendors' -ErrorAction SilentlyContinue"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    openCLInstalled = True
+            except:
+                pass
+
+        if not openCLInstalled:
+            print("\n" + "="*80)
+            print("WARNING: OpenCL drivers not detected on your Windows system!")
+            print("="*80)
+            self.printOpenCLGuidanceWindows()
+
+    def getWindowsGPUInfo(self):
+        """Get GPU information on Windows"""
+        try:
+            result = subprocess.run(
+                ['powershell', '-Command',
+                 "Get-WmiObject Win32_VideoController | Select-Object Name, DriverVersion | Format-List"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except:
+            pass
+        return None
+
+    def printOpenCLGuidanceWindows(self):
+        """Print guidance for installing OpenCL drivers on Windows"""
+        print("\nTornadoVM requires OpenCL drivers to execute on GPUs.")
+        print("\nCHECK YOUR GPU:")
+
+        gpuInfo = self.getWindowsGPUInfo()
+        if gpuInfo:
+            print("-" * 80)
+            print(gpuInfo)
+            print("-" * 80)
+
+        print("\nHOW TO INSTALL OPENCL DRIVERS:\n")
+
+        print("For Intel GPUs:")
+        print("  1. Intel Graphics Driver (may include OpenCL):")
+        print("     https://www.intel.com/content/www/us/en/download-center/home.html")
+        print("\n  2. Intel OpenCL Runtime (Recommended):")
+        print("     https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html")
+        print("\n  3. Intel oneAPI Base Toolkit (For Development):")
+        print("     https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html")
+
+        print("\nFor NVIDIA GPUs:")
+        print("  - Download latest NVIDIA drivers (includes OpenCL):")
+        print("    https://www.nvidia.com/Download/index.aspx")
+
+        print("\nFor AMD GPUs:")
+        print("  - Download AMD Adrenalin drivers (includes OpenCL):")
+        print("    https://www.amd.com/en/support")
+
+        print("\nVERIFY INSTALLATION:")
+        print("  After installing drivers, check for OpenCL.dll:")
+        print("    dir C:\\Windows\\System32\\OpenCL.dll")
+
+        print("\n" + "="*80)
+        print("TornadoVM will continue, but OpenCL execution may fail without drivers.")
+        print("="*80 + "\n")
+
+    def checkVCRuntimeWindows(self):
+        """Check if required Visual C++ Runtime is installed on Windows"""
+        vcRuntimeOK = False
+
+        # Method 1: Check for MSVCR140.dll (VC++ 2015 - required by tornado-opencl.dll)
+        system32_msvcr = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'MSVCR140.dll')
+        syswow64_msvcr = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'SysWOW64', 'MSVCR140.dll')
+
+        if os.path.exists(system32_msvcr) or os.path.exists(syswow64_msvcr):
+            vcRuntimeOK = True
+
+        # Method 2: Check registry for VC++ 2015 Redistributable
+        if not vcRuntimeOK:
+            try:
+                result = subprocess.run(
+                    ['reg', 'query', 'HKLM\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64', '/v', 'Version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if result.returncode == 0:
+                    vcRuntimeOK = True
+            except:
+                pass
+
+        # If MSVCR140.dll not found, check for newer runtime (VC++ 2017+)
+        # This helps determine which runtime is installed
+        hasModernRuntime = False
+        vcruntime140 = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'VCRUNTIME140.dll')
+        if os.path.exists(vcruntime140):
+            hasModernRuntime = True
+
+        if not vcRuntimeOK:
+            print("\n" + "="*80)
+            print("WARNING: Visual C++ 2015 Runtime (MSVCR140.dll) not detected!")
+            print("="*80)
+            self.printVCRuntimeGuidanceWindows(hasModernRuntime)
+
+    def printVCRuntimeGuidanceWindows(self, hasModernRuntime):
+        """Print guidance for installing Visual C++ Runtime on Windows"""
+        print("\nTornadoVM native libraries (tornado-opencl.dll) require Visual C++ 2015 Runtime.")
+
+        if hasModernRuntime:
+            print("\nYou have Visual C++ 2017+ Runtime installed, but TornadoVM was built with VC++ 2015.")
+            print("The older MSVCR140.dll is required for compatibility.")
+
+        print("\nSYMPTOMS:")
+        print("  - 'tornado --devices' fails with ExceptionInInitializerError")
+        print("  - Error 126 when loading tornado-opencl.dll")
+        print("  - UnsatisfiedLinkError for native libraries")
+
+        print("\nSOLUTION:")
+        print("  Install Visual C++ 2015-2022 Redistributable (x64):")
+        print("\n  Download:")
+        print("    https://aka.ms/vs/17/release/vc_redist.x64.exe")
+        print("\n  Or search Microsoft for:")
+        print("    'Visual C++ Redistributable for Visual Studio 2015-2022'")
+
+        print("\nAFTER INSTALLATION:")
+        print("  1. Verify MSVCR140.dll exists:")
+        print("     dir C:\\Windows\\System32\\MSVCR140.dll")
+        print("\n  2. Test TornadoVM:")
+        print("     %TORNADO_SDK%\\bin\\tornado --devices")
+
+        print("\nALTERNATIVE SOLUTION (Advanced):")
+        print("  Build TornadoVM from source with Visual Studio 2017+ to use modern runtime.")
+        print("  Repository: https://github.com/beehive-lab/TornadoVM")
+
+        print("\n" + "="*80)
+        print("TornadoVM will continue, but native library loading may fail without this runtime.")
+        print("="*80 + "\n")
+
+    def checkNVMLWindows(self):
+        """Check if NVML (NVIDIA Management Library) is available on Windows"""
+        nvmlFound = False
+
+        # Common locations for nvml.dll
+        nvmlPaths = [
+            os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'nvml.dll'),
+            "C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvml.dll",
+            "C:\\Windows\\System32\\nvml.dll",
+            os.path.join(self.sdk, 'lib', 'nvml.dll')
+        ]
+
+        # Also check if it's in PATH
+        try:
+            result = subprocess.run(
+                ['where', 'nvml.dll'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                nvmlFound = True
+        except:
+            pass
+
+        # Check specific paths
+        if not nvmlFound:
+            for path in nvmlPaths:
+                if os.path.exists(path):
+                    nvmlFound = True
+                    break
+
+        if not nvmlFound:
+            print("\n" + "="*80)
+            print("WARNING: nvml.dll (NVIDIA Management Library) not found!")
+            print("="*80)
+            self.printNVMLGuidanceWindows()
+
+    def printNVMLGuidanceWindows(self):
+        """Print guidance for nvml.dll dependency issue"""
+        print("\nThe tornado-opencl.dll has a dependency on nvml.dll (NVIDIA Management Library).")
+        print("This is required even if you don't have an NVIDIA GPU.")
+
+        print("\nSYMPTOMS:")
+        print("  - 'tornado --devices' fails with ExceptionInInitializerError")
+        print("  - Error 126 when loading tornado-opencl.dll")
+        print("  - UnsatisfiedLinkError for native libraries")
+
+        print("\nWHY IS THIS NEEDED?")
+        print("  The Windows OpenCL backend was compiled with a hard dependency on NVML.")
+        print("  This should be an optional dependency but currently it's required.")
+
+        print("\nSOLUTION 1: Install NVIDIA CUDA Toolkit (Includes nvml.dll)")
+        print("  Even without an NVIDIA GPU, the DLL can be present.")
+        print("\n  Download CUDA Toolkit:")
+        print("    https://developer.nvidia.com/cuda-downloads")
+        print("\n  After installation, nvml.dll will be at:")
+        print("    C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvml.dll")
+
+        print("\nSOLUTION 2: Copy nvml.dll to System32")
+        print("  If you can obtain nvml.dll from another source:")
+        print("    copy nvml.dll C:\\Windows\\System32\\")
+
+        print("\nSOLUTION 3: Build TornadoVM without NVML dependency (Recommended)")
+        print("  Clone and build from source without CUDA in the build environment.")
+        print("  Repository: https://github.com/beehive-lab/TornadoVM")
+
+        print("\nREPORT THIS ISSUE:")
+        print("  This is a packaging bug. NVML should not be a hard dependency.")
+        print("  Please report: https://github.com/beehive-lab/TornadoVM/issues")
+        print("  Title: 'Windows OpenCL backend has hard dependency on nvml.dll'")
+
+        print("\n" + "="*80)
+        print("TornadoVM will continue, but OpenCL backend loading will fail without nvml.dll.")
+        print("="*80 + "\n")
 
     def printRelease(self):
         f = open(self.sdk + "/etc/tornado.release")
