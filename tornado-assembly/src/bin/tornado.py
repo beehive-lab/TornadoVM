@@ -434,6 +434,9 @@ class TornadoVMRunnerTool():
         # Validate Windows-specific dependencies (path format, DLL dependencies, etc.)
         validate_windows_dependencies(self.sdk)
 
+        # Automatically expand tornado-argfile.template if tornado-argfile doesn't exist
+        self.ensureArgfileExists()
+
         try:
             self.java_home = os.environ["JAVA_HOME"]
             # Strip any surrounding quotes that may have been included in the environment variable
@@ -823,6 +826,141 @@ class TornadoVMRunnerTool():
         self.printRelease()
         self.getInstalledBackends(True)
 
+    def ensureArgfileExists(self):
+        """
+        Automatically expand tornado-argfile.template to tornado-argfile if it doesn't exist.
+        This runs on every tornado command to ensure the argfile is always up-to-date.
+        Handles cross-platform compatibility (Unix paths vs Windows paths).
+        """
+        template_path = os.path.join(self.sdk, "tornado-argfile.template")
+        argfile_path = os.path.join(self.sdk, "tornado-argfile")
+
+        # If argfile exists and template doesn't, nothing to do
+        if os.path.exists(argfile_path) and not os.path.exists(template_path):
+            return
+
+        # If template doesn't exist, nothing to do
+        if not os.path.exists(template_path):
+            return
+
+        # If argfile doesn't exist or template is newer, expand it
+        if not os.path.exists(argfile_path) or \
+           os.path.getmtime(template_path) > os.path.getmtime(argfile_path):
+            try:
+                with open(template_path, 'r') as f:
+                    content = f.read()
+
+                # Expand ${TORNADO_SDK} to actual path
+                # On Windows, convert forward slashes to backslashes in the SDK path
+                sdk_path = self.sdk.replace('/', '\\') if os.name == 'nt' else self.sdk
+                expanded = content.replace('${TORNADO_SDK}', sdk_path)
+
+                # Fix module path separator for current platform
+                # Template uses : (Unix) but Windows needs ;
+                if os.name == 'nt':
+                    # Only replace : in module-path lines (not in all --add-exports)
+                    lines = expanded.split('\n')
+                    for i, line in enumerate(lines):
+                        if line.startswith('--module-path ') or line.startswith('--upgrade-module-path '):
+                            # Replace : with ; in module paths only
+                            lines[i] = line.replace(':', ';')
+                    expanded = '\n'.join(lines)
+
+                with open(argfile_path, 'w') as f:
+                    f.write(expanded)
+            except Exception as e:
+                # Silently fail - this is not critical for tornado operation
+                pass
+
+    def generateArgfile(self):
+        """
+        Generate tornado-argfile.template and tornado-argfile in current directory.
+        Uses envsubst to expand ${TORNADO_SDK} placeholders for portability.
+        """
+        print("[INFO] Generating tornado-argfile in current directory")
+
+        # Get backends from the tornado.backends property file
+        backend_string = ",".join(self.listOfBackends)
+
+        # Get the gen-tornado-argfile.py script location
+        scripts_dir = os.path.join(self.sdk, "bin")
+        gen_script = os.path.join(scripts_dir, "gen-tornado-argfile.py")
+
+        # Output files in current working directory
+        template_file = os.path.join(os.getcwd(), "tornado-argfile.template")
+        output_file = os.path.join(os.getcwd(), "tornado-argfile")
+
+        if not os.path.exists(gen_script):
+            print(f"[ERROR] gen-tornado-argfile.py not found at: {gen_script}")
+            sys.exit(1)
+
+        # Use 'python' on Windows, 'python3' on Unix-like systems
+        python_cmd = "python" if os.name == 'nt' else "python3"
+
+        try:
+            # Step 1: Generate the template with ${TORNADO_SDK} placeholders
+            if os.name == 'nt':
+                result = subprocess.run(
+                    f'{python_cmd} "{gen_script}" {backend_string} "{os.getcwd()}"',
+                    shell=True,
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+            else:
+                result = subprocess.run(
+                    [python_cmd, gen_script, backend_string, os.getcwd()],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+
+            if result.stdout:
+                print(result.stdout)
+
+            # Step 2: Use envsubst to expand ${TORNADO_SDK} (Unix/macOS) or manual replacement (Windows)
+            if os.name == 'nt':
+                # Windows: manual environment variable replacement
+                with open(template_file, 'r') as f:
+                    content = f.read()
+                expanded = content.replace('${TORNADO_SDK}', self.sdk)
+                with open(output_file, 'w') as f:
+                    f.write(expanded)
+                print(f"[INFO] Expanded template using Windows variable substitution")
+            else:
+                # Unix/macOS: use envsubst if available
+                envsubst_check = subprocess.run(['which', 'envsubst'], capture_output=True)
+                if envsubst_check.returncode == 0:
+                    with open(template_file, 'r') as f_in:
+                        with open(output_file, 'w') as f_out:
+                            subprocess.run(['envsubst'], stdin=f_in, stdout=f_out, check=True)
+                    print(f"[INFO] Expanded template using envsubst")
+                else:
+                    # Fallback to manual replacement
+                    with open(template_file, 'r') as f:
+                        content = f.read()
+                    expanded = content.replace('${TORNADO_SDK}', self.sdk)
+                    with open(output_file, 'w') as f:
+                        f.write(expanded)
+                    print(f"[INFO] Expanded template manually (envsubst not found)")
+
+            print(f"[INFO] Template generated at: {template_file}")
+            print(f"[INFO] Expanded argfile at: {output_file}")
+            print(f"[INFO] You can now run: java @{os.path.basename(output_file)} -cp <classpath> <MainClass>")
+
+        except subprocess.CalledProcessError as e:
+            print(f"[ERROR] Failed to generate argfile")
+            print(f"[ERROR] Command: {e.cmd}")
+            print(f"[ERROR] Return code: {e.returncode}")
+            if e.stdout:
+                print(f"[ERROR] stdout: {e.stdout}")
+            if e.stderr:
+                print(f"[ERROR] stderr: {e.stderr}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"[ERROR] Unexpected error: {e}")
+            sys.exit(1)
+
     def buildOptionalParameters(self, args):
         params = ""
         if (args.param1 != None):
@@ -972,6 +1110,10 @@ class TornadoVMRunnerTool():
             ideaUtils.tornadovm_ide_init(os.environ['TORNADO_SDK'], self.java_home, self.listOfBackends)
             sys.exit(0)
 
+        if (args.generate_argfile):
+            self.generateArgfile()
+            sys.exit(0)
+
         if (args.showDevices):
             command = javaFlags + "uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose"
             os.system(command)
@@ -1049,6 +1191,8 @@ def parseArguments():
                         help="Generate internal xml files for IntelliJ IDE")
     parser.add_argument('--dumpBC', action="store", dest="dump_bytecodes_dir", default=None,
                         help="Dump the TornadoVM bytecodes to a directory")
+    parser.add_argument('--generate-argfile', action="store_true", dest="generate_argfile", default=False,
+                        help="Generate tornado-argfile template and expanded argfile in current directory")
     parser.add_argument("param1", nargs="?")
     parser.add_argument("param2", nargs="?")
     parser.add_argument("param3", nargs="?")
