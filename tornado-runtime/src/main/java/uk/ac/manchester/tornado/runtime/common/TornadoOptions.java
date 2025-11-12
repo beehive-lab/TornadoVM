@@ -38,9 +38,9 @@ public class TornadoOptions {
     public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
 
     /**
-     * Default PTX Compiler Flags.
+     * Default PTX Compiler Flags. Make sure the flags are passed in the following format: <flag><space><flag value><another flag><space><another flag value> and so on
      */
-    public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "");
+    public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
     /**
      * Default SPIR-V/LevelZero Flags.
