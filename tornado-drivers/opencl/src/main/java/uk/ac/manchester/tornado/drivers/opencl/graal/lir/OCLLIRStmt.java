@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -106,6 +107,107 @@ public class OCLLIRStmt {
 
         public Value getExpr() {
             return rhs;
+        }
+    }
+
+    @Opcode("CAST_COMPRESSED")
+    public static class CastCompressedStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<CastCompressedStmt> TYPE = LIRInstructionClass.create(CastCompressedStmt.class);
+
+        @Def
+        protected Value compressed;
+        @Use
+        protected Value address;
+
+        public CastCompressedStmt(Value compressed, Value address) {
+            super(TYPE);
+            this.compressed = compressed;
+            this.address = address;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, compressed);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("*((__global uint *)");
+            asm.space();
+            asm.emitValue(crb, address);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    @Opcode("DECOMPRESS_POINTER")
+    public static class DecompressPointerStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<DecompressPointerStmt> TYPE = LIRInstructionClass.create(DecompressPointerStmt.class);
+        @Def
+        protected Value decompressed;
+        @Use
+        protected Value base;
+        @Use
+        protected Value compressed;
+
+        public DecompressPointerStmt(Value decompressed, Value base, Value compressed) {
+            super(TYPE);
+            this.decompressed = decompressed;
+            this.base = base;
+            this.compressed = compressed;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, decompressed);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, base);
+            asm.space();
+            asm.emit("+");
+            asm.space();
+            asm.emit("((ulong) ");
+            asm.emitValue(crb, compressed);
+            asm.space();
+            asm.emit("<< 3)"); // this 3 is standard for the decompression - this code is generated only for coops
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
+    public static class LoadRawPointerStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoadRawPointerStmt> TYPE = LIRInstructionClass.create(LoadRawPointerStmt.class);
+
+        @Def
+        protected Value result;
+        @Use
+        protected Value pointer;
+
+        public LoadRawPointerStmt(Value result, Value pointer) {
+            super(TYPE);
+            this.result = result;
+            this.pointer = pointer;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // This will emit: result = *((__global uint *) pointer);
+            asm.indent();
+            asm.emitValue(crb, result);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("*((__global uint *) ");
+            asm.emitValue(crb, pointer);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
         }
     }
 

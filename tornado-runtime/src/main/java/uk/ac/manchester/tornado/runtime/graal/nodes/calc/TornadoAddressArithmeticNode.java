@@ -54,6 +54,9 @@ public class TornadoAddressArithmeticNode extends FloatingNode implements LIRLow
     public ValueNode getBase() {
         return base;
     }
+    public ValueNode getOffset() {
+        return offset;
+    }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {

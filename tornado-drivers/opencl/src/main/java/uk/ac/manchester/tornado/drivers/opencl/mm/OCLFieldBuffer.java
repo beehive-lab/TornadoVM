@@ -39,6 +39,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -52,6 +53,7 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -61,7 +63,8 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class OCLFieldBuffer implements XPUBuffer {
 
-    private static final long BYTES_OBJECT_REFERENCE = 8;
+    private final long bytesObjectReference;
+    private final boolean areCoopsEnabled;
     private final HotSpotResolvedJavaType resolvedType;
     private final HotSpotResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
@@ -81,6 +84,10 @@ public class OCLFieldBuffer implements XPUBuffer {
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
+
+        final int headerSize = getVMConfig().getArrayBaseOffset(JavaKind.Object);
+        this.areCoopsEnabled = (headerSize == 16);
+        this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -212,7 +219,15 @@ public class OCLFieldBuffer implements XPUBuffer {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            buffer.putLong(wrappedFields[index].getBufferOffset());
+            if (areCoopsEnabled) {
+                long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
+                // Compress it by dividing by 8
+                int compressedOffset = (int) (relativeOffset / 8);
+                // Write compressed value
+                buffer.putInt(compressedOffset);
+            } else {
+                buffer.putInt((int) wrappedFields[index].getBufferOffset());
+            }
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -239,7 +254,11 @@ public class OCLFieldBuffer implements XPUBuffer {
                 shouldNotReachHere("unable to read field: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            buffer.getLong();
+            if (areCoopsEnabled) {
+                buffer.getInt();
+            } else {
+                buffer.getLong();
+            }
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -436,7 +455,11 @@ public class OCLFieldBuffer implements XPUBuffer {
         long size = fieldsOffset;
         if (fields.length > 0) {
             HotSpotResolvedJavaField field = fields[fields.length - 1];
-            size = field.getOffset() + ((field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount());
+           // size = field.getOffset() + ((field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount());
+            size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
+        }
+        if (areCoopsEnabled && (size % 8 != 0)) {
+            size = size + (8 - (size % 8));
         }
         return size;
     }
