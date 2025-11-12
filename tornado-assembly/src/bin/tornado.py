@@ -293,19 +293,32 @@ def validate_spirv_backend(sdk_path):
     if os.name != 'nt':
         return True
 
-    spirv_dll = os.path.join(sdk_path, 'lib', 'tornado-spirv.dll')
+    # SPIR-V can run through OpenCL or Level Zero runtimes
+    opencl_dll = os.path.join(sdk_path, 'lib', 'tornado-opencl.dll')
+    levelzero_dll = os.path.join(sdk_path, 'lib', 'tornado-levelzero.dll')
 
-    if not os.path.exists(spirv_dll):
-        print(f"[WARNING] SPIR-V backend configured but tornado-spirv.dll not found")
-        print(f"[INFO] Expected location: {spirv_dll}")
+    has_opencl = os.path.exists(opencl_dll)
+    has_levelzero = os.path.exists(levelzero_dll)
+
+    if not has_opencl and not has_levelzero:
+        print(f"[WARNING] SPIR-V backend configured but no compatible runtime found")
+        print(f"[INFO] SPIR-V requires either:")
+        print(f"       - tornado-opencl.dll at: {opencl_dll}")
+        print(f"       - tornado-levelzero.dll at: {levelzero_dll}")
         print()
         return False
 
-    # Try to load the DLL
-    if not check_dll_loadable(spirv_dll):
-        print("[ERROR] Cannot load SPIR-V JNI library")
+    # Try to load at least one of the DLLs
+    opencl_loadable = has_opencl and check_dll_loadable(opencl_dll)
+    levelzero_loadable = has_levelzero and check_dll_loadable(levelzero_dll)
+
+    if not opencl_loadable and not levelzero_loadable:
+        print("[ERROR] Cannot load SPIR-V runtime libraries")
         print()
-        print(f"[INFO] Library location: {spirv_dll}")
+        if has_opencl:
+            print(f"[INFO] Found but failed to load: {opencl_dll}")
+        if has_levelzero:
+            print(f"[INFO] Found but failed to load: {levelzero_dll}")
         print()
 
         # Detect GPU to provide better guidance
