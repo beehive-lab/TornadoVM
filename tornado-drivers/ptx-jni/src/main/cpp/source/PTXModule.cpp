@@ -27,8 +27,28 @@
 #include <cuda.h>
 
 #include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <sstream>
 #include "PTXModule.h"
 #include "ptx_log.h"
+
+static const std::unordered_map<std::string, CUjit_option> CUDAJITFlagsMap {
+    {"CU_JIT_OPTIMIZATION_LEVEL", CU_JIT_OPTIMIZATION_LEVEL},
+    {"CU_JIT_TARGET",             CU_JIT_TARGET},
+    {"CU_JIT_MAX_REGISTERS",  CU_JIT_MAX_REGISTERS},
+    {"CU_JIT_THREADS_PER_BLOCK",         CU_JIT_THREADS_PER_BLOCK},
+    {"CU_JIT_MIN_CTA_PER_SM",    CU_JIT_MIN_CTA_PER_SM},
+    {"CU_JIT_MAX_THREADS_PER_BLOCK",   CU_JIT_MAX_THREADS_PER_BLOCK},
+    {"CU_JIT_FALLBACK_STRATEGY",   CU_JIT_FALLBACK_STRATEGY},
+    {"CU_JIT_GENERATE_DEBUG_INFO",   CU_JIT_GENERATE_DEBUG_INFO},
+    {"CU_JIT_LOG_VERBOSE",   CU_JIT_LOG_VERBOSE},
+    {"CU_JIT_GENERATE_LINE_INFO",   CU_JIT_GENERATE_LINE_INFO},
+    {"CU_JIT_CACHE_MODE",   CU_JIT_CACHE_MODE},
+    {"CU_JIT_POSITION_INDEPENDENT_CODE",   CU_JIT_POSITION_INDEPENDENT_CODE},
+    {"CU_JIT_OVERRIDE_DIRECTIVE_VALUES",   CU_JIT_OVERRIDE_DIRECTIVE_VALUES}
+};//currently supported CUDA JIT options
 
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = env->NewByteArray(sizeof(CUmodule));
@@ -81,7 +101,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Signature:
  */
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleLoadDataEx
-  (JNIEnv *env, jclass clazz, jbyteArray source) {
+  (JNIEnv *env, jclass clazz, jbyteArray source, jstring compilerFlags) {
     CUresult result;
 
     size_t ptx_length = env->GetArrayLength(source);
@@ -93,21 +113,54 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     env->GetByteArrayRegion(source, 0, ptx_length, reinterpret_cast<jbyte *>(ptx));
     ptx[ptx_length] = 0; // Make sure string terminates with a 0
 
-    /// FIXME: don't use hard coding values, pass them from API instead.
-    const unsigned int jitNumOptions = 2;
-    CUjit_option *jitOptions = new CUjit_option[jitNumOptions];
-    void **jitOptVals = new void *[jitNumOptions];
+    const char* chars = env->GetStringUTFChars(compilerFlags, nullptr);
+    std::string flags(chars);
+    env->ReleaseStringUTFChars(compilerFlags, chars);
 
-    jitOptions[0] = CU_JIT_OPTIMIZATION_LEVEL;
-    int opt_level = 4;
-    jitOptVals[0] = (void *)(size_t)opt_level;
+    std::istringstream iss(flags);
+    std::vector<CUjit_option> options;
+    std::vector<unsigned int> values;
 
-    jitOptions[1] = CU_JIT_TARGET;
-    int arch_target = 120;
-    jitOptVals[1] = (void *)(size_t)arch_target;
+    std::string token;
+    std::vector<std::pair<std::string, std::string>> entries;
+    while (iss >> token) {
+        if (token.rfind("CU_JIT", 0) == 0) {
+            std::string val;
+            if (!(iss >> val)) {
+                std::cerr << "Missing value for flag: " << token << "\n";
+                break;
+            }
+            entries.emplace_back(token, val);
+        } else {
+            std::cerr << "Skipping unsupported CUDA JIT flag: " << token << "\n";
+        }
+    }
+    options.reserve(entries.size());
+    values.reserve(entries.size());
+
+    for (const auto &p : entries) {
+        const std::string &flagName = p.first;
+        const std::string &valStr = p.second;
+
+        auto it = CUDAJITFlagsMap.find(flagName);
+        if (it == CUDAJITFlagsMap.end()) {
+            std::cerr << "Unsupported CUDA JIT flag: " << flagName << "\n";
+            continue;
+        }
+
+        options.push_back(it->second);
+
+        unsigned int v = std::stoi(valStr);
+        values.push_back(v);
+    }
+
+    void **jitOptVals = new void *[options.size()];
+    for(int i = 0;i < options.size();i++){
+        jitOptVals[i] = (void *)(size_t)values[i];
+    }
 
     CUmodule module;
-    result = cuModuleLoadDataEx(&module, ptx, jitNumOptions, jitOptions, (void **)jitOptVals);
+    result = cuModuleLoadDataEx(&module, ptx, options.size(),  options.data(), (void **)jitOptVals);
 
     LOG_PTX_AND_VALIDATE("cuModuleLoadDataEx", result);
 #ifdef _WIN32
