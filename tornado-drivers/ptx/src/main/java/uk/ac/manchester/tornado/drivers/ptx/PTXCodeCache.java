@@ -28,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXCodeCache {
 
@@ -39,14 +41,15 @@ public class PTXCodeCache {
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
+    public PTXInstalledCode installSource(TaskDataContext taskMeta, String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
         if (!cache.containsKey(name)) {
             if (debugKernel) {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
 
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name);
+            String compilerFlags = taskMeta.getCompilerFlags(TornadoVMBackendType.PTX);
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, compilerFlags);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
