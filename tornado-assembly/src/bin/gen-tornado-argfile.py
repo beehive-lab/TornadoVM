@@ -143,26 +143,31 @@ def strip_comments(file_path):
         return []
 
 
-def generate_argfile(backends):
+def generate_argfile(backends, output_dir=None):
     """
-    Generate the tornado-argfile based on selected backends.
+    Generate the tornado-argfile.template based on selected backends.
 
-    This function creates a Java argument file (@argfile) that contains all the JVM
-    flags needed to run TornadoVM applications. The argfile includes:
+    This function creates a Java argument file template (@argfile) that contains all the JVM
+    flags needed to run TornadoVM applications. The template uses ${TORNADO_SDK} placeholders
+    which can be expanded using envsubst. The argfile includes:
     - JVM mode and memory settings (-XX flags, -server, etc.)
-    - Native library paths
+    - Native library paths (with ${TORNADO_SDK} placeholder)
     - TornadoVM runtime properties
-    - Module system configuration (--module-path, --add-modules)
+    - Module system configuration (--module-path, --add-modules with ${TORNADO_SDK} placeholder)
     - Module exports (--add-exports) for common and backend-specific modules
 
     Args:
         backends (str): Comma-separated list of backends (e.g., "opencl,ptx,spirv")
+        output_dir (str): Optional output directory. If None, uses TORNADO_SDK directory
     """
     tornado_sdk = os.environ.get("TORNADO_SDK")
     project_root = get_project_root()
 
-    # Generate argfile in SDK bin directory instead of project root
-    output_file = Path(tornado_sdk) / "tornado-argfile"
+    # Generate argfile template in specified directory or SDK directory
+    if output_dir:
+        output_file = Path(output_dir) / "tornado-argfile.template"
+    else:
+        output_file = Path(tornado_sdk) / "tornado-argfile.template"
     export_paths = get_export_list_paths(tornado_sdk)
 
     # Clean old file
@@ -170,13 +175,14 @@ def generate_argfile(backends):
     if output_file.exists():
         output_file.unlink()
 
-    print("[INFO] Generating TornadoVM argfile")
+    print("[INFO] Generating TornadoVM argfile template")
 
     # Get Java flags from tornado command
     java_flags = get_tornado_flags()
 
     # Parse backends (split comma-separated list and trim whitespace)
-    backend_list = [b.strip() for b in backends.split(",")]
+    # Normalize backend names by removing "-backend" suffix if present
+    backend_list = [b.strip().replace("-backend", "") for b in backends.split(",")]
 
     # Start building the output content
     output_lines = []
@@ -190,11 +196,9 @@ def generate_argfile(backends):
     output_lines.append("")
 
     # === Native library path ===
-    # Extract the java.library.path property that points to TornadoVM native libraries
+    # Note: This will be expanded by the tornado launcher or manually via envsubst
     output_lines.append("# === Native library path ===")
-    for flag in java_flags:
-        if flag.startswith("-Djava.library.path"):
-            output_lines.append(flag)
+    output_lines.append("-Djava.library.path=${TORNADO_SDK}/lib")
     output_lines.append("")
 
     # === Tornado runtime classes ===
@@ -206,13 +210,15 @@ def generate_argfile(backends):
     output_lines.append("")
 
     # === Module system ===
-    # Extract module-related flags that take an argument (--module-path, --add-modules, etc.)
-    # These flags come in pairs: flag + value
     output_lines.append("# === Module system ===")
+    # Add module paths with ${TORNADO_SDK} placeholders
+    output_lines.append("--module-path .:${TORNADO_SDK}/share/java/tornado")
+    output_lines.append("--upgrade-module-path ${TORNADO_SDK}/share/java/graalJars")
+    # Extract and add --add-modules
     i = 0
     while i < len(java_flags):
         flag = java_flags[i]
-        if flag in ["--module-path", "--upgrade-module-path", "--add-modules"]:
+        if flag == "--add-modules":
             if i + 1 < len(java_flags):
                 output_lines.append(f"{flag} {java_flags[i+1]}")
                 i += 2
@@ -243,18 +249,21 @@ def generate_argfile(backends):
     with open(output_file, "w") as f:
         f.write("\n".join(output_lines) + "\n")
 
-    print("[INFO] Done. Generated fresh argfile")
-    print(f"[INFO] File path: {output_file}")
+    print("[INFO] Done. Generated argfile template")
+    print(f"[INFO] Template path: {output_file}")
+    print(f"[INFO] To use: envsubst < {output_file.name} > tornado-argfile && java @tornado-argfile ...")
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: gen-tornado-argfile.py <backends>")
+        print("Usage: gen-tornado-argfile.py <backends> [output_dir]")
         print("Example: gen-tornado-argfile.py opencl,ptx,spirv")
+        print("Example: gen-tornado-argfile.py opencl /path/to/output/dir")
         sys.exit(1)
 
     backends = sys.argv[1]
-    generate_argfile(backends)
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else None
+    generate_argfile(backends, output_dir)
 
 
 if __name__ == "__main__":
