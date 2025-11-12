@@ -473,10 +473,6 @@ class TornadoVMRunnerTool():
         if (os.name == 'nt'):
             self.checkVCRuntimeWindows()
 
-        # Check NVML dependency on Windows for OpenCL backend
-        if (os.name == 'nt' and 'opencl-backend' in self.listOfBackends):
-            self.checkNVMLWindows()
-
     def setTruffleVars(self, env_vars):
         for var, attr in env_vars.items():
             if var in os.environ:
@@ -685,44 +681,6 @@ class TornadoVMRunnerTool():
         print("\n" + "="*80)
         print("TornadoVM will continue, but native library loading may fail without this runtime.")
         print("="*80 + "\n")
-
-    def checkNVMLWindows(self):
-        """Check if NVML (NVIDIA Management Library) is available on Windows"""
-        nvmlFound = False
-
-        # Common locations for nvml.dll
-        nvmlPaths = [
-            os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', 'nvml.dll'),
-            "C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvml.dll",
-            "C:\\Windows\\System32\\nvml.dll",
-            os.path.join(self.sdk, 'lib', 'nvml.dll')
-        ]
-
-        # Also check if it's in PATH
-        try:
-            result = subprocess.run(
-                ['where', 'nvml.dll'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                nvmlFound = True
-        except:
-            pass
-
-        # Check specific paths
-        if not nvmlFound:
-            for path in nvmlPaths:
-                if os.path.exists(path):
-                    nvmlFound = True
-                    break
-
-        if not nvmlFound:
-            print("\n" + "="*80)
-            print("WARNING: nvml.dll (NVIDIA Management Library) not found!")
-            print("="*80)
-            self.printNVMLGuidanceWindows()
 
     def printNVMLGuidanceWindows(self):
         """Print guidance for nvml.dll dependency issue"""
