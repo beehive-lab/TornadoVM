@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,8 +32,36 @@ import update_paths as updp
 import pull_graal_jars
 
 
-__LEVEL_ZERO_JNI_VERSION__ = "0.1.4"
-__BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.4"
+__LEVEL_ZERO_JNI_VERSION__ = "0.1.5"
+__BEEHIVE_SPIRV_TOOLKIT_VERSION__ = "0.0.5"
+
+
+
+def get_mvn_command():
+    """
+    Returns the appropriate Maven command (mvnw or mvnw.cmd) based on the operating system.
+
+    Returns:
+        str: The Maven wrapper command to use.
+    """
+    if os.name == 'nt':
+        return ".\\mvnw.cmd"
+    else:
+        return "./mvnw"
+
+
+def is_win_or_bat():
+    """
+    Returns boolean indicating whether the operating system is Windows or not.
+
+    Returns:
+        bool: True if the operating system is Windows, False otherwise.
+    """
+    if os.name == 'nt':
+        isWinCmdOrBat = True
+    else:
+        isWinCmdOrBat = False
+    return isWinCmdOrBat
 
 
 def check_java_version():
@@ -72,14 +100,12 @@ def should_handle_graal_jars(jdk):
 
 
 def maven_cleanup():
-    print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
-    if os.name == 'nt':
-        isWinCmdOrBat = True
-    else:
-        isWinCmdOrBat = False
+    mvn_cmd = get_mvn_command()
+    print("mvnw -Popencl-backend,ptx-backend,spirv-backend clean")
+
     subprocess.run(
-        ["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
-        stdout=subprocess.PIPE, shell=isWinCmdOrBat
+        [mvn_cmd, "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
+        stdout=subprocess.PIPE, shell=is_win_or_bat()
     )
 
 
@@ -171,13 +197,10 @@ def build_levelzero_jni_lib(rebuild=False):
             ],
         )
 
+        mvn_cmd = get_mvn_command()
         ## Always pull for the latest changes
         subprocess.run(["git", "pull", "origin", __LEVEL_ZERO_JNI_VERSION__])
-        if os.name == 'nt':
-            isWinCmdOrBat = True
-        else:
-            isWinCmdOrBat = False
-        subprocess.run(["mvn", "clean", "install"], shell=isWinCmdOrBat)
+        subprocess.run([mvn_cmd, "clean", "install"], shell=is_win_or_bat())
 
         ## Build native library
         os.chdir("levelZeroLib")
@@ -222,13 +245,11 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
             ],
         )
 
+        mvn_cmd = get_mvn_command()
         subprocess.run(["git", "pull", "origin", "master"])
-        if os.name == 'nt':
-            isWinCmdOrBat = True
-        else:
-            isWinCmdOrBat = False
-        subprocess.run(["mvn", "clean", "package"], shell=isWinCmdOrBat)
-        subprocess.run(["mvn", "install"], shell=isWinCmdOrBat)
+
+        subprocess.run([mvn_cmd, "clean", "package"], shell=is_win_or_bat())
+        subprocess.run([mvn_cmd, "install"], shell=is_win_or_bat())
         os.chdir(current)
 
         level_zero_lib = "level-zero"
@@ -244,13 +265,11 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
 
     if os.name == 'nt':
         subprocess.run([os.path.join(level_zero_lib, "build", "bin", "Release", "zello_world")])
-    else:
-        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "zello_world")])
-
-    if os.name == 'nt':
         zeSharedLoader = os.path.join("level-zero", "build", "lib", "Release", "ze_loader.lib")
     else:
+        subprocess.run([os.path.join(level_zero_lib, "build", "bin", "zello_world")])
         zeSharedLoader = os.path.join("level-zero", "build", "lib", "libze_loader.so")
+
 
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
         current, zeSharedLoader
@@ -293,19 +312,19 @@ def build_tornadovm(args, backend_profiles):
         CompletedProcess: Result of the Maven build process.
     """
     try:
-        if os.name == 'nt':
-            isWinCmdOrBat = True
-        else:
-            isWinCmdOrBat = False
+        mvn_cmd = get_mvn_command()
 
+        process = [mvn_cmd]
+        # Only override threading if single-threaded mode explicitly requested
+        # Default parallel build (-T1.5C) is configured in .mvn/maven.config
         if args.mavenSingleThreaded:
-            process = ["mvn", "-T1", "-Dstyle.color=always"]
-        else:
-            process = ["mvn", "-T1.5C", "-Dstyle.color=always"]
+            process.append("-T1")
+
         if args.polyglot:
             process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
         else:
             process.append(f"-P{args.jdk},{backend_profiles}")
+
         process.append("install")
         print(' '.join(process))
 
@@ -314,7 +333,7 @@ def build_tornadovm(args, backend_profiles):
             check=True,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-            shell=isWinCmdOrBat
+            shell=is_win_or_bat(),
         )
 
         if result.returncode == 0:
@@ -434,7 +453,7 @@ def generate_argfile(backend):
         current = os.getcwd()
         os.chdir(scripts_dir)
         print(os.getcwd())
-        subprocess.run(["gen-tornado-argfile.sh", backend])
+        subprocess.run(["python3", "gen-tornado-argfile.py", backend], shell=is_win_or_bat())
         os.chdir(current)
 
 
