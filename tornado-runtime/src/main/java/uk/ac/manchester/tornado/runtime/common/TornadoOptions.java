@@ -38,7 +38,8 @@ public class TornadoOptions {
     public static final String DEFAULT_OPENCL_COMPILER_FLAGS = getProperty("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
 
     /**
-     * Default PTX Compiler Flags. Make sure the flags are passed in the following format: <flag><space><flag value><another flag><space><another flag value> and so on
+     * Default PTX Compiler Flags. Make sure the flags are passed in the following format: <flag><space><flag value><another flag><space><another flag value> and so on.
+     * For example, CU_JIT_OPTIMIZATION_LEVEL 4 CU_JIT_TARGET 120
      */
     public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
@@ -74,7 +75,7 @@ public class TornadoOptions {
      */
     public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);
 
-    /**F
+    /**
      * Enable the runtime to dump the generated code (e.g., OpenCL, CUDA PTX or SPIR-V) from the TornadoVM JIT Compiler.
      */
     public static final boolean PRINT_KERNEL_SOURCE = getBooleanValue("tornado.printKernel", FALSE);
