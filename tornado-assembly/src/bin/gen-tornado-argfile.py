@@ -257,7 +257,6 @@ def generate_argfile(backends, output_dir=None):
 
     print("[INFO] Done. Generated argfile template")
     print(f"[INFO] Template path: {output_file}")
-    print(f"[INFO] To use: envsubst < {output_file.name} > tornado-argfile && java @tornado-argfile ...")
 
 
 def main():

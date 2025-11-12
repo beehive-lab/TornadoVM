@@ -874,8 +874,9 @@ class TornadoVMRunnerTool():
 
     def generateArgfile(self):
         """
-        Generate tornado-argfile.template and tornado-argfile in current directory.
-        Uses envsubst to expand ${TORNADO_SDK} placeholders for portability.
+        Generate tornado-argfile in current directory.
+        Automatically expands ${TORNADO_SDK} placeholders to create a ready-to-use argfile.
+        Works portably across Windows, Linux, and macOS.
         """
         print("[INFO] Generating tornado-argfile in current directory")
 
@@ -926,7 +927,6 @@ class TornadoVMRunnerTool():
                 expanded = content.replace('${TORNADO_SDK}', self.sdk)
                 with open(output_file, 'w') as f:
                     f.write(expanded)
-                print(f"[INFO] Expanded template using Windows variable substitution")
             else:
                 # Unix/macOS: use envsubst if available
                 envsubst_check = subprocess.run(['which', 'envsubst'], capture_output=True)
@@ -934,7 +934,6 @@ class TornadoVMRunnerTool():
                     with open(template_file, 'r') as f_in:
                         with open(output_file, 'w') as f_out:
                             subprocess.run(['envsubst'], stdin=f_in, stdout=f_out, check=True)
-                    print(f"[INFO] Expanded template using envsubst")
                 else:
                     # Fallback to manual replacement
                     with open(template_file, 'r') as f:
@@ -942,10 +941,8 @@ class TornadoVMRunnerTool():
                     expanded = content.replace('${TORNADO_SDK}', self.sdk)
                     with open(output_file, 'w') as f:
                         f.write(expanded)
-                    print(f"[INFO] Expanded template manually (envsubst not found)")
 
-            print(f"[INFO] Template generated at: {template_file}")
-            print(f"[INFO] Expanded argfile at: {output_file}")
+            print(f"[INFO] Generated argfile at: {output_file}")
             print(f"[INFO] You can now run: java @{os.path.basename(output_file)} -cp <classpath> <MainClass>")
 
         except subprocess.CalledProcessError as e:
