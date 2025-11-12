@@ -198,7 +198,9 @@ def generate_argfile(backends, output_dir=None):
     # === Native library path ===
     # Note: This will be expanded by the tornado launcher or manually via envsubst
     output_lines.append("# === Native library path ===")
-    output_lines.append("-Djava.library.path=${TORNADO_SDK}/lib")
+    # Use OS-appropriate path separator (\ on Windows, / on Unix)
+    lib_path = f"-Djava.library.path=${{TORNADO_SDK}}{os.sep}lib"
+    output_lines.append(lib_path)
     output_lines.append("")
 
     # === Tornado runtime classes ===
@@ -212,8 +214,12 @@ def generate_argfile(backends, output_dir=None):
     # === Module system ===
     output_lines.append("# === Module system ===")
     # Add module paths with ${TORNADO_SDK} placeholders
-    output_lines.append("--module-path .:${TORNADO_SDK}/share/java/tornado")
-    output_lines.append("--upgrade-module-path ${TORNADO_SDK}/share/java/graalJars")
+    # Use OS-appropriate separators: ; on Windows, : on Unix for path lists
+    # Use \ on Windows, / on Unix for file paths
+    module_path = f"--module-path .{os.pathsep}${{TORNADO_SDK}}{os.sep}share{os.sep}java{os.sep}tornado"
+    upgrade_module_path = f"--upgrade-module-path ${{TORNADO_SDK}}{os.sep}share{os.sep}java{os.sep}graalJars"
+    output_lines.append(module_path)
+    output_lines.append(upgrade_module_path)
     # Extract and add --add-modules
     i = 0
     while i < len(java_flags):
