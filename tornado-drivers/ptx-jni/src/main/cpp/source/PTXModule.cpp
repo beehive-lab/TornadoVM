@@ -31,6 +31,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cstdint>
+#include <limits>
 #include "PTXModule.h"
 #include "ptx_log.h"
 
@@ -48,7 +50,7 @@ static const std::unordered_map<std::string, CUjit_option> CUDAJITFlagsMap {
     {"CU_JIT_CACHE_MODE",   CU_JIT_CACHE_MODE},
     {"CU_JIT_POSITION_INDEPENDENT_CODE",   CU_JIT_POSITION_INDEPENDENT_CODE},
     {"CU_JIT_OVERRIDE_DIRECTIVE_VALUES",   CU_JIT_OVERRIDE_DIRECTIVE_VALUES}
-};//currently supported CUDA JIT options
+};//currently supported CUDA JIT options in TornadoVM
 
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = env->NewByteArray(sizeof(CUmodule));
@@ -127,8 +129,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
         if (token.rfind("CU_JIT", 0) == 0) {
             std::string val;
             if (!(iss >> val)) {
-                std::cerr << "Missing value for flag: " << token << "\n";
-                break;
+                throw std::runtime_error("Missing value for flag: " + token);
             }
             entries.emplace_back(token, val);
         } else {
@@ -149,18 +150,34 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
         }
 
         options.push_back(it->second);
-
-        unsigned int v = std::stoi(valStr);
-        values.push_back(v);
+        try{
+            unsigned int v = std::stoi(valStr);
+            if (v > std::numeric_limits<unsigned int>::max()) {
+                std::cerr << "Warning: value for " << flagName << " (" << valStr << ") out of range for unsigned int.\n";
+                v = std::numeric_limits<unsigned int>::max();
+            }
+            values.push_back(v);
+        }
+        catch (const std::invalid_argument&) {
+            std::cerr << "Error: value for " << flagName << " is not a valid integer (" << valStr << ")\n";
+            values.push_back(0);
+        }
+        catch (const std::out_of_range&) {
+            std::cerr << "Error: value for " << flagName << " is out of integer range (" << valStr << ")\n";
+            unsigned int v = std::numeric_limits<unsigned int>::max();
+            values.push_back(v);
+        }
     }
 
     void **jitOptVals = new void *[options.size()];
-    for(int i = 0;i < options.size();i++){
-        jitOptVals[i] = (void *)(size_t)values[i];
+    for(int i = 0; i < options.size(); i++){
+        jitOptVals[i] = (void *)(uintptr_t)values[i];
     }
 
     CUmodule module;
     result = cuModuleLoadDataEx(&module, ptx, options.size(),  options.data(), (void **)jitOptVals);
+
+    delete[] jitOptVals;
 
     LOG_PTX_AND_VALIDATE("cuModuleLoadDataEx", result);
 #ifdef _WIN32
