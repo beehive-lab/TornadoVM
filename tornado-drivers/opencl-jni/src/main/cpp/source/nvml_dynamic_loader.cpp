@@ -103,8 +103,6 @@ bool initNVMLLoader() {
     }
 
     g_nvmlLoader.loaded = true;
-    std::cout << "TornadoVM-OpenCL: NVML loaded successfully - "
-              << "NVIDIA power metrics are available" << std::endl;
     return true;
 }
 
