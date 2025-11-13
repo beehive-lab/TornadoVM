@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import jdk.vm.ci.meta.Value;
@@ -15,6 +36,9 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
+/**
+ * Node for reading and decompressing a 4-byte object reference from an object's field into a full 64-bit address.
+ */
 @NodeInfo
 public class PTXDecompressedReadFieldNode extends FixedWithNextNode implements LIRLowerable {
 
@@ -37,28 +61,17 @@ public class PTXDecompressedReadFieldNode extends FixedWithNextNode implements L
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         PTXLIRGenerator tool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
-        // 1. Get operands
-        // This is 'this' (e.g., ul_0)
         Value addressBase = gen.operand(address.getBase());
-        // This is the offset (e.g., 12L)
         Value index = gen.operand(address.getIndex());
-        // 2. Calculate field address
-        // This is 'ul_5 = ul_0 + 12L'
         Variable fieldAddress = tool.getArithmetic().emitAdd(addressBase, index, false);
-        // 3. Read 4-byte compressed pointer from field address
-        // This will be 'ui_6'
         Variable compressedPointer = tool.newVariable(LIRKind.value(PTXKind.U32));
-        // Emits: 'ui_6 = *((__global uint *) ul_5);'
         tool.append(new PTXLIRStmt.CastCompressedStmt(compressedPointer, fieldAddress));
-        // 4. Decompress the pointer
-        // This will be 'ul_7'
         Variable decompressedPointer = tool.newVariable(LIRKind.value(PTXKind.U64));
-        // Emits: 'ul_7 = ul_0 + ((ulong) ui_6 << 3);'
-        // NOTE: We pass 'addressBase' (ul_0), NOT 'fieldAddress' (ul_5)
-        Variable temp64 = tool.newVariable(LIRKind.value(PTXKind.U64));               // Temporary for cvt
-        Variable tempShifted = tool.newVariable(LIRKind.value(PTXKind.U64));          // Temporary for shl
+        // Temporary variable for cvt
+        Variable temp64 = tool.newVariable(LIRKind.value(PTXKind.U64));
+        // Temporary for shl
+        Variable tempShifted = tool.newVariable(LIRKind.value(PTXKind.U64));
         tool.append(new PTXLIRStmt.DecompressPointerStmt(decompressedPointer, addressBase, compressedPointer, temp64, tempShifted));
-        // 5. Set the result of this node
         gen.setResult(this, decompressedPointer);
     }
 

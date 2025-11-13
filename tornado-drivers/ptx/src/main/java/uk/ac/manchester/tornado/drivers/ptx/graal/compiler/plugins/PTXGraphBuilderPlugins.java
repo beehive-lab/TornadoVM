@@ -275,22 +275,18 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        // Supplier for 4-byte element types (int, float)
-        // This will return 4 (for 16-byte coops header) or 6 (for 24-byte header)
+        // Accessing the vmConfig during initialization was causing a NullPointerException.
+        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
         Supplier<Integer> headerSupplier4Byte = () -> {
             var vmConfig = TornadoCoreRuntime.getVMConfig();
-            // We can use JavaKind.Int as the reference for all 4-byte types
             int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
-            return headerSize / JavaKind.Int.getByteCount();
+            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
         };
 
-        // Supplier for 8-byte element types (long, double)
-        // This will return 2 (for 16-byte coops header) or 3 (for 24-byte header)
         Supplier<Integer> headerSupplier8Byte = () -> {
             var vmConfig = TornadoCoreRuntime.getVMConfig();
-            // We can use JavaKind.Long as the reference for all 8-byte types
             int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
-            return headerSize / JavaKind.Long.getByteCount();
+            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
         };
 
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, headerSupplier4Byte);

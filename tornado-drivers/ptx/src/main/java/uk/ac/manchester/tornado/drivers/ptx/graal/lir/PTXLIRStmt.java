@@ -432,12 +432,13 @@ public class PTXLIRStmt {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
-            // Emits: ld.global.u32 %r_compressed, [%r_address];
+            // casts an 8-byte address to a 4-byte pointer
+            // ld.global.u32 %r_compressed, [%r_address];
             asm.emit("ld.global.u32");
             asm.space();
-            asm.emitValue(compressed); // The destination register (%r_compressed)
+            asm.emitValue(compressed);
             asm.emit(", [");
-            asm.emitValue(address);    // The source 64-bit address register (%r_address)
+            asm.emitValue(address);
             asm.emit("]");
             asm.delimiter();
             asm.eol();
@@ -471,8 +472,8 @@ public class PTXLIRStmt {
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            // 1. Emit: cvt.u64.u32 %temp64, %compressed;
-            // (Convert the 32-bit compressed value to 64-bit)
+            // Convert the 32-bit compressed value to 64-bit
+            // cvt.s64.s32 %temp64, %compressed;
             asm.emitSymbol(TAB);
             asm.emit("cvt.s64.s32");
             asm.space();
@@ -482,8 +483,8 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // 2. Emit: shl.b64 %tempShifted, %temp64, 3;
-            // (Shift the 64-bit value left by 3)
+            // Shift the 64-bit value left by 3
+            // shl.b64 %tempShifted, %temp64, 3;
             asm.emitSymbol(TAB);
             asm.emit("shl.b64");
             asm.space();
@@ -494,8 +495,8 @@ public class PTXLIRStmt {
             asm.delimiter();
             asm.eol();
 
-            // 3. Emit: add.u64 %decompressed, %base, %tempShifted;
-            // (Add the base address to the shifted offset)
+            // Add the base address to the shifted offset
+            // add.u64 %decompressed, %base, %tempShifted;
             asm.emitSymbol(TAB);
             asm.emit("add.u64");
             asm.space();

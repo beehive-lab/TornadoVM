@@ -217,8 +217,11 @@ public class CUDAFieldBuffer implements XPUBuffer {
             }
         } else if (wrappedFields[index] != null) {
             if (areCoopsEnabled) {
+                // calculate the relative offset
                 long relativeOffset = wrappedFields[index].toBuffer() - this.toBuffer();
+                // Compress it by dividing by 8
                 int compressedOffset = (int) (relativeOffset / 8);
+                // Write compressed value
                 buffer.putInt(compressedOffset);
             } else {
                 buffer.putLong(wrappedFields[index].toBuffer());
@@ -439,7 +442,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
         }
 
-        // ADD THIS PADDING LOGIC
+        // when coops are enabled, padding is required to ensure an 8-byte object alignment
         if (areCoopsEnabled && (size % 8 != 0)) {
             size = size + (8 - (size % 8));
         }
@@ -448,13 +451,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
     @Override
     public long size() {
-        long size = getObjectSize();
-        for (FieldBuffer wrappedField : wrappedFields) {
-            if (wrappedField != null) {
-                size += wrappedField.size();
-            }
-        }
-        return size;
+        return getObjectSize();
     }
 
     @Override
