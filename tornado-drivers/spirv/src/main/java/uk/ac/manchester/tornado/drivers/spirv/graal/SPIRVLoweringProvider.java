@@ -28,6 +28,7 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import java.util.Iterator;
 
@@ -105,6 +106,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
@@ -561,10 +563,19 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
-        loadField.replaceAtUsages(memoryRead);
-        graph.replaceFixed(loadField, memoryRead);
+        final int headerSize = getVMConfig().getArrayBaseOffset(field.getJavaKind());
+        boolean areCoopsEnabled = (headerSize == 16);
+        // if coops are used and the field is a not a primitive (primitive data is not compressed)
+        if (areCoopsEnabled && !field.getJavaKind().isPrimitive()) {
+            SPIRVDecompressedReadFieldNode decompressedNode = graph.add(new SPIRVDecompressedReadFieldNode(object, address, loadStamp));
+            loadField.replaceAtUsages(decompressedNode);
+            graph.replaceFixed(loadField, decompressedNode);
+        } else {
+            FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
+            ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+            loadField.replaceAtUsages(memoryRead);
+            graph.replaceFixed(loadField, memoryRead);
+        }
     }
 
     @Override

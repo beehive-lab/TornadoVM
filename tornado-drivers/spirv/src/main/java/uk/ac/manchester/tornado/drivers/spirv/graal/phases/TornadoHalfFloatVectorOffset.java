@@ -53,8 +53,16 @@ import java.util.Optional;
 public class TornadoHalfFloatVectorOffset extends Phase {
 
     private static int HALF_SIZE = 2;
-    private static String OBJECT_OFFSET = "3";
     private static long HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
+    private static String object_offset;
+
+    public TornadoHalfFloatVectorOffset() {
+        if (HEADER_SIZE == 16) { // coops
+            object_offset = "2";
+        } else {
+            object_offset = "3";
+        }
+    }
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -97,7 +105,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
             // if the shifting is by 3 because the JavaKind of half is Object
-            if (currentOffset.getValue().toValueString().equals(OBJECT_OFFSET)) {
+            if (currentOffset.getValue().toValueString().equals(object_offset)) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);
@@ -116,7 +124,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
             // if the shifting is by 3 because the JavaKind of half is Object
-            if (currentOffset.getValue().toValueString().equals(OBJECT_OFFSET)) {
+            if (currentOffset.getValue().toValueString().equals(object_offset)) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);

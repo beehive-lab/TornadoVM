@@ -38,10 +38,12 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpExtInst;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpIAdd;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpPhi;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpPtrCastToGeneric;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpShiftLeftLogical;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
@@ -1011,6 +1013,109 @@ public class SPIRVLIRStmt {
                         new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getByteCount())) //
                         )));
             }
+        }
+    }
+
+    @Opcode("CAST_COMPRESSED")
+    public static class CastCompressedStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<CastCompressedStmt> TYPE = LIRInstructionClass.create(CastCompressedStmt.class);
+
+        @Def
+        protected Value compressed;
+        @Use
+        protected Value address;
+
+        public CastCompressedStmt(Value compressed, Value address) {
+            super(TYPE);
+            this.compressed = compressed;
+            this.address = address;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            // This registers the destination variable (e.g., ui_6)
+            asm.emitValue(crb, compressed);
+
+            // 1. Get the SPIRVId for the 64-bit address value (e.g., ul_5)
+            SPIRVId addressValueId = asm.lookUpLIRInstructions(address);
+
+            // 2. Get the Type ID for a "pointer to u32 in global memory"
+            SPIRVId ptrToU32Type = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_32);
+
+            // 3. Create a new ID for the converted pointer
+            SPIRVId ptrId = asm.module.getNextId();
+
+            // 4. Emit: %ptrId = OpConvertUToPtr %ptrToU32Type %addressValueId
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrToU32Type, ptrId, addressValueId));
+
+            // 5. Get the Type ID for the value we are loading (a u32)
+            SPIRVId u32Type = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+
+            // 6. Create a new ID for the loaded value
+            SPIRVId loadedValueId = asm.module.getNextId();
+
+            // 7. Emit: %loadedValueId = OpLoad %u32Type %ptrId Aligned 4
+            asm.currentBlockScope().add(new SPIRVOpLoad(
+                    u32Type,
+                    loadedValueId,
+                    ptrId,
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))
+            ));
+
+            // 8. Register that the 'compressed' variable now holds the 'loadedValueId'
+            asm.registerLIRInstructionValue(compressed, loadedValueId);
+        }
+    }
+
+    @Opcode("DECOMPRESS_POINTER")
+    public static class DecompressPointerStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<DecompressPointerStmt> TYPE = LIRInstructionClass.create(DecompressPointerStmt.class);
+        @Def
+        protected Value decompressed;
+        @Use
+        protected Value base;
+        @Use
+        protected Value compressed;
+
+        public DecompressPointerStmt(Value decompressed, Value base, Value compressed) {
+            super(TYPE);
+            this.decompressed = decompressed;
+            this.base = base;
+            this.compressed = compressed;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            // This registers the destination variable (e.g., ul_7)
+            asm.emitValue(crb, decompressed);
+
+            // 1. Get the SPIRVIds for the inputs
+            SPIRVId baseId = asm.lookUpLIRInstructions(base);           // u64
+            SPIRVId compressedId = asm.lookUpLIRInstructions(compressed); // u32
+
+            // 2. Get the u64 type ID
+            SPIRVId u64Type = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+
+            // --- Step 1: Convert u32 compressed value to u64 ---
+            SPIRVId temp64Id = asm.module.getNextId();
+            // Emit: %temp64Id = OpUConvert %u64Type %compressedId
+            asm.currentBlockScope().add(new SPIRVOpUConvert(u64Type, temp64Id, compressedId));
+
+            // --- Step 2: Shift left by 3 ---
+            // Get the constant '3' as a u64 value
+            SPIRVId shiftConstId = asm.lookUpConstant("3", SPIRVKind.OP_TYPE_INT_64);
+            SPIRVId tempShiftedId = asm.module.getNextId();
+            // Emit: %tempShiftedId = OpShiftLeftLogical %u64Type %temp64Id %shiftConstId
+            asm.currentBlockScope().add(new SPIRVOpShiftLeftLogical(u64Type, tempShiftedId, temp64Id, shiftConstId));
+
+            // --- Step 3: Add base to shifted value ---
+            SPIRVId finalResultId = asm.module.getNextId();
+            // Emit: %finalResultId = OpIAdd %u64Type %baseId %tempShiftedId
+            asm.currentBlockScope().add(new SPIRVOpIAdd(u64Type, finalResultId, baseId, tempShiftedId));
+
+            // 4. Register that the 'decompressed' variable now holds the 'finalResultId'
+            asm.registerLIRInstructionValue(decompressed, finalResultId);
         }
     }
 
