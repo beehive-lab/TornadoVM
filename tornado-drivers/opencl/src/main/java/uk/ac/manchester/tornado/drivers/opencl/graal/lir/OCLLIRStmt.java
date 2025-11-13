@@ -128,7 +128,7 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // casts a 8-byte address to a 4-byte pointer
+            // casts an 8-byte address to a 4-byte pointer
             // uint_var = *((__global uint *) ulong_address);
             asm.indent();
             asm.emitValue(crb, compressed);
