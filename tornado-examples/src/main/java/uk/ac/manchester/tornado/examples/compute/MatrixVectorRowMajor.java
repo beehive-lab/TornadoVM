@@ -51,7 +51,8 @@ import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 public class MatrixVectorRowMajor {
 
     private static final float DELTA = 1e-4f;
-    private static final float DELTA_Q = 1e-1f; // the error margin is larger due to quantization
+    private static final float DELTA_Q = 1e-1f; // the error margin is larger due to quantization (Q8)
+    private static final float DELTA_Q4 = 0.8f; // Q4_0 has much larger quantization error than Q8
     private static final int WARM_UP_ITERATIONS = 140;
     private static final int BENCHMARK_ITERATIONS = 120;
     private static final Random random = new Random(42); // Fixed seed for reproducibility
@@ -1208,7 +1209,7 @@ public class MatrixVectorRowMajor {
                 isValid = false;
             }
 
-            if (error4b > DELTA_Q) {
+            if (error4b > DELTA_Q4) {
                 System.out.printf("[Q4_0 Vectorized] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
                         i, outputSeq.get(i), outputQ4Vec.get(i), error4b);
                 isValid = false;
