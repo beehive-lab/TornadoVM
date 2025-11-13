@@ -295,6 +295,54 @@ public class MatrixVectorRowMajor {
         }
     }
 
+    public static void quantizeWeightsToQ4_0(FloatArray weightsFP32, Int8Array outQ, HalfFloatArray outScales, int rows, int cols) {
+        int blocksPerRow = cols / BLOCK_SIZE;
+
+        for (int r = 0; r < rows; r++) {
+            int rowBase = r * cols;
+            for (int b = 0; b < blocksPerRow; b++) {
+                int blockStart = rowBase + b * BLOCK_SIZE;
+
+                // compute max abs (Q4_0 format)
+                float maxAbs = 0.0f;
+                for (int i = 0; i < BLOCK_SIZE; i++) {
+                    float v = weightsFP32.get(blockStart + i);
+                    float a = Math.abs(v);
+                    if (a > maxAbs) maxAbs = a;
+                }
+
+                // For Q4_0, values are quantized to [-7, 7] range (4-bit signed)
+                float scale = (maxAbs == 0.0f) ? 0.0f : (maxAbs / 7.0f);
+
+                // store scale as HalfFloat (matches GGUF Q4_0 format)
+                int globalBlockIdx = r * blocksPerRow + b;
+                outScales.set(globalBlockIdx, new HalfFloat(scale));
+
+                float inv = (scale == 0.0f) ? 0.0f : 1.0f / scale;
+
+                // quantize and pack block - 2 values per byte
+                for (int i = 0; i < BLOCK_SIZE; i += 2) {
+                    float val1 = weightsFP32.get(blockStart + i);
+                    float val2 = weightsFP32.get(blockStart + i + 1);
+
+                    int q1 = Math.round(val1 * inv);
+                    int q2 = Math.round(val2 * inv);
+
+                    // Clamp to 4-bit range [-7, 7]
+                    if (q1 > 7) q1 = 7;
+                    else if (q1 < -7) q1 = -7;
+                    if (q2 > 7) q2 = 7;
+                    else if (q2 < -7) q2 = -7;
+
+                    // Pack two 4-bit values into one byte
+                    // Lower 4 bits: first value, Upper 4 bits: second value
+                    byte packed = (byte) ((q1 & 0x0F) | ((q2 & 0x0F) << 4));
+                    outQ.set(blockStart / 2 + i / 2, packed);
+                }
+            }
+        }
+    }
+
     public static void matrixVectorGenericFinal(KernelContext context, FloatArray x, FloatArray output, Int8Array weightsQ, HalfFloatArray weightScales, int dim1, int dim0, int localWorkGroupSize) {
         int rowId = context.groupIdx;
         int localId = context.localIdx;
@@ -349,6 +397,77 @@ public class MatrixVectorRowMajor {
             int blockIdx = j / blockSize;
             float scale = weightScales.get(scalesRowOffset + blockIdx).getFloat32();
             partialSum += ((float) weightsQ.get(rowOffset + j) * scale) * x.get(j);
+        }
+
+        localSums[localId] = partialSum;
+        context.localBarrier();
+
+        // Parallel reduction
+        for (int stride = localSize / 2; stride > 0; stride >>= 1) {
+            if (localId < stride) {
+                localSums[localId] += localSums[localId + stride];
+            }
+            context.localBarrier();
+        }
+
+        return localSums[0];
+    }
+
+    public static void matrixVectorGenericQ4_0(KernelContext context, FloatArray x, FloatArray output, Int8Array weightsQ, HalfFloatArray weightScales, int dim1, int dim0, int localWorkGroupSize) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+
+        if (rowId >= dim0) {
+            return;
+        }
+
+        float sum = matrixVectorRowMajorOptimizedQ4_0(context, localWorkGroupSize, x, weightsQ, weightScales, dim1);
+
+        // Thread 0 writes the result
+        if (localId == 0) {
+            output.set(rowId, sum);
+        }
+    }
+
+    /**
+     * Helper method to compute dot product for a single row with Q4_0 quantized weights.
+     * Q4_0 packs two 4-bit values per byte.
+     */
+    public static float matrixVectorRowMajorOptimizedQ4_0(KernelContext context, int localSize, FloatArray x, Int8Array weightsQ, HalfFloatArray weightScales, int n) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+        int blockSize = 32;
+
+        float[] localSums = context.allocateFloatLocalArray(localSize);
+
+        int rowOffset = rowId * n / 2; // Q4_0 uses half the storage (2 values per byte)
+        int scalesRowOffset = rowId * (n / blockSize);
+
+        float partialSum = 0.0f;
+
+        // Process elements - each byte contains 2 quantized values
+        for (int j = localId * 2; j < n; j += localSize * 2) {
+            int blockIdx = j / blockSize;
+            float scale = weightScales.get(scalesRowOffset + blockIdx).getFloat32();
+
+            // Read packed byte
+            byte packed = (byte) weightsQ.get(rowOffset + j / 2);
+
+            // Unpack two 4-bit values
+            // Lower 4 bits: first value
+            int q1 = (packed & 0x0F);
+            // Upper 4 bits: second value
+            int q2 = ((packed >> 4) & 0x0F);
+
+            // Convert from unsigned to signed 4-bit [-7, 7]
+            if (q1 > 7) q1 -= 16;
+            if (q2 > 7) q2 -= 16;
+
+            // Dequantize and multiply
+            partialSum += ((float) q1 * scale) * x.get(j);
+            if (j + 1 < n) {
+                partialSum += ((float) q2 * scale) * x.get(j + 1);
+            }
         }
 
         localSums[localId] = partialSum;
@@ -680,6 +799,7 @@ public class MatrixVectorRowMajor {
         FloatArray outputPureTornado = new FloatArray(outputDim);
         FloatArray outputSeq = new FloatArray(outputDim);
         FloatArray outputQ8Vec = new FloatArray(outputDim);
+        FloatArray outputQ4Vec = new FloatArray(outputDim);
         FloatArray outputFp16 = new FloatArray(outputDim);
 
         // DP4A-specific arrays (only if enabled)
@@ -698,6 +818,7 @@ public class MatrixVectorRowMajor {
         ArrayList<Long> kernelContextTimers = new ArrayList<>();
         ArrayList<Long> parallelTimers = new ArrayList<>();
         ArrayList<Long> q8VectorizedTimers = new ArrayList<>();
+        ArrayList<Long> q4VectorizedTimers = new ArrayList<>();
         ArrayList<Long> fp16Timers = new ArrayList<>();
 
         ArrayList<Long> q8Dp4aTimers = supportsDP4A ? new ArrayList<>() : null;
@@ -756,6 +877,23 @@ public class MatrixVectorRowMajor {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, outputQ8Vec);
 
         ImmutableTaskGraph immutableTaskGraphQ8Vectorized = taskGraphQ8Vectorized.snapshot();
+
+        // Q4_0 vectorized
+        Int8Array weightsQuantizedQ4 = new Int8Array(inputDim * outputDim / 2); // Q4_0 uses half the storage
+        HalfFloatArray weightsScalesQ4 = new HalfFloatArray(outputDim * weightBlocksPerRow);
+        quantizeWeightsToQ4_0(weights, weightsQuantizedQ4, weightsScalesQ4, outputDim, inputDim);
+
+        WorkerGrid1D q4VectorWorker = new WorkerGrid1D(outputDim * LOCAL_WORK_GROUP_SIZE);
+        q4VectorWorker.setLocalWork(LOCAL_WORK_GROUP_SIZE, 1, 1);
+        GridScheduler schedulerQ4Vectorized = new GridScheduler("vectorized_q4.t0", q4VectorWorker);
+
+        TaskGraph taskGraphQ4Vectorized = new TaskGraph("vectorized_q4")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weightsQuantizedQ4, weightsScalesQ4)
+                .task("t0", MatrixVectorRowMajor::matrixVectorGenericQ4_0, new KernelContext(), input, outputQ4Vec,
+                        weightsQuantizedQ4, weightsScalesQ4, inputDim, outputDim, LOCAL_WORK_GROUP_SIZE)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputQ4Vec);
+
+        ImmutableTaskGraph immutableTaskGraphQ4Vectorized = taskGraphQ4Vectorized.snapshot();
 
         // DP4A benchmarks (only setup if PTX)
         ImmutableTaskGraph immutableTaskGraphDp4a = null;
@@ -889,6 +1027,7 @@ public class MatrixVectorRowMajor {
         TornadoExecutionPlan executionPlan2 = new TornadoExecutionPlan(immutableTaskGraphParallel);
         TornadoExecutionPlan executionPlan3 = new TornadoExecutionPlan(immutableTaskGraphFp16);
         TornadoExecutionPlan executionPlanQ8Vectorized = new TornadoExecutionPlan(immutableTaskGraphQ8Vectorized);
+        TornadoExecutionPlan executionPlanQ4Vectorized = new TornadoExecutionPlan(immutableTaskGraphQ4Vectorized);
 
         TornadoExecutionPlan executionPlanQ8Dp4a = supportsDP4A ? new TornadoExecutionPlan(immutableTaskGraphDp4a) : null;
         TornadoExecutionPlan executionPlanQ8Dp4aPacked = supportsDP4A ? new TornadoExecutionPlan(immutableTaskGraphDp4aPacked) : null;
@@ -914,6 +1053,11 @@ public class MatrixVectorRowMajor {
         executionPlanQ8Vectorized.withGridScheduler(schedulerQ8Vectorized);
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
             executionPlanQ8Vectorized.withGridScheduler(schedulerQ8Vectorized).execute();
+        }
+
+        executionPlanQ4Vectorized.withGridScheduler(schedulerQ4Vectorized);
+        for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+            executionPlanQ4Vectorized.withGridScheduler(schedulerQ4Vectorized).execute();
         }
 
         // Warm-up DP4A benchmarks (if enabled)
@@ -971,6 +1115,13 @@ public class MatrixVectorRowMajor {
             q8VectorizedTimers.add(end - start);
         }
 
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+            long start = System.nanoTime();
+            executionPlanQ4Vectorized.withGridScheduler(schedulerQ4Vectorized).execute();
+            long end = System.nanoTime();
+            q4VectorizedTimers.add(end - start);
+        }
+
         // Benchmark DP4A implementations (if enabled)
         if (supportsDP4A) {
             System.out.println("Benchmarking DP4A implementations...");
@@ -1011,6 +1162,7 @@ public class MatrixVectorRowMajor {
         float maxError2 = 0.0f;
         float maxError3 = 0.0f;
         float maxError4 = 0.0f;
+        float maxError4b = 0.0f;
         float maxError5 = 0.0f;
         float maxError6 = 0.0f;
         float maxError7 = 0.0f;
@@ -1028,6 +1180,9 @@ public class MatrixVectorRowMajor {
 
             float error4 = Math.abs(outputSeq.get(i) - outputQ8Vec.get(i));
             maxError4 = Math.max(maxError4, error4);
+
+            float error4b = Math.abs(outputSeq.get(i) - outputQ4Vec.get(i));
+            maxError4b = Math.max(maxError4b, error4b);
 
             if (error > DELTA) {
                 System.out.printf("[KernelContext] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
@@ -1050,6 +1205,12 @@ public class MatrixVectorRowMajor {
             if (error4 > DELTA_Q) {
                 System.out.printf("[Q8 Vectorized] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
                         i, outputSeq.get(i), outputQ8Vec.get(i), error4);
+                isValid = false;
+            }
+
+            if (error4b > DELTA_Q) {
+                System.out.printf("[Q4_0 Vectorized] Error at index %d: Expected %.6f, Actual %.6f, Diff %.6f\n",
+                        i, outputSeq.get(i), outputQ4Vec.get(i), error4b);
                 isValid = false;
             }
 
@@ -1099,6 +1260,7 @@ public class MatrixVectorRowMajor {
             System.out.println("[@Parallel] Maximum error: " + maxError2);
             System.out.println("[KernelContext FP16] Maximum error: " + maxError3);
             System.out.println("[Q8 Vectorized] Maximum error: " + maxError4);
+            System.out.println("[Q4_0 Vectorized] Maximum error: " + maxError4b);
 
             if (supportsDP4A) {
                 System.out.println("[Q8 DP4A] Maximum error: " + maxError5);
@@ -1114,6 +1276,7 @@ public class MatrixVectorRowMajor {
         LongSummaryStatistics statsParallel = parallelTimers.stream().mapToLong(Long::longValue).summaryStatistics();
         LongSummaryStatistics statsFp16 = fp16Timers.stream().mapToLong(Long::longValue).summaryStatistics();
         LongSummaryStatistics statsQ8Vectorized = q8VectorizedTimers.stream().mapToLong(Long::longValue).summaryStatistics();
+        LongSummaryStatistics statsQ4Vectorized = q4VectorizedTimers.stream().mapToLong(Long::longValue).summaryStatistics();
 
         LongSummaryStatistics statsQ8Dp4a = supportsDP4A ? q8Dp4aTimers.stream().mapToLong(Long::longValue).summaryStatistics() : null;
         LongSummaryStatistics statsQ8Dp4aPacked = supportsDP4A ? q8Dp4aPackedTimers.stream().mapToLong(Long::longValue).summaryStatistics() : null;
@@ -1128,6 +1291,7 @@ public class MatrixVectorRowMajor {
         double parallelGFlops = (totalFlops * 1e-9) / (statsParallel.getAverage() * 1e-9);
         double fp16GFlops = (totalFlops * 1e-9) / (statsFp16.getAverage() * 1e-9);
         double q8VectorizedGFlops = (totalFlops * 1e-9) / (statsQ8Vectorized.getAverage() * 1e-9);
+        double q4VectorizedGFlops = (totalFlops * 1e-9) / (statsQ4Vectorized.getAverage() * 1e-9);
 
         Double q8Dp4aGFlops = supportsDP4A ? (totalFlops * 1e-9) / (statsQ8Dp4a.getAverage() * 1e-9) : null;
         Double q8Dp4aPackedGFlops = supportsDP4A ? (totalFlops * 1e-9) / (statsQ8Dp4aPacked.getAverage() * 1e-9) : null;
@@ -1168,6 +1332,12 @@ public class MatrixVectorRowMajor {
         System.out.printf("  Min time: %.3f ms\n", (double) statsQ8Vectorized.getMin() / 1_000_000);
         System.out.printf("  Max time: %.3f ms\n", (double) statsQ8Vectorized.getMax() / 1_000_000);
         System.out.printf("  Performance: %.2f GFLOP/s\n", q8VectorizedGFlops);
+
+        System.out.println("Q4_0 Vectorized:");
+        System.out.printf("  Average time: %.3f ms\n", statsQ4Vectorized.getAverage() / 1_000_000);
+        System.out.printf("  Min time: %.3f ms\n", (double) statsQ4Vectorized.getMin() / 1_000_000);
+        System.out.printf("  Max time: %.3f ms\n", (double) statsQ4Vectorized.getMax() / 1_000_000);
+        System.out.printf("  Performance: %.2f GFLOP/s\n", q4VectorizedGFlops);
 
         if (supportsDP4A) {
             System.out.println("Q8 DP4A:");
@@ -1210,6 +1380,12 @@ public class MatrixVectorRowMajor {
 
         double speedup5 = statsFp16.getAverage() / statsQ8Vectorized.getAverage();
         System.out.printf("Speedup: Q8 Vectorized vs KernelContext FP16 %.2fx\n", speedup5);
+
+        double speedup5b = statsFp16.getAverage() / statsQ4Vectorized.getAverage();
+        System.out.printf("Speedup: Q4_0 Vectorized vs KernelContext FP16 %.2fx\n", speedup5b);
+
+        double speedup5c = statsQ8Vectorized.getAverage() / statsQ4Vectorized.getAverage();
+        System.out.printf("Speedup: Q4_0 Vectorized vs Q8 Vectorized %.2fx\n", speedup5c);
 
         if (supportsDP4A) {
             double speedup6 = statsFp16.getAverage() / statsQ8Dp4a.getAverage();
