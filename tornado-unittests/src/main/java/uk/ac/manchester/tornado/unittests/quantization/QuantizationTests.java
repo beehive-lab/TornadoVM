@@ -514,6 +514,129 @@ public class QuantizationTests extends TornadoTestBase {
         }
     }
 
+    public static void quantizeWeightsToQ4_0(FloatArray weightsFP32,
+                                             Int8Array outQ,
+                                             HalfFloatArray outScales,
+                                             int rows,
+                                             int cols,
+                                             int blockSize) {
+        if ((cols % blockSize) != 0) {
+            throw new IllegalArgumentException("cols must be multiple of BLOCK_SIZE=" + blockSize);
+        }
+        int blocksPerRow = cols / blockSize;
+
+        for (int r = 0; r < rows; r++) {
+            int rowBase = r * cols;
+            for (int b = 0; b < blocksPerRow; b++) {
+                int blockStart = rowBase + b * blockSize;
+
+                // compute max abs (Q4_0 format)
+                float maxAbs = 0.0f;
+                for (int i = 0; i < blockSize; i++) {
+                    float v = weightsFP32.get(blockStart + i);
+                    float a = Math.abs(v);
+                    if (a > maxAbs) maxAbs = a;
+                }
+
+                // For Q4_0, values are quantized to [-7, 7] range (4-bit signed)
+                float scale = (maxAbs == 0.0f) ? 0.0f : (maxAbs / 7.0f);
+
+                // store scale as HalfFloat (matches GGUF Q4_0 format)
+                int globalBlockIdx = r * blocksPerRow + b;
+                outScales.set(globalBlockIdx, new HalfFloat(scale));
+
+                float inv = (scale == 0.0f) ? 0.0f : 1.0f / scale;
+
+                // quantize and pack block - 2 values per byte
+                for (int i = 0; i < blockSize; i += 2) {
+                    float val1 = weightsFP32.get(blockStart + i);
+                    float val2 = weightsFP32.get(blockStart + i + 1);
+
+                    int q1 = Math.round(val1 * inv);
+                    int q2 = Math.round(val2 * inv);
+
+                    // Clamp to 4-bit range [-7, 7]
+                    if (q1 > 7) q1 = 7;
+                    else if (q1 < -7) q1 = -7;
+                    if (q2 > 7) q2 = 7;
+                    else if (q2 < -7) q2 = -7;
+
+                    // Pack two 4-bit values into one byte
+                    // Lower 4 bits: first value, Upper 4 bits: second value
+                    byte packed = (byte) ((q1 & 0x0F) | ((q2 & 0x0F) << 4));
+                    outQ.set(blockStart / 2 + i / 2, packed);
+                }
+            }
+        }
+    }
+
+    public static void matrixVectorGenericQ4_0(KernelContext context, FloatArray x, FloatArray output, Int8Array weightsQ, HalfFloatArray weightScales, int dim1, int dim0, int localWorkGroupSize) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+
+        if (rowId >= dim0) {
+            return;
+        }
+
+        float sum = matrixVectorRowMajorOptimizedQ4_0(context, localWorkGroupSize, x, weightsQ, weightScales, dim1);
+
+        // Thread 0 writes the result
+        if (localId == 0) {
+            output.set(rowId, sum);
+        }
+    }
+
+    public static float matrixVectorRowMajorOptimizedQ4_0(KernelContext context, int localSize, FloatArray x, Int8Array weightsQ, HalfFloatArray weightScales, int n) {
+        int rowId = context.groupIdx;
+        int localId = context.localIdx;
+        int blockSize = 32;
+
+        float[] localSums = context.allocateFloatLocalArray(localSize);
+
+        int rowOffset = rowId * n / 2; // Q4_0 uses half the storage (2 values per byte)
+        int scalesRowOffset = rowId * (n / blockSize);
+
+        float partialSum = 0.0f;
+
+        // Process elements - each byte contains 2 quantized values
+        for (int j = localId * 2; j < n; j += localSize * 2) {
+            int blockIdx = j / blockSize;
+            float scale = weightScales.get(scalesRowOffset + blockIdx).getFloat32();
+
+            // Read packed byte and treat as unsigned
+            int packed = weightsQ.get(rowOffset + j / 2) & 0xFF;
+
+            // Unpack two 4-bit values
+            // Lower 4 bits: first value
+            int q1 = packed & 0x0F;
+            // Upper 4 bits: second value
+            int q2 = (packed >> 4);
+
+            // Convert from unsigned to signed 4-bit [-7, 7]
+            if (q1 > 7) q1 -= 16;
+            if (q2 > 7) q2 -= 16;
+
+            // Dequantize and multiply
+            partialSum += ((float) q1 * scale) * x.get(j);
+            if (j + 1 < n) {
+                partialSum += ((float) q2 * scale) * x.get(j + 1);
+            }
+        }
+
+        localSums[localId] = partialSum;
+        context.localBarrier();
+
+        // Parallel reduction
+        for (int stride = localSize / 2; stride > 0; stride >>= 1) {
+            if (localId < stride) {
+                localSums[localId] += localSums[localId + stride];
+            }
+            context.localBarrier();
+        }
+
+        return localSums[0];
+    }
+
     @Test
     public void testDP4A() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
@@ -883,6 +1006,52 @@ public class QuantizationTests extends TornadoTestBase {
 
         for (int i = 0; i < output.getSize(); i++) {
             assertEquals(outputSeq.get(i), output.get(i), 0.1f);
+        }
+
+    }
+
+    @Test
+    public void testMatrixVectorQ4_0Vectorized() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        Random random = new Random(42);
+        int localWorkgroupSize = 64;
+        int blockSize = 32;
+        int inputDim = 8192;   // Default input dimension (columns)
+        int outputDim = 2048; // Default output dimension (rows)
+
+        FloatArray input = new FloatArray(inputDim);
+        FloatArray weights = new FloatArray(inputDim * outputDim);
+        FloatArray output = new FloatArray(outputDim);
+        FloatArray outputSeq = new FloatArray(outputDim);
+        fillRandomData(input, -1.0f, 1.0f, random);
+        fillRandomData(weights, -0.1f, 0.1f, random);
+
+        // Quantize to Q4_0: 2 values per byte, so half the storage of Q8
+        Int8Array weightsQuantizedQ4 = new Int8Array(inputDim * outputDim / 2);
+        int weightBlocksPerRow = inputDim / blockSize;
+        HalfFloatArray weightsScalesQ4 = new HalfFloatArray(outputDim * weightBlocksPerRow);
+        quantizeWeightsToQ4_0(weights, weightsQuantizedQ4, weightsScalesQ4, outputDim, inputDim, blockSize);
+
+        WorkerGrid1D hybridWorker = new WorkerGrid1D(outputDim * localWorkgroupSize);
+        hybridWorker.setLocalWork(localWorkgroupSize, 1, 1);
+        GridScheduler scheduler = new GridScheduler("s0_q4.t0", hybridWorker);
+        TaskGraph taskGraph = new TaskGraph("s0_q4")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, weightsQuantizedQ4, weightsScalesQ4)
+                .task("t0", QuantizationTests::matrixVectorGenericQ4_0, new KernelContext(), input, output, weightsQuantizedQ4, weightsScalesQ4, inputDim, outputDim, localWorkgroupSize)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        try (TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            tornadoExecutor.withGridScheduler(scheduler).execute();
+        }
+
+        matrixVectorSequential(outputSeq, weights, input, inputDim, outputDim);
+
+        // Q4_0 has larger quantization error than Q8, so use a more lenient threshold
+        for (int i = 0; i < output.getSize(); i++) {
+            assertEquals(outputSeq.get(i), output.get(i), 0.8f);
         }
 
     }
