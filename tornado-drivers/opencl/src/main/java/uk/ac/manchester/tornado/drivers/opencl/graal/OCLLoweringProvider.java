@@ -31,7 +31,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import java.util.Iterator;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
@@ -95,7 +94,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLDecompressedReadFieldNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;

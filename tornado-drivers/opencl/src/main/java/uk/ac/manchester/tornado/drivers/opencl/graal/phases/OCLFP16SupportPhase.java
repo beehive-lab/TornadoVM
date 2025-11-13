@@ -32,7 +32,7 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLDecompressedReadFieldNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLDevice;
 
 /**

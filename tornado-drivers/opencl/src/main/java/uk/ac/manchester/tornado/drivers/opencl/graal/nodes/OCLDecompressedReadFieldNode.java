@@ -1,4 +1,25 @@
-package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
+/*
+ * Copyright (c) 2025, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -11,9 +32,13 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
+/**
+ * Node for reading and decompressing a 4-byte object reference from an object's field into a full 64-bit address.
+ */
 @NodeInfo
 public class OCLDecompressedReadFieldNode extends FixedWithNextNode implements LIRLowerable {
     public static final NodeClass<OCLDecompressedReadFieldNode> TYPE = NodeClass.create(OCLDecompressedReadFieldNode.class);
@@ -34,37 +59,14 @@ public class OCLDecompressedReadFieldNode extends FixedWithNextNode implements L
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-//        OCLLIRGenerator tool = (OCLLIRGenerator) gen.getLIRGeneratorTool();
-//        Value addressBase = gen.operand(address.getBase());
-//        Value index = gen.operand(address.getIndex());
-//        Variable addressValue = tool.getArithmetic().emitAdd(addressBase, index, false);
-//        Variable compressedPointer = tool.newVariable(LIRKind.value(OCLKind.UINT));
-//        tool.append(new OCLLIRStmt.CastCompressedStmt(compressedPointer, addressValue));
-//        Value shiftValue = tool.emitConstant(LIRKind.value(OCLKind.INT), new RawConstant(3));
-//        Variable decompressedPointer = tool.getArithmetic().emitAdd(addressValue, compressedPointer, false);
-//        tool.append(new OCLLIRStmt.DecompressPointerStmt(decompressedPointer, addressValue, compressedPointer, shiftValue));
-//        gen.setResult(this, decompressedPointer);
         OCLLIRGenerator tool = (OCLLIRGenerator) gen.getLIRGeneratorTool();
-        // 1. Get operands
-        // This is 'this' (e.g., ul_0)
         Value addressBase = gen.operand(address.getBase());
-        // This is the offset (e.g., 12L)
         Value index = gen.operand(address.getIndex());
-        // 2. Calculate field address
-        // This is 'ul_5 = ul_0 + 12L'
         Variable fieldAddress = tool.getArithmetic().emitAdd(addressBase, index, false);
-        // 3. Read 4-byte compressed pointer from field address
-        // This will be 'ui_6'
         Variable compressedPointer = tool.newVariable(LIRKind.value(OCLKind.UINT));
-        // Emits: 'ui_6 = *((__global uint *) ul_5);'
         tool.append(new OCLLIRStmt.CastCompressedStmt(compressedPointer, fieldAddress));
-        // 4. Decompress the pointer
-        // This will be 'ul_7'
         Variable decompressedPointer = tool.newVariable(LIRKind.value(OCLKind.ULONG));
-        // Emits: 'ul_7 = ul_0 + ((ulong) ui_6 << 3);'
-        // NOTE: We pass 'addressBase' (ul_0), NOT 'fieldAddress' (ul_5)
         tool.append(new OCLLIRStmt.DecompressPointerStmt(decompressedPointer, addressBase, compressedPointer));
-        // 5. Set the result of this node
         gen.setResult(this, decompressedPointer);
     }
 }

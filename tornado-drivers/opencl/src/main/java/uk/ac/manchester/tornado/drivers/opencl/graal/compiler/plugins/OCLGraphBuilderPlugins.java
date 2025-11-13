@@ -273,6 +273,8 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
+        // Accessing the vmConfig during initialization was causing a NullPointerException.
+        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
         Supplier<Integer> intHeaderSupplier = () -> {
             var vmConfig = TornadoCoreRuntime.getVMConfig();
             int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);

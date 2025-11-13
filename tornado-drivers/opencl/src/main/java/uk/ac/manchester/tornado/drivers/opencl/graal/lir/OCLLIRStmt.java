@@ -128,6 +128,8 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // casts a 8-byte address to a 4-byte pointer
+            // uint_var = *((__global uint *) ulong_address);
             asm.indent();
             asm.emitValue(crb, compressed);
             asm.space();
@@ -162,6 +164,8 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // emits instruction to decompress a 4-byte reference into an 8-byte address.
+            // ulong_var = ul_0 + ((ulong) uint_var << 3);
             asm.indent();
             asm.emitValue(crb, decompressed);
             asm.space();
@@ -175,37 +179,6 @@ public class OCLLIRStmt {
             asm.emitValue(crb, compressed);
             asm.space();
             asm.emit("<< 3)"); // this 3 is standard for the decompression - this code is generated only for coops
-            asm.delimiter();
-            asm.eol();
-        }
-    }
-
-    public static class LoadRawPointerStmt extends AbstractInstruction {
-
-        public static final LIRInstructionClass<LoadRawPointerStmt> TYPE = LIRInstructionClass.create(LoadRawPointerStmt.class);
-
-        @Def
-        protected Value result;
-        @Use
-        protected Value pointer;
-
-        public LoadRawPointerStmt(Value result, Value pointer) {
-            super(TYPE);
-            this.result = result;
-            this.pointer = pointer;
-        }
-
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // This will emit: result = *((__global uint *) pointer);
-            asm.indent();
-            asm.emitValue(crb, result);
-            asm.space();
-            asm.assign();
-            asm.space();
-            asm.emit("*((__global uint *) ");
-            asm.emitValue(crb, pointer);
-            asm.emit(")");
             asm.delimiter();
             asm.eol();
         }
