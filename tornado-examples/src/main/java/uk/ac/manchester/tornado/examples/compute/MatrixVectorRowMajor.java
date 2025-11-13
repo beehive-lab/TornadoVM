@@ -450,14 +450,14 @@ public class MatrixVectorRowMajor {
             int blockIdx = j / blockSize;
             float scale = weightScales.get(scalesRowOffset + blockIdx).getFloat32();
 
-            // Read packed byte
-            byte packed = (byte) weightsQ.get(rowOffset + j / 2);
+            // Read packed byte and treat as unsigned
+            int packed = weightsQ.get(rowOffset + j / 2) & 0xFF;
 
             // Unpack two 4-bit values
             // Lower 4 bits: first value
-            int q1 = (packed & 0x0F);
+            int q1 = packed & 0x0F;
             // Upper 4 bits: second value
-            int q2 = ((packed >> 4) & 0x0F);
+            int q2 = (packed >> 4);
 
             // Convert from unsigned to signed 4-bit [-7, 7]
             if (q1 > 7) q1 -= 16;
