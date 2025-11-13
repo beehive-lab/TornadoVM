@@ -13,6 +13,7 @@ graal_dumps/
 level-zero/
 levelzero-jni/
 setvars.sh
+setvars.cmd
 target/
 tornado-annotation/target/
 tornado-assembly/target/
@@ -29,3 +30,4 @@ tornado-runtime/target/
 tornado.iml
 tornado_unittests.log
 OpenCL-Headers/
+tornado-assembly/src/etc/tornado.backend
