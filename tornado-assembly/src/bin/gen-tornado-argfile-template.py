@@ -17,7 +17,7 @@
 #
 
 """
-gen-tornado-argfile.py
+gen-tornado-argfile-template.py
 Generate tornado-argfile from tornado --printJavaFlags and export lists
 """
 
@@ -171,11 +171,8 @@ def generate_argfile(backends, output_dir=None):
     export_paths = get_export_list_paths(tornado_sdk)
 
     # Clean old file
-    print("[INFO] Cleaning old file")
     if output_file.exists():
         output_file.unlink()
-
-    print("[INFO] Generating TornadoVM argfile template")
 
     # Get Java flags from tornado command
     java_flags = get_tornado_flags()
@@ -243,9 +240,15 @@ def generate_argfile(backends, output_dir=None):
     output_lines.extend(strip_comments(export_paths["common"]))
     output_lines.append("")
 
+    # SPIRV backend depends on OpenCL runtime, so ensure OpenCL exports are included
+    # when SPIRV is in the backend list (but don't add opencl to backend_list itself)
+    exports_to_include = backend_list.copy()
+    if "spirv" in backend_list and "opencl" not in exports_to_include:
+        exports_to_include.insert(0, "opencl")
+
     # Backend-specific exports
     # Each backend (opencl, ptx, spirv) requires access to different internal modules
-    for backend in backend_list:
+    for backend in exports_to_include:
         if backend in export_paths:
             output_lines.append(f"# === {export_paths[backend].name} ===")
             output_lines.extend(strip_comments(export_paths[backend]))
@@ -255,15 +258,11 @@ def generate_argfile(backends, output_dir=None):
     with open(output_file, "w") as f:
         f.write("\n".join(output_lines) + "\n")
 
-    print("[INFO] Done. Generated argfile template")
-    print(f"[INFO] Template path: {output_file}")
-
-
 def main():
     if len(sys.argv) < 2:
-        print("Usage: gen-tornado-argfile.py <backends> [output_dir]")
-        print("Example: gen-tornado-argfile.py opencl,ptx,spirv")
-        print("Example: gen-tornado-argfile.py opencl /path/to/output/dir")
+        print("Usage: gen-tornado-argfile-template.py <backends> [output_dir]")
+        print("Example: gen-tornado-argfile-template.py opencl,ptx,spirv")
+        print("Example: gen-tornado-argfile-template.py opencl /path/to/output/dir")
         sys.exit(1)
 
     backends = sys.argv[1]
