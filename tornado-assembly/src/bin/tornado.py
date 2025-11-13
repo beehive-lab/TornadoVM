@@ -874,76 +874,50 @@ class TornadoVMRunnerTool():
 
     def generateArgfile(self):
         """
-        Generate tornado-argfile in current directory.
-        Automatically expands ${TORNADO_SDK} placeholders to create a ready-to-use argfile.
+        Regenerate tornado-argfile in SDK directory.
+        Expands ${TORNADO_SDK} placeholders to create a ready-to-use argfile.
         Works portably across Windows, Linux, and macOS.
         """
-        print("[INFO] Generating tornado-argfile in current directory")
+        template_file = os.path.join(self.sdk, "tornado-argfile.template")
+        output_file = os.path.join(self.sdk, "tornado-argfile")
 
-        # Get backends from the tornado.backends property file
-        backend_string = ",".join(self.listOfBackends)
-
-        # Get the gen-tornado-argfile.py script location
-        scripts_dir = os.path.join(self.sdk, "bin")
-        gen_script = os.path.join(scripts_dir, "gen-tornado-argfile.py")
-
-        # Output files in current working directory
-        template_file = os.path.join(os.getcwd(), "tornado-argfile.template")
-        output_file = os.path.join(os.getcwd(), "tornado-argfile")
-
-        if not os.path.exists(gen_script):
-            print(f"[ERROR] gen-tornado-argfile.py not found at: {gen_script}")
+        if not os.path.exists(template_file):
+            print(f"[ERROR] Argfile is not found in TORNADO_SDK")
+            print(f"[ERROR] Please open an issue in TornadoVM: https://github.com/beehive-lab/TornadoVM/issues")
             sys.exit(1)
 
-        # Use 'python' on Windows, 'python3' on Unix-like systems
-        python_cmd = "python" if os.name == 'nt' else "python3"
+        print(f"[INFO] Generating argfile in SDK directory: {self.sdk}")
 
         try:
-            # Step 1: Generate the template with ${TORNADO_SDK} placeholders
-            if os.name == 'nt':
-                result = subprocess.run(
-                    f'{python_cmd} "{gen_script}" {backend_string} "{os.getcwd()}"',
-                    shell=True,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-            else:
-                result = subprocess.run(
-                    [python_cmd, gen_script, backend_string, os.getcwd()],
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
+            # Read template and expand ${TORNADO_SDK} placeholders
+            with open(template_file, 'r') as f:
+                content = f.read()
 
-            if result.stdout:
-                print(result.stdout)
+            # Expand ${TORNADO_SDK} to actual SDK path
+            # On Windows, ensure backslashes are used
+            sdk_path = self.sdk.replace('/', '\\') if os.name == 'nt' else self.sdk
+            expanded = content.replace('${TORNADO_SDK}', sdk_path)
 
-            # Step 2: Use envsubst to expand ${TORNADO_SDK} (Unix/macOS) or manual replacement (Windows)
+            # Fix module path separator for current platform
+            # Template uses OS-specific separator, but ensure consistency
             if os.name == 'nt':
-                # Windows: manual environment variable replacement
-                with open(template_file, 'r') as f:
-                    content = f.read()
-                expanded = content.replace('${TORNADO_SDK}', self.sdk)
-                with open(output_file, 'w') as f:
-                    f.write(expanded)
-            else:
-                # Unix/macOS: use envsubst if available
-                envsubst_check = subprocess.run(['which', 'envsubst'], capture_output=True)
-                if envsubst_check.returncode == 0:
-                    with open(template_file, 'r') as f_in:
-                        with open(output_file, 'w') as f_out:
-                            subprocess.run(['envsubst'], stdin=f_in, stdout=f_out, check=True)
-                else:
-                    # Fallback to manual replacement
-                    with open(template_file, 'r') as f:
-                        content = f.read()
-                    expanded = content.replace('${TORNADO_SDK}', self.sdk)
-                    with open(output_file, 'w') as f:
-                        f.write(expanded)
+                # Only replace : with ; in module-path lines (not in all --add-exports)
+                lines = expanded.split('\n')
+                for i, line in enumerate(lines):
+                    if line.startswith('--module-path ') or line.startswith('--upgrade-module-path '):
+                        # Replace : with ; in module paths only
+                        lines[i] = line.replace(':', ';')
+                expanded = '\n'.join(lines)
+
+            # Write expanded argfile
+            with open(output_file, 'w') as f:
+                f.write(expanded)
 
             print(f"[INFO] Generated argfile at: {output_file}")
-            print(f"[INFO] You can now run: java @{os.path.basename(output_file)} -cp <classpath> <MainClass>")
+            if os.name == 'nt':
+                print(f"[INFO] You can now use: java @%TORNADO_SDK%\\tornado-argfile -cp <classpath> <MainClass>")
+            else:
+                print(f"[INFO] You can now use: java @$TORNADO_SDK/tornado-argfile -cp <classpath> <MainClass>")
 
         except subprocess.CalledProcessError as e:
             print(f"[ERROR] Failed to generate argfile")
