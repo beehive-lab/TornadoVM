@@ -551,7 +551,7 @@ def generate_argfile_template(backend):
 
         # Use 'python' on Windows, 'python3' on Unix-like systems
         python_cmd = "python" if os.name == 'nt' else "python3"
-        gen_script = os.path.join(scripts_dir, "gen-tornado-argfile.py")
+        gen_script = os.path.join(scripts_dir, "gen-tornado-argfile-template.py")
 
         try:
             if is_win_or_bat():
