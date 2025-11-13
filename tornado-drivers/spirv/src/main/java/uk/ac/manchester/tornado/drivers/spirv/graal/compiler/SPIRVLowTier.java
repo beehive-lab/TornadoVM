@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InfinityReplacementPh
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.PartialLoopUnrollPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFP64SupportPhase;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFieldCoopsAccess;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFieldCoopsAccessPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFixedArrayCopyPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoHalfFloatVectorOffset;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -103,7 +103,7 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         // TODO Atomics Phase for SPIRV (this is the last thing to support)
 
-        appendPhase(new SPIRVFieldCoopsAccess());
+        appendPhase(new SPIRVFieldCoopsAccessPhase());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 

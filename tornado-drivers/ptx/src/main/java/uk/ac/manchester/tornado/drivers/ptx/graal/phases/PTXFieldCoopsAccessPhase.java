@@ -46,17 +46,15 @@ public class PTXFieldCoopsAccessPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-        ArrayList<TornadoAddressArithmeticNode> toBeDeleted = new ArrayList<>();
         for (PTXDecompressedReadFieldNode readDecompressedField : graph.getNodes().filter(PTXDecompressedReadFieldNode.class)) {
             for (TornadoAddressArithmeticNode tornadoAddressArithmeticNode : readDecompressedField.usages().filter(TornadoAddressArithmeticNode.class)) {
                 PTXFieldAddressArithmeticNode ptxFieldAddressArithmetic = new PTXFieldAddressArithmeticNode(readDecompressedField);
                 graph.addWithoutUnique(ptxFieldAddressArithmetic);
                 tornadoAddressArithmeticNode.replaceAtUsages(ptxFieldAddressArithmetic);
-                toBeDeleted.add(tornadoAddressArithmeticNode);
+                if (tornadoAddressArithmeticNode.usages().isEmpty()) {
+                    tornadoAddressArithmeticNode.safeDelete();
+                }
             }
-        }
-        for (int i = 0; i < toBeDeleted.size(); i++) {
-            toBeDeleted.get(i).safeDelete();
         }
     }
 

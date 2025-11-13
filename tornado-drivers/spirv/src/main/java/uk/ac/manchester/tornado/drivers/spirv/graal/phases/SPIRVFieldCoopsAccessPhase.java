@@ -40,7 +40,7 @@ import java.util.Optional;
  * is replaced by a {@code SPIRVFieldAddressArithmeticNode}, which emits the absolute address, as
  * evaluated by the corresponding {@code SPIRVDecompressedReadFieldNode}.
  */
-public class SPIRVFieldCoopsAccess extends Phase {
+public class SPIRVFieldCoopsAccessPhase extends Phase {
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -49,17 +49,15 @@ public class SPIRVFieldCoopsAccess extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-        ArrayList<TornadoAddressArithmeticNode> toBeDeleted = new ArrayList<>();
         for (SPIRVDecompressedReadFieldNode readDecompressedField : graph.getNodes().filter(SPIRVDecompressedReadFieldNode.class)) {
             for (TornadoAddressArithmeticNode tornadoAddressArithmeticNode : readDecompressedField.usages().filter(TornadoAddressArithmeticNode.class)) {
                 SPIRVFieldAddressArithmeticNode spirvFieldAddressArithmetic = new SPIRVFieldAddressArithmeticNode(readDecompressedField);
                 graph.addWithoutUnique(spirvFieldAddressArithmetic);
                 tornadoAddressArithmeticNode.replaceAtUsages(spirvFieldAddressArithmetic);
-                toBeDeleted.add(tornadoAddressArithmeticNode);
+                if (tornadoAddressArithmeticNode.usages().isEmpty()) {
+                    tornadoAddressArithmeticNode.safeDelete();
+                }
             }
-        }
-        for (int i = 0; i < toBeDeleted.size(); i++) {
-            toBeDeleted.get(i).safeDelete();
         }
     }
 

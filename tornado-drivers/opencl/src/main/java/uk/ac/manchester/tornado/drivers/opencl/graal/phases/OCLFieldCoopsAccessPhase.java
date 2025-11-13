@@ -46,17 +46,15 @@ public class OCLFieldCoopsAccessPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-        ArrayList<TornadoAddressArithmeticNode> toBeDeleted = new ArrayList<>();
         for (OCLDecompressedReadFieldNode readDecompressedField : graph.getNodes().filter(OCLDecompressedReadFieldNode.class)) {
             for (TornadoAddressArithmeticNode tornadoAddressArithmeticNode : readDecompressedField.usages().filter(TornadoAddressArithmeticNode.class)) {
                 OCLFieldAddressArithmeticNode oclFieldAddressArithmetic = new OCLFieldAddressArithmeticNode(readDecompressedField);
                 graph.addWithoutUnique(oclFieldAddressArithmetic);
                 tornadoAddressArithmeticNode.replaceAtUsages(oclFieldAddressArithmetic);
-                toBeDeleted.add(tornadoAddressArithmeticNode);
+                if (tornadoAddressArithmeticNode.usages().isEmpty()) {
+                    tornadoAddressArithmeticNode.safeDelete();
+                }
             }
-        }
-        for (int i = 0; i < toBeDeleted.size(); i++) {
-            toBeDeleted.get(i).safeDelete();
         }
     }
 
