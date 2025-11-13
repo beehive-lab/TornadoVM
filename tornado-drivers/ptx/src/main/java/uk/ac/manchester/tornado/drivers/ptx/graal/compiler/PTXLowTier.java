@@ -88,6 +88,7 @@ public class PTXLowTier extends TornadoLowTier {
 
         appendPhase(new InfinityReplacementPhase());
 
+        appendPhase(new PTXFieldCoopsAccess());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 

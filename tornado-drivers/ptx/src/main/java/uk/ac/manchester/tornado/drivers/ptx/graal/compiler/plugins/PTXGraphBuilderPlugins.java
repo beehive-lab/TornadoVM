@@ -43,6 +43,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrin
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.function.Supplier;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -100,6 +101,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXGraphBuilderPlugins {
@@ -273,19 +275,38 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, 3);
-        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, 3);
+        // Supplier for 4-byte element types (int, float)
+        // This will return 4 (for 16-byte coops header) or 6 (for 24-byte header)
+        Supplier<Integer> headerSupplier4Byte = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            // We can use JavaKind.Int as the reference for all 4-byte types
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
+            return headerSize / JavaKind.Int.getByteCount();
+        };
+
+        // Supplier for 8-byte element types (long, double)
+        // This will return 2 (for 16-byte coops header) or 3 (for 24-byte header)
+        Supplier<Integer> headerSupplier8Byte = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            // We can use JavaKind.Long as the reference for all 8-byte types
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
+            return headerSize / JavaKind.Long.getByteCount();
+        };
+
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, headerSupplier8Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, headerSupplier8Byte);
     }
 
-    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, int panamaOffset) {
+    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, Supplier<Integer> headerSupplier) {
         r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind javaKind = kind.asJavaKind();
-                AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
+                int header = headerSupplier.get();
+                AddressNode address = computeAddress(b, segment, index, header, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(b.append(atomicAddNode));
                 return true;
