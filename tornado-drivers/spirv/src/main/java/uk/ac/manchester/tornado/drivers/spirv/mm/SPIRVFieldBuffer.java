@@ -222,6 +222,7 @@ public class SPIRVFieldBuffer implements XPUBuffer {
             }
         } else if (wrappedFields[index] != null) {
             if (areCoopsEnabled) {
+                // calculate the relative offset
                 long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
                 // Compress it by dividing by 8
                 int compressedOffset = (int) (relativeOffset / 8);
@@ -457,8 +458,8 @@ public class SPIRVFieldBuffer implements XPUBuffer {
         if (fields.length > 0) {
             HotSpotResolvedJavaField field = fields[fields.length - 1];
             size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
-           // size = field.getOffset() + ((field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount());
         }
+        // when coops are enabled, padding is required to ensure an 8-byte object alignment
         if (areCoopsEnabled && (size % 8 != 0)) {
             size = size + (8 - (size % 8));
         }
