@@ -310,11 +310,11 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Inconsistent results that occur in some NVIDIA drivers
     "uk.ac.manchester.tornado.unittests.branching.TestLoopConditions#testConditionBeforeSingleLoopReturn",
-    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTest#testDP4A",
-    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTest#testMatrixVectorDP4AKernelContext",
-    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTest#testMatrixVectorDP4AKernelLocalMemory",
-    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTest#testMatrixVectorDP4AKernelPacked",
-    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTest#testMatrixVector4WayDP4AKernel",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testDP4A",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelContext",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelLocalMemory",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelPacked",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVector4WayDP4AKernel",
 
     ## For the OpenCL Backend
     "uk.ac.manchester.tornado.unittests.foundation.TestIf#test06",
