@@ -454,14 +454,14 @@ export PATH="$TORNADO_SDK/bin:$PATH"
         print(f"  Unix:    {setvars_sh_path}")
 
 
-def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status, backend):
+def post_installation_actions(backend_profiles, mvn_build_result, args, graal_jars_status):
     """
     Performs post-installation actions.
 
     Args:
         backend_profiles (str): The processed backend options.
         mvn_build_result (CompletedProcess): Result of the Maven build process.
-        jdk (str): The JDK version.
+        args (object): The user-defined arguments.
         backend (str): The backend string for argfile generation.
     """
     if mvn_build_result.returncode == 0:
@@ -481,15 +481,22 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jar
         # Note: Graal JARs are now included by Maven assembly from graalJars/ directory
         # See tornado-assembly/assembly.xml for the fileSet configuration
 
-        # Generate argfile template after SDK is set up
-        generate_argfile_template(backend)
+        # Generate argfile template and final argfile
+        # This creates two files in the TORNADO_SDK directory (dist/):
+        # 1. tornado-argfile.template - Contains ${TORNADO_SDK} placeholders for portability
+        # 2. tornado-argfile - Ready-to-use argfile with actual paths expanded
+        # Both files use OS-appropriate path separators (/ on Unix, \ on Windows)
+        generate_argfile_template(args.backend)
+        if not args.sdk:
+            expand_argfile_template()
 
         # On Windows, create executables before packaging
         if os.name == 'nt':
             cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
 
         # Create SDK archives last, after all files (including argfile and Windows executables) are ready
-        package_sdk_archives()
+        if args.sdk:
+            package_sdk_archives()
 
     else:
         print("\nCompilation failed\n")
@@ -525,6 +532,13 @@ def parse_args():
         dest="rebuild",
         default=False,
         help="Enable pull and rebuild of the external dependencies."
+    )
+    parser.add_argument(
+        "--sdk",
+        action="store_true",
+        dest="sdk",
+        default=False,
+        help="Generate SDK for current platform. JDK is auto-detected from JAVA_HOME."
     )
 
     args = parser.parse_args()
@@ -591,6 +605,47 @@ def generate_argfile_template(backend):
             sys.exit(-1)
         finally:
             os.chdir(current)
+
+
+def expand_argfile_template():
+    """
+    Expand the tornado-argfile.template by replacing ${TORNADO_SDK} placeholders
+    with the actual TORNADO_SDK path and generate the final tornado-argfile.
+
+    This function creates a ready-to-use tornado-argfile in the TORNADO_SDK directory
+    that can be used with @argfile syntax. The expansion is done in pure Python for
+    cross-platform portability (Linux, macOS, Windows).
+    """
+    tornado_sdk = os.environ.get("TORNADO_SDK")
+    if not tornado_sdk:
+        print("[WARNING] TORNADO_SDK not set, skipping argfile expansion")
+        return
+
+    template_path = os.path.join(tornado_sdk, "tornado-argfile.template")
+    output_path = os.path.join(tornado_sdk, "tornado-argfile")
+
+    if not os.path.exists(template_path):
+        print(f"[WARNING] Template file not found: {template_path}")
+        return
+
+    try:
+        # Read the template file
+        with open(template_path, "r") as template_file:
+            template_content = template_file.read()
+
+        # Expand ${TORNADO_SDK} placeholder with the actual path
+        # This works across all platforms (Linux, macOS, Windows)
+        expanded_content = template_content.replace("${TORNADO_SDK}", tornado_sdk)
+
+        # Write the expanded argfile
+        with open(output_path, "w") as output_file:
+            output_file.write(expanded_content)
+
+        print(f"[OK] Generated tornado-argfile at: {output_path}")
+
+    except Exception as e:
+        print(f"[ERROR] Failed to expand argfile template: {e}")
+        sys.exit(-1)
 
 
 def package_sdk_archives():
@@ -691,7 +746,7 @@ def main():
     mvn_build_result = build_tornadovm(args, backend_profiles)
 
     post_installation_actions(
-        backend_profiles, mvn_build_result, args.jdk, graal_jars_status, args.backend
+        backend_profiles, mvn_build_result, args, graal_jars_status
     )
 
 

@@ -31,6 +31,9 @@ ptx:
 spirv:
 	bin/compile --jdk jdk21 --backend spirv,ptx,opencl
 
+sdk:
+	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
+
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
 FPGA_PLATFORM       ?= xilinx_u50_gen3x16_xdma_201920_3
