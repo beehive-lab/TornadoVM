@@ -57,11 +57,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
     private static String object_offset;
 
     public TornadoHalfFloatVectorOffset() {
-        if (HEADER_SIZE == 16) { // coops
-            object_offset = "2";
-        } else {
-            object_offset = "3";
-        }
+        object_offset = (HEADER_SIZE == 16) ? "2" : "3";
     }
 
     @Override
