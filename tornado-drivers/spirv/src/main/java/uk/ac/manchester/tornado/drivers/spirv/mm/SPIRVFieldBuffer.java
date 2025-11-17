@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends.
@@ -83,8 +84,7 @@ public class SPIRVFieldBuffer implements XPUBuffer {
         this.deviceContext = deviceContext;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
-        final int headerSize = getVMConfig().getArrayBaseOffset(JavaKind.Object);
-        this.areCoopsEnabled = (headerSize == 16);
+        this.areCoopsEnabled = TornadoOptions.coopsUsed();
         this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
 
         hubOffset = getVMConfig().hubOffset;

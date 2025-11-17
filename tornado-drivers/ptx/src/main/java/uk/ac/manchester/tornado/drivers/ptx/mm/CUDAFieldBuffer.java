@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class CUDAFieldBuffer implements XPUBuffer {
@@ -79,8 +80,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
-        final int headerSize = getVMConfig().getArrayBaseOffset(JavaKind.Object);
-        this.areCoopsEnabled = (headerSize == 16);
+        this.areCoopsEnabled = TornadoOptions.coopsUsed();
         this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
 
         hubOffset = getVMConfig().hubOffset;

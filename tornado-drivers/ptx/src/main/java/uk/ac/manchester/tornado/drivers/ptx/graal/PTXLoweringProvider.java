@@ -103,6 +103,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -490,8 +491,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        final int headerSize = getVMConfig().getArrayBaseOffset(field.getJavaKind());
-        boolean areCoopsEnabled = (headerSize == 16);
+        boolean areCoopsEnabled = TornadoOptions.coopsUsed();
         // if coops are used and the field is a not a primitive (primitive data is not compressed)
         if (areCoopsEnabled && !field.getJavaKind().isPrimitive()) {
             PTXDecompressedReadFieldNode decompressedNode = graph.add(new PTXDecompressedReadFieldNode(object, address, loadStamp));

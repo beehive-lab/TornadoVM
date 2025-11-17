@@ -62,14 +62,14 @@ fast-tests:
 	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
-tests_uncompressed:
+tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
 	tornado-test --ea --verbose --uncompressed
 	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
-fast-tests_uncompressed:
+fast-tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
 	tornado-test --ea --verbose --quickPass --uncompressed

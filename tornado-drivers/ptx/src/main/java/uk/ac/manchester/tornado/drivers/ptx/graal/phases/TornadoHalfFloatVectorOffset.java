@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 
 import java.util.Optional;
@@ -54,7 +55,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
     private static String object_offset;
 
     public TornadoHalfFloatVectorOffset() {
-        object_offset = (HEADER_SIZE == 16) ? "2" : "3";
+        object_offset = TornadoOptions.coopsUsed() ? "2" : "3";
     }
 
     @Override

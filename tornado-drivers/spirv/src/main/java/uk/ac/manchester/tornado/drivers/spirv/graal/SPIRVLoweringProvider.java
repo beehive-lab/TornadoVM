@@ -109,6 +109,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -563,8 +564,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        final int headerSize = getVMConfig().getArrayBaseOffset(field.getJavaKind());
-        boolean areCoopsEnabled = (headerSize == 16);
+        boolean areCoopsEnabled = TornadoOptions.coopsUsed();
         // if coops are used and the field is a not a primitive (primitive data is not compressed)
         if (areCoopsEnabled && !field.getJavaKind().isPrimitive()) {
             SPIRVDecompressedReadFieldNode decompressedNode = graph.add(new SPIRVDecompressedReadFieldNode(object, address, loadStamp));
