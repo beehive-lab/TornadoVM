@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -105,6 +106,8 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
-        testVirtualDeviceKernel("virtualDeviceKernelGPU.cl");
+        boolean coops = TornadoNativeArray.ARRAY_HEADER == 16;
+        String kernelFile = coops ? "virtualDeviceKernelGPU.cl" : "virtualDeviceKernelGPU_uncompressed.cl";
+        testVirtualDeviceKernel(kernelFile);
     }
 }

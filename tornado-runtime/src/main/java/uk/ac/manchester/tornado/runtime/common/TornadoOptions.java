@@ -27,6 +27,9 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
+import java.lang.management.ManagementFactory;
+import java.util.List;
+
 public class TornadoOptions {
 
     private static final String FALSE = "FALSE";
@@ -491,5 +494,13 @@ public class TornadoOptions {
      */
     public static boolean cleanUpAtomicsSpace() {
         return getBooleanValue("tornado.clean.atomics.space", FALSE);
+    }
+
+    public static boolean coopsUsed() {
+        List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
+        boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") ||
+                jvmArgs.contains("-XX:-UseCompressedClassPointers");
+
+        return isUncompressed ? false : true;
     }
 }

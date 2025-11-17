@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 import java.util.Optional;
 
 import org.graalvm.compiler.nodes.GraphState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.phases.Phase;
@@ -31,6 +32,7 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLDevice;
 
 /**
@@ -62,6 +64,12 @@ public class OCLFP16SupportPhase extends Phase {
         }
         if (extensions != null && extensions.contains("cl_khr_fp16")) {
             fp16Support = true;
+        }
+
+        for (OCLDecompressedReadFieldNode decompressedField : graph.getNodes().filter(OCLDecompressedReadFieldNode.class)) {
+            if (decompressedField.getObject().stamp(NodeView.DEFAULT).toString().contains("VectorHalf") && !fp16Support) {
+                throw new TornadoDeviceFP16NotSupported("The current OpenCL device (" + deviceContext.getDeviceName() + ") does not support FP16");
+            }
         }
 
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {

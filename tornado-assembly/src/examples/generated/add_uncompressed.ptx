@@ -25,7 +25,7 @@
     @!rpb0 bra	BLOCK_3;
 
  BLOCK_2:
-    add.s32	rsi3, rsi2, 4;
+    add.s32	rsi3, rsi2, 6;
     cvt.s64.s32	rsd0, rsi3;
     shl.b64	rsd1, rsd0, 2;
     add.u64	rud5, rud1, rsd1;
