@@ -107,7 +107,7 @@ public class TestPTXJITCompiler {
         PTXCompilationResult compilationResult = PTXCompiler.compileSketchForDevice(sketch, compilableTask, (PTXProviders) providers, ptxBackend, new EmptyProfiler());
 
         // Install the PTX Code in the VM
-        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, taskMeta, compilationResult, resolvedJavaMethod.getName());
+        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, compilationResult, resolvedJavaMethod.getName());
 
         return new MetaCompilation(taskMeta, (PTXInstalledCode) ptxCode);
     }
