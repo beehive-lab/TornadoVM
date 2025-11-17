@@ -72,8 +72,8 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview "
-__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --vm.XX:-UseCompressedClassPointers --enable-preview "
+__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
+__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.

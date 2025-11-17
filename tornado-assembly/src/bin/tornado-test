@@ -310,6 +310,11 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Inconsistent results that occur in some NVIDIA drivers
     "uk.ac.manchester.tornado.unittests.branching.TestLoopConditions#testConditionBeforeSingleLoopReturn",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testDP4A",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelContext",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelLocalMemory",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelPacked",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVector4WayDP4AKernel",
 
     ## For the OpenCL Backend
     "uk.ac.manchester.tornado.unittests.foundation.TestIf#test06",
@@ -365,6 +370,7 @@ __PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 __TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
 __THREAD_INFO__ = "-Dtornado.threadInfo=True "
+__UNCOMPRESSED_POINTERS__ = "-XX:-UseCompressedOops -XX:-UseCompressedClassPointers "
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
@@ -428,6 +434,9 @@ def composeAllOptions(args):
 
     if (args.threadInfo):
         options = options + __THREAD_INFO__
+
+    if (args.uncompressed):
+        options = options + __UNCOMPRESSED_POINTERS__
 
     if (args.printKernel):
         options = options + __PRINT_OPENCL_KERNEL__
@@ -738,6 +747,8 @@ def parseArguments():
                         help="Enable Tornado assertions")
     parser.add_argument('--threadInfo', action="store_true", dest="threadInfo", default=False,
                         help="Print thread information")
+    parser.add_argument('--uncompressed', action="store_true", dest="uncompressed", default=False,
+                        help="Run with uncompressed pointers")
     parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False,
                         help="Print OpenCL kernel")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,

@@ -19,7 +19,7 @@ __kernel void add(__global long *_kernel_context,
 
   l_5  =  (long) i_4;
   l_6  =  l_5 << 2;
-  l_7  =  l_6 + 16L;
+  l_7  =  l_6 + 24L;
   ul_8  =  ul_0 + l_7;
   i_9  =  *((__global int *) ul_8);
   int base = 24L;

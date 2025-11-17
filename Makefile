@@ -65,6 +65,20 @@ fast-tests:
 	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
+tests-uncompressed:
+	rm -f tornado_unittests.log
+	tornado --devices
+	tornado-test --ea --verbose --uncompressed
+	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
+fast-tests-uncompressed:
+	rm -f tornado_unittests.log
+	tornado --devices
+	tornado-test --ea --verbose --quickPass --uncompressed
+	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh	
+
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"

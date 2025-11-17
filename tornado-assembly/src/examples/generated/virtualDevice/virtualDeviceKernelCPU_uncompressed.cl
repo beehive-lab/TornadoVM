@@ -29,7 +29,7 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     i_12  =  get_local_size(0);
     l_13  =  (long) i_10;
     l_14  =  l_13 << 2;
-    l_15  =  l_14 + 16L;
+    l_15  =  l_14 + 24L;
     ul_16  =  ul_0 + l_15;
     f_17  =  *((__global float *) ul_16);
     adf_2[i_11]  =  f_17;
@@ -73,7 +73,7 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
       i_33  =  i_32 + 1;
       l_34  =  (long) i_33;
       l_35  =  l_34 << 2;
-      l_36  =  l_35 + 16L;
+      l_36  =  l_35 + 24L;
       ul_37  =  ul_1 + l_36;
       *((__global float *) ul_37)  =  f_31;
     }  // B9
@@ -99,31 +99,31 @@ __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_r
 
   // BLOCK 0
   ul_0  =  (ulong) array;
-  ul_1  =  ul_0 + 16L;
+  ul_1  =  ul_0 + 24L;
   f_2  =  *((__global float *) ul_1);
-  ul_3  =  ul_0 + 20L;
+  ul_3  =  ul_0 + 28L;
   f_4  =  *((__global float *) ul_3);
-  ul_5  =  ul_0 + 24L;
+  ul_5  =  ul_0 + 32L;
   f_6  =  *((__global float *) ul_5);
-  ul_7  =  ul_0 + 28L;
+  ul_7  =  ul_0 + 36L;
   f_8  =  *((__global float *) ul_7);
-  ul_9  =  ul_0 + 32L;
+  ul_9  =  ul_0 + 40L;
   f_10  =  *((__global float *) ul_9);
-  ul_11  =  ul_0 + 36L;
+  ul_11  =  ul_0 + 44L;
   f_12  =  *((__global float *) ul_11);
-  ul_13  =  ul_0 + 40L;
+  ul_13  =  ul_0 + 48L;
   f_14  =  *((__global float *) ul_13);
-  ul_15  =  ul_0 + 44L;
+  ul_15  =  ul_0 + 52L;
   f_16  =  *((__global float *) ul_15);
-  ul_17  =  ul_0 + 48L;
+  ul_17  =  ul_0 + 56L;
   f_18  =  *((__global float *) ul_17);
-  ul_19  =  ul_0 + 52L;
+  ul_19  =  ul_0 + 60L;
   f_20  =  *((__global float *) ul_19);
-  ul_21  =  ul_0 + 56L;
+  ul_21  =  ul_0 + 64L;
   f_22  =  *((__global float *) ul_21);
-  ul_23  =  ul_0 + 60L;
+  ul_23  =  ul_0 + 68L;
   f_24  =  *((__global float *) ul_23);
-  ul_25  =  ul_0 + 64L;
+  ul_25  =  ul_0 + 72L;
   f_26  =  *((__global float *) ul_25);
   f_27  =  fmax(f_2, f_4);
   f_28  =  fmax(f_27, f_6);
