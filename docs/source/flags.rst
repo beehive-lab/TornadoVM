@@ -132,6 +132,28 @@ Optimizations
    ``-Dtornado.enable.nativeFunctions=true``                         Enables native math functions (default: false).
    ================================================================  ===================================================================================================
 
+CUDA (PTX Specific)
+----------------------------
+
+**CUDA JIT Flags**
+
+.. table::
+   :align: left
+
+   ================================================================  ==================================================================================================================
+   Flag                                                              Description
+   ================================================================  ==================================================================================================================
+   ``CU_JIT_OPTIMIZATION_LEVEL``                                     Level of optimizations to apply to generated code (0 - 4), with 4 being the highest level of optimizations. (default: 4).
+   ``CU_JIT_TARGET``                                                 Specify the target microarchitecture. Cannot be combined with CU_JIT_THREADS_PER_BLOCK. List of currently supported
+                                                                     target: 30, 32, 35, 37, 50, 52, 53, 60, 61, 62, 70, 71, 72, 75, 80, 86, 87, 89, 90, 100, 103, 110, 120, 121.
+   ``CU_JIT_MAX_REGISTERS``                                          Max number of registers that a thread may use.
+   ``CU_JIT_THREADS_PER_BLOCK``                                      Specifies minimum number of threads per block to target compilation for. This restricts the resource utilization
+                                                                     of the compiler (e.g. max registers) such that a block with the given number of threads should be able to launch
+                                                                     based on register limitations. Cannot be combined with CU_JIT_TARGET.
+   ``CU_JIT_CACHE_MODE``                                             Specifies whether to enable caching explicitly (-dlcm). 0, compile with no -dlcm flag specified.
+                                                                     1, compile with L1 cache disabled (use only L2 cache). 2, compile with L1 cache enabled (use both L1 and L2 cache).
+   ================================================================  ==================================================================================================================
+
 Level Zero (SPIR-V Specific)
 ----------------------------
 
