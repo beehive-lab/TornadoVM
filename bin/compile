@@ -430,8 +430,8 @@ set PATH=%TORNADO_SDK%\\bin;%PATH%
         with open(setvars_cmd_path, 'w', newline='\r\n') as f:
             f.write(setvars_cmd_content)
 
-        print(f"Generated environment setup script:")
-        print(f"  Windows: {setvars_cmd_path}")
+        print(f"Generated utilities:")
+        print(f"   [Windows-env]: {setvars_cmd_path}")
     else:
         # Generate setvars.sh for Unix/Linux/Mac
         setvars_sh_path = os.path.join(project_root, "setvars.sh")
@@ -450,8 +450,8 @@ export PATH="$TORNADO_SDK/bin:$PATH"
         # Make setvars.sh executable on Unix systems
         os.chmod(setvars_sh_path, 0o755)
 
-        print(f"Generated environment setup script:")
-        print(f"  Unix:    {setvars_sh_path}")
+        print(f"Generated utilities:")
+        print(f"   [Unix-env]: {setvars_sh_path}")
 
 
 def post_installation_actions(backend_profiles, mvn_build_result, args, graal_jars_status):
@@ -563,7 +563,6 @@ def generate_argfile_template(backend):
         scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
         current = os.getcwd()
         os.chdir(scripts_dir)
-        print(os.getcwd())
 
         # Use 'python' on Windows, 'python3' on Unix-like systems
         python_cmd = "python" if os.name == 'nt' else "python3"
@@ -641,7 +640,7 @@ def expand_argfile_template():
         with open(output_path, "w") as output_file:
             output_file.write(expanded_content)
 
-        print(f"[OK] Generated tornado-argfile at: {output_path}")
+        print(f"   [argfile]: {output_path}")
 
     except Exception as e:
         print(f"[ERROR] Failed to expand argfile template: {e}")
@@ -664,9 +663,22 @@ def package_sdk_archives():
     import zipfile
     from pathlib import Path
 
+    # --- Simple ANSI color helpers (safe if terminal supports them) ---
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    CYAN = "\033[96m"
+
+    def ok(msg: str) -> None:
+        print(f"  {GREEN}[OK]{RESET} {msg}")
+
+    def warn(msg: str) -> None:
+        print(f"  {YELLOW}[WARNING]{RESET} {msg}")
+
     tornado_sdk = os.environ.get('TORNADO_SDK')
     if not tornado_sdk:
-        print("Warning: TORNADO_SDK not set, skipping archive creation")
+        warn("TORNADO_SDK not set; skipping archive creation.")
         return
 
     # Get the SDK directory paths
@@ -677,17 +689,26 @@ def package_sdk_archives():
     outer_dir_name = outer_dir.name  # e.g., tornadovm-1.1.2-dev-opencl-mac-aarch64
     dist_dir = outer_dir.parent  # e.g., dist/
 
-    print(f"\nCreating SDK distribution archives...")
-    print(f"  SDK directory: {sdk_path}")
-    print(f"  Archive base name: {outer_dir_name}")
-    print(f"  Distribution directory: {dist_dir}")
+    # Header
+    print()
+    print("=" * 72)
+    print(f"{BOLD}SDK Distribution Packaging{RESET}".center(72))
+    print("=" * 72)
+
+    # Context block
+    print(f"{CYAN}Environment{RESET}")
+    print(f"  SDK directory       : {sdk_path}")
+    print(f"  Archive base name   : {outer_dir_name}")
+    print(f"  Distribution folder : {dist_dir}")
+    print()
 
     # Verify argfile exists
     argfile_path = sdk_path / "tornado-argfile"
     if argfile_path.exists():
-        print(f"  [OK] tornado-argfile found and will be included")
+        ok(f"tornado-argfile found and will be included ({argfile_path})")
     else:
-        print(f"  [WARNING] tornado-argfile not found at {argfile_path}")
+        warn(f"To generate the tornado-argfile, run: tornado --generate-argfile")
+    print()
 
     # Change to the dist directory to create archives with correct structure
     original_dir = os.getcwd()
@@ -696,16 +717,17 @@ def package_sdk_archives():
     try:
         # Use outer_dir_name for the archive names (includes platform-arch)
         # but archive the inner sdk_name directory
+        print(f"{CYAN}Creating archives...{RESET}")
+
+        # TAR.GZ
         tar_filename = f"{outer_dir_name}.tar.gz"
-        print(f"  Creating {tar_filename}...")
         with tarfile.open(tar_filename, "w:gz") as tar:
             # Add from outer_dir/sdk_name, archive as sdk_name/
             tar.add(os.path.join(outer_dir_name, sdk_name), arcname=sdk_name)
-        print(f"  [OK] Created {tar_filename}")
+        ok(f"Created {tar_filename}")
 
-        # Create zip archive
+        # ZIP
         zip_filename = f"{outer_dir_name}.zip"
-        print(f"  Creating {zip_filename}...")
         with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
             sdk_dir_to_archive = os.path.join(outer_dir_name, sdk_name)
             for root, dirs, files in os.walk(sdk_dir_to_archive):
@@ -714,9 +736,14 @@ def package_sdk_archives():
                     # Calculate relative path from outer_dir_name/sdk_name to archive as sdk_name/
                     rel_path = os.path.relpath(file_path, outer_dir_name)
                     zipf.write(file_path, rel_path)
-        print(f"  [OK] Created {zip_filename}")
+        ok(f"Created {zip_filename}")
 
-        print(f"\n[OK] SDK packaging complete! Archives created in {dist_dir}")
+        # Footer
+        print()
+        print("=" * 72)
+        ok("SDK packaging complete!")
+        print(f"  Archives created in: {dist_dir}")
+        print("=" * 72)
 
     finally:
         os.chdir(original_dir)
