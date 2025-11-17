@@ -498,6 +498,11 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
         if args.sdk:
             package_sdk_archives()
 
+        if os.name == 'nt':
+            print("\033[36m[INFO]\033[0m Run with: \033[1msetvars.cmd\033[0m\n")
+        else:
+            print("\033[36m[INFO]\033[0m Run first: \033[1msource setvars.sh\033[0m\n")
+
     else:
         print("\nCompilation failed\n")
         sys.exit(-1)
@@ -775,7 +780,6 @@ def main():
     post_installation_actions(
         backend_profiles, mvn_build_result, args, graal_jars_status
     )
-
 
 
 if __name__ == "__main__":
