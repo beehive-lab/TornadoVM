@@ -28,8 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXCodeCache {
 
@@ -41,15 +40,16 @@ public class PTXCodeCache {
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(TaskDataContext taskMeta, String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
+    public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
         if (!cache.containsKey(name)) {
             if (debugKernel) {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
 
-            String compilerFlags = taskMeta.getCompilerFlags(TornadoVMBackendType.PTX);
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, compilerFlags);
+            int[] CompilerFlags = {TornadoOptions.PTX_COMPILER_OPT_LEVEL, TornadoOptions.PTX_COMPILER_JIT_TARGET, TornadoOptions.PTX_COMPILER_MAX_REG, TornadoOptions.PTX_COMPILER_CACHE_MODE,
+                    TornadoOptions.PTX_COMPILER_GENERATE_DEBUG_INFO, TornadoOptions.PTX_COMPILER_LOG_VERBOSE, TornadoOptions.PTX_COMPILER_GENERATE_LINE_INFO};
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, CompilerFlags);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
