@@ -66,17 +66,17 @@ public class TornadoOptions {
     /**
      * Generate debug info for the CUDA JIT compiler. Default is 0 (false).
      */
-    public static final int PTX_COMPILER_GENERATE_DEBUG_INFO = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_GENERATE_DEBUG_INFO", "0"));
+    //public static final int PTX_COMPILER_GENERATE_DEBUG_INFO = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_GENERATE_DEBUG_INFO", "0"));
 
     /**
      * Generate verbose log for the CUDA JIT compiler. Default is 0 (false).
      */
-    public static final int PTX_COMPILER_LOG_VERBOSE = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_LOG_VERBOSE", "0"));
+    //public static final int PTX_COMPILER_LOG_VERBOSE = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_LOG_VERBOSE", "0"));
 
     /**
      * Generate line info for the CUDA JIT compiler. Default is 0 (false).
      */
-    public static final int PTX_COMPILER_GENERATE_LINE_INFO = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_GENERATE_LINE_INFO", "0"));
+    //public static final int PTX_COMPILER_GENERATE_LINE_INFO = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_GENERATE_LINE_INFO", "0"));
 
     /**
      * Default SPIR-V/LevelZero Flags.
