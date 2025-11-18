@@ -47,8 +47,9 @@ public class PTXCodeCache {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
 
-            int[] CompilerFlags = {TornadoOptions.PTX_COMPILER_OPT_LEVEL, TornadoOptions.PTX_COMPILER_JIT_TARGET, TornadoOptions.PTX_COMPILER_MAX_REG, TornadoOptions.PTX_COMPILER_CACHE_MODE,
-                    TornadoOptions.PTX_COMPILER_GENERATE_DEBUG_INFO, TornadoOptions.PTX_COMPILER_LOG_VERBOSE, TornadoOptions.PTX_COMPILER_GENERATE_LINE_INFO};
+            /*int[] CompilerFlags = {TornadoOptions.PTX_COMPILER_OPT_LEVEL, TornadoOptions.PTX_COMPILER_JIT_TARGET, TornadoOptions.PTX_COMPILER_MAX_REG, TornadoOptions.PTX_COMPILER_CACHE_MODE,
+                    TornadoOptions.PTX_COMPILER_GENERATE_DEBUG_INFO, TornadoOptions.PTX_COMPILER_LOG_VERBOSE, TornadoOptions.PTX_COMPILER_GENERATE_LINE_INFO};*/
+            int[] CompilerFlags = {TornadoOptions.PTX_COMPILER_OPT_LEVEL, TornadoOptions.PTX_COMPILER_JIT_TARGET, TornadoOptions.PTX_COMPILER_MAX_REG, TornadoOptions.PTX_COMPILER_CACHE_MODE};
             PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, CompilerFlags);
 
             if (module.isPTXJITSuccess()) {
