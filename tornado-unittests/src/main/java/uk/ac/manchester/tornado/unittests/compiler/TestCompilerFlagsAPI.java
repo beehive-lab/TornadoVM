@@ -56,7 +56,7 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withCompilerFlags(TornadoVMBackendType.OPENCL, "-cl-opt-disable") //
-                    .withCompilerFlags(TornadoVMBackendType.PTX, " ") //
+                    .withCompilerFlags(TornadoVMBackendType.PTX, "") //
                     .withCompilerFlags(TornadoVMBackendType.SPIRV, "-ze-opt-level 1") //
                     .execute();
         }

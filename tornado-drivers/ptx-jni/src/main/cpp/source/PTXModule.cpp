@@ -27,6 +27,7 @@
 #include <cuda.h>
 
 #include <iostream>
+#include <cuda_runtime_api.h>
 #include "PTXModule.h"
 #include "ptx_log.h"
 
@@ -68,6 +69,61 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     /// FIXME
     if (result != CUDA_SUCCESS) {
         printf("PTX to cubin JIT compilation failed! (%d)\n", result);
+        fflush(stdout);
+        jbyteArray error_array = env->NewByteArray(0);
+        return error_array;
+    }
+    return from_module(env, &module);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
+ * Method:    cuModuleLoadDataEx
+ * Signature: ([B[I)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleLoadDataEx
+  (JNIEnv *env, jclass clazz, jbyteArray source, jintArray CompilerFlags) {
+    CUresult result;
+
+    size_t ptx_length = env->GetArrayLength(source);
+#ifdef _WIN32
+    char *ptx = new char[ptx_length + 1];
+#else
+    char ptx[ptx_length + 1];
+#endif
+    env->GetByteArrayRegion(source, 0, ptx_length, reinterpret_cast<jbyte *>(ptx));
+    ptx[ptx_length] = 0; // Make sure string terminates with a 0
+
+    const unsigned int length = env->GetArrayLength(CompilerFlags);
+
+    jint *elements = env->GetIntArrayElements(CompilerFlags, NULL);
+
+    CUjit_option *jitOptions = new CUjit_option[length];
+    void **jitOptVals = new void *[length];
+    for(int i = 0; i < length; i++){
+        jitOptVals[i] = (void *)(size_t)elements[i];
+    }
+
+    jitOptions[0] = CU_JIT_OPTIMIZATION_LEVEL;
+    jitOptions[1] = CU_JIT_MAX_REGISTERS;
+    jitOptions[2] = CU_JIT_CACHE_MODE;
+    jitOptions[3] = CU_JIT_GENERATE_DEBUG_INFO;
+    jitOptions[4] = CU_JIT_LOG_VERBOSE;
+    jitOptions[5] = CU_JIT_GENERATE_LINE_INFO;
+
+    CUmodule module;
+    result = cuModuleLoadDataEx(&module, ptx, length,  jitOptions, (void **)jitOptVals);
+
+    delete[] jitOptVals;
+    delete[] jitOptions;
+
+    LOG_PTX_AND_VALIDATE("cuModuleLoadDataEx", result);
+#ifdef _WIN32
+    delete[] ptx;
+#endif
+    /// FIXME
+    if (result != CUDA_SUCCESS) {
+        printf("PTX to cubin JIT compilation using cuModuleLoadDataEx failed! (%d)\n", result);
         fflush(stdout);
         jbyteArray error_array = env->NewByteArray(0);
         return error_array;

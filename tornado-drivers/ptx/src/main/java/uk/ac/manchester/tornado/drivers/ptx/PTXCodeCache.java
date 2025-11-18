@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXCodeCache {
 
@@ -46,7 +47,9 @@ public class PTXCodeCache {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
 
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name);
+            int[] CompilerFlags = {TornadoOptions.PTX_COMPILER_OPT_LEVEL, TornadoOptions.PTX_COMPILER_MAX_REG, TornadoOptions.PTX_COMPILER_CACHE_MODE,
+                    TornadoOptions.PTX_COMPILER_GENERATE_DEBUG_INFO, TornadoOptions.PTX_COMPILER_LOG_VERBOSE, TornadoOptions.PTX_COMPILER_GENERATE_LINE_INFO};
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, CompilerFlags);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
