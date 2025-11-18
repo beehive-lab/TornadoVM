@@ -27,6 +27,7 @@
 #include <cuda.h>
 
 #include <iostream>
+#include <cuda_runtime_api.h>
 #include "PTXModule.h"
 #include "ptx_log.h"
 
@@ -104,7 +105,6 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     }
 
     jitOptions[0] = CU_JIT_OPTIMIZATION_LEVEL;
-    jitOptions[1] = CU_JIT_TARGET;
     jitOptions[2] = CU_JIT_MAX_REGISTERS;
     jitOptions[3] = CU_JIT_CACHE_MODE;
     jitOptions[4] = CU_JIT_GENERATE_DEBUG_INFO;
