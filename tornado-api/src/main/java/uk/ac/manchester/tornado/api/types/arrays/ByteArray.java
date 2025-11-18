@@ -62,6 +62,35 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new instance of the {@link ByteArray} by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param existingSegment
+     *     The {@link MemorySegment} containing both the header and the off-heap float data.
+     */
+    public ByteArray(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / BYTE_BYTES;
+
+        // Validate segment size
+        if (existingSegment.byteSize() < segmentByteSize) {
+            throw new IllegalArgumentException(String.format(
+                    "Segment size (%d bytes) insufficient for %d elements (requires %d bytes)",
+                    existingSegment.byteSize(), numberOfElements, segmentByteSize));
+        }
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, BYTE_BYTES);
+        this.numberOfElements = (int) (dataSize / BYTE_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = existingSegment;
+        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
      * Constructs a new {@link ByteArray} instance by concatenating the contents of the given array of {@link ByteArray} instances.
      *
      * @param arrays
