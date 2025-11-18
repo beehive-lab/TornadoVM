@@ -93,28 +93,29 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     env->GetByteArrayRegion(source, 0, ptx_length, reinterpret_cast<jbyte *>(ptx));
     ptx[ptx_length] = 0; // Make sure string terminates with a 0
 
-    unsigned int length = env->GetArrayLength(CompilerFlags);
+    const unsigned int length = env->GetArrayLength(CompilerFlags);
 
     jint *elements = env->GetIntArrayElements(CompilerFlags, NULL);
 
-    CUjit_option options[length];
+    CUjit_option *jitOptions = new CUjit_option[length];
     void **jitOptVals = new void *[length];
     for(int i = 0; i < length; i++){
-        jitOptVals[i] = (void *)(uintptr_t)elements[i];
+        jitOptVals[i] = (void *)(size_t)elements[i];
     }
 
-    options[0] = CU_JIT_OPTIMIZATION_LEVEL;
-    options[1] = CU_JIT_TARGET;
-    options[2] = CU_JIT_MAX_REGISTERS;
-    options[3] = CU_JIT_CACHE_MODE;
-    //options[4] = CU_JIT_GENERATE_DEBUG_INFO;
-    //options[5] = CU_JIT_LOG_VERBOSE;
-    //options[6] = CU_JIT_GENERATE_LINE_INFO;
+    jitOptions[0] = CU_JIT_OPTIMIZATION_LEVEL;
+    //jitOptions[1] = CU_JIT_TARGET;
+    //jitOptions[2] = CU_JIT_MAX_REGISTERS;
+    //jitOptions[3] = CU_JIT_CACHE_MODE;
+    //jitOptions[4] = CU_JIT_GENERATE_DEBUG_INFO;
+    //jitOptions[5] = CU_JIT_LOG_VERBOSE;
+    //jitOptions[6] = CU_JIT_GENERATE_LINE_INFO;
 
     CUmodule module;
-    result = cuModuleLoadDataEx(&module, ptx, length,  options, (void **)jitOptVals);
+    result = cuModuleLoadDataEx(&module, ptx, length,  jitOptions, (void **)jitOptVals);
 
     delete[] jitOptVals;
+    delete[] jitOptions;
 
     LOG_PTX_AND_VALIDATE("cuModuleLoadDataEx", result);
 #ifdef _WIN32

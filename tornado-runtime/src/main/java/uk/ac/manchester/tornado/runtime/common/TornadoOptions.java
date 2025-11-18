@@ -51,17 +51,17 @@ public class TornadoOptions {
     /**
      * Target microarchitecture for the CUDA JIT compiler. Default is 120 (Blackwell).
      */
-    public static final int PTX_COMPILER_JIT_TARGET = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_TARGET", "120"));
+    //public static final int PTX_COMPILER_JIT_TARGET = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_TARGET", "120"));
 
     /**
      * Maximum number of registers a CUDA thread can use. Default is 255.
      */
-    public static final int PTX_COMPILER_MAX_REG = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_MAX_REGISTERS", "255"));
+    //public static final int PTX_COMPILER_MAX_REG = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_MAX_REGISTERS", "255"));
 
     /**
      * Data load cache mode of the CUDA JIT compiler. Default is 0 (no -dlcm flag specified).
      */
-    public static final int PTX_COMPILER_CACHE_MODE = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_CACHE_MODE", "0"));
+    //public static final int PTX_COMPILER_CACHE_MODE = Integer.parseInt(getProperty("tornado.ptx.compiler.CU_JIT_CACHE_MODE", "0"));
 
     /**
      * Generate debug info for the CUDA JIT compiler. Default is 0 (false).
