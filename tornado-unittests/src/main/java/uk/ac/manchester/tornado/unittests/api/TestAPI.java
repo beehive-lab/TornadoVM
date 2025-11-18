@@ -38,14 +38,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.*;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -505,6 +499,240 @@ public class TestAPI extends TornadoTestBase {
 
         MemorySegment m = Arena.ofAuto().allocate(byteSize);
         IntArray intArray = IntArray.fromSegment(m);
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyFloat() {
+        final int n = 10;
+
+        // Create a custom memory segment with FloatArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_FLOAT.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_FLOAT.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_FLOAT, headerOffset + i, 20 + i);
+        }
+
+        // Create FloatArray using zero-copy constructor
+        FloatArray floatArray = new FloatArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, floatArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals(20 + i, floatArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyHalfFloat() {
+        final int n = 10;
+
+        // Create a custom memory segment with HalfFloatArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_SHORT.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_SHORT.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_SHORT, headerOffset + i, Float.floatToFloat16(20 + i));
+        }
+
+        // Create HalfFloatArray using zero-copy constructor
+        HalfFloatArray halfFloatArray = new HalfFloatArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, halfFloatArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals(20 + i, halfFloatArray.get(i).getFloat32(), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyByte() {
+        final int n = 10;
+
+        // Create a custom memory segment with ByteArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_BYTE.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_BYTE.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_BYTE, headerOffset + i, (byte) (20 + i));
+        }
+
+        // Create ByteArray using zero-copy constructor
+        ByteArray byteArray = new ByteArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, byteArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals((byte) (20 + i), byteArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyChar() {
+        final int n = 10;
+
+        // Create a custom memory segment with CharArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_CHAR.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_CHAR.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_CHAR, headerOffset + i, (char) (20 + i));
+        }
+
+        // Create CharArray using zero-copy constructor
+        CharArray charArray = new CharArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, charArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals((char) 20 + i, charArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyDouble() {
+        final int n = 10;
+
+        // Create a custom memory segment with DoubleArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_DOUBLE.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_DOUBLE.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_DOUBLE, headerOffset + i, 20 + i);
+        }
+
+        // Create DoubleArray using zero-copy constructor
+        DoubleArray doubleArray = new DoubleArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, doubleArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals(20 + i, doubleArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyInt8() {
+        final int n = 10;
+
+        // Create a custom memory segment with Int8Array layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_BYTE.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_BYTE.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_BYTE, headerOffset + i, (byte)(20 + i));
+        }
+
+        // Create Int8Array using zero-copy constructor
+        Int8Array int8Array = new Int8Array(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, int8Array.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals((byte) (20 + i), int8Array.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyInt() {
+        final int n = 10;
+
+        // Create a custom memory segment with IntArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_INT.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_INT.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_INT, headerOffset + i, 20 + i);
+        }
+
+        // Create IntArray using zero-copy constructor
+        IntArray intArray = new IntArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, intArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals(20 + i, intArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyLong() {
+        final int n = 10;
+
+        // Create a custom memory segment with LongArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_LONG.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_LONG.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_LONG, headerOffset + i, 20 + i);
+        }
+
+        // Create LongArray using zero-copy constructor
+        LongArray longArray = new LongArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, longArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals(20 + i, longArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsZeroCopyShort() {
+        final int n = 10;
+
+        // Create a custom memory segment with ShortArray layout
+        long headerSize = TornadoNativeArray.ARRAY_HEADER;
+        long dataSize = ValueLayout.JAVA_SHORT.byteSize() * n;
+        long totalSize = headerSize + dataSize;
+        MemorySegment segment = Arena.ofAuto().allocate(totalSize);
+
+        // Set values in the data section
+        long headerOffset = headerSize / ValueLayout.JAVA_SHORT.byteSize();
+        for (int i = 0; i < n; i++) {
+            segment.setAtIndex(ValueLayout.JAVA_SHORT, headerOffset + i, (short) (20 + i));
+        }
+
+        // Create ShortArray using zero-copy constructor
+        ShortArray shortArray = new ShortArray(segment);
+
+        // Verify the calculated size and data
+        assertEquals(n, shortArray.getSize());
+        for (int i = 0; i < n; i++) {
+            assertEquals((short) (20 + i), shortArray.get(i), 0.001f);
+        }
     }
 
     public static void simpleAddition(DoubleArray a, DoubleArray b) {
