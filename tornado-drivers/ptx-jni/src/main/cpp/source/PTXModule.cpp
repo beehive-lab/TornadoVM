@@ -105,11 +105,11 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     }
 
     jitOptions[0] = CU_JIT_OPTIMIZATION_LEVEL;
-    jitOptions[2] = CU_JIT_MAX_REGISTERS;
-    jitOptions[3] = CU_JIT_CACHE_MODE;
-    jitOptions[4] = CU_JIT_GENERATE_DEBUG_INFO;
-    jitOptions[5] = CU_JIT_LOG_VERBOSE;
-    jitOptions[6] = CU_JIT_GENERATE_LINE_INFO;
+    jitOptions[1] = CU_JIT_MAX_REGISTERS;
+    jitOptions[2] = CU_JIT_CACHE_MODE;
+    jitOptions[3] = CU_JIT_GENERATE_DEBUG_INFO;
+    jitOptions[4] = CU_JIT_LOG_VERBOSE;
+    jitOptions[5] = CU_JIT_GENERATE_LINE_INFO;
 
     CUmodule module;
     result = cuModuleLoadDataEx(&module, ptx, length,  jitOptions, (void **)jitOptVals);
