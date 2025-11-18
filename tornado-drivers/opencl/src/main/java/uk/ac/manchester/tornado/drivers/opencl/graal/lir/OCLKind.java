@@ -293,10 +293,9 @@ public enum OCLKind implements PlatformKind {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
         } else if (type == JavaKind.Long) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
-        } else if (type == JavaKind.Char) {
+        } else if (type == JavaKind.Char || type == JavaKind.Byte) {
+            // In OpenCL bytes are treated as chars
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-        } else if (type == JavaKind.Byte) {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
         }
         return null;
     }

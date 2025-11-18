@@ -49,6 +49,8 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryI
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -188,13 +190,22 @@ public class SPIRVGraphBuilderPlugins {
         registerLocalArray(r, "allocateLongLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_64.asJavaKind());
         registerLocalArray(r, "allocateFloatLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
         registerLocalArray(r, "allocateDoubleLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_64.asJavaKind());
+        registerLocalArray(r, "allocateByteLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_8.asJavaKind());
     }
 
     private static void registerLocalArray(Registration r, final String method, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register(new InvocationPlugin(method, InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
+                LocalArrayNode localArrayNode;
+                if (elementType == SPIRVKind.OP_TYPE_INT_8.asJavaKind()) {
+                    // if we do not pass the resolved type, the compiler cannot deduct if the type is char or byte
+                    MetaAccessProvider metaAccess = b.getMetaAccess();
+                    ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                    localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, resolvedElementType, size);
+                } else {
+                   localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
+                }
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }

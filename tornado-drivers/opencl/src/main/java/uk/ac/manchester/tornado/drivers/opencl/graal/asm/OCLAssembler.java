@@ -978,7 +978,6 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate NEW_LOCAL_LONG_ARRAY = new OCLBinaryTemplate("local memory array long", "__local long %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new OCLBinaryTemplate("local memory array short", "__local short %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new OCLBinaryTemplate("local memory array char", "__local char %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new OCLBinaryTemplate("local memory array byte", "__local byte %s[%s]");
         // @formatter:on
         private final String template;
 
