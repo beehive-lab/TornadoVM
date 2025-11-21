@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.tensors.GGMLType;
 
 /**
  * This class represents an array of bytes stored in native memory.
@@ -58,6 +59,15 @@ public final class ByteArray extends TornadoNativeArray {
         segmentByteSize = (long) numberOfElements * BYTE_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+
+    public ByteArray(int numberOfElements, long requiredStorageSize) {
+        this.numberOfElements = numberOfElements;
+        baseIndex=0;
+        this.segmentByteSize = requiredStorageSize;
+        segment = Arena.ofAuto().allocate(requiredStorageSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
@@ -121,6 +131,14 @@ public final class ByteArray extends TornadoNativeArray {
         ensureMultipleOfElementSize(byteSize, BYTE_BYTES);
         ByteArray byteArray = new ByteArray(numElements);
         MemorySegment.copy(segment, 0, byteArray.segment, (long) byteArray.baseIndex * BYTE_BYTES, byteSize);
+        return byteArray;
+    }
+
+    // Temporary workaround to copy raw memory segment without a tornado header
+    public static ByteArray fromSegment(MemorySegment segment, int numberOfElements) {
+        long byteSize = segment.byteSize();
+        ByteArray byteArray = new ByteArray(numberOfElements, byteSize);
+        MemorySegment.copy(segment, 0, byteArray.segment, byteArray.baseIndex * BYTE_BYTES, byteSize);
         return byteArray;
     }
 
