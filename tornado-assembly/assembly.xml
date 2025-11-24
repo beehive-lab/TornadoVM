@@ -4,10 +4,9 @@
     <id>bin</id>
     <formats>
         <format>dir</format>
-        <format>tar.gz</format>
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>tornado-sdk-${project.version}-${buildNumber}/</baseDirectory>
+    <baseDirectory>tornadovm-${project.version}-${tornado.backend}/</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>../</directory>
@@ -32,16 +31,28 @@
         </fileSet>
         <fileSet>
             <directory>src/bin</directory>
-            <!-- tornado binaries -->
+            <!-- tornado scripts -->
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.sh</include>
                 <include>*.cmd</include>
                 <include>*.py</include>
-                <include>tornado*</include>
+                <include>tornado</include>
+                <include>tornado-test</include>
+                <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>
             <lineEnding>unix</lineEnding>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/bin</directory>
+            <!-- Windows executables (binary files - without line ending conversion) -->
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>*.exe</include>
+                <include>*.spec</include>
+            </includes>
             <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
@@ -51,7 +62,21 @@
             <includes>
                 <include>**/*</include>
             </includes>
+            <excludes>
+                <exclude>tornado.backend</exclude>
+            </excludes>
             <filtered>true</filtered>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0666</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/etc</directory>
+            <!-- tornado.backend file (pre-created by compile script, no filtering needed) -->
+            <outputDirectory>etc</outputDirectory>
+            <includes>
+                <include>tornado.backend</include>
+            </includes>
+            <filtered>false</filtered>
             <lineEnding>unix</lineEnding>
             <fileMode>0666</fileMode>
         </fileSet>
@@ -132,6 +157,15 @@
                 <include>**/*</include>
             </includes>
             <fileMode>0666</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>../graalJars</directory>
+            <!-- Graal compiler JARs for JDK 21 -->
+            <outputDirectory>share/java/graalJars</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
         </fileSet>
     </fileSets>
     <moduleSets>

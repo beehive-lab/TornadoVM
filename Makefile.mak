@@ -31,6 +31,9 @@ ptx:
 spirv:
 	python bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
 
+sdk:
+	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
+
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
 FPGA_PLATFORM       = xilinx_u50_gen3x16_xdma_201920_3
@@ -46,13 +49,13 @@ clean:
 	.\mvnw -Popencl-backend,ptx-backend,spirv-backend clean
 
 example:
-	python %TORNADO_SDK%\bin\tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
+	%TORNADO_SDK%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
 
 tests:
 	del /f tornado_unittests.log
-	python %TORNADO_SDK%\bin\tornado --devices
-	python %TORNADO_SDK%\bin\tornado-test --ea --verbose
-	python %TORNADO_SDK%\bin\tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADO_SDK%\bin\tornado.exe --devices
+	%TORNADO_SDK%\bin\tornado-test.exe --ea --verbose
+	%TORNADO_SDK%\bin\tornado-test.exe --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADO_SDK%\bin\test-native.cmd
 
 tests-uncompressed:
@@ -63,4 +66,4 @@ tests-uncompressed:
 	%TORNADO_SDK%\bin\test-native.cmd
 
 test-slam:
-	python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+	%TORNADO_SDK%\bin\tornado-test.exe -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
