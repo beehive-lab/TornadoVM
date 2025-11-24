@@ -24,32 +24,72 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class PTXCodeCache {
 
     private final PTXDeviceContext deviceContext;
     private final ConcurrentHashMap<String, PTXInstalledCode> cache;
 
+    private static final Set<String> SUPPORTED_PTX_JIT_FLAGS = Set.of(
+            "CU_JIT_OPTIMIZATION_LEVEL",
+            "CU_JIT_MAX_REGISTERS",
+            "CU_JIT_CACHE_MODE",
+            "CU_JIT_GENERATE_DEBUG_INFO",
+            "CU_JIT_LOG_VERBOSE",
+            "CU_JIT_GENERATE_LINE_INFO"
+    );
+
     PTXCodeCache(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
+    public PTXInstalledCode installSource(TaskDataContext taskMeta, String name, byte[] targetCode, String resolvedMethodName, boolean debugKernel) {
 
         if (!cache.containsKey(name)) {
             if (debugKernel) {
                 RuntimeUtilities.dumpKernel(targetCode);
             }
 
-            int[] CompilerFlags = {TornadoOptions.PTX_COMPILER_OPT_LEVEL, TornadoOptions.PTX_COMPILER_MAX_REG, TornadoOptions.PTX_COMPILER_CACHE_MODE,
-                    TornadoOptions.PTX_COMPILER_GENERATE_DEBUG_INFO, TornadoOptions.PTX_COMPILER_LOG_VERBOSE, TornadoOptions.PTX_COMPILER_GENERATE_LINE_INFO};
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, CompilerFlags);
+            String compilerFlags = taskMeta.getCompilerFlags(TornadoVMBackendType.PTX);
+            String[] parts = compilerFlags.trim().split("\\s+");
+
+            if (parts.length % 2 != 0) {
+                throw new TornadoBailoutRuntimeException(
+                        "Malformed compilerFlags string: expected pairs of <flag> <value>. Got: " + compilerFlags
+                );
+            }
+
+            String[] flagNames = new String[parts.length / 2];
+            int[] flagValues = new int[parts.length / 2];
+
+            for (int i = 0; i < parts.length; i += 2) {
+                flagNames[i / 2] = parts[i];
+                try {
+                    flagValues[i / 2] = Integer.parseInt(parts[i + 1]);
+                } catch (NumberFormatException e) {
+                    throw new TornadoBailoutRuntimeException(
+                            "Invalid flag value (must be integer): '" + parts[i + 1] + "'", e
+                    );
+                }
+            }
+
+            for (String flag : flagNames) {
+                if (!SUPPORTED_PTX_JIT_FLAGS.contains(flag)) {
+                    throw new TornadoBailoutRuntimeException(
+                            "Unsupported PTX JIT compiler flag: " + flag + ". Supported flags are: " + SUPPORTED_PTX_JIT_FLAGS
+                    );
+                }
+            }
+
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, compilerFlags);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
