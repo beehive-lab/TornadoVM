@@ -43,7 +43,8 @@ static const std::unordered_map<std::string, CUjit_option> CUDAJITFlagsMap {
     {"CU_JIT_CACHE_MODE",   CU_JIT_CACHE_MODE},
     {"CU_JIT_GENERATE_DEBUG_INFO",         CU_JIT_GENERATE_DEBUG_INFO},
     {"CU_JIT_LOG_VERBOSE",             CU_JIT_LOG_VERBOSE},
-    {"CU_JIT_GENERATE_LINE_INFO",             CU_JIT_GENERATE_LINE_INFO}
+    {"CU_JIT_GENERATE_LINE_INFO",             CU_JIT_GENERATE_LINE_INFO},
+    {"CU_JIT_TARGET",             CU_JIT_TARGET}
 };//currently supported CUDA JIT options in TornadoVM, not all options are included due to backwards compatibility.
 
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
