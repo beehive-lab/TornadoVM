@@ -502,7 +502,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyFloat() {
+    public void testBuildFromSegmentsShallowFloat() {
         final int n = 10;
 
         // Create a custom memory segment with FloatArray layout
@@ -517,8 +517,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_FLOAT, headerOffset + i, 20 + i);
         }
 
-        // Create FloatArray using zero-copy constructor
-        FloatArray floatArray = new FloatArray(segment);
+        // Create FloatArray using fromSegmentShallow method
+        FloatArray floatArray = FloatArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, floatArray.getSize());
@@ -528,7 +528,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyHalfFloat() {
+    public void testBuildFromSegmentsShallowHalfFloat() {
         final int n = 10;
 
         // Create a custom memory segment with HalfFloatArray layout
@@ -543,8 +543,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_SHORT, headerOffset + i, Float.floatToFloat16(20 + i));
         }
 
-        // Create HalfFloatArray using zero-copy constructor
-        HalfFloatArray halfFloatArray = new HalfFloatArray(segment);
+        // Create HalfFloatArray using fromSegmentShallow method
+        HalfFloatArray halfFloatArray = HalfFloatArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, halfFloatArray.getSize());
@@ -554,7 +554,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyByte() {
+    public void testBuildFromSegmentsShallowByte() {
         final int n = 10;
 
         // Create a custom memory segment with ByteArray layout
@@ -569,8 +569,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_BYTE, headerOffset + i, (byte) (20 + i));
         }
 
-        // Create ByteArray using zero-copy constructor
-        ByteArray byteArray = new ByteArray(segment);
+        // Create ByteArray using fromSegmentShallow method
+        ByteArray byteArray = ByteArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, byteArray.getSize());
@@ -580,7 +580,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyChar() {
+    public void testBuildFromSegmentsShallowChar() {
         final int n = 10;
 
         // Create a custom memory segment with CharArray layout
@@ -595,8 +595,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_CHAR, headerOffset + i, (char) (20 + i));
         }
 
-        // Create CharArray using zero-copy constructor
-        CharArray charArray = new CharArray(segment);
+        // Create CharArray using fromSegmentShallow method
+        CharArray charArray = CharArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, charArray.getSize());
@@ -606,7 +606,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyDouble() {
+    public void testBuildFromSegmentsShallowDouble() {
         final int n = 10;
 
         // Create a custom memory segment with DoubleArray layout
@@ -621,8 +621,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_DOUBLE, headerOffset + i, 20 + i);
         }
 
-        // Create DoubleArray using zero-copy constructor
-        DoubleArray doubleArray = new DoubleArray(segment);
+        // Create DoubleArray using fromSegmentShallow method
+        DoubleArray doubleArray = DoubleArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, doubleArray.getSize());
@@ -632,7 +632,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyInt8() {
+    public void testBuildFromSegmentsShallowInt8() {
         final int n = 10;
 
         // Create a custom memory segment with Int8Array layout
@@ -647,8 +647,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_BYTE, headerOffset + i, (byte)(20 + i));
         }
 
-        // Create Int8Array using zero-copy constructor
-        Int8Array int8Array = new Int8Array(segment);
+        // Create Int8Array using fromSegmentShallow method
+        Int8Array int8Array = Int8Array.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, int8Array.getSize());
@@ -658,7 +658,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyInt() {
+    public void testBuildFromSegmentsShallowInt() {
         final int n = 10;
 
         // Create a custom memory segment with IntArray layout
@@ -673,8 +673,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_INT, headerOffset + i, 20 + i);
         }
 
-        // Create IntArray using zero-copy constructor
-        IntArray intArray = new IntArray(segment);
+        // Create IntArray using fromSegmentShallow method
+        IntArray intArray = IntArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, intArray.getSize());
@@ -684,7 +684,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyLong() {
+    public void testBuildFromSegmentsShallowLong() {
         final int n = 10;
 
         // Create a custom memory segment with LongArray layout
@@ -699,8 +699,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_LONG, headerOffset + i, 20 + i);
         }
 
-        // Create LongArray using zero-copy constructor
-        LongArray longArray = new LongArray(segment);
+        // Create LongArray using fromSegmentShallow method
+        LongArray longArray = LongArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, longArray.getSize());
@@ -710,7 +710,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testBuildWithSegmentsZeroCopyShort() {
+    public void testBuildFromSegmentsShallowShort() {
         final int n = 10;
 
         // Create a custom memory segment with ShortArray layout
@@ -725,8 +725,8 @@ public class TestAPI extends TornadoTestBase {
             segment.setAtIndex(ValueLayout.JAVA_SHORT, headerOffset + i, (short) (20 + i));
         }
 
-        // Create ShortArray using zero-copy constructor
-        ShortArray shortArray = new ShortArray(segment);
+        // Create ShortArray using fromSegmentShallow method
+        ShortArray shortArray = ShortArray.fromSegmentShallow(segment);
 
         // Verify the calculated size and data
         assertEquals(n, shortArray.getSize());
