@@ -29,7 +29,7 @@ import java.lang.foreign.ValueLayout;
  * Performance benchmark comparing different FloatArray initialization methods:
  * - Regular constructor: new FloatArray(size)
  * - fromSegment method: FloatArray.fromSegment(segment)
- * - Zero-copy constructor: new FloatArray(segment)
+ * - fromSegmentShallow method: FloatArray.fromSegmentShallow(segment)
  *
  * <p>
  * How to run?
@@ -86,8 +86,8 @@ public class TornadoNativeArrayInit {
         System.out.printf("fromSegment Method: %.3f ms for %d iterations\n", ms, iterations);
     }
 
-    private static void benchmarkZeroCopyConstructor(int size, int iterations) {
-        System.out.println("Benchmarking Zero-Copy Constructor...");
+    private static void benchmarkFromSegmentShallow(int size, int iterations) {
+        System.out.println("Benchmarking fromSegmentShallow Method...");
 
         // Pre-create the segment with proper TornadoNativeArray layout
         long headerSize = TornadoNativeArray.ARRAY_HEADER;
@@ -102,7 +102,7 @@ public class TornadoNativeArrayInit {
 
         long startTime = System.nanoTime();
         for (int iter = 0; iter < iterations; iter++) {
-            FloatArray array = new FloatArray(segment);
+            FloatArray array = FloatArray.fromSegmentShallow(segment);
             // Touch some data to ensure it's actually used
             float sum = 0;
             for (int i = 0; i < Math.min(10, size); i++) {
@@ -112,7 +112,7 @@ public class TornadoNativeArrayInit {
         long duration = System.nanoTime() - startTime;
 
         double ms = duration / 1_000_000.0;
-        System.out.printf("Zero-Copy Constructor: %.3f ms for %d iterations\n", ms, iterations);
+        System.out.printf("fromSegmentShallow Method: %.3f ms for %d iterations\n", ms, iterations);
     }
 
     private static String formatArraySize(int elements) {
@@ -164,28 +164,28 @@ public class TornadoNativeArrayInit {
             benchmarkFromSegment(size, iterations);
             times[1] = System.nanoTime() - startTime;
 
-            // Benchmark 3: Zero-Copy Constructor
+            // Benchmark 3: fromSegmentShallow
             startTime = System.nanoTime();
-            benchmarkZeroCopyConstructor(size, iterations);
+            benchmarkFromSegmentShallow(size, iterations);
             times[2] = System.nanoTime() - startTime;
 
             // Calculate speedups
             double regularMs = times[0] / 1_000_000.0;
             double fromSegmentMs = times[1] / 1_000_000.0;
-            double zeroCopyMs = times[2] / 1_000_000.0;
+            double fromSegmentShallowMs = times[2] / 1_000_000.0;
 
-            double speedupVsRegular = regularMs / zeroCopyMs;
-            double speedupVsFromSegment = fromSegmentMs / zeroCopyMs;
+            double speedupVsRegular = regularMs / fromSegmentShallowMs;
+            double speedupVsFromSegment = fromSegmentMs / fromSegmentShallowMs;
 
             System.out.println("\n" + "-".repeat(60));
             System.out.println("PERFORMANCE SUMMARY:");
             System.out.println("-".repeat(60));
             System.out.printf("Regular Constructor:    %.3f ms\n", regularMs);
             System.out.printf("fromSegment Method:     %.3f ms\n", fromSegmentMs);
-            System.out.printf("Zero-Copy Constructor:  %.3f ms\n", zeroCopyMs);
+            System.out.printf("fromSegmentShallow Method:  %.3f ms\n", fromSegmentShallowMs);
             System.out.println("-".repeat(60));
-            System.out.printf("Zero-Copy vs Regular:      %.2fx faster\n", speedupVsRegular);
-            System.out.printf("Zero-Copy vs fromSegment:  %.2fx faster\n", speedupVsFromSegment);
+            System.out.printf("fromSegmentShallow vs Regular:      %.2fx faster\n", speedupVsRegular);
+            System.out.printf("fromSegmentShallow vs fromSegment:  %.2fx faster\n", speedupVsFromSegment);
             System.out.println("-".repeat(60));
         }
     }
