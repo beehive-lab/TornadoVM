@@ -46,7 +46,7 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
     }
 
     @Test
-    public void test() throws TornadoExecutionPlanException {
+    public void testOpenCL() throws TornadoExecutionPlanException {
         FloatArray data = new FloatArray(512);
         data.init(1.0f);
 
@@ -56,8 +56,38 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.withCompilerFlags(TornadoVMBackendType.OPENCL, "-cl-opt-disable") //
-                    .withCompilerFlags(TornadoVMBackendType.PTX, "") //
-                    .withCompilerFlags(TornadoVMBackendType.SPIRV, "-ze-opt-level 1") //
+                    .execute();
+        }
+
+    }
+
+    @Test
+    public void testPTX() throws TornadoExecutionPlanException {
+        FloatArray data = new FloatArray(512);
+        data.init(1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("init") //
+                .task("foo", TestCompilerFlagsAPI::foo, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withCompilerFlags(TornadoVMBackendType.PTX, "CU_JIT_OPTIMIZATION_LEVEL 0") //
+                    .execute();
+        }
+
+    }
+
+    @Test
+    public void testSPIRV() throws TornadoExecutionPlanException {
+        FloatArray data = new FloatArray(512);
+        data.init(1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("init") //
+                .task("foo", TestCompilerFlagsAPI::foo, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withCompilerFlags(TornadoVMBackendType.SPIRV, "-ze-opt-level 1") //
                     .execute();
         }
 
