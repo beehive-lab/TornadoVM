@@ -135,7 +135,7 @@ Optimizations
 CUDA (PTX Specific)
 ----------------------------
 
-**JVM Flags**
+**Flags**
 
 .. table::
    :align: left
@@ -143,14 +143,14 @@ CUDA (PTX Specific)
    ================================================================  ==================================================================================================================
    Flag                                                              Description
    ================================================================  ==================================================================================================================
-   ``-Dtornado.ptx.compiler.CU_JIT_OPTIMIZATION_LEVEL=4``            Level of optimizations to apply to generated code (0 - 4), with 4 being the highest level of optimizations (default: 4).
-   ``-Dtornado.ptx.compiler.CU_JIT_MAX_REGISTERS=255``               Max number of registers that a thread may use (default: 255).
-   ``-Dtornado.ptx.compiler.CU_JIT_CACHE_MODE=0``                    Specifies whether to enable caching explicitly (-dlcm). 0, compile with no -dlcm flag specified.
+   ``CU_JIT_OPTIMIZATION_LEVEL``                                     Level of optimizations to apply to generated code (0 - 4), with 4 being the highest level of optimizations (default: 4).
+   ``CU_JIT_MAX_REGISTERS``                                          Max number of registers that a thread may use (default: 255).
+   ``CU_JIT_CACHE_MODE``                                             Specifies whether to enable caching explicitly (-dlcm). 0, compile with no -dlcm flag specified.
                                                                      1, compile with L1 cache disabled (use only L2 cache). 2, compile with L1 cache enabled (use both L1 and L2 cache)
                                                                      (default: 0).
-   ``-Dtornado.ptx.compiler.CU_JIT_GENERATE_DEBUG_INFO=0``           Specifies whether to create debug information in output (-g) (0: false) (default 0).
-   ``-Dtornado.ptx.compiler.CU_JIT_LOG_VERBOSE=0``                   Generate verbose log messages (0: false) (default 0).
-   ``-Dtornado.ptx.compiler.CU_JIT_GENERATE_LINE_INFO=0``            Generate line number information (-lineinfo) (0: false) (default 0).
+   ``CU_JIT_GENERATE_DEBUG_INFO``                                    Specifies whether to create debug information in output (-g) (0: false) (default 0).
+   ``CU_JIT_LOG_VERBOSE``                                            Generate verbose log messages (0: false) (default 0).
+   ``CU_JIT_GENERATE_LINE_INFO``                                     Generate line number information (-lineinfo) (0: false) (default 0).
    ================================================================  ==================================================================================================================
 
 Level Zero (SPIR-V Specific)
