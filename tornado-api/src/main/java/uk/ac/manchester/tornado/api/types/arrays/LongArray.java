@@ -68,7 +68,7 @@ public final class LongArray extends TornadoNativeArray {
      * @param existingSegment
      *     The {@link MemorySegment} containing both the header and the off-heap float data.
      */
-    public LongArray(MemorySegment existingSegment) {
+    private LongArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / LONG_BYTES;
 
@@ -151,6 +151,18 @@ public final class LongArray extends TornadoNativeArray {
         LongArray longArray = new LongArray(numElements);
         MemorySegment.copy(segment, 0, longArray.segment, (long) longArray.baseIndex * LONG_BYTES, byteSize);
         return longArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link LongArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *      The {@link MemorySegment} containing *both* the off-heap long *header* and *data*.
+     * @return A new {@link LongArray} instance that wraps the given segment.
+     */
+    public static LongArray fromSegmentShallow(MemorySegment segment) {
+        return new LongArray(segment);
     }
 
     /**

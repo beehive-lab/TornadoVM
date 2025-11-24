@@ -69,7 +69,7 @@ public final class ShortArray extends TornadoNativeArray {
      * @param existingSegment
      *     The {@link MemorySegment} containing both the header and the off-heap float data.
      */
-    public ShortArray(MemorySegment existingSegment) {
+    private ShortArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / SHORT_BYTES;
 
@@ -152,6 +152,18 @@ public final class ShortArray extends TornadoNativeArray {
         ShortArray shortArray = new ShortArray(numElements);
         MemorySegment.copy(segment, 0, shortArray.segment, (long) shortArray.baseIndex * SHORT_BYTES, byteSize);
         return shortArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link ShortArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *      The {@link MemorySegment} containing *both* the off-heap short *header* and *data*.
+     * @return A new {@link ShortArray} instance that wraps the given segment.
+     */
+    public static ShortArray fromSegmentShallow(MemorySegment segment) {
+        return new ShortArray(segment);
     }
 
     /**

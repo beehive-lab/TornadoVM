@@ -70,7 +70,7 @@ public final class DoubleArray extends TornadoNativeArray {
      * @param existingSegment
      *     The {@link MemorySegment} containing both the header and the off-heap float data.
      */
-    public DoubleArray(MemorySegment existingSegment) {
+    private DoubleArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / DOUBLE_BYTES;
 
@@ -153,6 +153,18 @@ public final class DoubleArray extends TornadoNativeArray {
         DoubleArray doubleArray = new DoubleArray(numElements);
         MemorySegment.copy(segment, 0, doubleArray.segment, (long) doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
         return doubleArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link DoubleArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *      The {@link MemorySegment} containing *both* the off-heap double *header* and *data*.
+     * @return A new {@link DoubleArray} instance that wraps the given segment.
+     */
+    public static DoubleArray fromSegmentShallow(MemorySegment segment) {
+        return new DoubleArray(segment);
     }
 
     /**

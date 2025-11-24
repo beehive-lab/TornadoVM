@@ -71,7 +71,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @param existingSegment
      *     The {@link MemorySegment} containing both the header and the off-heap float data.
      */
-    public HalfFloatArray(MemorySegment existingSegment) {
+    private HalfFloatArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / HALF_FLOAT_BYTES;
 
@@ -154,6 +154,18 @@ public final class HalfFloatArray extends TornadoNativeArray {
         HalfFloatArray halfFloatArray = new HalfFloatArray(numElements);
         MemorySegment.copy(segment, 0, halfFloatArray.segment, (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
         return halfFloatArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link HalfFloatArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *      The {@link MemorySegment} containing *both* the off-heap half-float *header* and *data*.
+     * @return A new {@link HalfFloatArray} instance that wraps the given segment.
+     */
+    public static HalfFloatArray fromSegmentShallow(MemorySegment segment) {
+        return new HalfFloatArray(segment);
     }
 
     /**

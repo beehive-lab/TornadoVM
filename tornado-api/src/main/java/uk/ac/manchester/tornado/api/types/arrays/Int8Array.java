@@ -63,7 +63,7 @@ public final class Int8Array extends TornadoNativeArray {
      * @param existingSegment
      *     The {@link MemorySegment} containing both the header and the off-heap float data.
      */
-    public Int8Array(MemorySegment existingSegment) {
+    private Int8Array(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / INT8_BYTES;
 
@@ -144,6 +144,18 @@ public final class Int8Array extends TornadoNativeArray {
         Int8Array int8Array = new Int8Array(numElements);
         MemorySegment.copy(segment, 0, int8Array.segment, (long) int8Array.baseIndex, numElements);
         return int8Array;
+    }
+
+    /**
+     * Creates a new instance of the {@link Int8Array} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *      The {@link MemorySegment} containing *both* the off-heap int8 *header* and *data*.
+     * @return A new {@link Int8Array} instance that wraps the given segment.
+     */
+    public static Int8Array fromSegmentShallow(MemorySegment segment) {
+        return new Int8Array(segment);
     }
 
     /**

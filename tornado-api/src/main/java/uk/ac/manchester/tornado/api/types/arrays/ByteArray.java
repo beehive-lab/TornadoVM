@@ -68,7 +68,7 @@ public final class ByteArray extends TornadoNativeArray {
      * @param existingSegment
      *     The {@link MemorySegment} containing both the header and the off-heap float data.
      */
-    public ByteArray(MemorySegment existingSegment) {
+    private ByteArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / BYTE_BYTES;
 
@@ -151,6 +151,18 @@ public final class ByteArray extends TornadoNativeArray {
         ByteArray byteArray = new ByteArray(numElements);
         MemorySegment.copy(segment, 0, byteArray.segment, (long) byteArray.baseIndex * BYTE_BYTES, byteSize);
         return byteArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link ByteArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *      The {@link MemorySegment} containing *both* the off-heap byte *header* and *data*.
+     * @return A new {@link ByteArray} instance that wraps the given segment.
+     */
+    public static ByteArray fromSegmentShallow(MemorySegment segment) {
+        return new ByteArray(segment);
     }
 
     /**
