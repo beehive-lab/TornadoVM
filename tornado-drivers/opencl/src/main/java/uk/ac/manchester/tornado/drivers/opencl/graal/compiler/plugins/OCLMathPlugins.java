@@ -59,6 +59,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -93,6 +94,28 @@ public class OCLMathPlugins {
         registerIntMath1Plugins(registration, byte.class, JavaKind.Byte);
         registerIntMath2Plugins(registration, byte.class, JavaKind.Byte);
         registerIntMath3Plugins(registration, byte.class, JavaKind.Byte);
+
+        registerHalfFloatMathPlugins(registration);
+    }
+
+    private static void registerHalfFloatMathPlugins(Registration r) {
+        r.register(new InvocationPlugin("min", HalfFloat.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                // Since HalfFloat is represented as short internally, we use JavaKind.Short
+                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Short)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("max", HalfFloat.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                // Since HalfFloat is represented as short internally, we use JavaKind.Short
+                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Short)));
+                return true;
+            }
+        });
     }
 
     private static void registerFloatMath1Plugins(Registration r, Class<?> type, JavaKind kind) {

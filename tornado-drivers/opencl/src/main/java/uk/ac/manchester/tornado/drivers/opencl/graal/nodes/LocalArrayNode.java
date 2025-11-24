@@ -61,7 +61,15 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.memoryRegister = memoryRegister;
         this.length = length;
         this.kind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementType, kind);
+    }
+
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ValueNode length, OCLKind kind) {
+        super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.kind = kind;
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementType, this.kind);
     }
 
     public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementKind, ValueNode length) {
@@ -69,7 +77,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.memoryRegister = memoryRegister;
         this.length = length;
         this.kind = OCLKind.fromResolvedJavaKind(elementKind);
-        this.arrayTemplate = OCLKind.resolveTemplateType(elementKind);
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementKind, kind);
     }
 
     public OCLArchitecture.OCLMemoryBase getMemoryRegister() {
@@ -78,6 +86,10 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
 
     public ValueNode getLength() {
         return length;
+    }
+
+    public OCLKind getOCLKind() {
+        return kind;
     }
 
     @Override

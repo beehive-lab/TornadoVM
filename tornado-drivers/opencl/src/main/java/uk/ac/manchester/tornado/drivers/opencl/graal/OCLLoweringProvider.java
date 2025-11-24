@@ -105,6 +105,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
@@ -378,14 +380,20 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead;
-        if (loadIndexed instanceof LoadIndexedVectorNode) {
-            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getOCLKind() == OCLKind.HALF) {
+            ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
+            loadIndexed.replaceAtUsages(localHalfFloatRead);
+            graph.replaceFixed(loadIndexed, localHalfFloatRead);
         } else {
-            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            ReadNode memoryRead;
+            if (loadIndexed instanceof LoadIndexedVectorNode) {
+                memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            } else {
+                memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            }
+            loadIndexed.replaceAtUsages(memoryRead);
+            graph.replaceFixed(loadIndexed, memoryRead);
         }
-        loadIndexed.replaceAtUsages(memoryRead);
-        graph.replaceFixed(loadIndexed, memoryRead);
     }
 
     @Override
@@ -395,9 +403,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, value, array, address, graph, storeIndexed);
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getOCLKind() == OCLKind.HALF) {
+            WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index()));
+            graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
+        } else {
+            AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, value, array, address, graph, storeIndexed);
+            memoryWrite.setStateAfter(storeIndexed.stateAfter());
+            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+        }
     }
 
     @Override

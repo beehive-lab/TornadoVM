@@ -68,6 +68,13 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.elementKind = SPIRVKind.fromJavaKind(elementType.getJavaKind());
     }
 
+    public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ValueNode length, SPIRVKind kind) {
+        super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
+        this.memoryBase = memoryBase;
+        this.length = length;
+        this.elementKind = kind;
+    }
+
     public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, JavaKind elementType, ValueNode length) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.memoryBase = memoryBase;
@@ -81,6 +88,10 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
 
     public ValueNode getLength() {
         return length;
+    }
+
+    public SPIRVKind getSPIRVKind() {
+        return elementKind;
     }
 
     @Override

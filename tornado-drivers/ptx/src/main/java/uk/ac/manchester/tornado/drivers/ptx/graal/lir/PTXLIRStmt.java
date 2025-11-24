@@ -1136,6 +1136,12 @@ public class PTXLIRStmt {
         @Use
         PTXNullaryOp loadOp;
 
+        @Use
+        protected Value index;
+
+        @Use
+        protected Value localArray;
+
         public HalfFloatLoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op) {
             super(TYPE);
             this.dest = dest;
@@ -1143,8 +1149,22 @@ public class PTXLIRStmt {
             this.address = address;
         }
 
-        @Override
-        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public HalfFloatLoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op, Value index, Value localArray) {
+            super(TYPE);
+            this.dest = dest;
+            this.loadOp = op;
+            this.address = address;
+            this.index = index;
+            this.localArray = localArray;
+        }
+
+        private boolean isLocalOrSharedLoad() {
+            return address.getBase().memorySpace == PTXMemorySpace.LOCAL ||
+                    address.getBase().memorySpace == PTXMemorySpace.SHARED;
+        }
+
+        public void emitPointerBaseIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: ld.global.b16 dest, [address];
             loadOp.emit(crb, null);
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.getName());
@@ -1157,6 +1177,36 @@ public class PTXLIRStmt {
             address.emit(crb, asm, null);
             asm.delimiter();
             asm.eol();
+        }
+
+        public void emitIntegerBasedIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: ld.shared.b16 dest, arrayName[index];
+            loadOp.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit("shared");
+            asm.emit(DOT + PTXKind.B16);
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA);
+            asm.space();
+
+            asm.emitValue(localArray);
+            asm.emit("[");
+            asm.emitValue(index);
+            asm.emit("]");
+
+            asm.delimiter();
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            if (isLocalOrSharedLoad()) {
+                emitIntegerBasedIndexCode(crb, asm);
+            } else {
+                emitPointerBaseIndexCode(crb, asm);
+            }
         }
     }
 
@@ -1267,6 +1317,11 @@ public class PTXLIRStmt {
         protected Value rhs;
         @Use
         protected PTXUnary.MemoryAccess address;
+        @Use
+        protected Value index;
+
+        @Use
+        protected Value localArray;
 
         public HalfFloatStoreStmt(PTXUnary.MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -1274,7 +1329,21 @@ public class PTXLIRStmt {
             this.address = address;
         }
 
-        public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public HalfFloatStoreStmt(PTXUnary.MemoryAccess address, Value rhs, Value index, Value localArray) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.address = address;
+            this.index = index;
+            this.localArray = localArray;
+        }
+
+        private boolean isLocalOrSharedLoad() {
+            return address.getBase().memorySpace == PTXMemorySpace.LOCAL ||
+                    address.getBase().memorySpace == PTXMemorySpace.SHARED;
+        }
+
+        public void emitPointerBaseIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: st.global.b16 [address], value;
             PTXNullaryOp.ST.emit(crb, null);
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.getName());
@@ -1290,9 +1359,35 @@ public class PTXLIRStmt {
             asm.eol();
         }
 
+        public void emitIntegerBasedIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: st.shared.b16 arrayName[index], value;
+            PTXNullaryOp.ST.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit("shared");
+            asm.emit(DOT + PTXKind.B16);
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(localArray);
+            asm.emit("[");
+            asm.emitValue(index);
+            asm.emit("]");
+
+            asm.emitSymbol(COMMA);
+            asm.space();
+
+            asm.emitValueOrOp(crb, rhs, null);
+
+            asm.delimiter();
+            asm.eol();
+        }
+
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            emitNormalCode(crb, asm);
+            if (isLocalOrSharedLoad()) {
+                emitIntegerBasedIndexCode(crb, asm);
+            } else {
+                emitPointerBaseIndexCode(crb, asm);
+            }
         }
     }
 

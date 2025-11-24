@@ -28,6 +28,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -47,17 +48,35 @@ public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable
 
     @Input
     private AddressNode addressNode;
+    @Input
+    private ValueNode indexNode;
+    @Input
+    private ValueNode localMemoryArrayNode;
 
     public ReadHalfFloatNode(AddressNode addressNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
     }
 
+    public ReadHalfFloatNode(AddressNode addressNode, ValueNode indexNode, ValueNode localMemoryArrayNode) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.indexNode = indexNode;
+        this.localMemoryArrayNode = localMemoryArrayNode;
+    }
+
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(LIRKind.value(PTXKind.F16));
         Value addressValue = generator.operand(addressNode);
-        tool.append(new PTXLIRStmt.HalfFloatLoadStmt((PTXUnary.MemoryAccess) addressValue, result, PTXAssembler.PTXNullaryOp.LD));
+        if (indexNode == null) {
+            // if the index is not passed, this is not a local/shared array access
+            tool.append(new PTXLIRStmt.HalfFloatLoadStmt((PTXUnary.MemoryAccess) addressValue, result, PTXAssembler.PTXNullaryOp.LD));
+        } else {
+            Value index = generator.operand(indexNode);
+            Value localArray = generator.operand(localMemoryArrayNode);
+            tool.append(new PTXLIRStmt.HalfFloatLoadStmt((PTXUnary.MemoryAccess) addressValue, result, PTXAssembler.PTXNullaryOp.LD, index, localArray));
+        }
         generator.setResult(this, result);
     }
 }

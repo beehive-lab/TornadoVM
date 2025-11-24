@@ -49,10 +49,20 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
     @Input
     private ValueNode valueNode;
 
+    @Input
+    private ValueNode indexNode;
+
     public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
         this.valueNode = valueNode;
+    }
+
+    public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode, ValueNode indexNode) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.valueNode = valueNode;
+        this.indexNode = indexNode;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -61,6 +71,12 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
         OCLArchitecture.OCLMemoryBase base = ((OCLUnary.MemoryAccess) addressValue).getBase();
         OCLUnary.OCLAddressCast cast = new OCLUnary.OCLAddressCast(base, LIRKind.value(OCLKind.HALF));
         Value input = generator.operand(valueNode);
-        tool.append(new OCLLIRStmt.StoreStmt(cast, (OCLUnary.MemoryAccess) addressValue, input));
+        if (indexNode == null) {
+            // if the index is not passed, this is not a local/shared array access
+            tool.append(new OCLLIRStmt.StoreStmt(cast, (OCLUnary.MemoryAccess) addressValue, input));
+        } else {
+            Value index = generator.operand(indexNode);
+            tool.append(new OCLLIRStmt.StoreStmt(cast, (OCLUnary.MemoryAccess) addressValue, input, index));
+        }
     }
 }

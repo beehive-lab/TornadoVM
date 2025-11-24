@@ -362,13 +362,27 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
-    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind) {
         r.register(new InvocationPlugin("allocateByteLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                // if we do not pass the resolved type, the compiler cannot deduct if the type is char or byte
                 MetaAccessProvider metaAccess = b.getMetaAccess();
                 ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
                 LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, size);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalfFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(short.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.localSpace, resolvedElementType, size, PTXKind.F16);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -390,8 +404,10 @@ public class PTXGraphBuilderPlugins {
         elementType = PTXKind.B64.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
 
-        elementType = PTXKind.S8.asJavaKind();
-        registerByteLocalArray(r, returnedJavaKind, elementType);
+        registerByteLocalArray(r, returnedJavaKind);
+
+        returnedJavaKind = JavaKind.fromJavaClass(short.class);
+        registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
