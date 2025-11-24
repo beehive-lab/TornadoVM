@@ -24,6 +24,7 @@ import static uk.ac.manchester.tornado.api.types.utils.DoubleOps.compareULP;
 import static uk.ac.manchester.tornado.api.types.utils.FloatOps.compare;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -63,6 +64,11 @@ public class TornadoMath {
         return (a > b) ? b : a;
     }
 
+    public static HalfFloat min(HalfFloat a, HalfFloat b) {
+        return (a.getHalfFloatValue() > b.getHalfFloatValue()) ? b : a;
+    }
+
+
     public static double max(double a, double b) {
         return Math.max(a, b);
     }
@@ -85,6 +91,10 @@ public class TornadoMath {
 
     public static byte max(byte a, byte b) {
         return (a > b) ? a : b;
+    }
+
+    public static HalfFloat max(HalfFloat a, HalfFloat b) {
+        return (a.getHalfFloatValue() > b.getHalfFloatValue()) ? a : b;
     }
 
     public static float abs(float a) {

@@ -282,7 +282,7 @@ public enum OCLKind implements PlatformKind {
         };
     }
 
-    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type, OCLKind kind) {
         if (type == JavaKind.Int) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
         } else if (type == JavaKind.Double) {
@@ -290,7 +290,11 @@ public enum OCLKind implements PlatformKind {
         } else if (type == JavaKind.Float) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
         } else if (type == JavaKind.Short) {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+            if (kind == OCLKind.HALF) {
+                return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_HALF_FLOAT_ARRAY;
+            } else {
+                return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+            }
         } else if (type == JavaKind.Long) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
         } else if (type == JavaKind.Char || type == JavaKind.Byte) {
@@ -300,8 +304,8 @@ public enum OCLKind implements PlatformKind {
         return null;
     }
 
-    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
-        return resolveTemplateType(type.getJavaKind());
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type, OCLKind kind) {
+        return resolveTemplateType(type.getJavaKind(), kind);
     }
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivateTemplateType(ResolvedJavaType type) {
