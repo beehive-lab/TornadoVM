@@ -37,6 +37,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -54,11 +55,13 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class CUDAFieldBuffer implements XPUBuffer {
 
-    private static final int BYTES_OBJECT_REFERENCE = 8;
+    private final long bytesObjectReference;
+    private final boolean areCoopsEnabled;
     private final Class<?> type;
     private final PTXDeviceContext deviceContext;
     private long address;
@@ -77,6 +80,9 @@ public class CUDAFieldBuffer implements XPUBuffer {
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
+        this.areCoopsEnabled = TornadoOptions.coopsUsed();
+        this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
+
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
 
@@ -210,7 +216,16 @@ public class CUDAFieldBuffer implements XPUBuffer {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            buffer.putLong(wrappedFields[index].toBuffer());
+            if (areCoopsEnabled) {
+                // calculate the relative offset
+                long relativeOffset = wrappedFields[index].toBuffer() - this.toBuffer();
+                // Compress it by dividing by 8
+                int compressedOffset = (int) (relativeOffset / 8);
+                // Write compressed value
+                buffer.putInt(compressedOffset);
+            } else {
+                buffer.putLong(wrappedFields[index].toBuffer());
+            }
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -237,7 +252,11 @@ public class CUDAFieldBuffer implements XPUBuffer {
                 shouldNotReachHere("unable to read field: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            buffer.getLong();
+            if (areCoopsEnabled) {
+                buffer.getInt();
+            } else {
+                buffer.getLong();
+            }
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -420,7 +439,12 @@ public class CUDAFieldBuffer implements XPUBuffer {
         long size = fieldsOffset;
         if (fields.length > 0) {
             HotSpotResolvedJavaField field = fields[fields.length - 1];
-            size = field.getOffset() + ((field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount());
+            size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
+        }
+
+        // when coops are enabled, padding is required to ensure an 8-byte object alignment
+        if (areCoopsEnabled && (size % 8 != 0)) {
+            size = size + (8 - (size % 8));
         }
         return size;
     }

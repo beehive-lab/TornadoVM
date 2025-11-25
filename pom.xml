@@ -18,6 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
+        <tornado.backend>opencl</tornado.backend>
         <graalvm.version>23.1.0</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>

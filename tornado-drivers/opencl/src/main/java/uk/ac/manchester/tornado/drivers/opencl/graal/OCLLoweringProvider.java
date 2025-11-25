@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import java.util.Iterator;
 
@@ -93,6 +94,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
@@ -108,6 +110,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVec
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -406,10 +409,18 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
-        loadField.replaceAtUsages(memoryRead);
-        graph.replaceFixed(loadField, memoryRead);
+        boolean areCoopsEnabled = TornadoOptions.coopsUsed();
+        // if coops are used and the field is a not a primitive (primitive data is not compressed)
+        if (areCoopsEnabled && !field.getJavaKind().isPrimitive()) {
+            OCLDecompressedReadFieldNode decompressedNode = graph.add(new OCLDecompressedReadFieldNode(object, address, loadStamp));
+            loadField.replaceAtUsages(decompressedNode);
+            graph.replaceFixed(loadField, decompressedNode);
+        } else {
+            FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
+            ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            loadField.replaceAtUsages(memoryRead);
+            graph.replaceFixed(loadField, memoryRead);
+        }
     }
 
     @Override

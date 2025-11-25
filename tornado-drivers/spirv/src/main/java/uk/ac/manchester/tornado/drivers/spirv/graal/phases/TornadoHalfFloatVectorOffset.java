@@ -40,6 +40,7 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 
 import java.util.Optional;
@@ -53,8 +54,12 @@ import java.util.Optional;
 public class TornadoHalfFloatVectorOffset extends Phase {
 
     private static int HALF_SIZE = 2;
-    private static String OBJECT_OFFSET = "3";
     private static long HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
+    private static String object_offset;
+
+    public TornadoHalfFloatVectorOffset() {
+        object_offset = TornadoOptions.coopsUsed() ? "2" : "3";
+    }
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -97,7 +102,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
             // if the shifting is by 3 because the JavaKind of half is Object
-            if (currentOffset.getValue().toValueString().equals(OBJECT_OFFSET)) {
+            if (currentOffset.getValue().toValueString().equals(object_offset)) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);
@@ -116,7 +121,7 @@ public class TornadoHalfFloatVectorOffset extends Phase {
             LeftShiftNode leftShiftNode = index.inputs().filter(LeftShiftNode.class).first();
             ConstantNode currentOffset = leftShiftNode.inputs().filter(ConstantNode.class).first();
             // if the shifting is by 3 because the JavaKind of half is Object
-            if (currentOffset.getValue().toValueString().equals(OBJECT_OFFSET)) {
+            if (currentOffset.getValue().toValueString().equals(object_offset)) {
                 Constant shortOffset = new RawConstant(1);
                 ConstantNode shortOffsetNode = new ConstantNode(shortOffset, StampFactory.forKind(JavaKind.Int));
                 graph.addWithoutUnique(shortOffsetNode);

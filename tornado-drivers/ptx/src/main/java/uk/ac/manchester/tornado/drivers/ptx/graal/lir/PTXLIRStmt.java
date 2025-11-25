@@ -413,6 +413,103 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("CAST_COMPRESSED")
+    public static class CastCompressedStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<CastCompressedStmt> TYPE = LIRInstructionClass.create(CastCompressedStmt.class);
+
+        @Def
+        protected Value compressed;
+        @Use
+        protected Value address;
+
+        public CastCompressedStmt(Value compressed, Value address) {
+            super(TYPE);
+            this.compressed = compressed;
+            this.address = address;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            // casts an 8-byte address to a 4-byte pointer
+            // ld.global.u32 %r_compressed, [%r_address];
+            asm.emit("ld.global.u32");
+            asm.space();
+            asm.emitValue(compressed);
+            asm.emit(", [");
+            asm.emitValue(address);
+            asm.emit("]");
+            asm.delimiter();
+            asm.eol();
+
+        }
+
+    }
+
+    @Opcode("DECOMPRESS_POINTER")
+    public static class DecompressPointerStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<DecompressPointerStmt> TYPE = LIRInstructionClass.create(DecompressPointerStmt.class);
+        @Def
+        protected Value decompressed;
+        @Use
+        protected Value base;
+        @Use
+        protected Value compressed;
+        @Def
+        protected Value temp64;
+        @Def
+        protected Value tempShifted;
+
+        public DecompressPointerStmt(Value decompressed, Value base, Value compressed, Value temp64, Value tempShifted) {
+            super(TYPE);
+            this.decompressed = decompressed;
+            this.base = base;
+            this.compressed = compressed;
+            this.temp64 = temp64;
+            this.tempShifted = tempShifted;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Convert the 32-bit compressed value to 64-bit
+            // cvt.s64.s32 %temp64, %compressed;
+            asm.emitSymbol(TAB);
+            asm.emit("cvt.s64.s32");
+            asm.space();
+            asm.emitValue(temp64);
+            asm.emit(", ");
+            asm.emitValue(compressed);
+            asm.delimiter();
+            asm.eol();
+
+            // Shift the 64-bit value left by 3
+            // shl.b64 %tempShifted, %temp64, 3;
+            asm.emitSymbol(TAB);
+            asm.emit("shl.b64");
+            asm.space();
+            asm.emitValue(tempShifted);
+            asm.emit(", ");
+            asm.emitValue(temp64);
+            asm.emit(", 3");
+            asm.delimiter();
+            asm.eol();
+
+            // Add the base address to the shifted offset
+            // add.u64 %decompressed, %base, %tempShifted;
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64");
+            asm.space();
+            asm.emitValue(decompressed);
+            asm.emit(", ");
+            asm.emitValue(base);
+            asm.emit(", ");
+            asm.emitValue(tempShifted);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("DIVHALF")
     public static class DivideHalfFloatStmt extends AbstractInstruction {
 

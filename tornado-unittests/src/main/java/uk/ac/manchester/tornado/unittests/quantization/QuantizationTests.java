@@ -643,12 +643,6 @@ public class QuantizationTests extends TornadoTestBase {
             System.out.println("Execution result: " + result);
         }
 
-        System.out.println("First 10 max values (per-workgroup maxes):");
-        for (int i = 0; i < 10; i++) {
-            System.out.print(x_max.get(i) + " ");
-        }
-        System.out.println();
-
         matrixVectorSequential(outputSeq, weights, input, inputDim, outputDim);
 
         for (int i = 0; i < output.getSize(); i++) {

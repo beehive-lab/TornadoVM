@@ -2,7 +2,7 @@
 
 for /f %%b in (%TORNADO_SDK%\etc\tornado.backend) do set backends=%%b
 
-echo %backends% | findstr "\<opencl\>" >nul
+echo %backends% | findstr "\<opencl\>" >nul 2>nul
 if not errorlevel 1 (
 	echo:
 	echo Testing the native PTX API
@@ -10,7 +10,7 @@ if not errorlevel 1 (
 	python %TORNADO_SDK%\bin\tornado uk.ac.manchester.tornado.drivers.ptx.tests.TestPTXJITCompiler
 	python %TORNADO_SDK%\bin\tornado uk.ac.manchester.tornado.drivers.ptx.tests.TestPTXTornadoCompiler
 )
-echo %backends% | findstr "\<ptx\>" >nul
+echo %backends% | findstr "\<ptx\>" >nul 2>nul
 if not errorlevel 1 (
 	echo:
 	echo Testing the native OpenCL API
@@ -18,7 +18,7 @@ if not errorlevel 1 (
 	python %TORNADO_SDK%\bin\tornado uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLJITCompiler
 	python %TORNADO_SDK%\bin\tornado uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLTornadoCompiler
 )
-echo %backends% | findstr "\<spirv\>" >nul
+echo %backends% | findstr "\<spirv\>" >nul 2>nul
 if not errorlevel 1 (
 	echo:
 	echo Testing the native SPIR-V API

@@ -43,8 +43,10 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntr
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import java.lang.foreign.MemorySegment;
+import java.util.function.Supplier;
 
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
@@ -88,6 +90,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -107,6 +110,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsic
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLGraphBuilderPlugins {
@@ -269,19 +273,33 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, 3);
+        // Accessing the vmConfig during initialization was causing a NullPointerException.
+        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
+        Supplier<Integer> intHeaderSupplier = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
+            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
+        };
+
+        Supplier<Integer> longHeaderSupplier = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
+            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
+        };
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, intHeaderSupplier);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, intHeaderSupplier);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, longHeaderSupplier);
         registerUnsupportedAtomicAddPlugin(r);
         registerUnsupportedAtomicAddPlugin(r);
     }
 
-    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, OCLKind kind, int panamaOffset) {
+    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, OCLKind kind, Supplier<Integer> headerSupplier) {
         r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind javaKind = kind.asJavaKind();
-                AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
+                int header = headerSupplier.get();
+                AddressNode address = computeAddress(b, segment, index, header, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(b.append(atomicAddNode));
                 return true;
