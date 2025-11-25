@@ -74,13 +74,6 @@ public final class DoubleArray extends TornadoNativeArray {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / DOUBLE_BYTES;
 
-        // Validate segment size
-        if (existingSegment.byteSize() < segmentByteSize) {
-            throw new IllegalArgumentException(String.format(
-                    "Segment size (%d bytes) insufficient for %d elements (requires %d bytes)",
-                    existingSegment.byteSize(), numberOfElements, segmentByteSize));
-        }
-
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
         ensureMultipleOfElementSize(dataSize, DOUBLE_BYTES);
