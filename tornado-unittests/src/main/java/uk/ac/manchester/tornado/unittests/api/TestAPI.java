@@ -575,7 +575,7 @@ public class TestAPI extends TornadoTestBase {
         // Verify the calculated size and data
         assertEquals(n, byteArray.getSize());
         for (int i = 0; i < n; i++) {
-            assertEquals((byte) (20 + i), byteArray.get(i), 0.001f);
+            assertEquals((byte) (20 + i), byteArray.get(i));
         }
     }
 
@@ -601,7 +601,7 @@ public class TestAPI extends TornadoTestBase {
         // Verify the calculated size and data
         assertEquals(n, charArray.getSize());
         for (int i = 0; i < n; i++) {
-            assertEquals((char) 20 + i, charArray.get(i), 0.001f);
+            assertEquals((char) 20 + i, charArray.get(i));
         }
     }
 
@@ -653,7 +653,7 @@ public class TestAPI extends TornadoTestBase {
         // Verify the calculated size and data
         assertEquals(n, int8Array.getSize());
         for (int i = 0; i < n; i++) {
-            assertEquals((byte) (20 + i), int8Array.get(i), 0.001f);
+            assertEquals((byte) (20 + i), int8Array.get(i));
         }
     }
 
@@ -679,7 +679,7 @@ public class TestAPI extends TornadoTestBase {
         // Verify the calculated size and data
         assertEquals(n, intArray.getSize());
         for (int i = 0; i < n; i++) {
-            assertEquals(20 + i, intArray.get(i), 0.001f);
+            assertEquals(20 + i, intArray.get(i));
         }
     }
 
@@ -705,7 +705,7 @@ public class TestAPI extends TornadoTestBase {
         // Verify the calculated size and data
         assertEquals(n, longArray.getSize());
         for (int i = 0; i < n; i++) {
-            assertEquals(20 + i, longArray.get(i), 0.001f);
+            assertEquals(20 + i, longArray.get(i));
         }
     }
 
@@ -731,7 +731,7 @@ public class TestAPI extends TornadoTestBase {
         // Verify the calculated size and data
         assertEquals(n, shortArray.getSize());
         for (int i = 0; i < n; i++) {
-            assertEquals((short) (20 + i), shortArray.get(i), 0.001f);
+            assertEquals((short) (20 + i), shortArray.get(i));
         }
     }
 
