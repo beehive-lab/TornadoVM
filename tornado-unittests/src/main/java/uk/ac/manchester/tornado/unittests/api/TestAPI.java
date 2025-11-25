@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.*;
-import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -58,7 +57,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsByte() {
         ByteArray dataA = ByteArray.fromElements((byte) 0, (byte) 1, (byte) 2, (byte) 3);
-        ByteArray dataB = ByteArray.fromArray(new byte[] { 0, 1, 2, 3 });
+        ByteArray dataB = ByteArray.fromArray(new byte[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i));
@@ -77,7 +76,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsChar() {
         CharArray dataA = CharArray.fromElements((char) 0, (char) 1, (char) 2, (char) 3);
-        CharArray dataB = CharArray.fromArray(new char[] { 0, 1, 2, 3 });
+        CharArray dataB = CharArray.fromArray(new char[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i));
@@ -96,7 +95,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsShort() {
         ShortArray dataA = ShortArray.fromElements((short) 0, (short) 1, (short) 2, (short) 3);
-        ShortArray dataB = ShortArray.fromArray(new short[] { 0, 1, 2, 3 });
+        ShortArray dataB = ShortArray.fromArray(new short[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i));
@@ -115,7 +114,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsIntegers() {
         IntArray dataA = IntArray.fromElements(0, 1, 2, 3);
-        IntArray dataB = IntArray.fromArray(new int[] { 0, 1, 2, 3 });
+        IntArray dataB = IntArray.fromArray(new int[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i));
@@ -134,7 +133,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsLong() {
         LongArray dataA = LongArray.fromElements(0, 1, 2, 3);
-        LongArray dataB = LongArray.fromArray(new long[] { 0, 1, 2, 3 });
+        LongArray dataB = LongArray.fromArray(new long[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i));
@@ -153,7 +152,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsFloats() {
         FloatArray dataA = FloatArray.fromElements(0, 1, 2, 3);
-        FloatArray dataB = FloatArray.fromArray(new float[] { 0, 1, 2, 3 });
+        FloatArray dataB = FloatArray.fromArray(new float[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i), 0.01f);
@@ -172,7 +171,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsDouble() {
         DoubleArray dataA = DoubleArray.fromElements(0, 1, 2, 3);
-        DoubleArray dataB = DoubleArray.fromArray(new double[] { 0, 1, 2, 3 });
+        DoubleArray dataB = DoubleArray.fromArray(new double[]{0, 1, 2, 3});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i), dataB.get(i), 0.001);
@@ -194,7 +193,7 @@ public class TestAPI extends TornadoTestBase {
     @Test
     public void testSegmentsHalfFloats() {
         HalfFloatArray dataA = HalfFloatArray.fromElements(new HalfFloat(0), new HalfFloat(1), new HalfFloat(2), new HalfFloat(3));
-        HalfFloatArray dataB = HalfFloatArray.fromArray(new HalfFloat[] { new HalfFloat(0), new HalfFloat(1), new HalfFloat(2), new HalfFloat(3) });
+        HalfFloatArray dataB = HalfFloatArray.fromArray(new HalfFloat[]{new HalfFloat(0), new HalfFloat(1), new HalfFloat(2), new HalfFloat(3)});
 
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(dataA.get(i).getFloat32(), dataB.get(i).getFloat32(), 0.01f);
@@ -644,7 +643,7 @@ public class TestAPI extends TornadoTestBase {
         // Set values in the data section
         long headerOffset = headerSize / ValueLayout.JAVA_BYTE.byteSize();
         for (int i = 0; i < n; i++) {
-            segment.setAtIndex(ValueLayout.JAVA_BYTE, headerOffset + i, (byte)(20 + i));
+            segment.setAtIndex(ValueLayout.JAVA_BYTE, headerOffset + i, (byte) (20 + i));
         }
 
         // Create Int8Array using fromSegmentShallow method
