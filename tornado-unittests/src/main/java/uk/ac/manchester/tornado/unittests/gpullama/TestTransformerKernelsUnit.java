@@ -933,8 +933,12 @@ public class TestTransformerKernelsUnit extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s_flash.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph taskGraphFlash = new TaskGraph("s_flash").transferToDevice(DataTransferMode.EVERY_EXECUTION, q, keyCache, valueCache, positionHolder).task("t0", GPULlama3Kernels::processHeadsFlashAttention,
-                context, q, keyCache, valueCache, xbFlash, nHeads, headSize, kvDim, kvMul, positionHolder, layer, contextLength).transferToHost(DataTransferMode.EVERY_EXECUTION, xbFlash);
+        // @formatter:off
+        TaskGraph taskGraphFlash = new TaskGraph("s_flash")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, q, keyCache, valueCache, positionHolder)
+                .task("t0", GPULlama3Kernels::processHeadsFlashAttention, context, q, keyCache, valueCache, xbFlash, nHeads, headSize, kvDim, kvMul, positionHolder, layer, contextLength)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, xbFlash);
+        // @formatter:on
 
         ImmutableTaskGraph immutableTaskGraphFlash = taskGraphFlash.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraphFlash)) {

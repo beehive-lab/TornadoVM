@@ -695,14 +695,6 @@ public class TestTransformerKernelsFused extends TornadoTestBase {
 
         assertArrayEquals("Stage 8: Complete transformer layer output", expectedX, x, EPSILON_ACCUMULATED);
 
-        // Print detailed comparison for debugging
-        System.out.println("Complete transformer layer - sample comparison:");
-        for (int i = 0; i < Math.min(10, DIM); i++) {
-            float expected = expectedX.get(i);
-            float actual = x.get(i);
-            float diff = Math.abs(expected - actual);
-            System.out.printf("  x[%d]: expected=%.6f, actual=%.6f, diff=%.6f%n", i, expected, actual, diff);
-        }
     }
 
     // ==================== Multi-Iteration Test ====================
