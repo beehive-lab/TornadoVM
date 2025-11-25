@@ -66,7 +66,7 @@ public final class CharArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param existingSegment
-     *     The {@link MemorySegment} containing both the header and the off-heap float data.
+     *     The {@link MemorySegment} containing *both* the off-heap char *header* and *data*.
      */
     private CharArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;

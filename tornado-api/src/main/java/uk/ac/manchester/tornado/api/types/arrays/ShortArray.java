@@ -67,7 +67,7 @@ public final class ShortArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param existingSegment
-     *     The {@link MemorySegment} containing both the header and the off-heap float data.
+     *     The {@link MemorySegment} containing *both* the off-heap short *header* and *data*.
      */
     private ShortArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;

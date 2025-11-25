@@ -61,7 +61,7 @@ public final class Int8Array extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param existingSegment
-     *     The {@link MemorySegment} containing both the header and the off-heap float data.
+     *     The {@link MemorySegment} containing *both* the off-heap int8 *header* and *data*.
      */
     private Int8Array(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;

@@ -66,7 +66,7 @@ public final class LongArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param existingSegment
-     *     The {@link MemorySegment} containing both the header and the off-heap float data.
+     *     The {@link MemorySegment} containing *both* the off-heap long *header* and *data*.
      */
     private LongArray(MemorySegment existingSegment) {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
