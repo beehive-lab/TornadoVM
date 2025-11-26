@@ -154,7 +154,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap half-float *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap half-float *header* and *data*.
      * @return A new {@link HalfFloatArray} instance that wraps the given segment.
      */
     public static HalfFloatArray fromSegmentShallow(MemorySegment segment) {

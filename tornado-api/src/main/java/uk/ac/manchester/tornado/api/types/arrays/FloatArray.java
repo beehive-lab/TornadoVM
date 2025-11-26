@@ -153,7 +153,7 @@ public final class FloatArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap float *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap float *header* and *data*.
      * @return A new {@link FloatArray} instance that wraps the given segment.
      */
     public static FloatArray fromSegmentShallow(MemorySegment segment) {

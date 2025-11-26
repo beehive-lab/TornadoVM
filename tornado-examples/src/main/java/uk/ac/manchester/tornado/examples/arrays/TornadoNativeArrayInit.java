@@ -134,13 +134,12 @@ public class TornadoNativeArrayInit {
         System.out.println("Testing FloatArray initialization methods\n");
 
         // Test different array sizes
-        int[] sizes = {1_000, 10_000, 100_000, 1_000_000};
+        int[] sizes = { 1_000, 10_000, 100_000, 1_000_000 };
         int iterations = 100;
 
         for (int size : sizes) {
             System.out.println("=".repeat(80));
-            System.out.printf("Performance Benchmark - Array Size: %,d elements (%s), Iterations: %,d\n",
-                    size, formatArraySize(size), iterations);
+            System.out.printf("Performance Benchmark - Array Size: %,d elements (%s), Iterations: %,d\n", size, formatArraySize(size), iterations);
             System.out.printf("Header Size: %d bytes\n", TornadoNativeArray.ARRAY_HEADER);
             System.out.println("=".repeat(80));
 

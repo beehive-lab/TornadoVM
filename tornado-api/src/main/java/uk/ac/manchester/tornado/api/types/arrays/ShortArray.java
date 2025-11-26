@@ -152,7 +152,7 @@ public final class ShortArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap short *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap short *header* and *data*.
      * @return A new {@link ShortArray} instance that wraps the given segment.
      */
     public static ShortArray fromSegmentShallow(MemorySegment segment) {

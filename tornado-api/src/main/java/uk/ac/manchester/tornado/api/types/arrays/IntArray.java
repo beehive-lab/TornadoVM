@@ -150,7 +150,7 @@ public final class IntArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap int *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap int *header* and *data*.
      * @return A new {@link IntArray} instance that wraps the given segment.
      */
     public static IntArray fromSegmentShallow(MemorySegment segment) {

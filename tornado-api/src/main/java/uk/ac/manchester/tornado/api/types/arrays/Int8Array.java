@@ -144,7 +144,7 @@ public final class Int8Array extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap int8 *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap int8 *header* and *data*.
      * @return A new {@link Int8Array} instance that wraps the given segment.
      */
     public static Int8Array fromSegmentShallow(MemorySegment segment) {

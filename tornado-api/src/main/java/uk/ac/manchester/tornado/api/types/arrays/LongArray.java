@@ -151,7 +151,7 @@ public final class LongArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap long *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap long *header* and *data*.
      * @return A new {@link LongArray} instance that wraps the given segment.
      */
     public static LongArray fromSegmentShallow(MemorySegment segment) {

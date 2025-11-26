@@ -153,7 +153,7 @@ public final class DoubleArray extends TornadoNativeArray {
      * without copying its contents.
      *
      * @param segment
-     *      The {@link MemorySegment} containing *both* the off-heap double *header* and *data*.
+     *     The {@link MemorySegment} containing *both* the off-heap double *header* and *data*.
      * @return A new {@link DoubleArray} instance that wraps the given segment.
      */
     public static DoubleArray fromSegmentShallow(MemorySegment segment) {
