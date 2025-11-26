@@ -65,6 +65,28 @@ public final class HalfFloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new instance of the {@link HalfFloatArray} by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param existingSegment
+     *     The {@link MemorySegment} containing *both* the off-heap half-float *header* and *data*.
+     */
+    private HalfFloatArray(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / HALF_FLOAT_BYTES;
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, HALF_FLOAT_BYTES);
+        this.numberOfElements = (int) (dataSize / HALF_FLOAT_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = existingSegment;
+        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
      * Constructs a new {@link HalfFloatArray} instance by concatenating the contents of the given array of {@link HalfFloatArray} instances.
      *
      * @param arrays
@@ -125,6 +147,18 @@ public final class HalfFloatArray extends TornadoNativeArray {
         HalfFloatArray halfFloatArray = new HalfFloatArray(numElements);
         MemorySegment.copy(segment, 0, halfFloatArray.segment, (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
         return halfFloatArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link HalfFloatArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing *both* the off-heap half-float *header* and *data*.
+     * @return A new {@link HalfFloatArray} instance that wraps the given segment.
+     */
+    public static HalfFloatArray fromSegmentShallow(MemorySegment segment) {
+        return new HalfFloatArray(segment);
     }
 
     /**

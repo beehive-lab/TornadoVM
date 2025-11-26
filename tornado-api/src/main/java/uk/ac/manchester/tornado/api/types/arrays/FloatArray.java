@@ -64,6 +64,28 @@ public final class FloatArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new instance of the {@link FloatArray} by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param existingSegment
+     *     The {@link MemorySegment} containing *both* the off-heap float *header* and *data*.
+     */
+    private FloatArray(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / FLOAT_BYTES;
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, FLOAT_BYTES);
+        this.numberOfElements = (int) (dataSize / FLOAT_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = existingSegment;
+        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
      * Constructs a new {@link FloatArray} instance by concatenating the contents of the given array of {@link FloatArray} instances.
      *
      * @param arrays
@@ -124,6 +146,18 @@ public final class FloatArray extends TornadoNativeArray {
         FloatArray floatArray = new FloatArray(numElements);
         MemorySegment.copy(segment, 0, floatArray.segment, (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link FloatArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing *both* the off-heap float *header* and *data*.
+     * @return A new {@link FloatArray} instance that wraps the given segment.
+     */
+    public static FloatArray fromSegmentShallow(MemorySegment segment) {
+        return new FloatArray(segment);
     }
 
     /**
