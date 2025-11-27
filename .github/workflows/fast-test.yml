@@ -3,7 +3,7 @@ name: Build on [push]
 on:
   push:
     branches: [feat/ci, develop, master]
-  pull_request:                              # Fixed: was incorrectly nested
+  pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -16,7 +16,8 @@ env:
 
 jobs:
   code-quality:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4            # Updated from v3
@@ -28,8 +29,9 @@ jobs:
 
   # OpenCL first
   build-opencl:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     needs: code-quality
+    timeout-minutes: 20
     env:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
@@ -63,8 +65,9 @@ jobs:
 
   # PTX after OpenCL
   build-ptx:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     needs: build-opencl                      # Waits for OpenCL
+    timeout-minutes: 20
     env:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
@@ -97,8 +100,9 @@ jobs:
 
   # SPIRV parallel with OpenCL/PTX chain
   build-spirv:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     needs: code-quality                      # Only waits for code-quality
+    timeout-minutes: 20
     env:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
