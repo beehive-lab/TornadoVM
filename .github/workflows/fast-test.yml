@@ -2,7 +2,7 @@ name: Build on [push]
 
 on:
   push:
-    branches: [feat/ci, develop, master]
+    branches: [master]
   pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened]
