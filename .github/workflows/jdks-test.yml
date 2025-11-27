@@ -1,4 +1,4 @@
-name: TornadoVM CI
+name: JDKs Test
 
 on:
   push:
