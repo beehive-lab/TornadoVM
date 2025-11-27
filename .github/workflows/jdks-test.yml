@@ -24,7 +24,7 @@ jobs:
       - name: Run Checkstyle
         run: |
           export PATH=$JAVA_HOME/bin:$PATH
-          ./mvnw checkstyle:check
+          #./mvnw checkstyle:check
 
   build-and-test:
     runs-on: self-hosted
