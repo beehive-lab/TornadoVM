@@ -1,0 +1,82 @@
+name: Build on [push]
+
+on:
+  push:
+    branches:
+      - feat/ci
+      - develop
+    pull_request:
+      branches: [ develop ]
+      types: [ opened, synchronize,  reopened ]
+  workflow_dispatch:
+
+jobs:
+  fast-test:
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [opencl, ptx, spirv]
+
+    env:
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-${{ matrix.backend }}
+      PATH: /opt/maven/bin:${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      KFUSION_ROOT: ${{ github.workspace }}/../kfusion-tornadovm
+      TORNADO_RAY_TRACER_ROOT: ${{ github.workspace }}/../TornadoVM-Ray-Tracer
+      JAVAFX_SDK: ${{ github.workspace }}/../TornadoVM-Ray-Tracer/javafx-sdk-21.0.3/
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+
+    steps:
+      - name: Debug info
+        run: |
+          echo "Backend: ${{ matrix.backend }}"
+          echo "PATH: $PATH"
+          echo "VENV_PATH: $VENV_PATH"
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: feat/ci
+
+      - name: Set up Java
+        run: |
+          export PATH=$JAVA_HOME/bin:$PATH
+          java -version
+
+      - name: Setup Python venv
+        run: |
+          python3 -m venv $VENV_PATH
+          source $VENV_PATH/bin/activate
+          pip install --upgrade pip
+          pip install tqdm psutil
+
+      - name: Copy Graal JARs
+        run: |
+          cd $TORNADO_ROOT
+          mkdir -p graalJars
+          cp /opt/graalJars/* graalJars/
+
+      # - name: Cache Maven dependencies
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.m2/repository
+      #     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-maven-
+
+      - name: Build TornadoVM (${{ matrix.backend }})
+        run: |
+          cd $TORNADO_ROOT
+          source $VENV_PATH/bin/activate
+          make jdk21 BACKEND=${{ matrix.backend }}
+
+      - name: Run ${{ matrix.backend }} fast unit tests
+        run: |
+          cd $TORNADO_ROOT
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --devices
+          make fast-tests

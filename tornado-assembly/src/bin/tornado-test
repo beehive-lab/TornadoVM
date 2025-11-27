@@ -335,6 +335,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorSubtractionHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorMultiplicationHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorDivisionHalfFloat',
+    ## Half-float Built-in functions
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMaxLocalMemory',
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMinLocalMemory',
 
     ## SPIR-V with Level Zero
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
