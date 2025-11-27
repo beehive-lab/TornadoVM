@@ -1,0 +1,31 @@
+name: Rerun Checks on Command
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  rerun:
+    if: >
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/rerun') &&
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger fast-test workflow
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/fast-test.yml/dispatches \
+            -d '{"ref": "${{ github.event.pull_request.head.ref }}"}'
+
