@@ -193,8 +193,8 @@ public class TornadoGraphBuilder {
                     } else if (objectNodes[variableIndex] instanceof CopyInNode copyInNode) {
                         value = copyInNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof AllocateNode allocateNode) {
-                        value = allocateNode.getValue(); }
-                    else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
+                        value = allocateNode.getValue();
+                    } else  if (objectNodes[variableIndex] instanceof OnDeviceObjectNode onDeviceObjectNode) {
                         value = onDeviceObjectNode.getValue();
                     } else if (objectNodes[variableIndex] instanceof StreamInNode streamInNode) {
                         value = streamInNode.getValue();
