@@ -17,13 +17,13 @@
         <dependency>
             <groupId>beehive-lab</groupId>
             <artifactId>beehive-spirv-lib</artifactId>
-            <version>0.0.4</version>
+            <version>0.0.5</version>
         </dependency>
 
         <dependency>
             <groupId>beehive-lab</groupId>
             <artifactId>beehive-levelzero-jni</artifactId>
-            <version>0.1.4</version>
+            <version>0.1.5</version>
         </dependency>
 
         <dependency>
