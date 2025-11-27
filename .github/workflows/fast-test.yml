@@ -11,10 +11,26 @@ on:
   workflow_dispatch:
 
 jobs:
+  code-quality:
+    runs-on: self-hosted
+    continue-on-error: true
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      PATH: /opt/maven/bin:/usr/local/bin:/usr/bin:/bin
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Checkstyle
+        run: |
+          export PATH=$JAVA_HOME/bin:$PATH
+          ./mvnw checkstyle:check
+
   fast-test:
     runs-on: self-hosted
+    needs: code-quality
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         backend: [opencl, ptx, spirv]
 
@@ -38,8 +54,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          ref: feat/ci
 
       - name: Set up Java
         run: |
