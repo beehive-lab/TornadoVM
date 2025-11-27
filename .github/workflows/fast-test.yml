@@ -16,7 +16,7 @@ env:
 
 jobs:
   code-quality:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     timeout-minutes: 5
     steps:
       - name: Checkout code
@@ -29,7 +29,7 @@ jobs:
 
   # OpenCL first
   build-opencl:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     needs: code-quality
     timeout-minutes: 20
     env:
@@ -65,7 +65,7 @@ jobs:
 
   # PTX after OpenCL
   build-ptx:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     needs: build-opencl                      # Waits for OpenCL
     timeout-minutes: 20
     env:
@@ -100,7 +100,7 @@ jobs:
 
   # SPIRV parallel with OpenCL/PTX chain
   build-spirv:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     needs: code-quality                      # Only waits for code-quality
     timeout-minutes: 20
     env:
