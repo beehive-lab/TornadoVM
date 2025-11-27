@@ -13,7 +13,7 @@ on:
 jobs:
   code-quality:
     runs-on: self-hosted
-    continue-on-error: true
+    continue-on-error: false
     env:
       JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       PATH: /opt/maven/bin:/usr/local/bin:/usr/bin:/bin
