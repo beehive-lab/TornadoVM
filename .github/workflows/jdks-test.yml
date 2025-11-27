@@ -35,7 +35,7 @@ jobs:
       group: tornadovm-gpu-tests-${{ github.ref }}
       cancel-in-progress: false
     strategy:
-      fail-fast: false
+      fail-fast: true
       max-parallel: 1  # Sequential execution - only one JDK at a time due to GPU
       matrix:
         jdk:
