@@ -7,7 +7,7 @@ on:
       - develop
     pull_request:
       branches: [ develop ]
-      types: [ opened, synchronize,  reopened ]
+      types: [ opened, synchronize, reopened ]
   workflow_dispatch:
 
 jobs:
@@ -59,13 +59,6 @@ jobs:
           mkdir -p graalJars
           cp /opt/graalJars/* graalJars/
 
-      # - name: Cache Maven dependencies
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.m2/repository
-      #     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-maven-
 
       - name: Build TornadoVM (${{ matrix.backend }})
         run: |
