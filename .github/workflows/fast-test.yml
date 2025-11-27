@@ -26,7 +26,7 @@ jobs:
           export PATH=$JAVA_HOME/bin:$PATH
           ./mvnw checkstyle:check
 
-  fast-test:
+  build-and-test:
     runs-on: self-hosted
     needs: code-quality
     strategy:
@@ -72,7 +72,6 @@ jobs:
           cd $TORNADO_ROOT
           mkdir -p graalJars
           cp /opt/graalJars/* graalJars/
-
 
       - name: Build TornadoVM (${{ matrix.backend }})
         run: |
