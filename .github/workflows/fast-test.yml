@@ -68,5 +68,4 @@ jobs:
           cd $TORNADO_ROOT
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --devices
           make fast-tests
