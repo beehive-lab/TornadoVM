@@ -2,28 +2,28 @@ name: Build on [push]
 
 on:
   push:
-    branches:
-      - feat/ci
-      - develop
+    branches: [feat/ci, develop, master]
     pull_request:
       branches: [ develop ]
       types: [ opened, synchronize, reopened ]
   workflow_dispatch:
+env:
+  JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+  CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+  MAVEN_HOME: /opt/maven
+  GRAAL_JARS: /opt/graalJars
 
 jobs:
   code-quality:
     runs-on: self-hosted
     continue-on-error: false
-    env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
-      PATH: /opt/maven/bin:/usr/local/bin:/usr/bin:/bin
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Run Checkstyle
         run: |
-          export PATH=$JAVA_HOME/bin:$PATH
+          export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
           ./mvnw checkstyle:check
 
   build-and-test:
@@ -38,27 +38,16 @@ jobs:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-${{ matrix.backend }}
-      PATH: /opt/maven/bin:${{ github.workspace }}/bin:/usr/local/bin:/usr/bin:/bin
-      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-      KFUSION_ROOT: ${{ github.workspace }}/../kfusion-tornadovm
-      TORNADO_RAY_TRACER_ROOT: ${{ github.workspace }}/../TornadoVM-Ray-Tracer
-      JAVAFX_SDK: ${{ github.workspace }}/../TornadoVM-Ray-Tracer/javafx-sdk-21.0.3/
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
 
     steps:
-      - name: Debug info
-        run: |
-          echo "Backend: ${{ matrix.backend }}"
-          echo "PATH: $PATH"
-          echo "VENV_PATH: $VENV_PATH"
-
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Java
+      - name: Setup environment
         run: |
-          export PATH=$JAVA_HOME/bin:$PATH
-          java -version
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
       - name: Setup Python venv
         run: |
@@ -67,15 +56,10 @@ jobs:
           pip install --upgrade pip
           pip install tqdm psutil
 
-      - name: Copy Graal JARs
-        run: |
-          cd $TORNADO_ROOT
-          mkdir -p graalJars
-          cp /opt/graalJars/* graalJars/
-
       - name: Build TornadoVM (${{ matrix.backend }})
         run: |
           cd $TORNADO_ROOT
+          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           source $VENV_PATH/bin/activate
           make jdk21 BACKEND=${{ matrix.backend }}
 
