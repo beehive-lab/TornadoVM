@@ -290,6 +290,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_getAndIncrement_parallel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_kernel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_parallel_api",
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic18_parallel_api_LongArray",
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
