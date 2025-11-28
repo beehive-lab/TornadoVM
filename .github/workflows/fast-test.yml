@@ -8,12 +8,6 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
-env:
-  JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
-  CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-  MAVEN_HOME: /opt/maven
-  GRAAL_JARS: /opt/graalJars
-
 jobs:
   code-quality:
     runs-on: [self-hosted]
@@ -33,6 +27,10 @@ jobs:
     needs: code-quality
     timeout-minutes: 20
     env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      MAVEN_HOME: /opt/maven
+      GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
@@ -69,6 +67,10 @@ jobs:
     needs: build-opencl                      # Waits for OpenCL
     timeout-minutes: 20
     env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      MAVEN_HOME: /opt/maven
+      GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-ptx
@@ -104,6 +106,10 @@ jobs:
     needs: code-quality                      # Only waits for code-quality
     timeout-minutes: 20
     env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      MAVEN_HOME: /opt/maven
+      GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-spirv
@@ -137,7 +143,7 @@ jobs:
     needs: code-quality
     timeout-minutes: 45
     env:
-      JAVA_HOME: /Users/user/repositories/TornadoVM/etc/dependencies/TornadoVM-jdk21/jdk-21.0.9.jdk/Contents/Home
+      JAVA_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
