@@ -57,6 +57,28 @@ public final class Int8Array extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new instance of the {@link Int8Array} by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param existingSegment
+     *     The {@link MemorySegment} containing *both* the off-heap int8 *header* and *data*.
+     */
+    private Int8Array(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / INT8_BYTES;
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, INT8_BYTES);
+        this.numberOfElements = (int) (dataSize / INT8_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = existingSegment;
+        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
      * Constructs a new {@link Int8Array} instance by concatenating the contents of the given array of {@link Int8Array} instances.
      *
      * @param arrays
@@ -115,6 +137,18 @@ public final class Int8Array extends TornadoNativeArray {
         Int8Array int8Array = new Int8Array(numElements);
         MemorySegment.copy(segment, 0, int8Array.segment, (long) int8Array.baseIndex, numElements);
         return int8Array;
+    }
+
+    /**
+     * Creates a new instance of the {@link Int8Array} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing *both* the off-heap int8 *header* and *data*.
+     * @return A new {@link Int8Array} instance that wraps the given segment.
+     */
+    public static Int8Array fromSegmentShallow(MemorySegment segment) {
+        return new Int8Array(segment);
     }
 
     /**

@@ -7,6 +7,7 @@
         <tornado.sdk>${env.TORNADO_SDK}</tornado.sdk>
         <test.class>uk.ac.manchester.tornado.unittests.foundation.FoundationTestSuite</test.class>
         <maven.test.skip>true</maven.test.skip>
+        <checkstyle.skip>true</checkstyle.skip>
     </properties>
 
     <parent>
