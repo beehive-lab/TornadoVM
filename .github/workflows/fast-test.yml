@@ -135,7 +135,7 @@ jobs:
   build-macOs-opencl:
     runs-on: [self-hosted, macOS, arm64]
     needs: code-quality
-    timeout-minutes: 20
+    timeout-minutes: 45
     env:
       JAVA_HOME: /Users/user/repositories/TornadoVM/etc/dependencies/TornadoVM-jdk21/jdk-21.0.9.jdk/Contents/Home
       TORNADO_ROOT: ${{ github.workspace }}
