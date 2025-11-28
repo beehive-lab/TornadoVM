@@ -149,6 +149,7 @@ jobs:
       VENV_PATH: ${{ github.workspace }}/venv-opencl
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn
+      GRAAL_JARS: /opt/graalJars
     steps:
       - uses: actions/checkout@v4
 
