@@ -10,6 +10,9 @@ on:
 
 jobs:
   code-quality:
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      MAVEN_HOME: /opt/maven
     runs-on: [self-hosted]
     timeout-minutes: 5
     steps:
