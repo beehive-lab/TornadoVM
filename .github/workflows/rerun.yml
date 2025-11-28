@@ -1,35 +1,181 @@
-name: Rerun Checks on Command
+name: Rerun Workflows
+
 on:
   issue_comment:
     types: [created]
-permissions:
-  contents: read
-  actions: write
+
 jobs:
   rerun:
-    if: >
+    name: Rerun CI Workflows
+    # Only run on PR comments (not issue comments) with /rerun command
+    if: |
       github.event.issue.pull_request &&
-      startsWith(github.event.comment.body, '/rerun') &&
-      (
-        github.event.comment.author_association == 'OWNER' ||
-        github.event.comment.author_association == 'MEMBER' ||
-        github.event.comment.author_association == 'COLLABORATOR'
-      )
-    runs-on: self-hosted
-    steps:
-      - name: Get PR head ref
-        id: pr
-        run: |
-          PR_DATA=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
-          echo "head_ref=$(echo $PR_DATA | jq -r .head.ref)" >> $GITHUB_OUTPUT
+      contains(github.event.comment.body, '/rerun')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      pull-requests: write
+      contents: read
 
-      - name: Trigger build workflow
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build.yml/dispatches \
-            -d '{"ref": "${{ steps.pr.outputs.head_ref }}"}'
+    steps:
+      - name: Check for help command
+        id: help
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment.body;
+            if (comment.match(/\/rerun\s+help/i)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## 🔄 Rerun Workflow Commands
+            
+              | Command | Description |
+              |---------|-------------|
+              | \`/rerun\` | Rerun only **failed/cancelled/timed-out** workflows |
+              | \`/rerun all\` | Rerun **all** workflows for this PR |
+              | \`/rerun failed\` | Same as \`/rerun\` |
+              | \`/rerun <name>\` | Rerun workflows matching \`<name>\` (e.g. \`/rerun ci\`, \`/rerun build\`) |
+              | \`/rerun help\` | Show this help message |
+            
+              **Note:** Only completed workflows can be rerun. In-progress workflows are skipped.`
+              });
+              core.setOutput('is_help', 'true');
+              } else {
+              core.setOutput('is_help', 'false');
+              }
+
+      - name: Get PR SHA
+        if: steps.help.outputs.is_help != 'true'
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            core.setOutput('sha', pr.head.sha);
+            core.setOutput('head_ref', pr.head.ref);
+            console.log(`PR #${context.issue.number} SHA: ${pr.head.sha}`);
+            console.log(`PR head ref: ${pr.head.ref}`);
+
+      - name: Add reaction to comment
+        if: steps.help.outputs.is_help != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+      - name: Post start comment
+        if: steps.help.outputs.is_help != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment.body;
+            const rerunMatch = comment.match(/\/rerun\s*(\S+)?/);
+            const rerunArg = rerunMatch && rerunMatch[1] ? rerunMatch[1] : 'failed';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🚀 **Workflow rerun started**\n\nMode: \`${rerunArg}\`\nTriggered by: @${context.payload.comment.user.login}\n\n[View Actions](https://github.com/${context.repo.owner}/${context.repo.repo}/actions)`
+            });
+
+      - name: Rerun failed workflows
+        if: steps.help.outputs.is_help != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ steps.pr.outputs.sha }}';
+            const headRef = '${{ steps.pr.outputs.head_ref }}';
+            
+            // Get all workflow runs for this PR's head SHA
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: sha,
+              per_page: 100
+            });
+            
+            console.log(`Found ${runs.total_count} workflow runs for SHA ${sha}`);
+            
+            if (runs.total_count === 0) {
+              console.log('No workflow runs found for this PR');
+              return;
+            }
+            
+            // Parse command for specific workflow filter
+            // Supports: /rerun, /rerun all, /rerun failed, /rerun <workflow-name>
+            const comment = context.payload.comment.body;
+            const rerunMatch = comment.match(/\/rerun\s*(\S+)?/);
+            const rerunArg = rerunMatch && rerunMatch[1] ? rerunMatch[1].toLowerCase() : 'failed';
+            
+            console.log(`Rerun mode: ${rerunArg}`);
+            
+            let rerunCount = 0;
+            
+            for (const run of runs.workflow_runs) {
+              const shouldRerun = 
+                rerunArg === 'all' ||
+                (rerunArg === 'failed' && ['failure', 'cancelled', 'timed_out'].includes(run.conclusion)) ||
+                run.name.toLowerCase().includes(rerunArg);
+            
+              if (!shouldRerun) {
+                console.log(`Skipping ${run.name} (status: ${run.status}, conclusion: ${run.conclusion})`);
+                continue;
+              }
+            
+              // Only rerun completed workflows
+              if (run.status !== 'completed') {
+                console.log(`Skipping ${run.name} - still ${run.status}`);
+                continue;
+              }
+            
+              try {
+                console.log(`Rerunning workflow: ${run.name} (ID: ${run.id})`);
+            
+                // Use rerun-failed-jobs if available and workflow failed, otherwise full rerun
+                if (['failure', 'cancelled', 'timed_out'].includes(run.conclusion)) {
+                  await github.rest.actions.reRunWorkflowFailedJobs({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: run.id
+                  });
+                } else {
+                  await github.rest.actions.reRunWorkflow({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: run.id
+                  });
+                }
+                rerunCount++;
+              } catch (error) {
+                console.log(`Failed to rerun ${run.name}: ${error.message}`);
+              }
+            }
+            
+            console.log(`Reran ${rerunCount} workflow(s)`);
+
+      - name: Post completion comment
+        if: always() && steps.help.outputs.is_help != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}';
+            const emoji = status === 'success' ? '✅' : '❌';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${emoji} **Workflow rerun ${status}**\n\n[View Actions](https://github.com/${context.repo.owner}/${context.repo.repo}/actions)`
+            });
