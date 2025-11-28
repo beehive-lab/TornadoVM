@@ -290,6 +290,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_getAndIncrement_parallel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_kernel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_parallel_api",
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic18_parallel_api_LongArray",
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
@@ -335,6 +336,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorSubtractionHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorMultiplicationHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorDivisionHalfFloat',
+    ## Half-float Built-in functions
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMaxLocalMemory',
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMinLocalMemory',
 
     ## SPIR-V with Level Zero
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
