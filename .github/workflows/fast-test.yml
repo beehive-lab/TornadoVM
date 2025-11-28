@@ -132,41 +132,41 @@ jobs:
           source $VENV_PATH/bin/activate
           source setvars.sh
           make fast-tests
-    build-macOs-opencl:
-      runs-on: [self-hosted, macOS, arm64]
-      needs: code-quality
-      timeout-minutes: 20
-      env:
-        JAVA_HOME: /Users/user/repositories/TornadoVM/etc/dependencies/TornadoVM-jdk21/jdk-21.0.9.jdk/Contents/Home
-        TORNADO_ROOT: ${{ github.workspace }}
-        TORNADO_SDK: ${{ github.workspace }}/bin/sdk
-        VENV_PATH: ${{ github.workspace }}/venv-opencl
-        CMAKE_ROOT: /opt/homebrew/bin/cmake
-        MAVEN_HOME: /opt/homebrew/bin/mvn
-      steps:
-        - uses: actions/checkout@v4
+  build-macOs-opencl:
+    runs-on: [self-hosted, macOS, arm64]
+    needs: code-quality
+    timeout-minutes: 20
+    env:
+      JAVA_HOME: /Users/user/repositories/TornadoVM/etc/dependencies/TornadoVM-jdk21/jdk-21.0.9.jdk/Contents/Home
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
+      CMAKE_ROOT: /opt/homebrew/bin/cmake
+      MAVEN_HOME: /opt/homebrew/bin/mvn
+    steps:
+      - uses: actions/checkout@v4
 
-        - name: Setup environment
-          run: |
-            echo "$JAVA_HOME/bin" >> $GITHUB_PATH
-            echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
-            echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
-        - name: Setup Python venv
-          run: |
-            python3 -m venv $VENV_PATH
-            source $VENV_PATH/bin/activate
-            pip install --upgrade pip tqdm psutil
+      - name: Setup Python venv
+        run: |
+          python3 -m venv $VENV_PATH
+          source $VENV_PATH/bin/activate
+          pip install --upgrade pip tqdm psutil
 
-        - name: Build TornadoVM (opencl)
-          run: |
-            mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
-            source $VENV_PATH/bin/activate
-            make jdk21 BACKEND=opencl
+      - name: Build TornadoVM (opencl)
+        run: |
+          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
+          source $VENV_PATH/bin/activate
+          make jdk21 BACKEND=opencl
 
-        - name: Run opencl fast unit tests
-          run: |
-            source $VENV_PATH/bin/activate
-            source setvars.sh
-            tornado --devices
-            make fast-tests
+      - name: Run opencl fast unit tests
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --devices
+          make fast-tests
