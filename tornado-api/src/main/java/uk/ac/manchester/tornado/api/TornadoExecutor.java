@@ -121,6 +121,16 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
     }
 
+    void transferToDevice(Object... objects) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToDevice(objects));
+    }
+
+    void partialTransferToDevice(DataRange dataRange) {
+        // At this point we compute the offsets and the total size in bytes.
+        dataRange.materialize();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToDevice(dataRange.getArray(), dataRange.getOffset(), dataRange.getPartialSize()));
+    }
+
     boolean isFinished() {
         boolean result = true;
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {

@@ -90,6 +90,10 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void syncRuntimeTransferToHost(Object objects, long offset, long partialCopySize);
 
+    void syncRuntimeTransferToDevice(Object... objects);
+
+    void syncRuntimeTransferToDevice(Object objects, long offset, long partialCopySize);
+
     String getId();
 
     TaskContextInterface meta();

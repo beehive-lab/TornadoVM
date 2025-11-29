@@ -85,6 +85,43 @@ public class TornadoExecutionResult {
     }
 
     /**
+     * Transfer data from host to device. This is applied for all immutable
+     * task-graphs within an executor. This method is used when a task-graph defines
+     * transferToDevice using the
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#UNDER_DEMAND}.
+     * This indicates the runtime to not to copy-in the data on every iteration and
+     * transfer the data under demand.
+     *
+     * @param objects
+     *     Host objects to transfer the data from.
+     *
+     * @return {@link TornadoExecutionResult}
+     *
+     * @since v1.0.2
+     */
+    public TornadoExecutionResult transferToDevice(Object... objects) {
+        tornadoProfilerResult.getExecutor().transferToDevice(objects);
+        return this;
+    }
+
+    /**
+     * Partial data transfer from the host to the device. This is applied for all immutable
+     * task-graphs within an executor. This indicates the runtime to not to copy-in the data
+     * on every iteration and transfer the data under demand. The sub-region to be copied is
+     * specified in the data range.
+     *
+     * @param dataRange
+     *     Range of type: {@link DataRange}
+     * @return {@link TornadoExecutionResult}
+     *
+     * @since v1.0.2
+     */
+    public TornadoExecutionResult transferToDevice(DataRange dataRange) {
+        tornadoProfilerResult.getExecutor().partialTransferToDevice(dataRange);
+        return this;
+    }
+
+    /**
      * It returns true if all task-graphs associated to the executor finished
      * execution.
      *
