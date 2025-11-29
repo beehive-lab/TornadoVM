@@ -67,7 +67,10 @@ public enum DType {
     /**
      * Represents a quantized 8-bit unsigned integer used in specialized applications like machine learning, using 1 byte.
      */
-    QUINT8(1, ValueLayout.JAVA_BYTE);
+    QUINT8(1, ValueLayout.JAVA_BYTE),
+
+    Q4_0(1,  ValueLayout.JAVA_BYTE);
+
     // @formatter:on
 
     /**

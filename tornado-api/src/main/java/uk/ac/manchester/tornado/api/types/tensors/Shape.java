@@ -45,7 +45,8 @@ public record Shape(long... dimensions) {
      * @return the total size of the shape as an int
      */
     public int getSize() {
-        return (int) Arrays.stream(dimensions).reduce(1, (a, b) -> a * b);
+        assert Arrays.stream(dimensions).allMatch(i -> i > 0);
+        return (int) Arrays.stream(dimensions).reduce(Math::multiplyExact).orElseThrow();
     }
 
     @Override
