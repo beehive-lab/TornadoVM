@@ -92,15 +92,6 @@
                                 <additionalOption>--enable-preview</additionalOption>
                             </additionalOptions>
 
-                            <!-- Export lists for modules -->
-                            <additionalparam>
-                                --enable-preview
-                                @${project.basedir}/tornado-assembly/src/etc/exportLists/common-exports
-                                @${project.basedir}/tornado-assembly/src/etc/exportLists/opencl-exports
-                                @${project.basedir}/tornado-assembly/src/etc/exportLists/ptx-exports
-                                @${project.basedir}/tornado-assembly/src/etc/exportLists/spirv-exports
-                            </additionalparam>
-
                             <!-- Avoid breaking the build -->
                             <failOnError>false</failOnError>
                             <failOnWarnings>false</failOnWarnings>
