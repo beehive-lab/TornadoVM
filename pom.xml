@@ -10,6 +10,14 @@
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
 
+    <developers>
+        <developer>
+            <id>beehive-lab</id>
+            <name>Beehive Lab</name>
+            <email>info@beehive-lab.org</email>
+        </developer>
+    </developers>
+
     <scm>
         <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
         <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
@@ -30,6 +38,93 @@
 
     <profiles>
         <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <source>21</source>
+                            <target>21</target>
+                            <showDeprecation>true</showDeprecation>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-SYSTEM</arg>
+                                <arg>--add-modules=jdk.incubator.vector</arg>
+                                <arg>--upgrade-module-path</arg>
+                                <arg>${user.dir}/graalJars</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <configuration>
+                            <source>21</source>
+                            <release>21</release>
+                            <skip>false</skip>
+                            <failOnError>false</failOnError>
+
+                            <!-- Enable preview features -->
+                            <additionalJOptions>
+                                <additionalJOption>--enable-preview</additionalJOption>
+                                <additionalJOption>--add-modules=ALL-SYSTEM</additionalJOption>
+                                <additionalJOption>--add-modules=jdk.incubator.vector</additionalJOption>
+                            </additionalJOptions>
+
+                            <additionalOptions>
+                                <additionalOption>--enable-preview</additionalOption>
+                            </additionalOptions>
+
+                            <!-- Export lists for modules -->
+                            <additionalparam>
+                                --enable-preview
+                                @${project.basedir}/tornado-assembly/src/etc/exportLists/common-exports
+                                @${project.basedir}/tornado-assembly/src/etc/exportLists/opencl-exports
+                                @${project.basedir}/tornado-assembly/src/etc/exportLists/ptx-exports
+                                @${project.basedir}/tornado-assembly/src/etc/exportLists/spirv-exports
+                            </additionalparam>
+
+                            <!-- Avoid breaking the build -->
+                            <failOnError>false</failOnError>
+                            <failOnWarnings>false</failOnWarnings>
+                            <doclint>none</doclint>
+
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>false</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>windows-i386-release</id>
             <activation>
                 <property>
@@ -47,10 +142,6 @@
                 <cmake.classifier>windows-i386</cmake.classifier>
                 <cmake.generator>Visual Studio 17 2022</cmake.generator>
                 <cmake.config>${build.type}</cmake.config>
-                <!--
-                        CMake interprets the lack of a generator architecture ("-A<platform>") as x86. There doesn't
-                        seem to be any other way to specify it.
-                        -->
             </properties>
         </profile>
         <profile>
@@ -171,10 +262,6 @@
         </profile>
         <profile>
             <id>portable</id>
-            <!--
-                  Sonatype requires a main jar, even for platform-specific artifacts, so we supply it with an
-                  empty file.
-                  -->
             <build>
                 <plugins>
                     <plugin>
