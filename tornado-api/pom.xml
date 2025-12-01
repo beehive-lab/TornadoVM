@@ -10,8 +10,6 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.1.2-dev</version>
-
     <name>tornado-api</name>
     <url>https://tornadovm.org</url>
 
