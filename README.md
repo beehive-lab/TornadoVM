@@ -4,7 +4,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?style=for-the-badge&logo=apache-maven&color=blue)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?style=for-the-badge&logo=apache-maven&color=blue)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
 
-![TornadoVM version](https://img.shields.io/badge/version-1.1.1-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+![TornadoVM version](https://img.shields.io/badge/version-2.0.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
@@ -24,7 +24,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 1.1.1 - 07/07/2025 :
+**Latest Release:** TornadoVM 2.0.0 - 02/12/2025 :
 See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
@@ -238,12 +238,12 @@ You can import the TornadoVM API by setting this the following dependency in the
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.1.2</version>
+    <version>2.0.0</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>1.1.2</version>
+    <version>2.0.0</version>
   </dependency>
 </dependencies>
 ```

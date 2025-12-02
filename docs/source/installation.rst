@@ -718,24 +718,17 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
 
 .. code-block:: xml
 
-   <repositories>
-     <repository>
-       <id>universityOfManchester-graal</id>
-       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
-     </repository>
-   </repositories>
-
    <dependencies>
       <dependency>
          <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.1.1</version>
+         <version>2.0.0</version>
       </dependency>
 
       <dependency>
          <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.1.1</version>
+         <version>2.0.0</version>
       </dependency>
    </dependencies>
 
@@ -746,6 +739,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ==================
 
+* 2.0.0
 * 1.1.1
 * 1.1.0
 * 1.0.10
