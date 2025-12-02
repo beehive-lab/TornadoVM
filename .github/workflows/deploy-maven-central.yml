@@ -23,6 +23,40 @@ jobs:
           echo "$JAVA_HOME/bin" >> $GITHUB_PATH
           echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
 
+      - name: Configure Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml << 'EOF'
+          <settings>
+            <servers>
+              <server>
+                <id>central</id>
+                <username>${env.MAVEN_USERNAME}</username>
+                <password>${env.MAVEN_PASSWORD}</password>
+              </server>
+            </servers>
+            <profiles>
+              <profile>
+                <id>gpg</id>
+                <properties>
+                  <gpg.executable>gpg</gpg.executable>
+                  <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
+                  <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+                </properties>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>gpg</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+        env:
+          GPG_TTY: $(tty)
+
       - name: Deploy to Maven Central
         run: |
           mvn clean deploy \
@@ -30,9 +64,9 @@ jobs:
             -am \
             -P release \
             -DskipTests \
-            --batch-mode \
-            --no-transfer-progress
+            --batch-mode
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
