@@ -58,6 +58,7 @@ Refactors & Infrastructure
 - `#744 <https://github.com/beehive-lab/TornadoVM/pull/744>`_: Add licences in pom files - prep work for migrating release to maven central.
 - `#745 <https://github.com/beehive-lab/TornadoVM/pull/745>`_: [deploy] Add release profile in maven to prepare maven central release.
 - `#747 <https://github.com/beehive-lab/TornadoVM/pull/747>`_: [CI] Add deploy-maven-central workflow for deploying artifacts to Maven central.
+- `#749 <https://github.com/beehive-lab/TornadoVM/pull/749>`_: [CI] Add GPG key configuration and Maven settings to deploy-maven-central.
 
 
 TornadoVM 1.1.1
