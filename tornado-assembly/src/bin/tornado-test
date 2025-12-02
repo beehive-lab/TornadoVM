@@ -125,6 +125,7 @@ __TEST_THE_WORLD__ = [
     ## SPIR-V, OpenCL and PTX foundation tests
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestHalfFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.MultipleRuns"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra"),

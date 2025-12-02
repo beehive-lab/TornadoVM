@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.MultHalfNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXHalfFloatDivisionNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
@@ -99,7 +100,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         // replace reads with halfFloat reads
         for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
-            if (javaRead.successors().first() instanceof NewInstanceNode) {
+            if (javaRead.successors().first() instanceof NewInstanceNode && javaRead.getReadKind() == JavaKind.Short) {
                 NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
                 if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
                     if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
@@ -124,6 +125,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
                     deleteFixed(newHalfFloatInstance);
+                } else if (newInstanceNode.successors().first() instanceof JavaReadNode readValue && readValue.getReadKind() == JavaKind.Float) {
+                    PTXConvertFloatToHalf convertFloatToHalf = new PTXConvertFloatToHalf(readValue);
+                    graph.addWithoutUnique(convertFloatToHalf);
+                    newInstanceNode.replaceAtUsages(convertFloatToHalf);
+                    for (NewHalfFloatInstance newHalfFloatInstance : readValue.usages().filter(NewHalfFloatInstance.class)) {
+                        deleteFixed(newHalfFloatInstance);
+                    }
+                    deleteFixed(newInstanceNode);
                 }
             }
         }
@@ -262,6 +271,10 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
             return halfFloatConstantNode;
+        } else if (halfFloatValue instanceof JavaReadNode javaReadNode && javaReadNode.getReadKind() == JavaKind.Float) {
+            PTXConvertFloatToHalf convertFloatToHalf = new PTXConvertFloatToHalf(javaReadNode);
+            graph.addWithoutUnique(convertFloatToHalf);
+            return convertFloatToHalf;
         } else {
             return halfFloatValue;
         }
