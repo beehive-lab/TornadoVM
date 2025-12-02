@@ -1,5 +1,9 @@
 # TornadoVM
 [![Build on [push]](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml)
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?style=for-the-badge&logo=apache-maven&color=blue)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?style=for-the-badge&logo=apache-maven&color=blue)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
+
 ![TornadoVM version](https://img.shields.io/badge/version-1.1.1-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpth%20Exeception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
@@ -230,25 +234,17 @@ and/or SPIRV/Level Zero).
 You can import the TornadoVM API by setting this the following dependency in the Maven `pom.xml` file:
 
 ```xml
-
-<repositories>
-    <repository>
-        <id>universityOfManchester-graal</id>
-        <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
-    </repository>
-</repositories>
-
 <dependencies>
-<dependency>
-    <groupId>tornado</groupId>
+  <dependency>
+    <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.1.1</version>
-</dependency>
-<dependency>
-    <groupId>tornado</groupId>
-    <artifactId>tornado-matrices</artifactId>
-    <version>1.1.1</version>
-</dependency>
+    <version>1.1.2</version>
+  </dependency>
+  <dependency>
+    <groupId>io.github.beehive-lab</groupId>
+    <artifactId>tornado-runtime</artifactId>
+    <version>1.1.2</version>
+  </dependency>
 </dependencies>
 ```
 

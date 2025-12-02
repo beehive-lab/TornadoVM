@@ -3,18 +3,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>tornado</groupId>
+    <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
     <version>1.1.2-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
+    <description>TornadoVM: A practical heterogeneous programming framework for managed languages</description>
+    <developers>
+        <developer>
+            <id>beehive-lab</id>
+            <name>Beehive Lab</name>
+            <email>info@tornadovm.org</email>
+        </developer>
+    </developers>
 
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
             <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
         </license>
     </licenses>
 
@@ -22,7 +29,19 @@
         <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
         <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
         <url>https://github.com/beehive-lab/tornadovm</url>
+        <tag>HEAD</tag>
     </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
@@ -37,6 +56,122 @@
     </properties>
 
     <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.6.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>   
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <source>21</source>
+                            <target>21</target>
+                            <showDeprecation>true</showDeprecation>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-SYSTEM</arg>
+                                <arg>--add-modules=jdk.incubator.vector</arg>
+                                <arg>--upgrade-module-path</arg>
+                                <arg>${user.dir}/graalJars</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <configuration>
+                            <source>21</source>
+                            <release>21</release>
+                            <skip>false</skip>
+                            <failOnError>false</failOnError>
+
+                            <!-- Enable preview features -->
+                            <additionalJOptions>
+                                <additionalJOption>--enable-preview</additionalJOption>
+                                <additionalJOption>--add-modules=ALL-SYSTEM</additionalJOption>
+                                <additionalJOption>--add-modules=jdk.incubator.vector</additionalJOption>
+                            </additionalJOptions>
+
+                            <additionalOptions>
+                                <additionalOption>--enable-preview</additionalOption>
+                            </additionalOptions>
+
+                            <!-- Avoid breaking the build -->
+                            <failOnError>false</failOnError>
+                            <failOnWarnings>false</failOnWarnings>
+                            <doclint>none</doclint>
+
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>false</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>windows-i386-release</id>
             <activation>
@@ -55,10 +190,6 @@
                 <cmake.classifier>windows-i386</cmake.classifier>
                 <cmake.generator>Visual Studio 17 2022</cmake.generator>
                 <cmake.config>${build.type}</cmake.config>
-                <!--
-                        CMake interprets the lack of a generator architecture ("-A<platform>") as x86. There doesn't
-                        seem to be any other way to specify it.
-                        -->
             </properties>
         </profile>
         <profile>
@@ -179,10 +310,6 @@
         </profile>
         <profile>
             <id>portable</id>
-            <!--
-                  Sonatype requires a main jar, even for platform-specific artifacts, so we supply it with an
-                  empty file.
-                  -->
             <build>
                 <plugins>
                     <plugin>
