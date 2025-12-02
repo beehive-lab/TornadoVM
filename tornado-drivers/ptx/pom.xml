@@ -5,9 +5,9 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
+        <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <groupId>tornado</groupId>
-        <version>1.1.2-dev</version>
+        <version>1.1.2</version>
     </parent>
     <artifactId>tornado-drivers-ptx</artifactId>
     <name>tornado-drivers-ptx</name>

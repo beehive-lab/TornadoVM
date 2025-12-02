@@ -11,9 +11,9 @@
     </properties>
 
     <parent>
-        <groupId>tornado</groupId>
+        <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>1.1.2-dev</version>
+        <version>1.1.2</version>
     </parent>
     <artifactId>tornado-unittests</artifactId>
     <name>tornado-unittests</name>

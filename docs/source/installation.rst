@@ -727,13 +727,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
 
    <dependencies>
       <dependency>
-         <groupId>tornado</groupId>
+         <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-api</artifactId>
          <version>1.1.1</version>
       </dependency>
 
       <dependency>
-         <groupId>tornado</groupId>
+         <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-matrices</artifactId>
          <version>1.1.1</version>
       </dependency>
