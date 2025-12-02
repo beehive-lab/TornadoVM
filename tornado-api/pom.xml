@@ -5,12 +5,12 @@
     <parent>
         <artifactId>tornado</artifactId>
         <groupId>io.github.beehive-lab</groupId>
-        <version>1.1.2</version>
+        <version>1.1.2-dev</version>
     </parent>
     <description>TornadoVM API: A high-level programming interface for accelerating Java applications on heterogeneous hardware</description>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.2-dev</version>
     <name>tornado-api</name>
     <url>https://tornadovm.org</url>
     <licenses>
