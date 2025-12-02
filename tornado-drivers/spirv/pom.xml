@@ -15,13 +15,13 @@
     <dependencies>
 
         <dependency>
-            <groupId>beehive-lab</groupId>
+            <groupId>tornado</groupId>
             <artifactId>beehive-spirv-lib</artifactId>
             <version>0.0.5</version>
         </dependency>
 
         <dependency>
-            <groupId>beehive-lab</groupId>
+            <groupId>tornado</groupId>
             <artifactId>beehive-levelzero-jni</artifactId>
             <version>0.1.5</version>
         </dependency>
