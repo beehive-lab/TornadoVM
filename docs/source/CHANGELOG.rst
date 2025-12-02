@@ -7,6 +7,60 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 2.0.0
+---------------
+02/12/25
+
+Improvements
+~~~~~~~~~~~~
+
+- `#722 <https://github.com/beehive-lab/TornadoVM/pull/722>`_: Simplify running tornadovm with a Java argfile.
+- `#732 <https://github.com/beehive-lab/TornadoVM/pull/732>`_: [types] Support for GPU-native Int8 types for PTX and OpenCL.
+- `#736 <https://github.com/beehive-lab/TornadoVM/pull/736>`_: Implement support for compressed oops (coops).
+- `#738 <https://github.com/beehive-lab/TornadoVM/pull/738>`_: [feat] Update TornadoVM to be packaged as SDK across multiple platforms.
+- `#739 <https://github.com/beehive-lab/TornadoVM/pull/739>`_: [feat] Zero-copy TornadoNativeArray type instances with shallow memory segments.
+- `#740 <https://github.com/beehive-lab/TornadoVM/pull/740>`_: Add support for byte and half-float arrays in local memory across all backends.
+- `#748 <https://github.com/beehive-lab/TornadoVM/pull/748>`_: Support FP32 to FP16 conversion across all backends.
+
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#704 <https://github.com/beehive-lab/TornadoVM/pull/704>`_: Bump org.apache.commons:commons-lang3 from 3.12.0 to 3.18.0 in tornado-benchmark.
+- `#709 <https://github.com/beehive-lab/TornadoVM/pull/709>`_: Fix Python dependency installation issues in installer.
+- `#717 <https://github.com/beehive-lab/TornadoVM/pull/717>`_: [feat] Added streamlit python dependency for compatibility with TornadoViz.
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#705 <https://github.com/beehive-lab/TornadoVM/pull/705>`_: [fix] Support for ShortCircuits in OpenCL and PTX.
+- `#706 <https://github.com/beehive-lab/TornadoVM/pull/706>`_: [fix] Codegen support for IntegerBelowNode & Fix of closing bracket in OpenCL.
+- `#712 <https://github.com/beehive-lab/TornadoVM/pull/712>`_: [fix] Fix for Loop Partial Unroll Phase.
+- `#714 <https://github.com/beehive-lab/TornadoVM/pull/714>`_: [fix] The differences CUDA 13 introduced to CUDA API cuCtxCreate.
+- `#721 <https://github.com/beehive-lab/TornadoVM/pull/721>`_: [fix] Integer overflow in TornadoNativeArray implementations that caused IllegalArgumentException when allocating large arrays.
+- `#723 <https://github.com/beehive-lab/TornadoVM/pull/723>`_: [fix] Prevent NullPointerException when trying to dump bytecodes during warm-up.
+- `#746 <https://github.com/beehive-lab/TornadoVM/pull/746>`_: [fix] Remove @ prefix from inline Truffle export flags.
+
+Refactors & Infrastructure
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- `#703 <https://github.com/beehive-lab/TornadoVM/pull/703>`_: Updated build instructions for using a single thread for maven.
+- `#708 <https://github.com/beehive-lab/TornadoVM/pull/708>`_: [test] Mark unsupported tests for SPIRV.
+- `#711 <https://github.com/beehive-lab/TornadoVM/pull/711>`_: Add mvn test configuration to ease unit-testing when porting TornadoVM to third-party projects.
+- `#716 <https://github.com/beehive-lab/TornadoVM/pull/716>`_: [build-infra] Add missing checksums and script to generate checksum files for TornadoVM Maven artifacts.
+- `#720 <https://github.com/beehive-lab/TornadoVM/pull/720>`_: Increase default memory size on device.
+- `#725 <https://github.com/beehive-lab/TornadoVM/pull/725>`_: [refactor] Move Dynamic Reconfiguration to research features
+- `#730 <https://github.com/beehive-lab/TornadoVM/pull/730>`_: [build] Revamp build infrastructure by adding Maven wrapper mvnw.
+- `#733 <https://github.com/beehive-lab/TornadoVM/pull/733>`_: Move argfile generation to python from bash.
+- `#742 <https://github.com/beehive-lab/TornadoVM/pull/742>`_: [CI] Migrate build & test workflows (OpenCL, PTX, SPIR-V) to GitHub Actions for Linux (x64) and macOs(arm64).
+- `#737 <https://github.com/beehive-lab/TornadoVM/pull/737>`_: [tests] Marked Quantization Tests as whitelisted due to NVIDIA driver issues.
+- `#743 <https://github.com/beehive-lab/TornadoVM/pull/743>`_: [build] Use shared export‑list files instead of verbose inline --add-exports in pom.xml.
+- `#744 <https://github.com/beehive-lab/TornadoVM/pull/744>`_: Add licences in pom files - prep work for migrating release to maven central.
+- `#745 <https://github.com/beehive-lab/TornadoVM/pull/745>`_: [deploy] Add release profile in maven to prepare maven central release.
+- `#747 <https://github.com/beehive-lab/TornadoVM/pull/747>`_: [CI] Add deploy-maven-central workflow for deploying artifacts to Maven central.
+- `#749 <https://github.com/beehive-lab/TornadoVM/pull/749>`_: [CI] Add GPG key configuration and Maven settings to deploy-maven-central.
+
+
 TornadoVM 1.1.1
 ---------------
 07/07/25

@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>1.1.2-dev</version>
+        <version>2.0.0</version>
     </parent>
     <artifactId>tornado-drivers-spirv</artifactId>
     <name>tornado-drivers-spirv</name>
@@ -39,7 +39,7 @@
         </dependency>
 
         <dependency>
-            <groupId>tornado</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-drivers-opencl</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
