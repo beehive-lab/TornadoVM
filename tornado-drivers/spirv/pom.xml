@@ -15,13 +15,13 @@
     <dependencies>
 
         <dependency>
-            <groupId>tornado</groupId>
+            <groupId>beehive-lab</groupId>
             <artifactId>beehive-spirv-lib</artifactId>
             <version>0.0.5</version>
         </dependency>
 
         <dependency>
-            <groupId>tornado</groupId>
+            <groupId>beehive-lab</groupId>
             <artifactId>beehive-levelzero-jni</artifactId>
             <version>0.1.5</version>
         </dependency>
@@ -39,7 +39,7 @@
         </dependency>
 
         <dependency>
-            <groupId>tornado</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-drivers-opencl</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
