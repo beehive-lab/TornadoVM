@@ -1003,16 +1003,30 @@ class TornadoVMRunnerTool():
             ptx = self.truffleCompatibleExports(ptx)
             spirv = self.truffleCompatibleExports(spirv)
 
-        javaFlags = javaFlags + " @" + common + " "
-        if ("opencl-backend" in self.listOfBackends):
-            javaFlags = javaFlags + "@" + opencl + " "
-            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-        if ("spirv-backend" in self.listOfBackends):
-            javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
-            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-        if ("ptx-backend" in self.listOfBackends):
-            javaFlags = javaFlags + "@" + ptx + " "
-            tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+        # For Truffle, exports are already expanded inline (no @ prefix needed)
+        # For Java, use @ to read from file
+        if (self.isTruffleCommand):
+            javaFlags = javaFlags + " " + common + " "
+            if ("opencl-backend" in self.listOfBackends):
+                javaFlags = javaFlags + opencl + " "
+                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+            if ("spirv-backend" in self.listOfBackends):
+                javaFlags = javaFlags + opencl + " " + spirv + " "
+                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+            if ("ptx-backend" in self.listOfBackends):
+                javaFlags = javaFlags + ptx + " "
+                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+        else:
+            javaFlags = javaFlags + " @" + common + " "
+            if ("opencl-backend" in self.listOfBackends):
+                javaFlags = javaFlags + "@" + opencl + " "
+                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+            if ("spirv-backend" in self.listOfBackends):
+                javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
+                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+            if ("ptx-backend" in self.listOfBackends):
+                javaFlags = javaFlags + "@" + ptx + " "
+                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
