@@ -10,7 +10,13 @@
     <artifactId>tornado-drivers</artifactId>
     <name>tornado-drivers</name>
     <packaging>pom</packaging>
-
+    <licenses>
+        <license>
+            <name>GNU General Public License, Version 2</name>
+            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <modules>
         <module>drivers-common</module>
     </modules>
