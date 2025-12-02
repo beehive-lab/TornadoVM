@@ -10,7 +10,13 @@
     </parent>
     <artifactId>tornado-runtime</artifactId>
     <name>tornado-runtime</name>
-
+    <licenses>
+        <license>
+            <name>GNU General Public License, Version 2</name>
+            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
