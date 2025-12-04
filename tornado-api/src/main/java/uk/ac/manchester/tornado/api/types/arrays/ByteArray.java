@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,6 +42,7 @@ public final class ByteArray extends TornadoNativeArray {
     private int arrayHeaderSize;
 
     private int baseIndex;
+    private int halfBaseIndex;
 
     private long segmentByteSize;
 
@@ -198,6 +199,16 @@ public final class ByteArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_BYTE, baseIndex + index, value);
     }
 
+    public void setHalf(int byteIndex, HalfFloat value) {
+        if (byteIndex % 2 != 0) {
+            throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
+        }
+        // Convert byte index to short index for the segment
+        // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
+        int shortIndex = (arrayHeaderSize + byteIndex) / 2;
+        segment.setAtIndex(JAVA_SHORT, shortIndex, value.getHalfFloatValue());
+    }
+
     /**
      * Gets the byte value stored at the specified index of the {@link ByteArray} instance.
      *
@@ -207,6 +218,18 @@ public final class ByteArray extends TornadoNativeArray {
      */
     public byte get(int index) {
         return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
+    }
+
+    public HalfFloat getHalf(int byteIndex) {
+        if (byteIndex % 2 != 0) {
+            throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
+        }
+        // Convert byte index to short index for the segment
+        // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
+        int shortIndex = (arrayHeaderSize + byteIndex) / 2;
+        short halfFloatValue = segment.getAtIndex(JAVA_SHORT, shortIndex);
+        return new HalfFloat(halfFloatValue);
+
     }
 
     /**
