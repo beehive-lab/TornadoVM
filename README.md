@@ -85,6 +85,7 @@ physics simulations, financial applications, computational photography, and sign
 
 Featured use-cases:
 
+- [GPULlama3.java](https://github.com/beehive-lab/GPULlama3.java): GPU-accelerated Llama3.java inference in pure Java using TornadoVM.
 - [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm): Java application for accelerating a
   computer-vision application using the Tornado-APIs to run on discrete and integrated GPUs.
 - [Java Ray-Tracer](https://github.com/Vinhixus/TornadoVM-Ray-Tracer): Java application accelerated with TornadoVM for
