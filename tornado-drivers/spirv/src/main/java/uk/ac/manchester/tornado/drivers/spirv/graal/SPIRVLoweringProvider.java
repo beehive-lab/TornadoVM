@@ -106,7 +106,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVDecompressedReadFieldNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -500,14 +502,20 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead;
-        if (loadIndexed instanceof LoadIndexedVectorNode) {
-            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getSPIRVKind() == SPIRVKind.OP_TYPE_FLOAT_16) {
+            ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index()));
+            loadIndexed.replaceAtUsages(localHalfFloatRead);
+            graph.replaceFixed(loadIndexed, localHalfFloatRead);
         } else {
-            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            ReadNode memoryRead;
+            if (loadIndexed instanceof LoadIndexedVectorNode) {
+                memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            } else {
+                memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            }
+            loadIndexed.replaceAtUsages(memoryRead);
+            graph.replaceFixed(loadIndexed, memoryRead);
         }
-        loadIndexed.replaceAtUsages(memoryRead);
-        graph.replaceFixed(loadIndexed, memoryRead);
     }
 
     private boolean isPrivateMemoryAccessNode(StoreIndexedNode storeIndexed) {
@@ -550,9 +558,14 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode array = storeIndexed.array();
         ValueNode index = storeIndexed.index();
         AddressNode address = createArrayAddress(graph, array, elementKind, index);
-        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, valueToStore, array, address, graph, storeIndexed);
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getSPIRVKind() == SPIRVKind.OP_TYPE_FLOAT_16) {
+            WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, valueToStore, storeIndexed.index()));
+            graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
+        } else {
+            AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, valueToStore, array, address, graph, storeIndexed);
+            memoryWrite.setStateAfter(storeIndexed.stateAfter());
+            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+        }
     }
 
     @Override

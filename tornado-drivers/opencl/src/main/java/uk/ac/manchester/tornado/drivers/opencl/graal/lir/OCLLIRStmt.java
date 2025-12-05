@@ -216,6 +216,37 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("CONVERT_FLOAT_TO_HALF")
+    public static class ConvertFloatToHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFloatToHalfStmt> TYPE = LIRInstructionClass.create(ConvertFloatToHalfStmt.class);
+
+        @Use
+        protected Value floatValue;
+        @Def
+        protected Value halfValue;
+
+        public ConvertFloatToHalfStmt(Value floatValue, Value halfValue) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emitValue(crb, halfValue);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emit("(half) ");
+            asm.emitValue(crb, floatValue);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("VADD_HALF")
     public static class VectorAddHalfStmt extends AbstractInstruction {
 

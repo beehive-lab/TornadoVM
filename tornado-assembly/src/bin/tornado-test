@@ -125,6 +125,7 @@ __TEST_THE_WORLD__ = [
     ## SPIR-V, OpenCL and PTX foundation tests
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestHalfFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.MultipleRuns"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra"),
@@ -178,6 +179,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsBytes"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
     TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
     TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
@@ -288,6 +291,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_getAndIncrement_parallel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_kernel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_parallel_api",
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic18_parallel_api_LongArray",
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
@@ -333,6 +337,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorSubtractionHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorMultiplicationHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorDivisionHalfFloat',
+    ## Half-float Built-in functions
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMaxLocalMemory',
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMinLocalMemory',
 
     ## SPIR-V with Level Zero
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
@@ -387,7 +394,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "1.1.2-dev"
+__VERSION__ = "2.0.0"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

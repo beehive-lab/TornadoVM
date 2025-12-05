@@ -176,17 +176,17 @@
             <includes>
                 <include>tornado:beehive-spirv-toolkit</include>
                 <include>tornado:beehive-levelzero-jni</include>
-                <include>tornado:tornado-api</include>
-                <include>tornado:tornado-runtime</include>
-                <include>tornado:tornado-annotation</include>
-                <include>tornado:tornado-matrices</include>
-                <include>tornado:tornado-drivers-common</include>
-                <include>tornado:tornado-drivers-ptx</include>
-                <include>tornado:tornado-drivers-opencl</include>
-                <include>tornado:tornado-drivers-spirv</include>
-                <include>tornado:tornado-examples</include>
-                <include>tornado:tornado-benchmarks</include>
-                <include>tornado:tornado-unittests</include>
+                <include>io.github.beehive-lab:tornado-api</include>
+                <include>io.github.beehive-lab:tornado-runtime</include>
+                <include>io.github.beehive-lab:tornado-annotation</include>
+                <include>io.github.beehive-lab:tornado-matrices</include>
+                <include>io.github.beehive-lab:tornado-drivers-common</include>
+                <include>io.github.beehive-lab:tornado-drivers-ptx</include>
+                <include>io.github.beehive-lab:tornado-drivers-opencl</include>
+                <include>io.github.beehive-lab:tornado-drivers-spirv</include>
+                <include>io.github.beehive-lab:tornado-examples</include>
+                <include>io.github.beehive-lab:tornado-benchmarks</include>
+                <include>io.github.beehive-lab:tornado-unittests</include>
             </includes>
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
@@ -208,8 +208,8 @@
                 </includes>
             </unpackOptions>
             <includes>
-                <include>tornado:tornado-drivers-ptx-jni:jar:libs</include>
-                <include>tornado:tornado-drivers-opencl-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

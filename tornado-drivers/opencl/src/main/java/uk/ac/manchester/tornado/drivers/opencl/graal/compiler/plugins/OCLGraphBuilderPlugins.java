@@ -48,6 +48,8 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import java.lang.foreign.MemorySegment;
 import java.util.function.Supplier;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -376,6 +378,33 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
+    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateByteLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                // if we do not pass the resolved type, the compiler cannot deduct if the type is char or byte
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, resolvedElementType, size);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalfFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(short.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, resolvedElementType, size, OCLKind.HALF);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -390,6 +419,11 @@ public class OCLGraphBuilderPlugins {
 
         elementType = OCLKind.DOUBLE.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
+
+        registerByteLocalArray(r, returnedJavaKind);
+
+        returnedJavaKind = JavaKind.fromJavaClass(short.class);
+        registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {

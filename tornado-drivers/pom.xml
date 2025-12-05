@@ -3,14 +3,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>tornado</groupId>
+        <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>1.1.2-dev</version>
+        <version>2.0.1-dev</version>
     </parent>
     <artifactId>tornado-drivers</artifactId>
     <name>tornado-drivers</name>
     <packaging>pom</packaging>
-
+    <licenses>
+        <license>
+            <name>GNU General Public License, Version 2</name>
+            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <modules>
         <module>drivers-common</module>
     </modules>
@@ -53,7 +59,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>tornado</groupId>
+            <groupId>io.github.beehive-lab</groupId>
             <artifactId>tornado-runtime</artifactId>
             <version>${tornado.version}</version>
         </dependency>

@@ -99,6 +99,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXDecompressedReadFieldNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
@@ -450,19 +452,25 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead;
-
-        if (loadIndexed instanceof LoadIndexedVectorNode) {
-            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getPTXKind() == PTXKind.F16) {
+            ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index(), loadIndexed.array()));
+            loadIndexed.replaceAtUsages(localHalfFloatRead);
+            graph.replaceFixed(loadIndexed, localHalfFloatRead);
         } else {
-            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            ReadNode memoryRead;
+
+            if (loadIndexed instanceof LoadIndexedVectorNode) {
+                memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            } else {
+                memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            }
+            ValueNode readValue = memoryRead;
+            if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
+                readValue = implicitLoadConvert(graph, elementKind, memoryRead);
+            }
+            loadIndexed.replaceAtUsages(readValue);
+            graph.replaceFixed(loadIndexed, memoryRead);
         }
-        ValueNode readValue = memoryRead;
-        if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
-            readValue = implicitLoadConvert(graph, elementKind, memoryRead);
-        }
-        loadIndexed.replaceAtUsages(readValue);
-        graph.replaceFixed(loadIndexed, memoryRead);
     }
 
     @Override
@@ -472,14 +480,19 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        ValueNode writeValue = value;
-        Stamp valueStamp = value.stamp(NodeView.DEFAULT);
-        if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
-            writeValue = implicitStoreConvert(graph, elementKind, value);
+        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getPTXKind() == PTXKind.F16) {
+            WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index(), storeIndexed.array()));
+            graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
+        } else {
+            ValueNode writeValue = value;
+            Stamp valueStamp = value.stamp(NodeView.DEFAULT);
+            if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
+                writeValue = implicitStoreConvert(graph, elementKind, value);
+            }
+            AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, writeValue, array, address, graph, storeIndexed);
+            memoryWrite.setStateAfter(storeIndexed.stateAfter());
+            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
         }
-        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, writeValue, array, address, graph, storeIndexed);
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override

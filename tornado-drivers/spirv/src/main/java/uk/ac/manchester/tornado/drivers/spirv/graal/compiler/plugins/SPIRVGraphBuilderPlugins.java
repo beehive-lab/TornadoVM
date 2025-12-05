@@ -49,6 +49,8 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryI
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -188,18 +190,45 @@ public class SPIRVGraphBuilderPlugins {
         registerLocalArray(r, "allocateLongLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_64.asJavaKind());
         registerLocalArray(r, "allocateFloatLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
         registerLocalArray(r, "allocateDoubleLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_64.asJavaKind());
+        registerLocalArray(r, "allocateByteLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_8.asJavaKind());
+        registerLocalArray(r, "allocateHalfFloatLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_16.asJavaKind());
     }
 
-    private static void registerLocalArray(Registration r, final String method, JavaKind returnedJavaKind, JavaKind elementType) {
+    private static void registerLocalArray(Registration r, String method, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register(new InvocationPlugin(method, InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
+                LocalArrayNode localArrayNode = createLocalArrayNode(b, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
     }
+
+    private static LocalArrayNode createLocalArrayNode(GraphBuilderContext b, JavaKind elementType, ValueNode size) {
+        SPIRVKind spirvInt8 = SPIRVKind.OP_TYPE_INT_8;
+        SPIRVKind spirvFloat16 = SPIRVKind.OP_TYPE_FLOAT_16;
+
+        // Byte arrays need explicit type resolution (byte vs char ambiguity)
+        if (elementType == spirvInt8.asJavaKind()) {
+            ResolvedJavaType byteType = resolveType(b, byte.class);
+            return new LocalArrayNode(SPIRVArchitecture.localSpace, byteType, size);
+        }
+
+        // Half-float arrays need special handling with explicit SPIRV kind
+        if (elementType == spirvFloat16.asJavaKind()) {
+            ResolvedJavaType shortType = resolveType(b, short.class);
+            return new LocalArrayNode(SPIRVArchitecture.localSpace, shortType, size, spirvFloat16);
+        }
+
+        // Standard types can use elementType directly
+        return new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
+    }
+
+    private static ResolvedJavaType resolveType(GraphBuilderContext b, Class<?> clazz) {
+        return b.getMetaAccess().lookupJavaType(clazz);
+    }
+
 
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {
         r.register(new InvocationPlugin("min", type, type) {

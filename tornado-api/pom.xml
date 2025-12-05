@@ -4,15 +4,31 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>tornado</artifactId>
-        <groupId>tornado</groupId>
-        <version>1.1.2-dev</version>
+        <groupId>io.github.beehive-lab</groupId>
+        <version>2.0.1-dev</version>
     </parent>
-
-    <groupId>tornado</groupId>
+    <description>TornadoVM API: A high-level programming interface for accelerating Java applications on heterogeneous hardware</description>
+    <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>1.1.2-dev</version>
-
+    <version>2.0.1-dev</version>
     <name>tornado-api</name>
     <url>https://tornadovm.org</url>
-
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>beehive-lab</id>
+            <name>Beehive Lab</name>
+            <email>info@tornadovm.org</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
+        <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
+        <url>https://github.com/beehive-lab/tornadovm</url>
+    </scm>
 </project>
