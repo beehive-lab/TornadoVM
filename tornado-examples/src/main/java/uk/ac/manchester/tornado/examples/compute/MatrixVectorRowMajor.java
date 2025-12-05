@@ -372,7 +372,6 @@ public class MatrixVectorRowMajor {
             int blockByteOffset = (rowBlockOffset + blockIdx) * Q8_0_BLOCK_BYTES;
 
             // Load scale (first 2 bytes of block as HalfFloat)
-            //HalfFloat scale = q.getHalf(blockByteOffset / 2); // HalfFloat get uses short indexing
             HalfFloat scale = q.getHalf(blockByteOffset);
             float scaleFloat = scale.getFloat32();
 
@@ -401,7 +400,6 @@ public class MatrixVectorRowMajor {
             int blockByteOffset = (rowBlockOffset + blockIdx) * Q8_0_BLOCK_BYTES;
 
             // Load scale
-            //HalfFloat scale = q.getHalf(blockByteOffset / 2);
             HalfFloat scale = q.getHalf(blockByteOffset);
             float scaleFloat = scale.getFloat32();
 

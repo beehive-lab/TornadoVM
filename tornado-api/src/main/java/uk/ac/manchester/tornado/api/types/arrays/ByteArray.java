@@ -44,7 +44,6 @@ public final class ByteArray extends TornadoNativeArray {
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int halfBaseIndex;
 
     private long segmentByteSize;
 
