@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
  *
  * <p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.api.TestTypedAccess
+ * tornado-test -V uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess
  * </code>
  * </p>
  */
