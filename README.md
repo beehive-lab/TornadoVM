@@ -34,7 +34,7 @@ See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 Set `JAVA_HOME` to a **JDK 21** installation, then download an SDK matching your OS, architecture, and accelerator backends.
 
-More SDKs are available on the [Releases Page](https://github.com/beehive-lab/TornadoVM/releases).
+More SDKs (`opencl`, `ptx`, `spirv`)are available on the [Releases Page](https://github.com/beehive-lab/TornadoVM/releases).
 
 ### Linux (x86_64)
 
