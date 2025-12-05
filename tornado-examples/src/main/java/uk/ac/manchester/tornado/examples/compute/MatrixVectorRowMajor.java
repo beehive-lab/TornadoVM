@@ -291,7 +291,7 @@ public class MatrixVectorRowMajor {
                 outScales.set(globalBlockIdx, new HalfFloat(scale));
 
                 // store scale in unified ByteArray
-                outQ8ByteArray.setHalf(blockByteOffset, new HalfFloat(scale));
+                outQ8ByteArray.setHalfFloat(blockByteOffset, new HalfFloat(scale));
 
                 float inv = (scale == 0.0f) ? 0.0f : 1.0f / scale;
 

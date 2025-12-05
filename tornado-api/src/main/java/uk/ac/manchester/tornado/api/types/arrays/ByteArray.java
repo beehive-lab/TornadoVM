@@ -214,7 +214,7 @@ public final class ByteArray extends TornadoNativeArray {
      * @throws IllegalArgumentException
      *     If the {@code byteIndex} is not aligned to a 2-byte boundary.
      */
-    public void setHalf(int byteIndex, HalfFloat value) {
+    public void setHalfFloat(int byteIndex, HalfFloat value) {
         if (byteIndex % 2 != 0) {
             throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
         }
