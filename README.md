@@ -7,7 +7,7 @@
 
 ![TornadoVM version](https://img.shields.io/badge/version-2.0.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) ![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exception-blue.svg)
 
-<img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
+<img align="left" width="180" height="180" src="etc/tornadoVM_Logo.jpg">
 
 TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
 heterogeneous hardware.
