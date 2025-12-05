@@ -30,13 +30,13 @@ See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
 
-# 1. Quick Start - Install & Use the TornadoVM SDK
+## 1. Quick Start - Install & Use the TornadoVM SDK
 
 Set `JAVA_HOME` to a **JDK 21** installation, then download an SDK matching your OS, architecture, and accelerator backends.
 
 More SDKs are available on the [Releases Page](https://github.com/beehive-lab/TornadoVM/releases).
 
-## Linux (x86_64)
+### Linux (x86_64)
 
 ```bash
 wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.0.0-opencl-linux-amd64.zip
@@ -48,7 +48,7 @@ tornado --devices
 tornado --version
 ```
 
-## macOS (Apple Silicon)
+### macOS (Apple Silicon)
 
 ```bash
 wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.0.0-opencl-mac-aarch64.zip
@@ -60,7 +60,7 @@ tornado --devices
 tornado --version
 ```
 
-## Windows (10+)
+### Windows (10+)
 
 ```bash
 curl -L -o tornadovm-2.0.0-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.0.0-opencl-windows-amd64.zip
@@ -140,7 +140,7 @@ Read more in our [documentation](https://tornadovm.readthedocs.io/en/latest/prog
 </dependencies>
 ```
 
-# 5. Contributing to TornadoVM
+## 5. Contributing to TornadoVM
 
 We welcome contributions from the community — bug reports, documentation improvements, new features, and backends.
 
