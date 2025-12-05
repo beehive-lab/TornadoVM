@@ -1,0 +1,126 @@
+name: JDK Matrix Build & Integration Tests
+
+on:
+  push:
+    branches: [ci/night]
+  workflow_dispatch:
+
+jobs:
+  build-jdk-matrix:
+    runs-on: [self-hosted, Linux, x64]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        jdk:
+          - name: OpenJDK-21
+            java_home: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+            profile: jdk21
+          - name: GraalVM-21
+            java_home: /opt/jenkins/jdks/graal-23.1.0/graalvm-community-openjdk-21.0.1+12.1
+            profile: graal-jdk-21
+          - name: Mandrel-21
+            java_home: /opt/jenkins/jdks/graal-23.1.0/mandrel-java21-23.1.0.0-Final
+            profile: jdk21
+          - name: Zulu-21
+            java_home: /opt/jenkins/jdks/graal-23.1.0/zulu21.28.85-ca-jdk21.0.0-linux_x64
+            profile: jdk21
+          - name: Corretto-21
+            java_home: /opt/jenkins/jdks/graal-23.1.0/amazon-corretto-21.0.3.9.1-linux-x64
+            profile: jdk21
+          - name: Microsoft-21
+            java_home: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3+9
+            profile: jdk21
+    env:
+      JAVA_HOME: ${{ matrix.jdk.java_home }}
+      MAVEN_HOME: /opt/maven
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      GRAAL_JARS: /opt/graalJars
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+
+    steps:
+      - name: Checkout TornadoVM
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+
+      - name: Build TornadoVM (${{ matrix.jdk.name }})
+        run: |
+          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
+          java -version
+          make ${{ matrix.jdk.profile }} BACKEND=ptx,opencl,spirv
+
+  integration-tests:
+    runs-on: [self-hosted, Linux, x64]
+    needs: build-jdk-matrix
+    timeout-minutes: 45
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      MAVEN_HOME: /opt/maven
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      GRAAL_JARS: /opt/graalJars
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      KFUSION_ROOT: /var/lib/jenkins/workspace/kfusion-tornadovm
+      RAY_TRACER_ROOT: /var/lib/jenkins/workspace/TornadoVM-Ray-Tracer
+      JAVAFX_SDK: /var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-21.0.3
+
+    steps:
+      - name: Checkout TornadoVM
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+
+      - name: Build TornadoVM (OpenJDK 21)
+        run: |
+          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
+          make jdk21 BACKEND=ptx,opencl,spirv
+
+      - name: Build KFusion
+        run: |
+          source ${{ github.workspace }}/setvars.sh
+          cd $KFUSION_ROOT
+          git reset HEAD --hard
+          git fetch
+          git pull origin master
+          mvn clean install -DskipTests
+
+      - name: Run KFusion (OpenCL)
+        run: |
+          source ${{ github.workspace }}/setvars.sh
+          cd $KFUSION_ROOT
+          sed -i 's/kfusion.tornado.backend=PTX/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings
+          ./scripts/runOnlyOpenCL.sh
+
+      - name: Run KFusion (PTX)
+        run: |
+          source ${{ github.workspace }}/setvars.sh
+          cd $KFUSION_ROOT
+          sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings
+          ./scripts/runOnlyPTX.sh
+
+      - name: Build Ray Tracer
+        run: |
+          source ${{ github.workspace }}/setvars.sh
+          cd $RAY_TRACER_ROOT
+          git reset HEAD --hard
+          git fetch
+          git checkout master
+          git pull origin master
+          mvn clean install
+
+      - name: Run Ray Tracer regression
+        run: |
+          source ${{ github.workspace }}/setvars.sh
+          cd $RAY_TRACER_ROOT
+          ./bin/tornadovm-ray-tracer regression
