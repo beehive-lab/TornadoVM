@@ -200,6 +200,20 @@ public final class ByteArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_BYTE, baseIndex + index, value);
     }
 
+    /**
+     * Sets the half-float value at the specified byte index within the {@link ByteArray} instance.
+     *
+     * The specified {@code byteIndex} must be aligned to a 2-byte boundary; if it is not, 
+     * an {@link IllegalArgumentException} will be thrown. The method internally calculates 
+     * the appropriate short index for storage and updates the underlying memory segment.
+     *
+     * @param byteIndex
+     *     The byte index at which to set the half-float value. Must be aligned to a 2-byte boundary.
+     * @param value
+     *     The {@link HalfFloat} value to be stored at the specified index.
+     * @throws IllegalArgumentException
+     *     If the {@code byteIndex} is not aligned to a 2-byte boundary.
+     */
     public void setHalf(int byteIndex, HalfFloat value) {
         if (byteIndex % 2 != 0) {
             throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
@@ -221,6 +235,19 @@ public final class ByteArray extends TornadoNativeArray {
         return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
     }
 
+    /**
+     * Gets the half-float value stored at the specified byte index within the {@link ByteArray} instance.
+     *
+     * The specified {@code byteIndex} must be aligned to a 2-byte boundary; if it is not,
+     * an {@link IllegalArgumentException} will be thrown. The method internally calculates
+     * the appropriate short index for storage and retrieves the value from the underlying memory segment.
+     *
+     * @param byteIndex
+     *     The byte index from which to retrieve the half-float value. Must be aligned to a 2-byte boundary.
+     * @return A {@link HalfFloat} instance containing the value stored at the specified index.
+     * @throws IllegalArgumentException
+     *     If the {@code byteIndex} is not aligned to a 2-byte boundary.
+     */
     public HalfFloat getHalf(int byteIndex) {
         if (byteIndex % 2 != 0) {
             throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");

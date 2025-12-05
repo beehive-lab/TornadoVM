@@ -345,6 +345,9 @@ public class MatrixVectorRowMajor {
         }
     }
 
+    /**
+     * Matrix-vector multiplication between FloatArray and ByteArray, specialized for Q8_0 tensors.
+     */
     public static float matrixVectorRowMajorOptimizedQ8_0Byte(KernelContext context, int localSize, FloatArray x, ByteArray q, int n) {
         int rowId = context.groupIdx;
         int localId = context.localIdx;
