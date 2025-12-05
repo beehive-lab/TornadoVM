@@ -34,7 +34,7 @@ See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 Set `JAVA_HOME` to a **JDK 21** installation, then download an SDK matching your OS, architecture, and accelerator backends.
 
-More SDKs (`opencl`, `ptx`, `spirv`)are available on the [Releases Page](https://github.com/beehive-lab/TornadoVM/releases).
+All SDKs (`opencl`, `ptx`, `spirv`) are available on the [Releases Page](https://github.com/beehive-lab/TornadoVM/releases).
 
 ### Linux (x86_64)
 
@@ -110,21 +110,7 @@ that includes NBody, DFT, KMeans computation and matrix computations.
 - [FPGA execution](https://tornadovm.readthedocs.io/en/latest/fpga-programming.html)
 - [Profiler Usage](https://tornadovm.readthedocs.io/en/latest/profiler.html)
 
-## 3. Programming Model
-
-TornadoVM offers two complementary ways to express parallelism:
-
-### Loop Parallel API  
-Use Java annotations such as `@Parallel` and `@Reduce` to parallelize loops.
-
-### Kernel API  
-Use `KernelContext` for explicit GPU-style programming (thread IDs, local memory, barriers), similar to CUDA/OpenCL/SYCL.
-
-Both models can be combined inside a `TaskGraph`.
-
-Read more in our [documentation](https://tornadovm.readthedocs.io/en/latest/programming.html).
-
-## 4. Use TornadoVM in Your Project (Maven)
+## 3. Use TornadoVM in Your Project (Maven)
 
 ```xml
 <dependencies>
@@ -140,6 +126,20 @@ Read more in our [documentation](https://tornadovm.readthedocs.io/en/latest/prog
   </dependency>
 </dependencies>
 ```
+
+## 4. Programming Model
+
+TornadoVM offers two complementary ways to express parallelism:
+
+### Loop Parallel API  
+Use Java annotations such as `@Parallel` and `@Reduce` to parallelize loops.
+
+### Kernel API  
+Use `KernelContext` for explicit GPU-style programming (thread IDs, local memory, barriers), similar to CUDA/OpenCL/SYCL.
+
+Both models can be combined inside a `TaskGraph`.
+
+Read more in our [documentation](https://tornadovm.readthedocs.io/en/latest/programming.html).
 
 ## 5. Contributing to TornadoVM
 
