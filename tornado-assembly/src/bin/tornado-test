@@ -227,6 +227,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 
 /**
  * This class represents an array of bytes stored in native memory.
@@ -199,6 +201,30 @@ public final class ByteArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the half-float value at the specified byte index within the {@link ByteArray} instance.
+     *
+     * The specified {@code byteIndex} must be aligned to a 2-byte boundary; if it is not, 
+     * an {@link IllegalArgumentException} will be thrown. The method internally calculates 
+     * the appropriate short index for storage and updates the underlying memory segment.
+     *
+     * @param byteIndex
+     *     The byte index at which to set the half-float value. Must be aligned to a 2-byte boundary.
+     * @param value
+     *     The {@link HalfFloat} value to be stored at the specified index.
+     * @throws IllegalArgumentException
+     *     If the {@code byteIndex} is not aligned to a 2-byte boundary.
+     */
+    public void setHalfFloat(int byteIndex, HalfFloat value) {
+        if (byteIndex % 2 != 0) {
+            throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
+        }
+        // Convert byte index to short index for the segment
+        // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
+        int shortIndex = (arrayHeaderSize + byteIndex) / 2;
+        segment.setAtIndex(JAVA_SHORT, shortIndex, value.getHalfFloatValue());
+    }
+
+    /**
      * Gets the byte value stored at the specified index of the {@link ByteArray} instance.
      *
      * @param index
@@ -207,6 +233,31 @@ public final class ByteArray extends TornadoNativeArray {
      */
     public byte get(int index) {
         return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
+    }
+
+    /**
+     * Gets the half-float value stored at the specified byte index within the {@link ByteArray} instance.
+     *
+     * The specified {@code byteIndex} must be aligned to a 2-byte boundary; if it is not,
+     * an {@link IllegalArgumentException} will be thrown. The method internally calculates
+     * the appropriate short index for storage and retrieves the value from the underlying memory segment.
+     *
+     * @param byteIndex
+     *     The byte index from which to retrieve the half-float value. Must be aligned to a 2-byte boundary.
+     * @return A {@link HalfFloat} instance containing the value stored at the specified index.
+     * @throws IllegalArgumentException
+     *     If the {@code byteIndex} is not aligned to a 2-byte boundary.
+     */
+    public HalfFloat getHalfFloat(int byteIndex) {
+        if (byteIndex % 2 != 0) {
+            throw new IllegalArgumentException("Half-float must be aligned to 2-byte boundary");
+        }
+        // Convert byte index to short index for the segment
+        // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
+        int shortIndex = (arrayHeaderSize + byteIndex) / 2;
+        short halfFloatValue = segment.getAtIndex(JAVA_SHORT, shortIndex);
+        return new HalfFloat(halfFloatValue);
+
     }
 
     /**
