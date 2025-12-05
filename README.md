@@ -1,8 +1,8 @@
 # TornadoVM
 [![Build on [push]](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/fast-test.yml)
 
-[![API Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?style=for-the-badge&logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
-[![Runtime Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?style=for-the-badge&logo=apache-maven&color=blue&label=Tornado%20Runtime)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
+[![API Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
+[![Runtime Version](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-runtime?logo=apache-maven&color=blue&label=Tornado%20Runtime)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-runtime)
 
 
 ![TornadoVM version](https://img.shields.io/badge/version-2.0.0-purple)  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) ![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exception-blue.svg)
