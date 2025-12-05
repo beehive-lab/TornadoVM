@@ -126,14 +126,14 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return new PTXTornadoDevice(device.getDeviceIndex());
     }
 
-    public TornadoInstalledCode installCode(long executionPlanId, PTXCompilationResult result, String resolvedMethodName) {
+    public TornadoInstalledCode installCode(TaskDataContext taskMeta, long executionPlanId, PTXCompilationResult result, String resolvedMethodName) {
         PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
-        return ptxCodeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName, result.metaData().isPrintKernelEnabled());
+        return ptxCodeCache.installSource(taskMeta, result.getName(), result.getTargetCode(), resolvedMethodName, result.metaData().isPrintKernelEnabled());
     }
 
-    public TornadoInstalledCode installCode(long executionPlanId, String name, byte[] code, String resolvedMethodName, boolean printKernel) {
+    public TornadoInstalledCode installCode(TaskDataContext taskMeta, long executionPlanId, String name, byte[] code, String resolvedMethodName, boolean printKernel) {
         PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
-        return ptxCodeCache.installSource(name, code, resolvedMethodName, printKernel);
+        return ptxCodeCache.installSource(taskMeta, name, code, resolvedMethodName, printKernel);
     }
 
     public TornadoInstalledCode getInstalledCode(long executionPlanId, String name) {
