@@ -59,17 +59,69 @@ jobs:
           java -version
           make ${{ matrix.jdk.profile }} BACKEND=ptx,opencl,spirv
 
-      - name: Run (${{ matrix.jdk.name }}) Full unit tests
+      - name: Run (${{ matrix.jdk.name }}) Full unit tests for SPIR-V with OpenCL runtime
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
           make tests
-      - name: Run polyglot kernels (Graal JDK 21 only)
+      - name: Run polyglot tests for SPIR-V with OpenCL runtime
         if: ${{ matrix.jdk.profile == 'graal-jdk-21' }}
         run: |
-          # ensure same environment as tests
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run (${{ matrix.jdk.name }}) Full unit tests for SPIR-V with Level Zero runtime
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose -jvm="-Dtornado.unittests.device=0:1"
+      - name: Run polyglot tests for SPIR-V with Level Zero runtime
+        if: ${{ matrix.jdk.profile == 'graal-jdk-21' }}
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run (${{ matrix.jdk.name }}) Full unit tests for OpenCL on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose -jvm="-Dtornado.unittests.device=1:0"
+      - name: Run polyglot tests for OpenCL on NVIDIA GPU
+        if: ${{ matrix.jdk.profile == 'graal-jdk-21' }}
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run (${{ matrix.jdk.name }}) Full unit tests for OpenCL on Integrated Graphics
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose -jvm="-Dtornado.unittests.device=1:1"
+      - name: Run polyglot tests for OpenCL on Integrated Graphics
+        if: ${{ matrix.jdk.profile == 'graal-jdk-21' }}
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run (${{ matrix.jdk.name }}) Full unit tests for PTX on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose -jvm="-Dtornado.unittests.device=2:0"
+      - name: Run polyglot tests for PTX on NVIDIA GPU
+        if: ${{ matrix.jdk.profile == 'graal-jdk-21' }}
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      
