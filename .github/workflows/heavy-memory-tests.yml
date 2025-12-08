@@ -59,6 +59,7 @@ jobs:
 
     steps:
       - name: Run full unit tests for SPIR-V with OpenCL runtime
+        working-directory: ${{ env.TORNADO_ROOT }}
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
