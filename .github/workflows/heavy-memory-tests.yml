@@ -40,24 +40,6 @@ jobs:
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           java -version
           make jdk21 BACKEND=ptx,opencl,spirv
-
-  tornadovm-heavy-memory-tests:
-    runs-on: [ self-hosted, Linux, x64 ]
-    needs: build-openjdk
-    timeout-minutes: 225
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-    env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
-      MAVEN_HOME: /opt/maven
-      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
-      GRAAL_JARS: /opt/graalJars
-      TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
-      VENV_PATH: ${{ github.workspace }}/venv-opencl
-
-    steps:
       - name: Run full unit tests for SPIR-V with OpenCL runtime
         working-directory: ${{ env.TORNADO_ROOT }}
         run: |
