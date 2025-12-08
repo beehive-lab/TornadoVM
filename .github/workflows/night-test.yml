@@ -58,6 +58,12 @@ jobs:
           mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
           java -version
           make ${{ matrix.jdk.profile }} BACKEND=ptx,opencl,spirv
+      
+      - name: Setup Python venv
+        run: |
+          python3 -m venv $VENV_PATH
+          source $VENV_PATH/bin/activate
+          pip install --upgrade pip tqdm psutil   # Combined    
 
       - name: Run (${{ matrix.jdk.name }}) Full unit tests for SPIR-V with OpenCL runtime
         run: |
