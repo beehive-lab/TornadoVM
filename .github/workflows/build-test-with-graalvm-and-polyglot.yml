@@ -97,6 +97,9 @@ jobs:
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
+      GRAALPY_HOME: /opt/graalpy-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_03DCD25EA1_JAVA21/graalvm-03dcd25ea1-java21-23.1.0-dev
+      GRAALJS_HOME: /opt/graaljs-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_3AF13F6F38_JAVA21/graalvm-3af13f6f38-java21-23.1.0-dev
+      TRUFFLERUBY_HOME: /opt/truffleruby-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_AEA5C30A3B_JAVA21/graalvm-aea5c30a3b-java21-23.1.0-dev
     steps:
       - name: Run polyglot tests for SPIR-V with OpenCL runtime
         run: |
