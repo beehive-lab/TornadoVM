@@ -1,14 +1,14 @@
 name: Build & Test with JDK Matrix
 
 on:
-  push:
-    branches: [ ci/night ]
+  schedule:
+    - cron: '0 1 * * *'
   workflow_dispatch:
 
 jobs:
   build-jdk-matrix:
     runs-on: [ self-hosted, Linux, x64 ]
-    timeout-minutes: 150
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       max-parallel: 1
