@@ -1,8 +1,8 @@
 name: JDK Matrix Build & Full Tests
 
 on:
-  schedule:
-    - cron: '0 2 * * *'  # 2 AM UTC daily
+  push:
+    branches: [ci/night]
   workflow_dispatch:
 
 jobs:
