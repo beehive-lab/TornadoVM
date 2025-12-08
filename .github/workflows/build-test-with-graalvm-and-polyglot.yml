@@ -54,6 +54,7 @@ jobs:
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
     steps:
       - name: Run fast unit-tests for SPIR-V with OpenCL runtime
         run: |
@@ -95,6 +96,7 @@ jobs:
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
     steps:
       - name: Run polyglot tests for SPIR-V with OpenCL runtime
         run: |
