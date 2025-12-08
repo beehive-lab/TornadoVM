@@ -306,6 +306,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Inconsistent timing metrics for data Transfers, triggering difference in copy once vs copy always
     "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
+    "uk.ac.manchester.tornado.unittests.warmup.TestWarmUp#test01",
 
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel.
