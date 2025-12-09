@@ -325,6 +325,21 @@ jobs:
             });
             
             console.log(`✅ Created PR #${pr.number}: ${pr.html_url}`);
+
+             // Request reviewers
+            const reviewers = ['mikepapadim', 'stratika', 'kotselidis', 'mairooni', 'orionpapadakis'];
+            
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                reviewers: reviewers
+              });
+              console.log(`✅ Requested reviewers: ${reviewers.join(', ')}`);
+            } catch (e) {
+              console.log('Could not request reviewers:', e.message);
+            }
             
             // Add label if exists
             try {
