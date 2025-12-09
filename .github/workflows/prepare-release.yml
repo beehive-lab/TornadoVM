@@ -91,10 +91,10 @@ jobs:
           
           # Update "Latest Release" line with current date (DD/MM/YYYY format)
           RELEASE_DATE=$(date +"%d/%m/%Y")
-          sed -i "s/\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+ - [0-9\/]\+/**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}/" README.md
+          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+ - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
           
           # Update Maven Central dependency versions (io.github.beehive-lab groupId)
-          sed -i 's/<version>[0-9]\+\.[0-9]\+\.[0-9]\+<\/version>/<version>${{ env.VERSION }}<\/version>/g' README.md
+          sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+</version>|<version>${{ env.VERSION }}</version>|g' README.md
           
           echo "✅ Updated README.md"
 
