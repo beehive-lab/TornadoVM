@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>2.0.1-dev</version>
+        <version>2.1.0</version>
     </parent>
     <artifactId>tornado-matrices</artifactId>
     <name>tornado-matrices</name>

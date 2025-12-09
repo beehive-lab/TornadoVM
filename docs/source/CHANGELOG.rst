@@ -7,6 +7,33 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 2.1.0
+---------------
+09/12/25
+
+Improvements
+~~~~~~~~~~~~
+
+- `#754 <https://github.com/beehive-lab/TornadoVM/pull/754>`_: Support to express Q8_0 tensors as Tornado ByteArray
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#756 <https://github.com/beehive-lab/TornadoVM/pull/756>`_: [CI] Add night workflow to build and test all supported JDKs (Zulu, OpenJDK, GraalVM, Corretto, Mandrel etc) on Linux x64 runner
+- `#755 <https://github.com/beehive-lab/TornadoVM/pull/755>`_: [docs] Refining README and simplifying instructions
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#753 <https://github.com/beehive-lab/TornadoVM/pull/753>`_: [hotfix] Fix Conversion Error from FP16 to FP32
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#758 <https://github.com/beehive-lab/TornadoVM/pull/758>`_: [CI] Pre and post release workflows to automate release deployments
+- `#752 <https://github.com/beehive-lab/TornadoVM/pull/752>`_: Update POM files: bump parent version to \`2.0.1-dev\` across all modules
+
+
 TornadoVM 2.0.0
 ---------------
 02/12/25
