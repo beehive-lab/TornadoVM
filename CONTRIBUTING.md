@@ -97,4 +97,4 @@ Main contacts:
 
 * Christos Kotselidis <christos (dot) kotselidis (at) manchester (dot) ac (dot) uk >
 * Athanasios Stratikopoulos <athanasios (dot) stratikopoulos (at) manchester (dot) ac (dot) uk >
-* Juan Fumero <juan (dot) fumero (at) manchester (dot) ac (dot) uk >
+* Michail Papadimitriou <michail (dot) papadimitriou (at) manchester (dot) ac (dot) uk >
