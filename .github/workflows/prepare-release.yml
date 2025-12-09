@@ -101,17 +101,22 @@ jobs:
       - name: Update docs/source/conf.py
         run: |
           if [ -f docs/source/conf.py ]; then
-            sed -i "s/version = '[0-9]\+\.[0-9]\+\.[0-9]\+'/version = '${{ env.VERSION }}'/" docs/source/conf.py
-            sed -i "s/release = '[0-9]\+\.[0-9]\+\.[0-9]\+'/release = '${{ env.VERSION }}'/" docs/source/conf.py
+            # conf.py uses "vX.Y.Z" format with double quotes
+            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
             echo "✅ Updated docs/source/conf.py"
+            grep -E "(version|release) =" docs/source/conf.py
           fi
 
       - name: Update docs/source/installation.rst
         run: |
           if [ -f docs/source/installation.rst ]; then
-            # Be selective - only update TornadoVM version references, not JDK versions
-            sed -i 's/TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+/TornadoVM ${{ env.VERSION }}/g' docs/source/installation.rst
-            sed -i 's/tornadovm-[0-9]\+\.[0-9]\+\.[0-9]\+/tornadovm-${{ env.VERSION }}/g' docs/source/installation.rst
+            # Update Maven dependency versions in the XML examples
+            sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+</version>|<version>${{ env.VERSION }}</version>|g' docs/source/installation.rst
+            
+            # Add new version to "Versions available" list (insert before previous version)
+            sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
+            
             echo "✅ Updated docs/source/installation.rst"
           fi
 
