@@ -489,6 +489,14 @@ class TornadoVMRunnerTool():
         if (os.name == 'nt'):
             self.checkVCRuntimeWindows()
 
+        # Check C++ standard library compatibility on Linux
+        if (self.platform.startswith('linux')):
+            self.checkLinuxLibstdcxxCompatibility()
+
+        # Check macOS compatibility
+        if (self.platform == 'darwin'):
+            self.checkMacOSCompatibility()
+
     def setTruffleVars(self, env_vars):
         for var, attr in env_vars.items():
             if var in os.environ:
@@ -696,6 +704,241 @@ class TornadoVMRunnerTool():
 
         print("\n" + "="*80)
         print("TornadoVM will continue, but native library loading may fail without this runtime.")
+        print("="*80 + "\n")
+
+    def checkLinuxLibstdcxxCompatibility(self):
+        """Check if the system has compatible libstdc++ version for TornadoVM native libraries"""
+        try:
+            # Check if OpenCL backend is installed
+            opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.so')
+            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.so')
+            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.so')
+
+            # Find at least one native library to check
+            lib_to_check = None
+            if os.path.exists(opencl_lib):
+                lib_to_check = opencl_lib
+            elif os.path.exists(spirv_lib):
+                lib_to_check = spirv_lib
+            elif os.path.exists(ptx_lib):
+                lib_to_check = ptx_lib
+
+            if not lib_to_check:
+                # No native libraries found, skip check
+                return
+
+            # Use ldd to check dependencies
+            result = subprocess.run(['ldd', lib_to_check],
+                                  capture_output=True,
+                                  text=True,
+                                  timeout=5)
+
+            if result.returncode == 0:
+                output = result.stdout
+
+                # Check for "not found" or GLIBCXX version errors
+                if 'not found' in output or 'GLIBCXX' in output:
+                    # Try to get more specific info using strings
+                    strings_result = subprocess.run(['strings', lib_to_check],
+                                                   capture_output=True,
+                                                   text=True,
+                                                   timeout=5)
+
+                    if strings_result.returncode == 0:
+                        glibcxx_versions = [line for line in strings_result.stdout.split('\n')
+                                          if line.startswith('GLIBCXX_')]
+
+                        if glibcxx_versions:
+                            max_required = max(glibcxx_versions)
+
+                            # Check system libstdc++
+                            system_libstdcxx = '/usr/lib/x86_64-linux-gnu/libstdc++.so.6'
+                            if not os.path.exists(system_libstdcxx):
+                                # Try alternative locations
+                                system_libstdcxx = '/lib/x86_64-linux-gnu/libstdc++.so.6'
+
+                            if os.path.exists(system_libstdcxx):
+                                system_result = subprocess.run(['strings', system_libstdcxx],
+                                                             capture_output=True,
+                                                             text=True,
+                                                             timeout=5)
+
+                                if system_result.returncode == 0:
+                                    system_versions = [line for line in system_result.stdout.split('\n')
+                                                     if line.startswith('GLIBCXX_')]
+
+                                    if system_versions:
+                                        max_available = max(system_versions)
+
+                                        # Compare versions
+                                        if max_required > max_available:
+                                            self.printLibstdcxxCompatibilityWarning(
+                                                lib_to_check, max_required, max_available)
+        except Exception:
+            # Silently fail - this is a best-effort check
+            pass
+
+    def printLibstdcxxCompatibilityWarning(self, library, required_version, available_version):
+        """Print warning about libstdc++ incompatibility"""
+        print("\n" + "="*80)
+        print("WARNING: C++ Standard Library Compatibility Issue Detected!")
+        print("="*80)
+        print(f"\nTornadoVM native library: {os.path.basename(library)}")
+        print(f"Required version: {required_version}")
+        print(f"Available version: {available_version}")
+        print("\nCAUSE:")
+        print("  The TornadoVM SDK was built on a system with a newer GCC version")
+        print("  than what is available on this system.")
+        print("\nSYMPTOMS:")
+        print("  - 'tornado --devices' will fail with ExceptionInInitializerError")
+        print("  - Error: 'GLIBCXX_X.X.XX not found'")
+        print("  - UnsatisfiedLinkError for native libraries")
+
+        # Detect distribution
+        distro_info = self.getLinuxDistribution()
+
+        print("\nSOLUTIONS:")
+        print("\nOption 1: Upgrade GCC/libstdc++ on this system (Quick Fix)")
+
+        if 'ubuntu' in distro_info.lower() or 'debian' in distro_info.lower():
+            print("  Ubuntu/Debian:")
+            print("    sudo add-apt-repository ppa:ubuntu-toolchain-r/test")
+            print("    sudo apt update")
+            print("    sudo apt install gcc-13 g++-13 libstdc++6")
+        elif 'fedora' in distro_info.lower() or 'rhel' in distro_info.lower() or 'centos' in distro_info.lower():
+            print("  Fedora/RHEL/CentOS:")
+            print("    sudo dnf install gcc-toolset-13")
+            print("    scl enable gcc-toolset-13 bash")
+        elif 'arch' in distro_info.lower():
+            print("  Arch Linux:")
+            print("    sudo pacman -Syu gcc")
+        else:
+            print("  Install the latest GCC version for your distribution")
+
+        print("\nOption 2: Rebuild TornadoVM SDK on a compatible system (Recommended for portability)")
+        print("  For maximum compatibility, build on the oldest system you need to support.")
+        print("  For example, building on Ubuntu 22.04 (GCC 11) will run on both")
+        print("  Ubuntu 22.04+ and Ubuntu 24.04+")
+        print("\n  On the BUILD machine:")
+        print("    export CC=gcc-11")
+        print("    export CXX=g++-11")
+        print("    make clean")
+        print("    make")
+
+        print("\nSYSTEM REQUIREMENTS:")
+        print("  This SDK requires:")
+        if 'GLIBCXX_3.4.32' in required_version:
+            print("    - GCC 13+ / Ubuntu 24.04+ / Fedora 38+")
+        elif 'GLIBCXX_3.4.30' in required_version:
+            print("    - GCC 11+ / Ubuntu 22.04+ / Fedora 36+")
+        elif 'GLIBCXX_3.4.29' in required_version:
+            print("    - GCC 10+ / Ubuntu 20.04+ / Fedora 33+")
+
+        print("\n" + "="*80)
+        print("TornadoVM will attempt to continue, but execution will likely fail.")
+        print("="*80 + "\n")
+
+    def getLinuxDistribution(self):
+        """Get Linux distribution information"""
+        try:
+            if os.path.exists('/etc/os-release'):
+                with open('/etc/os-release', 'r') as f:
+                    for line in f:
+                        if line.startswith('ID='):
+                            return line.split('=')[1].strip().strip('"')
+        except:
+            pass
+        return "unknown"
+
+    def checkMacOSCompatibility(self):
+        """Check macOS version compatibility for TornadoVM native libraries"""
+        try:
+            # Get macOS version
+            macos_version = platform.mac_ver()[0]
+            if not macos_version:
+                return
+
+            major_version = int(macos_version.split('.')[0])
+
+            # Check native libraries for deployment target
+            opencl_lib = os.path.join(self.sdk, 'lib', 'libtornado-opencl.dylib')
+            spirv_lib = os.path.join(self.sdk, 'lib', 'libtornado-levelzero.dylib')
+            ptx_lib = os.path.join(self.sdk, 'lib', 'libtornado-ptx.dylib')
+
+            lib_to_check = None
+            if os.path.exists(opencl_lib):
+                lib_to_check = opencl_lib
+            elif os.path.exists(spirv_lib):
+                lib_to_check = spirv_lib
+            elif os.path.exists(ptx_lib):
+                lib_to_check = ptx_lib
+
+            if not lib_to_check:
+                return
+
+            # Use otool to check deployment target
+            result = subprocess.run(['otool', '-l', lib_to_check],
+                                  capture_output=True,
+                                  text=True,
+                                  timeout=5)
+
+            if result.returncode == 0:
+                output = result.stdout
+
+                # Parse deployment target from otool output
+                # Look for LC_VERSION_MIN_MACOSX or LC_BUILD_VERSION
+                min_version = None
+                for line in output.split('\n'):
+                    if 'version' in line.lower() and any(v in line for v in ['10.', '11.', '12.', '13.', '14.', '15.']):
+                        # Try to extract version number
+                        import re
+                        version_match = re.search(r'(\d+\.\d+)', line)
+                        if version_match:
+                            min_version = version_match.group(1)
+                            break
+
+                if min_version:
+                    min_major = int(min_version.split('.')[0])
+
+                    if major_version < min_major:
+                        self.printMacOSCompatibilityWarning(lib_to_check, min_version, macos_version)
+        except Exception:
+            # Silently fail - this is a best-effort check
+            pass
+
+    def printMacOSCompatibilityWarning(self, library, required_version, current_version):
+        """Print warning about macOS version incompatibility"""
+        print("\n" + "="*80)
+        print("WARNING: macOS Version Compatibility Issue Detected!")
+        print("="*80)
+        print(f"\nTornadoVM native library: {os.path.basename(library)}")
+        print(f"Required minimum macOS: {required_version}")
+        print(f"Current macOS version: {current_version}")
+        print("\nCAUSE:")
+        print("  The TornadoVM SDK was built on a newer version of macOS")
+        print("  than what is currently running on this system.")
+        print("\nSYMPTOMS:")
+        print("  - 'tornado --devices' may fail to load native libraries")
+        print("  - dyld errors about incompatible library versions")
+        print("  - UnsatisfiedLinkError for native libraries")
+        print("\nSOLUTION:")
+        print("\nOption 1: Upgrade macOS (if possible)")
+        print(f"  Upgrade to macOS {required_version} or later")
+
+        print("\nOption 2: Rebuild TornadoVM SDK on a compatible system (Recommended)")
+        print("  For maximum compatibility, build on the oldest macOS you need to support.")
+        print("\n  On the BUILD machine, set deployment target:")
+        print("    export MACOSX_DEPLOYMENT_TARGET=11.0  # or your minimum version")
+        print("    make clean")
+        print("    make")
+
+        print("\nRECOMMENDED DEPLOYMENT TARGETS:")
+        print("  - macOS 11.0 (Big Sur): Maximum compatibility with Apple Silicon and Intel")
+        print("  - macOS 12.0 (Monterey): Modern features, good compatibility")
+        print("  - macOS 13.0 (Ventura): Latest features, newer systems only")
+
+        print("\n" + "="*80)
+        print("TornadoVM will attempt to continue, but execution may fail.")
         print("="*80 + "\n")
 
     def printNVMLGuidanceWindows(self):
