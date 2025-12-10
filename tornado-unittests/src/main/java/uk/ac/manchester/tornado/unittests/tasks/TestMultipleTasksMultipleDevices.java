@@ -106,8 +106,12 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     }
 
     private static void assertAvailableDevices() {
-        if (TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices() < 2) {
-            throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + 2 + " devices enabled");
+        String driverAndDevice = System.getProperty("tornado.unittests.device", "0:0");
+        String[] parts = driverAndDevice.split(":");
+        int backendIndex = Integer.parseInt(parts[0]);
+
+        if (TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex).getNumDevices() < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 devices enabled on backend " + backendIndex);
         }
     }
 

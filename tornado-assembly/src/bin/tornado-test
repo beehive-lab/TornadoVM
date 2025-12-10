@@ -227,6 +227,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -306,6 +307,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Inconsistent timing metrics for data Transfers, triggering difference in copy once vs copy always
     "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
+    "uk.ac.manchester.tornado.unittests.warmup.TestWarmUp#test01",
 
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel.
@@ -394,7 +396,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "2.0.0"
+__VERSION__ = "2.1.0"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

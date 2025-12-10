@@ -38,6 +38,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
+import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -408,6 +409,16 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
             phiNode.replaceAtUsages(halfPhiNode);
             phiNode.safeDelete();
+            for (HalfFloatPlaceholder halfFloatPlaceholder : halfPhiNode.usages().filter(HalfFloatPlaceholder.class)) {
+                for (FloatConvertNode floatConvertNode : halfFloatPlaceholder.usages().filter(FloatConvertNode.class)) {
+                    OCLConvertHalfToFloat oclConvertHalfToFloat = new OCLConvertHalfToFloat(halfPhiNode);
+                    graph.addWithoutUnique(oclConvertHalfToFloat);
+                    floatConvertNode.replaceAtUsages(oclConvertHalfToFloat);
+                    floatConvertNode.safeDelete();
+                }
+                halfFloatPlaceholder.replaceAtUsages(halfPhiNode);
+                halfFloatPlaceholder.safeDelete();
+            }
             return halfPhiNode;
         } else {
             return phiNode;

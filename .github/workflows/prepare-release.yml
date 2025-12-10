@@ -1,0 +1,368 @@
+name: Prepare TornadoVM Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 2.0.1)'
+        required: true
+        type: string
+      previous_version:
+        description: 'Previous version for changelog (e.g., 2.0.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run - show changes without creating PR'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  VERSION: ${{ inputs.version }}
+  PREV_VERSION: ${{ inputs.previous_version }}
+
+jobs:
+  prepare-release:
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 15
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      MAVEN_HOME: /opt/maven
+    
+    steps:
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Expected: X.Y.Z (e.g., 2.0.1)"
+            exit 1
+          fi
+          echo "✅ Version format valid: ${{ inputs.version }}"
+
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch
+        run: |
+          git checkout -b release/${{ env.VERSION }}
+          echo "✅ Created branch: release/${{ env.VERSION }}"
+
+      # ============================================
+      # VERSION UPDATES
+      # ============================================
+      
+      - name: Update Maven versions
+        run: |
+          ./mvnw versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
+          echo "✅ Maven versions updated to ${{ env.VERSION }}"
+
+      - name: Update tornadovm-installer version
+        run: |
+          sed -i 's/__VERSION__ = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9]*\)\?"/__VERSION__ = "v${{ env.VERSION }}"/' bin/tornadovm-installer
+          echo "Updated bin/tornadovm-installer:"
+          grep -n "__VERSION__" bin/tornadovm-installer
+
+      - name: Update tornado-test version
+        run: |
+          sed -i 's/__VERSION__ = "[0-9]\+\.[0-9]\+\.[0-9]\+\(-dev\)\?"/__VERSION__ = "${{ env.VERSION }}"/' tornado-assembly/src/bin/tornado-test
+          echo "Updated tornado-assembly/src/bin/tornado-test:"
+          grep -n "__VERSION__" tornado-assembly/src/bin/tornado-test
+
+      - name: Update README.md
+        run: |
+          # Update version badge
+          sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+-purple/version-${{ env.VERSION }}-purple/g' README.md
+          
+          # Update "Latest Release" line with current date (DD/MM/YYYY format)
+          RELEASE_DATE=$(date +"%d/%m/%Y")
+          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+ - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
+          
+          # Update Maven Central dependency versions (io.github.beehive-lab groupId)
+          sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+</version>|<version>${{ env.VERSION }}</version>|g' README.md
+          
+          echo "✅ Updated README.md"
+
+      - name: Update docs/source/conf.py
+        run: |
+          if [ -f docs/source/conf.py ]; then
+            # conf.py uses "vX.Y.Z" format with double quotes
+            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
+            echo "✅ Updated docs/source/conf.py"
+            grep -E "(version|release) =" docs/source/conf.py
+          fi
+
+      - name: Update docs/source/installation.rst
+        run: |
+          if [ -f docs/source/installation.rst ]; then
+            # Update Maven dependency versions in the XML examples
+            sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+</version>|<version>${{ env.VERSION }}</version>|g' docs/source/installation.rst
+            
+            # Add new version to "Versions available" list (insert before previous version)
+            sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
+            
+            echo "✅ Updated docs/source/installation.rst"
+          fi
+
+      # ============================================
+      # CHANGELOG GENERATION
+      # ============================================
+      
+      - name: Fetch merged PRs for changelog
+        id: fetch_prs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prevVersion = '${{ env.PREV_VERSION }}';
+            const newVersion = '${{ env.VERSION }}';
+            
+            // Find the previous release date
+            let sinceDate;
+            try {
+              const { data: releases } = await github.rest.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 10
+              });
+              
+              const prevRelease = releases.find(r => 
+                r.tag_name === `v${prevVersion}` || r.tag_name === prevVersion
+              );
+              if (prevRelease) {
+                sinceDate = prevRelease.published_at;
+                console.log(`Found previous release ${prevVersion} from ${sinceDate}`);
+              }
+            } catch (e) {
+              console.log('Could not fetch releases:', e.message);
+            }
+            
+            if (!sinceDate) {
+              const date = new Date();
+              date.setDate(date.getDate() - 90);
+              sinceDate = date.toISOString();
+              console.log(`Using fallback date: ${sinceDate}`);
+            }
+            
+            // Fetch merged PRs since last release
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              sort: 'updated',
+              direction: 'desc',
+              per_page: 100
+            });
+            
+            const mergedPRs = prs.filter(pr => 
+              pr.merged_at && new Date(pr.merged_at) > new Date(sinceDate)
+            );
+            
+            console.log(`Found ${mergedPRs.length} merged PRs since ${sinceDate}`);
+            
+            // Categorize PRs
+            const improvements = [];
+            const bugfixes = [];
+            const compatibility = [];
+            const other = [];
+            
+            for (const pr of mergedPRs) {
+              const labels = pr.labels.map(l => l.name.toLowerCase());
+              const title = pr.title.replace(/`/g, '\\`');
+              const entry = `- \`#${pr.number} <${pr.html_url}>\`_: ${title}`;
+              
+              if (labels.some(l => l.includes('bug') || l.includes('fix'))) {
+                bugfixes.push(entry);
+              } else if (labels.some(l => l.includes('enhancement') || l.includes('feature') || l.includes('improvement'))) {
+                improvements.push(entry);
+              } else if (labels.some(l => l.includes('compat') || l.includes('doc') || l.includes('ci') || l.includes('build'))) {
+                compatibility.push(entry);
+              } else {
+                other.push(entry);
+              }
+            }
+            
+            // Generate RST changelog entry
+            const today = new Date();
+            const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getFullYear()).slice(-2)}`;
+            
+            let changelog = `TornadoVM ${newVersion}\n`;
+            changelog += '-'.repeat(`TornadoVM ${newVersion}`.length) + '\n';
+            changelog += `${dateStr}\n\n`;
+            
+            if (improvements.length > 0) {
+              changelog += 'Improvements\n~~~~~~~~~~~~\n\n';
+              changelog += improvements.join('\n') + '\n\n';
+            }
+            
+            if (compatibility.length > 0) {
+              changelog += 'Compatibility\n~~~~~~~~~~~~\n\n';
+              changelog += compatibility.join('\n') + '\n\n';
+            }
+            
+            if (bugfixes.length > 0) {
+              changelog += 'Bug Fixes\n~~~~~~~~~~~~\n\n';
+              changelog += bugfixes.join('\n') + '\n\n';
+            }
+            
+            if (other.length > 0) {
+              changelog += 'Other Changes\n~~~~~~~~~~~~\n\n';
+              changelog += other.join('\n') + '\n\n';
+            }
+            
+            if (mergedPRs.length === 0) {
+              changelog += '.. TODO: Add changes manually\n\n';
+            }
+            
+            // Write to file for next step
+            const fs = require('fs');
+            fs.writeFileSync('/tmp/changelog_entry.txt', changelog);
+            
+            core.setOutput('pr_count', mergedPRs.length);
+
+      - name: Update CHANGELOG.rst
+        run: |
+          CHANGELOG_FILE="docs/source/CHANGELOG.rst"
+          
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "⚠️ CHANGELOG.rst not found"
+            exit 0
+          fi
+          
+          # Find insertion point (after "This file summarizes...")
+          INSERT_LINE=$(grep -n "This file summarizes" "$CHANGELOG_FILE" | head -1 | cut -d: -f1)
+          
+          if [ -n "$INSERT_LINE" ]; then
+            INSERT_LINE=$((INSERT_LINE + 2))
+            
+            head -n "$INSERT_LINE" "$CHANGELOG_FILE" > /tmp/changelog_new.rst
+            echo "" >> /tmp/changelog_new.rst
+            cat /tmp/changelog_entry.txt >> /tmp/changelog_new.rst
+            tail -n +$((INSERT_LINE + 1)) "$CHANGELOG_FILE" >> /tmp/changelog_new.rst
+            mv /tmp/changelog_new.rst "$CHANGELOG_FILE"
+            
+            echo "✅ Updated CHANGELOG.rst"
+          else
+            echo "⚠️ Could not find insertion point in CHANGELOG.rst"
+          fi
+
+      # ============================================
+      # SUMMARY & PR CREATION
+      # ============================================
+      
+      - name: Show changes summary
+        run: |
+          echo "## 📋 Release ${{ env.VERSION }} Preparation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Modified:" >> $GITHUB_STEP_SUMMARY
+          git diff --name-only | while read file; do
+            echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### PRs included: ${{ steps.fetch_prs.outputs.pr_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next steps after PR merge:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Existing CI will run build & tests" >> $GITHUB_STEP_SUMMARY
+          echo "2. Run \`deploy-maven-central\` workflow" >> $GITHUB_STEP_SUMMARY
+          echo "3. Create GitHub release with tag \`v${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Commit and push
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          git add -A
+          git commit -m "Prepare release ${{ env.VERSION }}"
+          git push origin release/${{ env.VERSION }}
+
+      - name: Create Pull Request
+        if: ${{ inputs.dry_run == false }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = process.env.VERSION;
+            const prCount = '${{ steps.fetch_prs.outputs.pr_count }}';
+            
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Release ${version}`,
+              head: `release/${version}`,
+              base: 'master',
+              body: `## Release ${version}
+
+            Auto-generated release preparation PR.
+
+            ### Changes
+            - ${prCount} PRs included in changelog
+            - Version bumped in all files
+
+            ### Review checklist
+            - [ ] Version numbers correct in all files
+            - [ ] CHANGELOG.rst content reviewed and edited
+            - [ ] CI passes (build + tests)
+
+            ### After merge
+            1. CI runs automatically ✅
+            2. Run **deploy-maven-central** workflow manually
+            3. Create GitHub Release with tag \`v${version}\`
+            4. Merge master → develop
+            5. Bump develop to \`${version.replace(/(\d+)$/, m => parseInt(m)+1)}-dev\`
+            `
+            });
+            
+            console.log(`✅ Created PR #${pr.number}: ${pr.html_url}`);
+
+             // Request reviewers
+            const reviewers = ['mikepapadim', 'stratika', 'kotselidis', 'mairooni', 'orionpapadakis'];
+            
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                reviewers: reviewers
+              });
+              console.log(`✅ Requested reviewers: ${reviewers.join(', ')}`);
+            } catch (e) {
+              console.log('Could not request reviewers:', e.message);
+            }
+            
+            // Add label if exists
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['release']
+              });
+            } catch (e) {
+              console.log('Could not add label:', e.message);
+            }
+
+      - name: Dry run output
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "🏃 DRY RUN MODE"
+          echo ""
+          echo "=== Files changed ==="
+          git diff --stat
+          echo ""
+          echo "=== Changelog entry ==="
+          cat /tmp/changelog_entry.txt
+          echo ""
+          echo "=== Full diff ==="
+          git diff

@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>2.0.1-dev</version>
+        <version>2.1.0</version>
     </parent>
     <artifactId>tornado-drivers-ptx-jni</artifactId>
     <name>tornado-drivers-ptx-jni</name>

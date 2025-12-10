@@ -1,0 +1,138 @@
+name: Build & Test with GraalVM and Polyglot
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-graalvm:
+    runs-on: [ self-hosted, Linux, x64 ]
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/graalvm-community-openjdk-21.0.1+12.1
+      MAVEN_HOME: /opt/maven
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      GRAAL_JARS: /opt/graalJars
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
+
+    steps:
+      - name: Checkout TornadoVM
+        uses: actions/checkout@v4
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+      - name: Setup Python venv
+        run: |
+          python3 -m venv $VENV_PATH
+          source $VENV_PATH/bin/activate
+          pip install --upgrade pip tqdm psutil   # Combined
+      - name: Build TornadoVM with GraalVM (graal-jdk-21)
+        run: |
+          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
+          java -version
+          make graal-jdk-21 BACKEND=ptx,opencl,spirv
+
+  tornadovm-graalvm-fast-tests:
+    runs-on: [ self-hosted, Linux, x64 ]
+    needs: build-graalvm
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/graalvm-community-openjdk-21.0.1+12.1
+      MAVEN_HOME: /opt/maven
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      GRAAL_JARS: /opt/graalJars
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
+    steps:
+      - name: Run fast unit-tests for SPIR-V with OpenCL runtime
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          make fast-tests
+      - name: Run fast unit-tests for SPIR-V with Level Zero runtime
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:1" -qp
+      - name: Run fast unit-tests for OpenCL on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:0" -qp
+      - name: Run fast unit-tests for OpenCL on Integrated Graphics
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:1" -qp
+      - name: Run fast unit-tests for PTX on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=2:0" -qp
+
+  tornadovm-graalvm-polyglot-tests:
+    runs-on: [ self-hosted, Linux, x64 ]
+    needs: tornadovm-graalvm-fast-tests
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/graalvm-community-openjdk-21.0.1+12.1
+      MAVEN_HOME: /opt/maven
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      GRAAL_JARS: /opt/graalJars
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
+      GRAALPY_HOME: /opt/graalpy-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_03DCD25EA1_JAVA21/graalvm-03dcd25ea1-java21-23.1.0-dev
+      GRAALJS_HOME: /opt/graaljs-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_3AF13F6F38_JAVA21/graalvm-3af13f6f38-java21-23.1.0-dev
+      TRUFFLERUBY_HOME: /opt/truffleruby-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_AEA5C30A3B_JAVA21/graalvm-aea5c30a3b-java21-23.1.0-dev
+    steps:
+      - name: Run polyglot tests for SPIR-V with OpenCL runtime
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run polyglot tests for SPIR-V with Level Zero runtime
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run polyglot tests for OpenCL on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run polyglot tests for OpenCL on Integrated Graphics
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+      - name: Run polyglot tests for PTX on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
