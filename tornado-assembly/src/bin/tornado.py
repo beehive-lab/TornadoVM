@@ -733,47 +733,83 @@ class TornadoVMRunnerTool():
                                   text=True,
                                   timeout=5)
 
-            if result.returncode == 0:
-                output = result.stdout
+            # Check both stdout and stderr (ldd outputs errors to stderr)
+            output = result.stdout + result.stderr
 
-                # Check for "not found" or GLIBCXX version errors
-                if 'not found' in output or 'GLIBCXX' in output:
-                    # Try to get more specific info using strings
-                    strings_result = subprocess.run(['strings', lib_to_check],
-                                                   capture_output=True,
-                                                   text=True,
-                                                   timeout=5)
+            # Check for "not found" or GLIBCXX version errors
+            if 'not found' in output or 'GLIBCXX' in output:
+                # Try to get more specific info using strings
+                strings_result = subprocess.run(['strings', lib_to_check],
+                                               capture_output=True,
+                                               text=True,
+                                               timeout=5)
 
-                    if strings_result.returncode == 0:
-                        glibcxx_versions = [line for line in strings_result.stdout.split('\n')
-                                          if line.startswith('GLIBCXX_')]
+                if strings_result.returncode == 0:
+                    # Extract GLIBCXX versions from symbol names (e.g., "symbol@GLIBCXX_3.4.32")
+                    glibcxx_versions = []
+                    for line in strings_result.stdout.split('\n'):
+                        if 'GLIBCXX_' in line:
+                            # Extract version after @ or at start of line
+                            if '@GLIBCXX_' in line:
+                                version = line.split('@GLIBCXX_')[1].split()[0]
+                                glibcxx_versions.append('GLIBCXX_' + version)
+                            elif line.startswith('GLIBCXX_'):
+                                glibcxx_versions.append(line.strip())
 
-                        if glibcxx_versions:
-                            max_required = max(glibcxx_versions)
+                    if glibcxx_versions:
+                        # Filter to only numeric versions (e.g., GLIBCXX_3.4.32)
+                        # Exclude non-version strings like GLIBCXX_DEBUG_MESSAGE_LENGTH
+                        numeric_versions = [v for v in glibcxx_versions
+                                          if v.replace('GLIBCXX_', '').replace('.', '').isdigit()]
 
-                            # Check system libstdc++
-                            system_libstdcxx = '/usr/lib/x86_64-linux-gnu/libstdc++.so.6'
-                            if not os.path.exists(system_libstdcxx):
-                                # Try alternative locations
-                                system_libstdcxx = '/lib/x86_64-linux-gnu/libstdc++.so.6'
+                        if not numeric_versions:
+                            return
 
-                            if os.path.exists(system_libstdcxx):
-                                system_result = subprocess.run(['strings', system_libstdcxx],
-                                                             capture_output=True,
-                                                             text=True,
-                                                             timeout=5)
+                        # Sort by version number properly (not alphabetically)
+                        def version_key(v):
+                            parts = v.replace('GLIBCXX_', '').split('.')
+                            return tuple(int(p) for p in parts)
 
-                                if system_result.returncode == 0:
-                                    system_versions = [line for line in system_result.stdout.split('\n')
-                                                     if line.startswith('GLIBCXX_')]
+                        max_required = sorted(numeric_versions, key=version_key)[-1]
 
-                                    if system_versions:
-                                        max_available = max(system_versions)
+                        # Check system libstdc++
+                        system_libstdcxx = '/usr/lib/x86_64-linux-gnu/libstdc++.so.6'
+                        if not os.path.exists(system_libstdcxx):
+                            # Try alternative locations
+                            system_libstdcxx = '/lib/x86_64-linux-gnu/libstdc++.so.6'
 
-                                        # Compare versions
-                                        if max_required > max_available:
-                                            self.printLibstdcxxCompatibilityWarning(
-                                                lib_to_check, max_required, max_available)
+                        if os.path.exists(system_libstdcxx):
+                            system_result = subprocess.run(['strings', system_libstdcxx],
+                                                         capture_output=True,
+                                                         text=True,
+                                                         timeout=5)
+
+                            if system_result.returncode == 0:
+                                # Extract GLIBCXX versions from system library
+                                system_versions = []
+                                for line in system_result.stdout.split('\n'):
+                                    if 'GLIBCXX_' in line:
+                                        if '@GLIBCXX_' in line:
+                                            version = line.split('@GLIBCXX_')[1].split()[0]
+                                            system_versions.append('GLIBCXX_' + version)
+                                        elif line.startswith('GLIBCXX_'):
+                                            system_versions.append(line.strip())
+
+                                if system_versions:
+                                    # Filter to only numeric versions
+                                    numeric_system_versions = [v for v in system_versions
+                                                              if v.replace('GLIBCXX_', '').replace('.', '').isdigit()]
+
+                                    if not numeric_system_versions:
+                                        return
+
+                                    # Get max available version using proper version comparison
+                                    max_available = sorted(numeric_system_versions, key=version_key)[-1]
+
+                                    # Compare versions using tuple comparison
+                                    if version_key(max_required) > version_key(max_available):
+                                        self.printLibstdcxxCompatibilityWarning(
+                                            lib_to_check, max_required, max_available)
         except Exception:
             # Silently fail - this is a best-effort check
             pass
@@ -835,8 +871,10 @@ class TornadoVMRunnerTool():
             print("    - GCC 10+ / Ubuntu 20.04+ / Fedora 33+")
 
         print("\n" + "="*80)
-        print("TornadoVM will attempt to continue, but execution will likely fail.")
+        print("TornadoVM cannot continue with incompatible libstdc++ version.")
+        print("Please follow one of the solutions above to resolve this issue.")
         print("="*80 + "\n")
+        sys.exit(1)
 
     def getLinuxDistribution(self):
         """Get Linux distribution information"""
@@ -938,8 +976,10 @@ class TornadoVMRunnerTool():
         print("  - macOS 13.0 (Ventura): Latest features, newer systems only")
 
         print("\n" + "="*80)
-        print("TornadoVM will attempt to continue, but execution may fail.")
+        print("TornadoVM cannot continue with incompatible macOS version.")
+        print("Please follow one of the solutions above to resolve this issue.")
         print("="*80 + "\n")
+        sys.exit(1)
 
     def printNVMLGuidanceWindows(self):
         """Print guidance for nvml.dll dependency issue"""
