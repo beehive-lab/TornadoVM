@@ -264,9 +264,11 @@ REM ########################################################
         echo   Repository: https://github.com/beehive-lab/TornadoVM
         echo.
         echo ================================================================================
-        echo TornadoVM will attempt to continue, but execution will likely fail.
+        echo TornadoVM cannot continue without the required Visual C++ runtime.
+        echo Please install the runtime following the instructions above.
         echo ================================================================================
         echo.
+        exit /b 1
     )
 
     goto :eof
