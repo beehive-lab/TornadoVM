@@ -8,6 +8,7 @@ on:
 
 jobs:
   deploy:
+    if: github.repository == 'beehive-lab/TornadoVM'
     name: Deploy to Maven Central
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 15
