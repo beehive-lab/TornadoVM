@@ -833,8 +833,8 @@ class TornadoVMRunnerTool():
         # Detect distribution
         distro_info = self.getLinuxDistribution()
 
-        print("\nSOLUTIONS:")
-        print("\nOption 1: Upgrade GCC/libstdc++ on this system (Quick Fix)")
+        print("\nSOLUTION:")
+        print("\nUpgrade GCC/libstdc++ on this system")
 
         if 'ubuntu' in distro_info.lower() or 'debian' in distro_info.lower():
             print("  Ubuntu/Debian:")
@@ -851,16 +851,6 @@ class TornadoVMRunnerTool():
         else:
             print("  Install the latest GCC version for your distribution")
 
-        print("\nOption 2: Rebuild TornadoVM SDK on a compatible system (Recommended for portability)")
-        print("  For maximum compatibility, build on the oldest system you need to support.")
-        print("  For example, building on Ubuntu 22.04 (GCC 11) will run on both")
-        print("  Ubuntu 22.04+ and Ubuntu 24.04+")
-        print("\n  On the BUILD machine:")
-        print("    export CC=gcc-11")
-        print("    export CXX=g++-11")
-        print("    make clean")
-        print("    make")
-
         print("\nSYSTEM REQUIREMENTS:")
         print("  This SDK requires:")
         if 'GLIBCXX_3.4.32' in required_version:
@@ -872,7 +862,7 @@ class TornadoVMRunnerTool():
 
         print("\n" + "="*80)
         print("TornadoVM cannot continue with incompatible libstdc++ version.")
-        print("Please follow one of the solutions above to resolve this issue.")
+        print("Please follow the recommended solution to resolve this issue.")
         print("="*80 + "\n")
         sys.exit(1)
 
@@ -960,15 +950,8 @@ class TornadoVMRunnerTool():
         print("  - dyld errors about incompatible library versions")
         print("  - UnsatisfiedLinkError for native libraries")
         print("\nSOLUTION:")
-        print("\nOption 1: Upgrade macOS (if possible)")
+        print("\nUpgrade macOS (if possible)")
         print(f"  Upgrade to macOS {required_version} or later")
-
-        print("\nOption 2: Rebuild TornadoVM SDK on a compatible system (Recommended)")
-        print("  For maximum compatibility, build on the oldest macOS you need to support.")
-        print("\n  On the BUILD machine, set deployment target:")
-        print("    export MACOSX_DEPLOYMENT_TARGET=11.0  # or your minimum version")
-        print("    make clean")
-        print("    make")
 
         print("\nRECOMMENDED DEPLOYMENT TARGETS:")
         print("  - macOS 11.0 (Big Sur): Maximum compatibility with Apple Silicon and Intel")
@@ -977,7 +960,7 @@ class TornadoVMRunnerTool():
 
         print("\n" + "="*80)
         print("TornadoVM cannot continue with incompatible macOS version.")
-        print("Please follow one of the solutions above to resolve this issue.")
+        print("Please follow the recommended solution to resolve this issue.")
         print("="*80 + "\n")
         sys.exit(1)
 
