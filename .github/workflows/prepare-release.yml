@@ -23,6 +23,7 @@ env:
 
 jobs:
   prepare-release:
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
