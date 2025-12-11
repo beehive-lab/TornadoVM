@@ -17,10 +17,11 @@ on:
 
 jobs:
   create-release-tag:
-    # Run when release PR merges OR manual trigger
+    # Run when release PR merges OR manual trigger (upstream repo only)
     if: |
-      (github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')) ||
-      github.event_name == 'workflow_dispatch'
+      github.repository == 'beehive-lab/TornadoVM' &&
+      ((github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')) ||
+      github.event_name == 'workflow_dispatch')
     runs-on: [self-hosted, Linux, x64]
     permissions:
       contents: write
@@ -107,6 +108,7 @@ jobs:
             console.log(`✅ Created release: ${release.html_url}`);
 
   update-develop:
+    if: github.repository == 'beehive-lab/TornadoVM'
     needs: create-release-tag
     runs-on: [self-hosted, Linux, x64]
     permissions:
