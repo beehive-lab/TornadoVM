@@ -828,6 +828,14 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    void syncRuntimeTransferToDevice(Object... objects) {
+        taskGraphImpl.syncRuntimeTransferToDevice(objects);
+    }
+
+    void syncRuntimeTransferToDevice(Object object, long offset, long partialCopySize) {
+        taskGraphImpl.syncRuntimeTransferToDevice(object, offset, partialCopySize);
+    }
+
     TornadoDevice getDevice() {
         return taskGraphImpl.getDevice();
     }
