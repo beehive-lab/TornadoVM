@@ -132,6 +132,30 @@ Optimizations
    ``-Dtornado.enable.nativeFunctions=true``                         Enables native math functions (default: false).
    ================================================================  ===================================================================================================
 
+CUDA (PTX Specific)
+----------------------------
+
+**Flags**
+
+.. table::
+   :align: left
+
+   ================================================================  ==================================================================================================================
+   Flag                                                              Description
+   ================================================================  ==================================================================================================================
+   ``CU_JIT_OPTIMIZATION_LEVEL``                                     Level of optimizations to apply to generated code (0 - 4), with 4 being the highest level of optimizations (default: 4).
+   ``CU_JIT_MAX_REGISTERS``                                          Max number of registers that a thread may use (default: none).
+   ``CU_JIT_TARGET``                                                 Target microarchitecture (default: none). Note that the available target microarchitecture depends on the CUDA version.
+                                                                     Currently CUDA 13.0 supports the following: 30, 32, 35, 37, 50, 52, 53, 60, 61, 62, 70, 72, 75, 80, 86, 87, 89, 90, 100,
+                                                                     103, 110, 120, 121. Older version of CUDA might supports less microarchitecture, for example, CUDA 12.0 supports up to 90.
+   ``CU_JIT_CACHE_MODE``                                             Specifies whether to enable caching explicitly (-dlcm). 0, compile with no -dlcm flag specified.
+                                                                     1, compile with L1 cache disabled (use only L2 cache). 2, compile with L1 cache enabled (use both L1 and L2 cache)
+                                                                     (default: none).
+   ``CU_JIT_GENERATE_DEBUG_INFO``                                    Specifies whether to create debug information in output (-g) (0: false) (default: none).
+   ``CU_JIT_LOG_VERBOSE``                                            Generate verbose log messages (0: false) (default: none).
+   ``CU_JIT_GENERATE_LINE_INFO``                                     Generate line number information (-lineinfo) (0: false) (default: none).
+   ================================================================  ==================================================================================================================
+
 Level Zero (SPIR-V Specific)
 ----------------------------
 
