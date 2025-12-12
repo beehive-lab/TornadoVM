@@ -87,24 +87,24 @@ check_python3() {
 
         case $DISTRO in
             ubuntu|debian)
-                echo "  ${GREEN}sudo apt update${NC}" >&2
-                echo "  ${GREEN}sudo apt install -y python3${NC}" >&2
+                echo -e "  ${GREEN}sudo apt update${NC}" >&2
+                echo -e "  ${GREEN}sudo apt install -y python3${NC}" >&2
                 ;;
             fedora|rhel|centos|rocky|almalinux)
-                echo "  ${GREEN}sudo dnf install -y python3${NC}" >&2
+                echo -e "  ${GREEN}sudo dnf install -y python3${NC}" >&2
                 ;;
             arch|manjaro)
-                echo "  ${GREEN}sudo pacman -S python${NC}" >&2
+                echo -e "  ${GREEN}sudo pacman -S python${NC}" >&2
                 ;;
             opensuse*)
-                echo "  ${GREEN}sudo zypper install python3${NC}" >&2
+                echo -e "  ${GREEN}sudo zypper install python3${NC}" >&2
                 ;;
             macos)
                 if command_exists brew; then
-                    echo "  ${GREEN}brew install python3${NC}" >&2
+                    echo -e "  ${GREEN}brew install python3${NC}" >&2
                 else
                     echo "  Install Homebrew first: https://brew.sh" >&2
-                    echo "  Then run: ${GREEN}brew install python3${NC}" >&2
+                    echo -e "  Then run: ${GREEN}brew install python3${NC}" >&2
                 fi
                 ;;
             *)
@@ -125,33 +125,33 @@ check_java() {
         echo "" >&2
         echo "To set JAVA_HOME, add this to your ~/.bashrc or ~/.zshrc:" >&2
         echo "" >&2
-        echo "  ${GREEN}export JAVA_HOME=/path/to/jdk-21${NC}" >&2
-        echo "  ${GREEN}export PATH=\$JAVA_HOME/bin:\$PATH${NC}" >&2
+        echo -e "  ${GREEN}export JAVA_HOME=/path/to/jdk-21${NC}" >&2
+        echo -e "  ${GREEN}export PATH=\$JAVA_HOME/bin:\$PATH${NC}" >&2
         echo "" >&2
         echo "To install JDK 21:" >&2
         echo "" >&2
 
         case $DISTRO in
             ubuntu|debian)
-                echo "  ${GREEN}sudo apt update${NC}" >&2
-                echo "  ${GREEN}sudo apt install -y openjdk-21-jdk${NC}" >&2
+                echo -e "  ${GREEN}sudo apt update${NC}" >&2
+                echo -e "  ${GREEN}sudo apt install -y openjdk-21-jdk${NC}" >&2
                 echo "" >&2
                 echo "Or use SDKMAN (recommended):" >&2
-                echo "  ${GREEN}curl -s \"https://get.sdkman.io\" | bash${NC}" >&2
-                echo "  ${GREEN}sdk install java 21.0.1-graal${NC}" >&2
+                echo -e "  ${GREEN}curl -s \"https://get.sdkman.io\" | bash${NC}" >&2
+                echo -e "  ${GREEN}sdk install java 21.0.1-graal${NC}" >&2
                 ;;
             fedora|rhel|centos|rocky|almalinux)
-                echo "  ${GREEN}sudo dnf install -y java-21-openjdk-devel${NC}" >&2
+                echo -e "  ${GREEN}sudo dnf install -y java-21-openjdk-devel${NC}" >&2
                 ;;
             arch|manjaro)
-                echo "  ${GREEN}sudo pacman -S jdk21-openjdk${NC}" >&2
+                echo -e "  ${GREEN}sudo pacman -S jdk21-openjdk${NC}" >&2
                 ;;
             macos)
-                echo "  ${GREEN}brew install openjdk@21${NC}" >&2
+                echo -e "  ${GREEN}brew install openjdk@21${NC}" >&2
                 echo "" >&2
                 echo "Or use SDKMAN (recommended):" >&2
-                echo "  ${GREEN}curl -s \"https://get.sdkman.io\" | bash${NC}" >&2
-                echo "  ${GREEN}sdk install java 21.0.1-graal${NC}" >&2
+                echo -e "  ${GREEN}curl -s \"https://get.sdkman.io\" | bash${NC}" >&2
+                echo -e "  ${GREEN}sdk install java 21.0.1-graal${NC}" >&2
                 ;;
             *)
                 echo "  Visit: https://adoptium.net/ or https://www.graalvm.org/" >&2
@@ -183,8 +183,8 @@ check_tornado_sdk() {
         echo "" >&2
         echo "Add this to your ~/.bashrc or ~/.zshrc:" >&2
         echo "" >&2
-        echo "  ${GREEN}export TORNADO_SDK=/path/to/tornadovm/sdk${NC}" >&2
-        echo "  ${GREEN}export PATH=\$TORNADO_SDK/bin:\$PATH${NC}" >&2
+        echo -e "  ${GREEN}export TORNADO_SDK=/path/to/tornadovm/sdk${NC}" >&2
+        echo -e "  ${GREEN}export PATH=\$TORNADO_SDK/bin:\$PATH${NC}" >&2
         echo "" >&2
         return 1
     fi
@@ -223,26 +223,26 @@ check_opencl_backend() {
 
             case $DISTRO in
                 ubuntu|debian)
-                    echo "  ${GREEN}sudo apt update${NC}" >&2
-                    echo "  ${GREEN}sudo apt install -y ocl-icd-opencl-dev opencl-headers${NC}" >&2
+                    echo -e "  ${GREEN}sudo apt update${NC}" >&2
+                    echo -e "  ${GREEN}sudo apt install -y ocl-icd-opencl-dev opencl-headers${NC}" >&2
                     echo "" >&2
                     echo "For Intel GPUs, also install:" >&2
-                    echo "  ${GREEN}sudo apt install -y intel-opencl-icd${NC}" >&2
+                    echo -e "  ${GREEN}sudo apt install -y intel-opencl-icd${NC}" >&2
                     echo "" >&2
                     echo "For AMD GPUs, also install:" >&2
-                    echo "  ${GREEN}sudo apt install -y mesa-opencl-icd${NC}" >&2
+                    echo -e "  ${GREEN}sudo apt install -y mesa-opencl-icd${NC}" >&2
                     echo "" >&2
                     echo "For NVIDIA GPUs, install CUDA toolkit from:" >&2
                     echo "  https://developer.nvidia.com/cuda-downloads" >&2
                     ;;
                 fedora|rhel|centos|rocky|almalinux)
-                    echo "  ${GREEN}sudo dnf install -y ocl-icd ocl-icd-devel opencl-headers${NC}" >&2
+                    echo -e "  ${GREEN}sudo dnf install -y ocl-icd ocl-icd-devel opencl-headers${NC}" >&2
                     ;;
                 arch|manjaro)
-                    echo "  ${GREEN}sudo pacman -S ocl-icd opencl-headers${NC}" >&2
+                    echo -e "  ${GREEN}sudo pacman -S ocl-icd opencl-headers${NC}" >&2
                     ;;
                 opensuse*)
-                    echo "  ${GREEN}sudo zypper install ocl-icd-devel opencl-headers${NC}" >&2
+                    echo -e "  ${GREEN}sudo zypper install ocl-icd-devel opencl-headers${NC}" >&2
                     ;;
                 *)
                     echo "  Install OpenCL ICD loader and headers using your package manager" >&2
@@ -270,16 +270,16 @@ check_ptx_backend() {
         echo "" >&2
         echo "The PTX backend requires NVIDIA CUDA Toolkit and drivers." >&2
         echo "" >&2
-        echo "Visit: ${GREEN}https://developer.nvidia.com/cuda-downloads${NC}" >&2
+        echo -e "Visit: ${GREEN}https://developer.nvidia.com/cuda-downloads${NC}" >&2
         echo "" >&2
 
         case $DISTRO in
             ubuntu|debian)
                 echo "Or install via package manager:" >&2
-                echo "  ${GREEN}wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb${NC}" >&2
-                echo "  ${GREEN}sudo dpkg -i cuda-keyring_1.1-1_all.deb${NC}" >&2
-                echo "  ${GREEN}sudo apt update${NC}" >&2
-                echo "  ${GREEN}sudo apt install -y cuda${NC}" >&2
+                echo -e "  ${GREEN}wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb${NC}" >&2
+                echo -e "  ${GREEN}sudo dpkg -i cuda-keyring_1.1-1_all.deb${NC}" >&2
+                echo -e "  ${GREEN}sudo apt update${NC}" >&2
+                echo -e "  ${GREEN}sudo apt install -y cuda${NC}" >&2
                 ;;
             *)
                 echo "Follow instructions at: https://developer.nvidia.com/cuda-downloads" >&2
@@ -297,36 +297,56 @@ check_spirv_backend() {
 
     # SPIR-V backend can use either Level Zero or OpenCL 2.1+
     if [ "$OS" == "linux" ]; then
-        if ! ldconfig -p 2>/dev/null | grep -q libze_loader.so; then
-            print_warning "Level Zero loader is not installed"
-            echo "" >&2
-            echo "The SPIR-V backend requires Level Zero or OpenCL 2.1+." >&2
-            echo "" >&2
-            echo "To install Level Zero for Intel GPUs:" >&2
-            echo "" >&2
+        # Check if SPIR-V backend library exists in SDK
+        local spirv_lib=""
+        if [ -f "$TORNADO_SDK/lib/libtornado-levelzero.so" ]; then
+            spirv_lib="$TORNADO_SDK/lib/libtornado-levelzero.so"
+        fi
 
-            case $DISTRO in
-                ubuntu|debian)
-                    echo "  ${GREEN}sudo apt update${NC}" >&2
-                    echo "  ${GREEN}sudo apt install -y intel-level-zero-gpu level-zero${NC}" >&2
-                    echo "" >&2
-                    echo "For Intel Compute Runtime:" >&2
-                    echo "  Visit: https://github.com/intel/compute-runtime/releases" >&2
-                    ;;
-                fedora|rhel|centos|rocky|almalinux)
-                    echo "  ${GREEN}sudo dnf install -y level-zero intel-level-zero${NC}" >&2
-                    ;;
-                arch|manjaro)
-                    echo "  ${GREEN}sudo pacman -S level-zero-loader${NC}" >&2
-                    ;;
-                *)
-                    echo "  Visit: https://github.com/oneapi-src/level-zero" >&2
-                    ;;
-            esac
-            echo "" >&2
-            echo "Alternatively, SPIR-V can use OpenCL 2.1+ (see OpenCL dependencies above)" >&2
-            echo "" >&2
-            spirv_ok=false
+        # If SPIR-V library exists, check if its dependencies are satisfied
+        if [ -n "$spirv_lib" ]; then
+            # Use ldd to check if all dependencies can be resolved
+            if ! ldd "$spirv_lib" 2>/dev/null | grep -q "not found"; then
+                # All dependencies satisfied, Level Zero is available (bundled or system-wide)
+                spirv_ok=true
+            else
+                # Dependencies missing
+                print_warning "SPIR-V backend dependencies are missing"
+                echo "" >&2
+                echo "The SPIR-V backend requires Level Zero or OpenCL 2.1+." >&2
+                echo "" >&2
+                echo "Missing dependencies:" >&2
+                ldd "$spirv_lib" 2>/dev/null | grep "not found" >&2
+                echo "" >&2
+                echo "To install Level Zero for Intel GPUs:" >&2
+                echo "" >&2
+
+                case $DISTRO in
+                    ubuntu|debian)
+                        echo -e "  ${GREEN}sudo apt update${NC}" >&2
+                        echo -e "  ${GREEN}sudo apt install -y intel-level-zero-gpu level-zero${NC}" >&2
+                        echo "" >&2
+                        echo "For Intel Compute Runtime:" >&2
+                        echo "  Visit: https://github.com/intel/compute-runtime/releases" >&2
+                        ;;
+                    fedora|rhel|centos|rocky|almalinux)
+                        echo -e "  ${GREEN}sudo dnf install -y level-zero intel-level-zero${NC}" >&2
+                        ;;
+                    arch|manjaro)
+                        echo -e "  ${GREEN}sudo pacman -S level-zero-loader${NC}" >&2
+                        ;;
+                    *)
+                        echo "  Visit: https://github.com/oneapi-src/level-zero" >&2
+                        ;;
+                esac
+                echo "" >&2
+                echo "Alternatively, SPIR-V can use OpenCL 2.1+ (see OpenCL dependencies above)" >&2
+                echo "" >&2
+                spirv_ok=false
+            fi
+        else
+            # SPIR-V library not found in SDK, skip check (backend not installed)
+            spirv_ok=true
         fi
     fi
 

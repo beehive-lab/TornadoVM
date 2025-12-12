@@ -99,6 +99,9 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM Check MSVC Runtime Compatibility
+call :CheckMSVCRuntime
+
 REM Check backend dependencies (warnings only, non-critical)
 if exist "%TORNADO_SDK%\etc\tornado.backend" (
     findstr "opencl-backend" "%TORNADO_SDK%\etc\tornado.backend" >nul 2>nul
@@ -202,3 +205,70 @@ if not exist "%TORNADO_LAUNCHER%" (
 
 REM Launch Python script with all arguments
 python "%TORNADO_LAUNCHER%" %*
+exit /b %errorlevel%
+
+REM ########################################################
+REM Subroutine: Check MSVC Runtime Compatibility
+REM ########################################################
+:CheckMSVCRuntime
+    REM Check if tornado native libraries exist
+    set NATIVE_LIB_FOUND=0
+    if exist "%TORNADO_SDK%\lib\tornado-opencl.dll" set NATIVE_LIB_FOUND=1
+    if exist "%TORNADO_SDK%\lib\tornado-ptx.dll" set NATIVE_LIB_FOUND=1
+    if exist "%TORNADO_SDK%\lib\tornado-spirv.dll" set NATIVE_LIB_FOUND=1
+
+    if !NATIVE_LIB_FOUND! equ 0 (
+        REM No native libraries found, skip check
+        goto :eof
+    )
+
+    REM Use PowerShell to check for required MSVC runtime DLLs
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$foundVCRuntime = $false; $foundMSVCR = $false; $paths = @($env:SystemRoot + '\System32', $env:SystemRoot + '\SysWOW64'); foreach ($path in $paths) { if (Test-Path (Join-Path $path 'VCRUNTIME140.dll')) { $foundVCRuntime = $true }; if (Test-Path (Join-Path $path 'MSVCP140.dll')) { $foundMSVCR = $true } }; if ($foundVCRuntime -and $foundMSVCR) { exit 0 } else { exit 1 }" >nul 2>nul
+
+    if !errorlevel! neq 0 (
+        echo.
+        echo ================================================================================
+        echo WARNING: Microsoft Visual C++ Runtime Compatibility Issue Detected!
+        echo ================================================================================
+        echo.
+        echo TornadoVM native libraries require Visual C++ 2015-2022 Redistributable.
+        echo.
+        echo CAUSE:
+        echo   The TornadoVM SDK was built with Visual Studio and requires the
+        echo   corresponding Visual C++ runtime libraries (VCRUNTIME140.dll, MSVCP140.dll^).
+        echo.
+        echo SYMPTOMS:
+        echo   - 'tornado --devices' fails with ExceptionInInitializerError
+        echo   - Error loading tornado-opencl.dll or other native libraries
+        echo   - UnsatisfiedLinkError or DLL not found errors
+        echo.
+        echo SOLUTION:
+        echo   Install Visual C++ 2015-2022 Redistributable (x64^)
+        echo.
+        echo   Download:
+        echo     https://aka.ms/vs/17/release/vc_redist.x64.exe
+        echo.
+        echo   Or search Microsoft for:
+        echo     "Visual C++ Redistributable for Visual Studio 2015-2022"
+        echo.
+        echo AFTER INSTALLATION:
+        echo   1. Verify runtime DLLs exist:
+        echo      dir %%SystemRoot%%\System32\VCRUNTIME140.dll
+        echo      dir %%SystemRoot%%\System32\MSVCP140.dll
+        echo.
+        echo   2. Test TornadoVM:
+        echo      tornado --devices
+        echo.
+        echo ALTERNATIVE SOLUTION (Advanced^):
+        echo   Build TornadoVM from source on this machine to use locally available runtime.
+        echo   Repository: https://github.com/beehive-lab/TornadoVM
+        echo.
+        echo ================================================================================
+        echo TornadoVM cannot continue without the required Visual C++ runtime.
+        echo Please install the runtime following the instructions above.
+        echo ================================================================================
+        echo.
+        exit /b 1
+    )
+
+    goto :eof
