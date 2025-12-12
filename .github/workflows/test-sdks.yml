@@ -1,0 +1,130 @@
+name: Test SDK Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'TornadoVM version to test'
+        required: true
+        default: '2.0.0'
+
+jobs:
+  test-sdk-linux-opencl:
+    runs-on: [self-hosted, Linux, x64]
+    timeout-minutes: 10
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+    steps:
+      - name: Download SDK
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          wget -q https://github.com/beehive-lab/TornadoVM/releases/download/v${VERSION}/tornadovm-${VERSION}-opencl-linux-amd64.zip
+          unzip -q tornadovm-${VERSION}-opencl-linux-amd64.zip
+
+      - name: Setup environment
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          echo "TORNADO_SDK=$(pwd)/tornadovm-${VERSION}-opencl" >> $GITHUB_ENV
+          echo "$(pwd)/tornadovm-${VERSION}-opencl/bin" >> $GITHUB_PATH
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+
+      - name: Verify SDK
+        run: |
+          tornado --version
+          tornado --devices
+
+      - name: Cleanup
+        if: always()
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          rm -rf tornadovm-${VERSION}-opencl tornadovm-${VERSION}-opencl-linux-amd64.zip
+
+  test-sdk-linux-ptx:
+    runs-on: [self-hosted, Linux, x64]
+    timeout-minutes: 10
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+    steps:
+      - name: Download SDK
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          wget -q https://github.com/beehive-lab/TornadoVM/releases/download/v${VERSION}/tornadovm-${VERSION}-ptx-linux-amd64.zip
+          unzip -q tornadovm-${VERSION}-ptx-linux-amd64.zip
+
+      - name: Setup environment
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          echo "TORNADO_SDK=$(pwd)/tornadovm-${VERSION}-ptx" >> $GITHUB_ENV
+          echo "$(pwd)/tornadovm-${VERSION}-ptx/bin" >> $GITHUB_PATH
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+
+      - name: Verify SDK
+        run: |
+          tornado --version
+          tornado --devices
+
+      - name: Cleanup
+        if: always()
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          rm -rf tornadovm-${VERSION}-ptx tornadovm-${VERSION}-ptx-linux-amd64.zip
+
+  test-sdk-linux-spirv:
+    runs-on: [self-hosted, Linux, x64]
+    timeout-minutes: 10
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+    steps:
+      - name: Download SDK
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          wget -q https://github.com/beehive-lab/TornadoVM/releases/download/v${VERSION}/tornadovm-${VERSION}-spirv-linux-amd64.zip
+          unzip -q tornadovm-${VERSION}-spirv-linux-amd64.zip
+
+      - name: Setup environment
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          echo "TORNADO_SDK=$(pwd)/tornadovm-${VERSION}-spirv" >> $GITHUB_ENV
+          echo "$(pwd)/tornadovm-${VERSION}-spirv/bin" >> $GITHUB_PATH
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+
+      - name: Verify SDK
+        run: |
+          tornado --version
+          tornado --devices
+
+      - name: Cleanup
+        if: always()
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          rm -rf tornadovm-${VERSION}-spirv tornadovm-${VERSION}-spirv-linux-amd64.zip
+
+  test-sdk-macos-opencl:
+    runs-on: [self-hosted, macOS, arm64]
+    timeout-minutes: 10
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
+    steps:
+      - name: Download SDK
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          wget -q https://github.com/beehive-lab/TornadoVM/releases/download/v${VERSION}/tornadovm-${VERSION}-opencl-mac-aarch64.zip
+          unzip -q tornadovm-${VERSION}-opencl-mac-aarch64.zip
+
+      - name: Setup environment
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          echo "TORNADO_SDK=$(pwd)/tornadovm-${VERSION}-opencl" >> $GITHUB_ENV
+          echo "$(pwd)/tornadovm-${VERSION}-opencl/bin" >> $GITHUB_PATH
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+
+      - name: Verify SDK
+        run: |
+          tornado --version
+          tornado --devices
+
+      - name: Cleanup
+        if: always()
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          rm -rf tornadovm-${VERSION}-opencl tornadovm-${VERSION}-opencl-mac-aarch64.zip
