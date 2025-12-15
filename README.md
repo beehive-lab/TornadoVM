@@ -39,9 +39,9 @@ All SDKs (`opencl`, `ptx`, `spirv`) are available on the [Releases Page](https:/
 ### Linux (x86_64)
 
 ```bash
-wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.0.0-opencl-linux-amd64.zip
-unzip tornadovm-2.0.0-opencl-linux-amd64.zip
-export TORNADO_SDK="$(pwd)/tornadovm-2.0.0-opencl"
+wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.1.0/tornadovm-2.1.0-opencl-linux-amd64.zip
+unzip tornadovm-2.1.0-opencl-linux-amd64.zip
+export TORNADO_SDK="$(pwd)/tornadovm-2.1.0-opencl"
 export PATH=$TORNADO_SDK/bin:$PATH
 
 tornado --devices
@@ -51,9 +51,9 @@ tornado --version
 ### macOS (Apple Silicon)
 
 ```bash
-wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.0.0-opencl-mac-aarch64.zip
-unzip tornadovm-2.0.0-opencl-mac-aarch64.zip
-export TORNADO_SDK="$(pwd)/tornadovm-2.0.0-opencl"
+wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.1.0-opencl-mac-aarch64.zip
+unzip tornadovm-2.1.0-opencl-mac-aarch64.zip
+export TORNADO_SDK="$(pwd)/tornadovm-2.1.0-opencl"
 export PATH=$TORNADO_SDK/bin:$PATH
 
 tornado --devices
@@ -63,9 +63,9 @@ tornado --version
 ### Windows (10+)
 
 ```bash
-curl -L -o tornadovm-2.0.0-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.0.0-opencl-windows-amd64.zip
-tar -xf tornadovm-2.0.0-opencl-windows-amd64.zip
-set TORNADO_SDK=%cd%\tornadovm-2.0.0-opencl
+curl -L -o tornadovm-2.1.0-opencl-windows-amd64.zip https://github.com/beehive-lab/TornadoVM/releases/download/v2.1.0/tornadovm-2.1.0-opencl-windows-amd64.zip
+tar -xf tornadovm-2.1.0-opencl-windows-amd64.zip
+set TORNADO_SDK=%cd%\tornadovm-2.1.0-opencl
 set PATH=%TORNADO_SDK%\bin;%PATH%
 
 tornado --devices
