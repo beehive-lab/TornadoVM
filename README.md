@@ -53,7 +53,7 @@ tornado --version
 ```bash
 wget https://github.com/beehive-lab/TornadoVM/releases/download/v2.0.0/tornadovm-2.1.0-opencl-mac-aarch64.zip
 unzip tornadovm-2.1.0-opencl-mac-aarch64.zip
-export TORNADO_SDK="$(pwd)/tornadovm-2.0.0-opencl"
+export TORNADO_SDK="$(pwd)/tornadovm-2.1.0-opencl"
 export PATH=$TORNADO_SDK/bin:$PATH
 
 tornado --devices
