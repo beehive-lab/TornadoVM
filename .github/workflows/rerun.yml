@@ -7,8 +7,9 @@ on:
 jobs:
   rerun:
     name: Rerun CI Workflows
-    # Only run on PR comments (not issue comments) with /rerun command
+    # Only run on PR comments (not issue comments) with /rerun command in upstream repo
     if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
       github.event.issue.pull_request &&
       contains(github.event.comment.body, '/rerun')
     runs-on: ubuntu-latest

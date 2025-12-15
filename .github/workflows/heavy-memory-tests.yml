@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-full-test-openjdk:
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [ self-hosted, Linux, x64 ]
     timeout-minutes: 200
     strategy:

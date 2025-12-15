@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-graalvm:
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [ self-hosted, Linux, x64 ]
     timeout-minutes: 5
     strategy:
@@ -41,6 +42,7 @@ jobs:
           make graal-jdk-21 BACKEND=ptx,opencl,spirv
 
   tornadovm-graalvm-fast-tests:
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [ self-hosted, Linux, x64 ]
     needs: build-graalvm
     timeout-minutes: 30
@@ -83,6 +85,7 @@ jobs:
           tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=2:0" -qp
 
   tornadovm-graalvm-polyglot-tests:
+    if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [ self-hosted, Linux, x64 ]
     needs: tornadovm-graalvm-fast-tests
     timeout-minutes: 5
