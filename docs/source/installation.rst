@@ -6,7 +6,7 @@ Pre-requisites
 
 These need to be installed before executing either automatic or manual TornadoVM installation:
 
-* GCC >= 10.0 or LLVM/clang (Linux)
+* GCC >= 13.0 or LLVM/clang (Linux)
 * Xcode >= 15 (macOS only)
 * Visual Studio Community 2022 (Windows 11 recommended)
 * Python >= 3.6 (all OSes)
