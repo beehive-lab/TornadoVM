@@ -47,6 +47,8 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
     @Test
     public void testOpenCL() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         FloatArray data = new FloatArray(512);
         data.init(1.0f);
 
@@ -63,6 +65,8 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
     @Test
     public void testPTX() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         FloatArray data = new FloatArray(512);
         data.init(1.0f);
 
@@ -79,6 +83,8 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
     @Test
     public void testSPIRV() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.PTX);
         FloatArray data = new FloatArray(512);
         data.init(1.0f);
 
