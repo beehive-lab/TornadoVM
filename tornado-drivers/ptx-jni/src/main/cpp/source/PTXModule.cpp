@@ -37,7 +37,7 @@
 #include "PTXModule.h"
 #include "ptx_log.h"
 
-static const std::unordered_map<std::string, CUjit_option> CUDAJITFlagsMap {
+/*static const std::unordered_map<std::string, CUjit_option> CUDAJITFlagsMap {
     {"CU_JIT_OPTIMIZATION_LEVEL", CU_JIT_OPTIMIZATION_LEVEL},
     {"CU_JIT_MAX_REGISTERS",  CU_JIT_MAX_REGISTERS},
     {"CU_JIT_CACHE_MODE",   CU_JIT_CACHE_MODE},
@@ -45,7 +45,7 @@ static const std::unordered_map<std::string, CUjit_option> CUDAJITFlagsMap {
     {"CU_JIT_LOG_VERBOSE",             CU_JIT_LOG_VERBOSE},
     {"CU_JIT_GENERATE_LINE_INFO",             CU_JIT_GENERATE_LINE_INFO},
     {"CU_JIT_TARGET",             CU_JIT_TARGET}
-};//currently supported CUDA JIT options in TornadoVM, not all options are included due to backwards compatibility.
+};*///currently supported CUDA JIT options in TornadoVM, not all options are included due to backwards compatibility.
 
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = env->NewByteArray(sizeof(CUmodule));
@@ -94,10 +94,10 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Method:    cuModuleLoadDataEx
- * Signature: ([BLjava/lang/String;)[B
+ * Signature: ([B[I[J)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleLoadDataEx
-  (JNIEnv *env, jclass clazz, jbyteArray source, jstring compilerFlags) {
+  (JNIEnv *env, jclass clazz, jbyteArray source, jintArray jitOptions, jlongArray jitValues) {
     CUresult result;
 
     size_t ptx_length = env->GetArrayLength(source);
@@ -109,69 +109,37 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     env->GetByteArrayRegion(source, 0, ptx_length, reinterpret_cast<jbyte *>(ptx));
     ptx[ptx_length] = 0; // Make sure string terminates with a 0
 
-    const char* chars = env->GetStringUTFChars(compilerFlags, nullptr);
-    std::string flags(chars);
-    env->ReleaseStringUTFChars(compilerFlags, chars);
+    // --- CUDA JIT options ---
+    jsize numOptions = env->GetArrayLength(jitOptions);
+    jsize numValues  = env->GetArrayLength(jitValues);
 
-    std::istringstream iss(flags);
-    std::vector<CUjit_option> options;
-    std::vector<unsigned int> values;
-
-    std::string token;
-    std::vector<std::pair<std::string, std::string>> entries;
-    while (iss >> token) {
-        if (token.rfind("CU_JIT", 0) == 0) {
-            std::string val;
-            if (!(iss >> val)) {
-                throw std::runtime_error("Missing value for flag: " + token);
-            }
-            entries.emplace_back(token, val);
-        } else {
-            std::cerr << "Skipping unsupported CUDA JIT flag: " << token << "\n";
-        }
-    }
-    options.reserve(entries.size());
-    values.reserve(entries.size());
-
-    for (const auto &p : entries) {
-        const std::string &flagName = p.first;
-        const std::string &valStr = p.second;
-
-        auto it = CUDAJITFlagsMap.find(flagName);
-        if (it == CUDAJITFlagsMap.end()) {
-            std::cerr << "Unsupported CUDA JIT flag: " << flagName << "\n";
-            continue;
-        }
-
-        options.push_back(it->second);
-        try{
-            unsigned int v = std::stoi(valStr);
-            if (v > std::numeric_limits<unsigned int>::max()) {
-                std::cerr << "Warning: value for " << flagName << " (" << valStr << ") out of range for unsigned int.\n";
-                v = std::numeric_limits<unsigned int>::max();
-            }
-            values.push_back(v);
-        }
-        catch (const std::invalid_argument&) {
-            std::cerr << "Error: value for " << flagName << " is not a valid integer (" << valStr << ")\n";
-            values.push_back(0);
-        }
-        catch (const std::out_of_range&) {
-            std::cerr << "Error: value for " << flagName << " is out of integer range (" << valStr << ")\n";
-            unsigned int v = std::numeric_limits<unsigned int>::max();
-            values.push_back(v);
-        }
+    if (numOptions != numValues) {
+        printf("JIT options and values length mismatch");
+        jbyteArray error_array = env->NewByteArray(0);
+        return error_array;
     }
 
-    void **jitOptVals = new void *[options.size()];
-    for(int i = 0; i < options.size(); i++){
-        jitOptVals[i] = (void *)(uintptr_t)values[i];
+    jint* options = env->GetIntArrayElements(jitOptions, nullptr);
+    jlong* values = env->GetLongArrayElements(jitValues, nullptr);
+
+    // CUDA expects void**
+    std::vector<void*> jitOptVals(numOptions);
+    for (jsize i = 0; i < numOptions; i++) {
+        jitOptVals[i] = reinterpret_cast<void*>(
+                static_cast<uintptr_t>(values[i]));
     }
 
     CUmodule module;
-    result = cuModuleLoadDataEx(&module, ptx, options.size(),  options.data(), (void **)jitOptVals);
+    result = cuModuleLoadDataEx(
+            &module,
+            ptx,
+            numOptions,
+            reinterpret_cast<CUjit_option*>(options),
+            jitOptVals.data()
+    );
 
-    delete[] jitOptVals;
+    env->ReleaseIntArrayElements(jitOptions, options, JNI_ABORT);
+    env->ReleaseLongArrayElements(jitValues, values, JNI_ABORT);
 
     LOG_PTX_AND_VALIDATE("cuModuleLoadDataEx", result);
 #ifdef _WIN32

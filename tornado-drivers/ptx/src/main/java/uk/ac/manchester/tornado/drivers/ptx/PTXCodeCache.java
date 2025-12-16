@@ -36,16 +36,17 @@ public class PTXCodeCache {
 
     private final PTXDeviceContext deviceContext;
     private final ConcurrentHashMap<String, PTXInstalledCode> cache;
-
-    private static final Set<String> SUPPORTED_PTX_JIT_FLAGS = Set.of(
-            "CU_JIT_OPTIMIZATION_LEVEL",
-            "CU_JIT_MAX_REGISTERS",
-            "CU_JIT_CACHE_MODE",
-            "CU_JIT_GENERATE_DEBUG_INFO",
-            "CU_JIT_LOG_VERBOSE",
-            "CU_JIT_GENERATE_LINE_INFO",
-            "CU_JIT_TARGET"
-    );
+    
+    private static final Set<String> SUPPORTED_PTX_JIT_FLAGS =
+            Set.of(
+                    CUjitOption.CU_JIT_OPTIMIZATION_LEVEL.name(),
+                    CUjitOption.CU_JIT_MAX_REGISTERS.name(),
+                    CUjitOption.CU_JIT_CACHE_MODE.name(),
+                    CUjitOption.CU_JIT_GENERATE_DEBUG_INFO.name(),
+                    CUjitOption.CU_JIT_LOG_VERBOSE.name(),
+                    CUjitOption.CU_JIT_GENERATE_LINE_INFO.name(),
+                    CUjitOption.CU_JIT_TARGET.name()
+            );
 
     PTXCodeCache(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -68,13 +69,32 @@ public class PTXCodeCache {
                 );
             }
 
-            String[] flagNames = new String[parts.length / 2];
-            int[] flagValues = new int[parts.length / 2];
+            int[] jitOptions = new int[parts.length / 2];
+            long[] jitValues = new long[parts.length / 2];
 
             for (int i = 0; i < parts.length; i += 2) {
-                flagNames[i / 2] = parts[i];
+                String flagName = parts[i];
+
+                if (!SUPPORTED_PTX_JIT_FLAGS.contains(flagName)) {
+                    throw new TornadoBailoutRuntimeException(
+                            "Unsupported PTX JIT compiler flag: " + flagName +
+                                    ". Supported flags are: " + SUPPORTED_PTX_JIT_FLAGS
+                    );
+                }
+
+                CUjitOption option;
                 try {
-                    flagValues[i / 2] = Integer.parseInt(parts[i + 1]);
+                    option = CUjitOption.valueOf(flagName);
+                } catch (IllegalArgumentException e) {
+                    throw new TornadoBailoutRuntimeException(
+                            "Invalid PTX JIT flag name: " + flagName, e
+                    );
+                }
+
+                jitOptions[i / 2] = option.getValue();
+
+                try {
+                    jitValues[i / 2] = Long.parseLong(parts[i + 1]);
                 } catch (NumberFormatException e) {
                     throw new TornadoBailoutRuntimeException(
                             "Invalid flag value (must be integer): '" + parts[i + 1] + "'", e
@@ -82,15 +102,7 @@ public class PTXCodeCache {
                 }
             }
 
-            for (String flag : flagNames) {
-                if (!SUPPORTED_PTX_JIT_FLAGS.contains(flag)) {
-                    throw new TornadoBailoutRuntimeException(
-                            "Unsupported PTX JIT compiler flag: " + flag + ". Supported flags are: " + SUPPORTED_PTX_JIT_FLAGS
-                    );
-                }
-            }
-
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, compilerFlags);
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, jitOptions, jitValues);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
