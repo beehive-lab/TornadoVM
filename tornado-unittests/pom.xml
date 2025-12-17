@@ -4,7 +4,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <properties>
-        <tornado.sdk>${env.TORNADO_SDK}</tornado.sdk>
+        <tornado.sdk>${env.TORNADOVM_HOME}</tornado.sdk>
         <test.class>uk.ac.manchester.tornado.unittests.foundation.FoundationTestSuite</test.class>
         <maven.test.skip>true</maven.test.skip>
         <checkstyle.skip>true</checkstyle.skip>
@@ -65,8 +65,8 @@
                         <argument>-XX:+EnableJVMCI</argument>
                         <argument>-XX:-UseCompressedClassPointers</argument>
                         <argument>--enable-preview</argument>
-                        <argument>-Djava.library.path=${env.TORNADO_SDK}/lib</argument>
-                        <argument>--module-path=.:${env.TORNADO_SDK}/share/java/tornado</argument>
+                        <argument>-Djava.library.path=${env.TORNADOVM_HOME}/lib</argument>
+                        <argument>--module-path=.:${env.TORNADOVM_HOME}/share/java/tornado</argument>
                         <argument>-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph</argument>
                         <argument>-Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime</argument>
                         <argument>-Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado</argument>

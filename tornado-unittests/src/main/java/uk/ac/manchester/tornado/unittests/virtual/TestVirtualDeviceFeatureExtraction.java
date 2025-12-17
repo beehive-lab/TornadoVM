@@ -106,7 +106,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String tornadoSDK = System.getenv("TORNADOVM_HOME");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedFeaturesFile;
 
         File fileLog = new File(FEATURE_DUMP_DIR);
