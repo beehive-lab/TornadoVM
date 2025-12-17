@@ -176,10 +176,14 @@ check_java() {
 
 # Check TORNADO_SDK
 check_tornado_sdk() {
-    if [ -z "$TORNADO_SDK" ]; then
-        print_error "TORNADO_SDK environment variable is not set"
+    # Prioritize TORNADOVM_HOME (used by SDKMAN) over TORNADO_SDK
+    # This ensures that when SDKMAN switches versions, we use the new version
+    if [ -n "$TORNADOVM_HOME" ]; then
+        export TORNADO_SDK="$TORNADOVM_HOME"
+    elif [ -z "$TORNADO_SDK" ]; then
+        print_error "TORNADO_SDK or TORNADOVM_HOME environment variable is not set"
         echo "" >&2
-        echo "Please set TORNADO_SDK to point to your TornadoVM installation." >&2
+        echo "Please set TORNADO_SDK (or TORNADOVM_HOME) to point to your TornadoVM installation." >&2
         echo "" >&2
         echo "Add this to your ~/.bashrc or ~/.zshrc:" >&2
         echo "" >&2

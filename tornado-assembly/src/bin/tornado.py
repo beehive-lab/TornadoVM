@@ -425,10 +425,15 @@ def validate_windows_dependencies(sdk_path):
 class TornadoVMRunnerTool():
 
     def __init__(self):
-        try:
+        # Prioritize TORNADOVM_HOME (used by SDKMAN) over TORNADO_SDK
+        # This ensures that when SDKMAN switches versions, we use the new version
+        if "TORNADOVM_HOME" in os.environ:
+            self.sdk = os.environ["TORNADOVM_HOME"]
+            print(f"[INFO] Using TORNADOVM_HOME as TORNADO_SDK: {self.sdk}")
+        elif "TORNADO_SDK" in os.environ:
             self.sdk = os.environ["TORNADO_SDK"]
-        except:
-            print("Please ensure the TORNADO_SDK environment variable is set correctly")
+        else:
+            print("Please ensure the TORNADO_SDK or TORNADOVM_HOME environment variable is set correctly")
             sys.exit(0)
 
         # Validate Windows-specific dependencies (path format, DLL dependencies, etc.)

@@ -60,20 +60,27 @@ if not exist "%JAVA_HOME%\bin\java.exe" (
     exit /b 1
 )
 
-REM Check TORNADO_SDK
-if not defined TORNADO_SDK (
-    echo [ERROR] TORNADO_SDK environment variable is not set
+REM Prioritize TORNADOVM_HOME (used by SDKMAN) over TORNADO_SDK
+REM This ensures that when SDKMAN switches versions, we use the new version
+if defined TORNADOVM_HOME (
+    set TORNADO_SDK=%TORNADOVM_HOME%
+    echo [INFO] Using TORNADOVM_HOME as TORNADO_SDK: %TORNADOVM_HOME%
     echo.
-    echo Please set TORNADO_SDK to point to your TornadoVM installation.
-    echo.
-    echo To set TORNADO_SDK:
-    echo   1. Right-click "This PC" ^> Properties ^> Advanced system settings
-    echo   2. Click "Environment Variables"
-    echo   3. Add TORNADO_SDK pointing to your TornadoVM SDK directory
-    echo      Example: C:\tornadovm\sdk
-    echo   4. Add %%TORNADO_SDK%%\bin to PATH
-    echo.
-    exit /b 1
+) else (
+    if not defined TORNADO_SDK (
+        echo [ERROR] TORNADO_SDK or TORNADOVM_HOME environment variable is not set
+        echo.
+        echo Please set TORNADO_SDK (or TORNADOVM_HOME^) to point to your TornadoVM installation.
+        echo.
+        echo To set TORNADO_SDK:
+        echo   1. Right-click "This PC" ^> Properties ^> Advanced system settings
+        echo   2. Click "Environment Variables"
+        echo   3. Add TORNADO_SDK pointing to your TornadoVM SDK directory
+        echo      Example: C:\tornadovm\sdk
+        echo   4. Add %%TORNADO_SDK%%\bin to PATH
+        echo.
+        exit /b 1
+    )
 )
 
 if not exist "%TORNADO_SDK%" (
