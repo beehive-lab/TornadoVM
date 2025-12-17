@@ -1,0 +1,96 @@
+name: Release to SDKMAN
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "GitHub release tag (e.g. v2.1.0)"
+        required: true
+        default: "v2.1.0"
+      publish:
+        description: "Actually publish to SDKMAN (true/false)"
+        required: true
+        default: "false"
+
+jobs:
+  publish-to-sdkman:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    name: Publish TornadoVM ${{ matrix.sdk_suffix }} / ${{ matrix.platform }} to SDKMAN
+    runs-on: [ self-hosted, Linux, x64 ]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # full
+          - sdk_suffix: full
+            platform: LINUX_64
+            variant: full-linux-amd64
+          - sdk_suffix: full
+            platform: WINDOWS_64
+            variant: full-windows-amd64
+
+          # opencl
+          - sdk_suffix: opencl
+            platform: LINUX_64
+            variant: opencl-linux-amd64
+          - sdk_suffix: opencl
+            platform: WINDOWS_64
+            variant: opencl-windows-amd64
+          - sdk_suffix: opencl
+            platform: MAC_ARM64
+            variant: opencl-mac-aarch64
+
+          # ptx
+          - sdk_suffix: ptx
+            platform: LINUX_64
+            variant: ptx-linux-amd64
+          - sdk_suffix: ptx
+            platform: WINDOWS_64
+            variant: ptx-windows-amd64
+
+          # spirv
+          - sdk_suffix: spirv
+            platform: LINUX_64
+            variant: spirv-linux-amd64
+          - sdk_suffix: spirv
+            platform: WINDOWS_64
+            variant: spirv-windows-amd64
+
+    steps:
+      - name: Derive versions and URLs
+        id: vars
+        shell: bash
+        env:
+          TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG#v}"
+          SDKMAN_VERSION="${VERSION}-${{ matrix.sdk_suffix }}"
+          ASSET="tornadovm-${VERSION}-${{ matrix.variant }}.zip"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ASSET}"
+
+          echo "sdkman_version=${SDKMAN_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+          echo "Publishing:"
+          echo "  TAG:            ${TAG}"
+          echo "  SDKMAN version: ${SDKMAN_VERSION}"
+          echo "  Platform:       ${{ matrix.platform }}"
+          echo "  Asset:          ${ASSET}"
+          echo "  URL:            ${URL}"
+
+      - name: Release to SDKMAN!
+        if: ${{ github.event_name == 'release' || inputs.publish == 'true' }}
+        uses: sdkman/sdkman-release-action@v0.2.0
+        with:
+          consumer-key: ${{ secrets.SDKMAN_CONSUMER_KEY }}
+          consumer-token: ${{ secrets.SDKMAN_CONSUMER_TOKEN }}
+          candidate: tornadovm
+          version: ${{ steps.vars.outputs.sdkman_version }}
+          platform: ${{ matrix.platform }}
+          url: ${{ steps.vars.outputs.url }}
+
