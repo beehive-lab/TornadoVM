@@ -6,8 +6,8 @@ Example:
 
 ```bash
 export JAVA_HOME="/home/user/graalvm-ce-java17-22.2.0"
-export TORNADO_SDK=`pwd`
-export PATH=$TORNADO_SDK/bin:$PATH 
+export TORNADOVM_HOME=`pwd`
+export PATH=$TORNADOVM_HOME/bin:$PATH
 ```
 
 Then, invoke the source file as follows:
