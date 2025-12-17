@@ -136,11 +136,11 @@ class Environment:
     """Environment variables container."""
     paths: List[str]
     java_home: str
-    tornado_sdk: str
+    tornadovm_home: str
 
     def __init__(self):
         self.paths = [str(Path.cwd() / "bin" / "bin")]
-        self.tornado_sdk = str(Path.cwd() / "bin" / "sdk")
+        self.tornadovm_home = str(Path.cwd() / "bin" / "sdk")
         self.java_home = ""
 
 # Abstract Base Classes
@@ -301,7 +301,9 @@ class EnvironmentManager:
         """Apply environment variables to current process."""
         os.environ["PATH"] = os.pathsep.join(str(p) for p in env.paths) + os.pathsep + os.environ["PATH"]
         os.environ["JAVA_HOME"] = env.java_home
-        os.environ["TORNADO_SDK"] = env.tornado_sdk
+        os.environ["TORNADOVM_HOME"] = env.tornadovm_home
+        # Also set TORNADO_SDK for backward compatibility (deprecated)
+        os.environ["TORNADO_SDK"] = env.tornadovm_home
 
     def create_setup_script(self, env: Environment) -> None:
         """Create environment setup script."""
@@ -314,19 +316,19 @@ class EnvironmentManager:
 
     def _create_windows_script(self, env: Environment) -> None:
         """Create Windows batch script."""
-        # Get the actual TORNADO_SDK from environment (set by update_tornado_paths)
-        tornado_sdk = os.environ.get('TORNADO_SDK', env.tornado_sdk)
+        # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK', env.tornadovm_home)
         java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
-        cutils.runPyInstaller(str(Path.cwd()), tornado_sdk)
+        cutils.runPyInstaller(str(Path.cwd()), tornadovm_home)
 
         content = f"""@echo off
 REM TornadoVM Environment Setup Script (Windows)
 REM Generated automatically by the build process
 
 set JAVA_HOME={java_home}
-set TORNADO_SDK={tornado_sdk}
-set PATH=%TORNADO_SDK%\\bin;%PATH%
+set TORNADOVM_HOME={tornadovm_home}
+set PATH=%TORNADOVM_HOME%\\bin;%PATH%
 """
 
         with open("setvars.cmd", "w", newline='\r\n') as f:
@@ -335,8 +337,8 @@ set PATH=%TORNADO_SDK%\\bin;%PATH%
         self.console.print("[INFO] Run with: setvars.cmd", style="green")
 
     def _create_unix_script(self, env: Environment) -> None:
-        # Get the actual TORNADO_SDK from environment (set by update_tornado_paths)
-        tornado_sdk = os.environ.get('TORNADO_SDK', env.tornado_sdk)
+        # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK', env.tornadovm_home)
         java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
         content = f"""#!/bin/bash
@@ -344,8 +346,8 @@ set PATH=%TORNADO_SDK%\\bin;%PATH%
 # Generated automatically by the build process
 
 export JAVA_HOME="{java_home}"
-export TORNADO_SDK="{tornado_sdk}"
-export PATH="$TORNADO_SDK/bin:$PATH"
+export TORNADOVM_HOME="{tornadovm_home}"
+export PATH="$TORNADOVM_HOME/bin:$PATH"
 """
 
         with open("setvars.sh", "w", newline='\n') as f:
@@ -498,7 +500,7 @@ class TornadoInstaller:
 
             self.build_manager.build(config)
 
-            # Update paths to get the correct TORNADO_SDK location from the built SDK
+            # Update paths to get the correct TORNADOVM_HOME location from the built SDK
             updp.update_tornado_paths()
 
             self.env_manager.create_setup_script(env)

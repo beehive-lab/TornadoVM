@@ -29,10 +29,10 @@ from pathlib import Path
 
 
 def get_project_root():
-    """Get the project root directory (two levels up from TORNADO_SDK)"""
-    tornado_sdk = os.environ.get("TORNADO_SDK")
+    """Get the project root directory (two levels up from TORNADOVM_HOME)"""
+    tornado_sdk = os.environ.get("TORNADOVM_HOME")
     if not tornado_sdk:
-        print("[ERROR] TORNADO_SDK environment variable not set")
+        print("[ERROR] TORNADOVM_HOME environment variable not set")
         sys.exit(1)
     return Path(tornado_sdk).parent.parent
 
@@ -48,10 +48,10 @@ def get_tornado_flags():
         list: List of Java flags split by whitespace
     """
     try:
-        # Use the tornado script from TORNADO_SDK/bin instead of relying on PATH
-        tornado_sdk = os.environ.get("TORNADO_SDK")
+        # Use the tornado script from TORNADOVM_HOME/bin instead of relying on PATH
+        tornado_sdk = os.environ.get("TORNADOVM_HOME")
         if not tornado_sdk:
-            print("[ERROR] TORNADO_SDK environment variable not set")
+            print("[ERROR] TORNADOVM_HOME environment variable not set")
             sys.exit(1)
 
         # On Windows, use the compiled tornado.exe executable if available,
@@ -68,7 +68,7 @@ def get_tornado_flags():
                 tornado_script = tornado_py
                 cmd = [sys.executable, str(tornado_script), "--printJavaFlags"]
             else:
-                print("[ERROR] Neither tornado.exe nor tornado.py found in TORNADO_SDK/bin")
+                print("[ERROR] Neither tornado.exe nor tornado.py found in TORNADOVM_HOME/bin")
                 sys.exit(1)
         else:  # Unix-like systems (Linux, macOS)
             tornado_script = Path(tornado_sdk) / "bin" / "tornado"
@@ -103,7 +103,7 @@ def get_export_list_paths(tornado_sdk):
     to TornadoVM. Each backend (OpenCL, PTX, SPIRV) requires specific module exports.
 
     Args:
-        tornado_sdk (str): Path to the TORNADO_SDK directory
+        tornado_sdk (str): Path to the TORNADOVM_HOME directory
 
     Returns:
         dict: Dictionary mapping backend names to their export list file paths
@@ -148,19 +148,19 @@ def generate_argfile(backends, output_dir=None):
     Generate the tornado-argfile.template based on selected backends.
 
     This function creates a Java argument file template (@argfile) that contains all the JVM
-    flags needed to run TornadoVM applications. The template uses ${TORNADO_SDK} placeholders
+    flags needed to run TornadoVM applications. The template uses ${TORNADOVM_HOME} placeholders
     which can be expanded using envsubst. The argfile includes:
     - JVM mode and memory settings (-XX flags, -server, etc.)
-    - Native library paths (with ${TORNADO_SDK} placeholder)
+    - Native library paths (with ${TORNADOVM_HOME} placeholder)
     - TornadoVM runtime properties
-    - Module system configuration (--module-path, --add-modules with ${TORNADO_SDK} placeholder)
+    - Module system configuration (--module-path, --add-modules with ${TORNADOVM_HOME} placeholder)
     - Module exports (--add-exports) for common and backend-specific modules
 
     Args:
         backends (str): Comma-separated list of backends (e.g., "opencl,ptx,spirv")
-        output_dir (str): Optional output directory. If None, uses TORNADO_SDK directory
+        output_dir (str): Optional output directory. If None, uses TORNADOVM_HOME directory
     """
-    tornado_sdk = os.environ.get("TORNADO_SDK")
+    tornado_sdk = os.environ.get("TORNADOVM_HOME")
     project_root = get_project_root()
 
     # Generate argfile template in specified directory or SDK directory
@@ -196,7 +196,7 @@ def generate_argfile(backends, output_dir=None):
     # Note: This will be expanded by the tornado launcher or manually via envsubst
     output_lines.append("# === Native library path ===")
     # Use OS-appropriate path separator (\ on Windows, / on Unix)
-    lib_path = f"-Djava.library.path=${{TORNADO_SDK}}{os.sep}lib"
+    lib_path = f"-Djava.library.path=${{TORNADOVM_HOME}}{os.sep}lib"
     output_lines.append(lib_path)
     output_lines.append("")
 
@@ -210,11 +210,11 @@ def generate_argfile(backends, output_dir=None):
 
     # === Module system ===
     output_lines.append("# === Module system ===")
-    # Add module paths with ${TORNADO_SDK} placeholders
+    # Add module paths with ${TORNADOVM_HOME} placeholders
     # Use OS-appropriate separators: ; on Windows, : on Unix for path lists
     # Use \ on Windows, / on Unix for file paths
-    module_path = f"--module-path .{os.pathsep}${{TORNADO_SDK}}{os.sep}share{os.sep}java{os.sep}tornado"
-    upgrade_module_path = f"--upgrade-module-path ${{TORNADO_SDK}}{os.sep}share{os.sep}java{os.sep}graalJars"
+    module_path = f"--module-path .{os.pathsep}${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}tornado"
+    upgrade_module_path = f"--upgrade-module-path ${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}graalJars"
     output_lines.append(module_path)
     output_lines.append(upgrade_module_path)
     # Extract and add --add-modules

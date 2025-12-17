@@ -1,7 +1,6 @@
 
-## Add your JAVA_HOME 
+## Add your JAVA_HOME
 export JAVA_HOME=""
 
-export TORNADO_SDK=`pwd`
-export PATH=$TORNADO_SDK/bin:$PATH 
-
+export TORNADOVM_HOME=`pwd`
+export PATH=$TORNADOVM_HOME/bin:$PATH

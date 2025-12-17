@@ -174,27 +174,30 @@ check_java() {
     return 0
 }
 
-# Check TORNADO_SDK
+# Check TORNADOVM_HOME
 check_tornado_sdk() {
-    # Prioritize TORNADOVM_HOME (used by SDKMAN) over TORNADO_SDK
-    # This ensures that when SDKMAN switches versions, we use the new version
-    if [ -n "$TORNADOVM_HOME" ]; then
-        export TORNADO_SDK="$TORNADOVM_HOME"
-    elif [ -z "$TORNADO_SDK" ]; then
-        print_error "TORNADO_SDK or TORNADOVM_HOME environment variable is not set"
-        echo "" >&2
-        echo "Please set TORNADO_SDK (or TORNADOVM_HOME) to point to your TornadoVM installation." >&2
-        echo "" >&2
-        echo "Add this to your ~/.bashrc or ~/.zshrc:" >&2
-        echo "" >&2
-        echo -e "  ${GREEN}export TORNADO_SDK=/path/to/tornadovm/sdk${NC}" >&2
-        echo -e "  ${GREEN}export PATH=\$TORNADO_SDK/bin:\$PATH${NC}" >&2
-        echo "" >&2
-        return 1
+    # Use TORNADOVM_HOME (SDKMAN compliant)
+    # Fall back to deprecated TORNADO_SDK for backward compatibility
+    if [ -z "$TORNADOVM_HOME" ]; then
+        if [ -n "$TORNADO_SDK" ]; then
+            print_warning "TORNADO_SDK is deprecated, please use TORNADOVM_HOME instead"
+            export TORNADOVM_HOME="$TORNADO_SDK"
+        else
+            print_error "TORNADOVM_HOME environment variable is not set"
+            echo "" >&2
+            echo "Please set TORNADOVM_HOME to point to your TornadoVM installation." >&2
+            echo "" >&2
+            echo "Add this to your ~/.bashrc or ~/.zshrc:" >&2
+            echo "" >&2
+            echo -e "  ${GREEN}export TORNADOVM_HOME=/path/to/tornadovm/sdk${NC}" >&2
+            echo -e "  ${GREEN}export PATH=\$TORNADOVM_HOME/bin:\$PATH${NC}" >&2
+            echo "" >&2
+            return 1
+        fi
     fi
 
-    if [ ! -d "$TORNADO_SDK" ]; then
-        print_error "TORNADO_SDK is set but directory does not exist: $TORNADO_SDK"
+    if [ ! -d "$TORNADOVM_HOME" ]; then
+        print_error "TORNADOVM_HOME is set but directory does not exist: $TORNADOVM_HOME"
         return 1
     fi
 
@@ -203,7 +206,7 @@ check_tornado_sdk() {
 
 # Get installed backends from tornado.backend file
 get_installed_backends() {
-    local backend_file="$TORNADO_SDK/etc/tornado.backend"
+    local backend_file="$TORNADOVM_HOME/etc/tornado.backend"
     if [ -f "$backend_file" ]; then
         INSTALLED_BACKENDS=$(grep "tornado.backends" "$backend_file" | cut -d'=' -f2 | tr ',' ' ')
     else
@@ -303,8 +306,8 @@ check_spirv_backend() {
     if [ "$OS" == "linux" ]; then
         # Check if SPIR-V backend library exists in SDK
         local spirv_lib=""
-        if [ -f "$TORNADO_SDK/lib/libtornado-levelzero.so" ]; then
-            spirv_lib="$TORNADO_SDK/lib/libtornado-levelzero.so"
+        if [ -f "$TORNADOVM_HOME/lib/libtornado-levelzero.so" ]; then
+            spirv_lib="$TORNADOVM_HOME/lib/libtornado-levelzero.so"
         fi
 
         # If SPIR-V library exists, check if its dependencies are satisfied

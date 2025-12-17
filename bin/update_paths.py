@@ -100,13 +100,13 @@ def select_tornado_sdk(tornado_sdk_dir):
 
 def update_tornado_paths():
     """
-    Update PATH and TORNADO_SDK symbolic links to the latest TornadoVM SDK.
+    Update PATH and TORNADOVM_HOME symbolic links to the latest TornadoVM SDK.
 
     This function determines the appropriate TornadoVM SDK in the 'dist/' directory
     (by examining archive files) and updates the symbolic links 'bin' and 'sdk' to point
     to the selected SDK version.
 
-    The TORNADO_SDK environment variable will point to the selected SDK installation.
+    The TORNADOVM_HOME environment variable will point to the selected SDK installation.
 
     Selection Strategy:
         - Prefers 'full' backend (includes all backends: OpenCL, PTX, SPIR-V)
@@ -141,7 +141,7 @@ def update_tornado_paths():
         "###########################################################################"
     )
     log_messages.append("\x1b[32mTornadoVM build success\x1b[39m")
-    log_messages.append(f"Updating PATH and TORNADO_SDK to {selected_sdk}")
+    log_messages.append(f"Updating PATH and TORNADOVM_HOME to {selected_sdk}")
     log_messages.append(f"Backend : {backend_info}")
 
     # Change to the 'bin' directory
@@ -194,7 +194,9 @@ def update_tornado_paths():
 
     sdk_path = os.path.join(os.getcwd(), outer_dir, inner_sdk_dir)
 
-    # Update TORNADO_SDK environment variable to point to the new SDK
+    # Update TORNADOVM_HOME environment variable to point to the new SDK
+    os.environ['TORNADOVM_HOME'] = sdk_path
+    # Also set TORNADO_SDK for backward compatibility (deprecated, use TORNADOVM_HOME)
     os.environ['TORNADO_SDK'] = sdk_path
 
     # Create symbolic links 'bin' and 'sdk'

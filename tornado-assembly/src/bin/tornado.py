@@ -84,24 +84,24 @@ __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
 # Windows Dependency Validation Functions
 # ########################################################
 def validate_tornado_sdk_path(sdk_path):
-    """Validate TORNADO_SDK has proper Windows path format with drive letter."""
+    """Validate TORNADOVM_HOME has proper Windows path format with drive letter."""
     if os.name == 'nt':
         # Check if path starts with drive letter (e.g., C:, D:)
         if not re.match(r'^[A-Za-z]:', sdk_path):
-            print("[ERROR] TORNADO_SDK path is missing drive letter")
+            print("[ERROR] TORNADOVM_HOME path is missing drive letter")
             print()
-            print(f"[INFO] Current TORNADO_SDK: {sdk_path}")
+            print(f"[INFO] Current TORNADOVM_HOME: {sdk_path}")
             print()
             print("[CAUSE] On Windows, paths must start with a drive letter (C:, D:, etc.)")
             print("        Your path starts with a backslash instead of a drive letter.")
             print()
-            print("[FIX] Update your TORNADO_SDK environment variable to include the drive letter:")
+            print("[FIX] Update your TORNADOVM_HOME environment variable to include the drive letter:")
             print("      Example: C:\\Users\\YourName\\tornadovm\\sdk")
             print()
             print("      Steps to fix:")
             print("      1. Right-click 'This PC' > Properties > Advanced system settings")
             print("      2. Click 'Environment Variables'")
-            print("      3. Edit TORNADO_SDK and add the drive letter (e.g., C:)")
+            print("      3. Edit TORNADOVM_HOME and add the drive letter (e.g., C:)")
             print()
             sys.exit(1)
 
@@ -425,15 +425,15 @@ def validate_windows_dependencies(sdk_path):
 class TornadoVMRunnerTool():
 
     def __init__(self):
-        # Prioritize TORNADOVM_HOME (used by SDKMAN) over TORNADO_SDK
-        # This ensures that when SDKMAN switches versions, we use the new version
+        # Use TORNADOVM_HOME (SDKMAN compliant)
+        # Fall back to deprecated TORNADO_SDK for backward compatibility
         if "TORNADOVM_HOME" in os.environ:
             self.sdk = os.environ["TORNADOVM_HOME"]
-            print(f"[INFO] Using TORNADOVM_HOME as TORNADO_SDK: {self.sdk}")
         elif "TORNADO_SDK" in os.environ:
+            print("[WARNING] TORNADO_SDK is deprecated, please use TORNADOVM_HOME instead")
             self.sdk = os.environ["TORNADO_SDK"]
         else:
-            print("Please ensure the TORNADO_SDK or TORNADOVM_HOME environment variable is set correctly")
+            print("Please ensure the TORNADOVM_HOME environment variable is set correctly")
             sys.exit(0)
 
         # Validate Windows-specific dependencies (path format, DLL dependencies, etc.)
@@ -701,7 +701,7 @@ class TornadoVMRunnerTool():
         print("  1. Verify MSVCR140.dll exists:")
         print("     dir C:\\Windows\\System32\\MSVCR140.dll")
         print("\n  2. Test TornadoVM:")
-        print("     %TORNADO_SDK%\\bin\\tornado --devices")
+        print("     %TORNADOVM_HOME%\\bin\\tornado --devices")
 
         print("\nALTERNATIVE SOLUTION (Advanced):")
         print("  Build TornadoVM from source with Visual Studio 2017+ to use modern runtime.")
@@ -1121,10 +1121,10 @@ class TornadoVMRunnerTool():
                 with open(template_path, 'r') as f:
                     content = f.read()
 
-                # Expand ${TORNADO_SDK} to actual path
+                # Expand ${TORNADOVM_HOME} to actual path
                 # On Windows, convert forward slashes to backslashes in the SDK path
                 sdk_path = self.sdk.replace('/', '\\') if os.name == 'nt' else self.sdk
-                expanded = content.replace('${TORNADO_SDK}', sdk_path)
+                expanded = content.replace('${TORNADOVM_HOME}', sdk_path)
 
                 # Fix module path separator for current platform
                 # Template uses : (Unix) but Windows needs ;
@@ -1146,28 +1146,28 @@ class TornadoVMRunnerTool():
     def generateArgfile(self):
         """
         Regenerate tornado-argfile in SDK directory.
-        Expands ${TORNADO_SDK} placeholders to create a ready-to-use argfile.
+        Expands ${TORNADOVM_HOME} placeholders to create a ready-to-use argfile.
         Works portably across Windows, Linux, and macOS.
         """
         template_file = os.path.join(self.sdk, "tornado-argfile.template")
         output_file = os.path.join(self.sdk, "tornado-argfile")
 
         if not os.path.exists(template_file):
-            print(f"[ERROR] Argfile is not found in TORNADO_SDK")
+            print(f"[ERROR] Argfile is not found in TORNADOVM_HOME")
             print(f"[ERROR] Please open an issue in TornadoVM: https://github.com/beehive-lab/TornadoVM/issues")
             sys.exit(1)
 
         print(f"[INFO] Generating argfile in SDK directory: {self.sdk}")
 
         try:
-            # Read template and expand ${TORNADO_SDK} placeholders
+            # Read template and expand ${TORNADOVM_HOME} placeholders
             with open(template_file, 'r') as f:
                 content = f.read()
 
-            # Expand ${TORNADO_SDK} to actual SDK path
+            # Expand ${TORNADOVM_HOME} to actual SDK path
             # On Windows, ensure backslashes are used
             sdk_path = self.sdk.replace('/', '\\') if os.name == 'nt' else self.sdk
-            expanded = content.replace('${TORNADO_SDK}', sdk_path)
+            expanded = content.replace('${TORNADOVM_HOME}', sdk_path)
 
             # Fix module path separator for current platform
             # Template uses OS-specific separator, but ensure consistency
@@ -1186,9 +1186,9 @@ class TornadoVMRunnerTool():
 
             print(f"[INFO] Generated argfile at: {output_file}")
             if os.name == 'nt':
-                print(f"[INFO] You can now use: java @%TORNADO_SDK%\\tornado-argfile -cp <classpath> <MainClass>")
+                print(f"[INFO] You can now use: java @%TORNADOVM_HOME%\\tornado-argfile -cp <classpath> <MainClass>")
             else:
-                print(f"[INFO] You can now use: java @$TORNADO_SDK/tornado-argfile -cp <classpath> <MainClass>")
+                print(f"[INFO] You can now use: java @$TORNADOVM_HOME/tornado-argfile -cp <classpath> <MainClass>")
 
         except subprocess.CalledProcessError as e:
             print(f"[ERROR] Failed to generate argfile")
@@ -1363,7 +1363,9 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
         if (args.intellijinit):
-            ideaUtils.tornadovm_ide_init(os.environ['TORNADO_SDK'], self.java_home, self.listOfBackends)
+            # Use TORNADOVM_HOME, fallback to TORNADO_SDK for backward compatibility
+            sdk_path = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK')
+            ideaUtils.tornadovm_ide_init(sdk_path, self.java_home, self.listOfBackends)
             sys.exit(0)
 
         if (args.generate_argfile):
