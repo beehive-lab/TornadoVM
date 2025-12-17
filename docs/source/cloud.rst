@@ -73,7 +73,7 @@ c. Load the environment variables of TornadoVM for root.
 
    $ tornado --devices
 
-3. Update the the FPGA Conguration file
+3. Update the FPGA Conguration file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Update the ``$TORNADOVM_HOME/etc/xilinx-fpga.conf`` file or create your own
