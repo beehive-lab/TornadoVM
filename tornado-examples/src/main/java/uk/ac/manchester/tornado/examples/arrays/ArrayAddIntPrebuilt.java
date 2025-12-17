@@ -64,7 +64,7 @@ public class ArrayAddIntPrebuilt {
         b.init(2);
         c.init(0);
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String tornadoSDK = System.getenv("TORNADOVM_HOME");
 
         TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
         String filePath = tornadoSDK + "/examples/generated/";
@@ -77,7 +77,7 @@ public class ArrayAddIntPrebuilt {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .prebuiltTask("t0", "add", filePath, accessorParameters) // 
+                .prebuiltTask("t0", "add", filePath, accessorParameters) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         WorkerGrid workerGrid = new WorkerGrid1D(numElements);
