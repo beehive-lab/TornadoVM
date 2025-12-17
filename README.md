@@ -235,17 +235,9 @@ To use TornadoVM, you can link the TornadoVM API to your application which is un
 
 Each Java TornadoVM module is licensed as follows:
 
-| Module                         | License                                                                                                                                                          |
-|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Tornado-API                    | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Runtime                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2%20Classpath%20Exception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
-| Tornado-Assembly               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Drivers                | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20V2%20Classpath%20Exception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
-| Tornado-Drivers-OpenCL-Headers | [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE)                      |
-| Tornado-scripts                | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Annotation             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Unittests              | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Benchmarks             | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Examples               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-| Tornado-Matrices               | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)          |
-|                                |                                                                                                                                                                  |
+
+| Modules                                                                                                                                                                       | License                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tornado-API, Tornado-Assembly, Tornado-scripts, <br/>Tornado-Annotation, Tornado-Unittests, Tornado-Benchmarks, <br/>Tornado-Examples, Tornado-Matrices, Tornado-Drivers-OpenCL-Headers | [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)         |
+| Tornado-Runtime, Tornado-Drivers                                                                                                                                              | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2%20Classpath%20Exception-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
+
