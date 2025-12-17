@@ -63,7 +63,7 @@ public class TestSPIRVTornadoCompiler {
         TaskDataContext task = new TaskDataContext(scheduleMetaData, "saxpy");
         new SPIRVCompilationResult("saxpy", "saxpy", task);
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String tornadoSDK = System.getenv("TORNADOVM_HOME");
         String pathToSPIRVBinaryFile = tornadoSDK + "/examples/generated/add.spv";
 
         SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "add", "add", pathToSPIRVBinaryFile);
