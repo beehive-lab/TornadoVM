@@ -7,6 +7,30 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 2.2.0
+---------------
+17/12/25
+
+Improvements
+~~~~~~~~~~~~
+
+- `#765 <https://github.com/beehive-lab/TornadoVM/pull/765>`_: Add cross-platform SDK compatibility checks and fix launcher issues
+- `#713 <https://github.com/beehive-lab/TornadoVM/pull/713>`_: [ptx] Support for CUDA JIT compiler flags
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#764 <https://github.com/beehive-lab/TornadoVM/pull/764>`_: [cicd] Prevent workflows from running on forks
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#773 <https://github.com/beehive-lab/TornadoVM/pull/773>`_: [build] Replace TORNADO_SDK with TORNADOVM_HOME 
+- `#772 <https://github.com/beehive-lab/TornadoVM/pull/772>`_: [docs] Refactor license table in README.md for clarity and conciseness
+- `#771 <https://github.com/beehive-lab/TornadoVM/pull/771>`_: [CI] Publish archives to sdkman action
+- `#769 <https://github.com/beehive-lab/TornadoVM/pull/769>`_: Update README.md for TornadoVM version 2.1.0 for SDKs
+
+
 TornadoVM 2.1.0
 ---------------
 09/12/25
