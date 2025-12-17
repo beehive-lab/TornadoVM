@@ -19,7 +19,7 @@ jobs:
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
 
     steps:
@@ -55,7 +55,7 @@ jobs:
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
     steps:
       - name: Run fast unit-tests for SPIR-V with OpenCL runtime
@@ -98,7 +98,7 @@ jobs:
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
       GRAALPY_HOME: /opt/graalpy-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_03DCD25EA1_JAVA21/graalvm-03dcd25ea1-java21-23.1.0-dev
       GRAALJS_HOME: /opt/graaljs-build/graal/sdk/mxbuild/linux-amd64/GRAALVM_3AF13F6F38_JAVA21/graalvm-3af13f6f38-java21-23.1.0-dev
@@ -108,34 +108,34 @@ jobs:
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for SPIR-V with Level Zero runtime
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=0:1" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for OpenCL on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for OpenCL on Integrated Graphics
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=1:1" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb
       - name: Run polyglot tests for PTX on NVIDIA GPU
         run: |
           source $VENV_PATH/bin/activate
           source setvars.sh
-          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
-          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle js     $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
-          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle ruby   $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle js     $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
+          tornado --jvm="-Ds0.t0.device=2:0" --printKernel --truffle ruby   $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb

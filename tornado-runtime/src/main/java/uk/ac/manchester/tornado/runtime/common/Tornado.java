@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoSetting;
 
 public final class Tornado implements TornadoSetting {
 
-    private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
+    private static final String TORNADOVM_HOME_VARIABLE = "TORNADOVM_HOME";
 
     private static final Properties settings = System.getProperties();
 
@@ -72,7 +72,7 @@ public final class Tornado implements TornadoSetting {
     }
 
     private static void tryLoadSettings() {
-        final String tornadoRoot = System.getenv(TORNADO_SDK_VARIABLE);
+        final String tornadoRoot = System.getenv(TORNADOVM_HOME_VARIABLE);
         loadSettings(tornadoRoot + "/etc/tornado.properties");
     }
 

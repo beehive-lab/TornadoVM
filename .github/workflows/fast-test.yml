@@ -37,7 +37,7 @@ jobs:
       MAVEN_HOME: /opt/maven
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
       MAVEN_HOME: /opt/maven
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-ptx
     steps:
       - uses: actions/checkout@v4
@@ -118,7 +118,7 @@ jobs:
       MAVEN_HOME: /opt/maven
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-spirv
     steps:
       - uses: actions/checkout@v4
@@ -153,7 +153,7 @@ jobs:
     env:
       JAVA_HOME: /opt/jenkins/jdks/graalvm-community-openjdk-21.0.1+12.1/Contents/Home
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn

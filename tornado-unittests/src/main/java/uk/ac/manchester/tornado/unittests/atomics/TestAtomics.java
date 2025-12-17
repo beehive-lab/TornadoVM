@@ -372,7 +372,7 @@ public class TestAtomics extends TornadoTestBase {
         int deviceNumber = Integer.parseInt(deviceToRun);
 
         TornadoDevice defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
-        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String tornadoSDK = System.getenv("TORNADOVM_HOME");
 
         boolean coops = TornadoNativeArray.ARRAY_HEADER == 16;
         String basePath = tornadoSDK + "/examples/generated/";

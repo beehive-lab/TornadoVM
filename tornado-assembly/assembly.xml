@@ -84,7 +84,6 @@
             <directory>src/etc</directory>
             <outputDirectory>./</outputDirectory>
             <includes>
-                <include>sourceSDK.sh</include>
                 <include>README.md</include>
             </includes>
             <filtered>true</filtered>

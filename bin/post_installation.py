@@ -39,7 +39,7 @@ def update_backend_file(selected_backends_str):
     Args:
         selected_backends_str (str): Comma-separated string of selected backends.
     """
-    tornado_sdk_path = os.environ.get("TORNADO_SDK")
+    tornado_sdk_path = os.environ.get("TORNADOVM_HOME")
     backend_file_path = os.path.join(tornado_sdk_path, "etc", "tornado.backend")
     with open(backend_file_path, "w") as backend_file:
         backend_file.write(f"tornado.backends={selected_backends_str}")
@@ -52,7 +52,7 @@ def copy_graal_jars():
     This function checks the Java version and copies GraalVM JAR files to the Tornado SDK's 'share/java/graalJars'
     directory if the Java environment is not GraalVM.
     """
-    tornado_sdk_path = os.environ.get("TORNADO_SDK")
+    tornado_sdk_path = os.environ.get("TORNADOVM_HOME")
     java_version_output = subprocess.check_output(
         ["java", "-version"], stderr=subprocess.STDOUT, universal_newlines=True
     )
@@ -82,7 +82,7 @@ def main():
     update_backend_file(selected_backends_str)
     copy_graal_jars()
     if os.name == 'nt':
-        cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
+        cutils.runPyInstaller(os.getcwd(), os.environ['TORNADOVM_HOME'])
 
 
 if __name__ == "__main__":

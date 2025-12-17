@@ -51,7 +51,7 @@ If the OpenCL ICD loaders are installed correctly, the output of the
 Step 1: Update/Create the FPGA’s configuration file
 ---------------------------------------------------
 
-Update the “$TORNADO_SDK/etc/vendor-fpga.conf” file with the necessary
+Update the “$TORNADOVM_HOME/etc/vendor-fpga.conf” file with the necessary
 information (i.e. fpga platform name (DEVICE_NAME), HLS compiler (COMPILER),
 HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will
 automatically load the user-defined configurations according to the
@@ -66,7 +66,7 @@ Edit/create the configuration file:
 
 .. code:: bash
 
-   $ vim $TORNADO_SDK/etc/intel-oneapi-fpga.conf
+   $ vim $TORNADOVM_HOME/etc/intel-oneapi-fpga.conf
 
 .. code:: bash
 
@@ -85,7 +85,7 @@ Edit/create the configuration file fo the FPGA:
 
 .. code:: bash
 
-   $ vim $TORNADO_SDK/etc/intel-fpga.conf
+   $ vim $TORNADOVM_HOME/etc/intel-fpga.conf
 
 .. code:: bash
 
@@ -103,7 +103,7 @@ Example of a configuration file for a Xilinx KCU1500 FPGA:
 
 .. code:: bash
 
-   $ vim $TORNADO_SDK/etc/xilinx-fpga.conf
+   $ vim $TORNADOVM_HOME/etc/xilinx-fpga.conf
 
 .. code:: bash
 
@@ -154,7 +154,7 @@ Example of a configuration file for an AWS xilinx_aws-vu9p-f1-04261818_dynamic_5
 
 .. code:: bash
 
-   $ vim $TORNADO_SDK/etc/xilinx-fpga.conf
+   $ vim $TORNADOVM_HOME/etc/xilinx-fpga.conf
 
 .. code:: bash
 

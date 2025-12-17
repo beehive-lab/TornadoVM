@@ -49,21 +49,21 @@ clean:
 	.\mvnw -Popencl-backend,ptx-backend,spirv-backend clean
 
 example:
-	%TORNADO_SDK%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
+	%TORNADOVM_HOME%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
 
 tests:
 	del /f tornado_unittests.log
-	%TORNADO_SDK%\bin\tornado.exe --devices
-	%TORNADO_SDK%\bin\tornado-test.exe --ea --verbose
-	%TORNADO_SDK%\bin\tornado-test.exe --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	%TORNADO_SDK%\bin\test-native.cmd
+	%TORNADOVM_HOME%\bin\tornado.exe --devices
+	%TORNADOVM_HOME%\bin\tornado-test.exe --ea --verbose
+	%TORNADOVM_HOME%\bin\tornado-test.exe --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\test-native.cmd
 
 tests-uncompressed:
 	del /f tornado_unittests.log
-	python %TORNADO_SDK%\bin\tornado --devices
-	python %TORNADO_SDK%\bin\tornado-test --ea --verbose --uncompressed
-	python %TORNADO_SDK%\bin\tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	%TORNADO_SDK%\bin\test-native.cmd
+	python %TORNADOVM_HOME%\bin\tornado --devices
+	python %TORNADOVM_HOME%\bin\tornado-test --ea --verbose --uncompressed
+	python %TORNADOVM_HOME%\bin\tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\test-native.cmd
 
 test-slam:
-	%TORNADO_SDK%\bin\tornado-test.exe -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+	%TORNADOVM_HOME%\bin\tornado-test.exe -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests

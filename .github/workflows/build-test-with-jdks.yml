@@ -36,7 +36,7 @@ jobs:
       CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
       GRAAL_JARS: /opt/graalJars
       TORNADO_ROOT: ${{ github.workspace }}
-      TORNADO_SDK: ${{ github.workspace }}/bin/sdk
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
 
     steps:

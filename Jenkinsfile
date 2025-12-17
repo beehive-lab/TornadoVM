@@ -18,7 +18,7 @@ pipeline {
         MICROSOFT_21_JAVA_HOME="/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3+9"
         TORNADO_ROOT="/var/lib/jenkins/workspace/TornadoVM-pipeline"
         PATH="/opt/maven/bin:/var/lib/jenkins/workspace/kfusion-tornadovm/bin:/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/bin:$PATH"
-        TORNADO_SDK="/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/sdk"
+        TORNADOVM_HOME="/var/lib/jenkins/workspace/TornadoVM-pipeline/bin/sdk"
         CMAKE_ROOT="/opt/jenkins/cmake-3.25.2-linux-x86_64"
         KFUSION_ROOT="/var/lib/jenkins/workspace/kfusion-tornadovm"
         TORNADO_RAY_TRACER_ROOT="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer"

@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
  * </code>
  */
 public class PrebuiltTests extends TornadoTestBase {
-    private static final String TORNADO_SDK = "TORNADO_SDK";
+    private static final String TORNADOVM_HOME = "TORNADOVM_HOME";
     private static TornadoDevice defaultDevice;
     private static TornadoVMBackendType backendType;
     private static boolean coops;
@@ -70,7 +70,7 @@ public class PrebuiltTests extends TornadoTestBase {
     }
 
     private String getPrebuiltKernelPath(String kernelName) {
-        String sdkPath = System.getenv(TORNADO_SDK);
+        String sdkPath = System.getenv(TORNADOVM_HOME);
         String basePath = sdkPath + "/examples/generated/";
         String fileStem = coops ? kernelName : kernelName + "_uncompressed";
 
@@ -92,7 +92,7 @@ public class PrebuiltTests extends TornadoTestBase {
     }
 
     private String getPrebuiltKernelPath(String kernelName, String extension) {
-        String sdkPath = System.getenv(TORNADO_SDK);
+        String sdkPath = System.getenv(TORNADOVM_HOME);
         String basePath = sdkPath + "/examples/generated/";
         String fileStem = coops ? kernelName : kernelName + "_uncompressed";
 
@@ -337,13 +337,13 @@ public class PrebuiltTests extends TornadoTestBase {
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
                         kernelFile, //
-                        accessorParameters) // 
+                        accessorParameters) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler) //
-                    .withDevice(device) // 
+                    .withDevice(device) //
                     .execute();
         }
 
@@ -366,7 +366,7 @@ public class PrebuiltTests extends TornadoTestBase {
      * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests#testPrebuiltMutiBackend
      * </code>
      * </p>
-     * 
+     *
      * @throws TornadoExecutionPlanException
      */
     @Test

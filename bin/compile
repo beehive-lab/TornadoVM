@@ -400,19 +400,19 @@ def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
 
 def generate_setvars_files():
     """
-    Generate setvars.cmd (Windows) or setvars.sh (Unix/Linux/Mac) file with the correct TORNADO_SDK path.
+    Generate setvars.cmd (Windows) or setvars.sh (Unix/Linux/Mac) file with the correct TORNADOVM_HOME path.
 
     This function creates an environment setup script at the project root that:
-    - Set TORNADO_SDK to the correct SDK location
+    - Set TORNADOVM_HOME to the correct SDK location (SDKMAN compliant)
     - Add the SDK bin directory to PATH
     - Preserve the current JAVA_HOME setting
     """
     project_root = os.getcwd()
-    tornado_sdk = os.environ.get('TORNADO_SDK')
+    tornado_sdk = os.environ.get('TORNADOVM_HOME')
     java_home = os.environ.get('JAVA_HOME', '')
 
     if not tornado_sdk:
-        print("Warning: TORNADO_SDK not set, skipping setvars file generation")
+        print("Warning: TORNADOVM_HOME not set, skipping setvars file generation")
         return
 
     if os.name == 'nt':
@@ -423,8 +423,8 @@ REM TornadoVM Environment Setup Script (Windows)
 REM Generated automatically by the build process
 
 set JAVA_HOME={java_home}
-set TORNADO_SDK={tornado_sdk}
-set PATH=%TORNADO_SDK%\\bin;%PATH%
+set TORNADOVM_HOME={tornado_sdk}
+set PATH=%TORNADOVM_HOME%\\bin;%PATH%
 """
 
         with open(setvars_cmd_path, 'w', newline='\r\n') as f:
@@ -440,8 +440,8 @@ set PATH=%TORNADO_SDK%\\bin;%PATH%
 # Generated automatically by the build process
 
 export JAVA_HOME="{java_home}"
-export TORNADO_SDK="{tornado_sdk}"
-export PATH="$TORNADO_SDK/bin:$PATH"
+export TORNADOVM_HOME="{tornado_sdk}"
+export PATH="$TORNADOVM_HOME/bin:$PATH"
 """
 
         with open(setvars_sh_path, 'w', newline='\n') as f:
@@ -465,7 +465,7 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
         backend (str): The backend string for argfile generation.
     """
     if mvn_build_result.returncode == 0:
-        # Update all PATHs - this must run first to set TORNADO_SDK
+        # Update all PATHs - this must run first to set TORNADOVM_HOME
         updp.update_tornado_paths()
 
         # Generate setvars files with the correct SDK path
@@ -473,7 +473,8 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
 
         # Create tornado.backend file in the extracted SDK
         # Maven filtering should handle this, but as a fallback (especially on Windows), ensure it exists
-        backend_file_path = os.path.join(f"{os.environ['TORNADO_SDK']}", "etc", "tornado.backend")
+        tornado_home = os.environ.get('TORNADOVM_HOME')
+        backend_file_path = os.path.join(f"{tornado_home}", "etc", "tornado.backend")
         os.makedirs(os.path.dirname(backend_file_path), exist_ok=True)
         with open(backend_file_path, "w") as backend_file:
             backend_file.write(f"tornado.backends={backend_profiles}\n")
@@ -482,8 +483,8 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
         # See tornado-assembly/assembly.xml for the fileSet configuration
 
         # Generate argfile template and final argfile
-        # This creates two files in the TORNADO_SDK directory (dist/):
-        # 1. tornado-argfile.template - Contains ${TORNADO_SDK} placeholders for portability
+        # This creates two files in the TORNADOVM_HOME directory (dist/):
+        # 1. tornado-argfile.template - Contains ${TORNADOVM_HOME} placeholders for portability
         # 2. tornado-argfile - Ready-to-use argfile with actual paths expanded
         # Both files use OS-appropriate path separators (/ on Unix, \ on Windows)
         generate_argfile_template(args.backend)
@@ -492,7 +493,7 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
 
         # On Windows, create executables before packaging
         if os.name == 'nt':
-            cutils.runPyInstaller(os.getcwd(), os.environ['TORNADO_SDK'])
+            cutils.runPyInstaller(os.getcwd(), tornado_home)
 
         # Create SDK archives last, after all files (including argfile and Windows executables) are ready
         if args.sdk:
@@ -553,7 +554,7 @@ def parse_args():
 def generate_argfile_template(backend):
         """
         Generate the argfile template for your current build.
-        The template contains ${TORNADO_SDK} placeholders that will be expanded at runtime.
+        The template contains ${TORNADOVM_HOME} placeholders that will be expanded at runtime.
 
         Note: SPIRV backend depends on OpenCL runtime, so when building with SPIRV,
         we automatically include OpenCL exports in the argfile.
@@ -565,7 +566,8 @@ def generate_argfile_template(backend):
             backend_list.insert(0, "opencl")  # Add OpenCL before SPIRV
             backend = ",".join(backend_list)
 
-        scripts_dir = os.path.join(f"{os.environ['TORNADO_SDK']}", "bin")
+        tornado_home = os.environ.get('TORNADOVM_HOME')
+        scripts_dir = os.path.join(f"{tornado_home}", "bin")
         current = os.getcwd()
         os.chdir(scripts_dir)
 
@@ -613,20 +615,20 @@ def generate_argfile_template(backend):
 
 def expand_argfile_template():
     """
-    Expand the tornado-argfile.template by replacing ${TORNADO_SDK} placeholders
-    with the actual TORNADO_SDK path and generate the final tornado-argfile.
+    Expand the tornado-argfile.template by replacing ${TORNADOVM_HOME} placeholders
+    with the actual TORNADOVM_HOME path and generate the final tornado-argfile.
 
-    This function creates a ready-to-use tornado-argfile in the TORNADO_SDK directory
+    This function creates a ready-to-use tornado-argfile in the TORNADOVM_HOME directory
     that can be used with @argfile syntax. The expansion is done in pure Python for
     cross-platform portability (Linux, macOS, Windows).
     """
-    tornado_sdk = os.environ.get("TORNADO_SDK")
-    if not tornado_sdk:
-        print("[WARNING] TORNADO_SDK not set, skipping argfile expansion")
+    tornado_home = os.environ.get("TORNADOVM_HOME")
+    if not tornado_home:
+        print("[WARNING] TORNADOVM_HOME not set, skipping argfile expansion")
         return
 
-    template_path = os.path.join(tornado_sdk, "tornado-argfile.template")
-    output_path = os.path.join(tornado_sdk, "tornado-argfile")
+    template_path = os.path.join(tornado_home, "tornado-argfile.template")
+    output_path = os.path.join(tornado_home, "tornado-argfile")
 
     if not os.path.exists(template_path):
         print(f"[WARNING] Template file not found: {template_path}")
@@ -637,9 +639,9 @@ def expand_argfile_template():
         with open(template_path, "r") as template_file:
             template_content = template_file.read()
 
-        # Expand ${TORNADO_SDK} placeholder with the actual path
+        # Expand ${TORNADOVM_HOME} placeholder with the actual path
         # This works across all platforms (Linux, macOS, Windows)
-        expanded_content = template_content.replace("${TORNADO_SDK}", tornado_sdk)
+        expanded_content = template_content.replace("${TORNADOVM_HOME}", tornado_home)
 
         # Write the expanded argfile
         with open(output_path, "w") as output_file:
@@ -681,14 +683,14 @@ def package_sdk_archives():
     def warn(msg: str) -> None:
         print(f"  {YELLOW}[WARNING]{RESET} {msg}")
 
-    tornado_sdk = os.environ.get('TORNADO_SDK')
-    if not tornado_sdk:
-        warn("TORNADO_SDK not set; skipping archive creation.")
+    tornado_home = os.environ.get('TORNADOVM_HOME')
+    if not tornado_home:
+        warn("TORNADOVM_HOME not set; skipping archive creation.")
         return
 
     # Get the SDK directory paths
-    # TORNADO_SDK = dist/tornadovm-X.Y.Z-BACKEND-PLATFORM-ARCH/tornadovm-X.Y.Z-BACKEND/
-    sdk_path = Path(tornado_sdk)
+    # TORNADOVM_HOME = dist/tornadovm-X.Y.Z-BACKEND-PLATFORM-ARCH/tornadovm-X.Y.Z-BACKEND/
+    sdk_path = Path(tornado_home)
     sdk_name = sdk_path.name  # e.g., tornadovm-1.1.2-dev-opencl
     outer_dir = sdk_path.parent  # e.g., dist/tornadovm-1.1.2-dev-opencl-mac-aarch64
     outer_dir_name = outer_dir.name  # e.g., tornadovm-1.1.2-dev-opencl-mac-aarch64
