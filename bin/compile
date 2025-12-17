@@ -404,13 +404,11 @@ def generate_setvars_files():
 
     This function creates an environment setup script at the project root that:
     - Set TORNADOVM_HOME to the correct SDK location (SDKMAN compliant)
-    - Set TORNADO_SDK to the same location (backward compatibility, deprecated)
     - Add the SDK bin directory to PATH
     - Preserve the current JAVA_HOME setting
     """
     project_root = os.getcwd()
-    # Prefer TORNADOVM_HOME, fallback to TORNADO_SDK for backward compatibility
-    tornado_sdk = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK')
+    tornado_sdk = os.environ.get('TORNADOVM_HOME')
     java_home = os.environ.get('JAVA_HOME', '')
 
     if not tornado_sdk:
@@ -475,7 +473,7 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
 
         # Create tornado.backend file in the extracted SDK
         # Maven filtering should handle this, but as a fallback (especially on Windows), ensure it exists
-        tornado_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK')
+        tornado_home = os.environ.get('TORNADOVM_HOME')
         backend_file_path = os.path.join(f"{tornado_home}", "etc", "tornado.backend")
         os.makedirs(os.path.dirname(backend_file_path), exist_ok=True)
         with open(backend_file_path, "w") as backend_file:
@@ -568,7 +566,7 @@ def generate_argfile_template(backend):
             backend_list.insert(0, "opencl")  # Add OpenCL before SPIRV
             backend = ",".join(backend_list)
 
-        tornado_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK')
+        tornado_home = os.environ.get('TORNADOVM_HOME')
         scripts_dir = os.path.join(f"{tornado_home}", "bin")
         current = os.getcwd()
         os.chdir(scripts_dir)
@@ -624,7 +622,7 @@ def expand_argfile_template():
     that can be used with @argfile syntax. The expansion is done in pure Python for
     cross-platform portability (Linux, macOS, Windows).
     """
-    tornado_home = os.environ.get("TORNADOVM_HOME") or os.environ.get("TORNADO_SDK")
+    tornado_home = os.environ.get("TORNADOVM_HOME")
     if not tornado_home:
         print("[WARNING] TORNADOVM_HOME not set, skipping argfile expansion")
         return
@@ -685,7 +683,7 @@ def package_sdk_archives():
     def warn(msg: str) -> None:
         print(f"  {YELLOW}[WARNING]{RESET} {msg}")
 
-    tornado_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK')
+    tornado_home = os.environ.get('TORNADOVM_HOME')
     if not tornado_home:
         warn("TORNADOVM_HOME not set; skipping archive creation.")
         return

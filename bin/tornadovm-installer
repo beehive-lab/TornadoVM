@@ -302,8 +302,6 @@ class EnvironmentManager:
         os.environ["PATH"] = os.pathsep.join(str(p) for p in env.paths) + os.pathsep + os.environ["PATH"]
         os.environ["JAVA_HOME"] = env.java_home
         os.environ["TORNADOVM_HOME"] = env.tornadovm_home
-        # Also set TORNADO_SDK for backward compatibility (deprecated)
-        os.environ["TORNADO_SDK"] = env.tornadovm_home
 
     def create_setup_script(self, env: Environment) -> None:
         """Create environment setup script."""
@@ -317,7 +315,7 @@ class EnvironmentManager:
     def _create_windows_script(self, env: Environment) -> None:
         """Create Windows batch script."""
         # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
-        tornadovm_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK', env.tornadovm_home)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME')
         java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
         cutils.runPyInstaller(str(Path.cwd()), tornadovm_home)
@@ -338,7 +336,7 @@ set PATH=%TORNADOVM_HOME%\\bin;%PATH%
 
     def _create_unix_script(self, env: Environment) -> None:
         # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
-        tornadovm_home = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK', env.tornadovm_home)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME')
         java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
         content = f"""#!/bin/bash

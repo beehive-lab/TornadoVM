@@ -196,8 +196,6 @@ def update_tornado_paths():
 
     # Update TORNADOVM_HOME environment variable to point to the new SDK
     os.environ['TORNADOVM_HOME'] = sdk_path
-    # Also set TORNADO_SDK for backward compatibility (deprecated, use TORNADOVM_HOME)
-    os.environ['TORNADO_SDK'] = sdk_path
 
     # Create symbolic links 'bin' and 'sdk'
     if os.name == 'nt':

@@ -61,7 +61,6 @@ if not exist "%JAVA_HOME%\bin\java.exe" (
 )
 
 REM Use TORNADOVM_HOME (SDKMAN compliant)
-REM Fall back to deprecated TORNADO_SDK for backward compatibility
 if not defined TORNADOVM_HOME (
     if defined TORNADO_SDK (
         echo [WARNING] TORNADO_SDK is deprecated, please use TORNADOVM_HOME instead

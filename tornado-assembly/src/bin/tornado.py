@@ -83,7 +83,7 @@ __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
 # ########################################################
 # Windows Dependency Validation Functions
 # ########################################################
-def validate_tornado_sdk_path(sdk_path):
+def validate_tornadovm_home_path(sdk_path):
     """Validate TORNADOVM_HOME has proper Windows path format with drive letter."""
     if os.name == 'nt':
         # Check if path starts with drive letter (e.g., C:, D:)
@@ -391,8 +391,8 @@ def validate_windows_dependencies(sdk_path):
     if os.name != 'nt':
         return
 
-    # Validate TORNADO_SDK path format
-    validate_tornado_sdk_path(sdk_path)
+    # Validate TORNADOVM_HOME path format
+    validate_tornadovm_home_path(sdk_path)
 
     # Check if tornado.backend file exists and validate backends
     backend_file = os.path.join(sdk_path, 'etc', 'tornado.backend')
@@ -426,7 +426,6 @@ class TornadoVMRunnerTool():
 
     def __init__(self):
         # Use TORNADOVM_HOME (SDKMAN compliant)
-        # Fall back to deprecated TORNADO_SDK for backward compatibility
         if "TORNADOVM_HOME" in os.environ:
             self.sdk = os.environ["TORNADOVM_HOME"]
         elif "TORNADO_SDK" in os.environ:
@@ -1363,8 +1362,7 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
         if (args.intellijinit):
-            # Use TORNADOVM_HOME, fallback to TORNADO_SDK for backward compatibility
-            sdk_path = os.environ.get('TORNADOVM_HOME') or os.environ.get('TORNADO_SDK')
+            sdk_path = os.environ.get('TORNADOVM_HOME')
             ideaUtils.tornadovm_ide_init(sdk_path, self.java_home, self.listOfBackends)
             sys.exit(0)
 
