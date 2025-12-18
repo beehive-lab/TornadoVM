@@ -32,33 +32,33 @@ See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ## 1. Quick Start - Install & Use the TornadoVM SDK
 
+### Prerequisites
+- **JDK 21** (or GraalVM based on JDK 21)
+- GCC/G++ >= 13.0
+- C toolchain / build tools (for native parts, depending on backend)
+- OpenCL Headers, CUDA Toolkit
+
+**Note:** Make sure `JAVA_HOME` points to your JDK/GraalVM 21 installation.
+
 ### Install TornadoVM (via SDKMAN!)
 
 TornadoVM is distributed through our [**official website**](https://www.tornadovm.org/downloads) and **SDKMAN!**. Install a version that matches your OS, architecture, and accelerator backend.
 
 All TornadoVM SDKs are available on the [SDKMAN! TornadoVM page](https://sdkman.io/sdks/tornadovm/).
 
-You can choose a backend-specific build by appending it to the version:
-- `opencl` (default if no backend is specified)
-- `ptx`
-- `spirv`
-- `full` (all backends)
+You can choose a backend-specific build:
 
-Examples:
-- `2.2.0-opencl`
-- `2.2.0-ptx`
-- `2.2.0-spirv`
-- `2.2.0-full`
+Backend   | SDKMAN! Latest Version
+--------- | --------------
+OpenCL   | `2.2.0-opencl` **(default)**
+PTX      | `2.2.0-ptx`
+SPIR-V   | `2.2.0-spirv`
+All Backends     | `2.2.0-full`
+
 
 Install **TornadoVM**:
 ```bash
 sdk install tornadovm <version>
-```
-
-TornadoVM requires **JDK 21**. If Java is already installed and `JAVA_HOME` is set, you can skip this step.
-Otherwise, you can install and configure Java using SDKMAN!:
-```bash
-sdk install java 21.0.9-tem
 ```
 
 ### Verify Available Devices
