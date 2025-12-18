@@ -95,7 +95,7 @@ jobs:
           url: ${{ steps.vars.outputs.url }}
   set-sdkman-default:
     name: Set TornadoVM default version on SDKMAN
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux, x64 ]
     needs: publish-to-sdkman
 
     if: >
