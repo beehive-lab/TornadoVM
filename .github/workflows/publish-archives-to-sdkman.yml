@@ -93,4 +93,56 @@ jobs:
           version: ${{ steps.vars.outputs.sdkman_version }}
           platform: ${{ matrix.platform }}
           url: ${{ steps.vars.outputs.url }}
+  set-sdkman-default:
+    name: Set TornadoVM default version on SDKMAN
+    runs-on: ubuntu-latest
+    needs: publish-to-sdkman
 
+    if: >
+      github.repository == 'beehive-lab/TornadoVM' &&
+      (github.event_name == 'release' || inputs.publish == 'true')
+
+    steps:
+      - name: Derive default version
+        id: vars
+        shell: bash
+        env:
+          TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG#v}"
+          DEFAULT_VERSION="${VERSION}-opencl"
+
+          echo "default_version=${DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
+
+          echo "Setting SDKMAN default:"
+          echo "  TAG:     ${TAG}"
+          echo "  Version: ${DEFAULT_VERSION}"
+
+      - name: Set SDKMAN default version
+        shell: bash
+        env:
+          SDKMAN_CONSUMER_KEY: ${{ secrets.SDKMAN_CONSUMER_KEY }}
+          SDKMAN_CONSUMER_TOKEN: ${{ secrets.SDKMAN_CONSUMER_TOKEN }}
+          DEFAULT_VERSION: ${{ steps.vars.outputs.default_version }}
+        run: |
+          set -euo pipefail
+
+          SDKMAN_ENDPOINT="https://vendors.sdkman.io/default"
+          CANDIDATE="tornadovm"
+
+          echo "Calling SDKMAN Vendor API…"
+
+          curl -fsSL -X PUT \
+            -H "Consumer-Key: ${SDKMAN_CONSUMER_KEY}" \
+            -H "Consumer-Token: ${SDKMAN_CONSUMER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d "{
+              \"candidate\": \"${CANDIDATE}\",
+              \"version\": \"${DEFAULT_VERSION}\"
+            }" \
+            "${SDKMAN_ENDPOINT}"
+
+          echo "✅ SDKMAN default version set to ${DEFAULT_VERSION}"
