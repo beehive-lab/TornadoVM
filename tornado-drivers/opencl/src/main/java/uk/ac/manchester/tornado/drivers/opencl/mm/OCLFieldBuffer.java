@@ -93,14 +93,18 @@ public class OCLFieldBuffer implements XPUBuffer {
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);
+        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(true);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
             HotSpotResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(objectType, field.getName());
+            Class<?> objectTypeTemp = objectType;
+            while(!objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())){
+                objectTypeTemp = objectTypeTemp.getSuperclass();
+            }
+            final Field reflectedField = getField(objectTypeTemp, field.getName());
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
