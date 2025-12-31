@@ -62,7 +62,7 @@ public class TestInheritedFields extends TornadoTestBase {
             executionPlan.execute();
             assertTrue(b.valueA[0] == 1f);
             assertTrue(b.valueB[0] == 1f);
-        }catch (TornadoExecutionPlanException e){
+        } catch (TornadoExecutionPlanException e){
             e.printStackTrace();
         }
     }
