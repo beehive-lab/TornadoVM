@@ -178,7 +178,7 @@ public class SPIRVFieldBuffer implements XPUBuffer {
     }
 
     public SPIRVFieldBuffer(final SPIRVDeviceContext device, Object object, Access access) {
-        this(device, object, !isChildOfTornadoNativeArray(object))
+        this(device, object, access, !isChildOfTornadoNativeArray(object));
     }
 
     private static boolean isChildOfTornadoNativeArray(Object object){
