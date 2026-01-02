@@ -80,7 +80,7 @@ public class OCLFieldBuffer implements XPUBuffer {
     private final TornadoLogger logger;
     private final Access access;
 
-    public OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access) {
+    private OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
         this.objectType = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
@@ -93,14 +93,14 @@ public class OCLFieldBuffer implements XPUBuffer {
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);
+        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
             HotSpotResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(objectType, field.getName());
+            final Field reflectedField = getField(findDeclaringClass(field), field.getName());
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
@@ -160,7 +160,7 @@ public class OCLFieldBuffer implements XPUBuffer {
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new OCLFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
+                wrappedField = new OCLFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
             }
 
             if (wrappedField != null) {
@@ -172,6 +172,21 @@ public class OCLFieldBuffer implements XPUBuffer {
             buffer = ByteBuffer.allocate((int) getObjectSize());
             buffer.order(deviceContext.getByteOrder());
         }
+    }
+
+    public OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access) {
+        this(device, object, access, !isChildOfTornadoNativeArray(object));
+    }
+
+    private static boolean isChildOfTornadoNativeArray(Object object){
+        Class<?> objectType = object.getClass();
+        while(objectType!=null){
+            if(objectType.getName().equals(TornadoNativeArray.class.getName())){
+                return true;
+            }
+            objectType = objectType.getSuperclass();
+        }
+        return false;
     }
 
     @Override
@@ -288,7 +303,7 @@ public class OCLFieldBuffer implements XPUBuffer {
             buffer.position(fields[0].getOffset());
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(objectType, field.getName());
+                Field f = getField(findDeclaringClass(field), field.getName());
                 if (DEBUG) {
                     logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
@@ -307,7 +322,7 @@ public class OCLFieldBuffer implements XPUBuffer {
 
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(objectType, field.getName());
+                Field f = getField(findDeclaringClass(field), field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
                     logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
@@ -315,6 +330,17 @@ public class OCLFieldBuffer implements XPUBuffer {
                 readFieldFromBuffer(i, f, object);
             }
         }
+    }
+
+    private Class<?> findDeclaringClass(HotSpotResolvedJavaField field) {
+        Class<?> objectTypeTemp = objectType;
+        while (objectTypeTemp != null && !objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())) {
+            objectTypeTemp = objectTypeTemp.getSuperclass();
+        }
+        if (objectTypeTemp == null) {
+            throw new TornadoRuntimeException(String.format("Cannot find declaring class %s in hierarchy of %s for field %s", field.getDeclaringClass().toJavaName(), objectType.getName(), field.getName()));
+        }
+        return objectTypeTemp;
     }
 
     @Override
