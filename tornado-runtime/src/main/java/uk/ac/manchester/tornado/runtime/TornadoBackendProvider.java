@@ -26,6 +26,8 @@ package uk.ac.manchester.tornado.runtime;
 import org.graalvm.compiler.options.OptionValues;
 
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
+import uk.ac.manchester.tornado.runtime.types.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoConstantReflectionProvider;
 
 /**
  * Each class which implements {@link TornadoBackendProvider} must set a {@link TornadoBackends} and use the same compareTo function.
@@ -46,13 +48,13 @@ public interface TornadoBackendProvider extends Comparable<TornadoBackendProvide
      * Creates a backend instance.
      *
      * @param options Graal compiler options
-     * @param metaAccess MetaAccessProvider for type/method/field metadata
-     * @param constantReflection ConstantReflectionProvider for constant resolution
+     * @param metaAccess TornadoMetaAccessProvider for type/method/field metadata (JVMCI-free)
+     * @param constantReflection TornadoConstantReflectionProvider for constant resolution (JVMCI-free)
      * @param config VM configuration access
      * @return The created TornadoAcceleratorBackend
      */
-    TornadoAcceleratorBackend createBackend(OptionValues options, jdk.vm.ci.meta.MetaAccessProvider metaAccess,
-            jdk.vm.ci.meta.ConstantReflectionProvider constantReflection, TornadoVMConfigAccess config);
+    TornadoAcceleratorBackend createBackend(OptionValues options, TornadoMetaAccessProvider metaAccess,
+            TornadoConstantReflectionProvider constantReflection, TornadoVMConfigAccess config);
 
     TornadoBackends getDevicePriority();
 }

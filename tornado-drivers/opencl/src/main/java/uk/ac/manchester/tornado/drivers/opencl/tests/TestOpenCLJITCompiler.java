@@ -84,7 +84,7 @@ public class TestOpenCLJITCompiler {
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
         // Get the Graal Resolved Java Method
-        ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
+        ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethodForGraal(methodToCompile);
 
         // Get the backend from TornadoVM
         OCLBackend openCLBackend = tornadoRuntime.getBackend(OCLBackendImpl.class).getDefaultBackend();

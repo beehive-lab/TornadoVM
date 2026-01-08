@@ -25,12 +25,12 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import org.graalvm.compiler.options.OptionValues;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
+import uk.ac.manchester.tornado.runtime.types.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoConstantReflectionProvider;
 
 public class OCLTornadoDriverProvider implements TornadoBackendProvider {
 
@@ -45,7 +45,7 @@ public class OCLTornadoDriverProvider implements TornadoBackendProvider {
     }
 
     @Override
-    public TornadoAcceleratorBackend createBackend(OptionValues options, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection,
+    public TornadoAcceleratorBackend createBackend(OptionValues options, TornadoMetaAccessProvider metaAccess, TornadoConstantReflectionProvider constantReflection,
             TornadoVMConfigAccess vmConfig) {
         return new OCLBackendImpl(options, metaAccess, constantReflection, vmConfig);
     }

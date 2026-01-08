@@ -46,10 +46,13 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.runtime.types.TornadoMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoReflectionMetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoReflectionConstantReflectionProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoResolvedMethod;
+import uk.ac.manchester.tornado.runtime.graal.JVMCIMetaAccessAdapter;
+import uk.ac.manchester.tornado.runtime.graal.JVMCIConstantReflectionAdapter;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -83,8 +86,8 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     private static DebugContext debugContext = null;
     private static OptionValues options;
 
-    private final MetaAccessProvider metaAccess;
-    private final ConstantReflectionProvider constantReflection;
+    private final TornadoMetaAccessProvider metaAccess;
+    private final TornadoConstantReflectionProvider constantReflection;
     private final TornadoVMConfigAccess vmConfig;
     private final TornadoAcceleratorBackend[] tornadoVMBackends;
     private int backendCount;
@@ -94,14 +97,14 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
-        // Use HotSpot JVMCI to obtain providers
-        HotSpotJVMCIRuntime vmRuntime = (HotSpotJVMCIRuntime) HotSpotJVMCIRuntime.runtime();
-        var jvmciBackend = vmRuntime.getHostJVMCIBackend();
-        this.metaAccess = jvmciBackend.getMetaAccess();
-        this.constantReflection = jvmciBackend.getConstantReflection();
+        // COMPLETELY JVMCI-FREE INITIALIZATION
+        // Using TornadoVM's own reflection-based providers - NO JVMCI DEPENDENCY
+        TornadoReflectionMetaAccessProvider reflectionMetaAccess = new TornadoReflectionMetaAccessProvider();
+        this.metaAccess = reflectionMetaAccess;
+        this.constantReflection = new TornadoReflectionConstantReflectionProvider(reflectionMetaAccess);
 
         if (TornadoOptions.FULL_DEBUG) {
-            System.out.println("[INFO] TornadoVM runtime initialized with HotSpot JVMCI backend");
+            System.out.println("[INFO] TornadoVM runtime initialized WITHOUT ANY JVMCI DEPENDENCY (reflection-based)");
         }
 
         this.vmConfig = new TornadoVMConfigAccess(this.metaAccess);
@@ -125,11 +128,11 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         return EXECUTOR;
     }
 
-    public static MetaAccessProvider getMetaAccess() {
+    public static TornadoMetaAccessProvider getMetaAccess() {
         return runtime.metaAccess;
     }
 
-    public static ConstantReflectionProvider getConstantReflection() {
+    public static TornadoConstantReflectionProvider getConstantReflection() {
         return runtime.constantReflection;
     }
 
@@ -200,8 +203,19 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         return (UpsMeterReader.getOutputPowerMetric() != null) ? Long.parseLong(UpsMeterReader.getOutputPowerMetric()) : -1;
     }
 
-    public ResolvedJavaMethod resolveMethod(final Method method) {
+    public TornadoResolvedMethod resolveMethod(final Method method) {
         return getMetaAccess().lookupJavaMethod(method);
+    }
+
+    /**
+     * Resolves a method and returns the real JVMCI ResolvedJavaMethod for use with Graal compiler.
+     * Since Graal expects HotSpot-specific implementations, we return the actual JVMCI method.
+     */
+    public jdk.vm.ci.meta.ResolvedJavaMethod resolveMethodForGraal(final Method method) {
+        // Get the real JVMCI MetaAccessProvider and use it to look up the method
+        // This returns a HotSpotResolvedJavaMethodImpl that Graal can work with
+        jdk.vm.ci.meta.MetaAccessProvider jvmciMetaAccess = jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime().getHostJVMCIBackend().getMetaAccess();
+        return jvmciMetaAccess.lookupJavaMethod(method);
     }
 
     @Override

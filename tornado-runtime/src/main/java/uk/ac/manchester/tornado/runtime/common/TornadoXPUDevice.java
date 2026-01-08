@@ -192,7 +192,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      */
     default boolean loopIndexInWrite(SchedulableTask task) {
         if (task instanceof CompilableTask executable) {
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(executable.getMethod());
             final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
             return sketch.getBatchWriteThreadIndex();
         } else {

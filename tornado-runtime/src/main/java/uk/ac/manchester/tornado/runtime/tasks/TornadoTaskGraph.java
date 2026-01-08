@@ -524,7 +524,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             SchedulableTask task = executionContext.getTask(i);
             task.meta().setDevice(device);
             if (task instanceof CompilableTask compilableTask) {
-                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(compilableTask.getMethod());
                 if (!meta().getXPUDevice().getDeviceContext().isCached(executionPlanId, method.getName(), compilableTask)) {
                     updateInner(i, executionContext.getTask(i));
                 }
@@ -608,7 +608,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (name.equals(taskName)) {
                 task.meta().setDevice(device);
                 if (task instanceof CompilableTask) {
-                    ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+                    ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(((CompilableTask) task).getMethod());
                     if (!task.getDevice().getDeviceContext().isCached(executionPlanId, method.getName(), task)) {
                         updateInner(i, task);
                     }
@@ -647,7 +647,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         executionContext.setTask(index, task);
 
         if (task instanceof CompilableTask compilableTask) {
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(compilableTask.getMethod());
             final TaskDataContext taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
 
@@ -667,7 +667,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (task instanceof CompilableTask compilableTask) {
             checkForMemorySegmentAsTaskParameter(compilableTask);
 
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(compilableTask.getMethod());
             final TaskDataContext taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
 

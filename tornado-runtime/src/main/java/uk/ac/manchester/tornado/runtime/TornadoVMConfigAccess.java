@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.types.TornadoJavaKind;
+import uk.ac.manchester.tornado.runtime.types.TornadoMetaAccessProvider;
 
 /**
  * Provides access to VM configuration.
@@ -35,11 +35,11 @@ public class TornadoVMConfigAccess {
     private final int arrayOopDescSize;
     private final int narrowKlassSize;
 
-    private final MetaAccessProvider metaAccessProvider;
+    private final TornadoMetaAccessProvider metaAccessProvider;
 
     private int fieldOffset = -1;
 
-    public TornadoVMConfigAccess(MetaAccessProvider metaAccessProvider) {
+    public TornadoVMConfigAccess(TornadoMetaAccessProvider metaAccessProvider) {
         this.metaAccessProvider = metaAccessProvider;
         this.hubOffset = 8; // Standard Java object header offset for klass pointer
         this.useCompressedClassPointers = detectCompressedClassPointers();
@@ -57,11 +57,11 @@ public class TornadoVMConfigAccess {
         return useCompressedClassPointers ? hubOffset + narrowKlassSize : arrayOopDescSize;
     }
 
-    public int getArrayBaseOffset(JavaKind kind) {
+    public int getArrayBaseOffset(TornadoJavaKind kind) {
         return metaAccessProvider.getArrayBaseOffset(kind);
     }
 
-    public int getArrayIndexScale(JavaKind kind) {
+    public int getArrayIndexScale(TornadoJavaKind kind) {
         return metaAccessProvider.getArrayIndexScale(kind);
     }
 

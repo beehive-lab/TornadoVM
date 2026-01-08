@@ -64,7 +64,7 @@ public class OCLJIT {
 
             Method method = declaringClass.getDeclaredMethod(methodName, parameterTypes);
 
-            ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(method);
+            ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethodForGraal(method);
 
             System.out.printf("method: name=%s, signature=%s\n", resolvedMethod.getName(), resolvedMethod.getSignature());
 

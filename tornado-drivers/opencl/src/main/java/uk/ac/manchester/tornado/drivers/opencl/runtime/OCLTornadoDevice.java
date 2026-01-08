@@ -249,7 +249,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // Return the code from the cache

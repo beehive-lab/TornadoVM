@@ -251,7 +251,7 @@ public class TornadoGraphBuilder {
 
 
                 if (task instanceof CompilableTask compilableTask) {
-                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));
+                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal((compilableTask.getMethod()));
                     Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
                     accesses = sketch.getArgumentsAccess();
                 } else {

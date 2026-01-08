@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.types.TornadoJavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -58,6 +59,22 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     private TornadoLogger logger;
     private Access access;
 
+    private static TornadoJavaKind convertToTornadoJavaKind(JavaKind kind) {
+        return switch (kind) {
+            case Boolean -> TornadoJavaKind.Boolean;
+            case Byte -> TornadoJavaKind.Byte;
+            case Short -> TornadoJavaKind.Short;
+            case Char -> TornadoJavaKind.Char;
+            case Int -> TornadoJavaKind.Int;
+            case Long -> TornadoJavaKind.Long;
+            case Float -> TornadoJavaKind.Float;
+            case Double -> TornadoJavaKind.Double;
+            case Object -> TornadoJavaKind.Object;
+            case Void -> TornadoJavaKind.Void;
+            default -> TornadoJavaKind.Illegal;
+        };
+    }
+
     protected OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize, Access access) {
         this.deviceContext = device;
         this.kind = kind;
@@ -68,7 +85,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.access = access;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        arrayHeaderSize = getVMConfig().getArrayBaseOffset(convertToTornadoJavaKind(kind));
         logger = new TornadoLogger(this.getClass());
     }
 

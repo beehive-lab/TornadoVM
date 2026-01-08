@@ -154,10 +154,10 @@ public class TaskUtils {
 
         guarantee(entryPoint != null, "unable to find entry point");
         /*
-         * Fortunately we can do a bit of JVMCI magic to resolve the function to a
-         * Method.
+         * Using Graal's JVMCI interface to resolve the function to a Method.
+         * We adapt Tornado's JVMCI-free types to JVMCI types at the Graal boundary.
          */
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getMetaAccess().lookupJavaMethod(entryPoint);
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
         final byte[] bc = resolvedMethod.getCode();
 

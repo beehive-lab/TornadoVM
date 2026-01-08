@@ -187,7 +187,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         final CompilableTask executable = (CompilableTask) task;
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethodForGraal(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task

@@ -14,6 +14,8 @@ open module tornado.runtime {
 
     exports uk.ac.manchester.tornado.runtime;
     exports uk.ac.manchester.tornado.runtime.analyzer;
+    exports uk.ac.manchester.tornado.runtime.api;
+    exports uk.ac.manchester.tornado.runtime.types;
     exports uk.ac.manchester.tornado.runtime.common;
     exports uk.ac.manchester.tornado.runtime.common.enums;
     exports uk.ac.manchester.tornado.runtime.common.exceptions;

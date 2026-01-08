@@ -83,6 +83,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.runtime.types.TornadoJavaKind;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
@@ -279,13 +280,13 @@ public class OCLGraphBuilderPlugins {
         // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
         Supplier<Integer> intHeaderSupplier = () -> {
             var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
+            int headerSize = vmConfig.getArrayBaseOffset(TornadoJavaKind.Int);
             return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
         };
 
         Supplier<Integer> longHeaderSupplier = () -> {
             var vmConfig = TornadoCoreRuntime.getVMConfig();
-            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
+            int headerSize = vmConfig.getArrayBaseOffset(TornadoJavaKind.Long);
             return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
         };
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, intHeaderSupplier);
