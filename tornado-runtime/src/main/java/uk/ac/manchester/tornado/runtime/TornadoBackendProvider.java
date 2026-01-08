@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime;
 
 import org.graalvm.compiler.options.OptionValues;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 
 /**
@@ -43,7 +42,17 @@ public interface TornadoBackendProvider extends Comparable<TornadoBackendProvide
 
     String getName();
 
-    TornadoAcceleratorBackend createBackend(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfigAccess config);
+    /**
+     * Creates a backend instance.
+     *
+     * @param options Graal compiler options
+     * @param metaAccess MetaAccessProvider for type/method/field metadata
+     * @param constantReflection ConstantReflectionProvider for constant resolution
+     * @param config VM configuration access
+     * @return The created TornadoAcceleratorBackend
+     */
+    TornadoAcceleratorBackend createBackend(OptionValues options, jdk.vm.ci.meta.MetaAccessProvider metaAccess,
+            jdk.vm.ci.meta.ConstantReflectionProvider constantReflection, TornadoVMConfigAccess config);
 
     TornadoBackends getDevicePriority();
 }

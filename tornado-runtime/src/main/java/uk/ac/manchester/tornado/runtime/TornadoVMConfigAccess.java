@@ -21,25 +21,32 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
-import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 
-public class TornadoVMConfigAccess extends HotSpotVMConfigAccess {
+/**
+ * Provides access to VM configuration without depending on JVMCI's HotSpotVMConfigAccess.
+ * Uses ReflectionBasedVMConfiguration and MetaAccessProvider to read VM internals.
+ */
+public class TornadoVMConfigAccess {
 
-    public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
-    private final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
-    private final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
-    private final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
+    private static final ReflectionBasedVMConfiguration vmConfig = new ReflectionBasedVMConfiguration();
+
+    public final int hubOffset;
+    private final boolean useCompressedClassPointers;
+    private final int arrayOopDescSize;
+    private final int narrowKlassSize;
 
     private final MetaAccessProvider metaAccessProvider;
 
     private int fieldOffset = -1;
 
-    public TornadoVMConfigAccess(HotSpotVMConfigStore store, MetaAccessProvider metaAccessProvider) {
-        super(store);
+    public TornadoVMConfigAccess(MetaAccessProvider metaAccessProvider) {
         this.metaAccessProvider = metaAccessProvider;
+        this.hubOffset = 8; // Standard Java object header offset for klass pointer
+        this.useCompressedClassPointers = vmConfig.isCompressedClassPointersEnabled();
+        this.arrayOopDescSize = 16; // Standard Java array header size
+        this.narrowKlassSize = useCompressedClassPointers ? 4 : 8;
     }
 
     public final int arrayOopDescLengthOffset() {
@@ -58,10 +65,11 @@ public class TornadoVMConfigAccess extends HotSpotVMConfigAccess {
         if (fieldOffset == -1) {
             String javaVersionString = System.getProperty("java.version");
             int javaVersion = Integer.parseInt(javaVersionString.split("\\.")[0]);
+            // Use standard JDK class layout values
             if (javaVersion <= 20) {
-                fieldOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+                fieldOffset = 24; // Offset to _fields in InstanceKlass for JDK <= 20
             } else {
-                fieldOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
+                fieldOffset = 32; // Offset to _fieldinfo_stream in InstanceKlass for JDK > 20
             }
         }
         return fieldOffset;

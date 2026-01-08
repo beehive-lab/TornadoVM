@@ -47,6 +47,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
@@ -100,7 +101,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
         vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfigAccess(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
+        vmConfig = new TornadoVMConfigAccess(vmBackend.getMetaAccess());
         tornadoVMBackends = loadBackends();
     }
 
@@ -161,7 +162,9 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
             if (TornadoOptions.FULL_DEBUG) {
                 System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            TornadoAcceleratorBackend backend = provider.createBackend(options, vmRuntime, vmConfig);
+            MetaAccessProvider metaAccess = vmBackend.getMetaAccess();
+            ConstantReflectionProvider constantReflection = vmBackend.getConstantReflection();
+            TornadoAcceleratorBackend backend = provider.createBackend(options, metaAccess, constantReflection, vmConfig);
             if (backend != null) {
                 tornadoAcceleratorBackends[index] = backend;
                 index++;
