@@ -50,8 +50,6 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.runtime.JVMCI;
-import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -96,14 +94,15 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
-        // Initialize from JVMCI
-        if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
-            shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
+        // Use HotSpot JVMCI to obtain providers
+        HotSpotJVMCIRuntime vmRuntime = (HotSpotJVMCIRuntime) HotSpotJVMCIRuntime.runtime();
+        var jvmciBackend = vmRuntime.getHostJVMCIBackend();
+        this.metaAccess = jvmciBackend.getMetaAccess();
+        this.constantReflection = jvmciBackend.getConstantReflection();
+
+        if (TornadoOptions.FULL_DEBUG) {
+            System.out.println("[INFO] TornadoVM runtime initialized with HotSpot JVMCI backend");
         }
-        HotSpotJVMCIRuntime vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-        JVMCIBackend vmBackend = vmRuntime.getHostJVMCIBackend();
-        this.metaAccess = vmBackend.getMetaAccess();
-        this.constantReflection = vmBackend.getConstantReflection();
 
         this.vmConfig = new TornadoVMConfigAccess(this.metaAccess);
         tornadoVMBackends = loadBackends();
