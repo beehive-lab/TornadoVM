@@ -157,7 +157,7 @@ public class TaskUtils {
          * Fortunately we can do a bit of JVMCI magic to resolve the function to a
          * Method.
          */
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
         final byte[] bc = resolvedMethod.getCode();
 

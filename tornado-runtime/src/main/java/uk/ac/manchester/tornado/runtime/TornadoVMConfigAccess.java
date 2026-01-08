@@ -25,12 +25,10 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 
 /**
- * Provides access to VM configuration without depending on JVMCI's HotSpotVMConfigAccess.
- * Uses ReflectionBasedVMConfiguration and MetaAccessProvider to read VM internals.
+ * Provides access to VM configuration.
+ * Uses standard Java object layout values (HotSpot compatible).
  */
 public class TornadoVMConfigAccess {
-
-    private static final ReflectionBasedVMConfiguration vmConfig = new ReflectionBasedVMConfiguration();
 
     public final int hubOffset;
     private final boolean useCompressedClassPointers;
@@ -44,9 +42,15 @@ public class TornadoVMConfigAccess {
     public TornadoVMConfigAccess(MetaAccessProvider metaAccessProvider) {
         this.metaAccessProvider = metaAccessProvider;
         this.hubOffset = 8; // Standard Java object header offset for klass pointer
-        this.useCompressedClassPointers = vmConfig.isCompressedClassPointersEnabled();
+        this.useCompressedClassPointers = detectCompressedClassPointers();
         this.arrayOopDescSize = 16; // Standard Java array header size
         this.narrowKlassSize = useCompressedClassPointers ? 4 : 8;
+    }
+
+    private static boolean detectCompressedClassPointers() {
+        // On 64-bit systems, compressed class pointers are typically enabled
+        String arch = System.getProperty("sun.arch.data.model");
+        return "64".equals(arch);
     }
 
     public final int arrayOopDescLengthOffset() {

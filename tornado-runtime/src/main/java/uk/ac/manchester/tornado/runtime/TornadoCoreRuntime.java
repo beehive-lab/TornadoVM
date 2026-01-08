@@ -85,8 +85,8 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     private static DebugContext debugContext = null;
     private static OptionValues options;
 
-    private final JVMCIBackend vmBackend;
-    private final HotSpotJVMCIRuntime vmRuntime;
+    private final MetaAccessProvider metaAccess;
+    private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfigAccess vmConfig;
     private final TornadoAcceleratorBackend[] tornadoVMBackends;
     private int backendCount;
@@ -96,12 +96,16 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         initOptions();
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
+        // Initialize from JVMCI
         if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
             shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
         }
-        vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-        vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfigAccess(vmBackend.getMetaAccess());
+        HotSpotJVMCIRuntime vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
+        JVMCIBackend vmBackend = vmRuntime.getHostJVMCIBackend();
+        this.metaAccess = vmBackend.getMetaAccess();
+        this.constantReflection = vmBackend.getConstantReflection();
+
+        this.vmConfig = new TornadoVMConfigAccess(this.metaAccess);
         tornadoVMBackends = loadBackends();
     }
 
@@ -122,12 +126,12 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         return EXECUTOR;
     }
 
-    public static JVMCIBackend getVMBackend() {
-        return runtime.vmBackend;
+    public static MetaAccessProvider getMetaAccess() {
+        return runtime.metaAccess;
     }
 
-    public static HotSpotJVMCIRuntime getVMRuntime() {
-        return runtime.vmRuntime;
+    public static ConstantReflectionProvider getConstantReflection() {
+        return runtime.constantReflection;
     }
 
     public static TornadoVMConfigAccess getVMConfig() {
@@ -162,8 +166,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
             if (TornadoOptions.FULL_DEBUG) {
                 System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            MetaAccessProvider metaAccess = vmBackend.getMetaAccess();
-            ConstantReflectionProvider constantReflection = vmBackend.getConstantReflection();
             TornadoAcceleratorBackend backend = provider.createBackend(options, metaAccess, constantReflection, vmConfig);
             if (backend != null) {
                 tornadoAcceleratorBackends[index] = backend;
@@ -197,10 +199,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     @Override
     public long getPowerMetric() {
         return (UpsMeterReader.getOutputPowerMetric() != null) ? Long.parseLong(UpsMeterReader.getOutputPowerMetric()) : -1;
-    }
-
-    public MetaAccessProvider getMetaAccess() {
-        return vmBackend.getMetaAccess();
     }
 
     public ResolvedJavaMethod resolveMethod(final Method method) {
