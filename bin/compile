@@ -298,7 +298,7 @@ def build_tornadovm(args, backend_profiles):
         else:
             isWinCmdOrBat = False
 
-        process = ["mvn", "-T1.5C"]
+        process = ["mvn", "-X", "-T1.5C"]
         if args.polyglot:
             process.append(f"-P{args.jdk},{backend_profiles},graalvm-polyglot")
         else:

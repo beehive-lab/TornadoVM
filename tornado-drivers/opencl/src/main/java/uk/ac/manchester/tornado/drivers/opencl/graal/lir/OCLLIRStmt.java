@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
+
 public class OCLLIRStmt {
 
     protected abstract static class AbstractInstruction extends LIRInstruction {
@@ -294,9 +296,9 @@ public class OCLLIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -383,7 +385,7 @@ public class OCLLIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
         @Use
         protected MemoryAccess address;
@@ -445,9 +447,9 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -562,7 +564,7 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
         @Use
         protected Value left;

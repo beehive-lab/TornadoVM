@@ -32,12 +32,12 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -54,12 +54,13 @@ public class OCLArchitecture extends Architecture {
     public static final OCLMemoryBase localSpace = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL, OCLKind.UCHAR);
     public static final OCLMemoryBase privateSpace = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.PRIVATE, OCLKind.UCHAR);
     public static final OCLMemoryBase atomicSpace = new OCLMemoryBase(5, ATOMICS_REGION_NAME, OCLMemorySpace.GLOBAL, OCLKind.INT);
-    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
+    private final static Register[] EMPTY = new Register[0];
+    private final static List<Register> EMPTY_LIST = List.of();
 
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
-        super("Tornado OpenCL", wordKind, byteOrder, false, EMPTY, LOAD_STORE | STORE_STORE, 0, 0);
+        super("Tornado OpenCL", wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, 0, 0);
         abiRegisters = new OCLRegister[] { kernelContext, constantSpace, localSpace, atomicSpace };
     }
 

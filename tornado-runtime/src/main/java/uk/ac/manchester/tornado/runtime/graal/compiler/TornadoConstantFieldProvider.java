@@ -21,6 +21,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
+import jdk.graal.compiler.nodes.spi.CanonicalizerTool;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.graal.compiler.core.common.spi.ConstantFieldProvider;
@@ -31,6 +32,16 @@ public class TornadoConstantFieldProvider implements ConstantFieldProvider {
     public <T> T readConstantField(ResolvedJavaField resolvedField, ConstantFieldTool<T> tool) {
         JavaConstant ret = tool.readValue();
         return tool.foldConstant(ret);
+    }
+
+    @Override
+    public boolean maybeFinal(ResolvedJavaField field) {
+        return ConstantFieldProvider.super.maybeFinal(field);
+    }
+
+    @Override
+    public boolean isTrustedFinal(CanonicalizerTool tool, ResolvedJavaField field) {
+        return false;
     }
 
 }

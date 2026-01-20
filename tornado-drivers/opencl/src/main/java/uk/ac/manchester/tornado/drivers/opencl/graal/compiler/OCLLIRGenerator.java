@@ -167,6 +167,11 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public boolean isReservedRegister(Register r) {
+        return false;
+    }
+
+    @Override
     public void emitSpeculationFence() {
         unimplemented();
     }
@@ -208,10 +213,6 @@ public class OCLLIRGenerator extends LIRGenerator {
         return 0;
     }
 
-    @Override
-    public Register getHeapBaseRegister() {
-        return null;
-    }
 
     public OCLGenTool getOCLGenTool() {
         return oclGenTool;
@@ -310,7 +311,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
 
     }
-
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", key);
@@ -318,8 +318,10 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
-
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets,
+            SwitchStrategy strategy, LabelRef[] keyTargets, AllocatableValue key) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitRangeTableSwitch: key=%s", key);
+        append(new OCLControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
     }
 
     @Override

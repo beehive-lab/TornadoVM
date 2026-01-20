@@ -156,7 +156,7 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
         @Use
-        private final Value condition;
+        private Value condition;
 
         private boolean generateIfBreakStatement = true;
 

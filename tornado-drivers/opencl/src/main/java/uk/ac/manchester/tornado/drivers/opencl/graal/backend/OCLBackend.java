@@ -427,7 +427,7 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
 
     @Override
     public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
-        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, new AllocatableValue[0] ));
     }
 
     @Override

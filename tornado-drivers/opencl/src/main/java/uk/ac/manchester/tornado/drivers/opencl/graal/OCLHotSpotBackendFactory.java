@@ -141,16 +141,24 @@ public class OCLHotSpotBackendFactory {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
+//        StandardGraphBuilderPlugins.registerInvocationPlugins(snippetReflectionProvider, //
+//                invocationPlugins, //
+//                replacements, //
+//                false, //
+//                false, //
+//                false, //
+//                loweringProvider);
+
         StandardGraphBuilderPlugins.registerInvocationPlugins(snippetReflectionProvider, //
                 invocationPlugins, //
-                replacements, //
                 false, //
                 false, //
-                false, //
-                loweringProvider);
+                false);
         OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
         return plugins;
     }
+
+
 
     @Override
     public String toString() {

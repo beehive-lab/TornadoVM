@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graalvm.version>24.1.0</graalvm.version>
+        <graalvm.version>25.0.1</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
             <cmake.download>false</cmake.download>
@@ -201,7 +201,7 @@
             </profile>
 
             <profile>
-                <id>jdk23</id>
+                <id>jdk25</id>
                 <activation>
                     <activeByDefault>false</activeByDefault>
                 </activation>
@@ -226,8 +226,8 @@
                             <version>3.13.0</version>
                             <configuration>
                                 <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                                <source>24</source>
-                                <target>24</target>
+                                <source>25</source>
+                                <target>25</target>
                                 <showDeprecation>true</showDeprecation>
                                 <annotationProcessorPaths>
                                     <path>
@@ -1061,7 +1061,7 @@
             </profile>
 
             <profile>
-                <id>graal-jdk-24</id>
+                <id>graal-jdk-25</id>
                 <activation>
                     <activeByDefault>false</activeByDefault>
                 </activation>
@@ -1073,8 +1073,8 @@
                             <version>3.11.0</version>
                             <configuration>
                                 <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                                <source>24</source>
-                                <target>24</target>
+                                <source>25</source>
+                                <target>25</target>
                                 <showDeprecation>true</showDeprecation>
                                 <annotationProcessorPaths>
                                     <path>
@@ -1546,6 +1546,8 @@
                                     <arg>
                                         jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.opencl
                                     </arg>
+                                    <arg>--add-exports</arg>
+                                    <arg>jdk.graal.compiler/jdk.graal.compiler.vector.architecture=tornado.drivers.opencl</arg>
                                     <!-- PTX exports-->
                                     <arg>--add-opens</arg>
                                     <arg>java.base/java.lang=tornado.drivers.ptx</arg>
@@ -1714,6 +1716,7 @@
                                     <arg>
                                         jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.ptx
                                     </arg>
+
                                     <!-- SPIRV exports-->
                                     <arg>--add-opens</arg>
                                     <arg>java.base/java.lang=tornado.drivers.spirv</arg>

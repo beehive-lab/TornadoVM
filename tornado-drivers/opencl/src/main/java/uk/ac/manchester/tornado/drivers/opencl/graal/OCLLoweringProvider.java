@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
 import java.util.Iterator;
+import jdk.graal.compiler.vector.architecture.VectorArchitecture;
 
 import jdk.graal.compiler.core.common.memory.BarrierType;
 import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
@@ -45,6 +46,7 @@ import jdk.graal.compiler.nodes.CompressionNode;
 import jdk.graal.compiler.nodes.ConstantNode;
 import jdk.graal.compiler.nodes.FieldLocationIdentity;
 import jdk.graal.compiler.nodes.FixedNode;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
 import jdk.graal.compiler.nodes.Invoke;
 import jdk.graal.compiler.nodes.InvokeNode;
 import jdk.graal.compiler.nodes.LoweredCallTargetNode;
@@ -138,10 +140,18 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private ReduceGPUSnippets.Templates gpuReduceSnippets;
     private ReduceCPUSnippets.Templates cpuReduceSnippets;
 
+//    public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
+//            ConstantReflectionProvider constantReflection, TornadoVMConfigAccess vmConfig, OCLTargetDescription target) {
+//        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
+//        this.vmConfig = vmConfig;
+//        this.constantReflection = constantReflection;
+//    }
+
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
             ConstantReflectionProvider constantReflection, TornadoVMConfigAccess vmConfig, OCLTargetDescription target) {
-        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
-        this.vmConfig = vmConfig;
+//super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false, VectorArchitecture.NONE);
+        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false, null);
+this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
     }
 
@@ -226,11 +236,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public boolean supportsBulkZeroingOfEden() {
-        return false;
-    }
-
-    @Override
-    public boolean supportsRounding() {
         return false;
     }
 
@@ -528,20 +533,19 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
+    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool, FixedWithNextNode insertAfter) {
+        return null;
+    }
+
+    @Override
+    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, boolean isKnownObjectArray, FixedNode anchor, LoweringTool tool, FixedWithNextNode insertAfter) {
+        return null;
+    }
+
+    @Override
     public int fieldOffset(ResolvedJavaField f) {
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
         return field.getOffset();
-    }
-
-    @Override
-    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool) {
-        unimplemented("Create READ hub is not supported yet");
-        return null;
-    }
-
-    @Override
-    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, boolean isKnownObjectArray, FixedNode anchor) {
-        return null;
     }
 
     @Override

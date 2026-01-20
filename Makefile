@@ -4,17 +4,17 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-build jdk24:
-	bin/compile --jdk jdk24 --backend $(BACKEND)
+build jdk25:
+	bin/compile --jdk jdk25 --backend $(BACKEND)
 
-rebuild-deps-jdk24:
-	bin/compile --jdk jdk24 --rebuild --backend $(BACKEND)
+rebuild-deps-jdk25:
+	bin/compile --jdk jdk25 --rebuild --backend $(BACKEND)
 
-graal-jdk-24:
-	bin/compile --jdk graal-jdk-24 --backend $(BACKEND)
+graal-jdk-25:
+	bin/compile --jdk graal-jdk-25 --backend $(BACKEND)
 
 polyglot:
-	bin/compile --jdk graal-jdk-24 --backend $(BACKEND) --polyglot
+	bin/compile --jdk graal-jdk-25 --backend $(BACKEND) --polyglot
 
 ptx:
 	bin/compile --jdk jdk23 --backend ptx,opencl
