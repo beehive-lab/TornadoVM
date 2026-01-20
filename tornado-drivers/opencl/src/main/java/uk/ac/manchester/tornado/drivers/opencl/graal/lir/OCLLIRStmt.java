@@ -387,7 +387,7 @@ public class OCLLIRStmt {
         protected AllocatableValue lhs;
         @Use({COMPOSITE})
         protected OCLAddressCast cast;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         @Use
@@ -568,7 +568,7 @@ public class OCLLIRStmt {
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         public StoreAtomicAddStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -667,7 +667,7 @@ public class OCLLIRStmt {
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         public StoreAtomicAddFloatStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -764,11 +764,11 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         public StoreAtomicSubStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -862,11 +862,11 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         public StoreAtomicMulStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -958,9 +958,9 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use({COMPOSITE})
         protected OCLAddressCast cast;
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
         @Use
         protected Value index;
