@@ -54,6 +54,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+import jdk.vm.ci.meta.Constant;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
@@ -320,8 +321,25 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets,
             SwitchStrategy strategy, LabelRef[] keyTargets, AllocatableValue key) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitRangeTableSwitch: key=%s", key);
-        append(new OCLControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitRangeTableSwitch: key=%s, lowKey=%d, strategy=%s", key, lowKey, strategy);
+
+        Constant[] keyConstants;
+        LabelRef[] actualKeyTargets;
+
+        if (strategy != null) {
+            // Use strategy's key constants
+            keyConstants = strategy.getKeyConstants();
+            actualKeyTargets = keyTargets;
+        } else {
+            // Range table switch: generate contiguous keys from lowKey
+            keyConstants = new Constant[targets.length];
+            for (int i = 0; i < targets.length; i++) {
+                keyConstants[i] = JavaConstant.forInt(lowKey + i);
+            }
+            actualKeyTargets = targets;
+        }
+
+        append(new OCLControlFlow.SwitchOp(key, keyConstants, actualKeyTargets, defaultTarget));
     }
 
     @Override

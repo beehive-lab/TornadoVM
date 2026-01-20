@@ -263,14 +263,12 @@ public class OCLControlFlow {
         public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass.create(SwitchOp.class);
 
         @Use
-        private final AllocatableValue value;
+        private AllocatableValue value;
 
-        @Use({ CONST })
-        private final Constant[] keyConstants;
+        private  Constant[] keyConstants;
 
-        @Use
-        private final LabelRef[] keyTargets;
-        private final LabelRef defaultTarget;
+        private  LabelRef[] keyTargets;
+        private  LabelRef defaultTarget;
 
         public SwitchOp(AllocatableValue value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);

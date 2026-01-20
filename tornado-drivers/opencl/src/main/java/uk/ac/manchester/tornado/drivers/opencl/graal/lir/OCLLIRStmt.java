@@ -452,10 +452,13 @@ public class OCLLIRStmt {
         @Use({COMPOSITE})
         protected MemoryAccess address;
         @Use
-        protected Value index;
+        protected Value index;  // Make sure @Use is present!
 
         public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
+            if (rhs == null) {
+                throw new IllegalArgumentException("StoreStmt: rhs cannot be null. cast=" + cast + ", address=" + address);
+            }
             this.rhs = rhs;
             this.cast = cast;
             this.address = address;
@@ -463,6 +466,9 @@ public class OCLLIRStmt {
 
         public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs, Value index) {
             super(TYPE);
+            if (rhs == null) {
+                throw new IllegalArgumentException("StoreStmt: rhs cannot be null. cast=" + cast + ", address=" + address);
+            }
             this.rhs = rhs;
             this.cast = cast;
             this.address = address;
