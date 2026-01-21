@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.phases.PhaseSuite;
+import jdk.graal.compiler.phases.PhaseSuite;
 
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 

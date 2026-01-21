@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import org.graalvm.compiler.phases.tiers.LowTierContext;
-import org.graalvm.compiler.phases.tiers.TargetProvider;
-import org.graalvm.compiler.phases.util.Providers;
+import jdk.graal.compiler.phases.tiers.LowTierContext;
+import jdk.graal.compiler.phases.tiers.TargetProvider;
+import jdk.graal.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 

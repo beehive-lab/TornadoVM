@@ -27,8 +27,8 @@ import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 import java.nio.ByteOrder;
 import java.util.Set;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Variable;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;

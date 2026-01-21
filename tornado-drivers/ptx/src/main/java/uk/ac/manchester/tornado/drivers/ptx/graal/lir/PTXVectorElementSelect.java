@@ -24,9 +24,9 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.Opcode;
+import jdk.graal.compiler.lir.Variable;
 
 @Opcode("VSEL")
 public class PTXVectorElementSelect extends Value {

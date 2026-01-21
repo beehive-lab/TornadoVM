@@ -26,22 +26,23 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.CompressEncoding;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.spi.CodeGenProviders;
-import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.SwitchStrategy;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGenerator;
+import jdk.graal.compiler.core.common.CompressEncoding;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.Condition;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
+import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
+import jdk.graal.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.SwitchStrategy;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.LIRGenerationResult;
+import jdk.graal.compiler.lir.gen.LIRGenerator;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
@@ -53,6 +54,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+import jdk.vm.ci.meta.Constant;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
@@ -81,10 +83,9 @@ public class OCLLIRGenerator extends LIRGenerator {
     private final OCLBuiltinTool oclBuiltinTool;
     private final OCLGenTool oclGenTool;
 
-    public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLBarrierSetLIRGenerator() {
-
-        }, new OCLMoveFactory(), providers, res);
+    public OCLLIRGenerator(CoreProviders providers, LIRGenerationResult res) {
+        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool() {
+        }, new BarrierSetLIRGeneratorTool() {}, new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
     }
@@ -167,6 +168,11 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public boolean isReservedRegister(Register r) {
+        return false;
+    }
+
+    @Override
     public void emitSpeculationFence() {
         unimplemented();
     }
@@ -208,10 +214,6 @@ public class OCLLIRGenerator extends LIRGenerator {
         return 0;
     }
 
-    @Override
-    public Register getHeapBaseRegister() {
-        return null;
-    }
 
     public OCLGenTool getOCLGenTool() {
         return oclGenTool;
@@ -236,7 +238,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitConditionalMove: (%s %s %s) ? %s : %s, unorderedIsTrue:%s", left, cond, right, trueValue, falseValue, unorderedIsTrue);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitConditionalMove");
 
         final OCLBinaryOp condOp = getConditionalOp(cond);
         final OCLBinary.Expr condExpr = new OCLBinary.Expr(condOp, LIRKind.value(cmpKind), left, right);
@@ -265,6 +267,16 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
     public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitIntegerTestMove: " + left + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
         assert left.getPlatformKind() == right.getPlatformKind() && ((OCLKind) left.getPlatformKind()).isInteger();
@@ -282,6 +294,16 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
     public Variable emitReverseBytes(Value operand) {
         return null;
     }
@@ -290,7 +312,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
 
     }
-
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", key);
@@ -298,8 +319,27 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets,
+            SwitchStrategy strategy, LabelRef[] keyTargets, AllocatableValue key) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitRangeTableSwitch: key=%s, lowKey=%d, strategy=%s", key, lowKey, strategy);
 
+        Constant[] keyConstants;
+        LabelRef[] actualKeyTargets;
+
+        if (strategy != null) {
+            // Use strategy's key constants
+            keyConstants = strategy.getKeyConstants();
+            actualKeyTargets = keyTargets;
+        } else {
+            // Range table switch: generate contiguous keys from lowKey
+            keyConstants = new Constant[targets.length];
+            for (int i = 0; i < targets.length; i++) {
+                keyConstants[i] = JavaConstant.forInt(lowKey + i);
+            }
+            actualKeyTargets = targets;
+        }
+
+        append(new OCLControlFlow.SwitchOp(key, keyConstants, actualKeyTargets, defaultTarget));
     }
 
     @Override

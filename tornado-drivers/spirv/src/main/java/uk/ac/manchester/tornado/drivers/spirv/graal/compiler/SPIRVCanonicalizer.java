@@ -24,9 +24,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.spi.SimplifierTool;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.spi.SimplifierTool;
+import jdk.graal.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

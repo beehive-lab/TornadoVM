@@ -43,40 +43,40 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntr
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Supplier;
 
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.PiNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
+import jdk.graal.compiler.nodes.extended.BoxNode;
+import jdk.graal.compiler.nodes.extended.JavaReadNode;
+import jdk.graal.compiler.nodes.extended.JavaWriteNode;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import jdk.graal.compiler.nodes.java.NewArrayNode;
+import jdk.graal.compiler.nodes.java.StoreIndexedNode;
+import jdk.graal.compiler.nodes.memory.address.AddressNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.util.GraphUtil;
+import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaConstant;
@@ -84,7 +84,6 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -92,7 +91,6 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -117,7 +115,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, final HotSpotMetaAccessProvider metaAccessProvider) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
@@ -125,8 +123,6 @@ public class OCLGraphBuilderPlugins {
         registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 
-        // Register Atomics
-        registerTornadoVMAtomicsPlugins(plugins);
         // Register KernelContext Plugins
         registerKernelContextPlugins(plugins);
 
@@ -143,21 +139,6 @@ public class OCLGraphBuilderPlugins {
 
     }
 
-    private static void registerTornadoVMAtomicsPlugins(Registration r) {
-        r.register(new InvocationPlugin("atomic_add", int[].class, Integer.TYPE, Integer.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
-                AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, inc, JavaKind.Int);
-                b.addPush(JavaKind.Int, b.append(atomicIncNode));
-                return true;
-            }
-        });
-    }
-
-    private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, TornadoVMIntrinsics.class);
-        registerTornadoVMAtomicsPlugins(r);
-    }
 
     private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
         return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger") || method.getDeclaringClass().toJavaName().equals(
@@ -168,7 +149,12 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("incrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.INCREMENT_AND_GET)));
+                IncAtomicNode atomicNode =
+                        new IncAtomicNode(receiver.get(true),
+                                OCLUnary.AtomicOperator.INCREMENT_AND_GET);
+                b.getGraph().addOrUnique(atomicNode);
+                b.addPush(returnedJavaKind, atomicNode);
+//                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.INCREMENT_AND_GET)));
                 return true;
             }
         });
@@ -176,7 +162,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("getAndIncrement", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
                 return true;
             }
         });
@@ -184,7 +170,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("decrementAndGet", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(), OCLUnary.AtomicOperator.DECREMENT_AND_GET)));
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.DECREMENT_AND_GET)));
                 return true;
             }
         });
@@ -192,7 +178,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("getAndDecrement", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(), OCLUnary.AtomicOperator.GET_AND_DECREMENT)));
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.GET_AND_DECREMENT)));
                 return true;
             }
         });
@@ -200,7 +186,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("get", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get())));
+                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get(true))));
                 return true;
             }
         });
@@ -243,11 +229,11 @@ public class OCLGraphBuilderPlugins {
 
     private static TornadoAtomicIntegerNode resolveReceiverAtomic(ValueNode thisObject) {
         TornadoAtomicIntegerNode atomicNode = null;
-        if (thisObject instanceof PiNode) {
-            thisObject = ((PiNode) thisObject).getOriginalNode();
+        if (thisObject instanceof PiNode piNode) {
+            thisObject = piNode.getOriginalNode();
         }
-        if (thisObject instanceof TornadoAtomicIntegerNode) {
-            atomicNode = (TornadoAtomicIntegerNode) thisObject;
+        if (thisObject instanceof TornadoAtomicIntegerNode tornadoAtomicIntegerNode) {
+            atomicNode = tornadoAtomicIntegerNode;
         }
         return atomicNode;
     }
@@ -291,7 +277,6 @@ public class OCLGraphBuilderPlugins {
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, longHeaderSupplier);
-        registerUnsupportedAtomicAddPlugin(r);
         registerUnsupportedAtomicAddPlugin(r);
     }
 
@@ -484,7 +469,11 @@ public class OCLGraphBuilderPlugins {
                 Class valueLayoutClass = getValueLayoutClass(layout);
                 JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
 
-                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                AddNode absoluteIndexNode = b.append(new AddNode(index, index));
+                MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
+//                AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+
+//                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                 AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
                 JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                 b.add(writeNode);
@@ -608,15 +597,17 @@ public class OCLGraphBuilderPlugins {
         registerFPIntrinsics(r);
 
         Registration longReg = new Registration(plugins, Long.class);
+        longReg.setAllowOverwrite(true);   // <-- ADD THIS
         longReg.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Int, b.append(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
+                b.push(JavaKind.Int, b.append(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
                 return true;
             }
         });
 
         Registration intReg = new Registration(plugins, Integer.class);
+        intReg.setAllowOverwrite(true);
         intReg.register(new InvocationPlugin("bitCount", Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {

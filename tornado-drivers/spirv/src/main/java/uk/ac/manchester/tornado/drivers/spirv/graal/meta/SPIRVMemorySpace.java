@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.meta;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;

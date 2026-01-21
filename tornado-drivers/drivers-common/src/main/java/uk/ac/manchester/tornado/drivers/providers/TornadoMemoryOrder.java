@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.drivers.providers;
 
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
 
 public class TornadoMemoryOrder {
     public static MemoryOrderMode GPU_MEMORY_MODE = null;

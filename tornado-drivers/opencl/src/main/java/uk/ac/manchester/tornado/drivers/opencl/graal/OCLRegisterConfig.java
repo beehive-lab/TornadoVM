@@ -26,7 +26,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.ValueKindFactory;
@@ -34,20 +33,28 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.PlatformKind;
 
+import java.util.List;
+
 public class OCLRegisterConfig implements RegisterConfig {
 
     private final static Register DUMMY = new Register(0, 0, "dummy", OCLArchitecture.OCL_ABI);
-    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
+    private final static Register[] EMPTY = new Register[0];
 
-    @Override
-    public RegisterArray getCalleeSaveRegisters() {
-        return EMPTY;
-    }
 
     @Override
     public CallingConvention getCallingConvention(Type type, JavaType jt, JavaType[] jts, ValueKindFactory<?> vkf) {
         unimplemented("Get calling convention not implemented yet.");
         return null;
+    }
+
+    @Override
+    public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
+        return List.of();
+    }
+
+    @Override
+    public List<Register> getAllocatableRegisters() {
+        return List.of();
     }
 
     @Override
@@ -62,30 +69,23 @@ public class OCLRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
-        return EMPTY;
+    public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
+        return List.of();
     }
 
     @Override
-    public RegisterArray getAllocatableRegisters() {
-        return EMPTY;
+    public List<Register> getCallerSaveRegisters() {
+        return List.of();
     }
 
     @Override
-    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
-        unimplemented("Filter allocation registers not implemented yet.");
-        return null;
+    public List<Register> getCalleeSaveRegisters() {
+        return List.of();
     }
 
     @Override
-    public RegisterArray getCallerSaveRegisters() {
-        return EMPTY;
-    }
-
-    @Override
-    public RegisterAttributes[] getAttributesMap() {
-        unimplemented("Get attributes map not implemented yet");
-        return null;
+    public List<RegisterAttributes> getAttributesMap() {
+        return List.of();
     }
 
     @Override

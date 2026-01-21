@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.providers;
 
-import org.graalvm.compiler.word.WordTypes;
+import jdk.graal.compiler.word.WordTypes;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;

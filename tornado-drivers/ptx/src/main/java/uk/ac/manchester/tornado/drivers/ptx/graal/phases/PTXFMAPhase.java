@@ -23,13 +23,13 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.phases.Phase;
+import jdk.graal.compiler.graph.iterators.NodeIterable;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFMANode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
