@@ -162,7 +162,7 @@ def tornadovm_ide_init(tornado_sdk, java_home, backends):
         sys.exit(0)
 
     tornado_sdk_path = Path(tornado_sdk)
-    tornado_root = tornado_sdk_path.parents[1]
+    tornado_root = tornado_sdk_path.parents[2]
     project_directory = str(tornado_root)
 
     cleanup_build_directory(os.path.join(project_directory, ".build"))
