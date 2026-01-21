@@ -22,7 +22,7 @@ mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.Multipl
 ```
 
 
-### Debug and Profiling Options 
+### Debug and Profiling Options
 
 ```bash
 mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFloats \
@@ -31,7 +31,7 @@ mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFlo
 
 #### Expected Output
 
-**Success** 
+**Success**
 
 ```bash
 WARNING: Using incubator modules: jdk.incubator.vector
@@ -59,12 +59,12 @@ Tests run: 1,  Failures: 1
 ```
 
 
-## Testing TornadoVM Unit Tests with Custom TornadoRunner infrastructure    
+## Testing TornadoVM Unit Tests with Custom TornadoRunner infrastructure
 The TornadoVM project provides a specialized test infrastructure that offers enhanced reporting, backend-aware exception handling, and comprehensive test categorization. This approach provides more detailed output and better integration with TornadoVM's heterogeneous computing environment.
 
 **Prerequisites**
 
-* TornadoVM built and installed with TORNADO_SDK configured
+* TornadoVM built and installed with TORNADOVM_HOME configured
 * Run from the TornadoVM root directory
 
 #### Basic Usage
@@ -114,18 +114,18 @@ tornado-test -V --printKernel uk.ac.manchester.tornado.unittests.compute.Compute
 
 ```bash
 Test: class uk.ac.manchester.tornado.unittests.foundation.TestFloats
-	Running test: testFloatsCopy             ................  [PASS] 
-	Running test: testVectorFloatAdd         ................  [PASS] 
-	Running test: testVectorFloatSub         ................  [PASS] 
-	Running test: testVectorFloatMul         ................  [PASS] 
-	Running test: testVectorFloatDiv         ................  [PASS] 
+	Running test: testFloatsCopy             ................  [PASS]
+	Running test: testVectorFloatAdd         ................  [PASS]
+	Running test: testVectorFloatSub         ................  [PASS]
+	Running test: testVectorFloatMul         ................  [PASS]
+	Running test: testVectorFloatDiv         ................  [PASS]
 Test ran: 5, Failed: 0, Unsupported: 0
 ```
 
 
 **Failure**
 ```bash
-Running test: testMethod                 ................  [FAILED] 
+Running test: testMethod                 ................  [FAILED]
 		\_[REASON] Expected <10> but was: <20>
 ```
 

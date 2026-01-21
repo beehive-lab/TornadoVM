@@ -1,0 +1,64 @@
+name: Build & Test exhaustively with all backends and devices
+
+on:
+  schedule:
+    - cron: '0 19 * * 0'
+  workflow_dispatch:
+
+jobs:
+  build-full-test-openjdk:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    runs-on: [ self-hosted, Linux, x64 ]
+    timeout-minutes: 200
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      MAVEN_HOME: /opt/maven
+      CMAKE_ROOT: /opt/jenkins/cmake-3.25.2-linux-x86_64
+      GRAAL_JARS: /opt/graalJars
+      TORNADO_ROOT: ${{ github.workspace }}
+      TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
+      VENV_PATH: ${{ github.workspace }}/venv-opencl
+
+    steps:
+      - name: Checkout TornadoVM
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+      - name: Setup Python venv
+        run: |
+          python3 -m venv $VENV_PATH
+          source $VENV_PATH/bin/activate
+          pip install --upgrade pip tqdm psutil   # Combined
+      - name: Build TornadoVM (jdk21)
+        run: |
+          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
+          java -version
+          make jdk21 BACKEND=ptx,opencl,spirv
+      - name: Run full unit tests for SPIR-V with OpenCL runtime
+        working-directory: ${{ env.TORNADO_ROOT }}
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          make tests
+      - name: Run full unit tests for SPIR-V with Level Zero runtime
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=0:1"
+      - name: Run full unit tests for OpenCL on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=1:0"
+      - name: Run full unit tests for PTX on NVIDIA GPU
+        run: |
+          source $VENV_PATH/bin/activate
+          source setvars.sh
+          tornado-test --ea --verbose --jvm="-Dtornado.unittests.device=2:0"

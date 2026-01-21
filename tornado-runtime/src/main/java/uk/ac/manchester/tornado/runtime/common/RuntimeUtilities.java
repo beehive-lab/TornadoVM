@@ -499,9 +499,13 @@ public final class RuntimeUtilities {
     }
 
     public static void writeBytecodeToFile(StringBuilder logBuilder) {
+        if (logBuilder == null) {
+            return; // nothing to dump
+        }
+
         String filePath = getFilePath();
-        try (FileWriter fw = new FileWriter(filePath, true)) {
-            BufferedWriter bw = new BufferedWriter(fw);
+        try (FileWriter fw = new FileWriter(filePath, true);
+             BufferedWriter bw = new BufferedWriter(fw)) {
             // Clean ANSI escape sequences before writing
             String cleanedString = removeAnsiEscapeCodes(logBuilder.toString());
             bw.write(cleanedString);
@@ -511,6 +515,7 @@ public final class RuntimeUtilities {
             throw new RuntimeException("unable to dump bytecodes: " + e.getMessage());
         }
     }
+
 
     /**
      * Removes ANSI escape sequences from the input string.

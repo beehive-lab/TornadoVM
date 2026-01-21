@@ -9,7 +9,7 @@
       <env name="BACKEND" value="opencl" />
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="selected_backends" value="[@@BACKEND_PROFILES@@]"/>
-      <env name="TORNADO_SDK" value="[@@TORNADO_SDK@@]" />
+      <env name="TORNADOVM_HOME" value="[@@TORNADOVM_HOME@@]" />
       <env name="JAVA_HOME" value="[@@JAVA_HOME@@]" />
     </envs>
     <option name="SDK_HOME" value="[@@PYTHON_SDK_HOME@@]"/>

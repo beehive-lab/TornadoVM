@@ -43,9 +43,12 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrin
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.function.Supplier;
 
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -81,11 +84,15 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.AtomAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.DP4APackedNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.Dp4aNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXConvertHalfToFloat;
@@ -94,6 +101,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXGraphBuilderPlugins {
@@ -111,6 +119,7 @@ public class PTXGraphBuilderPlugins {
         PTXHalfFloatPlugin.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(ps);
         registerKernelContextPlugins(plugins);
+        registerQuantizationUtilsPlugins(plugins);
     }
 
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
@@ -123,6 +132,37 @@ public class PTXGraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, QuantizationUtils.class);
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+                Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
+                DP4APackedNode dp4aPackedOp = new DP4APackedNode(a, b, accumulator);
+                graphBuilderContext.addPush(JavaKind.Int, dp4aPackedOp);
+                return true;
+            }
+        });
+
     }
 
     private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -235,19 +275,34 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, 3);
-        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, 3);
+        // Accessing the vmConfig during initialization was causing a NullPointerException.
+        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
+        Supplier<Integer> headerSupplier4Byte = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
+            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
+        };
+
+        Supplier<Integer> headerSupplier8Byte = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
+            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
+        };
+
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, headerSupplier8Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, headerSupplier8Byte);
     }
 
-    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, int panamaOffset) {
+    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, Supplier<Integer> headerSupplier) {
         r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind javaKind = kind.asJavaKind();
-                AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
+                int header = headerSupplier.get();
+                AddressNode address = computeAddress(b, segment, index, header, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(b.append(atomicAddNode));
                 return true;
@@ -307,6 +362,33 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
+    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateByteLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                // if we do not pass the resolved type, the compiler cannot deduct if the type is char or byte
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, size);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalfFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(short.class);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.localSpace, resolvedElementType, size, PTXKind.F16);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -321,6 +403,11 @@ public class PTXGraphBuilderPlugins {
 
         elementType = PTXKind.B64.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
+
+        registerByteLocalArray(r, returnedJavaKind);
+
+        returnedJavaKind = JavaKind.fromJavaClass(short.class);
+        registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {

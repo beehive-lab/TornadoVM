@@ -37,6 +37,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -51,17 +52,20 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends.
 public class SPIRVFieldBuffer implements XPUBuffer {
 
-    private static final int BYTES_OBJECT_REFERENCE = 8;
+    private final long bytesObjectReference;
+    private final boolean areCoopsEnabled;
     private final HotSpotResolvedJavaType resolvedType;
     private final HotSpotResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
@@ -76,24 +80,27 @@ public class SPIRVFieldBuffer implements XPUBuffer {
     private final TornadoLogger logger;
     private final Access access;
 
-    public SPIRVFieldBuffer(final SPIRVDeviceContext deviceContext, Object object, Access access) {
+    private SPIRVFieldBuffer(final SPIRVDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
         this.objectType = object.getClass();
-        this.deviceContext = deviceContext;
+        this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
+
+        this.areCoopsEnabled = TornadoOptions.coopsUsed();
+        this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);
+        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
             HotSpotResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(objectType, field.getName());
+            final Field reflectedField = getField(findDeclaringClass(field), field.getName());
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
@@ -104,60 +111,60 @@ public class SPIRVFieldBuffer implements XPUBuffer {
             if (type.isArray()) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 if (type == int[].class) {
-                    wrappedField = new SPIRVIntArrayWrapper((int[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVIntArrayWrapper((int[]) objectFromField, device, 0, access);
                 } else if (type == float[].class) {
-                    wrappedField = new SPIRVFloatArrayWrapper((float[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVFloatArrayWrapper((float[]) objectFromField, device, 0, access);
                 } else if (type == double[].class) {
-                    wrappedField = new SPIRVDoubleArrayWrapper((double[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVDoubleArrayWrapper((double[]) objectFromField, device, 0, access);
                 } else if (type == long[].class) {
-                    wrappedField = new SPIRVLongArrayWrapper((long[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVLongArrayWrapper((long[]) objectFromField, device, 0, access);
                 } else if (type == short[].class) {
-                    wrappedField = new SPIRVShortArrayWrapper((short[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVShortArrayWrapper((short[]) objectFromField, device, 0, access);
                 } else if (type == char[].class) {
-                    wrappedField = new SPIRVCharArrayWrapper((char[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVCharArrayWrapper((char[]) objectFromField, device, 0, access);
                 } else if (type == byte[].class) {
-                    wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, deviceContext, 0, access);
+                    wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, device, 0, access);
                 } else {
                     logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.FLOAT.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.FLOAT.getNumBytes());
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.INT.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.INT.getNumBytes());
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.BYTE.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.BYTE.getNumBytes());
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.DOUBLE.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.DOUBLE.getNumBytes());
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.SHORT.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.SHORT.getNumBytes());
             } else if (type == CharArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((CharArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.CHAR.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.CHAR.getNumBytes());
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.LONG.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.LONG.getNumBytes());
             } else if (type == HalfFloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long sizeInBytes = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, deviceContext, 0, access, Sizeof.SHORT.getNumBytes());
+                wrappedField = new SPIRVMemorySegmentWrapper(sizeInBytes, device, 0, access, Sizeof.SHORT.getNumBytes());
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
-                wrappedField = new SPIRVVectorWrapper(deviceContext, object, 0, access);
+                wrappedField = new SPIRVVectorWrapper(device, object, 0, access);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new SPIRVFieldBuffer(deviceContext, TornadoUtils.getObjectFromField(reflectedField, object), access);
+                wrappedField = new SPIRVFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
             }
 
             if (wrappedField != null) {
@@ -169,6 +176,21 @@ public class SPIRVFieldBuffer implements XPUBuffer {
             buffer = ByteBuffer.allocate((int) getObjectSize());
             buffer.order(this.deviceContext.getDevice().getByteOrder());
         }
+    }
+
+    public SPIRVFieldBuffer(final SPIRVDeviceContext device, Object object, Access access) {
+        this(device, object, access, !isChildOfTornadoNativeArray(object));
+    }
+
+    private static boolean isChildOfTornadoNativeArray(Object object){
+        Class<?> objectType = object.getClass();
+        while(objectType!=null){
+            if(objectType.getName().equals(TornadoNativeArray.class.getName())){
+                return true;
+            }
+            objectType = objectType.getSuperclass();
+        }
+        return false;
     }
 
     @Override
@@ -216,7 +238,16 @@ public class SPIRVFieldBuffer implements XPUBuffer {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            buffer.putLong(wrappedFields[index].getBufferOffset());
+            if (areCoopsEnabled) {
+                // calculate the relative offset
+                long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
+                // Compress it by dividing by 8
+                int compressedOffset = (int) (relativeOffset / 8);
+                // Write compressed value
+                buffer.putInt(compressedOffset);
+            } else {
+                buffer.putLong(wrappedFields[index].getBufferOffset());
+            }
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -243,7 +274,11 @@ public class SPIRVFieldBuffer implements XPUBuffer {
                 shouldNotReachHere("unable to read field: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            buffer.getLong();
+            if (areCoopsEnabled) {
+                buffer.getInt();
+            } else {
+                buffer.getLong();
+            }
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -272,7 +307,7 @@ public class SPIRVFieldBuffer implements XPUBuffer {
             buffer.position(fields[0].getOffset());
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(objectType, field.getName());
+                Field f = getField(findDeclaringClass(field), field.getName());
                 if (DEBUG) {
                     logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
@@ -291,7 +326,7 @@ public class SPIRVFieldBuffer implements XPUBuffer {
 
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(objectType, field.getName());
+                Field f = getField(findDeclaringClass(field), field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
                     logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
@@ -299,6 +334,17 @@ public class SPIRVFieldBuffer implements XPUBuffer {
                 readFieldFromBuffer(i, f, object);
             }
         }
+    }
+
+    private Class<?> findDeclaringClass(HotSpotResolvedJavaField field) {
+        Class<?> objectTypeTemp = objectType;
+        while (objectTypeTemp != null && !objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())) {
+            objectTypeTemp = objectTypeTemp.getSuperclass();
+        }
+        if (objectTypeTemp == null) {
+            throw new TornadoRuntimeException(String.format("Cannot find declaring class %s in hierarchy of %s for field %s", field.getDeclaringClass().toJavaName(), objectType.getName(), field.getName()));
+        }
+        return objectTypeTemp;
     }
 
     @Override
@@ -439,7 +485,11 @@ public class SPIRVFieldBuffer implements XPUBuffer {
         long size = fieldsOffset;
         if (fields.length > 0) {
             HotSpotResolvedJavaField field = fields[fields.length - 1];
-            size = field.getOffset() + ((field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount());
+            size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
+        }
+        // when coops are enabled, padding is required to ensure an 8-byte object alignment
+        if (areCoopsEnabled && (size % 8 != 0)) {
+            size = size + (8 - (size % 8));
         }
         return size;
     }

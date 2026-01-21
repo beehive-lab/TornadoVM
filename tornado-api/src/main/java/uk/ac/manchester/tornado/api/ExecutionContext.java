@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -92,6 +93,24 @@ public interface ExecutionContext {
      * @return double[]
      */
     double[] allocateDoubleLocalArray(int size);
+
+    /**
+     * Array Allocation in Local Memory (OpenCL terminology).
+     *
+     * @param size
+     *     size of the byte-array.
+     * @return byte[]
+     */
+    byte[] allocateByteLocalArray(int size);
+
+    /**
+     * Array Allocation in Local Memory (OpenCL terminology).
+     *
+     * @param size
+     *     size of the byte-array.
+     * @return HalfFloat[]
+     */
+    HalfFloat[] allocateHalfFloatLocalArray(int size);
 
     /**
      * Method used to read a memory address by using the array and the index,

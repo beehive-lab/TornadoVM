@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -188,7 +189,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            TornadoInstalledCode installedCode = deviceContext.installCode(executionPlanId, result, resolvedMethod.getName());
+            TornadoInstalledCode installedCode = deviceContext.installCode(taskMeta, executionPlanId, result, resolvedMethod.getName());
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
@@ -212,10 +213,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
         final Path path = Paths.get(executable.getFilename());
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+        final TaskDataContext taskMeta = executable.meta();
         try {
             byte[] source = Files.readAllBytes(path);
             source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(executionPlanId, functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
+            return deviceContext.installCode(taskMeta, executionPlanId, functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -277,6 +279,8 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S8.getSizeInBytes());
             } else if (object instanceof HalfFloatArray) {
                 result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S16.getSizeInBytes());
+            } else if (object instanceof Int8Array) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize, access, PTXKind.S8.getSizeInBytes());
             } else {
                 result = new CUDAFieldBuffer(getDeviceContext(), object, access);
             }

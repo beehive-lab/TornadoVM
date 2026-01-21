@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>tornado</groupId>
+        <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>1.1.2-dev</version>
+        <version>2.2.1-dev</version>
     </parent>
     <artifactId>tornado-assembly</artifactId>
     <packaging>pom</packaging>
@@ -136,9 +136,9 @@
                         </goals>
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <finalName>tornado-sdk</finalName>
+                            <finalName>tornadovm-${project.version}-${tornado.backend}-${platform}</finalName>
                             <outputDirectory>${project.basedir}/../dist</outputDirectory>
-                            <updateOnly>true</updateOnly>
+                            <updateOnly>false</updateOnly>
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
@@ -162,6 +162,10 @@
                     </filesets>
                 </configuration>
             </plugin>
+            <!--
+                Note: tornado.backend file is created by bin/compile's post_installation_actions()
+                No need for additional Maven plugin to create it
+            -->
         </plugins>
     </build>
 </project>

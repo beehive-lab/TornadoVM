@@ -125,6 +125,7 @@ __TEST_THE_WORLD__ = [
     ## SPIR-V, OpenCL and PTX foundation tests
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestHalfFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.MultipleRuns"),
     TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra"),
@@ -178,6 +179,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsBytes"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
     TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
     TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
@@ -185,8 +188,10 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestInheritedFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.quantization.QuantizationTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
@@ -206,7 +211,6 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.MMwithBytes"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.TransformerKernelsTest"),
-    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestConcat"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestSlice"),
@@ -224,6 +228,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -234,17 +239,17 @@ __TEST_THE_WORLD__ = [
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
               testMethods=["testVirtualDeviceKernel"],
               testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
+                  "-Dtornado.device.desc=" + os.environ["TORNADOVM_HOME"] + "/examples/virtual-device-GPU.json",
                   "-Dtornado.printKernel=True",
                   "-Dtornado.virtual.device=True",
-                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
+                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualKernelOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
               testMethods=["testVirtualDeviceFeatures"],
               testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
+                  "-Dtornado.device.desc=" + os.environ["TORNADOVM_HOME"] + "/examples/virtual-device-GPU.json",
                   "-Dtornado.virtual.device=True",
                   "-Dtornado.feature.extraction=True",
-                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualFeaturesOut.out"]),
 
     ## Tests for Multi-Thread and Memory
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
@@ -288,6 +293,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_getAndIncrement_parallel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_kernel_api",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic17_incrementAndGet_parallel_api",
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic18_parallel_api_LongArray",
 
     ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
@@ -302,6 +308,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Inconsistent timing metrics for data Transfers, triggering difference in copy once vs copy always
     "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
+    "uk.ac.manchester.tornado.unittests.warmup.TestWarmUp#test01",
 
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel.
@@ -310,6 +317,11 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Inconsistent results that occur in some NVIDIA drivers
     "uk.ac.manchester.tornado.unittests.branching.TestLoopConditions#testConditionBeforeSingleLoopReturn",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testDP4A",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelContext",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelLocalMemory",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVectorDP4AKernelPacked",
+    "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests#testMatrixVector4WayDP4AKernel",
 
     ## For the OpenCL Backend
     "uk.ac.manchester.tornado.unittests.foundation.TestIf#test06",
@@ -328,6 +340,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorSubtractionHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorMultiplicationHalfFloat',
     'uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorDivisionHalfFloat',
+    ## Half-float Built-in functions
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMaxLocalMemory',
+    'uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats#testHalfFloatReductionsMinLocalMemory',
 
     ## SPIR-V with Level Zero
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
@@ -365,6 +380,7 @@ __PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 __TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
 __THREAD_INFO__ = "-Dtornado.threadInfo=True "
+__UNCOMPRESSED_POINTERS__ = "-XX:-UseCompressedOops -XX:-UseCompressedClassPointers "
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
@@ -375,13 +391,13 @@ __TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 # ################################################################################################################
 
 if (os.name == 'nt'):
-    TORNADO_CMD = "python " + os.path.expandvars(r"%TORNADO_SDK%/bin/tornado").replace("\\", "/") + " "
+    TORNADO_CMD = os.path.expandvars(r"%TORNADOVM_HOME%/bin/tornado.exe").replace("\\", "/") + " "
 else:
-    TORNADO_CMD = os.environ["TORNADO_SDK"] + "/bin/tornado "
+    TORNADO_CMD = os.environ["TORNADOVM_HOME"] + "/bin/tornado "
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "1.1.2-dev"
+__VERSION__ = "2.2.1-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]
@@ -428,6 +444,9 @@ def composeAllOptions(args):
 
     if (args.threadInfo):
         options = options + __THREAD_INFO__
+
+    if (args.uncompressed):
+        options = options + __UNCOMPRESSED_POINTERS__
 
     if (args.printKernel):
         options = options + __PRINT_OPENCL_KERNEL__
@@ -738,6 +757,8 @@ def parseArguments():
                         help="Enable Tornado assertions")
     parser.add_argument('--threadInfo', action="store_true", dest="threadInfo", default=False,
                         help="Print thread information")
+    parser.add_argument('--uncompressed', action="store_true", dest="uncompressed", default=False,
+                        help="Run with uncompressed pointers")
     parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False,
                         help="Print OpenCL kernel")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,

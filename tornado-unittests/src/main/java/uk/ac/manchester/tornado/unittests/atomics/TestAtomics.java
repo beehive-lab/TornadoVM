@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -371,7 +372,12 @@ public class TestAtomics extends TornadoTestBase {
         int deviceNumber = Integer.parseInt(deviceToRun);
 
         TornadoDevice defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(deviceNumber);
-        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String tornadoSDK = System.getenv("TORNADOVM_HOME");
+
+        boolean coops = TornadoNativeArray.ARRAY_HEADER == 16;
+        String basePath = tornadoSDK + "/examples/generated/";
+        String fileStem = coops ? "atomics" : "atomics_uncompressed";
+        String kernelPath = basePath + fileStem + ".cl";
 
         AccessorParameters accessorParameters = new AccessorParameters(2);
         accessorParameters.set(0, a, Access.WRITE_ONLY);
@@ -380,7 +386,7 @@ public class TestAtomics extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .prebuiltTask("t0", //
                         "add", //
-                        tornadoSDK + "/examples/generated/atomics.cl", //
+                        kernelPath, //
                         accessorParameters, //
                         new int[] { 155 }   // Array for AtomicsInteger - Initial int value
                 ).transferToHost(DataTransferMode.EVERY_EXECUTION, a);

@@ -55,12 +55,13 @@ tornadoReq.check_python_dependencies()
 import wget
 import config_utils as cutils
 import installer_config as config
+import update_paths as updp
 from packaging import version
 import textwrap
 
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
-__VERSION__ = "v1.1.2-dev"
+__VERSION__ = "v2.2.0"
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
     config.__GRAALVM21__,
@@ -119,7 +120,6 @@ class InstallationConfig:
     """Installation configuration container."""
     jdk_keyword: Optional[str] = None
     download_jdk: bool = False
-    download_maven: bool = False
     download_cmake: bool = False
     backends: List[str] = None
     polyglot: bool = False
@@ -136,11 +136,11 @@ class Environment:
     """Environment variables container."""
     paths: List[str]
     java_home: str
-    tornado_sdk: str
+    tornadovm_home: str
 
     def __init__(self):
         self.paths = [str(Path.cwd() / "bin" / "bin")]
-        self.tornado_sdk = str(Path.cwd() / "bin" / "sdk")
+        self.tornadovm_home = str(Path.cwd() / "bin" / "sdk")
         self.java_home = ""
 
 # Abstract Base Classes
@@ -222,25 +222,6 @@ class CMakeDownloader(Downloader):
 
         return bin_path
 
-class MavenDownloader(Downloader):
-    """Maven downloader and extractor."""
-
-    def download(self, dependencies_dir: Path) -> str:
-        url = config.MAVEN.get(self.system_info.platform, {}).get(self.system_info.architecture)
-        if not url:
-            raise ConfigurationError(
-                f"Maven not configured for {self.system_info.platform}/{self.system_info.architecture}"
-            )
-
-        filename = Path(url).name
-        archive_path = Path(dependencies_dir) / filename
-
-        self._download_file(url, archive_path)
-        tld = self._extract_archive(archive_path, dependencies_dir)
-
-        bin_path = Path(dependencies_dir) / tld / "bin"
-        return bin_path
-
 class JDKDownloader(Downloader):
     """JDK downloader and extractor."""
 
@@ -269,7 +250,6 @@ class DependencyManager:
         self.console = console
         self.system_info = system_info
         self.cmake_downloader = CMakeDownloader(console, system_info)
-        self.maven_downloader = MavenDownloader(console, system_info)
         self.jdk_downloader = JDKDownloader(console, system_info)
 
     def setup_dependencies(self, config: InstallationConfig, env: Environment) -> None:
@@ -281,10 +261,6 @@ class DependencyManager:
             cmake_path = self.cmake_downloader.download(path_of_dependencies_dir)
             if cmake_path:
                 env.paths.append(cmake_path)
-
-        if config.download_maven:
-            maven_path = self.maven_downloader.download(path_of_dependencies_dir)
-            env.paths.append(maven_path)
 
         if config.download_jdk:
             java_home = self.jdk_downloader.download(self._create_jdk_dependencies_dir(path_of_dependencies_dir, config.jdk_keyword), config.jdk_keyword)
@@ -325,7 +301,7 @@ class EnvironmentManager:
         """Apply environment variables to current process."""
         os.environ["PATH"] = os.pathsep.join(str(p) for p in env.paths) + os.pathsep + os.environ["PATH"]
         os.environ["JAVA_HOME"] = env.java_home
-        os.environ["TORNADO_SDK"] = env.tornado_sdk
+        os.environ["TORNADOVM_HOME"] = env.tornadovm_home
 
     def create_setup_script(self, env: Environment) -> None:
         """Create environment setup script."""
@@ -338,32 +314,45 @@ class EnvironmentManager:
 
     def _create_windows_script(self, env: Environment) -> None:
         """Create Windows batch script."""
-        binaries_dist = Path(env.tornado_sdk) / "bin" / "dist"
-        level_zero_path = Path.cwd() / "level-zero" / "build" / "bin" / "Release"
+        # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME')
+        java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
-        cutils.runPyInstaller(str(Path.cwd()), env.tornado_sdk)
+        cutils.runPyInstaller(str(Path.cwd()), tornadovm_home)
 
-        content = f"""set JAVA_HOME={env.java_home}
-set PATH={os.pathsep.join(env.paths)}{os.pathsep}{level_zero_path}{os.pathsep}{binaries_dist}{os.pathsep}%PATH%
-set TORNADO_SDK={env.tornado_sdk}
+        content = f"""@echo off
+REM TornadoVM Environment Setup Script (Windows)
+REM Generated automatically by the build process
+
+set JAVA_HOME={java_home}
+set TORNADOVM_HOME={tornadovm_home}
+set PATH=%TORNADOVM_HOME%\\bin;%PATH%
 """
 
-        with open("setvars.cmd", "w") as f:
+        with open("setvars.cmd", "w", newline='\r\n') as f:
             f.write(content)
 
         self.console.print("[INFO] Run with: setvars.cmd", style="green")
 
     def _create_unix_script(self, env: Environment) -> None:
-        path_str = os.pathsep.join(str(p) for p in env.paths)
+        # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME')
+        java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
-        content = textwrap.dedent(f"""\
-            export JAVA_HOME={env.java_home}
-            export PATH={path_str}:$PATH
-            export TORNADO_SDK={env.tornado_sdk}
-        """)
+        content = f"""#!/bin/bash
+# TornadoVM Environment Setup Script (Unix/Linux/Mac)
+# Generated automatically by the build process
 
-        with open("setvars.sh", "w") as f:
+export JAVA_HOME="{java_home}"
+export TORNADOVM_HOME="{tornadovm_home}"
+export PATH="$TORNADOVM_HOME/bin:$PATH"
+"""
+
+        with open("setvars.sh", "w", newline='\n') as f:
             f.write(content)
+
+        # Make the script executable
+        os.chmod("setvars.sh", 0o755)
 
         self.console.print("[INFO] Run with: source setvars.sh", style="green")
 
@@ -449,14 +438,6 @@ class SystemValidator:
             self.console.print(f"[WARNING] Could not determine JDK version: {e}", style="yellow")
             return False, java_home, None
 
-    def check_maven(self) -> bool:
-        """Check if Maven is available."""
-        mvn_path = which("mvn")
-        if mvn_path:
-            self.console.print(f"[INFO] Maven found at: {mvn_path}", style="green")
-            return True
-        return False
-
     def check_cmake(self) -> bool:
         """Check if CMake is available and meets version requirements."""
         cmake_path = which("cmake")
@@ -516,6 +497,10 @@ class TornadoInstaller:
             self.env_manager.apply_environment(env)
 
             self.build_manager.build(config)
+
+            # Update paths to get the correct TORNADOVM_HOME location from the built SDK
+            updp.update_tornado_paths()
+
             self.env_manager.create_setup_script(env)
 
             self.console.print("[SUCCESS] Installation completed!", style="bold green")
@@ -551,12 +536,9 @@ class TornadoInstaller:
         if args.polyglot:
             config = self._validate_polyglot_config(config)
 
-        # Check other dependencies
-        config.download_maven = not self.validator.check_maven()
-        if config.download_maven and not args.autoDependencies:
-            if input("Maven not found. Download locally? (y/n): ").strip().lower() != "y":
-                raise ConfigurationError("Maven is required")
-
+        # Check CMake dependency
+        # Note: Maven is not checked because the build system uses Maven wrapper (mvnw)
+        # which automatically downloads and uses the correct Maven version
         config.download_cmake = not self.validator.check_cmake()
         if config.download_cmake and not args.autoDependencies:
             if input("CMake not found or too old. Download locally? (y/n): ").strip().lower() != "y":

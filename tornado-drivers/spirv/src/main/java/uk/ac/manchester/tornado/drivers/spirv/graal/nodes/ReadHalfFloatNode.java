@@ -31,6 +31,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -50,19 +51,37 @@ public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable
 
     @Input
     private AddressNode addressNode;
+    @Input
+    private ValueNode indexNode;
 
     public ReadHalfFloatNode(AddressNode addressNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
     }
 
+    public ReadHalfFloatNode(AddressNode addressNode, ValueNode indexNode) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.indexNode = indexNode;
+    }
+
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_16));
         Value addressValue = generator.operand(addressNode);
-        SPIRVArchitecture.SPIRVMemoryBase base = ((SPIRVUnary.MemoryAccess) (addressValue)).getMemoryRegion();
-        SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(addressValue, base, LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_16));
-        tool.append(new SPIRVLIRStmt.LoadStmt(result, cast, (SPIRVUnary.MemoryAccess) addressValue));
+        if (addressValue instanceof SPIRVUnary.MemoryAccess memoryAccess) {
+            SPIRVArchitecture.SPIRVMemoryBase base = memoryAccess.getMemoryRegion();
+            SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(memoryAccess, base, LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_16));
+            tool.append(new SPIRVLIRStmt.LoadStmt(result, cast, memoryAccess));
+        } else if (addressValue instanceof SPIRVUnary.MemoryIndexedAccess indexedAccess) {
+            Value index = generator.operand(indexNode);
+            SPIRVUnary.MemoryIndexedAccess localAccessIndex = new SPIRVUnary.MemoryIndexedAccess(
+                    indexedAccess.getMemoryRegion(),
+                    indexedAccess.getValue(),  // base array
+                    index
+            );
+            tool.append(new SPIRVLIRStmt.IndexedLoadMemAccess(localAccessIndex, result));
+        }
         generator.setResult(this, result);
     }
 

@@ -62,6 +62,28 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new instance of the {@link CharArray} by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param existingSegment
+     *     The {@link MemorySegment} containing *both* the off-heap char *header* and *data*.
+     */
+    private CharArray(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / CHAR_BYTES;
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, CHAR_BYTES);
+        this.numberOfElements = (int) (dataSize / CHAR_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = existingSegment;
+        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
      * Constructs a new {@link CharArray} instance by concatenating the contents of the given array of {@link CharArray} instances.
      *
      * @param arrays
@@ -122,6 +144,18 @@ public final class CharArray extends TornadoNativeArray {
         CharArray charArray = new CharArray(numElements);
         MemorySegment.copy(segment, 0, charArray.segment, (long) charArray.baseIndex * CHAR_BYTES, byteSize);
         return charArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link CharArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing *both* the off-heap char *header* and *data*.
+     * @return A new {@link CharArray} instance that wraps the given segment.
+     */
+    public static CharArray fromSegmentShallow(MemorySegment segment) {
+        return new CharArray(segment);
     }
 
     /**

@@ -4,9 +4,9 @@
     xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>tornado</groupId>
+        <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>1.1.2-dev</version>
+        <version>2.2.1-dev</version>
     </parent>
     <artifactId>tornado-drivers-opencl</artifactId>
     <name>tornado-drivers-opencl</name>

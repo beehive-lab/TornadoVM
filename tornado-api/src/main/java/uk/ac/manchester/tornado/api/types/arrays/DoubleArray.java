@@ -64,6 +64,28 @@ public final class DoubleArray extends TornadoNativeArray {
     }
 
     /**
+     * Constructs a new instance of the {@link DoubleArray} by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param existingSegment
+     *     The {@link MemorySegment} containing *both* the off-heap double *header* and *data*.
+     */
+    private DoubleArray(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / DOUBLE_BYTES;
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, DOUBLE_BYTES);
+        this.numberOfElements = (int) (dataSize / DOUBLE_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = existingSegment;
+        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    /**
      * Constructs a new {@link DoubleArray} instance by concatenating the contents of the given array of {@link DoubleArray} instances.
      *
      * @param arrays
@@ -124,6 +146,18 @@ public final class DoubleArray extends TornadoNativeArray {
         DoubleArray doubleArray = new DoubleArray(numElements);
         MemorySegment.copy(segment, 0, doubleArray.segment, (long) doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
         return doubleArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link DoubleArray} class by wrapping an existing {@link MemorySegment}
+     * without copying its contents.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing *both* the off-heap double *header* and *data*.
+     * @return A new {@link DoubleArray} instance that wraps the given segment.
+     */
+    public static DoubleArray fromSegmentShallow(MemorySegment segment) {
+        return new DoubleArray(segment);
     }
 
     /**

@@ -49,7 +49,7 @@ def define_and_get_internal_maven_content(xml_templates_directory, project_direc
         java_profile = "graal-jdk-21"
     else:
         java_profile = "jdk21"
-    
+
     xml_backend_profiles = generate_backend_profiles_as_xml_entries(backend_profiles)
 
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@MAVEN_DIRECTORY@@]", maven_directory)
@@ -69,7 +69,7 @@ def define_and_get_tornadovm_build_content(xml_templates_directory, project_dire
     python_sdk_home = str(python_home)
     python_sdk_name = f"Python {python_version_name}"
 
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@TORNADO_SDK@@]", tornado_sdk)
+    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@TORNADOVM_HOME@@]", tornado_sdk)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@JAVA_HOME@@]", java_home)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@BACKEND_PROFILES@@]", backend_profiles)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PYTHON_SDK_HOME@@]", python_sdk_home)
@@ -90,7 +90,7 @@ def define_and_get_tornadovm_tests_content(xml_templates_directory, project_dire
     python_sdk_name = f"Python {python_version_name}"
 
     xml_TornadoVM_tests_content = xml_TornadoVM_tests_content.replace("[@@BACKEND_PROFILES@@]", backend_profiles)
-    xml_TornadoVM_tests_content = xml_TornadoVM_tests_content.replace("[@@TORNADO_SDK@@]", tornado_sdk)
+    xml_TornadoVM_tests_content = xml_TornadoVM_tests_content.replace("[@@TORNADOVM_HOME@@]", tornado_sdk)
     xml_TornadoVM_tests_content = xml_TornadoVM_tests_content.replace("[@@JAVA_HOME@@]", java_home)
     xml_TornadoVM_tests_content = xml_TornadoVM_tests_content.replace("[@@PYTHON_SDK_HOME@@]", python_sdk_home)
     xml_TornadoVM_tests_content = xml_TornadoVM_tests_content.replace("[@@PYTHON_SDK_NAME@@]", python_sdk_name)
@@ -103,7 +103,7 @@ def generate_internal_maven_build_xml(xml_templates_directory, project_directory
     xml_internal_content = define_and_get_internal_maven_content(xml_templates_directory, project_directory, java_home, backend_profiles)
     xml_build_directory = os.path.join(project_directory, ".build", "_internal_TornadoVM_Maven-cleanAndinstall.run.xml")
     print("Generating " + xml_build_directory)
-    write_generated_template(xml_internal_content, xml_build_directory) 
+    write_generated_template(xml_internal_content, xml_build_directory)
 
 def generate_tornadovm_build_xml(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles):
     xml_build_content = define_and_get_tornadovm_build_content(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles)
@@ -139,7 +139,7 @@ def tornadovm_ide_init(tornado_sdk, java_home, backends):
     """
 
     if tornado_sdk == None:
-        print("Cannot initiate ide. TORNADO_SDK is not defined")
+        print("Cannot initiate ide. TORNADOVM_HOME is not defined")
         sys.exit(0)
 
     if java_home == None:

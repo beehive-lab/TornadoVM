@@ -38,6 +38,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
+import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -53,6 +54,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DivHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.HalfFloatConstantNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertFloatToHalf;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLConvertHalfToFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SubHalfNode;
@@ -99,7 +101,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
 
         // replace reads with halfFloat reads
         for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
-            if (javaRead.successors().first() instanceof NewInstanceNode) {
+            if (javaRead.successors().first() instanceof NewInstanceNode && javaRead.getReadKind() == JavaKind.Short) {
                 NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
                 if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
                     if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
@@ -124,6 +126,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     newInstanceNode.replaceAtUsages(valueInput);
                     deleteFixed(newInstanceNode);
                     deleteFixed(newHalfFloatInstance);
+                } else if (newInstanceNode.successors().first() instanceof JavaReadNode readValue && readValue.getReadKind() == JavaKind.Float) {
+                    OCLConvertFloatToHalf convertFloatToHalf = new OCLConvertFloatToHalf(readValue);
+                    graph.addWithoutUnique(convertFloatToHalf);
+                    newInstanceNode.replaceAtUsages(convertFloatToHalf);
+                    for (NewHalfFloatInstance newHalfFloatInstance : readValue.usages().filter(NewHalfFloatInstance.class)) {
+                        deleteFixed(newHalfFloatInstance);
+                    }
+                    deleteFixed(newInstanceNode);
                 }
             }
         }
@@ -264,6 +274,10 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             HalfFloatConstantNode halfFloatConstantNode = new HalfFloatConstantNode(floatValue);
             graph.addWithoutUnique(halfFloatConstantNode);
             return halfFloatConstantNode;
+        } else if (halfFloatValue instanceof JavaReadNode javaReadNode && javaReadNode.getReadKind() == JavaKind.Float) {
+            OCLConvertFloatToHalf convertFloatToHalf = new OCLConvertFloatToHalf(javaReadNode);
+            graph.addWithoutUnique(convertFloatToHalf);
+            return convertFloatToHalf;
         } else {
             return halfFloatValue;
         }
@@ -395,6 +409,16 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
             phiNode.replaceAtUsages(halfPhiNode);
             phiNode.safeDelete();
+            for (HalfFloatPlaceholder halfFloatPlaceholder : halfPhiNode.usages().filter(HalfFloatPlaceholder.class)) {
+                for (FloatConvertNode floatConvertNode : halfFloatPlaceholder.usages().filter(FloatConvertNode.class)) {
+                    OCLConvertHalfToFloat oclConvertHalfToFloat = new OCLConvertHalfToFloat(halfPhiNode);
+                    graph.addWithoutUnique(oclConvertHalfToFloat);
+                    floatConvertNode.replaceAtUsages(oclConvertHalfToFloat);
+                    floatConvertNode.safeDelete();
+                }
+                halfFloatPlaceholder.replaceAtUsages(halfPhiNode);
+                halfFloatPlaceholder.safeDelete();
+            }
             return halfPhiNode;
         } else {
             return phiNode;
