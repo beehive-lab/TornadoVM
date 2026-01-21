@@ -515,7 +515,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
-        "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
+        "--jdk", help="JDK version (e.g., jdk25, graal-jdk-25)"
     )
     parser.add_argument("--backend", help="e.g., opencl,ptx,spirv")
     parser.add_argument(
