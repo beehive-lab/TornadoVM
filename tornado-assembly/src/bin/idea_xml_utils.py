@@ -125,13 +125,20 @@ def generate_xml_files(xml_templates_directory, project_directory, tornado_sdk, 
     print("IntelIj Files Generated ............... [ok]")
 
 def cleanup_build_directory(build_directory_string):
-    tornado_root_directory = Path(build_directory_string)
-    if tornado_root_directory.exists() and tornado_root_directory.is_dir():
-        for file in tornado_root_directory.iterdir():
+    build_dir = Path(build_directory_string)
+    if build_dir.exists() and build_dir.is_dir():
+        for file in build_dir.iterdir():
             if file.name == ".gitignore":
                 continue
-            if file.is_file():
-                file.unlink()
+            if file.is_file() or file.is_dir():
+                # remove files and subdirectories recursively
+                if file.is_file():
+                    file.unlink()
+                else:
+                    import shutil
+                    shutil.rmtree(file)
+    # Ensure the directory exists
+    build_dir.mkdir(parents=True, exist_ok=True)
 
 def tornadovm_ide_init(tornado_sdk, java_home, backends):
     """
@@ -162,8 +169,7 @@ def tornadovm_ide_init(tornado_sdk, java_home, backends):
         sys.exit(0)
 
     tornado_sdk_path = Path(tornado_sdk)
-    tornado_root = tornado_sdk_path.parents[1]
-    project_directory = str(tornado_root)
+    project_directory = str(tornado_sdk_path)
 
     cleanup_build_directory(os.path.join(project_directory, ".build"))
     xml_templates_directory = os.path.join(project_directory, "scripts", "templates", "intellij-settings", "ideinit")

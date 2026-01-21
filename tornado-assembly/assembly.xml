@@ -30,6 +30,16 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
+            <directory>src/scripts</directory>
+            <!-- tornado scripts -->
+            <outputDirectory>scripts</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
             <directory>src/bin</directory>
             <!-- tornado scripts -->
             <outputDirectory>bin</outputDirectory>
