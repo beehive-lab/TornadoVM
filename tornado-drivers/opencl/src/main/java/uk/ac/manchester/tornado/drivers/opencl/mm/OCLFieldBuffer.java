@@ -33,9 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
@@ -80,7 +78,7 @@ public class OCLFieldBuffer implements XPUBuffer {
     private final TornadoLogger logger;
     private final Access access;
 
-    private OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
+    private OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access, boolean includeSuperClasses, IdentityHashMap<Object, XPUBuffer> identityMap) {
         this.objectType = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
@@ -107,65 +105,61 @@ public class OCLFieldBuffer implements XPUBuffer {
                 logger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
 
-            XPUBuffer wrappedField = null;
-            if (type.isArray()) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                if (type == int[].class) {
-                    wrappedField = new OCLIntArrayWrapper((int[]) objectFromField, device, 0, access);
-                } else if (type == float[].class) {
-                    wrappedField = new OCLFloatArrayWrapper((float[]) objectFromField, device, 0, access);
-                } else if (type == double[].class) {
-                    wrappedField = new OCLDoubleArrayWrapper((double[]) objectFromField, device, 0, access);
-                } else if (type == long[].class) {
-                    wrappedField = new OCLLongArrayWrapper((long[]) objectFromField, device, 0, access);
-                } else if (type == short[].class) {
-                    wrappedField = new OCLShortArrayWrapper((short[]) objectFromField, device, 0, access);
-                } else if (type == char[].class) {
-                    wrappedField = new OCLCharArrayWrapper((char[]) objectFromField, device, 0, access);
-                } else if (type == byte[].class) {
-                    wrappedField = new OCLByteArrayWrapper((byte[]) objectFromField, device, 0, access);
-                } else {
-                    logger.warn("cannot wrap field: array type=%s", type.getName());
+            Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+            XPUBuffer wrappedField = hasAnnotationVector(object) ? identityMap.get(object) : identityMap.get(objectFromField);
+            if (wrappedField == null) {
+                if (type.isArray()) {
+                    if (type == int[].class) {
+                        wrappedField = new OCLIntArrayWrapper((int[]) objectFromField, device, 0, access);
+                    } else if (type == float[].class) {
+                        wrappedField = new OCLFloatArrayWrapper((float[]) objectFromField, device, 0, access);
+                    } else if (type == double[].class) {
+                        wrappedField = new OCLDoubleArrayWrapper((double[]) objectFromField, device, 0, access);
+                    } else if (type == long[].class) {
+                        wrappedField = new OCLLongArrayWrapper((long[]) objectFromField, device, 0, access);
+                    } else if (type == short[].class) {
+                        wrappedField = new OCLShortArrayWrapper((short[]) objectFromField, device, 0, access);
+                    } else if (type == char[].class) {
+                        wrappedField = new OCLCharArrayWrapper((char[]) objectFromField, device, 0, access);
+                    } else if (type == byte[].class) {
+                        wrappedField = new OCLByteArrayWrapper((byte[]) objectFromField, device, 0, access);
+                    } else {
+                        logger.warn("cannot wrap field: array type=%s", type.getName());
+                    }
+                } else if (type == FloatArray.class) {
+                    long size = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.FLOAT.getSizeInBytes());
+                } else if (type == ByteArray.class) {
+                    long size = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.CHAR.getSizeInBytes());
+                } else if (type == DoubleArray.class) {
+                    long size = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.DOUBLE.getSizeInBytes());
+                } else if (type == IntArray.class) {
+                    long size = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.INT.getSizeInBytes());
+                } else if (type == ShortArray.class) {
+                    long size = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.SHORT.getSizeInBytes());
+                } else if (type == LongArray.class) {
+                    long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.LONG.getSizeInBytes());
+                } else if (type == HalfFloatArray.class) {
+                    long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
+                    wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.SHORT.getSizeInBytes());
+                } else if (hasAnnotationVector(object)) {
+                    wrappedField = new OCLVectorWrapper(device, object, 0, access);
+                } else if (field.getJavaKind().isObject()) {
+                    // We capture the field by the scope definition of the input
+                    // lambda expression
+                    wrappedField = new OCLFieldBuffer(device, objectFromField, access, includeSuperClasses, identityMap);
                 }
-            } else if (type == FloatArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.FLOAT.getSizeInBytes());
-            } else if (type == ByteArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.CHAR.getSizeInBytes());
-            } else if (type == DoubleArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.DOUBLE.getSizeInBytes());
-            } else if (type == IntArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.INT.getSizeInBytes());
-            } else if (type == ShortArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.SHORT.getSizeInBytes());
-            } else if (type == LongArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.LONG.getSizeInBytes());
-            } else if (type == HalfFloatArray.class) {
-                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new OCLMemorySegmentWrapper(size, device, 0, access, OCLKind.SHORT.getSizeInBytes());
-            } else if (object.getClass().getAnnotation(Vector.class) != null) {
-                wrappedField = new OCLVectorWrapper(device, object, 0, access);
-            } else if (field.getJavaKind().isObject()) {
-                // We capture the field by the scope definition of the input
-                // lambda expression
-                wrappedField = new OCLFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
             }
-
             if (wrappedField != null) {
+                identityMap.put(hasAnnotationVector(object) ? object : objectFromField, wrappedField);
                 wrappedFields[index] = new FieldBuffer(reflectedField, wrappedField);
             }
+
         }
 
         if (buffer == null) {
@@ -175,13 +169,17 @@ public class OCLFieldBuffer implements XPUBuffer {
     }
 
     public OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access) {
-        this(device, object, access, !isChildOfTornadoNativeArray(object));
+        this(device, object, access, !isChildOfTornadoNativeArray(object), new IdentityHashMap<>());
     }
 
-    private static boolean isChildOfTornadoNativeArray(Object object){
+    private boolean hasAnnotationVector(Object object) {
+        return object.getClass().getAnnotation(Vector.class) != null;
+    }
+
+    private static boolean isChildOfTornadoNativeArray(Object object) {
         Class<?> objectType = object.getClass();
-        while(objectType!=null){
-            if(objectType.getName().equals(TornadoNativeArray.class.getName())){
+        while (objectType != null) {
+            if (objectType.getName().equals(TornadoNativeArray.class.getName())) {
                 return true;
             }
             objectType = objectType.getSuperclass();
@@ -348,8 +346,16 @@ public class OCLFieldBuffer implements XPUBuffer {
         serialise(object);
         // XXX: Offset 0
         deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
+
+        Set<XPUBuffer> uniqueObjectBuffers = Collections.newSetFromMap(new IdentityHashMap<>());
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
+                XPUBuffer objectBuffer = wrappedFields[i].getObjectBuffer();
+                if(uniqueObjectBuffers.contains(objectBuffer)){
+                    continue;
+                }
+                uniqueObjectBuffers.add(objectBuffer);
+
                 wrappedFields[i].write(executionPlanId, object);
             }
         }
@@ -367,11 +373,18 @@ public class OCLFieldBuffer implements XPUBuffer {
 
         bufferWrapper.bufferOffset += getObjectSize();
 
+        Set<XPUBuffer> uniqueObjectBuffers = Collections.newSetFromMap(new IdentityHashMap<>());
         for (int i = 0; i < fields.length; i++) {
             FieldBuffer fieldBuffer = wrappedFields[i];
             if (fieldBuffer == null) {
                 continue;
             }
+
+            XPUBuffer objectBuffer = fieldBuffer.getObjectBuffer();
+            if(uniqueObjectBuffers.contains(objectBuffer)){
+                continue;
+            }
+            uniqueObjectBuffers.add(objectBuffer);
 
             fieldBuffer.setBuffer(bufferWrapper);
         }
@@ -392,8 +405,16 @@ public class OCLFieldBuffer implements XPUBuffer {
     public int read(long executionPlanId, Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         buffer.position(buffer.capacity());
         int event = deviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+
+        Set<XPUBuffer> uniqueObjectBuffers = Collections.newSetFromMap(new IdentityHashMap<>());
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
+                XPUBuffer objectBuffer = wrappedFields[i].getObjectBuffer();
+                if(uniqueObjectBuffers.contains(objectBuffer)){
+                    continue;
+                }
+                uniqueObjectBuffers.add(objectBuffer);
+
                 wrappedFields[i].read(executionPlanId, object);
             }
         }
@@ -439,9 +460,16 @@ public class OCLFieldBuffer implements XPUBuffer {
         int[] internalEvents = new int[fields.length];
         Arrays.fill(internalEvents, -1);
 
-        for (FieldBuffer fb : wrappedFields) {
-            if (fb != null) {
-                internalEvents[index] = fb.enqueueRead(executionPlanId, reference, (useDeps) ? events : null, useDeps);
+        Set<XPUBuffer> uniqueObjectBuffers = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (FieldBuffer field : wrappedFields) {
+            if (field != null) {
+                XPUBuffer objectBuffer = field.getObjectBuffer();
+                if(uniqueObjectBuffers.contains(objectBuffer)){
+                    continue;
+                }
+                uniqueObjectBuffers.add(objectBuffer);
+
+                internalEvents[index] = field.enqueueRead(executionPlanId, reference, (useDeps) ? events : null, useDeps);
                 index++;
             }
         }
@@ -465,8 +493,16 @@ public class OCLFieldBuffer implements XPUBuffer {
 
         serialise(ref);
         eventList.add(deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
+
+        Set<XPUBuffer> uniqueObjectBuffers = Collections.newSetFromMap(new IdentityHashMap<>());
         for (final FieldBuffer field : wrappedFields) {
             if (field != null) {
+                XPUBuffer objectBuffer = field.getObjectBuffer();
+                if(uniqueObjectBuffers.contains(objectBuffer)){
+                    continue;
+                }
+                uniqueObjectBuffers.add(objectBuffer);
+
                 eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
@@ -493,9 +529,16 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public long size() {
+        Set<XPUBuffer> uniqueObjectBuffers = Collections.newSetFromMap(new IdentityHashMap<>());
         long size = getObjectSize();
         for (FieldBuffer wrappedField : wrappedFields) {
             if (wrappedField != null) {
+                XPUBuffer objectBuffer = wrappedField.getObjectBuffer();
+                if (uniqueObjectBuffers.contains(objectBuffer)) {
+                    continue;
+                }
+                uniqueObjectBuffers.add(objectBuffer);
+
                 size += wrappedField.size();
             }
         }
