@@ -99,4 +99,7 @@ public class FieldBuffer {
         return objectBuffer.getBufferOffset();
     }
 
+    public XPUBuffer getObjectBuffer() {
+        return objectBuffer;
+    }
 }
