@@ -8,6 +8,18 @@
         <version>2.2.1-dev</version>
     </parent>
     <description>TornadoVM API: A high-level programming interface for accelerating Java applications on heterogeneous hardware</description>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
     <version>2.2.1-dev</version>

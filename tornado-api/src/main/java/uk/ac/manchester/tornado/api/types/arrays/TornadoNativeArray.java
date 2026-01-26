@@ -95,7 +95,9 @@ public abstract sealed class TornadoNativeArray //
     /**
      * Clears the contents of the native array.
      */
-    protected abstract void clear();
+    protected void clear() {
+
+    }
 
     public abstract int getElementSize();
 
