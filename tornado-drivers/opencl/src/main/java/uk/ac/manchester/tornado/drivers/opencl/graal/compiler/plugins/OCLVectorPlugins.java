@@ -312,23 +312,32 @@ public final class OCLVectorPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
-                b.add(b.append(store));
-                return true;
-            }
-        });
+        try {
+            r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                    final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
+                    b.add(b.append(store));
+                    return true;
+                }
+            });
+        } catch (NoSuchMethodError e) {
+            // set(int, storageType) method does not exist for this vector type, skip registration
+        }
 
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
-                b.add(b.append(store));
-                return true;
-            }
-        });
+        try {
+            r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                    final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
+                    b.add(b.append(store));
+                    return true;
+                }
+            });
+        } catch (NoSuchMethodError e) {
+            // set(int, elementType) method does not exist for this vector type, skip registration
+        }
+
 
         r.register(new InvocationPlugin("add", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
@@ -370,18 +379,22 @@ public final class OCLVectorPlugins {
             }
         });
 
-        r.register(new InvocationPlugin("getArray", Receiver.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
-                ValueNode array = receiver.get(true);
-                GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
-                b.push(JavaKind.Object, b.append(getArrayNode));
-                return true;
-            }
-        });
+        try {
+            r.register(new InvocationPlugin("getArray", Receiver.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                    final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                    OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                    JavaKind elementKind = kind.getElementKind().asJavaKind();
+                    ValueNode array = receiver.get(true);
+                    GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
+                    b.push(JavaKind.Object, b.append(getArrayNode));
+                    return true;
+                }
+            });
+        } catch (NoSuchMethodError e) {
+            // getArray() method does not exist for this vector type, skip registration
+        }
 
     }
 

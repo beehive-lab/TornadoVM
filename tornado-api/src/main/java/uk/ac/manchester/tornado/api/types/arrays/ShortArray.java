@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 @SegmentElementSize(size = 2)
 public final class ShortArray extends TornadoNativeArray {
     private static final int SHORT_BYTES = 2;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
@@ -57,9 +57,7 @@ public final class ShortArray extends TornadoNativeArray {
         assert arrayHeaderSize >= 4;
         baseIndex = arrayHeaderSize / SHORT_BYTES;
         segmentByteSize = (long) numberOfElements * SHORT_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -80,8 +78,8 @@ public final class ShortArray extends TornadoNativeArray {
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment = existingSegment;
-        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment = new TornadoMemorySegment(existingSegment, baseIndex);
+        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
@@ -143,7 +141,7 @@ public final class ShortArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / SHORT_BYTES);
         ensureMultipleOfElementSize(byteSize, SHORT_BYTES);
         ShortArray shortArray = new ShortArray(numElements);
-        MemorySegment.copy(segment, 0, shortArray.segment, (long) shortArray.baseIndex * SHORT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, shortArray.segment.getSegment(), (long) shortArray.baseIndex * SHORT_BYTES, byteSize);
         return shortArray;
     }
 
@@ -196,8 +194,7 @@ public final class ShortArray extends TornadoNativeArray {
      *     The short value to store at the specified index.
      */
     public void set(int index, short value) {
-        segment.setAtIndex(JAVA_SHORT, baseIndex + index, value);
-    }
+        segment.setAtIndex(index, value, baseIndex);    }
 
     /**
      * Gets the short value stored at the specified index of the {@link ShortArray} instance.
@@ -207,8 +204,7 @@ public final class ShortArray extends TornadoNativeArray {
      * @return
      */
     public short get(int index) {
-        return segment.getAtIndex(JAVA_SHORT, baseIndex + index);
-    }
+        return segment.getShortAtIndex(index, baseIndex);    }
 
     /**
      * Sets all the values of the {@link ShortArray} instance to zero.
@@ -231,7 +227,7 @@ public final class ShortArray extends TornadoNativeArray {
      */
     public void init(short value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_SHORT, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -252,7 +248,7 @@ public final class ShortArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -262,7 +258,7 @@ public final class ShortArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -337,7 +333,7 @@ public final class ShortArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * SHORT_BYTES;
         long sliceByteLength = (long) length * SHORT_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         ShortArray slice = fromSegment(sliceSegment);
         return slice;
     }

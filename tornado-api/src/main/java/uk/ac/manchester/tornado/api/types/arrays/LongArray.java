@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 @SegmentElementSize(size = 8)
 public final class LongArray extends TornadoNativeArray {
     private static final int LONG_BYTES = 8;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
@@ -55,10 +55,8 @@ public final class LongArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / LONG_BYTES;
-
         segmentByteSize = (long) numberOfElements * LONG_BYTES + arrayHeaderSize;
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -76,11 +74,9 @@ public final class LongArray extends TornadoNativeArray {
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
         ensureMultipleOfElementSize(dataSize, LONG_BYTES);
         this.numberOfElements = (int) (dataSize / LONG_BYTES);
-
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment = existingSegment;
-        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment = new TornadoMemorySegment(existingSegment, baseIndex);
     }
 
     /**
@@ -142,7 +138,7 @@ public final class LongArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / LONG_BYTES);
         ensureMultipleOfElementSize(byteSize, LONG_BYTES);
         LongArray longArray = new LongArray(numElements);
-        MemorySegment.copy(segment, 0, longArray.segment, (long) longArray.baseIndex * LONG_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, longArray.segment.getSegment(), (long) longArray.baseIndex * LONG_BYTES, byteSize);
         return longArray;
     }
 
@@ -195,8 +191,7 @@ public final class LongArray extends TornadoNativeArray {
      *     The long value to store at the specified index.
      */
     public void set(int index, long value) {
-        segment.setAtIndex(JAVA_LONG, baseIndex + index, value);
-    }
+        segment.setAtIndex(index, value, baseIndex);    }
 
     /**
      * Gets the long value stored at the specified index of the {@link LongArray} instance.
@@ -206,8 +201,7 @@ public final class LongArray extends TornadoNativeArray {
      * @return
      */
     public long get(int index) {
-        return segment.getAtIndex(JAVA_LONG, baseIndex + index);
-    }
+        return segment.getLongAtIndex(index, baseIndex);    }
 
     /**
      * Sets all the values of the {@link LongArray} instance to zero.
@@ -230,7 +224,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     public void init(long value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_LONG, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -251,7 +245,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -261,7 +255,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -337,7 +331,7 @@ public final class LongArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * LONG_BYTES;
         long sliceByteLength = (long) length * LONG_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         LongArray slice = fromSegment(sliceSegment);
         return slice;
     }

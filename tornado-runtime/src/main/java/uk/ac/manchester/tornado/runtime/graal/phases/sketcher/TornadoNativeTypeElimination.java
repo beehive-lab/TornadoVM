@@ -60,9 +60,9 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         }
 
         // identify the usages that need to be removed
-        for (Node node : fixedGuardNode.usages()) {
+        for (Node node : fixedGuardNode.usages().snapshot()) {
             if (node instanceof PiNode piNode && (piNode.usages().filter(OffsetAddressNode.class).isNotEmpty())) {
-                for (OffsetAddressNode offsetAddressNode : piNode.usages().filter(OffsetAddressNode.class)) {
+                for (OffsetAddressNode offsetAddressNode : piNode.usages().filter(OffsetAddressNode.class).snapshot()) {
                     if (piHasParameterInput(piNode)) {
                         return;
                     }
@@ -76,15 +76,15 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 nodesToBeRemoved.add(piNode);
                 LoadHubNode loadHubNode = piNode.usages().filter(LoadHubNode.class).first();
                 nodesToBeRemoved.add(loadHubNode);
-                for (Node pointerEqualsNode : loadHubNode.usages().filter(PointerEqualsNode.class)) {
+                for (Node pointerEqualsNode : loadHubNode.usages().filter(PointerEqualsNode.class).snapshot()) {
                     nodesToBeRemoved.add(pointerEqualsNode);
                     // the constant node associated with the PointerEquals node is not necessary and should also be removed
                     nodesToBeRemoved.add(pointerEqualsNode.inputs().filter(ConstantNode.class).first());
                     if (pointerEqualsNode.usages().filter(FixedGuardNode.class).isNotEmpty()) {
                         FixedGuardNode typeCheckingFixed = pointerEqualsNode.usages().filter(FixedGuardNode.class).first();
                         nodesToBeRemoved.add(typeCheckingFixed);
-                        for (PiNode piNodeOfTypeCheckingFixed : typeCheckingFixed.usages().filter(PiNode.class)) {
-                            for (OffsetAddressNode offsetAddressNode : piNodeOfTypeCheckingFixed.usages().filter(OffsetAddressNode.class)) {
+                        for (PiNode piNodeOfTypeCheckingFixed : typeCheckingFixed.usages().filter(PiNode.class).snapshot()) {
+                            for (OffsetAddressNode offsetAddressNode : piNodeOfTypeCheckingFixed.usages().filter(OffsetAddressNode.class).snapshot()) {
                                 if (piHasParameterInput(piNodeOfTypeCheckingFixed)) {
                                     return;
                                 }
@@ -138,9 +138,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             node.replaceAtPredecessor(successor);
             predecessor.replaceFirstSuccessor(node, successor);
 
-            for (Node us : node.usages()) {
-                node.removeUsage(us);
-            }
+            node.replaceAtUsages(null);
             node.clearInputs();
             node.safeDelete();
         }
@@ -168,7 +166,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
+        for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class).snapshot()) {
             if (loadFieldSegment.toString().contains("segment")) {
 
                 // Remove the loadField#baseIndex and replace it with a Constant value
@@ -187,8 +185,8 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     removeFixedGuardNodes(fixedGuardNode, loadFieldSegment);
                 }
 
-                for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class)) {
-                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class)) {
+                for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class).snapshot()) {
+                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class).snapshot()) {
                         offsetAddressNode.replaceFirstInput(loadFieldSegment, piNode);
                     }
                 }
