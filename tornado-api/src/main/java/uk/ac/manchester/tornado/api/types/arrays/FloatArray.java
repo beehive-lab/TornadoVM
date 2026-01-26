@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 @SegmentElementSize(size = 4)
 public final class FloatArray extends TornadoNativeArray {
     private static final int FLOAT_BYTES = 4;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
 
     private int numberOfElements;
 
@@ -58,9 +58,7 @@ public final class FloatArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / FLOAT_BYTES;
         segmentByteSize = (long) numberOfElements * FLOAT_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -81,8 +79,8 @@ public final class FloatArray extends TornadoNativeArray {
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment = existingSegment;
-        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.setSegment(existingSegment);
+        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
@@ -144,7 +142,7 @@ public final class FloatArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / FLOAT_BYTES);
         ensureMultipleOfElementSize(byteSize, FLOAT_BYTES);
         FloatArray floatArray = new FloatArray(numElements);
-        MemorySegment.copy(segment, 0, floatArray.segment, (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, floatArray.segment.getSegment(), (long) floatArray.baseIndex * FLOAT_BYTES, byteSize);
         return floatArray;
     }
 
@@ -197,7 +195,7 @@ public final class FloatArray extends TornadoNativeArray {
      *     The float value to store at the specified index.
      */
     public void set(int index, float value) {
-        segment.setAtIndex(JAVA_FLOAT, baseIndex + index, value);
+        segment.setAtIndex(index, value, baseIndex);
     }
 
     /**
@@ -208,7 +206,7 @@ public final class FloatArray extends TornadoNativeArray {
      * @return
      */
     public float get(int index) {
-        return segment.getAtIndex(JAVA_FLOAT, baseIndex + index);
+        return segment.getFloatAtIndex(index, baseIndex);
     }
 
     /**
@@ -232,7 +230,7 @@ public final class FloatArray extends TornadoNativeArray {
      */
     public void init(float value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_FLOAT, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -253,7 +251,7 @@ public final class FloatArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -263,7 +261,7 @@ public final class FloatArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -339,7 +337,7 @@ public final class FloatArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * FLOAT_BYTES;
         long sliceByteLength = (long) length * FLOAT_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         FloatArray slice = fromSegment(sliceSegment);
         return slice;
     }

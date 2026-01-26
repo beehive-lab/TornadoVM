@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 public final class HalfFloatArray extends TornadoNativeArray {
 
     private static final int HALF_FLOAT_BYTES = 2;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
 
     private int numberOfElements;
 
@@ -59,9 +59,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / HALF_FLOAT_BYTES;
         segmentByteSize = (long) numberOfElements * HALF_FLOAT_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -82,8 +80,8 @@ public final class HalfFloatArray extends TornadoNativeArray {
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment = existingSegment;
-        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.setSegment(existingSegment);
+        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
@@ -145,7 +143,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / HALF_FLOAT_BYTES);
         ensureMultipleOfElementSize(byteSize, HALF_FLOAT_BYTES);
         HalfFloatArray halfFloatArray = new HalfFloatArray(numElements);
-        MemorySegment.copy(segment, 0, halfFloatArray.segment, (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, halfFloatArray.segment.getSegment(), (long) halfFloatArray.baseIndex * HALF_FLOAT_BYTES, byteSize);
         return halfFloatArray;
     }
 
@@ -199,7 +197,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *     The {@link HalfFloat} value to store at the specified index.
      */
     public void set(int index, HalfFloat value) {
-        segment.setAtIndex(JAVA_SHORT, baseIndex + index, value.getHalfFloatValue());
+        segment.setAtIndex(index, value.getHalfFloatValue(), baseIndex);
     }
 
     /**
@@ -210,7 +208,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      * @return
      */
     public HalfFloat get(int index) {
-        short halfFloatValue = segment.getAtIndex(JAVA_SHORT, baseIndex + index);
+        short halfFloatValue = segment.getShortAtIndex(index, baseIndex);
         return new HalfFloat(halfFloatValue);
     }
 
@@ -235,7 +233,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     public void init(HalfFloat value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_SHORT, baseIndex + i, value.getHalfFloatValue());
+            segment.setAtIndex(i, value.getHalfFloatValue(), baseIndex);
         }
     }
 
@@ -256,7 +254,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -266,7 +264,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -342,7 +340,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * HALF_FLOAT_BYTES;
         long sliceByteLength = (long) length * HALF_FLOAT_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         HalfFloatArray slice = fromSegment(sliceSegment);
         return slice;
     }

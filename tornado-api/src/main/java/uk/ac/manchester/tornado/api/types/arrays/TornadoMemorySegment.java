@@ -21,6 +21,8 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+
 /**
  * The {@code TornadoMemorySegment} class provides a high-level interface for managing a
  * {@link MemorySegment} with support for different data types.
@@ -53,6 +55,8 @@ public class TornadoMemorySegment {
         segment.setAtIndex(ValueLayout.JAVA_INT, 0, numElements);
     }
 
+
+
     /**
      * Returns the underlying {@link MemorySegment}.
      *
@@ -60,6 +64,10 @@ public class TornadoMemorySegment {
      */
     public MemorySegment getSegment() {
         return segment;
+    }
+
+    public void setSegment(MemorySegment segment) {
+        this.segment = segment;
     }
 
     /**

@@ -30,7 +30,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @SegmentElementSize(size = 1)
 public final class Int8Array extends TornadoNativeArray {
     private static final int INT8_BYTES = 1;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
 
     private int numberOfElements;
 
@@ -51,9 +51,7 @@ public final class Int8Array extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT8_BYTES;
         segmentByteSize = (long) numberOfElements * INT8_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -74,8 +72,8 @@ public final class Int8Array extends TornadoNativeArray {
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment = existingSegment;
-        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.setSegment(existingSegment);
+        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
@@ -135,7 +133,7 @@ public final class Int8Array extends TornadoNativeArray {
     public static Int8Array fromSegment(MemorySegment segment) {
         int numElements = (int) segment.byteSize();
         Int8Array int8Array = new Int8Array(numElements);
-        MemorySegment.copy(segment, 0, int8Array.segment, (long) int8Array.baseIndex, numElements);
+        MemorySegment.copy(segment, 0, int8Array.segment.getSegment(), (long) int8Array.baseIndex, numElements);
         return int8Array;
     }
 
@@ -174,7 +172,7 @@ public final class Int8Array extends TornadoNativeArray {
      *     The byte value to store at the specified index.
      */
     public void set(int index, byte value) {
-        segment.setAtIndex(JAVA_BYTE, baseIndex + index, value);
+        segment.setAtIndex(index, value, baseIndex);
     }
 
     /**
@@ -185,7 +183,7 @@ public final class Int8Array extends TornadoNativeArray {
      * @return
      */
     public byte get(int index) {
-        return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
+        return segment.getByteAtIndex(index, baseIndex);
     }
 
     /**
@@ -209,7 +207,7 @@ public final class Int8Array extends TornadoNativeArray {
      */
     public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_BYTE, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -230,7 +228,7 @@ public final class Int8Array extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -240,7 +238,7 @@ public final class Int8Array extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -316,7 +314,7 @@ public final class Int8Array extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + offset;
         long sliceByteLength = length;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         Int8Array slice = fromSegment(sliceSegment);
         return slice;
     }

@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 @SegmentElementSize(size = 8)
 public final class DoubleArray extends TornadoNativeArray {
     private static final int DOUBLE_BYTES = 8;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int numberOfElements;
 
     private int arrayHeaderSize;
@@ -58,9 +58,7 @@ public final class DoubleArray extends TornadoNativeArray {
         assert arrayHeaderSize >= 8;
         baseIndex = arrayHeaderSize / DOUBLE_BYTES;
         segmentByteSize = (long) numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
     }
 
     /**
@@ -81,8 +79,8 @@ public final class DoubleArray extends TornadoNativeArray {
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment = existingSegment;
-        this.segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.setSegment( existingSegment);
+        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
@@ -144,7 +142,7 @@ public final class DoubleArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / DOUBLE_BYTES);
         ensureMultipleOfElementSize(byteSize, DOUBLE_BYTES);
         DoubleArray doubleArray = new DoubleArray(numElements);
-        MemorySegment.copy(segment, 0, doubleArray.segment, (long) doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, doubleArray.segment.getSegment(), (long) doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
         return doubleArray;
     }
 
@@ -197,7 +195,7 @@ public final class DoubleArray extends TornadoNativeArray {
      *     The double value to store at the specified index.
      */
     public void set(int index, double value) {
-        segment.setAtIndex(JAVA_DOUBLE, baseIndex + index, value);
+        segment.setAtIndex(index, value, baseIndex);
     }
 
     /**
@@ -208,7 +206,7 @@ public final class DoubleArray extends TornadoNativeArray {
      * @return
      */
     public double get(int index) {
-        return segment.getAtIndex(JAVA_DOUBLE, baseIndex + index);
+        return segment.getDoubleAtIndex(index, baseIndex);
     }
 
     /**
@@ -232,7 +230,7 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     public void init(double value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_DOUBLE, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -253,7 +251,7 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -263,7 +261,7 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -339,7 +337,7 @@ public final class DoubleArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * DOUBLE_BYTES;
         long sliceByteLength = (long) length * DOUBLE_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         DoubleArray slice = fromSegment(sliceSegment);
         return slice;
     }
