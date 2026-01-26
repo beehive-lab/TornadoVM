@@ -33,15 +33,78 @@ def is_win_or_bat():
     return os.name == 'nt'
 
 
+def detect_backends_from_sdk_path(sdk_path):
+    """
+    Detect the backends from the SDK directory name.
+
+    The SDK path follows the pattern:
+    .../dist/tornadovm-VERSION-BACKEND-PLATFORM/tornadovm-VERSION-BACKEND/
+
+    For example:
+    - tornadovm-2.2.1-dev-opencl-linux-amd64 → opencl
+    - tornadovm-2.2.1-dev-ptx-linux-amd64 → ptx
+    - tornadovm-2.2.1-dev-spirv-linux-amd64 → spirv
+    - tornadovm-2.2.1-dev-full-linux-amd64 → opencl,ptx,spirv
+
+    Args:
+        sdk_path (str): The absolute path to the SDK directory
+
+    Returns:
+        str: Comma-separated backend string (e.g., "opencl-backend" or "opencl-backend,ptx-backend")
+    """
+    # Get the SDK directory name (e.g., "tornadovm-2.2.1-dev-opencl")
+    sdk_dir_name = os.path.basename(sdk_path)
+
+    # Known backends
+    known_backends = ["opencl", "ptx", "spirv"]
+    detected_backends = []
+
+    # Check for "full" which means all backends
+    if "-full-" in sdk_dir_name or sdk_dir_name.endswith("-full"):
+        detected_backends = ["opencl", "ptx", "spirv"]
+    else:
+        # Check for individual backends in the directory name
+        for backend in known_backends:
+            # Match patterns like "-opencl-" or "-opencl" at the end
+            if f"-{backend}-" in sdk_dir_name or sdk_dir_name.endswith(f"-{backend}"):
+                detected_backends.append(backend)
+
+    # Convert to backend format (e.g., "opencl" -> "opencl-backend")
+    if detected_backends:
+        return ",".join([f"{b}-backend" for b in detected_backends])
+
+    # Fallback: return empty or default
+    print(f"[WARNING] Could not detect backend from SDK path: {sdk_path}")
+    return ""
+
+
 def update_paths():
     """
-    Run the 'update_paths.py' script.
+    Run the 'update_paths.py' script and update TORNADOVM_HOME in current process.
 
-    This function executes the 'update_paths.py' script to update environment paths.
+    This function executes the 'update_paths.py' script to update environment paths
+    and symlinks, then reads the new SDK path from the bin/sdk symlink to update
+    the TORNADOVM_HOME environment variable in the current process.
     """
     python_cmd = "python" if is_win_or_bat() else "python3"
     update_paths_script = os.path.join(".", "bin", "update_paths.py")
     subprocess.run([python_cmd, update_paths_script], stdout=subprocess.PIPE)
+
+    # Read the actual SDK path from the bin/sdk symlink
+    # This is necessary because environment variables set in subprocess don't propagate back
+    sdk_symlink = os.path.join("bin", "sdk")
+    if os.path.islink(sdk_symlink):
+        # Resolve the symlink to get the absolute path
+        sdk_path = os.path.realpath(sdk_symlink)
+        os.environ['TORNADOVM_HOME'] = sdk_path
+        print(f"TORNADOVM_HOME updated to: {sdk_path}")
+    elif os.path.isdir(sdk_symlink):
+        # On Windows, it might be a junction - get the absolute path
+        sdk_path = os.path.abspath(sdk_symlink)
+        os.environ['TORNADOVM_HOME'] = sdk_path
+        print(f"TORNADOVM_HOME updated to: {sdk_path}")
+    else:
+        print(f"[WARNING] Could not find SDK symlink at {sdk_symlink}")
 
 
 def update_backend_file(selected_backends_str):
@@ -331,13 +394,22 @@ def main():
     3. Copy GraalVM JARs if needed
     4. Generate setvars files (setvars.sh / setvars.cmd)
     5. Generate argfile template and expand it
-    6. Run PyInstaller on Windows
+    6. Update IntelliJ test configuration
+    7. Run PyInstaller on Windows
     """
-    # Update paths - this sets TORNADOVM_HOME environment variable
+    # Update paths - this sets TORNADOVM_HOME environment variable from the SDK symlink
     update_paths()
 
-    # Get the selected backends from environment
-    selected_backends_str = os.environ.get("selected_backends", "")
+    # Detect backends from the SDK path (more reliable than environment variable)
+    # This handles cases where the Maven profile was changed but the IntelliJ config still has old values
+    tornado_home = os.environ.get("TORNADOVM_HOME", "")
+    if tornado_home:
+        selected_backends_str = detect_backends_from_sdk_path(tornado_home)
+        print(f"Detected backends: {selected_backends_str}")
+    else:
+        # Fallback to environment variable if SDK path detection fails
+        selected_backends_str = os.environ.get("selected_backends", "")
+        print(f"Using backends from environment: {selected_backends_str}")
 
     # Update backend file
     update_backend_file(selected_backends_str)
