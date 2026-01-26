@@ -26,7 +26,10 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -45,6 +48,11 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
     private long constantMemoryPointer;
     private long NON_EXISTING_ADDRESS = -1;
     private long atomicsRegionPointer = -1;
+    private final Map<Object, SubBufferInfo> subBufferMappings = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<Object, XPUBuffer> objectBuffers = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<Long, Integer> parentSubBufferRefs = new ConcurrentHashMap<>();
+    private final Map<Long, Access> parentBufferAccess = new ConcurrentHashMap<>();
+    private final Set<Long> pendingParentRelease = ConcurrentHashMap.newKeySet();
 
     public OCLMemoryManager(final OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -87,6 +95,22 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
         return deviceContext.getPlatformContext().createBuffer(flags, size);
     }
 
+    public long createSubBuffer(long parentBuffer, long offset, long size, Access access) {
+        long flags = getOCLMemFlagForAccess(access);
+        Access parentAccess = parentBufferAccess.get(parentBuffer);
+        if (parentAccess != null) {
+            long parentFlags = getOCLMemFlagForAccess(parentAccess);
+            if ((flags & parentFlags) != flags) {
+                flags = parentFlags;
+            }
+        }
+        long subBuffer = deviceContext.getPlatformContext().createSubBuffer(parentBuffer, flags, offset, size);
+        if (subBuffer != -1) {
+            parentSubBufferRefs.merge(parentBuffer, 1, Integer::sum);
+        }
+        return subBuffer;
+    }
+
     public void releaseBuffer(long bufferId) {
         deviceContext.getPlatformContext().releaseBuffer(bufferId);
     }
@@ -114,5 +138,82 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
 
     public static long atomicRegionSize() {
         return INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL;
+    }
+
+    public static final class SubBufferInfo {
+        final long parentBuffer;
+        final long offset;
+        final long size;
+        final Access parentAccess;
+
+        public SubBufferInfo(long parentBuffer, long offset, long size, Access parentAccess) {
+            this.parentBuffer = parentBuffer;
+            this.offset = offset;
+            this.size = size;
+            this.parentAccess = parentAccess;
+        }
+    }
+
+    public SubBufferInfo getSubBufferInfo(Object key) {
+        synchronized (subBufferMappings) {
+            return subBufferMappings.get(key);
+        }
+    }
+
+    public void registerSubBuffer(Object key, long parentBuffer, long offset, long size, Access access) {
+        synchronized (subBufferMappings) {
+            subBufferMappings.putIfAbsent(key, new SubBufferInfo(parentBuffer, offset, size, access));
+        }
+        parentBufferAccess.putIfAbsent(parentBuffer, access);
+        synchronized (objectBuffers) {
+            if (objectBuffers.get(key) instanceof OCLArrayWrapper<?> arrayWrapper) {
+                arrayWrapper.remapToSubBuffer(getSubBufferInfo(key), key);
+            }
+        }
+    }
+
+    public boolean delayParentBufferRelease(long parentBuffer, Access access) {
+        if (parentSubBufferRefs.getOrDefault(parentBuffer, 0) > 0) {
+            pendingParentRelease.add(parentBuffer);
+            parentBufferAccess.putIfAbsent(parentBuffer, access);
+            return true;
+        }
+        return false;
+    }
+
+    public void releaseSubBuffer(long subBuffer, long parentBuffer) {
+        if (subBuffer != parentBuffer) {
+            releaseBuffer(subBuffer);
+        }
+        int remaining = parentSubBufferRefs.get(parentBuffer) - 1;
+        if (remaining <= 0) {
+            parentSubBufferRefs.remove(parentBuffer);
+            if (pendingParentRelease.remove(parentBuffer)) {
+                deviceContext.getBufferProvider().markBufferReleased(parentBuffer, parentBufferAccess.get(parentBuffer));
+            }
+        } else {
+            parentSubBufferRefs.put(parentBuffer, remaining);
+        }
+    }
+
+    private static long getOCLMemFlagForAccess(Access access) {
+        return switch (access) {
+            case READ_ONLY -> OCLMemFlags.CL_MEM_READ_ONLY;
+            case WRITE_ONLY -> OCLMemFlags.CL_MEM_WRITE_ONLY;
+            case READ_WRITE -> OCLMemFlags.CL_MEM_READ_WRITE;
+            default -> OCLMemFlags.CL_MEM_READ_WRITE;
+        };
+    }
+
+    public void registerObjectBuffer(Object key, XPUBuffer buffer) {
+        synchronized (objectBuffers) {
+            objectBuffers.put(key, buffer);
+        }
+    }
+
+    public XPUBuffer getObjectBuffer(Object key) {
+        synchronized (objectBuffers) {
+            return objectBuffers.get(key);
+        }
     }
 }

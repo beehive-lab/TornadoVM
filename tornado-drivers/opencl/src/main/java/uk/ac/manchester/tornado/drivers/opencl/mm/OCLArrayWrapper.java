@@ -55,6 +55,10 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     private long bufferOffset;
     private long bufferSize;
     private long setSubRegionSize;
+    private boolean usesSubBuffer;
+    private long parentBufferId;
+    private long subBufferId;
+    private long lastExecutionPlanId;
     private TornadoLogger logger;
     private Access access;
 
@@ -65,6 +69,10 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.bufferId = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
         this.bufferOffset = 0;
+        this.parentBufferId = INIT_VALUE;
+        this.subBufferId = INIT_VALUE;
+        this.usesSubBuffer = false;
+        this.lastExecutionPlanId = INIT_VALUE;
         this.access = access;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
@@ -104,6 +112,22 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
+        if (batchSize <= 0) {
+            OCLMemoryManager.SubBufferInfo subBufferInfo = deviceContext.getMemoryManager().getSubBufferInfo(hostArray);
+            if (subBufferInfo != null && subBufferInfo.size == bufferSize) {
+                long subBuffer = deviceContext.getMemoryManager().createSubBuffer(subBufferInfo.parentBuffer, subBufferInfo.offset, subBufferInfo.size, access);
+                if (subBuffer != INIT_VALUE) {
+                    this.subBufferId = subBuffer;
+                    this.bufferId = subBufferInfo.parentBuffer;
+                    this.bufferOffset = subBufferInfo.offset;
+                    this.usesSubBuffer = true;
+                    this.parentBufferId = subBufferInfo.parentBuffer;
+                    deviceContext.getMemoryManager().registerObjectBuffer(hostArray, this);
+                    return;
+                }
+            }
+        }
+
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
@@ -111,11 +135,23 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             logger.info("allocated: %s", toString());
         }
 
+        deviceContext.getMemoryManager().registerObjectBuffer(hostArray, this);
+
     }
 
     @Override
     public void markAsFreeBuffer() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        if (usesSubBuffer) {
+            deviceContext.getMemoryManager().releaseSubBuffer(subBufferId, parentBufferId);
+            bufferId = INIT_VALUE;
+            bufferSize = INIT_VALUE;
+            usesSubBuffer = false;
+            parentBufferId = INIT_VALUE;
+            subBufferId = INIT_VALUE;
+            return;
+        }
 
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
@@ -125,6 +161,34 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             logger.info("deallocated: %s", toString());
         }
+    }
+
+    public boolean remapToSubBuffer(OCLMemoryManager.SubBufferInfo subBufferInfo, Object hostArray) {
+        if (usesSubBuffer || subBufferInfo == null || bufferId == INIT_VALUE) {
+            return false;
+        }
+        if (subBufferInfo.size != bufferSize) {
+            return false;
+        }
+        if (hostArray != null && lastExecutionPlanId != INIT_VALUE) {
+            deviceContext.sync(lastExecutionPlanId);
+            read(lastExecutionPlanId, hostArray, 0, 0, null, false);
+        }
+        long subBuffer = deviceContext.getMemoryManager().createSubBuffer(subBufferInfo.parentBuffer, subBufferInfo.offset, subBufferInfo.size, access);
+        if (subBuffer == INIT_VALUE) {
+            return false;
+        }
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        subBufferId = subBuffer;
+        bufferId = subBufferInfo.parentBuffer;
+        bufferOffset = subBufferInfo.offset;
+        usesSubBuffer = true;
+        parentBufferId = subBufferInfo.parentBuffer;
+        if (hostArray != null) {
+            long planId = lastExecutionPlanId != INIT_VALUE ? lastExecutionPlanId : 0;
+            write(planId, hostArray);
+        }
+        return true;
     }
 
     @Override
@@ -161,6 +225,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, final Object value, long hostOffset, final int[] events, boolean useDeps) {
+        lastExecutionPlanId = executionPlanId;
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
@@ -190,6 +255,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
+        lastExecutionPlanId = executionPlanId;
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
@@ -266,6 +332,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
      */
     @Override
     public int read(long executionPlanId, final Object value, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        lastExecutionPlanId = executionPlanId;
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
@@ -325,6 +392,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public void write(long executionPlanId, final Object value) {
+        lastExecutionPlanId = executionPlanId;
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] data is NULL");

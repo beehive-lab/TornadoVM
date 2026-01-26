@@ -31,6 +31,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBufferCreateType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -216,6 +217,21 @@ public class OCLContext implements OCLContextInterface {
             logger.error(e.getMessage());
         }
         return null;
+    }
+
+    public long createSubBuffer(long buffer, long flags, long offset, long size) {
+        byte[] createInfo = new byte[Long.BYTES * 2];
+        ByteBuffer infoBuffer = ByteBuffer.wrap(createInfo);
+        infoBuffer.order(OpenCL.BYTE_ORDER);
+        infoBuffer.putLong(offset);
+        infoBuffer.putLong(size);
+
+        try {
+            return createSubBuffer(buffer, flags, OCLBufferCreateType.CL_BUFFER_CREATE_TYPE_REGION.getValue(), createInfo);
+        } catch (OCLException e) {
+            logger.error(e.getMessage());
+        }
+        return -1;
     }
 
     public void releaseBuffer(long bufferId) {
