@@ -243,6 +243,7 @@ public final class ByteArray extends TornadoNativeArray {
         // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
         int shortIndex = (arrayHeaderSize + byteIndex) / 2;
         segment.setAtIndex(shortIndex, value.getHalfFloatValue(), baseIndex);
+//        segment.setAtIndex(shortIndex, value.getHalfFloatValue(), baseIndex);
     }
 
     /**
