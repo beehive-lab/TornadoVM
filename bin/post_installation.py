@@ -40,7 +40,8 @@ def update_paths():
     This function executes the 'update_paths.py' script to update environment paths.
     """
     python_cmd = "python" if is_win_or_bat() else "python3"
-    subprocess.run([python_cmd, "./bin/update_paths.py"], stdout=subprocess.PIPE)
+    update_paths_script = os.path.join(".", "bin", "update_paths.py")
+    subprocess.run([python_cmd, update_paths_script], stdout=subprocess.PIPE)
 
 
 def update_backend_file(selected_backends_str):
