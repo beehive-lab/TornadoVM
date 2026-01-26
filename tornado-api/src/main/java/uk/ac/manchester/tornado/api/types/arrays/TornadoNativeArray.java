@@ -21,16 +21,13 @@ import java.lang.foreign.MemorySegment;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 
-
 import static java.lang.String.format;
 
 /**
- * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays,
- * (e.g., {@link ByteArray}, {@link IntArray}, etc.)
+ * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays, (e.g., {@link ByteArray}, {@link IntArray}, etc.)
  *
  * <p>
- * The class provides methods for retrieving the number of elements stored in the native arrays,
- * for obtaining the underlying memory segment, for clearing the data, for calculating the total number of
+ * The class provides methods for retrieving the number of elements stored in the native arrays, for obtaining the underlying memory segment, for clearing the data, for calculating the total number of
  * bytes occupied by the memory segment, and for getting the number of bytes, excluding the array header size.
  * </p>
  *
@@ -44,17 +41,25 @@ public abstract sealed class TornadoNativeArray //
         LongArray, ShortArray, Int8Array {
 
     /**
-     * The size of the header in bytes. It sets the default value either to 16 or 24, depending on whether the uncompressed flags
-     * are passed by the user. It can also be configurable through the "tornado.panama.objectHeader" system property.
+     * The size of the header in bytes. It sets the default value either to 16 or 24, depending on whether the uncompressed flags are passed by the user. It can also be configurable through the
+     * "tornado.panama.objectHeader" system property.
      */
     public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", getDefaultHeaderSize()));
 
     private static String getDefaultHeaderSize() {
         List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
-        boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") ||
-                jvmArgs.contains("-XX:-UseCompressedClassPointers");
+        boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") || jvmArgs.contains("-XX:-UseCompressedClassPointers");
 
         return isUncompressed ? "24" : "16";
+    }
+
+    /**
+     * Checks that the byte size is a multiple of the element size.
+     */
+    static void ensureMultipleOfElementSize(long byteSize, long elementSize) {
+        if (byteSize % elementSize != 0) {
+            throw new IllegalArgumentException(format("The byte size (%d) is not a multiple of the element size (%d)", byteSize, elementSize));
+        }
     }
 
     /**
@@ -100,14 +105,5 @@ public abstract sealed class TornadoNativeArray //
     }
 
     public abstract int getElementSize();
-
-    /**
-     * Checks that the byte size is a multiple of the element size.
-     */
-    static void ensureMultipleOfElementSize(long byteSize, long elementSize) {
-        if (byteSize % elementSize != 0) {
-            throw new IllegalArgumentException(format("The byte size (%d) is not a multiple of the element size (%d)", byteSize, elementSize));
-        }
-    }
 
 }

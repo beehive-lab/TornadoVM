@@ -21,14 +21,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-
 /**
- * The {@code TornadoMemorySegment} class provides a high-level interface for managing a
- * {@link MemorySegment} with support for different data types.
+ * The {@code TornadoMemorySegment} class provides a high-level interface for managing a {@link MemorySegment} with support for different data types.
  * <p>
- * This class allows the allocation of a memory segment with a specific size, and provides
- * methods to set and get values of various types at specific indices relative to a base index.
+ * This class allows the allocation of a memory segment with a specific size, and provides methods to set and get values of various types at specific indices relative to a base index.
  * </p>
  */
 public class TornadoMemorySegment {
@@ -38,24 +34,21 @@ public class TornadoMemorySegment {
     /**
      * Constructs a {@code TornadoMemorySegment} with a specified byte size and base index.
      * <p>
-     * This constructor allocates a new memory segment of the specified byte size and
-     * initializes it with a given number of elements.
+     * This constructor allocates a new memory segment of the specified byte size and initializes it with a given number of elements.
      * </p>
      *
      * @param segmentByteSize
-     *     the size of the memory segment in bytes
+     *         the size of the memory segment in bytes
      * @param baseIndex
-     *     the base index used for calculating the actual index in the memory segment
+     *         the base index used for calculating the actual index in the memory segment
      * @param numElements
-     *     the number of elements to initialize in the segment
+     *         the number of elements to initialize in the segment
      */
     public TornadoMemorySegment(long segmentByteSize, int baseIndex, int numElements) {
         this.segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         this.baseIndex = baseIndex;
         segment.setAtIndex(ValueLayout.JAVA_INT, 0, numElements);
     }
-
-
 
     /**
      * Returns the underlying {@link MemorySegment}.
@@ -74,11 +67,11 @@ public class TornadoMemorySegment {
      * Sets a {@code float} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code float} value to set
+     *         the {@code float} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, float value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_FLOAT, baseIndex + index, value);
@@ -88,9 +81,9 @@ public class TornadoMemorySegment {
      * Returns the {@code float} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code float} value at the specified index
      */
     public float getFloatAtIndex(int index, int baseIndex) {
@@ -101,11 +94,11 @@ public class TornadoMemorySegment {
      * Sets a {@code double} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code double} value to set
+     *         the {@code double} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, double value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_DOUBLE, baseIndex + index, value);
@@ -115,9 +108,9 @@ public class TornadoMemorySegment {
      * Returns the {@code double} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code double} value at the specified index
      */
     public double getDoubleAtIndex(int index, int baseIndex) {
@@ -128,11 +121,11 @@ public class TornadoMemorySegment {
      * Sets a {@code byte} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code byte} value to set
+     *         the {@code byte} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, byte value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_BYTE, baseIndex + index, value);
@@ -142,9 +135,9 @@ public class TornadoMemorySegment {
      * Returns the {@code byte} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code byte} value at the specified index
      */
     public byte getByteAtIndex(int index, int baseIndex) {
@@ -155,11 +148,11 @@ public class TornadoMemorySegment {
      * Sets a {@code char} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code char} value to set
+     *         the {@code char} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, char value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_CHAR, baseIndex + index, value);
@@ -169,9 +162,9 @@ public class TornadoMemorySegment {
      * Returns the {@code char} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code char} value at the specified index
      */
     public char getCharAtIndex(int index, int baseIndex) {
@@ -182,11 +175,11 @@ public class TornadoMemorySegment {
      * Sets an {@code int} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code int} value to set
+     *         the {@code int} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, int value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_INT, baseIndex + index, value);
@@ -196,9 +189,9 @@ public class TornadoMemorySegment {
      * Returns the {@code int} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code int} value at the specified index
      */
     public int getIntAtIndex(int index, int baseIndex) {
@@ -209,11 +202,11 @@ public class TornadoMemorySegment {
      * Sets a {@code long} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code long} value to set
+     *         the {@code long} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, long value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_LONG, baseIndex + index, value);
@@ -223,9 +216,9 @@ public class TornadoMemorySegment {
      * Returns the {@code long} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code long} value at the specified index
      */
     public long getLongAtIndex(int index, int baseIndex) {
@@ -236,11 +229,11 @@ public class TornadoMemorySegment {
      * Sets a {@code short} value at the specified index.
      *
      * @param index
-     *     the index where the value will be set
+     *         the index where the value will be set
      * @param value
-     *     the {@code short} value to set
+     *         the {@code short} value to set
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      */
     public void setAtIndex(int index, short value, int baseIndex) {
         segment.setAtIndex(ValueLayout.JAVA_SHORT, baseIndex + index, value);
@@ -250,9 +243,9 @@ public class TornadoMemorySegment {
      * Returns the {@code short} value at the specified index.
      *
      * @param index
-     *     the index from which the value will be retrieved
+     *         the index from which the value will be retrieved
      * @param baseIndex
-     *     the base index used for calculating the actual index
+     *         the base index used for calculating the actual index
      * @return the {@code short} value at the specified index
      */
     public short getShortAtIndex(int index, int baseIndex) {

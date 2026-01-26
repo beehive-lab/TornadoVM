@@ -25,9 +25,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 /**
  * This class represents an array of bytes stored in native memory. The byte data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
