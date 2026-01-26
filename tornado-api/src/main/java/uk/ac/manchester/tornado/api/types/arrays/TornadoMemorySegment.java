@@ -50,6 +50,9 @@ public class TornadoMemorySegment {
         segment.setAtIndex(ValueLayout.JAVA_INT, 0, numElements);
     }
 
+    public TornadoMemorySegment(MemorySegment memorySegment) {
+        this.segment = memorySegment;
+    }
     /**
      * Returns the underlying {@link MemorySegment}.
      *

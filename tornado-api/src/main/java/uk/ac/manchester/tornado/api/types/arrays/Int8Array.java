@@ -69,7 +69,7 @@ public final class Int8Array extends TornadoNativeArray {
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
-        this.segment.setSegment(existingSegment);
+        this.segment = new TornadoMemorySegment(existingSegment);
         this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
