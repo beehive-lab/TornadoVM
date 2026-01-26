@@ -21,7 +21,6 @@ import java.lang.foreign.MemorySegment;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 
 import static java.lang.String.format;
 
@@ -42,7 +41,7 @@ import static java.lang.String.format;
 public abstract sealed class TornadoNativeArray //
         permits ByteArray, CharArray, DoubleArray, //
         FloatArray, HalfFloatArray, IntArray, //
-        LongArray, ShortArray, Int8Array, Tensor {
+        LongArray, ShortArray, Int8Array {
 
     /**
      * The size of the header in bytes. It sets the default value either to 16 or 24, depending on whether the uncompressed flags
