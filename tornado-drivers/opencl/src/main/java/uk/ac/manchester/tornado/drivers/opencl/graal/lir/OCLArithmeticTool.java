@@ -206,20 +206,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return emitBinaryAssign(OCLBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
     }
 
+
     private OCLUnaryOp getSignExtendOp(int toBits) {
-        switch (toBits) {
-            case 8:
-                return OCLUnaryOp.CAST_TO_BYTE;
-            case 16:
-                return OCLUnaryOp.CAST_TO_SHORT;
-            case 32:
-                return OCLUnaryOp.CAST_TO_INT;
-            case 64:
-                return OCLUnaryOp.CAST_TO_LONG;
-            default:
-                unimplemented();
-        }
-        return null;
+        return switch (toBits) {
+            case 8 -> OCLUnaryOp.CAST_TO_BYTE;
+            case 16 -> OCLUnaryOp.CAST_TO_SHORT;
+            case 32 -> OCLUnaryOp.CAST_TO_INT;
+            case 64 -> OCLUnaryOp.CAST_TO_LONG;
+            default -> throw new UnsupportedOperationException("Unimplemented case for toBits: " + toBits);
+        };
     }
 
     @Override

@@ -334,39 +334,26 @@ public enum OCLKind implements PlatformKind {
     }
 
     public static int lookupTypeIndex(OCLKind kind) {
-        switch (kind) {
-            case SHORT:
-                return 0;
-            case INT:
-                return 1;
-            case FLOAT:
-                return 2;
-            case CHAR:
-                return 3;
-            case DOUBLE:
-                return 4;
-            case HALF:
-                return 5;
-            default:
-                return -1;
-        }
+        return switch (kind) {
+            case SHORT -> 0;
+            case INT -> 1;
+            case FLOAT -> 2;
+            case CHAR -> 3;
+            case DOUBLE -> 4;
+            case HALF -> 5;
+            default -> -1;
+        };
     }
 
     public static int lookupLengthIndex(int length) {
-        switch (length) {
-            case 2:
-                return 0;
-            case 3:
-                return 1;
-            case 4:
-                return 2;
-            case 8:
-                return 3;
-            case 16:
-                return 4;
-            default:
-                return -1;
-        }
+        return switch (length) {
+            case 2 -> 0;
+            case 3 -> 1;
+            case 4 -> 2;
+            case 8 -> 3;
+            case 16 -> 4;
+            default -> -1;
+        };
     }
 
     @Override
