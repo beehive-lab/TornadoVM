@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
@@ -74,6 +75,7 @@ public class OCLFieldBuffer implements XPUBuffer {
     private final int hubOffset;
     private final int fieldsOffset;
     private final OCLDeviceContext deviceContext;
+    private final Object reference;
     private long bufferId;
     private long bufferOffset;
     private ByteBuffer buffer;
@@ -87,6 +89,7 @@ public class OCLFieldBuffer implements XPUBuffer {
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
+        this.reference = object;
 
         this.areCoopsEnabled = TornadoOptions.coopsUsed();
         this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
@@ -399,17 +402,45 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public void setBuffer(XPUBufferWrapper bufferWrapper) {
+        setBufferWithAliases(bufferWrapper, new IdentityHashMap<>());
+    }
+
+    private void setBufferWithAliases(XPUBufferWrapper bufferWrapper, IdentityHashMap<Object, AliasEntry> aliasMap) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
         bufferWrapper.bufferOffset += getObjectSize();
 
+        OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
         for (int i = 0; i < fields.length; i++) {
             FieldBuffer fieldBuffer = wrappedFields[i];
             if (fieldBuffer == null) {
                 continue;
             }
             bufferWrapper.bufferOffset = alignOffset(bufferWrapper.bufferOffset);
+            XPUBuffer childBuffer = fieldBuffer.getObjectBuffer();
+            if (childBuffer instanceof OCLFieldBuffer nested) {
+                nested.setBufferWithAliases(bufferWrapper, aliasMap);
+                continue;
+            }
+            Object fieldValue = (reference != null) ? fieldBuffer.getFieldValue(reference) : null;
+            if (fieldValue != null && fieldValue.getClass().isArray() && childBuffer instanceof OCLArrayWrapper<?> arrayWrapper) {
+                fieldBuffer.setBuffer(bufferWrapper);
+                long newOffset = arrayWrapper.getBufferOffset();
+                AliasEntry entry = aliasMap.get(fieldValue);
+                if (entry == null) {
+                    entry = new AliasEntry(arrayWrapper);
+                    aliasMap.put(fieldValue, entry);
+                } else if (entry.getSize() == arrayWrapper.size()) {
+                    entry.updateOffset(newOffset);
+                    entry.addBuffer(arrayWrapper);
+                }
+                if (memoryManager != null) {
+                    long canonicalOffset = entry.getOffset();
+                    memoryManager.registerSubBuffer(fieldValue, bufferId, canonicalOffset, arrayWrapper.size(), access);
+                }
+                continue;
+            }
             fieldBuffer.setBuffer(bufferWrapper);
         }
     }

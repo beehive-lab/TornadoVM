@@ -118,7 +118,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
                 long subBuffer = deviceContext.getMemoryManager().createSubBuffer(subBufferInfo.parentBuffer, subBufferInfo.offset, subBufferInfo.size, access);
                 if (subBuffer != INIT_VALUE) {
                     this.subBufferId = subBuffer;
-                    this.bufferId = subBufferInfo.parentBuffer;
+                    this.bufferId = subBuffer;
                     this.bufferOffset = subBufferInfo.offset;
                     this.usesSubBuffer = true;
                     this.parentBufferId = subBufferInfo.parentBuffer;
@@ -164,23 +164,31 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     }
 
     public boolean remapToSubBuffer(OCLMemoryManager.SubBufferInfo subBufferInfo, Object hostArray) {
-        if (usesSubBuffer || subBufferInfo == null || bufferId == INIT_VALUE) {
+        if (subBufferInfo == null || bufferId == INIT_VALUE) {
             return false;
         }
         if (subBufferInfo.size != bufferSize) {
             return false;
         }
+        final boolean needsRemap = !usesSubBuffer || parentBufferId != subBufferInfo.parentBuffer || bufferOffset != subBufferInfo.offset;
+        if (!needsRemap) {
+            return true;
+        }
         if (hostArray != null && lastExecutionPlanId != INIT_VALUE) {
             deviceContext.sync(lastExecutionPlanId);
             read(lastExecutionPlanId, hostArray, 0, 0, null, false);
+        }
+        if (usesSubBuffer) {
+            deviceContext.getMemoryManager().releaseSubBuffer(subBufferId, parentBufferId);
+        } else {
+            deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         }
         long subBuffer = deviceContext.getMemoryManager().createSubBuffer(subBufferInfo.parentBuffer, subBufferInfo.offset, subBufferInfo.size, access);
         if (subBuffer == INIT_VALUE) {
             return false;
         }
-        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         subBufferId = subBuffer;
-        bufferId = subBufferInfo.parentBuffer;
+        bufferId = subBuffer;
         bufferOffset = subBufferInfo.offset;
         usesSubBuffer = true;
         parentBufferId = subBufferInfo.parentBuffer;
@@ -231,8 +239,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
         final int returnEvent;
-        // FIXME: <REFACTOR>
-        returnEvent = enqueueReadArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        returnEvent = enqueueReadArrayData(executionPlanId, toBuffer(), arrayHeaderSize + deviceBufferOffset(), bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -269,7 +276,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         } else {
             headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite(executionPlanId, (useDeps) ? events : null);
         }
-        final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        final int returnEvent = enqueueWriteArrayData(executionPlanId, toBuffer(), arrayHeaderSize + deviceBufferOffset(), bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
@@ -295,7 +302,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     protected abstract int enqueueWriteArrayData(long executionPlanId, long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     private OCLByteBuffer getArrayHeader() {
-        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, bufferOffset, arrayHeaderSize);
+        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, deviceBufferOffset(), arrayHeaderSize);
         header.buffer.clear();
         return header;
     }
@@ -338,7 +345,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
-        return readArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, numBytes, array, hostOffset, (useDeps) ? events : null);
+        return readArrayData(executionPlanId, toBuffer(), arrayHeaderSize + deviceBufferOffset(), numBytes, array, hostOffset, (useDeps) ? events : null);
     }
 
     protected abstract int readArrayData(long executionPlanId, long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
@@ -367,6 +374,14 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     @Override
     public long getBufferOffset() {
         return bufferOffset;
+    }
+
+    void updateBufferOffset(long newOffset) {
+        bufferOffset = newOffset;
+    }
+
+    private long deviceBufferOffset() {
+        return usesSubBuffer ? 0 : bufferOffset;
     }
 
     @Override
@@ -398,8 +413,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             throw new TornadoRuntimeException("[ERROR] data is NULL");
         }
         buildArrayHeader(Array.getLength(array)).write(executionPlanId);
-        // TODO: Writing with offset != 0
-        writeArrayData(executionPlanId, toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, 0, null);
+        writeArrayData(executionPlanId, toBuffer(), arrayHeaderSize + deviceBufferOffset(), bufferSize - arrayHeaderSize, array, 0, null);
     }
 
     protected abstract void writeArrayData(long executionPlanId, long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);

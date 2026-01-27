@@ -38,6 +38,8 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLMemoryManager implements TornadoMemoryProvider {
 
@@ -162,7 +164,10 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
 
     public void registerSubBuffer(Object key, long parentBuffer, long offset, long size, Access access) {
         synchronized (subBufferMappings) {
-            subBufferMappings.putIfAbsent(key, new SubBufferInfo(parentBuffer, offset, size, access));
+            SubBufferInfo existing = subBufferMappings.get(key);
+            if (existing == null || existing.parentBuffer != parentBuffer || existing.size != size || existing.offset < offset) {
+                subBufferMappings.put(key, new SubBufferInfo(parentBuffer, offset, size, access));
+            }
         }
         parentBufferAccess.putIfAbsent(parentBuffer, access);
         synchronized (objectBuffers) {
