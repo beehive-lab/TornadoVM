@@ -55,6 +55,7 @@ public class OCLContext implements OCLContextInterface {
         this.deviceContexts = new ArrayList<>(devices.size());
         this.logger = new TornadoLogger(this.getClass());
     }
+    
 
     native void clReleaseContext(long id) throws OCLException;
 
