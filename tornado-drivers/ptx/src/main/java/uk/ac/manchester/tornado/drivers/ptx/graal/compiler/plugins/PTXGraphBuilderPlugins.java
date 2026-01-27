@@ -122,7 +122,6 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("float16ToFloat", short.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
-                receiver.get(true);
                 PTXConvertHalfToFloat convertHalfToFloat = new PTXConvertHalfToFloat(halfValue);
                 b.addPush(JavaKind.Float, convertHalfToFloat);
                 return true;
@@ -136,7 +135,6 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
                     ValueNode accumulator) {
-                receiver.get(true);
                 Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
                 graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
                 return true;
@@ -147,7 +145,6 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
                     ValueNode accumulator) {
-                receiver.get(true);
                 Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
                 graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
                 return true;
@@ -157,7 +154,6 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("dp4a_packed", int.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode b, ValueNode accumulator) {
-                receiver.get(true);
                 DP4APackedNode dp4aPackedOp = new DP4APackedNode(a, b, accumulator);
                 graphBuilderContext.addPush(JavaKind.Int, dp4aPackedOp);
                 return true;
