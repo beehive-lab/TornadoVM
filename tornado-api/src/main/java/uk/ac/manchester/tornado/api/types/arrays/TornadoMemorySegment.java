@@ -47,12 +47,13 @@ public class TornadoMemorySegment {
     public TornadoMemorySegment(long segmentByteSize, int baseIndex, int numElements) {
         this.segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         this.baseIndex = baseIndex;
-        segment.setAtIndex(ValueLayout.JAVA_INT, 0, numElements);
+        this.segment.setAtIndex(ValueLayout.JAVA_INT, 0, numElements);
     }
 
     public TornadoMemorySegment(MemorySegment memorySegment) {
         this.segment = memorySegment;
     }
+
     /**
      * Returns the underlying {@link MemorySegment}.
      *

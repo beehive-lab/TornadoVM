@@ -242,8 +242,7 @@ public final class ByteArray extends TornadoNativeArray {
         // Convert byte index to short index for the segment
         // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
         int shortIndex = (arrayHeaderSize + byteIndex) / 2;
-        segment.setAtIndex(shortIndex, value.getHalfFloatValue(), baseIndex);
-//        segment.setAtIndex(shortIndex, value.getHalfFloatValue(), baseIndex);
+        segment.setAtIndex(shortIndex, value.getHalfFloatValue(), 0);
     }
 
     /**
@@ -276,9 +275,8 @@ public final class ByteArray extends TornadoNativeArray {
         // Convert byte index to short index for the segment
         // arrayHeaderSize (8 bytes) + byteIndex, then divide by 2 for short indexing
         int shortIndex = (arrayHeaderSize + byteIndex) / 2;
-        short halfFloatValue = segment.getShortAtIndex(shortIndex, baseIndex); //Todo: might have issues
+        short halfFloatValue = segment.getShortAtIndex(shortIndex, 0); //Todo: might have issues
         return new HalfFloat(halfFloatValue);
-
     }
 
     /**
