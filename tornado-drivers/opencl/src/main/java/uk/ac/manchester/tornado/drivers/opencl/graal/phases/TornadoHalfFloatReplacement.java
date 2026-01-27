@@ -21,9 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
@@ -47,8 +44,8 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
-
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
+import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DivHalfNode;
@@ -65,7 +62,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElem
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorMultHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubHalfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
@@ -75,150 +71,10 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.SubHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.VectorHalfRead;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
+import java.util.ArrayList;
+import java.util.Optional;
+
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
-
-    @Override
-    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
-        return ALWAYS_APPLICABLE;
-    }
-
-    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-
-        for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
-            ArrayList<PiNode> deletePi = new ArrayList<PiNode>();
-            for (Node valueAnchorNodeUsage : valueAnchorNode.usages()) {
-                if (valueAnchorNodeUsage instanceof PiNode) {
-                    PiNode piNode = (PiNode) valueAnchorNodeUsage;
-                    piNode.replaceAtUsages(piNode.object());
-                    deletePi.add(piNode);
-                }
-            }
-            for (PiNode p : deletePi) {
-                p.safeDelete();
-            }
-            deleteFixed(valueAnchorNode);
-        }
-
-        // replace reads with halfFloat reads
-        for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
-            if (javaRead.successors().first() instanceof NewInstanceNode && javaRead.getReadKind() == JavaKind.Short) {
-                NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
-                if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                    if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                        NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
-                        deleteFixed(newHalfFloatInstance);
-                    }
-                    AddressNode readingAddress = javaRead.getAddress();
-                    ReadHalfFloatNode readHalfFloatNode = new ReadHalfFloatNode(readingAddress);
-                    graph.addWithoutUnique(readHalfFloatNode);
-                    replaceFixed(javaRead, readHalfFloatNode);
-                    newInstanceNode.replaceAtUsages(readHalfFloatNode);
-                    deleteFixed(newInstanceNode);
-                }
-            }
-        }
-
-        for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
-            if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
-                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
-                    ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
-                    newInstanceNode.replaceAtUsages(valueInput);
-                    deleteFixed(newInstanceNode);
-                    deleteFixed(newHalfFloatInstance);
-                } else if (newInstanceNode.successors().first() instanceof JavaReadNode readValue && readValue.getReadKind() == JavaKind.Float) {
-                    OCLConvertFloatToHalf convertFloatToHalf = new OCLConvertFloatToHalf(readValue);
-                    graph.addWithoutUnique(convertFloatToHalf);
-                    newInstanceNode.replaceAtUsages(convertFloatToHalf);
-                    for (NewHalfFloatInstance newHalfFloatInstance : readValue.usages().filter(NewHalfFloatInstance.class)) {
-                        deleteFixed(newHalfFloatInstance);
-                    }
-                    deleteFixed(newInstanceNode);
-                }
-            }
-        }
-
-        // replace writes with halfFloat writes
-        for (JavaWriteNode javaWrite : graph.getNodes().filter(JavaWriteNode.class)) {
-            if (isWriteHalfFloat(javaWrite)) {
-                // This casting is safe to do as it is already checked by the isWriteHalfFloat function
-                HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
-                ValueNode writingValue;
-                if (javaWrite.predecessor() instanceof NewHalfFloatInstance) {
-                    // if a new HalfFloat instance is written
-                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) javaWrite.predecessor();
-                    writingValue = newHalfFloatInstance.getValue();
-                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
-                        NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
-                        if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
-                            deleteFixed(newInstanceNode);
-                            deleteFixed(newHalfFloatInstance);
-                        }
-                    }
-                } else {
-                    // if the result of an operation or a stored value is written
-                    writingValue = placeholder.getInput();
-                }
-                placeholder.replaceAtUsages(writingValue);
-                placeholder.safeDelete();
-                AddressNode writingAddress = javaWrite.getAddress();
-                WriteHalfFloatNode writeHalfFloatNode = new WriteHalfFloatNode(writingAddress, writingValue);
-                graph.addWithoutUnique(writeHalfFloatNode);
-                replaceFixed(javaWrite, writeHalfFloatNode);
-                deleteFixed(javaWrite);
-            }
-        }
-
-        // replace the half float operator nodes with the corresponding regular operators
-        replaceAddHalfFloatNodes(graph);
-        replaceSubHalfFloatNodes(graph);
-        replaceMultHalfFloatNodes(graph);
-        replaceDivHalfFloatNodes(graph);
-
-        for (LoadFieldNode loadFieldNode : graph.getNodes().filter(LoadFieldNode.class)) {
-            // if the field loaded is from the HalfFloat class for the FP16->FP32 conversion, replace it
-            if (loadFieldNode.usages().filter(OCLConvertHalfToFloat.class).isNotEmpty()) {
-                replaceFieldAccess(loadFieldNode);
-            }
-        }
-
-        // add after the loadindexedvector nodes the marker node to fix the offset of its read
-
-        for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
-            if (loadIndexedVectorNode.getOCLKind().isHalf()) {
-                VectorHalfRead vectorHalfRead;
-                if (loadIndexedVectorNode.index() instanceof ConstantNode) {
-                    ConstantNode offset = (ConstantNode) loadIndexedVectorNode.index();
-                    int offsetValue = Integer.valueOf(offset.getValue().toValueString());
-                    vectorHalfRead = graph.addWithoutUnique(new VectorHalfRead(offsetValue));
-                } else {
-                    vectorHalfRead = graph.addWithoutUnique(new VectorHalfRead());
-                }
-                graph.addAfterFixed(loadIndexedVectorNode, vectorHalfRead);
-            }
-        }
-
-        for (VectorValueNode vectorValueNode : graph.getNodes().filter(VectorValueNode.class)) {
-            if (vectorValueNode.getOCLKind().isHalf()) {
-                for (Node vectorElement : vectorValueNode.inputs()) {
-                    if (vectorElement instanceof VectorLoadElementNode) {
-                        VectorLoadElementNode vectorLoad = (VectorLoadElementNode) vectorElement;
-                        VectorLoadElementNode vectorLoadShort = new VectorLoadElementNode(OCLKind.HALF, vectorLoad.getVector(), vectorLoad.getLaneId());
-                        graph.addWithoutUnique(vectorLoadShort);
-                        vectorLoad.replaceAtUsages(vectorLoadShort);
-                        vectorLoad.safeDelete();
-                    } else if (vectorElement instanceof ConstantNode constantNode && constantNode.getValue().toValueString().contains("null")) {
-                        Constant zeroValue = new RawConstant(0);
-                        ConstantNode zero = new ConstantNode(zeroValue, StampFactory.forKind(JavaKind.Short));
-                        graph.addWithoutUnique(zero);
-                        constantNode.replaceAtUsages(zero);
-                        constantNode.safeDelete();
-                    }
-                }
-            }
-        }
-
-    }
 
     private static void replaceFieldAccess(LoadFieldNode loadFieldNode) {
         // remove the FixGuardNode associated with the loading of the field
@@ -261,11 +117,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     /**
-     * This function receives a half float value and, if it is a constant, it encapsulates it in a {@code HalfFloatConstantNode}.
-     * Otherwise, the input value is returned.
+     * This function receives a half float value and, if it is a constant, it encapsulates it in a {@code HalfFloatConstantNode}. Otherwise, the input value is returned.
      *
-     * @param halfFloatValue The half float value.
-     * @param graph The Structured Graph.
+     * @param halfFloatValue
+     *         The half float value.
+     * @param graph
+     *         The Structured Graph.
      * @return The half float value, either as is, or in the form of the {@code HalfFloatConstantNode}.
      */
     private static ValueNode getHalfFloatValue(ValueNode halfFloatValue, StructuredGraph graph) {
@@ -386,14 +243,14 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     /**
-     * Since the compiler treats half float values as Objects by default,
-     * this function examines if the stamp of a {@code ValuePhiNode} is an Object stamp,
-     * and if it is, it replaces the node with a new {@code ValuePhiNode} with a {@code HalfFloatStamp}.
-     * It is safe to assume that the Object stamp corresponds to a half value and not another
-     * Object type, because the functions that invoke it are operating only on half float related nodes.
+     * Since the compiler treats half float values as Objects by default, this function examines if the stamp of a {@code ValuePhiNode} is an Object stamp, and if it is, it replaces the node with a
+     * new {@code ValuePhiNode} with a {@code HalfFloatStamp}. It is safe to assume that the Object stamp corresponds to a half value and not another Object type, because the functions that invoke it
+     * are operating only on half float related nodes.
      *
-     * @param phiNode The {@code ValuePhiNode} to be examined.
-     * @param graph The Structured Graph.
+     * @param phiNode
+     *         The {@code ValuePhiNode} to be examined.
+     * @param graph
+     *         The Structured Graph.
      * @return The {@code ValuePhiNode} with the {@code HalfFloatStamp}, or the existing {@code ValuePhiNode}.
      */
     private static ValuePhiNode replacePhi(ValuePhiNode phiNode, StructuredGraph graph) {
@@ -490,6 +347,147 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             node.clearInputs();
             node.safeDelete();
         }
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
+        for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
+            ArrayList<PiNode> deletePi = new ArrayList<PiNode>();
+            for (Node valueAnchorNodeUsage : valueAnchorNode.usages()) {
+                if (valueAnchorNodeUsage instanceof PiNode) {
+                    PiNode piNode = (PiNode) valueAnchorNodeUsage;
+                    piNode.replaceAtUsages(piNode.object());
+                    deletePi.add(piNode);
+                }
+            }
+            for (PiNode p : deletePi) {
+                p.safeDelete();
+            }
+            deleteFixed(valueAnchorNode);
+        }
+
+        // replace reads with halfFloat reads
+        for (JavaReadNode javaRead : graph.getNodes().filter(JavaReadNode.class)) {
+            if (javaRead.successors().first() instanceof NewInstanceNode && javaRead.getReadKind() == JavaKind.Short) {
+                NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
+                if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
+                    if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
+                        NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                        deleteFixed(newHalfFloatInstance);
+                    }
+                    AddressNode readingAddress = javaRead.getAddress();
+                    ReadHalfFloatNode readHalfFloatNode = new ReadHalfFloatNode(readingAddress);
+                    graph.addWithoutUnique(readHalfFloatNode);
+                    replaceFixed(javaRead, readHalfFloatNode);
+                    newInstanceNode.replaceAtUsages(readHalfFloatNode);
+                    deleteFixed(newInstanceNode);
+                }
+            }
+        }
+
+        for (NewInstanceNode newInstanceNode : graph.getNodes().filter(NewInstanceNode.class)) {
+            if (newInstanceNode.instanceClass().getAnnotation(HalfType.class) != null) {
+                if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
+                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                    ValueNode valueInput = getHalfFloatValue(newHalfFloatInstance.getValue(), graph);
+                    newInstanceNode.replaceAtUsages(valueInput);
+                    deleteFixed(newInstanceNode);
+                    deleteFixed(newHalfFloatInstance);
+                } else if (newInstanceNode.successors().first() instanceof JavaReadNode readValue && readValue.getReadKind() == JavaKind.Float) {
+                    OCLConvertFloatToHalf convertFloatToHalf = new OCLConvertFloatToHalf(readValue);
+                    graph.addWithoutUnique(convertFloatToHalf);
+                    newInstanceNode.replaceAtUsages(convertFloatToHalf);
+                    for (NewHalfFloatInstance newHalfFloatInstance : readValue.usages().filter(NewHalfFloatInstance.class)) {
+                        deleteFixed(newHalfFloatInstance);
+                    }
+                    deleteFixed(newInstanceNode);
+                }
+            }
+        }
+
+        // replace writes with halfFloat writes
+        for (JavaWriteNode javaWrite : graph.getNodes().filter(JavaWriteNode.class)) {
+            if (isWriteHalfFloat(javaWrite)) {
+                // This casting is safe to do as it is already checked by the isWriteHalfFloat function
+                HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
+                ValueNode writingValue;
+                if (javaWrite.predecessor() instanceof NewHalfFloatInstance) {
+                    // if a new HalfFloat instance is written
+                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) javaWrite.predecessor();
+                    writingValue = newHalfFloatInstance.getValue();
+                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
+                        NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
+                        if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                            deleteFixed(newInstanceNode);
+                            deleteFixed(newHalfFloatInstance);
+                        }
+                    }
+                } else {
+                    // if the result of an operation or a stored value is written
+                    writingValue = placeholder.getInput();
+                }
+                placeholder.replaceAtUsages(writingValue);
+                placeholder.safeDelete();
+                AddressNode writingAddress = javaWrite.getAddress();
+                WriteHalfFloatNode writeHalfFloatNode = new WriteHalfFloatNode(writingAddress, writingValue);
+                graph.addWithoutUnique(writeHalfFloatNode);
+                replaceFixed(javaWrite, writeHalfFloatNode);
+                deleteFixed(javaWrite);
+            }
+        }
+
+        // replace the half float operator nodes with the corresponding regular operators
+        replaceAddHalfFloatNodes(graph);
+        replaceSubHalfFloatNodes(graph);
+        replaceMultHalfFloatNodes(graph);
+        replaceDivHalfFloatNodes(graph);
+
+        for (LoadFieldNode loadFieldNode : graph.getNodes().filter(LoadFieldNode.class)) {
+            // if the field loaded is from the HalfFloat class for the FP16->FP32 conversion, replace it
+            if (loadFieldNode.usages().filter(OCLConvertHalfToFloat.class).isNotEmpty()) {
+                replaceFieldAccess(loadFieldNode);
+            }
+        }
+
+        // add after the loadindexedvector nodes the marker node to fix the offset of its read
+
+        for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
+            if (loadIndexedVectorNode.getOCLKind().isHalf()) {
+                VectorHalfRead vectorHalfRead;
+                if (loadIndexedVectorNode.index() instanceof ConstantNode constantNode) {
+                    int offsetValue = Integer.valueOf(constantNode.getValue().toValueString());
+                    vectorHalfRead = graph.addWithoutUnique(new VectorHalfRead(offsetValue));
+                } else {
+                    vectorHalfRead = graph.addWithoutUnique(new VectorHalfRead());
+                }
+                graph.addAfterFixed(loadIndexedVectorNode, vectorHalfRead);
+            }
+        }
+
+        for (VectorValueNode vectorValueNode : graph.getNodes().filter(VectorValueNode.class)) {
+            if (vectorValueNode.getOCLKind().isHalf()) {
+                for (Node vectorElement : vectorValueNode.inputs()) {
+                    if (vectorElement instanceof VectorLoadElementNode vectorLoad) {
+                        VectorLoadElementNode vectorLoadShort = new VectorLoadElementNode(OCLKind.HALF, vectorLoad.getVector(), vectorLoad.getLaneId());
+                        graph.addWithoutUnique(vectorLoadShort);
+                        vectorLoad.replaceAtUsages(vectorLoadShort);
+                        vectorLoad.safeDelete();
+                    } else if (vectorElement instanceof ConstantNode constantNode && constantNode.getValue().toValueString().contains("null")) {
+                        Constant zeroValue = new RawConstant(0);
+                        ConstantNode zero = new ConstantNode(zeroValue, StampFactory.forKind(JavaKind.Short));
+                        graph.addWithoutUnique(zero);
+                        constantNode.replaceAtUsages(zero);
+                        constantNode.safeDelete();
+                    }
+                }
+            }
+        }
+
     }
 
 }
