@@ -207,8 +207,8 @@ public final class OCLVectorPlugins {
 
     private static VectorValueNode resolveReceiver(ValueNode thisObject) {
         VectorValueNode vector = null;
-        if (thisObject instanceof PiNode) {
-            thisObject = ((PiNode) thisObject).getOriginalNode();
+        if (thisObject instanceof PiNode piNode) {
+            thisObject = piNode.getOriginalNode();
         }
         if (thisObject instanceof VectorValueNode vectorValueNode) {
             vector = vectorValueNode;
