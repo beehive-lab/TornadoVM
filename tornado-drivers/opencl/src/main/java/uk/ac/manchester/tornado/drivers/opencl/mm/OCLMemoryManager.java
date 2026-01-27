@@ -171,8 +171,11 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
         }
         parentBufferAccess.putIfAbsent(parentBuffer, access);
         synchronized (objectBuffers) {
-            if (objectBuffers.get(key) instanceof OCLArrayWrapper<?> arrayWrapper) {
+            XPUBuffer existingBuffer = objectBuffers.get(key);
+            if (existingBuffer instanceof OCLArrayWrapper<?> arrayWrapper) {
                 arrayWrapper.remapToSubBuffer(getSubBufferInfo(key), key);
+            } else if (existingBuffer instanceof OCLMemorySegmentWrapper memorySegmentWrapper) {
+                memorySegmentWrapper.remapToSubBuffer(getSubBufferInfo(key), key);
             }
         }
     }

@@ -2,12 +2,12 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import java.util.ArrayList;
 
-public class AliasEntry {
+public class MemorySegmentAliasEntry {
     private long offset;
     private final long size;
-    private final ArrayList<OCLArrayWrapper<?>> buffers;
+    private final ArrayList<OCLMemorySegmentWrapper> buffers;
 
-    public AliasEntry(OCLArrayWrapper<?> buffer) {
+    public MemorySegmentAliasEntry(OCLMemorySegmentWrapper buffer) {
         this.offset = buffer.getBufferOffset();
         this.size = buffer.size();
         this.buffers = new ArrayList<>();
@@ -16,13 +16,12 @@ public class AliasEntry {
 
     public void updateOffset(long newOffset) {
         offset = newOffset;
-        for (OCLArrayWrapper<?> buffer : buffers) {
+        for (OCLMemorySegmentWrapper buffer : buffers) {
             buffer.updateBufferOffset(newOffset);
-            
         }
     }
 
-    public void addBuffer(OCLArrayWrapper<?> buffer) {
+    public void addBuffer(OCLMemorySegmentWrapper buffer) {
         buffers.add(buffer);
         buffer.updateBufferOffset(offset);
     }

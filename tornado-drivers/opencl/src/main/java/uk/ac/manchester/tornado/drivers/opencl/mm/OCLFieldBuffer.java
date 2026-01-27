@@ -402,10 +402,10 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public void setBuffer(XPUBufferWrapper bufferWrapper) {
-        setBufferWithAliases(bufferWrapper, new IdentityHashMap<>());
+        setBufferWithAliases(bufferWrapper, new IdentityHashMap<>(), new IdentityHashMap<>());
     }
 
-    private void setBufferWithAliases(XPUBufferWrapper bufferWrapper, IdentityHashMap<Object, AliasEntry> aliasMap) {
+    private void setBufferWithAliases(XPUBufferWrapper bufferWrapper, IdentityHashMap<Object, ArrayWrapperAliasEntry> aliasMap, IdentityHashMap<Object, MemorySegmentAliasEntry> memorySegmentAliases) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
@@ -420,16 +420,16 @@ public class OCLFieldBuffer implements XPUBuffer {
             bufferWrapper.bufferOffset = alignOffset(bufferWrapper.bufferOffset);
             XPUBuffer childBuffer = fieldBuffer.getObjectBuffer();
             if (childBuffer instanceof OCLFieldBuffer nested) {
-                nested.setBufferWithAliases(bufferWrapper, aliasMap);
+                nested.setBufferWithAliases(bufferWrapper, aliasMap, memorySegmentAliases);
                 continue;
             }
             Object fieldValue = (reference != null) ? fieldBuffer.getFieldValue(reference) : null;
             if (fieldValue != null && fieldValue.getClass().isArray() && childBuffer instanceof OCLArrayWrapper<?> arrayWrapper) {
                 fieldBuffer.setBuffer(bufferWrapper);
                 long newOffset = arrayWrapper.getBufferOffset();
-                AliasEntry entry = aliasMap.get(fieldValue);
+                ArrayWrapperAliasEntry entry = aliasMap.get(fieldValue);
                 if (entry == null) {
-                    entry = new AliasEntry(arrayWrapper);
+                    entry = new ArrayWrapperAliasEntry(arrayWrapper);
                     aliasMap.put(fieldValue, entry);
                 } else if (entry.getSize() == arrayWrapper.size()) {
                     entry.updateOffset(newOffset);
@@ -438,6 +438,19 @@ public class OCLFieldBuffer implements XPUBuffer {
                 if (memoryManager != null) {
                     long canonicalOffset = entry.getOffset();
                     memoryManager.registerSubBuffer(fieldValue, bufferId, canonicalOffset, arrayWrapper.size(), access);
+                }
+                continue;
+            }
+            if (fieldValue != null && childBuffer instanceof OCLMemorySegmentWrapper memoryWrapper) {
+                fieldBuffer.setBuffer(bufferWrapper);
+                long newOffset = memoryWrapper.getBufferOffset();
+                MemorySegmentAliasEntry entry = memorySegmentAliases.get(fieldValue);
+                if (entry == null) {
+                    entry = new MemorySegmentAliasEntry(memoryWrapper);
+                    memorySegmentAliases.put(fieldValue, entry);
+                } else if (entry.getSize() == memoryWrapper.size()) {
+                    entry.updateOffset(newOffset);
+                    entry.addBuffer(memoryWrapper);
                 }
                 continue;
             }
@@ -576,7 +589,16 @@ public class OCLFieldBuffer implements XPUBuffer {
                 continue;
             }
             Object fieldValue = fieldBuffer.getFieldValue(reference);
-            if (fieldValue == null || !fieldValue.getClass().isArray()) {
+            if (fieldValue == null) {
+                continue;
+            }
+            boolean isArrayField = fieldValue.getClass().isArray();
+            boolean isMemorySegmentField = fieldBuffer.getObjectBuffer() instanceof OCLMemorySegmentWrapper;
+            if (fieldBuffer.getObjectBuffer() instanceof OCLFieldBuffer nested) {
+                nested.registerSubBufferMappings(fieldValue);
+                continue;
+            }
+            if (!isArrayField && !isMemorySegmentField) {
                 continue;
             }
             long offset = fieldBuffer.getBufferOffset();
