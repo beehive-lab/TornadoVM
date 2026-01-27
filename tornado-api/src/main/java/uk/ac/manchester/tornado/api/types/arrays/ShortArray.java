@@ -53,7 +53,7 @@ public final class ShortArray extends TornadoNativeArray {
         assert arrayHeaderSize >= 4;
         baseIndex = arrayHeaderSize / SHORT_BYTES;
         segmentByteSize = (long) numberOfElements * SHORT_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
     }
 
     /**

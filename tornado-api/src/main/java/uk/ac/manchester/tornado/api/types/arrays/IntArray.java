@@ -52,7 +52,7 @@ public final class IntArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT_BYTES;
         segmentByteSize = (long) numberOfElements * INT_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
     }
 
     /**

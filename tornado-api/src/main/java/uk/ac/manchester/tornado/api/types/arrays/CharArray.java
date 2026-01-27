@@ -52,7 +52,7 @@ public final class CharArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / CHAR_BYTES;
         segmentByteSize = (long) numberOfElements * CHAR_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
     }
 
     /**

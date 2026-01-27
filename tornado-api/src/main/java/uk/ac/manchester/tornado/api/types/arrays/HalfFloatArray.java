@@ -55,7 +55,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / HALF_FLOAT_BYTES;
         segmentByteSize = (long) numberOfElements * HALF_FLOAT_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
     }
 
     /**

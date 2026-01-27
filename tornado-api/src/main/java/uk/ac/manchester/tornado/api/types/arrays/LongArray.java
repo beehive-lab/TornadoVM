@@ -53,7 +53,7 @@ public final class LongArray extends TornadoNativeArray {
         baseIndex = arrayHeaderSize / LONG_BYTES;
 
         segmentByteSize = (long) numberOfElements * LONG_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
 
     }
 

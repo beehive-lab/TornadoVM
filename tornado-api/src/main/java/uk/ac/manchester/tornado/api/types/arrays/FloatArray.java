@@ -54,7 +54,7 @@ public final class FloatArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / FLOAT_BYTES;
         segmentByteSize = (long) numberOfElements * FLOAT_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
     }
 
     /**

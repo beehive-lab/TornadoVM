@@ -54,7 +54,7 @@ public final class DoubleArray extends TornadoNativeArray {
         assert arrayHeaderSize >= 8;
         baseIndex = arrayHeaderSize / DOUBLE_BYTES;
         segmentByteSize = (long) numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, baseIndex, numberOfElements);
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
     }
 
     /**

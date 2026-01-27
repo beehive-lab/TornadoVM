@@ -29,7 +29,6 @@ import java.lang.foreign.ValueLayout;
  */
 public class TornadoMemorySegment {
     private MemorySegment segment;
-    private int baseIndex;
 
     /**
      * Constructs a {@code TornadoMemorySegment} with a specified byte size and base index.
@@ -39,14 +38,11 @@ public class TornadoMemorySegment {
      *
      * @param segmentByteSize
      *         the size of the memory segment in bytes
-     * @param baseIndex
-     *         the base index used for calculating the actual index in the memory segment
      * @param numElements
      *         the number of elements to initialize in the segment
      */
-    public TornadoMemorySegment(long segmentByteSize, int baseIndex, int numElements) {
+    public TornadoMemorySegment(long segmentByteSize, int numElements) {
         this.segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        this.baseIndex = baseIndex;
         this.segment.setAtIndex(ValueLayout.JAVA_INT, 0, numElements);
     }
 
