@@ -219,7 +219,7 @@ public final class OCLVectorPlugins {
     }
 
     private static VectorValueNode resolveReceiver(Receiver receiver) {
-        ValueNode thisObject = receiver.get();
+        ValueNode thisObject = receiver.get(true);
         return resolveReceiver(thisObject);
     }
 
@@ -291,7 +291,7 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(true), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
@@ -300,8 +300,8 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, vectorKind.getJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                if (receiver.get() instanceof ParameterNode) {
-                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                if (receiver.get(true) instanceof ParameterNode) {
+                    final AddressNode address = new OffsetAddressNode(receiver.get(true), null);
                     final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(vectorKind, address, value);
                     b.add(b.append(store));
                     return true;
@@ -313,7 +313,7 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -322,7 +322,7 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -374,7 +374,7 @@ public final class OCLVectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
-                ValueNode array = receiver.get();
+                ValueNode array = receiver.get(true);
                 GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
                 b.push(JavaKind.Object, b.append(getArrayNode));
                 return true;
