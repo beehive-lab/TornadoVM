@@ -384,14 +384,21 @@ public class TornadoGraphBuilder {
                 if (Modifier.isStatic(field.getModifiers()) || field.getType().isPrimitive()) {
                     continue;
                 }
-                field.setAccessible(true);
+                boolean accessible;
+                try {
+                    accessible = field.trySetAccessible();
+                } catch (RuntimeException ignored) {
+                    continue;
+                }
+                if (!accessible) {
+                    continue;
+                }
                 try {
                     Object value = field.get(object);
                     if (value != null) {
                         collectAliases(value, objectIndices, aliases, visited);
                     }
                 } catch (IllegalAccessException | IllegalArgumentException ignored) {
-                    // Best-effort alias discovery; ignore inaccessible fields.
                 }
             }
         }
