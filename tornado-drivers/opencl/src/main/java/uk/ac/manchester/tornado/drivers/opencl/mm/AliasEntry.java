@@ -18,6 +18,7 @@ public class AliasEntry {
         offset = newOffset;
         for (OCLArrayWrapper<?> buffer : buffers) {
             buffer.updateBufferOffset(newOffset);
+            
         }
     }
 
