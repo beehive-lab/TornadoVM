@@ -96,17 +96,13 @@ def update_paths():
     if result.stderr:
         print(result.stderr)
 
-    # Read the actual SDK path from the bin/sdk symlink
+    # Read the actual SDK path from the bin/sdk symlink or junction
     # This is necessary because environment variables set in subprocess don't propagate back
     sdk_symlink = os.path.join("bin", "sdk")
-    if os.path.islink(sdk_symlink):
-        # Resolve the symlink to get the absolute path
+    if os.path.islink(sdk_symlink) or os.path.isdir(sdk_symlink):
+        # Use realpath to resolve both Unix symlinks and Windows junctions
+        # to their actual target paths (e.g., dist/tornadovm-X.Y.Z-backend/...)
         sdk_path = os.path.realpath(sdk_symlink)
-        os.environ['TORNADOVM_HOME'] = sdk_path
-        print(f"TORNADOVM_HOME updated to: {sdk_path}")
-    elif os.path.isdir(sdk_symlink):
-        # On Windows, it might be a junction - get the absolute path
-        sdk_path = os.path.abspath(sdk_symlink)
         os.environ['TORNADOVM_HOME'] = sdk_path
         print(f"TORNADOVM_HOME updated to: {sdk_path}")
     else:
