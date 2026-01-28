@@ -14,7 +14,7 @@ public class ArrayWrapperAliasEntry {
         this.buffers.add(buffer);
     }
 
-    public void updateOffset(long newOffset) {
+    public void updateOffset(long newOffset)  {
         offset = newOffset;
         for (OCLArrayWrapper<?> buffer : buffers) {
             buffer.updateBufferOffset(newOffset);
