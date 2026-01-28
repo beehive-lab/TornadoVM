@@ -264,7 +264,6 @@ public class SPIRVGraphBuilderPlugins {
         return b.getMetaAccess().lookupJavaType(clazz);
     }
 
-
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {
         r.register(new InvocationPlugin("min", type, type) {
             @Override
@@ -419,7 +418,8 @@ public class SPIRVGraphBuilderPlugins {
      * The current implementation of the SPIR-V backend provides a prebuilt kernel for the LookupBuffer Address. We keep this method as a reference, in the case we want to update how to lookup buffer
      * address works.
      *
-     * @param plugins {@link InvocationPlugins}
+     * @param plugins
+     *         {@link InvocationPlugins}
      */
     private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, CompilerInternals.class);
@@ -448,7 +448,8 @@ public class SPIRVGraphBuilderPlugins {
         Registration r = new Registration(plugins, QuantizationUtils.class);
         r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
+                    ValueNode accumulator) {
                 unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
                 return false;
             }
@@ -456,7 +457,8 @@ public class SPIRVGraphBuilderPlugins {
 
         r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
+                    ValueNode accumulator) {
                 unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
                 return false;
             }

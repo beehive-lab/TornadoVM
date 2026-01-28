@@ -121,14 +121,14 @@ public class OCLGraphBuilderPlugins {
         // Register Atomics
         registerKernelContextPlugins(plugins);
 
-        uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLMathPlugins.registerTornadoMathPlugins(plugins);
+        OCLMathPlugins.registerTornadoMathPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
-        uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLVectorPlugins.registerPlugins(ps, plugins);
+        OCLVectorPlugins.registerPlugins(ps, plugins);
 
         // Register TornadoAtomicInteger
         registerTornadoAtomicInteger(ps, plugins);
 
-        uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLHalfFloatPlugins.registerPlugins(ps, plugins);
+        OCLHalfFloatPlugins.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(plugins, metaAccessProvider);
         registerQuantizationUtilsPlugins(plugins);
 
