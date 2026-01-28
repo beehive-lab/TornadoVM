@@ -225,7 +225,6 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestMemorySegmentsAsType"),
     TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
-    TestEntry("uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
 
@@ -356,8 +355,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 ## List of tests to be excluded when running with the quick pass argument as they cause delays
 __TORNADO_HEAVY_TESTS__ = [
-    "uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
-    "uk.ac.manchester.tornado.unittests.tensors.TestTensorAPIWithOnnx"
+    "uk.ac.manchester.tornado.unittests.profiler.TestProfiler"
 ]
 
 ## List of tests that are memory intensive and potentially take a long time to run
