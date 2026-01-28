@@ -457,7 +457,12 @@ public class SPIRVGraphBuilderPlugins {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
                         var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, PTXKind.U64.asJavaKind().getBitCount()));
+                        var signExtendNode =
+                                b.append(IntegerConvertNode.convert(
+                                        absoluteIndexNode,
+                                        StampTool.getStampForKind(JavaKind.Long),
+                                        IntegerConvertNode.Convert.SIGN_EXTEND));
+
                         var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
                         var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         var readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
@@ -469,7 +474,12 @@ public class SPIRVGraphBuilderPlugins {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
                         var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, PTXKind.U64.asJavaKind().getBitCount()));
+                        var signExtendNode =
+                                b.append(IntegerConvertNode.convert(
+                                        absoluteIndexNode,
+                                        StampTool.getStampForKind(JavaKind.Long),
+                                        IntegerConvertNode.Convert.SIGN_EXTEND));
+
                         var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
                         var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         var writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
