@@ -49,7 +49,36 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryI
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.core.common.memory.BarrierType;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
+import org.graalvm.compiler.nodes.extended.BoxNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.java.NewArrayNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -77,6 +106,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
@@ -389,8 +419,7 @@ public class SPIRVGraphBuilderPlugins {
      * The current implementation of the SPIR-V backend provides a prebuilt kernel for the LookupBuffer Address. We keep this method as a reference, in the case we want to update how to lookup buffer
      * address works.
      *
-     * @param plugins
-     *     {@link InvocationPlugins}
+     * @param plugins {@link InvocationPlugins}
      */
     private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, CompilerInternals.class);
@@ -453,16 +482,11 @@ public class SPIRVGraphBuilderPlugins {
         var r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", InvocationPlugin.Receiver.class, int.class, int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
                         var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        var signExtendNode =
-                                b.append(IntegerConvertNode.convert(
-                                        absoluteIndexNode,
-                                        StampTool.getStampForKind(JavaKind.Long),
-                                        IntegerConvertNode.Convert.SIGN_EXTEND));
-
+                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, 64));
                         var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
                         var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
                         var readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
@@ -474,11 +498,8 @@ public class SPIRVGraphBuilderPlugins {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
                         var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        var signExtendNode =
-                                b.append(IntegerConvertNode.convert(
-                                        absoluteIndexNode,
-                                        StampTool.getStampForKind(JavaKind.Long),
-                                        IntegerConvertNode.Convert.SIGN_EXTEND));
+
+                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, 64));
 
                         var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
                         var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
