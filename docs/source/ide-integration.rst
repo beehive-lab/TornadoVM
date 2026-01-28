@@ -181,7 +181,6 @@ After running ``make intellijinit``, you will have the following run configurati
 
 - **TornadoVM-Build**: Builds TornadoVM (runs Maven + post-installation scripts)
 - **TornadoVM-Tests**: Runs the TornadoVM test suite
-- **_internal_TornadoVM_Maven-cleanAndinstall**: Internal Maven configuration (used by TornadoVM-Build)
 
 To build TornadoVM:
 
@@ -192,37 +191,22 @@ To build TornadoVM:
 3. Building for a Different Backend
 ===================================
 
-If you want to build TornadoVM for a different backend from IntelliJ, you have two options:
+To build TornadoVM for a different backend from IntelliJ, simply change the ``BACKEND`` environment variable:
 
-Option A: Rebuild and Regenerate (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+2. In the **Environment variables** section, modify the ``BACKEND`` value:
 
-Build from the command line with the desired backend, then regenerate IntelliJ files:
+   - Single backend: ``opencl``, ``ptx``, or ``spirv``
+   - Two backends: ``opencl,ptx`` (comma-separated)
+   - All backends (full): ``opencl,ptx,spirv``
 
-.. code:: bash
+3. Click **Run TornadoVM-Build**
 
-   $ make BACKEND=ptx        # Build with PTX backend
-   $ source setvars.sh       # Reload environment
-   $ make intellijinit       # Regenerate IntelliJ configs
+The build script will automatically:
 
-This ensures all configurations are consistent.
-
-Option B: Edit Maven Configuration Directly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Go to **Run > Edit Configurations**
-2. Find **_internal_TornadoVM_Maven-cleanAndinstall**
-3. Modify the Maven settings:
-
-   - **Profiles**: Enable/disable backend profiles (e.g., uncheck ``opencl-backend``, check ``ptx-backend``)
-   - **Command line options**: Update the ``-Dtornado.backend=`` value to match your selected backend(s).
-     This option must appear before the ``clean install`` goals. For example: ``-Dtornado.backend=ptx clean install``
-
-The ``-Dtornado.backend`` value should be:
-
-- Single backend: ``opencl``, ``ptx``, or ``spirv``
-- Multiple backends: ``opencl-ptx`` (sorted alphabetically, joined with ``-``)
-- All three backends: ``full``
+- Invoke Maven with the correct profiles (e.g., ``-Pptx-backend``)
+- Set the ``-Dtornado.backend`` property for correct SDK naming
+- Run all post-installation steps
 
 4. Running Unit Tests from IntelliJ
 ===================================
@@ -237,7 +221,7 @@ The test configuration automatically uses the correct ``TORNADOVM_HOME`` path fr
 
 .. note::
 
-   After building with a different backend, the ``TornadoVM-Tests`` configuration is automatically updated with the new SDK path. However, if you encounter issues, run ``make intellijinit`` again to regenerate the configurations.
+   After building with a different backend, the ``TornadoVM-Tests`` configuration is automatically updated with the new SDK path. If you encounter issues, run ``make intellijinit`` again to regenerate the configurations.
 
 Configuring Applications to Debug/Run
 *************************************

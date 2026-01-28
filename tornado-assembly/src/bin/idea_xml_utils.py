@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2024, APT Group, Department of Computer Science,
+# Copyright (c) 2024, 2026, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -92,7 +92,7 @@ def define_and_get_internal_maven_content(xml_templates_directory, project_direc
     return xml_internal_maven_build_content
 
 def define_and_get_tornadovm_build_content(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles):
-    post_installation_script_directory = os.path.join(project_directory, "bin", "post_installation.py")
+    intellij_build_script = os.path.join(project_directory, "bin", "intellij_build.py")
     xml_TornadoVM_build_content_directory = os.path.join(xml_templates_directory, "tornadovm_build_template.xml")
     xml_TornadoVM_build_content = read_template(xml_TornadoVM_build_content_directory)
 
@@ -101,13 +101,16 @@ def define_and_get_tornadovm_build_content(xml_templates_directory, project_dire
     python_sdk_home = str(python_home)
     python_sdk_name = f"Python {python_version_name}"
 
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@TORNADOVM_HOME@@]", tornado_sdk)
+    # Compute BACKEND value (e.g., "opencl" or "opencl,ptx")
+    # backend_profiles is comma-separated (e.g., "opencl-backend,ptx-backend")
+    backend_value = backend_profiles.replace("-backend", "")
+
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@JAVA_HOME@@]", java_home)
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@BACKEND_PROFILES@@]", backend_profiles)
+    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@BACKEND@@]", backend_value)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PYTHON_SDK_HOME@@]", python_sdk_home)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PYTHON_SDK_NAME@@]", python_sdk_name)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PROJECT_DIR@@]", project_directory)
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@POST_INSTALLATION_SCRIPT_DIRECTORY@@]", post_installation_script_directory)
+    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@INTELLIJ_BUILD_SCRIPT@@]", intellij_build_script)
 
     return xml_TornadoVM_build_content
 

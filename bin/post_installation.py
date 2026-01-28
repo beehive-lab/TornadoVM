@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2025, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2026, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -418,18 +418,18 @@ def main():
 
     This function is the entry point of the script and performs:
     1. Update paths and symlinks to the new SDK
-    2. Update the tornado.backend file
-    3. Copy GraalVM JARs if needed
-    4. Generate setvars files (setvars.sh / setvars.cmd)
-    5. Generate argfile template and expand it
-    6. Update IntelliJ test configuration
-    7. Run PyInstaller on Windows
+    2. Detect backends from SDK path
+    3. Update the tornado.backend file
+    4. Copy GraalVM JARs if needed
+    5. Generate setvars files (setvars.sh / setvars.cmd)
+    6. Generate argfile template and expand it
+    7. Update IntelliJ test configuration
+    8. Run PyInstaller on Windows
     """
     # Update paths - this sets TORNADOVM_HOME environment variable from the SDK symlink
     update_paths()
 
     # Detect backends from the SDK path (more reliable than environment variable)
-    # This handles cases where the Maven profile was changed but the IntelliJ config still has old values
     tornado_home = os.environ.get("TORNADOVM_HOME", "")
     if tornado_home:
         selected_backends_str = detect_backends_from_sdk_path(tornado_home)
