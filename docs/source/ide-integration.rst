@@ -158,37 +158,70 @@ Configuring IntelliJ for TornadoVM
 1. Initializing the IntelliJ Project Files
 ==========================================
 
-To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the file with the environment variables (``setvars.sh``, ``setvars.cmd``), as explained in the :ref:`installation`.
+To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the environment variables, as explained in the :ref:`installation`.
 
-Then you can execute the command to generate the IDE project files based on your built TornadoVM instance (i.e., with the JAVA_HOME and the backends), as follows:
+.. code:: bash
 
-   .. code:: bash
+   # Build TornadoVM first (with your desired backend)
+   $ make BACKEND=opencl   # or ptx, spirv, opencl,ptx, etc.
 
-      $ tornado --intellijinit
+   # Load the environment variables
+   $ source setvars.sh     # Linux/macOS
+   $ setvars.cmd           # Windows
 
-2. Configuring the TornadoVM Python Build Utility
-=================================================
+   # Generate IntelliJ project files
+   $ make intellijinit
 
-a. Navigate to the Python configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This generates run configurations in the ``.build/`` directory that IntelliJ will automatically detect.
 
-Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+2. Building TornadoVM from IntelliJ
+===================================
 
-b. Configure the Python interpreter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After running ``make intellijinit``, you will have the following run configurations available in **Run > Edit Configurations**:
 
-In the **Use specified interpreter** field, select a valid Python interpreter installed on your system.
+- **TornadoVM-Build**: Builds TornadoVM (runs Maven + post-installation scripts)
+- **TornadoVM-Tests**: Runs the TornadoVM test suite
 
-c. Update environment variables for selected backends
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To build TornadoVM:
 
-The **Environmental variables** section has been populated based on your built TornadoVM instance.
-If you change ``JAVA_HOME`` or built with different backends, you will need to run the ``tornado --intellijinit`` command.
+1. Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+2. Ensure a valid Python interpreter is selected in the **Use specified interpreter** field
+3. Click **Run TornadoVM-Build**
 
-d. Build TornadoVM from IntelliJ
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3. Building for a Different Backend
+===================================
 
-Run a new build by clicking **Run TornadoVM-Build**.
+To build TornadoVM for a different backend from IntelliJ, simply change the ``BACKEND`` environment variable:
+
+1. Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+2. In the **Environment variables** section, modify the ``BACKEND`` value:
+
+   - Single backend: ``opencl``, ``ptx``, or ``spirv``
+   - Two backends: ``opencl,ptx`` (comma-separated)
+   - All backends (full): ``opencl,ptx,spirv``
+
+3. Click **Run TornadoVM-Build**
+
+The build script will automatically:
+
+- Invoke Maven with the correct profiles (e.g., ``-Pptx-backend``)
+- Set the ``-Dtornado.backend`` property for correct SDK naming
+- Run all post-installation steps
+
+4. Running Unit Tests from IntelliJ
+===================================
+
+To run the TornadoVM test suite from IntelliJ:
+
+1. Go to **Run > Edit Configurations > Python > TornadoVM-Tests**
+2. Ensure a valid Python interpreter is selected
+3. Click **Run TornadoVM-Tests**
+
+The test configuration automatically uses the correct ``TORNADOVM_HOME`` path from your last build.
+
+.. note::
+
+   After building with a different backend, the ``TornadoVM-Tests`` configuration is automatically updated with the new SDK path. If you encounter issues, run ``make intellijinit`` again to regenerate the configurations.
 
 Configuring Applications to Debug/Run
 *************************************
