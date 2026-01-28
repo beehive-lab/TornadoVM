@@ -46,7 +46,8 @@ public class TornadoPanamaSegmentsHeaderPhase extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
         for (ReadNode readNode : graph.getNodes().filter(ReadNode.class)) {
-            String methodName = readNode.getLocationIdentity().toString();
+            LocationIdentity locationIdentity = (LocationIdentity) readNode.getLocationIdentity();
+            String methodName = locationIdentity.toString();
             if (methodName.endsWith("numberOfElements")) {
                 AddressNode address = readNode.getAddress();
                 if (address instanceof OffsetAddressNode offsetAddressNode) {
