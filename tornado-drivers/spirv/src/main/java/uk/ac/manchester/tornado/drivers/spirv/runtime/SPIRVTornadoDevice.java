@@ -49,7 +49,6 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.types.tensors.Tensor;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
@@ -300,8 +299,7 @@ public class SPIRVTornadoDevice implements TornadoXPUDevice {
                 return new SPIRVVectorWrapper(deviceContext, object, batchSize, access);
             } else if (object instanceof MemorySegment) {
                 return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access, 0);
-            } else if (object instanceof TornadoNativeArray nativeArray && !(object instanceof Tensor)) {
-                // For Tensor objects, we use the SPIRVObjectWrapper
+            } else if (object instanceof TornadoNativeArray nativeArray) {
                 return new SPIRVMemorySegmentWrapper(deviceContext, batchSize, access, nativeArray.getElementSize());
             } else {
                 // Possible a vector type, we encapsulate in an object
