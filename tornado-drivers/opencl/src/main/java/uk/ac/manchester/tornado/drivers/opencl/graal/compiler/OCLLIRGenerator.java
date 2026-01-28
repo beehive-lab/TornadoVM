@@ -82,9 +82,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     private final OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLBarrierSetLIRGenerator() {
-
-        }, new OCLMoveFactory(), providers, res);
+        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBarrierSetLIRGenerator() {}, new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
     }
@@ -186,7 +184,7 @@ public class OCLLIRGenerator extends LIRGenerator {
         final Variable variable = super.newVariable(valueKind);
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", variable.toString(), valueKind.toString(), valueKind.getClass().getName());
 
-        OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
+        uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerationResult res = (uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerationResult) getResult();
         res.insertVariable(variable);
 
         return variable;

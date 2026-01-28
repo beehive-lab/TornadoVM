@@ -65,12 +65,10 @@ public class OCLFP16SupportPhase extends Phase {
     protected void run(StructuredGraph graph) {
         boolean fp16Support = false;
         String extensions = null;
-        if (deviceContext.getDevice() instanceof OCLDevice) {
-            OCLDevice oclDevice = (OCLDevice) deviceContext.getDevice();
+        if (deviceContext.getDevice() instanceof OCLDevice oclDevice) {
             extensions = oclDevice.getDeviceExtensions();
-        } else if (deviceContext.getDevice() instanceof VirtualOCLDevice) {
-            VirtualOCLDevice oclDevice = (VirtualOCLDevice) deviceContext.getDevice();
-            extensions = oclDevice.getDeviceExtensions();
+        } else if (deviceContext.getDevice() instanceof VirtualOCLDevice virtualOCLDevice) {
+            extensions = virtualOCLDevice.getDeviceExtensions();
         }
         if (extensions != null && extensions.contains("cl_khr_fp16")) {
             fp16Support = true;

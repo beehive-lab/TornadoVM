@@ -21,6 +21,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
+
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CASE;
@@ -32,17 +42,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.NOT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.OPEN_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SWITCH;
-
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
-
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
 
 /**
  * OpenCL Code Generation for all control-flow constructs.
@@ -147,10 +146,8 @@ public class OCLControlFlow {
     }
 
     /**
-     * This instruction can generate different code depending on whether or not
-     * there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between
-     * the loop condition and the {@link LoopPostOp}, respectively the
-     * {@link LoopInitOp}.
+     * This instruction can generate different code depending on whether or not there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between the loop condition and the
+     * {@link LoopPostOp}, respectively the {@link LoopInitOp}.
      */
     public static class LoopConditionOp extends AbstractInstruction {
 
@@ -263,14 +260,14 @@ public class OCLControlFlow {
         public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass.create(SwitchOp.class);
 
         @Use
-        private final AllocatableValue value;
+        private AllocatableValue value;
 
-        @Use({ CONST })
-        private final Constant[] keyConstants;
+        @Use( { CONST })
+        private Constant[] keyConstants;
 
         @Use
-        private final LabelRef[] keyTargets;
-        private final LabelRef defaultTarget;
+        private LabelRef[] keyTargets;
+        private LabelRef defaultTarget;
 
         public SwitchOp(AllocatableValue value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);
@@ -310,7 +307,7 @@ public class OCLControlFlow {
         public static final LIRInstructionClass<CaseOp> TYPE = LIRInstructionClass.create(CaseOp.class);
 
         @Use
-        private final Constant value;
+        private Constant value;
 
         public CaseOp(Constant value) {
             super(TYPE);

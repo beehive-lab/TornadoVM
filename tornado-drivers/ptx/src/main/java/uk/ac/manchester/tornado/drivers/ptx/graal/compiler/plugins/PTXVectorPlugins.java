@@ -23,8 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -41,10 +42,6 @@ import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
@@ -91,6 +88,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
 public final class PTXVectorPlugins {
 
     public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
@@ -103,7 +102,7 @@ public final class PTXVectorPlugins {
                     return false;
                 }
                 if (method.getName().equals("<init>")) {
-                    final VectorValueNode vector = resolveReceiver(b, vectorKind, args[0]);
+                    final var vector = resolveReceiver(b, vectorKind, args[0]);
                     if (args.length > 1) {
                         int offset = (vector == args[0]) ? 1 : 0;
                         for (int i = offset; i < args.length; i++) {
@@ -195,40 +194,30 @@ public final class PTXVectorPlugins {
 
     private static VectorValueNode resolveReceiver(GraphBuilderContext b, PTXKind vectorKind, ValueNode thisObject) {
         VectorValueNode vector = null;
-        if (thisObject instanceof PiNode) {
-            thisObject = ((PiNode) thisObject).getOriginalNode();
+        if (thisObject instanceof PiNode piNode) {
+            thisObject = piNode.getOriginalNode();
         }
-        if (thisObject instanceof VectorValueNode) {
-            vector = (VectorValueNode) thisObject;
+        if (thisObject instanceof VectorValueNode vectorValueNode) {
+            vector = vectorValueNode;
         }
         guarantee(vector != null, "unable to resolve vector");
         return vector;
     }
 
-    private static VectorValueNode resolveReceiver(GraphBuilderContext b, PTXKind vectorKind, Receiver receiver) {
-        ValueNode thisObject = receiver.get();
-        return resolveReceiver(b, vectorKind, thisObject);
-    }
-
     private static Class<?> resolveJavaClass(String panamaType) throws TornadoCompilationException {
-        if (panamaType.contains("IntArray")) {
-            return int.class;
-        } else if (panamaType.contains("DoubleArray")) {
-            return double.class;
-        } else if (panamaType.contains("FloatArray")) {
-            return float.class;
-        } else if (panamaType.contains("HalfFloatArray")) {
-            return short.class;
-        } else {
-            throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
-        }
+
+        return switch (panamaType) {
+            case String s when s.contains("IntArray") -> int.class;
+            case String s when s.contains("DoubleArray") -> double.class;
+            case String s when s.contains("FloatArray") -> float.class;
+            case String s when s.contains("HalfFloatArray") -> short.class;
+            default -> throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
+        };
     }
 
     private static void registerVectorCollectionsPlugins(final InvocationPlugins plugins, final PTXKind vectorKind, final Class<?> storageType, final Class<?> vectorClass) {
-
-        final Class<?> declaringClass = vectorKind.getJavaClass();
-
-        final Registration r = new Registration(plugins, declaringClass);
+        final var declaringClass = vectorKind.getJavaClass();
+        final var r = new Registration(plugins, declaringClass);
         r.register(new InvocationPlugin("loadFromArray", Receiver.class, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
@@ -256,16 +245,14 @@ public final class PTXVectorPlugins {
     }
 
     private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final PTXKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
-
-        final Class<?> declaringClass = vectorKind.getJavaClass();
-        final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
-
-        final Registration r = new Registration(plugins, declaringClass);
+        final var declaringClass = vectorKind.getJavaClass();
+        final var javaElementKind = vectorKind.getElementKind().asJavaKind();
+        final var r = new Registration(plugins, declaringClass);
         ps.appendNodePlugin(new NodePlugin() {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
-                        "IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
+                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString()
+                        .contains("IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
                     Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;
@@ -276,7 +263,8 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
+                receiver.get(true);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(true), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
@@ -285,8 +273,9 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, vectorKind.getJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                if (receiver.get() instanceof ParameterNode) {
-                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                if (receiver.get(true) instanceof ParameterNode) {
+                    receiver.get(true);
+                    final AddressNode address = new OffsetAddressNode(receiver.get(true), null);
                     final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(vectorKind, address, value);
                     b.add(b.append(store));
                     return true;
@@ -298,7 +287,8 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                receiver.get(true);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -307,7 +297,8 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                receiver.get(true);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -356,10 +347,11 @@ public final class PTXVectorPlugins {
         r.register(new InvocationPlugin("getArray", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
-                ValueNode array = receiver.get();
+                ValueNode array = receiver.get(true);
                 GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
                 b.push(JavaKind.Object, b.append(getArrayNode));
                 return true;
@@ -369,10 +361,9 @@ public final class PTXVectorPlugins {
 
     static void registerParameterPlugins(Plugins plugins) {
         plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
-            if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
-                ObjectStamp objStamp = (ObjectStamp) stampPair.getTrustedStamp();
-                if (objStamp.type().getAnnotation(Vector.class) != null) {
-                    PTXKind kind = PTXKind.fromResolvedJavaType(objStamp.type());
+            if (stampPair.getTrustedStamp() instanceof ObjectStamp objectStamp) {
+                if (objectStamp.type().getAnnotation(Vector.class) != null) {
+                    PTXKind kind = PTXKind.fromResolvedJavaType(objectStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(PTXStampFactory.getStampFor(kind)));
                 }
             }
