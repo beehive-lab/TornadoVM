@@ -35,11 +35,11 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
-import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -55,7 +55,9 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -73,21 +75,25 @@ public class OCLFieldBuffer implements XPUBuffer {
     private final int hubOffset;
     private final int fieldsOffset;
     private final OCLDeviceContext deviceContext;
+    private final Object reference;
     private long bufferId;
     private long bufferOffset;
     private ByteBuffer buffer;
     private long setSubRegionSize;
     private final TornadoLogger logger;
     private final Access access;
+    private final int fieldRegionAlignmentBytes;
 
     private OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
         this.objectType = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
+        this.reference = object;
 
         this.areCoopsEnabled = TornadoOptions.coopsUsed();
         this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
+        this.fieldRegionAlignmentBytes = computeFieldRegionAlignment(device);
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -174,6 +180,30 @@ public class OCLFieldBuffer implements XPUBuffer {
         }
     }
 
+    private int computeFieldRegionAlignment(OCLDeviceContext device) {
+        int alignmentBits = 0;
+        OCLTargetDevice targetDevice = device.getDevice();
+        if (targetDevice instanceof OCLDevice oclDevice) {
+            alignmentBits = oclDevice.getDeviceMemoryBaseAlignment();
+        }
+        int alignmentBytes = alignmentBits > 0 ? (alignmentBits / 8) : 16;
+        if (areCoopsEnabled && alignmentBytes < 8) {
+            alignmentBytes = 8;
+        }
+        return alignmentBytes;
+    }
+
+    private long alignOffset(long value) {
+        if (fieldRegionAlignmentBytes <= 1) {
+            return value;
+        }
+        long remainder = value % fieldRegionAlignmentBytes;
+        if (remainder == 0) {
+            return value;
+        }
+        return value + (fieldRegionAlignmentBytes - remainder);
+    }
+
     public OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access) {
         this(device, object, access, !isChildOfTornadoNativeArray(object));
     }
@@ -198,6 +228,7 @@ public class OCLFieldBuffer implements XPUBuffer {
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size(), access);
         this.bufferOffset = 0;
         setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
+        registerSubBufferMappings(reference);
 
         if (DEBUG) {
             logger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
@@ -206,6 +237,11 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
+        OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
+        if (memoryManager != null && memoryManager.delayParentBufferRelease(this.bufferId, this.access)) {
+            bufferId = -1;
+            return;
+        }
         deviceContext.getBufferProvider().markBufferReleased(this.bufferId, this.access);
         bufferId = -1;
     }
@@ -350,6 +386,10 @@ public class OCLFieldBuffer implements XPUBuffer {
         deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
         for (int i = 0; i < fields.length; i++) {
             if (wrappedFields[i] != null) {
+                Object fieldValue = wrappedFields[i].getFieldValue(object);
+                if (shouldSkipFieldWrite(fieldValue)) {
+                    continue;
+                }
                 wrappedFields[i].write(executionPlanId, object);
             }
         }
@@ -362,17 +402,58 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public void setBuffer(XPUBufferWrapper bufferWrapper) {
+        setBufferWithAliases(bufferWrapper, new IdentityHashMap<>(), new IdentityHashMap<>());
+    }
+
+    private void setBufferWithAliases(XPUBufferWrapper bufferWrapper, IdentityHashMap<Object, ArrayWrapperAliasEntry> aliasMap, IdentityHashMap<Object, MemorySegmentAliasEntry> memorySegmentAliases) {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
         bufferWrapper.bufferOffset += getObjectSize();
 
+        OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
         for (int i = 0; i < fields.length; i++) {
             FieldBuffer fieldBuffer = wrappedFields[i];
             if (fieldBuffer == null) {
                 continue;
             }
-
+            bufferWrapper.bufferOffset = alignOffset(bufferWrapper.bufferOffset);
+            XPUBuffer childBuffer = fieldBuffer.getObjectBuffer();
+            if (childBuffer instanceof OCLFieldBuffer nested) {
+                nested.setBufferWithAliases(bufferWrapper, aliasMap, memorySegmentAliases);
+                continue;
+            }
+            Object fieldValue = (reference != null) ? fieldBuffer.getFieldValue(reference) : null;
+            if (fieldValue != null && fieldValue.getClass().isArray() && childBuffer instanceof OCLArrayWrapper<?> arrayWrapper) {
+                fieldBuffer.setBuffer(bufferWrapper);
+                long newOffset = arrayWrapper.getBufferOffset();
+                ArrayWrapperAliasEntry entry = aliasMap.get(fieldValue);
+                if (entry == null) {
+                    entry = new ArrayWrapperAliasEntry(arrayWrapper);
+                    aliasMap.put(fieldValue, entry);
+                } else if (entry.getSize() == arrayWrapper.size()) {
+                    entry.updateOffset(newOffset);
+                    entry.addBuffer(arrayWrapper);
+                }
+                if (memoryManager != null) {
+                    long canonicalOffset = entry.getOffset();
+                    memoryManager.registerSubBuffer(fieldValue, bufferId, canonicalOffset, arrayWrapper.size(), access);
+                }
+                continue;
+            }
+            if (fieldValue != null && childBuffer instanceof OCLMemorySegmentWrapper memoryWrapper) {
+                fieldBuffer.setBuffer(bufferWrapper);
+                long newOffset = memoryWrapper.getBufferOffset();
+                MemorySegmentAliasEntry entry = memorySegmentAliases.get(fieldValue);
+                if (entry == null) {
+                    entry = new MemorySegmentAliasEntry(memoryWrapper);
+                    memorySegmentAliases.put(fieldValue, entry);
+                } else if (entry.getSize() == memoryWrapper.size()) {
+                    entry.updateOffset(newOffset);
+                    entry.addBuffer(memoryWrapper);
+                }
+                continue;
+            }
             fieldBuffer.setBuffer(bufferWrapper);
         }
     }
@@ -467,6 +548,10 @@ public class OCLFieldBuffer implements XPUBuffer {
         eventList.add(deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {
             if (field != null) {
+                Object fieldValue = field.getFieldValue(ref);
+                if (shouldSkipFieldWrite(fieldValue)) {
+                    continue;
+                }
                 eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
             }
         }
@@ -491,11 +576,58 @@ public class OCLFieldBuffer implements XPUBuffer {
         return size;
     }
 
+    private void registerSubBufferMappings(Object reference) {
+        if (reference == null) {
+            return;
+        }
+        OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
+        if (memoryManager == null) {
+            return;
+        }
+        for (FieldBuffer fieldBuffer : wrappedFields) {
+            if (fieldBuffer == null) {
+                continue;
+            }
+            Object fieldValue = fieldBuffer.getFieldValue(reference);
+            if (fieldValue == null) {
+                continue;
+            }
+            boolean isArrayField = fieldValue.getClass().isArray();
+            boolean isMemorySegmentField = fieldBuffer.getObjectBuffer() instanceof OCLMemorySegmentWrapper;
+            if (fieldBuffer.getObjectBuffer() instanceof OCLFieldBuffer nested) {
+                nested.registerSubBufferMappings(fieldValue);
+                continue;
+            }
+            if (!isArrayField && !isMemorySegmentField) {
+                continue;
+            }
+            long offset = fieldBuffer.getBufferOffset();
+            long size = fieldBuffer.size();
+            memoryManager.registerSubBuffer(fieldValue, bufferId, offset, size, access);
+        }
+    }
+
+    private boolean shouldSkipFieldWrite(Object fieldValue) {
+        if (fieldValue == null || !fieldValue.getClass().isArray()) {
+            return false;
+        }
+        OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
+        if (memoryManager == null) {
+            return false;
+        }
+        OCLMemoryManager.SubBufferInfo info = memoryManager.getSubBufferInfo(fieldValue);
+        if (info == null || info.parentBuffer != this.bufferId) {
+            return false;
+        }
+        return memoryManager.getObjectBuffer(fieldValue) != null;
+    }
+
     @Override
     public long size() {
         long size = getObjectSize();
         for (FieldBuffer wrappedField : wrappedFields) {
             if (wrappedField != null) {
+                size = alignOffset(size);
                 size += wrappedField.size();
             }
         }

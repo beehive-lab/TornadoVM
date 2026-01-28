@@ -23,8 +23,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -122,6 +125,7 @@ public class TornadoGraphBuilder {
 
         final List<Object> constants = executionContext.getConstants();
         final List<Object> objects = executionContext.getObjects();
+        final BitSet[] aliasMap = buildAliasMap(objects);
 
 
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
@@ -210,6 +214,9 @@ public class TornadoGraphBuilder {
                 }
 
                 objectNodes[variableIndex] = nextAccessNode;
+                if (nextAccessNode instanceof DependentReadNode) {
+                    propagateAliasWrites(aliasMap, objectNodes, variableIndex, context, graph, taskNode, persist);
+                }
                 argIndex++;
 
                 // end-of load reference condition
@@ -317,6 +324,134 @@ public class TornadoGraphBuilder {
         }
 
         return graph;
+    }
+
+    private static BitSet[] buildAliasMap(List<Object> objects) {
+        if (objects == null || objects.isEmpty()) {
+            return new BitSet[0];
+        }
+        IdentityHashMap<Object, Integer> objectIndices = new IdentityHashMap<>();
+        for (int i = 0; i < objects.size(); i++) {
+            Object object = objects.get(i);
+            if (object != null) {
+                objectIndices.put(object, i);
+            }
+        }
+
+        BitSet[] aliasMap = new BitSet[objects.size()];
+        for (int i = 0; i < objects.size(); i++) {
+            BitSet aliases = new BitSet(objects.size());
+            IdentityHashMap<Object, Boolean> visited = new IdentityHashMap<>();
+            collectAliases(objects.get(i), objectIndices, aliases, visited);
+            aliasMap[i] = aliases;
+        }
+
+        // Make aliasing symmetric so writes to any alias propagate dependencies.
+        for (int i = 0; i < aliasMap.length; i++) {
+            BitSet aliases = aliasMap[i];
+            if (aliases == null) {
+                continue;
+            }
+            for (int j = aliases.nextSetBit(0); j >= 0; j = aliases.nextSetBit(j + 1)) {
+                if (aliasMap[j] == null) {
+                    aliasMap[j] = new BitSet(objects.size());
+                }
+                aliasMap[j].set(i);
+            }
+        }
+
+        return aliasMap;
+    }
+
+    private static void collectAliases(Object object, IdentityHashMap<Object, Integer> objectIndices, BitSet aliases, IdentityHashMap<Object, Boolean> visited) {
+        if (object == null) {
+            return;
+        }
+        if (visited.put(object, Boolean.TRUE) != null) {
+            return;
+        }
+        Integer index = objectIndices.get(object);
+        if (index != null) {
+            aliases.set(index);
+        }
+        Class<?> clazz = object.getClass();
+        if (clazz.isArray()) {
+            return;
+        }
+        for (Class<?> type = clazz; type != null; type = type.getSuperclass()) {
+            Field[] fields = type.getDeclaredFields();
+            for (Field field : fields) {
+                if (Modifier.isStatic(field.getModifiers()) || field.getType().isPrimitive()) {
+                    continue;
+                }
+                boolean accessible;
+                try {
+                    accessible = field.trySetAccessible();
+                } catch (RuntimeException ignored) {
+                    continue;
+                }
+                if (!accessible) {
+                    continue;
+                }
+                try {
+                    Object value = field.get(object);
+                    if (value != null) {
+                        collectAliases(value, objectIndices, aliases, visited);
+                    }
+                } catch (IllegalAccessException | IllegalArgumentException ignored) {
+                }
+            }
+        }
+    }
+
+    private static void propagateAliasWrites(BitSet[] aliasMap, AbstractNode[] objectNodes, int variableIndex, ContextNode context, TornadoGraph graph, TaskNode taskNode,
+            AllocateMultipleBuffersNode persist) {
+        if (aliasMap == null || aliasMap.length == 0) {
+            return;
+        }
+        BitSet aliases = aliasMap[variableIndex];
+        if (aliases == null) {
+            return;
+        }
+        for (int aliasIndex = aliases.nextSetBit(0); aliasIndex >= 0; aliasIndex = aliases.nextSetBit(aliasIndex + 1)) {
+            if (aliasIndex == variableIndex) {
+                continue;
+            }
+            ObjectNode aliasValue = resolveObjectNode(objectNodes[aliasIndex]);
+            if (aliasValue == null) {
+                continue;
+            }
+            if (persist != null && !persist.getValues().contains(aliasValue)) {
+                persist.addValue(aliasValue);
+            }
+            DependentReadNode depRead = new DependentReadNode(context);
+            depRead.setValue(aliasValue);
+            depRead.setDependent(taskNode);
+            graph.add(depRead);
+            objectNodes[aliasIndex] = depRead;
+        }
+    }
+
+    private static ObjectNode resolveObjectNode(AbstractNode node) {
+        if (node instanceof ObjectNode objectNode) {
+            return objectNode;
+        }
+        if (node instanceof DependentReadNode dependentReadNode) {
+            return dependentReadNode.getValue();
+        }
+        if (node instanceof CopyInNode copyInNode) {
+            return copyInNode.getValue();
+        }
+        if (node instanceof AllocateNode allocateNode) {
+            return allocateNode.getValue();
+        }
+        if (node instanceof OnDeviceObjectNode onDeviceObjectNode) {
+            return onDeviceObjectNode.getValue();
+        }
+        if (node instanceof StreamInNode streamInNode) {
+            return streamInNode.getValue();
+        }
+        return null;
     }
 
     /**

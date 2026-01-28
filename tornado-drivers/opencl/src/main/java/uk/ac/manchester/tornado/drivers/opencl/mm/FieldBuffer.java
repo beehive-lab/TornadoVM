@@ -58,7 +58,7 @@ public class FieldBuffer {
         return (useDeps) ? objectBuffer.enqueueWrite(executionPlanId, getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
     }
 
-    private Object getFieldValue(final Object container) {
+    public Object getFieldValue(final Object container) {
         Object value = null;
         try {
             value = field.get(container);
@@ -89,6 +89,10 @@ public class FieldBuffer {
 
     public long size() {
         return objectBuffer.size();
+    }
+
+    XPUBuffer getObjectBuffer() {
+        return objectBuffer;
     }
 
     void setBuffer(XPUBuffer.XPUBufferWrapper bufferWrapper) {

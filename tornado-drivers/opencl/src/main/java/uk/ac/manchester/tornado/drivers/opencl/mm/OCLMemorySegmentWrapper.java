@@ -50,6 +50,10 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
+    private boolean usesSubBuffer;
+    private long parentBufferId;
+    private long subBufferId;
+    private long lastExecutionPlanId;
 
     private long subregionSize;
     private Access access;
@@ -61,6 +65,10 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.usesSubBuffer = false;
+        this.parentBufferId = INIT_VALUE;
+        this.subBufferId = INIT_VALUE;
+        this.lastExecutionPlanId = INIT_VALUE;
         this.access = access;
         this.sizeOfType = sizeOfType;
         if (sizeOfType <= 0) {
@@ -90,6 +98,14 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         return bufferOffset;
     }
 
+    void updateBufferOffset(long newOffset) {
+        bufferOffset = newOffset;
+    }
+
+    private long deviceBufferOffset() {
+        return usesSubBuffer ? 0 : bufferOffset;
+    }
+
     @Override
     public void read(long executionPlanId, final Object reference) {
         read(executionPlanId, reference, 0, 0, null, false);
@@ -108,6 +124,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int read(long executionPlanId, final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        lastExecutionPlanId = executionPlanId;
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         final int returnEvent;
@@ -118,7 +135,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), hostOffset, partialReadSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else if (batchSize <= 0) {
             // Partial Copy Out due to batch processing
-            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), deviceBufferOffset(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
             // Full copy out (default)
             returnEvent = deviceContext.readBuffer(executionPlanId, toBuffer(), TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
@@ -132,10 +149,11 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     @Override
 
     public void write(long executionPlanId, Object reference) {
+        lastExecutionPlanId = executionPlanId;
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         if (batchSize <= 0) {
-            deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+            deviceContext.writeBuffer(executionPlanId, toBuffer(), deviceBufferOffset(), bufferSize, segment.address(), 0, null);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
         }
@@ -143,12 +161,13 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        lastExecutionPlanId = executionPlanId;
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
         final int returnEvent;
         if (batchSize <= 0) {
-            returnEvent = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), deviceBufferOffset(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for enqueueReadBuffer operation");
         }
@@ -157,17 +176,19 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+        lastExecutionPlanId = executionPlanId;
         List<Integer> returnEvents = new ArrayList<>();
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), deviceBufferOffset(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
+            long baseOffset = deviceBufferOffset();
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), baseOffset, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+            internalEvent = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), baseOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
                     hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
         }
         returnEvents.add(internalEvent);
@@ -181,6 +202,20 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
+            OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
+            OCLMemoryManager.SubBufferInfo subBufferInfo = (memoryManager != null) ? memoryManager.getSubBufferInfo(reference) : null;
+            if (subBufferInfo != null && subBufferInfo.size == bufferSize) {
+                long subBuffer = memoryManager.createSubBuffer(subBufferInfo.parentBuffer, subBufferInfo.offset, subBufferInfo.size, access);
+                if (subBuffer != INIT_VALUE) {
+                    subBufferId = subBuffer;
+                    bufferId = subBuffer;
+                    bufferOffset = subBufferInfo.offset;
+                    usesSubBuffer = true;
+                    parentBufferId = subBufferInfo.parentBuffer;
+                    memoryManager.registerObjectBuffer(reference, this);
+                    return;
+                }
+            }
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
         } else {
             bufferSize = batchSize;
@@ -191,6 +226,11 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
+        OCLMemoryManager memoryManager = deviceContext.getMemoryManager();
+        if (memoryManager != null) {
+            memoryManager.registerObjectBuffer(reference, this);
+        }
+
         if (TornadoOptions.FULL_DEBUG) {
             new TornadoLogger().info("allocated: %s", toString());
         }
@@ -199,6 +239,17 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        if (usesSubBuffer) {
+            deviceContext.getMemoryManager().releaseSubBuffer(subBufferId, parentBufferId);
+            bufferId = INIT_VALUE;
+            bufferSize = INIT_VALUE;
+            usesSubBuffer = false;
+            parentBufferId = INIT_VALUE;
+            subBufferId = INIT_VALUE;
+            return;
+        }
+
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
@@ -206,6 +257,42 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         if (TornadoOptions.FULL_DEBUG) {
             new TornadoLogger().info("deallocated: %s", toString());
         }
+    }
+
+    public boolean remapToSubBuffer(OCLMemoryManager.SubBufferInfo subBufferInfo, Object hostObject) {
+        if (subBufferInfo == null || bufferId == INIT_VALUE) {
+            return false;
+        }
+        if (subBufferInfo.size != bufferSize) {
+            return false;
+        }
+        final boolean needsRemap = !usesSubBuffer || parentBufferId != subBufferInfo.parentBuffer || bufferOffset != subBufferInfo.offset;
+        if (!needsRemap) {
+            return true;
+        }
+        if (hostObject != null && lastExecutionPlanId != INIT_VALUE) {
+            deviceContext.sync(lastExecutionPlanId);
+            read(lastExecutionPlanId, hostObject, 0, 0, null, false);
+        }
+        if (usesSubBuffer) {
+            deviceContext.getMemoryManager().releaseSubBuffer(subBufferId, parentBufferId);
+        } else {
+            deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        }
+        long subBuffer = deviceContext.getMemoryManager().createSubBuffer(subBufferInfo.parentBuffer, subBufferInfo.offset, subBufferInfo.size, access);
+        if (subBuffer == INIT_VALUE) {
+            return false;
+        }
+        subBufferId = subBuffer;
+        bufferId = subBuffer;
+        bufferOffset = subBufferInfo.offset;
+        usesSubBuffer = true;
+        parentBufferId = subBufferInfo.parentBuffer;
+        if (hostObject != null) {
+            long planId = lastExecutionPlanId != INIT_VALUE ? lastExecutionPlanId : 0;
+            write(planId, hostObject);
+        }
+        return true;
     }
 
     @Override
