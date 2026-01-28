@@ -717,11 +717,11 @@ public class OCLGraphBuilderPlugins {
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
-        plugins.appendNodePlugin(new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLVectorNodePlugin());
-        plugins.appendNodePlugin(new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLAtomicIntegerPlugin());
+        plugins.appendNodePlugin(new OCLVectorNodePlugin());
+        plugins.appendNodePlugin(new OCLAtomicIntegerPlugin());
     }
 
     public static void registerParameterPlugins(Plugins plugins) {
-        uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLVectorPlugins.registerParameterPlugins(plugins);
+        OCLVectorPlugins.registerParameterPlugins(plugins);
     }
 }
