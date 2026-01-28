@@ -88,7 +88,13 @@ def update_paths():
     """
     python_cmd = "python" if is_win_or_bat() else "python3"
     update_paths_script = os.path.join(".", "bin", "update_paths.py")
-    subprocess.run([python_cmd, update_paths_script], stdout=subprocess.PIPE)
+
+    # Run update_paths.py and capture its output for debugging
+    result = subprocess.run([python_cmd, update_paths_script], capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr)
 
     # Read the actual SDK path from the bin/sdk symlink
     # This is necessary because environment variables set in subprocess don't propagate back
@@ -117,9 +123,31 @@ def update_backend_file(selected_backends_str):
         selected_backends_str (str): Comma-separated string of selected backends.
     """
     tornado_sdk_path = os.environ.get("TORNADOVM_HOME")
+    if not tornado_sdk_path:
+        print("[ERROR] TORNADOVM_HOME is not set, cannot update backend file")
+        return
+
     backend_file_path = os.path.join(tornado_sdk_path, "etc", "tornado.backend")
+    backend_content = f"tornado.backends={selected_backends_str}\n"
+
+    # Check if the etc directory exists
+    etc_dir = os.path.join(tornado_sdk_path, "etc")
+    if not os.path.exists(etc_dir):
+        print(f"[WARNING] etc directory does not exist: {etc_dir}")
+        os.makedirs(etc_dir, exist_ok=True)
+
     with open(backend_file_path, "w") as backend_file:
-        backend_file.write(f"tornado.backends={selected_backends_str}")
+        backend_file.write(backend_content)
+
+    # Verify the write was successful
+    with open(backend_file_path, "r") as backend_file:
+        actual_content = backend_file.read()
+        if actual_content.strip() == backend_content.strip():
+            print(f"Backend file updated successfully")
+        else:
+            print(f"[ERROR] Backend file content mismatch!")
+            print(f"  Expected: {backend_content.strip()}")
+            print(f"  Actual:   {actual_content.strip()}")
 
 
 def copy_graal_jars():

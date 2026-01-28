@@ -40,6 +40,34 @@ def write_generated_template(xml_content, xml_file_path):
     with open(xml_file_path, "w") as file:
         file.write(xml_content)
 
+def compute_tornado_backend_variant(backend_profiles):
+    """
+    Compute the tornado.backend property value from backend profiles.
+
+    This follows the same logic as bin/compile:
+    - Single backend: "opencl", "ptx", or "spirv"
+    - Multiple backends: sorted and joined with "-" (e.g., "opencl-ptx")
+    - All three backends: "full"
+
+    Args:
+        backend_profiles: List of backend profile names (e.g., ["opencl-backend", "ptx-backend"])
+
+    Returns:
+        str: The tornado.backend value (e.g., "opencl", "ptx", "opencl-ptx", "full")
+    """
+    # Extract backend names from profiles (e.g., "opencl-backend" -> "opencl")
+    backend_list = [b.replace("-backend", "") for b in backend_profiles]
+
+    # Check if all backends are present -> use "full"
+    all_backends = {"opencl", "ptx", "spirv"}
+    if set(backend_list) == all_backends:
+        return "full"
+
+    # Sort and join for consistent naming
+    backend_list_sorted = sorted(backend_list)
+    return "-".join(backend_list_sorted)
+
+
 def define_and_get_internal_maven_content(xml_templates_directory, project_directory, java_home, backend_profiles):
     maven_directory = os.path.join(project_directory, "etc", "dependencies", "apache-maven-3.9.3")
     xml_internal_maven_build_content_directory = os.path.join(xml_templates_directory, "maven_template.xml")
@@ -52,10 +80,14 @@ def define_and_get_internal_maven_content(xml_templates_directory, project_direc
 
     xml_backend_profiles = generate_backend_profiles_as_xml_entries(backend_profiles)
 
+    # Compute tornado.backend property value for SDK directory naming
+    tornado_backend_variant = compute_tornado_backend_variant(backend_profiles)
+
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@MAVEN_DIRECTORY@@]", maven_directory)
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@JAVA_PROFILE@@]", java_profile)
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@BACKEND_PROFILES@@]", xml_backend_profiles)
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@PROJECT_DIR@@]", project_directory)
+    xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@TORNADO_BACKEND@@]", tornado_backend_variant)
 
     return xml_internal_maven_build_content
 

@@ -84,6 +84,16 @@ def select_tornado_sdk(tornado_sdk_dir):
         elif os.path.exists(zip_file):
             return os.path.getmtime(zip_file)
         elif os.path.isdir(dir_path):
+            # For directories, check the inner SDK directory for more accurate mtime
+            # Structure: dist/tornadovm-X.Y.Z-backend-platform/tornadovm-X.Y.Z-backend/
+            for item in os.listdir(dir_path):
+                inner_path = os.path.join(dir_path, item)
+                if item.startswith('tornadovm-') and os.path.isdir(inner_path):
+                    # Use the mtime of the etc/tornado.backend file if it exists
+                    backend_file = os.path.join(inner_path, "etc", "tornado.backend")
+                    if os.path.exists(backend_file):
+                        return os.path.getmtime(backend_file)
+                    return os.path.getmtime(inner_path)
             return os.path.getmtime(dir_path)
         return 0
 

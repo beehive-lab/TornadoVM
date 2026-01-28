@@ -158,37 +158,86 @@ Configuring IntelliJ for TornadoVM
 1. Initializing the IntelliJ Project Files
 ==========================================
 
-To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the file with the environment variables (``setvars.sh``, ``setvars.cmd``), as explained in the :ref:`installation`.
+To initialize IDE project files for building and running TornadoVM from IntelliJ, you must have first built TornadoVM and loaded the environment variables, as explained in the :ref:`installation`.
 
-Then you can execute the command to generate the IDE project files based on your built TornadoVM instance (i.e., with the JAVA_HOME and the backends), as follows:
+.. code:: bash
 
-   .. code:: bash
+   # Build TornadoVM first (with your desired backend)
+   $ make BACKEND=opencl   # or ptx, spirv, opencl,ptx, etc.
 
-      $ tornado --intellijinit
+   # Load the environment variables
+   $ source setvars.sh     # Linux/macOS
+   $ setvars.cmd           # Windows
 
-2. Configuring the TornadoVM Python Build Utility
-=================================================
+   # Generate IntelliJ project files
+   $ make intellijinit
 
-a. Navigate to the Python configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This generates run configurations in the ``.build/`` directory that IntelliJ will automatically detect.
 
-Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+2. Building TornadoVM from IntelliJ
+===================================
 
-b. Configure the Python interpreter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After running ``make intellijinit``, you will have the following run configurations available in **Run > Edit Configurations**:
 
-In the **Use specified interpreter** field, select a valid Python interpreter installed on your system.
+- **TornadoVM-Build**: Builds TornadoVM (runs Maven + post-installation scripts)
+- **TornadoVM-Tests**: Runs the TornadoVM test suite
+- **_internal_TornadoVM_Maven-cleanAndinstall**: Internal Maven configuration (used by TornadoVM-Build)
 
-c. Update environment variables for selected backends
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To build TornadoVM:
 
-The **Environmental variables** section has been populated based on your built TornadoVM instance.
-If you change ``JAVA_HOME`` or built with different backends, you will need to run the ``tornado --intellijinit`` command.
+1. Go to **Run > Edit Configurations > Python > TornadoVM-Build**
+2. Ensure a valid Python interpreter is selected in the **Use specified interpreter** field
+3. Click **Run TornadoVM-Build**
 
-d. Build TornadoVM from IntelliJ
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3. Building for a Different Backend
+===================================
 
-Run a new build by clicking **Run TornadoVM-Build**.
+If you want to build TornadoVM for a different backend from IntelliJ, you have two options:
+
+Option A: Rebuild and Regenerate (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Build from the command line with the desired backend, then regenerate IntelliJ files:
+
+.. code:: bash
+
+   $ make BACKEND=ptx        # Build with PTX backend
+   $ source setvars.sh       # Reload environment
+   $ make intellijinit       # Regenerate IntelliJ configs
+
+This ensures all configurations are consistent.
+
+Option B: Edit Maven Configuration Directly
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Go to **Run > Edit Configurations**
+2. Find **_internal_TornadoVM_Maven-cleanAndinstall**
+3. Modify the Maven settings:
+
+   - **Profiles**: Enable/disable backend profiles (e.g., uncheck ``opencl-backend``, check ``ptx-backend``)
+   - **Command line options**: Update the ``-Dtornado.backend=`` value to match your selected backend(s).
+     This option must appear before the ``clean install`` goals. For example: ``-Dtornado.backend=ptx clean install``
+
+The ``-Dtornado.backend`` value should be:
+
+- Single backend: ``opencl``, ``ptx``, or ``spirv``
+- Multiple backends: ``opencl-ptx`` (sorted alphabetically, joined with ``-``)
+- All three backends: ``full``
+
+4. Running Unit Tests from IntelliJ
+===================================
+
+To run the TornadoVM test suite from IntelliJ:
+
+1. Go to **Run > Edit Configurations > Python > TornadoVM-Tests**
+2. Ensure a valid Python interpreter is selected
+3. Click **Run TornadoVM-Tests**
+
+The test configuration automatically uses the correct ``TORNADOVM_HOME`` path from your last build.
+
+.. note::
+
+   After building with a different backend, the ``TornadoVM-Tests`` configuration is automatically updated with the new SDK path. However, if you encounter issues, run ``make intellijinit`` again to regenerate the configurations.
 
 Configuring Applications to Debug/Run
 *************************************
