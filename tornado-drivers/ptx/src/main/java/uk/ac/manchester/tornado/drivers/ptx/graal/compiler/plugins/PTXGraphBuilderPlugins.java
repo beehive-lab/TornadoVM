@@ -318,7 +318,9 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -330,7 +332,9 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -342,7 +346,9 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -354,7 +360,9 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -366,10 +374,11 @@ public class PTXGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                // if we do not pass the resolved type, the compiler cannot deduct if the type is char or byte
                 MetaAccessProvider metaAccess = b.getMetaAccess();
                 ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, size);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -383,7 +392,9 @@ public class PTXGraphBuilderPlugins {
                 receiver.get(true);
                 MetaAccessProvider metaAccess = b.getMetaAccess();
                 ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(short.class);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.localSpace, resolvedElementType, size, PTXKind.F16);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.localSpace, resolvedElementType, sizeNode, PTXKind.F16);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
