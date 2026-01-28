@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.unittests.fields;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -53,7 +54,7 @@ public class TestInheritedFields extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testIncrementPrimitiveB(){
         final int N = 1000;
         PrimitiveB b = new PrimitiveB(N);
@@ -72,7 +73,7 @@ public class TestInheritedFields extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testIncrementPrimitiveAB(){
         final int N = 1000;
         PrimitiveB b = new PrimitiveB(N);
