@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.utils.OCLTornadoUtil;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
@@ -64,6 +65,7 @@ public class OCLVectorWrapper implements XPUBuffer {
     private long bufferSize;
     private long setSubRegionSize;
     private Access access;
+    private TornadoLogger logger;
 
     public OCLVectorWrapper(final OCLDeviceContext device, final Object object, long batchSize, Access access) {
         TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type, but found: " + object.getClass());
@@ -75,6 +77,7 @@ public class OCLVectorWrapper implements XPUBuffer {
         this.kind = getJavaKind(payload.getClass());
         this.bufferSize = sizeOf(payload);
         this.access = access;
+        this.logger = new TornadoLogger(this.getClass());
     }
 
     public long getBatchSize() {
@@ -95,7 +98,7 @@ public class OCLVectorWrapper implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBuffer(value, this, bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
             new TornadoLogger().info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
@@ -118,9 +121,18 @@ public class OCLVectorWrapper implements XPUBuffer {
     }
 
     @Override
-    public long size() {
+    public long getBufferId(){return bufferId;}
+
+    @Override
+    public long getBufferSize() {
         return bufferSize;
     }
+
+    @Override
+    public long getBufferOffset(){return bufferOffset;}
+
+    @Override
+    public Access getBufferAccess(){return access;}
 
     @Override
     public void setSizeSubRegion(long batchSize) {
@@ -180,9 +192,10 @@ public class OCLVectorWrapper implements XPUBuffer {
 
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
+        ArrayList<Integer> listEvents = new ArrayList<>();
+
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
         final Object array = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
-        ArrayList<Integer> listEvents = new ArrayList<>();
 
         if (array == null) {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
@@ -280,12 +293,7 @@ public class OCLVectorWrapper implements XPUBuffer {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
-        bufferWrapper.bufferOffset += size();
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return bufferOffset;
+        bufferWrapper.bufferOffset += getBufferSize();
     }
 
     @Override

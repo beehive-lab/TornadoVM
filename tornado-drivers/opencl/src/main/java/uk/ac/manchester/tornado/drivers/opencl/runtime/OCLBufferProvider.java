@@ -24,9 +24,15 @@
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
+
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
@@ -38,8 +44,14 @@ public class OCLBufferProvider extends TornadoBufferProvider {
 
     @Override
     public long allocateBuffer(long size, Access access) {
-        long oclMemFlags = getOCLMemFlagForAccess(access);
-        return ((OCLDeviceContext) deviceContext).getMemoryManager().createBuffer(size, oclMemFlags).getBuffer();
+        long flag = getOCLMemFlagForAccess(access);
+        return ((OCLDeviceContext) deviceContext).getMemoryManager().createBuffer(size, flag).getBuffer();
+    }
+
+    @Override
+    public long allocateSubBuffer(long parentBuffer, long offset, long size, Access access) {
+        long flag = getOCLMemFlagForAccess(access);
+        return ((OCLDeviceContext) deviceContext).getMemoryManager().createSubBuffer(parentBuffer, offset, size, flag);
     }
 
     @Override
@@ -47,7 +59,7 @@ public class OCLBufferProvider extends TornadoBufferProvider {
         ((OCLDeviceContext) deviceContext).getMemoryManager().releaseBuffer(buffer);
     }
 
-    private static long getOCLMemFlagForAccess(Access access) {
+    private long getOCLMemFlagForAccess(Access access) {
         switch (access) {
             case READ_ONLY:
                 return OCLMemFlags.CL_MEM_READ_ONLY;

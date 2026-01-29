@@ -86,7 +86,7 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (hasObjectBuffer()) {
-            sb.append(String.format(" buffer=0x%x, size=%s ", xpuBuffer.toBuffer(), humanReadableByteCount(xpuBuffer.size(), true)));
+            sb.append(String.format(" buffer=0x%x, size=%s ", xpuBuffer.toBuffer(), humanReadableByteCount(xpuBuffer.getBufferSize(), true)));
         } else {
             sb.append(" <unbuffered>");
         }
