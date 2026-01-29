@@ -57,14 +57,6 @@ public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
             }
         });
 
-        //        graph.getNodes().filter(ValueAnchorNode.class).forEach(anchor -> {
-        //            if (anchor.getAnchoredNode() instanceof GuardNode guard) {
-        //                guards.add(guard);
-        //                conditions.add(guard.getCondition());
-        //                anchor.removeAnchoredNode();
-        //            }
-        //        });
-
         guards.forEach(guard -> {
             guard.clearInputs();
             guard.safeDelete();
