@@ -27,12 +27,14 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAI
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -47,6 +49,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public abstract class TornadoBufferProvider {
 
     protected final TornadoDeviceContext deviceContext;
+    protected final IdentityHashMap<Object, XPUBuffer> referenceToXpuBuffer;
     protected final HashMap<Access, ArrayList<BufferContainer>> freeBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> usedBuffers;
     protected long currentMemoryAvailable;
@@ -60,6 +63,7 @@ public abstract class TornadoBufferProvider {
         this.deviceContext = deviceContext;
         this.usedBuffers = initializeBufferHashMap();
         this.freeBuffers = initializeBufferHashMap();
+        referenceToXpuBuffer = new IdentityHashMap<>();
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
@@ -103,6 +107,8 @@ public abstract class TornadoBufferProvider {
 
     protected abstract long allocateBuffer(long size, Access access);
 
+    protected abstract long allocateSubBuffer(long parentBuffer, long offset, long size, Access access);
+
     protected abstract void releaseBuffer(long buffer);
 
     private synchronized long allocate(long size, Access access) {
@@ -111,6 +117,14 @@ public abstract class TornadoBufferProvider {
         BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
         usedBuffers.get(access).add(bufferInfo);
         logger.debug("Buffer %s has been allocated and included in the usedBuffers list with access: %s", bufferInfo, access);
+        return bufferInfo.buffer;
+    }
+
+    private synchronized long allocateSub(long parentBuffer, long offset, long size, Access access) {
+        long buffer = allocateSubBuffer(parentBuffer, offset, size, access);
+        BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
+        usedBuffers.get(access).add(bufferInfo);
+        logger.debug("SubBuffer %s has been allocated and included in the usedBuffers list with access: %s", bufferInfo, access);
         return bufferInfo.buffer;
     }
 
@@ -197,21 +211,30 @@ public abstract class TornadoBufferProvider {
      * @throws {@link
      *     TornadoOutOfMemoryException}
      */
-    public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
+    public synchronized long getOrAllocateBuffer(Object reference, XPUBuffer buffer, long sizeInBytes, Access access) {
         TornadoTargetDevice device = deviceContext.getDevice();
-        if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
-            // Allocate if there is enough device memory.
-            return allocate(sizeInBytes, access);
-        } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
-            int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes, access);
-            // If a buffer was found, mark it as used and return it.
-            if (minBufferIndex != -1) {
-                return markBufferUsed(minBufferIndex, access).buffer;
-            } else {
-                return freeUnusedNativeBufferAndAssignRegion(sizeInBytes, access);
+        if(referenceToXpuBuffer.containsKey(reference)){
+            XPUBuffer parentBuffer = referenceToXpuBuffer.get(reference);
+            if(buffer.getBufferSize() != parentBuffer.getBufferSize()){
+                throw new TornadoOutOfMemoryException("[ERROR] Aliasing with different size");
             }
+            return allocateSub(parentBuffer.getBufferId(), parentBuffer.getBufferOffset(), buffer.getBufferSize(), buffer.getBufferAccess());
         } else {
-            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
+            referenceToXpuBuffer.put(reference, buffer);
+            if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
+                // Allocate if there is enough device memory.
+                return allocate(sizeInBytes, access);
+            } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
+                int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes, access);
+                // If a buffer was found, mark it as used and return it.
+                if (minBufferIndex != -1) {
+                    return markBufferUsed(minBufferIndex, access).buffer;
+                } else {
+                    return freeUnusedNativeBufferAndAssignRegion(sizeInBytes, access);
+                }
+            } else {
+                throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
+            }
         }
     }
 

@@ -1373,7 +1373,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 Access objectAccess = getObjectAccess(objects[i]);
                 LocalObjectState localState = executionContext.getLocalStateObject(objects[i], objectAccess);
                 XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
-                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().getBufferSize());
             }
             updateProfiler();
         }
@@ -1410,7 +1410,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 Access objectAccess = getObjectAccess(object);
                 LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
                 XPUDeviceBufferState deviceObjectState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
-                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getXPUBuffer().getBufferSize());
                 updateProfiler();
             }
         }
