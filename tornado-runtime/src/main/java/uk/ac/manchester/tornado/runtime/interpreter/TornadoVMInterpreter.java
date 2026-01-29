@@ -491,7 +491,7 @@ public class TornadoVMInterpreter {
                 allocCounter++;
             } else {
                 XPUDeviceBufferState state = resolveObjectState(arg);
-                preAllocatedSizes += state.getXPUBuffer().size();
+                preAllocatedSizes += state.getXPUBuffer().getBufferSize();
             }
         }
 
@@ -506,7 +506,7 @@ public class TornadoVMInterpreter {
         if (TornadoOptions.LOG_BYTECODES()) {
             int objIndex = 0;
             for (XPUDeviceBufferState state : objectStates) {
-                long size = state.getXPUBuffer().size();
+                long size = state.getXPUBuffer().getBufferSize();
                 if (!state.isBufferReused()) {
                     DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
                 }
@@ -519,7 +519,7 @@ public class TornadoVMInterpreter {
         // Register allocations values in the profiler only if the profiler is enabled
         if (TornadoOptions.isProfilerEnabled() && allocationSize > 0) {
             for (XPUDeviceBufferState objectState : objectStates) {
-                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().getBufferSize());
             }
         }
         return -1;
@@ -594,7 +594,7 @@ public class TornadoVMInterpreter {
         resetEventIndexes(eventId);
 
         if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
-            long sizeObject = objectState.getXPUBuffer().size();
+            long sizeObject = objectState.getXPUBuffer().getBufferSize();
             DebugInterpreter.logTransferToDeviceOnce(allEvents, object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
@@ -605,7 +605,7 @@ public class TornadoVMInterpreter {
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().getBufferSize());
                 long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
                 dispatchValue += event.getDriverDispatchTime();
                 timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
@@ -626,7 +626,7 @@ public class TornadoVMInterpreter {
         resetEventIndexes(eventId);
 
         if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
-            long sizeObject = objectState.getXPUBuffer().size();
+            long sizeObject = objectState.getXPUBuffer().getBufferSize();
             DebugInterpreter.logTransferToDeviceAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
@@ -638,7 +638,7 @@ public class TornadoVMInterpreter {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().getBufferSize());
 
                 long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
                 dispatchValue += event.getDriverDispatchTime();
@@ -656,7 +656,7 @@ public class TornadoVMInterpreter {
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         if (TornadoOptions.LOG_BYTECODES()) {
-            long sizeObject = objectState.getXPUBuffer().size();
+            long sizeObject = objectState.getXPUBuffer().getBufferSize();
             DebugInterpreter.logTransferToHostAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
@@ -671,7 +671,7 @@ public class TornadoVMInterpreter {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().getBufferSize());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
@@ -690,7 +690,7 @@ public class TornadoVMInterpreter {
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         if (TornadoOptions.LOG_BYTECODES()) {
-            long sizeOfObject = objectState.getXPUBuffer().size();
+            long sizeOfObject = objectState.getXPUBuffer().getBufferSize();
             DebugInterpreter.logTransferToHostAlwaysBlocking(object, interpreterDevice, logBuilder, sizeOfObject, sizeBatch, offset, eventId);
         }
         final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
@@ -702,7 +702,7 @@ public class TornadoVMInterpreter {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().getBufferSize());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();

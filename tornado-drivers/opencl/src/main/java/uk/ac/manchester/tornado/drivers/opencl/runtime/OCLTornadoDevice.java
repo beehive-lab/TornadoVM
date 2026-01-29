@@ -636,7 +636,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         if (buffer.getClass() == OCLAtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return state.getXPUBuffer().size();
+        return state.getXPUBuffer().getBufferSize();
     }
 
     @Override

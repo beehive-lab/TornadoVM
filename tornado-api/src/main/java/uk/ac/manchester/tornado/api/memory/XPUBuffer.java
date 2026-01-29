@@ -39,7 +39,13 @@ public interface XPUBuffer {
 
     void setBuffer(XPUBufferWrapper bufferWrapper);
 
+    long getBufferId();
+
     long getBufferOffset();
+
+    long getBufferSize();
+
+    Access getBufferAccess();
 
     void read(long executionPlanId, Object reference);
 
@@ -54,8 +60,6 @@ public interface XPUBuffer {
     void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
     void markAsFreeBuffer() throws TornadoMemoryException;
-
-    long size();
 
     void setSizeSubRegion(long batchSize);
 
@@ -73,5 +77,4 @@ public interface XPUBuffer {
     void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset);
 
     int getSizeOfType();
-
 }

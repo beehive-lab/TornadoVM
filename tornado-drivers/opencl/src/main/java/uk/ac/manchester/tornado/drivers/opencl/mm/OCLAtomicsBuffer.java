@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class OCLAtomicsBuffer implements XPUBuffer {
 
@@ -63,9 +64,18 @@ public class OCLAtomicsBuffer implements XPUBuffer {
     }
 
     @Override
-    public long getBufferOffset() {
-        return 0;
+    public long getBufferId(){throw new TornadoRuntimeException("Not implemented");}
+
+    @Override
+    public long getBufferSize() {
+        return atomicsList.length * 4;
     }
+
+    @Override
+    public long getBufferOffset(){throw new TornadoRuntimeException("Not implemented");}
+
+    @Override
+    public Access getBufferAccess(){return access;}
 
     @Override
     public void read(long executionPlanId, Object reference) {
@@ -104,11 +114,6 @@ public class OCLAtomicsBuffer implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         logger.debug("Marking atomics buffer as free has no effect because we do not use the BufferProvider for this buffer.");
-    }
-
-    @Override
-    public long size() {
-        return atomicsList.length * 4;
     }
 
     @Override

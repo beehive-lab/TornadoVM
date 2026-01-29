@@ -57,9 +57,15 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     }
 
     @Override
-    public long size() {
-        return tableWrapper.size();
+    public long getBufferId(){return tableWrapper.getBufferId();}
+
+    @Override
+    public long getBufferSize() {
+        return tableWrapper.getBufferSize();
     }
+
+    @Override
+    public long getBufferOffset(){return tableWrapper.getBufferOffset();}
 
     @Override
     public void allocate(Object value, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {

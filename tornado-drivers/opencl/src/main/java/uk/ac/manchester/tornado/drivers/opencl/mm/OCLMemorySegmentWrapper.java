@@ -54,6 +54,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     private long subregionSize;
     private Access access;
     private final int sizeOfType;
+    private TornadoLogger logger;
 
     public OCLMemorySegmentWrapper(long bufferSize, OCLDeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -63,6 +64,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         this.bufferOffset = 0;
         this.access = access;
         this.sizeOfType = sizeOfType;
+        logger = new TornadoLogger(this.getClass());
         if (sizeOfType <= 0) {
             throw new TornadoRuntimeException("Invalid size of type " + sizeOfType);
         }
@@ -86,8 +88,19 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     }
 
     @Override
-    public long getBufferOffset() {
-        return bufferOffset;
+    public long getBufferId(){return bufferId;}
+
+    @Override
+    public long getBufferSize() {
+        return bufferSize;
+    }
+
+    @Override
+    public long getBufferOffset(){return bufferOffset;}
+
+    @Override
+    public Access getBufferAccess() {
+        return access;
     }
 
     @Override
@@ -158,8 +171,8 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
-        MemorySegment segment;
-        segment = getSegmentWithHeader(reference);
+
+        MemorySegment segment = getSegmentWithHeader(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
@@ -181,10 +194,10 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
 
         if (batchSize <= 0) {
             bufferSize = segment.byteSize();
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBuffer(reference, this, bufferSize, access);
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
+            bufferId = deviceContext.getBufferProvider().getOrAllocateBuffer(reference, this, bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
         if (bufferSize <= 0) {
@@ -211,11 +224,6 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
     @Override
     public long deallocate() {
         return deviceContext.getBufferProvider().deallocate(access);
-    }
-
-    @Override
-    public long size() {
-        return bufferSize;
     }
 
     @Override
