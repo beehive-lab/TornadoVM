@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.utils;
 
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
