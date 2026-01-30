@@ -135,7 +135,7 @@ public class PTXHotSpotBackendFactory {
                 false, //
                 false, //
                 loweringProvider);
-        PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
+        PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
         return plugins;
     }
 }

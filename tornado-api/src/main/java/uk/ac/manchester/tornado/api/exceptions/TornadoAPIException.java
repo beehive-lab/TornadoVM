@@ -22,4 +22,8 @@ public class TornadoAPIException extends RuntimeException {
     public TornadoAPIException(final String msg, Exception e) {
         super(msg, e);
     }
+
+    public TornadoAPIException(final String msg) {
+        super(msg);
+    }
 }

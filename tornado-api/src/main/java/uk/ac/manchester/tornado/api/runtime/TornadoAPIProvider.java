@@ -32,6 +32,9 @@ public class TornadoAPIProvider {
         TornadoTaskGraphInterface taskGraphImpl;
         try {
             String tornadoAPIImplementation = System.getProperty("tornado.load.api.implementation");
+            if (tornadoAPIImplementation == null) {
+                throw new TornadoAPIException("[ERROR] Tornado API Implementation class not specified. Did you remember to add @tornado-argfile?");
+            }
             Class<?> klass = Class.forName(tornadoAPIImplementation);
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (TornadoTaskGraphInterface) constructor.newInstance(name);
@@ -45,6 +48,9 @@ public class TornadoAPIProvider {
         TornadoRuntime runtime;
         try {
             String tornadoRuntimeImplementation = System.getProperty("tornado.load.runtime.implementation");
+            if (tornadoRuntimeImplementation == null) {
+                throw new TornadoAPIException("[ERROR] Tornado Runtime Implementation class not specified. Did you remember to add @tornado-argfile?");
+            }
             Class<?> klass = Class.forName(tornadoRuntimeImplementation);
             Method method = klass.getDeclaredMethod("getTornadoRuntime");
             runtime = (TornadoRuntime) method.invoke(null);
@@ -58,6 +64,9 @@ public class TornadoAPIProvider {
         TornadoSetting tornado;
         try {
             String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation");
+            if (tornadoImplementation == null) {
+                throw new TornadoAPIException("[ERROR] Tornado Implementation class not specified. Did you remember to add @tornado-argfile?");
+            }
             Class<?> klass = Class.forName(tornadoImplementation);
             Constructor<?> constructor = klass.getConstructor();
             tornado = (TornadoSetting) constructor.newInstance();
