@@ -24,14 +24,14 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import jdk.graal.compiler.lir.LIRInstructionClass;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.StandardOp.BlockEndOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CASE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CLOSE_PARENTHESIS;
@@ -146,7 +146,7 @@ public class OCLControlFlow {
     }
 
     /**
-     * This instruction can generate different code depending on whether or not there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between the loop condition and the
+     * This instruction can generate different code depending on whether or not there are additional {@link jdk.graal.compiler.lir.LIRInstruction}s between the loop condition and the
      * {@link LoopPostOp}, respectively the {@link LoopInitOp}.
      */
     public static class LoopConditionOp extends AbstractInstruction {

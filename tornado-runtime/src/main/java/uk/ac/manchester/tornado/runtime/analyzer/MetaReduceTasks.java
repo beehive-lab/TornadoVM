@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.runtime.analyzer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.StructuredGraph;
 
 /**
  * Mapping between the input tasks and the parameters indexes in which reduce

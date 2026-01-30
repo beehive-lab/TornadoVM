@@ -26,14 +26,14 @@
 
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import static org.graalvm.compiler.nodeinfo.InputType.State;
+import static jdk.graal.compiler.nodeinfo.InputType.State;
 
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.NodeClass;
+import jdk.graal.compiler.nodeinfo.NodeInfo;
+import jdk.graal.compiler.nodes.FrameState;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.FloatingNode;
 
 @NodeInfo(nameTemplate = "AtomicIndexedStoreExtension")
 public class StoreAtomicIndexedNodeExtension extends FloatingNode {

@@ -28,13 +28,13 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 
 import java.util.Optional;
 
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.phases.BasePhase;
+import jdk.graal.compiler.debug.DebugContext;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;

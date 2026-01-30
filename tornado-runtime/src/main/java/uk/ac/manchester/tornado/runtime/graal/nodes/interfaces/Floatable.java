@@ -22,7 +22,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes.interfaces;
 
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import jdk.graal.compiler.nodes.calc.FloatingNode;
 
 public interface Floatable {
 

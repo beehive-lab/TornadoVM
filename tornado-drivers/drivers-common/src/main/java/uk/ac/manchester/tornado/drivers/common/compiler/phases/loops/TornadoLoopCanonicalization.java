@@ -27,12 +27,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-import org.graalvm.compiler.phases.Phase;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.LoopsData;
+import jdk.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 

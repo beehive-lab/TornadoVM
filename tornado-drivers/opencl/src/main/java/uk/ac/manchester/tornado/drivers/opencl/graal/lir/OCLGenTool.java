@@ -27,11 +27,11 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import java.util.HashMap;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.nodes.NodeView;
+import jdk.graal.compiler.nodes.ParameterNode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;

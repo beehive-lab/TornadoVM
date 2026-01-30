@@ -33,7 +33,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.graalvm.compiler.bytecode.Bytecodes;
+import jdk.graal.compiler.bytecode.Bytecodes;
 
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;

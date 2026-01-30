@@ -74,7 +74,7 @@ def check_java_version():
         os.environ['JAVA_HOME']
         print("[OK]")
     except:
-        print("[ERROR] \n\t JAVA_HOME env variable not defined\n\n \t Suggestion (Linux and OSx): export JAVA_HOME=<path-to-jdk21>\n"),
+        print("[ERROR] \n\t JAVA_HOME env variable not defined\n\n \t Suggestion (Linux and OSx): export JAVA_HOME=<path-to-jdk25>\n"),
         sys.exit(-1)
 
     """
@@ -108,7 +108,7 @@ def pull_graal_jars_if_needed(graal_jars_status):
 
 def should_handle_graal_jars(jdk):
     java_version_output = check_java_version()
-    return jdk == "jdk21" and "GraalVM" not in java_version_output
+    return jdk == "jdk25" and "GraalVM" not in java_version_output
 
 
 def maven_cleanup():
@@ -515,7 +515,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
-        "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
+        "--jdk", help="JDK version (e.g., jdk25, graal-jdk-25)"
     )
     parser.add_argument("--backend", help="e.g., opencl,ptx,spirv")
     parser.add_argument(

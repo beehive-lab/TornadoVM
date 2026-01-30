@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.builtins;
 
-import org.graalvm.compiler.api.replacements.Fold;
+import jdk.graal.compiler.api.replacements.Fold;
 
 public class PTXIntrinsics {
 
