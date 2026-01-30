@@ -239,6 +239,9 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public long toBuffer() {
+        for(FieldBuffer fieldBuffer : wrappedFields){
+            return fieldBuffer.getObjectBuffer().toBuffer();
+        }
         throw new TornadoRuntimeException("[ERROR] not supported");
     }
 

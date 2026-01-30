@@ -25,9 +25,7 @@ package uk.ac.manchester.tornado.drivers.common;
 import static uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray.ARRAY_HEADER;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
+import java.util.*;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -50,6 +48,7 @@ public abstract class TornadoBufferProvider {
 
     protected final TornadoDeviceContext deviceContext;
     protected final IdentityHashMap<Object, XPUBuffer> referenceToXpuBuffer;
+    private final Map<Long, List<Long>> bufferToSubBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> freeBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> usedBuffers;
     protected long currentMemoryAvailable;
@@ -64,6 +63,7 @@ public abstract class TornadoBufferProvider {
         this.usedBuffers = initializeBufferHashMap();
         this.freeBuffers = initializeBufferHashMap();
         referenceToXpuBuffer = new IdentityHashMap<>();
+        bufferToSubBuffers = new HashMap<>();
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
@@ -214,7 +214,16 @@ public abstract class TornadoBufferProvider {
             if (buffer.getBufferSize() != parentBuffer.getBufferSize()) {
                 throw new TornadoOutOfMemoryException("[ERROR] Aliasing with different size");
             }
-            return allocateSub(parentBuffer.getBufferId(), parentBuffer.getBufferOffset(), buffer.getBufferSize(), buffer.getBufferAccess());
+            long subBuffer = allocateSub(parentBuffer.getBufferId(), parentBuffer.getBufferOffset(), buffer.getBufferSize(), buffer.getBufferAccess());
+
+            List<Long> subBuffers = bufferToSubBuffers.get(parentBuffer);
+            if (subBuffers == null) {
+                subBuffers = new ArrayList<>();
+            }
+            subBuffers.add(subBuffer);
+            bufferToSubBuffers.put(parentBuffer.getBufferId(), subBuffers);
+
+            return subBuffer;
         } else {
             referenceToXpuBuffer.put(reference, buffer);
             if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
@@ -251,9 +260,35 @@ public abstract class TornadoBufferProvider {
         if (foundIndex != -1) {
             // if found, we mark it as free by inserting it into the free list
             BufferContainer removedBuffer = usedBuffers.get(access).remove(foundIndex);
+            for (Map.Entry<Object, XPUBuffer> entry : new ArrayList<>(referenceToXpuBuffer.entrySet())) {
+                if (entry.getValue().getBufferId() == removedBuffer.buffer) {
+                    referenceToXpuBuffer.remove(entry.getKey());
+                }
+            }
+            if(bufferToSubBuffers.containsKey(removedBuffer.buffer)){
+                bufferToSubBuffers.remove(removedBuffer.buffer);
+            } else{
+                for(Map.Entry<Long, List<Long>> entry : bufferToSubBuffers.entrySet()){
+                    for(Long subBuffer : new ArrayList<>(entry.getValue())){
+                        if(subBuffer == removedBuffer.buffer){
+                            bufferToSubBuffers.get(entry.getKey()).remove(subBuffer);
+                        }
+                    }
+                }
+            }
+
             freeBuffers.get(access).add(removedBuffer);
             logger.debug("Buffer %s has been released and included in the freeBuffers list for access: %s", removedBuffer, access);
         }
+    }
+
+    public synchronized  boolean isSubBuffer(long buffer){
+        for(List<Long> subBuffers : bufferToSubBuffers.values()){
+            if(subBuffers.contains(buffer)){
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -199,6 +199,9 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         ArrayList<Integer> listEvents = new ArrayList<>();
+        if(deviceContext.getBufferProvider().isSubBuffer(bufferId)) {
+            return listEvents;
+        }
 
         final T array = cast(value);
         if (array == null) {
