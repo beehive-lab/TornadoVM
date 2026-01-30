@@ -194,6 +194,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.quantization.QuantizationTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.InliningFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.ResizeTest"),
