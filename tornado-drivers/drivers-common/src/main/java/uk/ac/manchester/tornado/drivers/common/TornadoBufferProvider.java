@@ -107,7 +107,9 @@ public abstract class TornadoBufferProvider {
 
     protected abstract long allocateBuffer(long size, Access access);
 
-    protected abstract long allocateSubBuffer(long parentBuffer, long offset, long size, Access access);
+    protected long allocateSubBuffer(long parentBuffer, long offset, long size, Access access) {
+        throw new UnsupportedOperationException("Sub-buffers are not supported by " + getClass().getSimpleName());
+    }
 
     protected abstract void releaseBuffer(long buffer);
 

@@ -140,7 +140,7 @@ public class TestSameVariableDifferentClass extends TornadoTestBase {
     public static void increment(ClasseTornado a) {
         for (@Parallel int i = 0; i < 1000; i++) {
             a.oggetto1.x.set(i, a.oggetto1.x.get(i) + 1f);
-            a.oggetto1.x.set(i, a.oggetto2.x.get(i) + 1f);
+            a.oggetto2.x.set(i, a.oggetto2.x.get(i) + 1f);
         }
     }
 

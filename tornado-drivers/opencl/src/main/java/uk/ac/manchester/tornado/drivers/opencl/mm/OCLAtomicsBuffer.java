@@ -34,7 +34,6 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class OCLAtomicsBuffer implements XPUBuffer {
 
@@ -68,7 +67,7 @@ public class OCLAtomicsBuffer implements XPUBuffer {
 
     @Override
     public long getBufferSize() {
-        return atomicsList.length * 4;
+        return (long) atomicsList.length * Integer.BYTES;
     }
 
     @Override

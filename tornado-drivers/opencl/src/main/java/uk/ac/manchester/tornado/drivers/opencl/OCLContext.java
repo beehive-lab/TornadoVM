@@ -228,7 +228,7 @@ public class OCLContext implements OCLContextInterface {
 
         try {
             long result = createSubBuffer(parentBuffer, flags, OCLBufferCreateType.CL_BUFFER_CREATE_TYPE_REGION.getValue(), createInfo);
-            logger.info("suBbuffer allocated %s @ 0x%x from parent @ 0x%x", RuntimeUtilities.humanReadableByteCount(size, false), result, parentBuffer);
+            logger.info("sub-buffer allocated %s @ 0x%x from parent @ 0x%x", RuntimeUtilities.humanReadableByteCount(size, false), result, parentBuffer);
             return result;
         } catch (OCLException e) {
             logger.error(e.getMessage());

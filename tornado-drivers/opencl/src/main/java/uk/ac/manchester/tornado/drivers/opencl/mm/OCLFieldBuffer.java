@@ -230,7 +230,7 @@ public class OCLFieldBuffer implements XPUBuffer {
         for (int i = 0; i < wrappedFields.size(); i++) {
             if (wrappedFields.get(i) != null) {
                 if (DEBUG) {
-                    logger.trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", wrappedFields.get(i), object.hashCode(), wrappedFields.get(i).getObjectField().hashCode());
+                    logger.trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", wrappedFields.get(i).getResolvedField().getName(), object.hashCode(), wrappedFields.get(i).getObjectField().hashCode());
                 }
                 wrappedFields.get(i).getObjectBuffer().write(executionPlanId, wrappedFields.get(i).getObjectField());
             }
@@ -311,7 +311,7 @@ public class OCLFieldBuffer implements XPUBuffer {
         for (final FieldBuffer field : wrappedFields) {
             if (field != null) {
                 if (DEBUG) {
-                    logger.trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), field.getObjectField().hashCode());
+                    logger.trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field.getField(), ref.hashCode(), field.getObjectField().hashCode());
                 }
                 eventList.addAll((useDeps) ? field.getObjectBuffer().enqueueWrite(executionPlanId, field.getObjectField(), 0, 0, (useDeps) ? events : null, useDeps) : null);
             }
@@ -372,6 +372,6 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public Access getBufferAccess() {
-        return null;
+        return access;
     }
 }
