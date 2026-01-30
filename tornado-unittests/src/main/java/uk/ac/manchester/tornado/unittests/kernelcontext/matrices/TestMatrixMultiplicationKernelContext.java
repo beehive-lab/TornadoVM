@@ -72,7 +72,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         for (int jdx = 0; jdx < size; jdx++) {
             float sum = 0.0f;
             for (int k = 0; k < size; k++) {
-                sum += a.get((idx * size) + k) * b.get((k * size) + jdx);
+                sum += a.get((jdx * size) + k) * b.get((k * size) + idx);
             }
             c.set((idx * size) + jdx, sum);
         }
