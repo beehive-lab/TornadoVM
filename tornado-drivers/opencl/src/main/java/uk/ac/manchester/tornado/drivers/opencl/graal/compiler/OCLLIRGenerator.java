@@ -167,7 +167,7 @@ public class OCLLIRGenerator extends LIRGenerator {
         final Variable variable = super.newVariable(valueKind);
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", variable.toString(), valueKind.toString(), valueKind.getClass().getName());
 
-        OCLLIRGenerationResult res = (uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerationResult) getResult();
+        OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
         res.insertVariable(variable);
 
         return variable;
