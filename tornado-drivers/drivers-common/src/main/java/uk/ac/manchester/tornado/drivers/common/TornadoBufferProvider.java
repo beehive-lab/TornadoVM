@@ -25,7 +25,11 @@ package uk.ac.manchester.tornado.drivers.common;
 import static uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray.ARRAY_HEADER;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
