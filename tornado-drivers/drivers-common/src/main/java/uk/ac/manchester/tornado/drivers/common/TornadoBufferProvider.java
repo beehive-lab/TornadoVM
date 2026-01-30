@@ -82,10 +82,9 @@ public abstract class TornadoBufferProvider {
      * access type and size has already been allocated, it returns true to signify that
      * this buffer can be reused for this batch. Otherwise, it returns false.
      *
-     * @param batchSize The size of the current batch
-     * @param access The access type of the object (READ-ONLY, WRITE-ONLY, READ-WRITE)
+     * @param batchSize                    The size of the current batch
+     * @param access                       The access type of the object (READ-ONLY, WRITE-ONLY, READ-WRITE)
      * @param numberOfBuffersForAccessType The number of buffers that are required to be allocated for this access type
-     *
      * @return True if a buffer to reuse is available, or false otherwise.
      */
     public boolean reuseBufferForBatchProcessing(long batchSize, Access access, int numberOfBuffersForAccessType) {
@@ -168,10 +167,9 @@ public abstract class TornadoBufferProvider {
      * size than can fulfill the allocation. The number of allocated buffers is
      * usually low, so searching sequentially should not take a lot of time.
      *
-     * @param sizeInBytes
-     *     Size in bytes for the requested buffer.
+     * @param sizeInBytes Size in bytes for the requested buffer.
      * @return returns the index position of a free buffer within the free buffer
-     *     list. It returns -1 if a free buffer slot is not found.
+     * list. It returns -1 if a free buffer slot is not found.
      */
     private synchronized int bufferIndexOfAFreeSpace(long sizeInBytes, Access access) {
         int minBufferIndex = -1;
@@ -188,8 +186,7 @@ public abstract class TornadoBufferProvider {
      * There is no buffer to fulfill the size. Start freeing unused buffers and try
      * to allocate.
      *
-     * @param sizeInBytes
-     *     Size in bytes for the requested buffer.
+     * @param sizeInBytes Size in bytes for the requested buffer.
      * @return It returns a buffer native pointer.
      */
     private synchronized long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes, Access access) {
@@ -206,18 +203,15 @@ public abstract class TornadoBufferProvider {
      * memory buffer is found, it performs the native buffer allocation on the
      * target device. Otherwise, it throws an exception.
      *
-     * @param sizeInBytes
-     *     Size in bytes for the requested buffer.
+     * @param sizeInBytes Size in bytes for the requested buffer.
      * @return Returns a pointer to the native buffer (JNI).
-     *
-     * @throws {@link
-     *     TornadoOutOfMemoryException}
+     * @throws {@link TornadoOutOfMemoryException}
      */
     public synchronized long getOrAllocateBuffer(Object reference, XPUBuffer buffer, long sizeInBytes, Access access) {
         TornadoTargetDevice device = deviceContext.getDevice();
-        if(referenceToXpuBuffer.containsKey(reference)){
+        if (referenceToXpuBuffer.containsKey(reference)) {
             XPUBuffer parentBuffer = referenceToXpuBuffer.get(reference);
-            if(buffer.getBufferSize() != parentBuffer.getBufferSize()){
+            if (buffer.getBufferSize() != parentBuffer.getBufferSize()) {
                 throw new TornadoOutOfMemoryException("[ERROR] Aliasing with different size");
             }
             return allocateSub(parentBuffer.getBufferId(), parentBuffer.getBufferOffset(), buffer.getBufferSize(), buffer.getBufferAccess());
@@ -265,8 +259,7 @@ public abstract class TornadoBufferProvider {
     /**
      * Function that returns true if the there are, at least numBuffers available in the free list.
      *
-     * @param numBuffers
-     *     Number of free buffers.
+     * @param numBuffers Number of free buffers.
      * @return boolean.
      */
     public boolean isNumFreeBuffersAvailable(int numBuffers, Access access) {
