@@ -265,12 +265,12 @@ public abstract class TornadoBufferProvider {
                     referenceToXpuBuffer.remove(entry.getKey());
                 }
             }
-            if(bufferToSubBuffers.containsKey(removedBuffer.buffer)){
+            if (bufferToSubBuffers.containsKey(removedBuffer.buffer)) {
                 bufferToSubBuffers.remove(removedBuffer.buffer);
-            } else{
-                for(Map.Entry<Long, List<Long>> entry : bufferToSubBuffers.entrySet()){
-                    for(Long subBuffer : new ArrayList<>(entry.getValue())){
-                        if(subBuffer == removedBuffer.buffer){
+            } else {
+                for (Map.Entry<Long, List<Long>> entry : bufferToSubBuffers.entrySet()) {
+                    for (Long subBuffer : new ArrayList<>(entry.getValue())) {
+                        if (subBuffer == removedBuffer.buffer) {
                             bufferToSubBuffers.get(entry.getKey()).remove(subBuffer);
                         }
                     }
@@ -282,9 +282,9 @@ public abstract class TornadoBufferProvider {
         }
     }
 
-    public synchronized  boolean isSubBuffer(long buffer){
-        for(List<Long> subBuffers : bufferToSubBuffers.values()){
-            if(subBuffers.contains(buffer)){
+    public synchronized boolean isSubBuffer(long buffer) {
+        for (List<Long> subBuffers : bufferToSubBuffers.values()) {
+            if (subBuffers.contains(buffer)) {
                 return true;
             }
         }
