@@ -104,7 +104,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBuffer(value, this, bufferSize, access);
 
         if (TornadoOptions.FULL_DEBUG) {
             logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
@@ -133,10 +133,18 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
     }
 
     @Override
-    public long size() {
+    public long getBufferId(){return bufferId;}
+
+    @Override
+    public long getBufferSize() {
         return bufferSize;
     }
 
+    @Override
+    public long getBufferOffset(){return bufferOffset;}
+
+    @Override
+    public Access getBufferAccess(){return access;}
     /*
      * Retrieves a buffer that will contain the contents of the array header. The
      * header is also populated using the header from the given array.
@@ -190,12 +198,16 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
+        ArrayList<Integer> listEvents = new ArrayList<>();
+        if(deviceContext.getBufferProvider().isSubBuffer(bufferId)) {
+            return listEvents;
+        }
+
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
 
-        ArrayList<Integer> listEvents = new ArrayList<>();
         // We first write the header for the object, and then we write actual buffer
         final int headerEvent;
         if (batchSize <= 0) {
@@ -294,12 +306,7 @@ public abstract class OCLArrayWrapper<T> implements XPUBuffer {
         this.bufferId = bufferWrapper.buffer;
         this.bufferOffset = bufferWrapper.bufferOffset;
 
-        bufferWrapper.bufferOffset += size();
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return bufferOffset;
+        bufferWrapper.bufferOffset += getBufferSize();
     }
 
     @Override

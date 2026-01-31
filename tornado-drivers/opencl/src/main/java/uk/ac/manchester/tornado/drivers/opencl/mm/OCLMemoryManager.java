@@ -87,6 +87,10 @@ public class OCLMemoryManager implements TornadoMemoryProvider {
         return deviceContext.getPlatformContext().createBuffer(flags, size);
     }
 
+    public long createSubBuffer(long parentBuffer, long offset, long size, long flags){
+        return deviceContext.getPlatformContext().createSubBuffer(parentBuffer, offset, size, flags);
+    }
+
     public void releaseBuffer(long bufferId) {
         deviceContext.getPlatformContext().releaseBuffer(bufferId);
     }

@@ -27,12 +27,16 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAI
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -47,6 +51,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public abstract class TornadoBufferProvider {
 
     protected final TornadoDeviceContext deviceContext;
+    protected final IdentityHashMap<Object, XPUBuffer> referenceToXpuBuffer;
+    private final Map<Long, List<Long>> bufferToSubBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> freeBuffers;
     protected final HashMap<Access, ArrayList<BufferContainer>> usedBuffers;
     protected long currentMemoryAvailable;
@@ -60,6 +66,8 @@ public abstract class TornadoBufferProvider {
         this.deviceContext = deviceContext;
         this.usedBuffers = initializeBufferHashMap();
         this.freeBuffers = initializeBufferHashMap();
+        referenceToXpuBuffer = new IdentityHashMap<>();
+        bufferToSubBuffers = new HashMap<>();
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
@@ -78,10 +86,9 @@ public abstract class TornadoBufferProvider {
      * access type and size has already been allocated, it returns true to signify that
      * this buffer can be reused for this batch. Otherwise, it returns false.
      *
-     * @param batchSize The size of the current batch
-     * @param access The access type of the object (READ-ONLY, WRITE-ONLY, READ-WRITE)
+     * @param batchSize                    The size of the current batch
+     * @param access                       The access type of the object (READ-ONLY, WRITE-ONLY, READ-WRITE)
      * @param numberOfBuffersForAccessType The number of buffers that are required to be allocated for this access type
-     *
      * @return True if a buffer to reuse is available, or false otherwise.
      */
     public boolean reuseBufferForBatchProcessing(long batchSize, Access access, int numberOfBuffersForAccessType) {
@@ -103,6 +110,10 @@ public abstract class TornadoBufferProvider {
 
     protected abstract long allocateBuffer(long size, Access access);
 
+    protected long allocateSubBuffer(long parentBuffer, long offset, long size, Access access) {
+        throw new UnsupportedOperationException("Sub-buffers are not supported by " + getClass().getSimpleName());
+    }
+
     protected abstract void releaseBuffer(long buffer);
 
     private synchronized long allocate(long size, Access access) {
@@ -111,6 +122,14 @@ public abstract class TornadoBufferProvider {
         BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
         usedBuffers.get(access).add(bufferInfo);
         logger.debug("Buffer %s has been allocated and included in the usedBuffers list with access: %s", bufferInfo, access);
+        return bufferInfo.buffer;
+    }
+
+    private synchronized long allocateSub(long parentBuffer, long offset, long size, Access access) {
+        long buffer = allocateSubBuffer(parentBuffer, offset, size, access);
+        BufferContainer bufferInfo = new BufferContainer(buffer, size, access);
+        usedBuffers.get(access).add(bufferInfo);
+        logger.debug("SubBuffer %s has been allocated and included in the usedBuffers list with access: %s", bufferInfo, access);
         return bufferInfo.buffer;
     }
 
@@ -152,10 +171,9 @@ public abstract class TornadoBufferProvider {
      * size than can fulfill the allocation. The number of allocated buffers is
      * usually low, so searching sequentially should not take a lot of time.
      *
-     * @param sizeInBytes
-     *     Size in bytes for the requested buffer.
+     * @param sizeInBytes Size in bytes for the requested buffer.
      * @return returns the index position of a free buffer within the free buffer
-     *     list. It returns -1 if a free buffer slot is not found.
+     * list. It returns -1 if a free buffer slot is not found.
      */
     private synchronized int bufferIndexOfAFreeSpace(long sizeInBytes, Access access) {
         int minBufferIndex = -1;
@@ -172,8 +190,7 @@ public abstract class TornadoBufferProvider {
      * There is no buffer to fulfill the size. Start freeing unused buffers and try
      * to allocate.
      *
-     * @param sizeInBytes
-     *     Size in bytes for the requested buffer.
+     * @param sizeInBytes Size in bytes for the requested buffer.
      * @return It returns a buffer native pointer.
      */
     private synchronized long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes, Access access) {
@@ -190,28 +207,43 @@ public abstract class TornadoBufferProvider {
      * memory buffer is found, it performs the native buffer allocation on the
      * target device. Otherwise, it throws an exception.
      *
-     * @param sizeInBytes
-     *     Size in bytes for the requested buffer.
+     * @param sizeInBytes Size in bytes for the requested buffer.
      * @return Returns a pointer to the native buffer (JNI).
-     *
-     * @throws {@link
-     *     TornadoOutOfMemoryException}
+     * @throws {@link TornadoOutOfMemoryException}
      */
-    public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
+    public synchronized long getOrAllocateBuffer(Object reference, XPUBuffer buffer, long sizeInBytes, Access access) {
         TornadoTargetDevice device = deviceContext.getDevice();
-        if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
-            // Allocate if there is enough device memory.
-            return allocate(sizeInBytes, access);
-        } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
-            int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes, access);
-            // If a buffer was found, mark it as used and return it.
-            if (minBufferIndex != -1) {
-                return markBufferUsed(minBufferIndex, access).buffer;
-            } else {
-                return freeUnusedNativeBufferAndAssignRegion(sizeInBytes, access);
+        if (referenceToXpuBuffer.containsKey(reference)) {
+            XPUBuffer parentBuffer = referenceToXpuBuffer.get(reference);
+            if (buffer.getBufferSize() != parentBuffer.getBufferSize()) {
+                throw new TornadoOutOfMemoryException("[ERROR] Aliasing with different size");
             }
+            long subBuffer = allocateSub(parentBuffer.getBufferId(), parentBuffer.getBufferOffset(), buffer.getBufferSize(), buffer.getBufferAccess());
+
+            List<Long> subBuffers = bufferToSubBuffers.get(parentBuffer);
+            if (subBuffers == null) {
+                subBuffers = new ArrayList<>();
+            }
+            subBuffers.add(subBuffer);
+            bufferToSubBuffers.put(parentBuffer.getBufferId(), subBuffers);
+
+            return subBuffer;
         } else {
-            throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
+            referenceToXpuBuffer.put(reference, buffer);
+            if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < device.getDeviceMaxAllocationSize()) {
+                // Allocate if there is enough device memory.
+                return allocate(sizeInBytes, access);
+            } else if (sizeInBytes < device.getDeviceMaxAllocationSize()) {
+                int minBufferIndex = bufferIndexOfAFreeSpace(sizeInBytes, access);
+                // If a buffer was found, mark it as used and return it.
+                if (minBufferIndex != -1) {
+                    return markBufferUsed(minBufferIndex, access).buffer;
+                } else {
+                    return freeUnusedNativeBufferAndAssignRegion(sizeInBytes, access);
+                }
+            } else {
+                throw new TornadoOutOfMemoryException("[ERROR] Unable to allocate " + sizeInBytes + " bytes of memory." + OUT_OF_MEMORY_MESSAGE);
+            }
         }
     }
 
@@ -232,16 +264,41 @@ public abstract class TornadoBufferProvider {
         if (foundIndex != -1) {
             // if found, we mark it as free by inserting it into the free list
             BufferContainer removedBuffer = usedBuffers.get(access).remove(foundIndex);
+            for (Map.Entry<Object, XPUBuffer> entry : new ArrayList<>(referenceToXpuBuffer.entrySet())) {
+                if (entry.getValue().getBufferId() == removedBuffer.buffer) {
+                    referenceToXpuBuffer.remove(entry.getKey());
+                }
+            }
+            if (bufferToSubBuffers.containsKey(removedBuffer.buffer)) {
+                bufferToSubBuffers.remove(removedBuffer.buffer);
+            } else {
+                for (Map.Entry<Long, List<Long>> entry : bufferToSubBuffers.entrySet()) {
+                    for (Long subBuffer : new ArrayList<>(entry.getValue())) {
+                        if (subBuffer == removedBuffer.buffer) {
+                            bufferToSubBuffers.get(entry.getKey()).remove(subBuffer);
+                        }
+                    }
+                }
+            }
+
             freeBuffers.get(access).add(removedBuffer);
             logger.debug("Buffer %s has been released and included in the freeBuffers list for access: %s", removedBuffer, access);
         }
     }
 
+    public synchronized boolean isSubBuffer(long buffer) {
+        for (List<Long> subBuffers : bufferToSubBuffers.values()) {
+            if (subBuffers.contains(buffer)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Function that returns true if the there are, at least numBuffers available in the free list.
      *
-     * @param numBuffers
-     *     Number of free buffers.
+     * @param numBuffers Number of free buffers.
      * @return boolean.
      */
     public boolean isNumFreeBuffersAvailable(int numBuffers, Access access) {
