@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
@@ -51,10 +52,15 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class OCLFieldBuffer implements XPUBuffer {
 
+    private final boolean areCoopsEnabled;
+    private final int fieldsOffset;
+    private long bufferId;
+    private long bufferOffset;
     private final HotSpotResolvedJavaType resolvedType;
     private final List<FieldBuffer> wrappedFields;
     private final Class<?> objectType;
@@ -64,9 +70,13 @@ public class OCLFieldBuffer implements XPUBuffer {
     private final Access access;
 
     private OCLFieldBuffer(final OCLDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
+        this.areCoopsEnabled = TornadoOptions.coopsUsed();
+        fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
         this.objectType = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
+        this.bufferId = -1;
+        this.bufferOffset = 0;
         this.access = access;
 
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
@@ -167,17 +177,19 @@ public class OCLFieldBuffer implements XPUBuffer {
             logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBuffer(reference, this, getBufferSize(), access);
+        if (DEBUG) {
+            logger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
+        }
         for(FieldBuffer fb : wrappedFields){
             fb.getObjectBuffer().allocate(fb.getObjectField(), batchSize, access);
-        }
-
-        if (DEBUG) {
-            logger.debug("object: object=0x%x", reference.hashCode());
         }
     }
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, this.access);
+        bufferId = -1;
         for(FieldBuffer fb : wrappedFields){
             fb.getObjectBuffer().markAsFreeBuffer();
         }
@@ -239,10 +251,7 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public long toBuffer() {
-        for(FieldBuffer fieldBuffer : wrappedFields){
-            return fieldBuffer.getObjectBuffer().toBuffer();
-        }
-        throw new TornadoRuntimeException("[ERROR] not supported");
+        return bufferId;
     }
 
     @Override
@@ -354,21 +363,19 @@ public class OCLFieldBuffer implements XPUBuffer {
 
     @Override
     public long getBufferId() {
-        throw new TornadoRuntimeException("[ERROR] not implemented");
+        return bufferId;
     }
 
     @Override
     public long getBufferOffset() {
-        throw new TornadoRuntimeException("[ERROR] not implemented");
+        return bufferOffset;
     }
 
     @Override
     public long getBufferSize() {
-        long size = 0;
-        for (FieldBuffer wrappedField : wrappedFields) {
-            if (wrappedField != null) {
-                size += wrappedField.getObjectBuffer().getBufferSize();
-            }
+        long size = fieldsOffset;
+        if (areCoopsEnabled && (size % 8 != 0)) {
+            size = size + (8 - (size % 8));
         }
         return size;
     }
