@@ -142,7 +142,7 @@ public class OCLHotSpotBackendFactory {
                 false, //
                 false, //
                 loweringProvider);
-        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
+        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
         return plugins;
     }
 

@@ -33,6 +33,7 @@ import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInliningException;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 
 public class TornadoPartialInliningPolicy implements TornadoInliningPolicy {
@@ -53,8 +54,11 @@ public class TornadoPartialInliningPolicy implements TornadoInliningPolicy {
     public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed) {
         final InlineInfo info = invocation.callee();
         int nodes = info.determineNodeCount();
-        if (nodes > MaximumInliningSize.getValue(info.graph().getOptions()) && !invocation.isRoot()) {
-            return Decision.NO;
+        int inliningLimit = MaximumInliningSize.getValue(info.graph().getOptions()) * 2;
+        boolean inliningLimitExceeded = nodes > inliningLimit;
+        boolean notRoot = !invocation.isRoot();
+        if (inliningLimitExceeded && notRoot) {
+            throw new TornadoInliningException("Method " + invocation + " cannot be inlined: node count (" + nodes + ") exceeds limit (" + inliningLimit + ")");
         }
         return Decision.YES;
     }

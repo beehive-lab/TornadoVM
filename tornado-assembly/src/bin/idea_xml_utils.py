@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2024, APT Group, Department of Computer Science,
+# Copyright (c) 2024, 2026, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +40,34 @@ def write_generated_template(xml_content, xml_file_path):
     with open(xml_file_path, "w") as file:
         file.write(xml_content)
 
+def compute_tornado_backend_variant(backend_profiles):
+    """
+    Compute the tornado.backend property value from backend profiles.
+
+    This follows the same logic as bin/compile:
+    - Single backend: "opencl", "ptx", or "spirv"
+    - Multiple backends: sorted and joined with "-" (e.g., "opencl-ptx")
+    - All three backends: "full"
+
+    Args:
+        backend_profiles: List of backend profile names (e.g., ["opencl-backend", "ptx-backend"])
+
+    Returns:
+        str: The tornado.backend value (e.g., "opencl", "ptx", "opencl-ptx", "full")
+    """
+    # Extract backend names from profiles (e.g., "opencl-backend" -> "opencl")
+    backend_list = [b.replace("-backend", "") for b in backend_profiles]
+
+    # Check if all backends are present -> use "full"
+    all_backends = {"opencl", "ptx", "spirv"}
+    if set(backend_list) == all_backends:
+        return "full"
+
+    # Sort and join for consistent naming
+    backend_list_sorted = sorted(backend_list)
+    return "-".join(backend_list_sorted)
+
+
 def define_and_get_internal_maven_content(xml_templates_directory, project_directory, java_home, backend_profiles):
     maven_directory = os.path.join(project_directory, "etc", "dependencies", "apache-maven-3.9.3")
     xml_internal_maven_build_content_directory = os.path.join(xml_templates_directory, "maven_template.xml")
@@ -52,15 +80,19 @@ def define_and_get_internal_maven_content(xml_templates_directory, project_direc
 
     xml_backend_profiles = generate_backend_profiles_as_xml_entries(backend_profiles)
 
+    # Compute tornado.backend property value for SDK directory naming
+    tornado_backend_variant = compute_tornado_backend_variant(backend_profiles)
+
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@MAVEN_DIRECTORY@@]", maven_directory)
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@JAVA_PROFILE@@]", java_profile)
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@BACKEND_PROFILES@@]", xml_backend_profiles)
     xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@PROJECT_DIR@@]", project_directory)
+    xml_internal_maven_build_content = xml_internal_maven_build_content.replace("[@@TORNADO_BACKEND@@]", tornado_backend_variant)
 
     return xml_internal_maven_build_content
 
 def define_and_get_tornadovm_build_content(xml_templates_directory, project_directory, tornado_sdk, java_home, python_home, backend_profiles):
-    post_installation_script_directory = os.path.join(project_directory, "bin", "post_installation.py")
+    intellij_build_script = os.path.join(project_directory, "bin", "intellij_build.py")
     xml_TornadoVM_build_content_directory = os.path.join(xml_templates_directory, "tornadovm_build_template.xml")
     xml_TornadoVM_build_content = read_template(xml_TornadoVM_build_content_directory)
 
@@ -69,13 +101,16 @@ def define_and_get_tornadovm_build_content(xml_templates_directory, project_dire
     python_sdk_home = str(python_home)
     python_sdk_name = f"Python {python_version_name}"
 
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@TORNADOVM_HOME@@]", tornado_sdk)
+    # Compute BACKEND value (e.g., "opencl" or "opencl,ptx")
+    # backend_profiles is comma-separated (e.g., "opencl-backend,ptx-backend")
+    backend_value = backend_profiles.replace("-backend", "")
+
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@JAVA_HOME@@]", java_home)
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@BACKEND_PROFILES@@]", backend_profiles)
+    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@BACKEND@@]", backend_value)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PYTHON_SDK_HOME@@]", python_sdk_home)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PYTHON_SDK_NAME@@]", python_sdk_name)
     xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@PROJECT_DIR@@]", project_directory)
-    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@POST_INSTALLATION_SCRIPT_DIRECTORY@@]", post_installation_script_directory)
+    xml_TornadoVM_build_content = xml_TornadoVM_build_content.replace("[@@INTELLIJ_BUILD_SCRIPT@@]", intellij_build_script)
 
     return xml_TornadoVM_build_content
 
@@ -125,13 +160,20 @@ def generate_xml_files(xml_templates_directory, project_directory, tornado_sdk, 
     print("IntelIj Files Generated ............... [ok]")
 
 def cleanup_build_directory(build_directory_string):
-    tornado_root_directory = Path(build_directory_string)
-    if tornado_root_directory.exists() and tornado_root_directory.is_dir():
-        for file in tornado_root_directory.iterdir():
+    build_dir = Path(build_directory_string)
+    if build_dir.exists() and build_dir.is_dir():
+        for file in build_dir.iterdir():
             if file.name == ".gitignore":
                 continue
-            if file.is_file():
-                file.unlink()
+            if file.is_file() or file.is_dir():
+                # remove files and subdirectories recursively
+                if file.is_file():
+                    file.unlink()
+                else:
+                    import shutil
+                    shutil.rmtree(file)
+    # Ensure the directory exists
+    build_dir.mkdir(parents=True, exist_ok=True)
 
 def tornadovm_ide_init(tornado_sdk, java_home, backends):
     """
@@ -162,8 +204,7 @@ def tornadovm_ide_init(tornado_sdk, java_home, backends):
         sys.exit(0)
 
     tornado_sdk_path = Path(tornado_sdk)
-    tornado_root = tornado_sdk_path.parents[2]
-    project_directory = str(tornado_root)
+    project_directory = str(tornado_sdk_path)
 
     cleanup_build_directory(os.path.join(project_directory, ".build"))
     xml_templates_directory = os.path.join(project_directory, "scripts", "templates", "intellij-settings", "ideinit")

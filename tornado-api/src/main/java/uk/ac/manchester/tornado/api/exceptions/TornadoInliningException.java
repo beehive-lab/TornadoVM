@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +15,10 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.types.tensors;
+package uk.ac.manchester.tornado.api.exceptions;
 
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-
-public abstract non-sealed class Tensor extends TornadoNativeArray {
-    private final DType dtype;
-    private final Shape shape;
-
-    protected Tensor(DType dtype, Shape shape) {
-        this.dtype = dtype;
-        this.shape = shape;
+public class TornadoInliningException extends RuntimeException {
+    public TornadoInliningException(final String msg) {
+        super(msg);
     }
-
-    public abstract Shape getShape();
-
-    public abstract String getDTypeAsString();
-
-    public abstract DType getDType();
-
 }

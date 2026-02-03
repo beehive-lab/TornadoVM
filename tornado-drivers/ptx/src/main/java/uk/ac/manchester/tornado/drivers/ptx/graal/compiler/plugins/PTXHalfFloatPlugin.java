@@ -101,7 +101,7 @@ public class PTXHalfFloatPlugin {
         r.register(new InvocationPlugin("getHalfFloatValue", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get())));
+                b.push(JavaKind.Short, b.append(new HalfFloatPlaceholder(receiver.get(true))));
                 return true;
             }
         });

@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -66,19 +65,6 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestAtomics extends TornadoTestBase {
 
-    /**
-     * Approach using a compiler-intrinsic in TornadoVM.
-     *
-     * @param a
-     *     Input array. It stores the addition with an atomic variable.
-     */
-    public static void atomic03(IntArray a) {
-        final int size = 100;
-        for (@Parallel int i = 0; i < a.getSize(); i++) {
-            int j = i % size;
-            a.set(j, TornadoVMIntrinsics.atomic_add(a, j, 1));
-        }
-    }
 
     /**
      * Approach using an API for Atomics. This provides atomics using the Java semantics (block a single elements). Note that, in OpenCL, this single elements has to be present in the device's global
@@ -265,29 +251,6 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
-    public void testAtomic03() throws TornadoExecutionPlanException {
-        final int size = 1024;
-        IntArray a = new IntArray(size);
-        IntArray b = new IntArray(size);
-
-        a.init(1);
-        b.init(1);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .task("t0", TestAtomics::atomic03, a) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
-        }
-
-        atomic03(b);
-        for (int i = 0; i < a.getSize(); i++) {
-            assertEquals(b.get(i), a.get(i));
-        }
-    }
 
     @Test
     public void testAtomic04() throws TornadoExecutionPlanException {
