@@ -59,4 +59,8 @@ public class GroupIdNode extends FloatingNode implements LIRLowerable, MemoryKil
         gen.setResult(this, result);
     }
 
+    @Override
+    public boolean killsInit() {
+        return false;
+    }
 }

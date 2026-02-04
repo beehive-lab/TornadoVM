@@ -549,7 +549,7 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def checkCompatibilityWithTornadoVM(self):
-        if (self.java_version != 21):
+        if (self.java_version != 25):
             print("TornadoVM supports only JDK version 21")
             sys.exit(0)
 

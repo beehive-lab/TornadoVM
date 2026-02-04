@@ -38,7 +38,7 @@ import jdk.graal.compiler.nodes.LoopBeginNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.debug.ControlFlowAnchorNode;
 import jdk.graal.compiler.nodes.loop.CountedLoopInfo;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.options.OptionValues;
 import jdk.graal.compiler.phases.Phase;
@@ -74,7 +74,7 @@ public class OCLFPGAPragmaPhase extends Phase {
         this.deviceContext = deviceContext;
     }
 
-    private static boolean shouldFullUnrollOrPipeline(OptionValues options, LoopEx loop) {
+    private static boolean shouldFullUnrollOrPipeline(OptionValues options, Loop loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
@@ -120,7 +120,7 @@ public class OCLFPGAPragmaPhase extends Phase {
                 peeled = false;
                 final LoopsData dataCounted = new TornadoLoopsData(graph);
                 dataCounted.detectCountedLoops();
-                for (LoopEx loop : dataCounted.countedLoops()) {
+                for (Loop loop : dataCounted.countedLoops()) {
                     if (shouldFullUnrollOrPipeline(graph.getOptions(), loop)) {
                         List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
                         int idx = 0;

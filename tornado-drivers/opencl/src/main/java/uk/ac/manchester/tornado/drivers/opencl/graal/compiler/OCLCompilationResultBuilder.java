@@ -35,11 +35,11 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
+import jdk.graal.compiler.nodes.spi.CoreProviders;
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
 import jdk.graal.compiler.asm.Assembler;
 import jdk.graal.compiler.code.CompilationResult;
-import jdk.graal.compiler.core.common.spi.CodeGenProviders;
 import jdk.graal.compiler.debug.DebugContext;
 import jdk.graal.compiler.lir.InstructionValueProcedure;
 import jdk.graal.compiler.lir.LIR;
@@ -93,9 +93,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private long[] localGrid;
     private OCLDeviceContextInterface deviceContext;
 
-    public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+    public OCLCompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, NO_VERIFIERS, lir);
         nonInlinedMethods = new HashSet<ResolvedJavaMethod>();
     }
 

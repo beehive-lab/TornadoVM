@@ -32,8 +32,9 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
-
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
@@ -52,54 +53,34 @@ public class OCLArchitecture extends Architecture {
     public static final OCLMemoryBase localSpace = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL, OCLKind.UCHAR);
     public static final OCLMemoryBase privateSpace = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.PRIVATE, OCLKind.UCHAR);
     public static final OCLMemoryBase atomicSpace = new OCLMemoryBase(5, ATOMICS_REGION_NAME, OCLMemorySpace.GLOBAL, OCLKind.INT);
+    private final static Register[] EMPTY = new Register[0];
+    private final static List<Register> EMPTY_LIST = List.of();
 
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
-        super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
+//        super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
+        super("Tornado OpenCL", wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, 0, 0);
         abiRegisters = new OCLRegister[] { kernelContext, constantSpace, localSpace, atomicSpace };
     }
 
-    @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        OCLKind oclKind = OCLKind.ILLEGAL;
-        switch (javaKind) {
-            case Boolean:
-                oclKind = OCLKind.BOOL;
-                break;
-            case Byte:
-                oclKind = OCLKind.CHAR;
-                break;
-            case Short:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.USHORT : OCLKind.SHORT;
-                break;
-            case Char:
-                oclKind = OCLKind.USHORT;
-                break;
-            case Int:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.UINT : OCLKind.INT;
-                break;
-            case Long:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.ULONG : OCLKind.LONG;
-                break;
-            case Float:
-                oclKind = OCLKind.FLOAT;
-                break;
-            case Double:
-                oclKind = OCLKind.DOUBLE;
-                break;
-            case Object:
-                oclKind = (OCLKind) getWordKind();
-                break;
-            case Void:
-            case Illegal:
-                break;
-            default:
-                shouldNotReachHere("illegal java type for %s", javaKind.name());
-        }
-
-        return oclKind;
+        return switch (javaKind) {
+            case Boolean -> OCLKind.BOOL;
+            case Byte    -> OCLKind.CHAR;
+            case Short   -> javaKind.isUnsigned() ? OCLKind.USHORT : OCLKind.SHORT;
+            case Char    -> OCLKind.USHORT;
+            case Int     -> javaKind.isUnsigned() ? OCLKind.UINT : OCLKind.INT;
+            case Long    -> javaKind.isUnsigned() ? OCLKind.ULONG : OCLKind.LONG;
+            case Float   -> OCLKind.FLOAT;
+            case Double  -> OCLKind.DOUBLE;
+            case Object  -> (OCLKind) getWordKind();
+            case Void, Illegal -> OCLKind.ILLEGAL;
+            default -> throw new AssertionError(
+                    String.format("illegal java type for %s", javaKind.name()));
+        };
     }
+
 
     /*
      * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the

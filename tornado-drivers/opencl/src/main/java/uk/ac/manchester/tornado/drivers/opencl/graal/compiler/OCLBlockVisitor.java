@@ -20,21 +20,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.IntStream;
-
-import jdk.graal.compiler.core.common.cfg.Loop;
+import jdk.graal.compiler.core.common.cfg.CFGLoop;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.graph.NodeMap;
 import jdk.graal.compiler.graph.iterators.NodeIterable;
 import jdk.graal.compiler.nodes.BeginNode;
 import jdk.graal.compiler.nodes.EndNode;
-import jdk.graal.compiler.nodes.FixedNode;
 import jdk.graal.compiler.nodes.IfNode;
 import jdk.graal.compiler.nodes.LoopBeginNode;
 import jdk.graal.compiler.nodes.LoopEndNode;
@@ -46,10 +37,17 @@ import jdk.graal.compiler.nodes.StructuredGraph;
 import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
 import jdk.graal.compiler.nodes.cfg.HIRBlock;
 import jdk.graal.compiler.nodes.extended.IntegerSwitchNode;
-
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlock> {
 
@@ -126,9 +124,10 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                     }
                     // falseSuccessor's endScope is redundant, can be removed.
                     if (mergeA && mergeB) {
-                        if (((IfNode) dom.getEndNode()).falseSuccessor().equals(block.getBeginNode()) && (((IfNode) dom.getEndNode()).falseSuccessor().next().equals(block.getEndNode())) && block
-                                .getBeginNode() instanceof LoopExitNode)
+                        if (((IfNode) dom.getEndNode()).falseSuccessor().equals(block.getBeginNode()) && (((IfNode) dom.getEndNode()).falseSuccessor().next()
+                                                                                                                  .equals(block.getEndNode())) && block.getBeginNode() instanceof LoopExitNode) {
                             rmvEndBracket.add(block);
+                        }
                     }
                 }
             } else {
@@ -348,7 +347,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
     }
 
     private boolean isComplexLoopCondition(HIRBlock block) {
-        Loop<HIRBlock> loop = block.getLoop();
+        CFGLoop<HIRBlock> loop = block.getLoop();
         LoopExitNode exitNode = block.getBeginNode() instanceof LoopExitNode ? (LoopExitNode) block.getBeginNode() : null;
 
         if (loop != null || exitNode != null) {
@@ -551,7 +550,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 block.getBeginNode() instanceof LoopExitNode && // The current block exits the block with a return
                 block.getEndNode() instanceof ReturnNode && //
                 !(dom.getFirstSuccessor().getEndNode() instanceof LoopEndNode && //
-                        dom.getFirstSuccessor().getBeginNode() instanceof BeginNode);
+                          dom.getFirstSuccessor().getBeginNode() instanceof BeginNode);
     }
 
     private void closeBranchBlock(HIRBlock block) {

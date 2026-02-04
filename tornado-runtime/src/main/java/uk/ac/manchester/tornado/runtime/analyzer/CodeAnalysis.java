@@ -62,6 +62,7 @@ import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.runtime.JVMCI;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoInternalGraphBuilder;
 
 public class CodeAnalysis {
 
@@ -95,7 +96,7 @@ public class CodeAnalysis {
             StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod).compilationId(
                     compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
-            graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
+            graphBuilderSuite.appendPhase(new TornadoInternalGraphBuilder(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
             return graph;
@@ -130,7 +131,21 @@ public class CodeAnalysis {
             ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
             CompilationResult compilationResult = new CompilationResult(method.getSignature().toMethodDescriptor());
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
+            GraalCompiler.Request<CompilationResult> request = new GraalCompiler.Request<>(
+                    graph,
+                    method,
+                    providers,
+                    backend,
+                    graphBuilderPhase,
+                    optimizationsOpts,
+                    profilerInfo,
+                    suites,
+                    lirSuites,
+                    compilationResult,
+                    factory,
+                    false
+            );
+            request.execute();
             return backend.addInstalledCode(getDebugContext(), method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);

@@ -23,15 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 import jdk.graal.compiler.core.common.CompressEncoding;
 import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.core.common.calc.Condition;
 import jdk.graal.compiler.core.common.memory.BarrierType;
 import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
-import jdk.graal.compiler.core.common.spi.CodeGenProviders;
 import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
 import jdk.graal.compiler.core.common.type.Stamp;
 import jdk.graal.compiler.lir.ConstantValue;
@@ -40,9 +36,10 @@ import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.LabelRef;
 import jdk.graal.compiler.lir.SwitchStrategy;
 import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
 import jdk.graal.compiler.lir.gen.LIRGenerator;
-
+import jdk.graal.compiler.nodes.spi.CoreProviders;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -73,6 +70,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 /**
  * It traverses the OCL HIR and generates OCL LIR.
  */
@@ -81,39 +81,27 @@ public class OCLLIRGenerator extends LIRGenerator {
     private final OCLBuiltinTool oclBuiltinTool;
     private final OCLGenTool oclGenTool;
 
-    public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBarrierSetLIRGenerator() {}, new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLMoveFactory(), providers, res);
+    public OCLLIRGenerator(CoreProviders providers, LIRGenerationResult res) {
+        //        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(),
+        //                new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBarrierSetLIRGenerator() {
+        //                }, new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLMoveFactory(), providers, res);
+        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool() {
+        }, new BarrierSetLIRGeneratorTool() {
+        }, new OCLMoveFactory(), providers, res);
+
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
     }
 
     public static OCLBinaryOp getConditionalOp(Condition condition) {
-        switch (condition) {
-            case AE:
-            case GE:
-                return OCLBinaryOp.RELATIONAL_GTE;
-            case AT:
-            case GT:
-                return OCLBinaryOp.RELATIONAL_GT;
-
-            case EQ:
-                return OCLBinaryOp.RELATIONAL_EQ;
-
-            case BE:
-            case LE:
-                return OCLBinaryOp.RELATIONAL_LTE;
-
-            case BT:
-            case LT:
-                return OCLBinaryOp.RELATIONAL_LT;
-            case NE:
-                return OCLBinaryOp.RELATIONAL_NE;
-            default:
-                shouldNotReachHere();
-                break;
-
-        }
-        return null;
+        return switch (condition) {
+            case AE, GE -> OCLBinaryOp.RELATIONAL_GTE;
+            case AT, GT -> OCLBinaryOp.RELATIONAL_GT;
+            case EQ -> OCLBinaryOp.RELATIONAL_EQ;
+            case BE, LE -> OCLBinaryOp.RELATIONAL_LTE;
+            case BT, LT -> OCLBinaryOp.RELATIONAL_LT;
+            case NE -> OCLBinaryOp.RELATIONAL_NE;
+        };
     }
 
     @Override
@@ -165,6 +153,11 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public boolean isReservedRegister(Register r) {
+        return false;
+    }
+
+    @Override
     public void emitSpeculationFence() {
         unimplemented();
     }
@@ -206,10 +199,6 @@ public class OCLLIRGenerator extends LIRGenerator {
         return 0;
     }
 
-    @Override
-    public Register getHeapBaseRegister() {
-        return null;
-    }
 
     public OCLGenTool getOCLGenTool() {
         return oclGenTool;
@@ -263,6 +252,16 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
     public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitIntegerTestMove: " + left + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
         assert left.getPlatformKind() == right.getPlatformKind() && ((OCLKind) left.getPlatformKind()).isInteger();
@@ -277,6 +276,16 @@ public class OCLLIRGenerator extends LIRGenerator {
         append(assignStmt);
 
         return variable;
+    }
+
+    @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
     }
 
     @Override
@@ -296,7 +305,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
 
     }
 

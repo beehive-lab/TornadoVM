@@ -246,7 +246,7 @@ public class OCLCompiler {
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
-            RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
+            RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {}, new Object());
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
             LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
             LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);

@@ -52,6 +52,11 @@ public class OCLBarrierNode extends FixedWithNextNode implements LIRLowerable, M
     }
 
     @Override
+    public boolean killsInit() {
+        return false;
+    }
+
+    @Override
     public void generate(NodeLIRBuilderTool gen) {
         gen.getLIRGeneratorTool().append(new OCLLIRStmt.ExprStmt(new OCLUnary.Barrier(OCLUnaryIntrinsic.BARRIER, flags)));
     }

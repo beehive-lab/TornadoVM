@@ -144,7 +144,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.INCREMENT_AND_GET)));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.INCREMENT_AND_GET)));
                 return true;
             }
         });
@@ -153,7 +153,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
                 return true;
             }
         });
@@ -273,7 +273,6 @@ public class OCLGraphBuilderPlugins {
         registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, longHeaderSupplier);
-        registerUnsupportedAtomicAddPlugin(r);
         registerUnsupportedAtomicAddPlugin(r);
     }
 
@@ -427,13 +426,15 @@ public class OCLGraphBuilderPlugins {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
-            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
                 r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
                     @Override
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
                         AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
                         MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        // ADD THIS: Sign-extend to 64 bits
+                        SignExtendNode signExtendNode = b.append(new SignExtendNode(mulNode, 64));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), signExtendNode));
                         JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                         b.addPush(kind, readNode);
                         return true;
@@ -444,7 +445,9 @@ public class OCLGraphBuilderPlugins {
                     public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
                         AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
                         MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        // ADD THIS: Sign-extend to 64 bits
+                        SignExtendNode signExtendNode = b.append(new SignExtendNode(mulNode, 64));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), signExtendNode));
                         JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                         b.add(writeNode);
                         return true;
@@ -453,6 +456,38 @@ public class OCLGraphBuilderPlugins {
             }
         }
     }
+
+//    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+//        Registration r = new Registration(plugins, TornadoMemorySegment.class);
+//
+//        for (JavaKind kind : JavaKind.values()) {
+//                if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
+//
+//                    r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
+//                    @Override
+//                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+//                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+//                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
+//                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+//                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+//                        b.addPush(kind, readNode);
+//                        return true;
+//                    }
+//                });
+//                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
+//                    @Override
+//                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+//                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+//                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
+//                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+//                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+//                        b.add(writeNode);
+//                        return true;
+//                    }
+//                });
+//            }
+//        }
+//    }
 
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, Float.class);
@@ -571,6 +606,7 @@ public class OCLGraphBuilderPlugins {
         registerFPIntrinsics(r);
 
         Registration longReg = new Registration(plugins, Long.class);
+        longReg.setAllowOverwrite(true);  // ADD THIS
         longReg.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
@@ -580,6 +616,7 @@ public class OCLGraphBuilderPlugins {
         });
 
         Registration intReg = new Registration(plugins, Integer.class);
+        intReg.setAllowOverwrite(true);  // ADD THIS
         intReg.register(new InvocationPlugin("bitCount", Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {

@@ -38,7 +38,7 @@ import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.ValuePhiNode;
 import jdk.graal.compiler.nodes.calc.IntegerLessThanNode;
 import jdk.graal.compiler.nodes.loop.InductionVariable;
-import jdk.graal.compiler.nodes.loop.LoopEx;
+import jdk.graal.compiler.nodes.loop.Loop;
 import jdk.graal.compiler.nodes.loop.LoopsData;
 import jdk.graal.compiler.phases.BasePhase;
 
@@ -131,7 +131,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
             int loopIndex = 0;
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
 
             // Enable loop interchange - Parallel Loops are processed in the IR reversed order
             // to set the ranges and offset of the corresponding <thread-ids> for each dimension.
@@ -139,7 +139,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                 Collections.reverse(loops);
             }
 
-            for (LoopEx loop : loops) {
+            for (Loop loop : loops) {
                 for (InductionVariable iv : loop.getInductionVariables().getValues()) {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
                         continue;

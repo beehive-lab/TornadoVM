@@ -456,6 +456,11 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
         return null;
     }
 
+    @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo, Object stub) {
+        return null;
+    }
+
     public void reset(long executionPlanId) {
         getDeviceContext().reset(executionPlanId);
     }

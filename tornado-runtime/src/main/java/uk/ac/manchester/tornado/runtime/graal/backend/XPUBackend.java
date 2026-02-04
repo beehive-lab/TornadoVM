@@ -50,10 +50,6 @@ public abstract class XPUBackend<P extends Providers> extends Backend {
         return super.getProviders();
     }
 
-    @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
-        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
-    }
 
     public abstract String decodeDeopt(long value);
 

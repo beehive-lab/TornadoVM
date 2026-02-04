@@ -139,7 +139,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return emitBinaryAssign(OCLBinaryOp.DIV, LIRKind.combine(x, y), x, y);
     }
 
-    @Override
     public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
@@ -262,6 +261,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
+        return null;
+    }
+
+    @Override
     public Value emitXor(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitXor: %s ^ %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_XOR, LIRKind.combine(x, y), x, y);
@@ -291,6 +295,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         ConstantValue mask = new ConstantValue(toKind, JavaConstant.forIntegerKind(CodeUtil.javaKindFromBitSize(toBits, kind.isFloating()), (1L << fromBits) - 1));
         Variable result = emitBinaryAssign(OCLBinaryOp.BITWISE_AND, toKind, value, mask);
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return null;
     }
 
     @Override
@@ -421,6 +430,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
     }
 
     @Override

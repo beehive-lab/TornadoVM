@@ -182,6 +182,25 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 }
 
                 // Remove FixedGuard nodes with its PI Node
+//                if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
+//                    FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
+//                    if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode) {
+//                        var elementKindSize = getElementKindSize(baseIndexNode);
+//                        var panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+//                        var baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
+//                        var constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
+//                        baseIndexNode.replaceAtUsages(constantNode);
+//                        if (baseIndexNode.predecessor() instanceof FixedGuardNode outterFixedGuardNode) {
+//                            outterFixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
+//                                isNullNode.safeDelete();
+//                            });
+//                            deleteFixed(outterFixedGuardNode);
+//                        }
+//                        deleteFixed(baseIndexNode);
+//                    }
+//                }
+
+                // Remove FixedGuard nodes with its PI Node
                 if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
                     FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
                     if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode) {
@@ -191,10 +210,16 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                         var constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
                         baseIndexNode.replaceAtUsages(constantNode);
                         if (baseIndexNode.predecessor() instanceof FixedGuardNode outterFixedGuardNode) {
-                            outterFixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
-                                isNullNode.safeDelete();
-                            });
+                            // Collect inputs before deleting
+                            var isNullNodes = outterFixedGuardNode.inputs().filter(IsNullNode.class).snapshot();
+                            // Delete the FixedGuardNode FIRST
                             deleteFixed(outterFixedGuardNode);
+                            // Then safely delete unused inputs
+                            for (IsNullNode isNullNode : isNullNodes) {
+                                if (!isNullNode.isDeleted() && isNullNode.hasNoUsages()) {
+                                    isNullNode.safeDelete();
+                                }
+                            }
                         }
                         deleteFixed(baseIndexNode);
                     }

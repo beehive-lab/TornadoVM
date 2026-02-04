@@ -761,6 +761,8 @@ def main():
 
     graal_jars_status = should_handle_graal_jars(args.jdk)
 
+    print(f"graal_jars_status={graal_jars_status}")
+
     maven_cleanup()
 
     pull_graal_jars_if_needed(graal_jars_status)
