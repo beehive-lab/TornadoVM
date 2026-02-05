@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
-
+import jdk.graal.compiler.phases.common.DisableOverflownCountedLoopsPhase;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.graal.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import jdk.graal.compiler.loop.phases.LoopFullUnrollPhase;
@@ -106,6 +106,8 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
+
+        appendPhase(new DisableOverflownCountedLoopsPhase());
 
         if (!deviceContext.isPlatformFPGA()) {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();
