@@ -44,6 +44,7 @@ import jdk.graal.compiler.nodes.java.LoadFieldNode;
 import jdk.graal.compiler.nodes.java.NewInstanceNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.phases.BasePhase;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -355,6 +356,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
 
         for (ValueAnchorNode valueAnchorNode : graph.getNodes().filter(ValueAnchorNode.class)) {
             ArrayList<PiNode> deletePi = new ArrayList<PiNode>();

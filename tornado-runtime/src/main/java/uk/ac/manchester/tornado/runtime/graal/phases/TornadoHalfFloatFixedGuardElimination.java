@@ -33,6 +33,8 @@ import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.calc.IsNullNode;
 import jdk.graal.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 
 public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSketchTierContext> {
@@ -61,6 +63,14 @@ public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSket
 
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
+
+        for (PiNode piNode : graph.getNodes().filter(PiNode.class)) {
+            if (piNode.piStamp().toString().contains("HalfFloat")) {
+                    piNode.replaceAtUsages(piNode.object());
+                    piNode.safeDelete();
+            }
+        }
+
         for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
             if (placeholderNode.getInput() instanceof PiNode placeholderInput) {
                 ValueNode halfFloatValue = placeholderInput.object();
