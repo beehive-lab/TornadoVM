@@ -21,12 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import jdk.vm.ci.meta.JavaKind;
 import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.LIRInstructionClass;
 import jdk.graal.compiler.lir.Opcode;
 import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
-
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -36,6 +34,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
+
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
 
 public class OCLLIRStmt {
 
@@ -580,9 +580,9 @@ public class OCLLIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -640,8 +640,7 @@ public class OCLLIRStmt {
         }
 
         /**
-         * This method is used to check if emiting a load to a local or private memory
-         * space.
+         * This method is used to check if emiting a load to a local or private memory space.
          *
          * @return boolean This returns if the memory base is private or local.
          */
@@ -669,9 +668,9 @@ public class OCLLIRStmt {
 
         @Def
         protected AllocatableValue lhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         @Use
@@ -731,9 +730,9 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
@@ -761,10 +760,9 @@ public class OCLLIRStmt {
          * </code>
          *
          * @param crb
-         *     OpenCL Compilation Result Builder
-         *
+         *         OpenCL Compilation Result Builder
          * @param asm
-         *     OpenCL Assembler
+         *         OpenCL Assembler
          */
         public void emitLocalAndPrivateStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             address.emit(crb, asm);
@@ -787,10 +785,9 @@ public class OCLLIRStmt {
          * </code>
          *
          * @param crb
-         *     OpenCL Compilation Result Builder
-         *
+         *         OpenCL Compilation Result Builder
          * @param asm
-         *     OpenCL Assembler
+         *         OpenCL Assembler
          */
         public void emitGlobalStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("*(");
@@ -817,8 +814,7 @@ public class OCLLIRStmt {
         }
 
         /**
-         * This method is used to check if emitting a store to a local or private memory
-         * space.
+         * This method is used to check if emitting a store to a local or private memory space.
          *
          * @return It returns true if the memory base is private or local.
          */
@@ -848,11 +844,11 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicAddStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -947,11 +943,11 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicAddFloatStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -970,7 +966,7 @@ public class OCLLIRStmt {
         private void emitAtomicAddStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.emit("atomicAdd_Tornado_Floats( &("); // Calling to the
-                                                     // intrinsic for Floats
+            // intrinsic for Floats
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -1048,11 +1044,11 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicSubStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1146,11 +1142,11 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
         @Use
         protected Value left;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
 
         public StoreAtomicMulStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
@@ -1242,9 +1238,9 @@ public class OCLLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected OCLAddressCast cast;
-        @Use
+        @Use( { COMPOSITE })
         protected MemoryAccess address;
         @Use
         protected Value index;
