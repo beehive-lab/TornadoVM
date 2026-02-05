@@ -98,12 +98,31 @@ public class OCLMathPlugins {
         registerHalfFloatMathPlugins(registration);
     }
 
+//    private static void registerHalfFloatMathPlugins(Registration r) {
+//        r.register(new InvocationPlugin("min", HalfFloat.class, HalfFloat.class) {
+//            @Override
+//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+//                // Since HalfFloat is represented as short internally, we use JavaKind.Short
+//                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Short)));
+//                return true;
+//            }
+//        });
+//
+//        r.register(new InvocationPlugin("max", HalfFloat.class, HalfFloat.class) {
+//            @Override
+//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+//                // Since HalfFloat is represented as short internally, we use JavaKind.Short
+//                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Short)));
+//                return true;
+//            }
+//        });
+//    }
+
     private static void registerHalfFloatMathPlugins(Registration r) {
         r.register(new InvocationPlugin("min", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Object)));
                 return true;
             }
         });
@@ -111,8 +130,7 @@ public class OCLMathPlugins {
         r.register(new InvocationPlugin("max", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Object)));
                 return true;
             }
         });

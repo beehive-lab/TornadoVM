@@ -23,9 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.graal.compiler.core.common.type.ObjectStamp;
 import jdk.graal.compiler.core.common.type.StampPair;
 import jdk.graal.compiler.nodes.ParameterNode;
@@ -42,6 +39,9 @@ import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
 import jdk.graal.compiler.nodes.java.StoreIndexedNode;
 import jdk.graal.compiler.nodes.memory.address.AddressNode;
 import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -132,17 +132,11 @@ public final class OCLVectorPlugins {
         registerVectorPlugins(ps, plugins, OCLKind.FLOAT16, FloatArray.class, float.class);
 
         // Adding half floats
-        // Change elementType from short.class to HalfFloat.class
-        registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloatArray.class, HalfFloat.class);
-        registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloatArray.class, HalfFloat.class);
-        registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloatArray.class, HalfFloat.class);
-        registerVectorPlugins(ps, plugins, OCLKind.HALF8, HalfFloatArray.class, HalfFloat.class);
-        registerVectorPlugins(ps, plugins, OCLKind.HALF16, HalfFloatArray.class, HalfFloat.class);
-//        registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
-//        registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloat.class, short.class);
-//        registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloat.class, short.class);
-//        registerVectorPlugins(ps, plugins, OCLKind.HALF8, HalfFloat.class, short.class);
-//        registerVectorPlugins(ps, plugins, OCLKind.HALF16, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF2, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF3, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF4, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF8, HalfFloat.class, short.class);
+        registerVectorPlugins(ps, plugins, OCLKind.HALF16, HalfFloat.class, short.class);
 
         // Adding ints
         registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
@@ -315,14 +309,14 @@ public final class OCLVectorPlugins {
             }
         });
 
-//        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-//                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
-//                b.add(b.append(store));
-//                return true;
-//            }
-//        });
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
+                b.add(b.append(store));
+                return true;
+            }
+        });
 
         r.register(new InvocationPlugin("add", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
@@ -364,18 +358,18 @@ public final class OCLVectorPlugins {
             }
         });
 
-//        r.register(new InvocationPlugin("getArray", Receiver.class) {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-//                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-//                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-//                JavaKind elementKind = kind.getElementKind().asJavaKind();
-//                ValueNode array = receiver.get(true);
-//                GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
-//                b.push(JavaKind.Object, b.append(getArrayNode));
-//                return true;
-//            }
-//        });
+        r.register(new InvocationPlugin("getArray", Receiver.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                ValueNode array = receiver.get(true);
+                GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
+                b.push(JavaKind.Object, b.append(getArrayNode));
+                return true;
+            }
+        });
 
     }
 
