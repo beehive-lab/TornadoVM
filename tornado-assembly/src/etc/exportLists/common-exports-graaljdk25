@@ -1,0 +1,110 @@
+#
+# This file is part of Tornado: A heterogeneous programming framework:
+# https://github.com/beehive-lab/tornadovm
+#
+# Copyright (c) 2020, APT Group, Department of Computer Science,
+# School of Engineering, The University of Manchester. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.cfg=tornado.runtime
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.hotspot.meta=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.util=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.runtime,tornado.annotation,tornado.drivers.common,jdk.graal.compiler
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,tornado.drivers.common,jdk.graal.compiler
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.graph=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.graph.spi=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.gen=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodeinfo=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.calc=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.spi=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.api.runtime=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.code=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.target=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.debug=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.hotspot=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.java=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.asm=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.phases=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.graphbuilderconf=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.loop=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.options=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.hotspot=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.framemap=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.constopt=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.phases=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.target=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.debug=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.options=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.tiers=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.util=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.printer=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.runtime=tornado.runtime
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.graph.iterators=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.java=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.bytecode=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.common=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.spi=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.api.replacements=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.replacements=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.common.inlining=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.phases=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.type=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.extended=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.loop=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.common.inlining.info=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.common.inlining.policy=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.common.inlining.walker=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.loop.phases=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.debug=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.memory=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.util=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.virtual=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.constopt=tornado.runtime
+--add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.runtime
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.gc=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.memory.address=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.replacements.nodes=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.word=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.phases.util=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.lir.framemap=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.alloc=tornado.runtime
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.graph=tornado.runtime,tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.graph.iterators=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.java=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.extended=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.loop=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.calc=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.options=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.debug=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.util=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.nodes.virtual=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.common
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.common
+--add-exports java.base/jdk.internal.foreign=tornado.drivers.opencl
+--add-exports jdk.internal.vm.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.opencl
+--add-exports=java.base/jdk.internal.misc=jdk.internal.vm.compiler
