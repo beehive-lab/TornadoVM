@@ -153,7 +153,7 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
         @Use
-        private final Value condition;
+        private  Value condition;
 
         private boolean generateIfBreakStatement = true;
 
@@ -206,7 +206,7 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass.create(ConditionalBranchOp.class);
         @Use
-        private final Value condition;
+        private  Value condition;
 
         public ConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -224,7 +224,7 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<LinkedConditionalBranchOp> TYPE = LIRInstructionClass.create(LinkedConditionalBranchOp.class);
         @Use
-        private final Value condition;
+        private  Value condition;
 
         public LinkedConditionalBranchOp(Value condition) {
             super(TYPE);
