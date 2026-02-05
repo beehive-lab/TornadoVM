@@ -297,10 +297,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return result;
     }
 
+
     @Override
-    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
-        return null;
+    public Value emitZeroExtend(Value value, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitZeroExtend: %s (from %d to %d, explicit=%b, kindChange=%b)",
+                value, fromBits, toBits, requiresExplicitZeroExtend, requiresLIRKindChange);
+        // Delegate to existing implementation - OpenCL always needs explicit zero extend via masking
+        return emitZeroExtend(value, fromBits, toBits);
     }
+
 
     @Override
     protected boolean isNumericInteger(PlatformKind platformKind) {

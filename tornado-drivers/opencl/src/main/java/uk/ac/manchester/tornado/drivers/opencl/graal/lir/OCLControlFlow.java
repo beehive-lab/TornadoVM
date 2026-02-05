@@ -262,10 +262,8 @@ public class OCLControlFlow {
         @Use
         private AllocatableValue value;
 
-        @Use( { CONST })
         private Constant[] keyConstants;
 
-        @Use
         private LabelRef[] keyTargets;
         private LabelRef defaultTarget;
 
