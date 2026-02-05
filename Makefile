@@ -54,43 +54,43 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --quickPass
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --quickPass
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --uncompressed
-	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --uncompressed
+	tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --quickPass --uncompressed
-	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --quickPass --uncompressed
+	tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh	
 
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --verbose
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-spirv-opencl:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"  --verbose
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 test-slam:
