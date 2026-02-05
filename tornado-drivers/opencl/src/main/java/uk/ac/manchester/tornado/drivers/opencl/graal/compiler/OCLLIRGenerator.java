@@ -301,6 +301,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", key);
+        System.out.println("+++++emitStrategySwitch: key=" + key);
         append(new OCLControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
     }
 

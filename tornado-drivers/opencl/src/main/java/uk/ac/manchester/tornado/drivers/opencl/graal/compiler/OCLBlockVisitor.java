@@ -86,6 +86,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
     }
 
     private static boolean isSwitchBlock(HIRBlock block) {
+        System.out.println("isSwitchBlock____________");
         return block.getEndNode() instanceof IntegerSwitchNode;
     }
 
@@ -170,6 +171,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
         }
 
         if (defaultSuccessorIndex == caseIndex) {
+            System.out.println("emitBeginBlockForSwitchStatements____________");
             asm.emit(OCLAssemblerConstants.DEFAULT_CASE + OCLAssemblerConstants.COLON);
         } else {
             for (Integer idx : commonCases) {
@@ -201,12 +203,29 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
             if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
                 emitBeginBlockForElseStatement(dom, block);
             } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
+                System.out.println("emitBeginBlockForSwitchStatements____________");
+                IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
+                if (isFirstSwitchSuccessor(block, switchNode)) {
+//                    emitSwitchHeader(switchNode);
+                }
                 emitBeginBlockForSwitchStatements(dom, block);
             }
             openclBuilder.emitBlock(block);
         }
         return null;
     }
+    private boolean isFirstSwitchSuccessor(HIRBlock block, IntegerSwitchNode switchNode) {
+        // Check if this block is the first successor of the switch
+        Node firstSuccessor = switchNode.successors().first();
+        return firstSuccessor.equals(block.getBeginNode());
+    }
+
+//    private void emitSwitchHeader(IntegerSwitchNode switchNode) {
+//        asm.indent();
+//        asm.emit("switch(" + openclBuilder.getKeyForSwitch(switchNode) + ")");
+//        asm.eol();
+//        asm.beginScope();
+//    }
 
     private boolean isLoopExitNode(HIRBlock block) {
         return block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode;
