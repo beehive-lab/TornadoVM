@@ -106,7 +106,6 @@
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
                             <source>25</source>
                             <target>25</target>
-                            <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
                                     <groupId>org.openjdk.jmh</groupId>
@@ -437,10 +436,10 @@
                                 <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports-graaljdk25</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports-graaljdk25</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports-graaljdk25</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports-graaljdk25</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/ptx-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/spirv-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
