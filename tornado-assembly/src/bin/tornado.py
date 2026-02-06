@@ -536,12 +536,7 @@ class TornadoVMRunnerTool():
             graalEnabled = True
 
         if (matchJVMVersion != None):
-            major_version = int(matchJVMVersion.group(1))
-            # For older Java versions (1.8, 1.11), the real version is in the second group
-            if major_version == 1 and matchJVMVersion.group(2):
-                version = int(matchJVMVersion.group(2))
-            else:
-                version = major_version
+            version = int(matchJVMVersion.group(1))
             return version, graalEnabled
         else:
             print("[ERROR] JDK Version not found")
