@@ -301,13 +301,19 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", key);
-        System.out.println("+++++emitStrategySwitch: key=" + key);
         append(new OCLControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
     }
 
     @Override
     protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
-
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitRangeTableSwitch: key=%s, lowKey=%d", key, lowKey);
+        // For OpenCL, we generate a regular switch statement
+        // Create key constants from the range starting at lowKey
+        JavaConstant[] keyConstants = new JavaConstant[targets.length];
+        for (int i = 0; i < targets.length; i++) {
+            keyConstants[i] = JavaConstant.forInt(lowKey + i);
+        }
+        append(new OCLControlFlow.SwitchOp(key, keyConstants, targets, defaultTarget));
     }
 
     @Override
