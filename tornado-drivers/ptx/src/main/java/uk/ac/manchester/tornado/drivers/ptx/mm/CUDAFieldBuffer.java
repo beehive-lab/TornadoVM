@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -65,6 +66,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
     private final Class<?> type;
     private final PTXDeviceContext deviceContext;
     private long address;
+    private long bufferOffset;
     private ByteBuffer buffer;
     private HotSpotResolvedJavaType resolvedType;
     private HotSpotResolvedJavaField[] fields;
@@ -76,6 +78,10 @@ public class CUDAFieldBuffer implements XPUBuffer {
     private Access access;
 
     public CUDAFieldBuffer(final PTXDeviceContext device, Object object, Access access) {
+        this(device, object, access, !isChildOfTornadoNativeArray(object));
+    }
+
+    private CUDAFieldBuffer(final PTXDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
         this.type = object.getClass();
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
@@ -88,14 +94,14 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(object.getClass());
 
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);
+        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
             HotSpotResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(type, field.getName());
+            final Field reflectedField = getField(findDeclaringClass(field), field.getName());
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
@@ -145,7 +151,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new CUDAFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access);
+                wrappedField = new CUDAFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
             }
 
             if (wrappedField != null) {
@@ -165,19 +171,12 @@ public class CUDAFieldBuffer implements XPUBuffer {
             logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(getObjectSize(), access);
+        this.address = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size(), access);
+        this.bufferOffset = 0;
+        setBuffer(new XPUBufferWrapper(address, bufferOffset));
 
         if (DEBUG) {
             logger.debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
-        }
-        for (FieldBuffer buffer : wrappedFields) {
-            if (buffer != null) {
-                // TODO: support batch sizes for scope/field arguments
-                if (batchSize > 0) {
-                    throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported for Objects Fields. BatchSize = " + batchSize + " (bytes)");
-                }
-                buffer.allocate(reference, batchSize, access);
-            }
         }
     }
 
@@ -185,11 +184,6 @@ public class CUDAFieldBuffer implements XPUBuffer {
     public void markAsFreeBuffer() throws TornadoMemoryException {
         deviceContext.getBufferProvider().markBufferReleased(address, access);
         address = -1;
-        for (FieldBuffer buffer : wrappedFields) {
-            if (buffer != null) {
-                buffer.deallocate();
-            }
-        }
     }
 
     private Field getField(Class<?> type, String name) {
@@ -207,6 +201,28 @@ public class CUDAFieldBuffer implements XPUBuffer {
         return result;
     }
 
+    private Class<?> findDeclaringClass(HotSpotResolvedJavaField field) {
+        Class<?> objectTypeTemp = type;
+        while (objectTypeTemp != null && !objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())) {
+            objectTypeTemp = objectTypeTemp.getSuperclass();
+        }
+        if (objectTypeTemp == null) {
+            throw new TornadoRuntimeException(String.format("Cannot find declaring class %s in hierarchy of %s for field %s", field.getDeclaringClass().toJavaName(), type.getName(), field.getName()));
+        }
+        return objectTypeTemp;
+    }
+
+    private static boolean isChildOfTornadoNativeArray(Object object) {
+        Class<?> objectType = object.getClass();
+        while (objectType != null) {
+            if (objectType.getName().equals(TornadoNativeArray.class.getName())) {
+                return true;
+            }
+            objectType = objectType.getSuperclass();
+        }
+        return false;
+    }
+
     private void writeFieldToBuffer(int index, Field field, Object obj) {
         Class<?> fieldType = field.getType();
         if (fieldType.isPrimitive()) {
@@ -217,7 +233,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             }
         } else if (wrappedFields[index] != null) {
             if (areCoopsEnabled) {
-                // calculate the relative offset
+                // calculate the relative offset within the contiguous buffer
                 long relativeOffset = wrappedFields[index].toBuffer() - this.toBuffer();
                 // Compress it by dividing by 8
                 int compressedOffset = (int) (relativeOffset / 8);
@@ -283,7 +299,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             buffer.position(fields[0].getOffset());
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(type, field.getName());
+                Field f = getField(findDeclaringClass(field), field.getName());
                 if (DEBUG) {
                     logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
@@ -302,7 +318,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(type, field.getName());
+                Field f = getField(findDeclaringClass(field), field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
                     logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
@@ -314,17 +330,28 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
     @Override
     public long toBuffer() {
-        return address;
+        return address + bufferOffset;
     }
 
     @Override
     public void setBuffer(XPUBufferWrapper bufferWrapper) {
-        TornadoInternalError.shouldNotReachHere();
+        this.address = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += getObjectSize();
+
+        for (int i = 0; i < fields.length; i++) {
+            FieldBuffer fieldBuffer = wrappedFields[i];
+            if (fieldBuffer == null) {
+                continue;
+            }
+            fieldBuffer.setBuffer(bufferWrapper);
+        }
     }
 
     @Override
     public long getBufferOffset() {
-        return 0;
+        return bufferOffset;
     }
 
     @Override
@@ -451,7 +478,13 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
     @Override
     public long size() {
-        return getObjectSize();
+        long size = getObjectSize();
+        for (FieldBuffer wrappedField : wrappedFields) {
+            if (wrappedField != null) {
+                size += wrappedField.size();
+            }
+        }
+        return size;
     }
 
     @Override
