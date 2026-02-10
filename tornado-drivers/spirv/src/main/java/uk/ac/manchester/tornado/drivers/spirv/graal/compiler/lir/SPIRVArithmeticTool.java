@@ -405,7 +405,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
-        return null;
+        return emitZeroExtend(inputVal, fromBits, toBits);
     }
 
     @Override

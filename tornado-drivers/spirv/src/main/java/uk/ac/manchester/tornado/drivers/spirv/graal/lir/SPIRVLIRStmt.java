@@ -1268,8 +1268,10 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
+        @Use({COMPOSITE})
         protected SPIRVAddressCast cast;
 
+        @Use({COMPOSITE})
         protected SPIRVUnary.AbstractMemoryAccess address;
 
         @Use
