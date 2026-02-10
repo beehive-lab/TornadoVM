@@ -35,6 +35,10 @@ public class PTXIntArrayWrapper extends PTXArrayWrapper<int[]> {
         super(deviceContext, JavaKind.Int, access);
     }
 
+    public PTXIntArrayWrapper(final int[] array, PTXDeviceContext deviceContext, Access access) {
+        super(array, deviceContext, JavaKind.Int, access);
+    }
+
     @Override
     protected int readArrayData(long executionPlanId, long address, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.readBuffer(executionPlanId, address, bytes, value, hostOffset, waitEvents);

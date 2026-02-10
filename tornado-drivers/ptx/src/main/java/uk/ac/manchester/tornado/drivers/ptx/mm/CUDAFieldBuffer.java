@@ -110,18 +110,19 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
             XPUBuffer wrappedField = null;
             if (type.isArray()) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 if (type == int[].class) {
-                    wrappedField = new PTXIntArrayWrapper(deviceContext, access);
+                    wrappedField = new PTXIntArrayWrapper((int[]) objectFromField, deviceContext, access);
                 } else if (type == float[].class) {
-                    wrappedField = new PTXFloatArrayWrapper(deviceContext, access);
+                    wrappedField = new PTXFloatArrayWrapper((float[]) objectFromField, deviceContext, access);
                 } else if (type == double[].class) {
-                    wrappedField = new PTXDoubleArrayWrapper(deviceContext, access);
+                    wrappedField = new PTXDoubleArrayWrapper((double[]) objectFromField, deviceContext, access);
                 } else if (type == long[].class) {
-                    wrappedField = new PTXLongArrayWrapper(deviceContext, access);
+                    wrappedField = new PTXLongArrayWrapper((long[]) objectFromField, deviceContext, access);
                 } else if (type == short[].class) {
-                    wrappedField = new PTXShortArrayWrapper(deviceContext, access);
+                    wrappedField = new PTXShortArrayWrapper((short[]) objectFromField, deviceContext, access);
                 } else if (type == byte[].class) {
-                    wrappedField = new PTXByteArrayWrapper(deviceContext, access);
+                    wrappedField = new PTXByteArrayWrapper((byte[]) objectFromField, deviceContext, access);
                 } else {
                     logger.warn("cannot wrap field: array type=%s", type.getName());
                 }
