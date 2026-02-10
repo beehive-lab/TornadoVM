@@ -234,6 +234,7 @@ public class SPIRVGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 LocalArrayNode localArrayNode = createLocalArrayNode(b, elementType, size);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }

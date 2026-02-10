@@ -1403,6 +1403,7 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
+        @Use({COMPOSITE})
         protected SPIRVUnary.MemoryIndexedAccess memoryIndexedAccess;
 
         @Use
@@ -1557,6 +1558,7 @@ public class SPIRVLIRStmt {
 
         public static final LIRInstructionClass<IndexedLoadMemAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemAccess.class);
 
+        @Use({COMPOSITE})
         protected SPIRVUnary.MemoryIndexedAccess address;
 
         public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, AllocatableValue result) {
@@ -1597,6 +1599,7 @@ public class SPIRVLIRStmt {
 
         public static final LIRInstructionClass<IndexedLoadMemCollectionAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemCollectionAccess.class);
 
+        @Use({COMPOSITE})
         protected SPIRVUnary.MemoryIndexedAccess address;
 
         @Use

@@ -331,6 +331,7 @@ public class SPIRVUnary {
 
         private final SPIRVMemoryBase memoryRegion;
 
+        @Use
         private Value index;
 
         MemoryAccess(SPIRVMemoryBase base, Value value) {
@@ -359,6 +360,7 @@ public class SPIRVUnary {
 
         private final SPIRVMemoryBase memoryRegion;
 
+        @Use
         private Value index;
 
         public MemoryIndexedAccess(SPIRVMemoryBase memoryRegion, Value baseValue, Value indexValue) {
