@@ -79,7 +79,7 @@ public class SPIRVMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMIN, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMIN, JavaKind.Object)));
                 return true;
             }
         });
@@ -88,7 +88,7 @@ public class SPIRVMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMAX, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMAX, JavaKind.Object)));
                 return true;
             }
         });
