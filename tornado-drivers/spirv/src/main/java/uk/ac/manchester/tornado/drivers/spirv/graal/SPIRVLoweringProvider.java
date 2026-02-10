@@ -42,20 +42,7 @@ import jdk.graal.compiler.core.common.type.StampFactory;
 import jdk.graal.compiler.core.common.type.StampPair;
 import jdk.graal.compiler.graph.Node;
 import jdk.graal.compiler.graph.NodeInputList;
-import jdk.graal.compiler.nodes.AbstractDeoptimizeNode;
-import jdk.graal.compiler.nodes.CompressionNode;
-import jdk.graal.compiler.nodes.ConstantNode;
-import jdk.graal.compiler.nodes.FieldLocationIdentity;
-import jdk.graal.compiler.nodes.FixedNode;
-import jdk.graal.compiler.nodes.Invoke;
-import jdk.graal.compiler.nodes.InvokeNode;
-import jdk.graal.compiler.nodes.LoweredCallTargetNode;
-import jdk.graal.compiler.nodes.NamedLocationIdentity;
-import jdk.graal.compiler.nodes.NodeView;
-import jdk.graal.compiler.nodes.PhiNode;
-import jdk.graal.compiler.nodes.StructuredGraph;
-import jdk.graal.compiler.nodes.UnwindNode;
-import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.*;
 import jdk.graal.compiler.nodes.calc.BinaryArithmeticNode;
 import jdk.graal.compiler.nodes.calc.FloatConvertNode;
 import jdk.graal.compiler.nodes.calc.IntegerDivRemNode;
@@ -80,6 +67,7 @@ import jdk.graal.compiler.nodes.util.GraphUtil;
 import jdk.graal.compiler.options.OptionValues;
 import jdk.graal.compiler.phases.util.Providers;
 import jdk.graal.compiler.replacements.DefaultJavaLoweringProvider;
+import jdk.graal.compiler.replacements.IdentityHashCodeSnippets;
 import jdk.graal.compiler.replacements.SnippetCounter;
 import org.graalvm.word.LocationIdentity;
 
@@ -137,7 +125,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     public SPIRVLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig,
             MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflectionProvider, TornadoVMConfigAccess vmConfig, SPIRVTargetDescription target,
             boolean useCompressedOops) {
-        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, useCompressedOops);
+        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false, null);
         this.constantReflectionProvider = constantReflectionProvider;
         this.vmConfig = vmConfig;
     }
@@ -157,6 +145,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers) {
         super.initialize(options, factory, providers);
         initializeSnippets(options, providers);
+    }
+
+    @Override
+    protected IdentityHashCodeSnippets.Templates createIdentityHashCodeSnippets(OptionValues options, Providers providers) {
+        return null;
     }
 
     private void initializeSnippets(OptionValues options, Providers providers) {
@@ -406,14 +399,12 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool) {
-        unimplemented("SPIRVLoweringProvider::createReadHub unimplemented");
+    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool, FixedWithNextNode insertAfter) {
         return null;
     }
 
     @Override
-    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, boolean isKnownObjectArray, FixedNode anchor) {
-        unimplemented("SPIRVLoweringProvider::createReadArrayComponentHub unimplemented");
+    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, boolean isKnownObjectArray, FixedNode anchor, LoweringTool tool, FixedWithNextNode insertAfter) {
         return null;
     }
 
@@ -427,13 +418,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    public boolean supportsBulkZeroing() {
-        unimplemented("SPIRVLoweringProvider::supportsBulkZeroing unimplemented");
-        return false;
-    }
-
-    @Override
-    public boolean supportsRounding() {
+    public boolean supportsBulkZeroingOfEden() {
         return false;
     }
 

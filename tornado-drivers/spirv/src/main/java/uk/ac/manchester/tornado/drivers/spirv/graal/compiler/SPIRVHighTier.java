@@ -35,10 +35,7 @@ import jdk.graal.compiler.loop.phases.LoopFullUnrollPhase;
 import jdk.graal.compiler.nodes.loop.DefaultLoopPolicies;
 import jdk.graal.compiler.nodes.loop.LoopPolicies;
 import jdk.graal.compiler.options.OptionValues;
-import jdk.graal.compiler.phases.common.CanonicalizerPhase;
-import jdk.graal.compiler.phases.common.DeadCodeEliminationPhase;
-import jdk.graal.compiler.phases.common.HighTierLoweringPhase;
-import jdk.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import jdk.graal.compiler.phases.common.*;
 import jdk.graal.compiler.phases.common.inlining.InliningPhase;
 import jdk.graal.compiler.phases.schedule.SchedulePhase;
 import jdk.graal.compiler.virtual.phases.ea.PartialEscapePhase;
@@ -108,6 +105,7 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
+        appendPhase(new DisableOverflownCountedLoopsPhase());
 
         if (!deviceContext.isPlatformFPGA()) {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();

@@ -35,7 +35,7 @@ import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
 import jdk.graal.compiler.asm.Assembler;
 import jdk.graal.compiler.code.CompilationResult;
-import jdk.graal.compiler.core.common.spi.CodeGenProviders;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
 import jdk.graal.compiler.debug.DebugContext;
 import jdk.graal.compiler.lir.LIR;
 import jdk.graal.compiler.lir.LIRInstruction;
@@ -76,10 +76,9 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
 
-    public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-            CompilationResult compilationResult, LIR lir) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
-
+    public SPIRVCompilationResultBuilder(CoreProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+                                         CompilationResult compilationResult, LIR lir) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, NO_VERIFIERS, lir);
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -209,14 +208,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * have a LoopExit in the true branch contains a LoopExitNode or it is not a
      * control Split (due to nested control-flow).
      *
-     * @param basicBlock
-     *     {@link HIRBlock}
-     * @param visitor
-     *     {@link OCLBlockVisitor}
-     * @param visited
-     *     {@link HashSet}
-     * @param pending
-     *     {@link HashMap}
+     * @param basicBlock {@link HIRBlock}
+     * @param visitor    {@link OCLBlockVisitor}
+     * @param visited    {@link HashSet}
+     * @param pending    {@link HashMap}
      */
     private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {

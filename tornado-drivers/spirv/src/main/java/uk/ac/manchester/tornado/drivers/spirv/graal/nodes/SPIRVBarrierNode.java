@@ -44,6 +44,11 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
 
     public static final NodeClass<SPIRVBarrierNode> TYPE = NodeClass.create(SPIRVBarrierNode.class);
 
+    @Override
+    public boolean killsInit() {
+        return false;
+    }
+
     public enum SPIRVMemFenceFlags {
         GLOBAL(0x200 | 0x10), //
         LOCAL(0x100 | 0x10); //

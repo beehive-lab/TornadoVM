@@ -110,4 +110,9 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         tool.append(new SPIRVLIRStmt.LocalArrayAllocation(localArray));
 
     }
+
+    @Override
+    public boolean killsInit() {
+        return false;
+    }
 }

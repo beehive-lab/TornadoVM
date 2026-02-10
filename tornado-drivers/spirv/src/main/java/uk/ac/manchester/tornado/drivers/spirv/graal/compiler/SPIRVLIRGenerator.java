@@ -33,7 +33,6 @@ import jdk.graal.compiler.core.common.calc.Condition;
 import jdk.graal.compiler.core.common.cfg.BasicBlock;
 import jdk.graal.compiler.core.common.memory.BarrierType;
 import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
-import jdk.graal.compiler.core.common.spi.CodeGenProviders;
 import jdk.graal.compiler.core.common.spi.ForeignCallLinkage;
 import jdk.graal.compiler.core.common.type.Stamp;
 import jdk.graal.compiler.lir.LIRFrameState;
@@ -41,9 +40,11 @@ import jdk.graal.compiler.lir.LIRInstruction;
 import jdk.graal.compiler.lir.LabelRef;
 import jdk.graal.compiler.lir.SwitchStrategy;
 import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
 import jdk.graal.compiler.lir.gen.LIRGenerator;
 
+import jdk.graal.compiler.phases.util.Providers;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -77,8 +78,9 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     private SPIRVGenTool spirvGenTool;
     private SPIRVBuiltinTool spirvBuiltinTool;
 
-    public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
-        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVBarrierSetLIRGenerator(), new SPIRVMoveFactory(), providers,
+    public SPIRVLIRGenerator(Providers providers, LIRGenerationResult lirGenRes, final int methodIndex) {
+        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new BarrierSetLIRGeneratorTool() {
+                }, new SPIRVMoveFactory(), providers,
                 lirGenRes);
         spirvGenTool = new SPIRVGenTool(this);
         spirvBuiltinTool = new SPIRVBuiltinTool();
@@ -106,7 +108,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder,
-            BarrierType barrierType) {
+                                            BarrierType barrierType) {
         return null;
     }
 
@@ -157,6 +159,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public boolean isReservedRegister(Register r) {
+        return false;
+    }
+
+    @Override
     public Value emitReadReturnAddress(Stamp wordStamp, int returnAddressSize) {
         unimplemented();
         return null;
@@ -201,7 +208,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
-            double trueDestinationProbability) {
+                                  double trueDestinationProbability) {
         unimplemented();
     }
 
@@ -213,6 +220,16 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
         throw new RuntimeException("Not implemented yet");
+    }
+
+    @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
     }
 
     @Override
@@ -228,14 +245,10 @@ public class SPIRVLIRGenerator extends LIRGenerator {
      * It generates an IntegerTestMove operation, which moves a value to a parameter
      * based on a bitwise and operation between two values.
      *
-     * @param leftVal
-     *     the left value of a condition
-     * @param right
-     *     the right value of a condition
-     * @param trueValue
-     *     the true value to move in the result
-     * @param falseValue
-     *     the false value to move in the result
+     * @param leftVal    the left value of a condition
+     * @param right      the right value of a condition
+     * @param trueValue  the true value to move in the result
+     * @param falseValue the false value to move in the result
      * @return Variable: reference to the variable that contains the result
      */
     @Override
@@ -256,6 +269,16 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
     public Variable emitReverseBytes(Value operand) {
         return null;
     }
@@ -272,8 +295,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
-        unimplemented();
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
+
     }
 
     @Override
@@ -331,11 +354,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return 0;
     }
 
-    @Override
-    public Register getHeapBaseRegister() {
-        unimplemented();
-        return null;
-    }
 
     @Override
     public Variable newVariable(ValueKind<?> valueKind) {

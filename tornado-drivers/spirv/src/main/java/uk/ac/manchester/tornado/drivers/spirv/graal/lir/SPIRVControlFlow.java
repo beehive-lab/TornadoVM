@@ -176,7 +176,6 @@ public class SPIRVControlFlow {
 
         public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
 
-        @Use
         private LabelRef branch;
 
         public Branch(LabelRef branch) {
@@ -208,7 +207,6 @@ public class SPIRVControlFlow {
         public static final LIRInstructionClass<BranchIf> TYPE = LIRInstructionClass.create(BranchIf.class);
         private final boolean isConditional;
         private final boolean isLoopEdgeBack;
-        @Use
         private LabelRef branch;
 
         public BranchIf(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
@@ -254,10 +252,8 @@ public class SPIRVControlFlow {
 
         private SwitchStrategy strategy;
 
-        @Use
         private LabelRef[] keytargets;
 
-        @Use
         private LabelRef defaultTarget;
 
         public SwitchStatement(AllocatableValue key, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget) {

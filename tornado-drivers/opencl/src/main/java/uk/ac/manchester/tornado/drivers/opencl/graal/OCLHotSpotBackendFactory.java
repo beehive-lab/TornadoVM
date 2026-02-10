@@ -106,8 +106,6 @@ public class OCLHotSpotBackendFactory {
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
-            //            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-            //                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
             HotSpotIdentityHashCodeProvider hotSpotIdentityHashCodeProvider = new HotSpotIdentityHashCodeProvider();
             Providers p = new Providers(metaAccess, //
                     codeCache, constantReflection, constantFieldProvider, //

@@ -28,6 +28,7 @@ import static jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguratio
 
 import jdk.graal.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.graal.compiler.core.common.spi.MetaAccessExtensionProvider;
+import jdk.graal.compiler.hotspot.meta.HotSpotIdentityHashCodeProvider;
 import jdk.graal.compiler.hotspot.meta.HotSpotStampProvider;
 import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import jdk.graal.compiler.nodes.loop.LoopsDataProviderImpl;
@@ -45,6 +46,7 @@ import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.providers.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.providers.TornadoWordTypes;
@@ -90,8 +92,9 @@ public class SPIRVHotSpotBackendFactory {
                 .isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
         SPIRVDeviceContext deviceContext = context.getDeviceContext(device.getDeviceIndex());
-
+        SPIRVCodeProvider codeCache = new SPIRVCodeProvider(targetDescription);
         SPIRVCodeProvider codeProvider = new SPIRVCodeProvider(targetDescription);
+        HotSpotIdentityHashCodeProvider hotSpotIdentityHashCodeProvider = new HotSpotIdentityHashCodeProvider();
 
         SPIRVProviders providers;
         SPIRVSuitesProvider suites;
@@ -105,21 +108,30 @@ public class SPIRVHotSpotBackendFactory {
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
-            Providers p = new Providers(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
+//            Providers p = new Providers(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
+//                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
+
+            Providers p = new Providers(metaAccess, //
+                    codeCache, constantReflection, constantFieldProvider, //
+                    foreignCalls, lowerer, lowerer.getReplacements(), stampProvider, //
+                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, //
+                    wordTypes, lpd, hotSpotIdentityHashCodeProvider);
+
 
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
-            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, targetDescription);
+            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, bytecodeProvider, targetDescription);
+
             plugins = createGraphPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
             replacements.setGraphBuilderPlugins(plugins);
 
             suites = new SPIRVSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
-                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
-
+//            providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
+//                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
+            providers = new SPIRVProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
+                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites, hotSpotIdentityHashCodeProvider);
             lowerer.initialize(options, new DummySnippetFactory(), providers);
         }
 
@@ -147,11 +159,9 @@ public class SPIRVHotSpotBackendFactory {
 
         StandardGraphBuilderPlugins.registerInvocationPlugins(snippetReflectionProvider, //
                 invocationPlugins, //
-                replacements, //
                 false, //
                 false, //
-                false, //
-                loweringProvider);
+                false);
         SPIRVGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
 
         return plugins;

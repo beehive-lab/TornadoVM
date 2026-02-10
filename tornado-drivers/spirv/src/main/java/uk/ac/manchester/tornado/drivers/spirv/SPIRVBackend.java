@@ -212,6 +212,11 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
     }
 
     @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo, Object stub) {
+        return null;
+    }
+
+    @Override
     protected CompiledCode createCompiledCode(ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult, boolean isDefault, OptionValues options) {
         unimplemented("Create compiled code method in SPIRVBackend not implemented yet.");
         return null;
@@ -255,7 +260,7 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
 
     @Override
     public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
-        return new SPIRVLIRGenerationResult(compilationId, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+        return new SPIRVLIRGenerationResult(compilationId, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, new AllocatableValue[0]));
     }
 
     @Override
@@ -753,19 +758,18 @@ public class SPIRVBackend extends XPUBackend<SPIRVProviders> implements FrameMap
     /**
      * This method emits the global variables (Storage Class set to Input) for
      * OpenCL thread access, such as get_global_id, global_size, etc.
-     *
+     * <p>
      * This is due to if the kernel is parallel, we need to declare a vector 3
      * elements (ThreadID-0, ThreadID-1, ThreadID-2) that will be used in the OCL
      * builtins for thread id and global sizes.
-     *
+     * <p>
      * Example:
      *
      * <code>
      * %spirv_BuiltinGlobalSize = OpVariable %ptr_Input_v3long Input
      * </code>
      *
-     * @param asm
-     *     {@link SPIRVAssembler}
+     * @param asm {@link SPIRVAssembler}
      */
     public void emitBuiltinVariables(SPIRVAssembler asm) {
         SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());

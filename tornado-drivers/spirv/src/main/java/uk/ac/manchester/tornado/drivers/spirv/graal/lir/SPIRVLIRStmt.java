@@ -62,6 +62,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
+
 public class SPIRVLIRStmt {
 
     protected abstract static class AbstractInstruction extends LIRInstruction {
@@ -387,7 +389,6 @@ public class SPIRVLIRStmt {
 
         protected boolean forwardedId;
 
-        @Use
         protected boolean checkDuplicate;
 
         protected List<SPIRVNodeLIRBuilder.PhiHolder> phiHolders;
@@ -840,10 +841,10 @@ public class SPIRVLIRStmt {
         @Def
         protected AllocatableValue result;
 
-        @Use
+        @Use({COMPOSITE})
         protected SPIRVAddressCast cast;
 
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess base;
 
         public LoadStmt(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess memoryRegion) {
@@ -922,10 +923,10 @@ public class SPIRVLIRStmt {
         @Def
         protected AllocatableValue result;
 
-        @Use
+        @Use({COMPOSITE})
         protected SPIRVAddressCast cast;
 
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess base;
 
         public LoadVectorStmt(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess memoryRegion) {
@@ -1107,10 +1108,10 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
-        @Use
+        @Use({COMPOSITE})
         protected SPIRVAddressCast cast;
 
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         @Use
@@ -1178,10 +1179,10 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
-        @Use
+        @Use({COMPOSITE})
         protected SPIRVAddressCast cast;
 
-        @Use
+        @Use({COMPOSITE})
         protected MemoryAccess address;
 
         @Use
@@ -1267,10 +1268,8 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
-        @Use
         protected SPIRVAddressCast cast;
 
-        @Use
         protected SPIRVUnary.AbstractMemoryAccess address;
 
         @Use
@@ -1404,7 +1403,6 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
-        @Use
         protected SPIRVUnary.MemoryIndexedAccess memoryIndexedAccess;
 
         @Use
@@ -1559,7 +1557,6 @@ public class SPIRVLIRStmt {
 
         public static final LIRInstructionClass<IndexedLoadMemAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemAccess.class);
 
-        @Use
         protected SPIRVUnary.MemoryIndexedAccess address;
 
         public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, AllocatableValue result) {
@@ -1600,7 +1597,6 @@ public class SPIRVLIRStmt {
 
         public static final LIRInstructionClass<IndexedLoadMemCollectionAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemCollectionAccess.class);
 
-        @Use
         protected SPIRVUnary.MemoryIndexedAccess address;
 
         @Use
@@ -1651,6 +1647,7 @@ public class SPIRVLIRStmt {
             if (offsetIndex instanceof ConstantValue) {
                 baseIndex = asm.lookUpConstant(((ConstantValue) offsetIndex).getConstant().toValueString(), (SPIRVKind) offsetIndex.getPlatformKind());
             } else {
+                baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
                 baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
             }
 

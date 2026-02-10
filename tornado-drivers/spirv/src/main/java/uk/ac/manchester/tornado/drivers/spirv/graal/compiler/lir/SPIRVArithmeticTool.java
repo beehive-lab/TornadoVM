@@ -351,7 +351,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert op, Value inputVal) {
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
         return null;
     }
 
@@ -401,6 +401,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVUnary.ZeroExtend zeroExtend = new SPIRVUnary.ZeroExtend(lirKind, result, inputVal, fromBits, toBits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, zeroExtend));
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return null;
     }
 
     @Override
@@ -504,6 +509,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
     }
 
     private void emitLoad(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
