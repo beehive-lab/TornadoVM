@@ -70,6 +70,23 @@ IntelliJ uses a single class import:
 Note that the formatter config file is stored in the following
 path: `<tornadovm>/scripts/templates/eclipse-settings/Tornado.xml`.
 
+### Setting up IntelliJ Run Configurations
+
+After building TornadoVM, you can generate IntelliJ run configurations for building and testing:
+
+```bash
+# Build TornadoVM first
+make
+
+# Load the environment variables
+source setvars.sh
+
+# Generate IntelliJ project files
+make intellijinit
+```
+
+This creates run configurations in the `.build/` directory that IntelliJ will automatically detect. You can then use **Run > Edit Configurations** to see the available configurations for building and running tests.
+
 ## Looking for tasks to contribute?
 
 Help us to develop TornadoVM or TornadoVM use cases:

@@ -24,7 +24,7 @@
       <option name="myRunnerSettings" />
       <option name="myRunnerParameters">
         <MavenRunnerParameters>
-          <option name="cmdOptions" />
+          <option name="cmdOptions" value="-Dtornado.backend=[@@TORNADO_BACKEND@@]" />
           <option name="profiles">
             <set />
           </option>

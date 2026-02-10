@@ -7,10 +7,8 @@
         <option name="PARENT_ENVS" value="true"/>
         <envs>
             <env name="PYTHONUNBUFFERED" value="1"/>
-            <env name="BACKEND" value="opencl"/>
-            <env name="TORNADOVM_HOME" value="[@@TORNADOVM_HOME@@]"/>
-            <env name="JAVA_HOME" value="[@@JAVA_HOME@@]" />
-            <env name="selected_backends" value="[@@BACKEND_PROFILES@@]"/>
+            <env name="BACKEND" value="[@@BACKEND@@]"/>
+            <env name="JAVA_HOME" value="[@@JAVA_HOME@@]"/>
         </envs>
         <option name="SDK_HOME" value="[@@PYTHON_SDK_HOME@@]"/>
         <option name="SDK_NAME" value="[@@PYTHON_SDK_NAME@@]"/>
@@ -19,17 +17,13 @@
         <option name="ADD_CONTENT_ROOTS" value="true"/>
         <option name="ADD_SOURCE_ROOTS" value="true"/>
         <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py"/>
-        <option name="SCRIPT_NAME" value="[@@POST_INSTALLATION_SCRIPT_DIRECTORY@@]"/>
+        <option name="SCRIPT_NAME" value="[@@INTELLIJ_BUILD_SCRIPT@@]"/>
         <option name="PARAMETERS" value=""/>
         <option name="SHOW_COMMAND_LINE" value="false"/>
         <option name="EMULATE_TERMINAL" value="false"/>
         <option name="MODULE_MODE" value="false"/>
         <option name="REDIRECT_INPUT" value="false"/>
         <option name="INPUT_FILE" value=""/>
-        <method v="2">
-            <option name="RunConfigurationTask" enabled="true"
-                    run_configuration_name="_internal_TornadoVM_Maven-cleanAndinstall"
-                    run_configuration_type="MavenRunConfiguration"/>
-        </method>
+        <method v="2"/>
     </configuration>
 </component>

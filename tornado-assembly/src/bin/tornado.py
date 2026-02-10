@@ -24,7 +24,6 @@ import re
 import shlex
 import subprocess
 import sys
-import idea_xml_utils as ideaUtils
 from pathlib import Path
 import shutil
 import ctypes
@@ -1358,11 +1357,6 @@ class TornadoVMRunnerTool():
             print(javaFlags)
             sys.exit(0)
 
-        if (args.intellijinit):
-            sdk_path = os.environ.get('TORNADOVM_HOME')
-            ideaUtils.tornadovm_ide_init(sdk_path, self.java_home, self.listOfBackends)
-            sys.exit(0)
-
         if (args.generate_argfile):
             self.generateArgfile()
             sys.exit(0)
@@ -1440,8 +1434,6 @@ def parseArguments():
     parser.add_argument("application", nargs="?")
     parser.add_argument("--truffle", action="store", dest="truffle_language", default=None,
                         help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
-    parser.add_argument("--intellijinit", action="store_true", dest="intellijinit", default=False,
-                        help="Generate internal xml files for IntelliJ IDE")
     parser.add_argument('--dumpBC', action="store", dest="dump_bytecodes_dir", default=None,
                         help="Dump the TornadoVM bytecodes to a directory")
     parser.add_argument('--generate-argfile', action="store_true", dest="generate_argfile", default=False,
