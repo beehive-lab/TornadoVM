@@ -96,7 +96,7 @@ public class PTXMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(PTXFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(PTXFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Object)));
                 return true;
             }
         });
@@ -105,7 +105,7 @@ public class PTXMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(PTXFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(PTXFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Object)));
                 return true;
             }
         });

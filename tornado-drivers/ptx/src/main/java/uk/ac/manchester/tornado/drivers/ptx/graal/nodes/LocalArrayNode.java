@@ -112,4 +112,9 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         gen.getLIRGeneratorTool().append(expr);
         gen.setResult(this, variable);
     }
+
+    @Override
+    public boolean killsInit() {
+        return false;
+    }
 }

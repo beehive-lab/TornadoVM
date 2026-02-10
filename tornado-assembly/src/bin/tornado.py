@@ -72,7 +72,8 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
+__LOG_JVM_EXCEPTIONS__ = "-Xlog:exceptions=info "
+__JAVA_BASE_OPTIONS__ = ("-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview ")
 __TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
@@ -545,7 +546,8 @@ class TornadoVMRunnerTool():
 
     def checkCompatibilityWithTornadoVM(self):
         if (self.java_version != 25):
-            print("TornadoVM supports only JDK version 21")
+            print(f"[ERROR] TornadoVM is only compatible with JDK version 25. Current JDK version: {self.java_version}")
+            print("TornadoVM supports only JDK version 25")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):

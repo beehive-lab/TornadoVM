@@ -29,7 +29,7 @@ import static jdk.graal.compiler.core.common.GraalOptions.OptConvertDeoptsToGuar
 import static jdk.graal.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
 import static jdk.graal.compiler.core.phases.HighTier.Options.Inline;
 import static jdk.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-
+import jdk.graal.compiler.phases.common.DisableOverflownCountedLoopsPhase;
 import jdk.graal.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import jdk.graal.compiler.loop.phases.LoopFullUnrollPhase;
 import jdk.graal.compiler.nodes.loop.DefaultLoopPolicies;
@@ -107,6 +107,8 @@ public class PTXHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
+        appendPhase(new DisableOverflownCountedLoopsPhase());
+
 
         LoopPolicies loopPolicies = new DefaultLoopPolicies();
         appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));

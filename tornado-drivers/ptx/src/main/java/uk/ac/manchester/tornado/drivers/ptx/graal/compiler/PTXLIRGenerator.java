@@ -45,7 +45,7 @@ import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.gen.LIRGenerationResult;
 import jdk.graal.compiler.lir.gen.LIRGenerator;
 import jdk.graal.compiler.phases.util.Providers;
-
+import jdk.graal.compiler.lir.gen.BarrierSetLIRGeneratorTool;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -77,6 +77,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
+import javax.print.DocFlavor;
+
 public class PTXLIRGenerator extends LIRGenerator {
     private final PTXGenTool ptxGenTool;
     private final PTXBuiltinTool ptxBuiltinTool;
@@ -84,40 +86,23 @@ public class PTXLIRGenerator extends LIRGenerator {
     private final Map<String, Variable> parameterAllocations;
 
     public PTXLIRGenerator(Providers providers, LIRGenerationResult lirGenRes) {
-        super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new PTXBarrierSetLIRGenerator(), new PTXMoveFactory(), providers, lirGenRes);
+        super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new  BarrierSetLIRGeneratorTool() {}, new PTXMoveFactory(), providers, lirGenRes);
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
         ptxBuiltinTool = new PTXBuiltinTool();
     }
 
     public static PTXBinaryOp getConditionalOp(Condition condition) {
-        switch (condition) {
-            case AE:
-            case GE:
-                return PTXBinaryOp.SETP_GE;
-            case AT:
-            case GT:
-                return PTXBinaryOp.SETP_GT;
-
-            case EQ:
-                return PTXBinaryOp.SETP_EQ;
-
-            case BE:
-            case LE:
-                return PTXBinaryOp.SETP_LE;
-
-            case BT:
-            case LT:
-                return PTXBinaryOp.SETP_LT;
-            case NE:
-                return PTXBinaryOp.SETP_NE;
-            default:
-                shouldNotReachHere();
-                break;
-
-        }
-        return null;
+        return switch (condition) {
+            case AE, GE -> PTXBinaryOp.SETP_GE;
+            case AT, GT -> PTXBinaryOp.SETP_GT;
+            case EQ     -> PTXBinaryOp.SETP_EQ;
+            case BE, LE -> PTXBinaryOp.SETP_LE;
+            case BT, LT -> PTXBinaryOp.SETP_LT;
+            case NE     -> PTXBinaryOp.SETP_NE;
+        };
     }
+
 
     @Override
     public PTXLIRKindTool getLIRKindTool() {
@@ -181,6 +166,11 @@ public class PTXLIRGenerator extends LIRGenerator {
     @Override
     public void emitCacheWritebackSync(boolean isPreSync) {
         unimplemented();
+    }
+
+    @Override
+    public boolean isReservedRegister(Register r) {
+        return false;
     }
 
     @Override
@@ -299,6 +289,16 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitOpMaskTestBranch(Value left, boolean negateLeft, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
+    public void emitOpMaskOrTestBranch(Value left, Value right, boolean allZeros, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
+
+    }
+
+    @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
         if (left.getValueKind().equals(LIRKind.value(PTXKind.PRED))) {
             return emitConditionalMovePred(left, unorderedIsTrue, trueValue, falseValue);
@@ -366,6 +366,16 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitOpMaskTestMove(Value leftVal, boolean negateLeft, Value right, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
+    public Variable emitOpMaskOrTestMove(Value leftVal, Value right, boolean allZeros, Value trueValue, Value falseValue) {
+        return null;
+    }
+
+    @Override
     public Variable emitReverseBytes(Value operand) {
         return null;
     }
@@ -381,6 +391,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         LIRKind kind = LIRKind.value(PTXKind.PRED);
         Variable predicate = newVariable(kind);
         Constant[] constants = strategy.getKeyConstants();
+        System.out.println("XXXXXX" + constants.length);
         for (int i = 0; i < keyTargets.length; i++) {
             append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, key, new ConstantValue(LIRKind.value(PTXKind.S32), constants[i]))));
             emitConditionalBranch(keyTargets[i], predicate, false, false);
@@ -388,9 +399,44 @@ public class PTXLIRGenerator extends LIRGenerator {
         append(new PTXControlFlow.Branch(defaultTarget, false, false));
     }
 
-    @Override
-    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
+//    @Override
+//    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
+//        System.out.println("XXXXXX"
+//        );
+//        JavaConstant[] keyConstants = new JavaConstant[targets.length];
+//        for (int i = 0; i < targets.length; i++) {
+//            keyConstants[i] = JavaConstant.forInt(lowKey + i);
+//        }
+//    }
 
+    @Override
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets,
+            SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
+        LIRKind kind = LIRKind.value(PTXKind.PRED);
+        Variable predicate = newVariable(kind);
+
+        // Emit comparison + branch for each case in the range table
+        for (int i = 0; i < targets.length; i++) {
+            JavaConstant constant = JavaConstant.forInt(lowKey + i);
+            append(new PTXLIRStmt.AssignStmt(predicate,
+                    new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, key,
+                            new ConstantValue(LIRKind.value(PTXKind.S32), constant))));
+            emitConditionalBranch(targets[i], predicate, false, false);
+        }
+
+        // Handle any remaining strategy cases (non-contiguous keys that didn't fit the range)
+        if (remainingStrategy != null && remainingTargets != null) {
+            Constant[] remainingConstants = remainingStrategy.getKeyConstants();
+            for (int i = 0; i < remainingTargets.length; i++) {
+                append(new PTXLIRStmt.AssignStmt(predicate,
+                        new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, key,
+                                new ConstantValue(LIRKind.value(PTXKind.S32), remainingConstants[i]))));
+                emitConditionalBranch(remainingTargets[i], predicate, false, false);
+            }
+        }
+
+        // Default fallthrough
+        append(new PTXControlFlow.Branch(defaultTarget, false, false));
     }
 
     @Override
@@ -429,11 +475,6 @@ public class PTXLIRGenerator extends LIRGenerator {
     @Override
     public int getArrayLengthOffset() {
         return 0;
-    }
-
-    @Override
-    public Register getHeapBaseRegister() {
-        return null;
     }
 
     public Variable newReturnVariable(ValueKind<?> lirKind) {

@@ -53,4 +53,9 @@ public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, M
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPTXBarrier: ctaInstance=%d, numberOfThreads=%d", ctaInstance, numberOfThreads);
         gen.getLIRGeneratorTool().append(new PTXLIRStmt.ExprStmt(new PTXUnary.Barrier(PTXAssembler.PTXUnaryIntrinsic.BARRIER_SYNC, ctaInstance, numberOfThreads)));
     }
+
+    @Override
+    public boolean killsInit() {
+        return false;
+    }
 }

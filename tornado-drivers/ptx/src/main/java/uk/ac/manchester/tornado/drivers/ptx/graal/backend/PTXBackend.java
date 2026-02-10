@@ -144,6 +144,11 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
     }
 
     @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo, Object stub) {
+        return null;
+    }
+
+    @Override
     public boolean isInitialised() {
         return isInitialised;
     }
@@ -187,7 +192,8 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
 
     @Override
     public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
-        return new PTXLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+        return new PTXLIRGenerationResult(identifier, lir, frameMapBuilder,
+                registerAllocationConfig, new CallingConvention(0, null, new AllocatableValue[0] ));
     }
 
     @Override
@@ -357,6 +363,7 @@ public class PTXBackend extends XPUBackend<PTXProviders> implements FrameMap.Ref
             asm.emitLine("");
         }
     }
+
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVariableDefs");

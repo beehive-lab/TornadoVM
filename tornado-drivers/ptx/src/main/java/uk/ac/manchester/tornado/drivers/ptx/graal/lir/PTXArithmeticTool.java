@@ -22,11 +22,6 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.RSQRT;
-
 import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.core.common.calc.FloatConvert;
 import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
@@ -35,7 +30,6 @@ import jdk.graal.compiler.lir.ConstantValue;
 import jdk.graal.compiler.lir.LIRFrameState;
 import jdk.graal.compiler.lir.Variable;
 import jdk.graal.compiler.lir.gen.ArithmeticLIRGenerator;
-
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
@@ -48,6 +42,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXTernaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.RSQRT;
 
 public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
@@ -168,8 +167,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert op, Value inputVal) {
-        unimplemented();
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
         return null;
     }
 
@@ -241,6 +239,14 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         ConstantValue mask = new ConstantValue(toKind, JavaConstant.forIntegerKind(CodeUtil.javaKindFromBitSize(toBits, kind.isFloating()), (1L << fromBits) - 1));
         Variable result = emitBinaryAssign(PTXBinaryOp.BITWISE_AND, toKind, signExtendedValue, mask);
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value value, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitZeroExtend: %s (from %d to %d, explicit=%b, kindChange=%b)",
+                value, fromBits, toBits, requiresExplicitZeroExtend, requiresLIRKindChange);
+        // Delegate to existing implementation - OpenCL always needs explicit zero extend via masking
+        return emitZeroExtend(value, fromBits, toBits);
     }
 
     public PTXLIRGenerator getGen() {
@@ -335,6 +341,11 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             getGen().append(new PTXLIRStmt.StoreStmt(access, input));
         }
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
     }
 
     public void emitVectorLoad(Variable result, PTXUnary.MemoryAccess address) {

@@ -135,8 +135,11 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
-        return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger") || method.getDeclaringClass().toJavaName()
-                .equals("java.util.concurrent.atomic.AtomicInteger");
+        return method.getDeclaringClass() //
+        .toJavaName() //
+            .equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger")  //
+            || method.getDeclaringClass().toJavaName() //
+            .equals("java.util.concurrent.atomic.AtomicInteger");
     }
 
     private static void registerAtomicCall(Registration r, JavaKind returnedJavaKind) {
@@ -287,7 +290,6 @@ public class OCLGraphBuilderPlugins {
                 int header = headerSupplier.get();
                 AddressNode address = computeAddress(b, segment, index, header, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
-                //                b.add(b.append(atomicAddNode));
                 b.add(atomicAddNode);
                 return true;
             }
