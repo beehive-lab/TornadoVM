@@ -146,13 +146,13 @@ jobs:
     needs: code-quality
     timeout-minutes: 45
     env:
-      JAVA_HOME: /opt/jenkins/jdks/jdk-25/Contents/Home
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2.jdk/Contents/Home
       TORNADO_ROOT: ${{ github.workspace }}
       TORNADOVM_HOME: ${{ github.workspace }}/bin/sdk
       VENV_PATH: ${{ github.workspace }}/venv-opencl
       CMAKE_ROOT: /opt/homebrew/bin/cmake
       MAVEN_HOME: /opt/homebrew/bin/mvn
-      GRAAL_JARS: /opt/graalJars
+      GRAAL_JARS: /opt/graal25Jars
     steps:
       - uses: actions/checkout@v4
 
