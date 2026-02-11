@@ -1294,6 +1294,17 @@ class TornadoVMRunnerTool():
                 javaFlags = javaFlags + "@" + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
 
+        # Enable native access for backend modules to avoid restricted method warnings
+        nativeAccessModules = []
+        if ("opencl-backend" in self.listOfBackends) or ("spirv-backend" in self.listOfBackends):
+            nativeAccessModules.append(__OPENCL_MODULE__)
+        if ("spirv-backend" in self.listOfBackends):
+            nativeAccessModules.append("tornado.drivers.spirv")
+        if ("ptx-backend" in self.listOfBackends):
+            nativeAccessModules.append(__PTX_MODULE__)
+        if nativeAccessModules:
+            javaFlags = javaFlags + "--enable-native-access=" + ",".join(nativeAccessModules) + " "
+
         javaFlags = javaFlags + tornadoAddModules + " "
 
         if (args.jvm_options != None):
