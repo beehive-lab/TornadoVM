@@ -25,11 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.analyzer;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-
-import java.lang.reflect.Method;
-
-import org.graalvm.collections.EconomicMap;
 import jdk.graal.compiler.api.runtime.GraalJVMCICompiler;
 import jdk.graal.compiler.code.CompilationResult;
 import jdk.graal.compiler.core.GraalCompiler;
@@ -39,7 +34,6 @@ import jdk.graal.compiler.core.target.Backend;
 import jdk.graal.compiler.debug.DebugContext;
 import jdk.graal.compiler.debug.DebugDumpScope;
 import jdk.graal.compiler.hotspot.HotSpotGraalOptionValues;
-import jdk.graal.compiler.java.GraphBuilderPhase;
 import jdk.graal.compiler.lir.asm.CompilationResultBuilderFactory;
 import jdk.graal.compiler.lir.phases.LIRSuites;
 import jdk.graal.compiler.nodes.StructuredGraph;
@@ -55,14 +49,18 @@ import jdk.graal.compiler.phases.tiers.HighTierContext;
 import jdk.graal.compiler.phases.tiers.Suites;
 import jdk.graal.compiler.phases.util.Providers;
 import jdk.graal.compiler.runtime.RuntimeProvider;
-
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.runtime.JVMCI;
+import org.graalvm.collections.EconomicMap;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoInternalGraphBuilder;
+
+import java.lang.reflect.Method;
+
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 public class CodeAnalysis {
 
@@ -70,9 +68,8 @@ public class CodeAnalysis {
      * Build Graal-IR for an input Java method.
      *
      * @param taskInputCode
-     *     Input Java method to be compiled by Graal
-     * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the
-     *     input method in the Graal-IR format,
+     *         Input Java method to be compiled by Graal
+     * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the input method in the Graal-IR format,
      */
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
         Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
@@ -93,8 +90,8 @@ public class CodeAnalysis {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
             opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
             OptionValues options = new OptionValues(opts);
-            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod).compilationId(
-                    compilationIdentifier).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod)
+                    .compilationId(compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
             graphBuilderSuite.appendPhase(new TornadoInternalGraphBuilder(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
@@ -110,7 +107,7 @@ public class CodeAnalysis {
      * It compiles and installs the method that represents the object {@code graph}.
      *
      * @param graph
-     *     Compile-graph
+     *         Compile-graph
      * @return {@link InstalledCode}
      */
     public static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
@@ -131,20 +128,8 @@ public class CodeAnalysis {
             ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
             CompilationResult compilationResult = new CompilationResult(method.getSignature().toMethodDescriptor());
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-            GraalCompiler.Request<CompilationResult> request = new GraalCompiler.Request<>(
-                    graph,
-                    method,
-                    providers,
-                    backend,
-                    graphBuilderPhase,
-                    optimizationsOpts,
-                    profilerInfo,
-                    suites,
-                    lirSuites,
-                    compilationResult,
-                    factory,
-                    false
-            );
+            GraalCompiler.Request<CompilationResult> request = new GraalCompiler.Request<>(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites,
+                    compilationResult, factory, false);
             request.execute();
             return backend.addInstalledCode(getDebugContext(), method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
         } catch (Throwable e) {

@@ -21,20 +21,18 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 import jdk.graal.compiler.core.common.LIRKind;
 import jdk.graal.compiler.core.common.spi.LIRKindTool;
 import jdk.graal.compiler.core.common.type.ObjectStamp;
 import jdk.graal.compiler.core.common.type.Stamp;
-
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class PTXStamp extends ObjectStamp {
 
@@ -71,39 +69,6 @@ public class PTXStamp extends ObjectStamp {
         return kind;
     }
 
-//    @Override
-//    public JavaKind getStackKind() {
-//        if (kind.isPrimitive()) {
-//            switch (kind) {
-//                case PRED:
-//                    return JavaKind.Boolean;
-//                case S8:
-//                case U8:
-//                    return JavaKind.Byte;
-//                case S16:
-//                case U16:
-//                case F16:
-//                case B16:
-//                    return JavaKind.Short;
-//                case S32:
-//                case U32:
-//                    return JavaKind.Int;
-//                case S64:
-//                case U64:
-//                    return JavaKind.Long;
-//                case F32:
-//                    return JavaKind.Float;
-//                case F64:
-//                    return JavaKind.Double;
-//                default:
-//                    return JavaKind.Illegal;
-//            }
-//        } else if (kind.isVector()) {
-//            return JavaKind.Object;
-//        }
-//        return JavaKind.Illegal;
-//    }
-
     @Override
     public JavaKind getStackKind() {
         if (kind.isPrimitive()) {
@@ -123,8 +88,6 @@ public class PTXStamp extends ObjectStamp {
         return JavaKind.Illegal;
     }
 
-
-
     @Override
     public boolean hasValues() {
         // shouldNotReachHere();
@@ -143,15 +106,15 @@ public class PTXStamp extends ObjectStamp {
         return false;
     }
 
-//    @Override
-//    public boolean isCompatible(Stamp stamp) {
-//        if (stamp instanceof PTXStamp && ((PTXStamp) stamp).kind == kind) {
-//            return true;
-//        }
-//
-//        unimplemented("stamp is compat: %s + %s", this, stamp);
-//        return false;
-//    }
+    //    @Override
+    //    public boolean isCompatible(Stamp stamp) {
+    //        if (stamp instanceof PTXStamp && ((PTXStamp) stamp).kind == kind) {
+    //            return true;
+    //        }
+    //
+    //        unimplemented("stamp is compat: %s + %s", this, stamp);
+    //        return false;
+    //    }
 
     @Override
     public boolean isCompatible(Stamp stamp) {

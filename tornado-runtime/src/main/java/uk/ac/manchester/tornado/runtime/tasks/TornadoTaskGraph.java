@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.graal.compiler.graph.Graph;
 import jdk.graal.compiler.phases.util.Providers;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -1711,7 +1711,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    @SuppressWarnings( { "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void addInner(int type, Method method, ScheduleContext meta, String id, Object[] parameters) {
         switch (type) {
             case 0 -> addInner(TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
