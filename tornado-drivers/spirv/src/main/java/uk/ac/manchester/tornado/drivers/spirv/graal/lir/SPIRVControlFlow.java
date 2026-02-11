@@ -252,6 +252,8 @@ public class SPIRVControlFlow {
 
         private SwitchStrategy strategy;
 
+        private Constant[] keyConstants;
+
         private LabelRef[] keytargets;
 
         private LabelRef defaultTarget;
@@ -260,6 +262,14 @@ public class SPIRVControlFlow {
             super(TYPE);
             this.key = key;
             this.strategy = strategy;
+            this.keytargets = keyTargets;
+            this.defaultTarget = defaultTarget;
+        }
+
+        public SwitchStatement(AllocatableValue key, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
+            super(TYPE);
+            this.key = key;
+            this.keyConstants = keyConstants;
             this.keytargets = keyTargets;
             this.defaultTarget = defaultTarget;
         }
@@ -291,9 +301,10 @@ public class SPIRVControlFlow {
 
             SPIRVId defaultSelector = getIdForBranch(defaultTarget, asm);
 
-            SPIRVPairLiteralIntegerIdRef[] cases = new SPIRVPairLiteralIntegerIdRef[strategy.getKeyConstants().length];
+            Constant[] constants = (strategy != null) ? strategy.getKeyConstants() : keyConstants;
+            SPIRVPairLiteralIntegerIdRef[] cases = new SPIRVPairLiteralIntegerIdRef[constants.length];
             int i = 0;
-            for (Constant keyConstant : strategy.getKeyConstants()) {
+            for (Constant keyConstant : constants) {
                 SPIRVId labelCase = getIdForBranch(keytargets[i], asm);
                 int caseIntValue = Integer.parseInt(keyConstant.toValueString());
                 SPIRVPairLiteralIntegerIdRef pairId = new SPIRVPairLiteralIntegerIdRef(new SPIRVLiteralInteger(caseIntValue), labelCase);

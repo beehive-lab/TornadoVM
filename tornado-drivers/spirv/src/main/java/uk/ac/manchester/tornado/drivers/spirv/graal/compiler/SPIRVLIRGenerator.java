@@ -296,7 +296,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
-
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitRangeTableSwitch: key=%s, lowKey=%d", key, lowKey);
+        JavaConstant[] keyConstants = new JavaConstant[targets.length];
+        for (int i = 0; i < targets.length; i++) {
+            keyConstants[i] = JavaConstant.forInt(lowKey + i);
+        }
+        append(new SPIRVControlFlow.SwitchStatement(key, keyConstants, targets, defaultTarget));
     }
 
     @Override
