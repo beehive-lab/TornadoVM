@@ -1,68 +1,149 @@
---add-opens  java.base/java.lang=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.graph=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.graph.spi=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.lir.gen=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodeinfo=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.calc=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.spi=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.code=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.debug=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.hotspot=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.java=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.lir.asm=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.lir.phases=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.graphbuilderconf=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.options=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.tiers=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.util=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.printer=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.graph.iterators=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.java=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.bytecode=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.common=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.spi=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.api.replacements=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.replacements=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.phases=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.type=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.extended=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.loop=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.debug=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.memory=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.util=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx
---add-opens  jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.asm=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.cfg=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.schedule=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.virtual.phases.ea=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.lir.ssa=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.calc=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.gen=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.match=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.memory.address=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.nodes.type=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.common.util=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.common.util=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.word=tornado.drivers.ptx
---add-opens jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.ptx
+--add-reads=tornado.drivers.ptx=jdk.graal.compiler
+
+# Graal compiler exports for PTX backend
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.cfg=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.graph=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.graph.spi=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.gen=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodeinfo=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.calc=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.spi=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.api.runtime=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.code=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.target=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.debug=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.hotspot=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.java=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.asm=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.phases=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.graphbuilderconf=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.loop=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.options=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.constopt=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.tiers=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.util=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.printer=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.runtime=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.graph.iterators=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.java=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.bytecode=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.spi=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.api.replacements=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.replacements=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.phases=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.type=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.extended=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining.info=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining.policy=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining.walker=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.debug=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.memory=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.util=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.virtual=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.gc=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.memory.address=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.replacements.nodes=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.word=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.asm=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.schedule=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.virtual.phases.ea=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.lir.ssa=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.common.calc=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.gen=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.core.match=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.nodes.type=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.phases.common.util=tornado.drivers.ptx
+--add-exports=jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.ptx
+
+# JVMCI exports for PTX backend
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.ptx
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.ptx
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.ptx
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx
+--add-exports=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx
+
+# Java base opens for PTX
+--add-opens=java.base/java.lang=tornado.drivers.ptx
+--add-opens=java.base/jdk.internal.foreign=tornado.drivers.ptx
+
+# Graal compiler opens for PTX backend
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.ptx
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.hotspot.meta=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.replacements.classfile=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.alloc=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.util=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.cfg=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.framemap=tornado.drivers.ptx
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.graph=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.graph.spi=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.gen=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodeinfo=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.calc=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.spi=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.code=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.debug=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.hotspot=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.java=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.asm=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.phases=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.graphbuilderconf=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.options=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.tiers=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.util=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.printer=tornado.drivers.ptx
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.graph.iterators=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.java=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.bytecode=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.common=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.spi=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.api.replacements=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.replacements=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.common.inlining=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.phases=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.type=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.extended=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.loop=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.loop.phases=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.debug=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.memory=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.util=tornado.drivers.ptx
+--add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.asm=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.cfg=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.schedule=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.virtual.phases.ea=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.lir.ssa=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.calc=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.gen=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.match=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.memory.address=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.nodes.type=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.graph=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.phases.common.util=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.word=tornado.drivers.ptx
+--add-opens=jdk.graal.compiler/jdk.graal.compiler.core.common.memory=tornado.drivers.ptx
