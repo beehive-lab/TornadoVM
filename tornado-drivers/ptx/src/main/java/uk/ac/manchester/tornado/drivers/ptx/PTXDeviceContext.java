@@ -124,6 +124,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return true;
     }
 
+    private boolean isMultiStreamEnabled() {
+        return TornadoOptions.ENABLE_PTX_MULTI_STREAM && TornadoOptions.VM_USE_DEPS;
+    }
+
     public PTXTornadoDevice toDevice() {
         return new PTXTornadoDevice(device.getDeviceIndex());
     }
