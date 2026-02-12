@@ -48,10 +48,20 @@ public class PTXEvent implements Event {
     private boolean isCompleted;
 
     public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
+    // Track which stream this event was recorded on
+    private final PTXStreamType sourceStreamType;
+
+    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId, PTXStreamType streamType) {
         eventWrapper = bytes;
         this.description = descriptorId.getNameDescription();
         this.name = String.format("%s: ", description);
         isCompleted = false;
+        this.sourceStreamType = streamType;
+    }
+
+    // Backward compatible constructor
+    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
+        this(bytes, descriptorId, PTXStreamType.DEFAULT);
     }
 
     private native static long cuEventDestroy(byte[] eventWrapper);
@@ -151,6 +161,10 @@ public class PTXEvent implements Event {
     @Override
     public double getTotalTimeInSeconds() {
         return getElapsedTimeInSeconds();
+    }
+
+    public PTXStreamType getSourceStreamType() {
+        return sourceStreamType;
     }
 
     @Override
