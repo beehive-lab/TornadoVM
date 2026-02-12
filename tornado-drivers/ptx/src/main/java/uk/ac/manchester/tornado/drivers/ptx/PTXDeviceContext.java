@@ -201,6 +201,14 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public Event resolveEvent(long executionPlanId, int event) {
+        if (isMultiStreamEnabled()) {
+            EventRegistry registry = getEventRegistry(executionPlanId);
+            EventRegistry.EventLocation location = registry.resolve(event);
+            if (location != null) {
+                PTXStream stream = getStream(executionPlanId, location.streamType());
+                return stream.resolveEvent(location.localEventId());
+            }
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.resolveEvent(event);
     }
