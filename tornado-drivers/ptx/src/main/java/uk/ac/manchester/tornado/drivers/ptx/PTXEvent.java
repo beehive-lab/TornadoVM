@@ -174,6 +174,17 @@ public class PTXEvent implements Event {
         waitForEvents(0);
     }
 
+    /**
+     * === Cross-stream synchronization ===
+     * Make another stream wait for this event to complete.
+     * Uses the afterEvent since that marks operation completion.
+     *
+     * @param targetStreamHandle the stream that should wait
+     */
+    public void waitOnStream(byte[] targetStreamHandle) {
+        cuStreamWaitEvent(targetStreamHandle, eventWrapper[1]);  // afterEvent
+    }
+
     public void destroy() {
         cuEventDestroy(eventWrapper[0]);
         cuEventDestroy(eventWrapper[1]);
