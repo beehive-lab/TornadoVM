@@ -403,6 +403,52 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return kernelLaunchEvent;
     }
 
+    /**
+     * for async execution
+     */
+    public int enqueueKernelLaunchWithDependencies(long executionPlanId, PTXModule module, KernelStackFrame kernelArgs,
+                                                   TaskDataContext taskMeta, long batchThreads, int[] waitEvents) {
+        int[] blockDimension = { 1, 1, 1 };
+        int[] gridDimension = { 1, 1, 1 };
+        if (taskMeta.isWorkerGridAvailable()) {
+            WorkerGrid grid = taskMeta.getWorkerGrid(taskMeta.getId());
+            int[] global = Arrays.stream(grid.getGlobalWork()).mapToInt(l -> (int) l).toArray();
+            if (grid.getLocalWork() != null) {
+                blockDimension = Arrays.stream(grid.getLocalWork()).mapToInt(l -> (int) l).toArray();
+            } else {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getPotentialBlockSizeMaxOccupancy(), grid.dimension(), module.javaName);
+            }
+            PTXGridInfo gridInfo = new PTXGridInfo(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getPotentialBlockSizeMaxOccupancy(), grid.dimension(), module.javaName);
+                System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
+            }
+            gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
+        } else if (taskMeta.isParallel()) {
+            scheduler.calculateGlobalWork(taskMeta, batchThreads);
+            blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
+            gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
+        }
+
+        PTXStreamType streamType = isMultiStreamEnabled() ? PTXStreamType.COMPUTE : PTXStreamType.DEFAULT;
+        PTXStream stream = getStream(executionPlanId);
+
+        if (isMultiStreamEnabled()) {
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+        }
+
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta,
+                writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta),
+                gridDimension, blockDimension);
+        updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
+
+        if (isMultiStreamEnabled()) {
+            return getEventRegistry(executionPlanId).register(streamType, kernelLaunchEvent);
+        }
+        return kernelLaunchEvent;
+    }
+
     private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
         int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
