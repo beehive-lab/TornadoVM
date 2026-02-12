@@ -125,3 +125,20 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
     }
     return (unsigned long) result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
+ * Method:    cuStreamWaitEvent
+ * Signature: ([B[B)V
+ */
+ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuStreamWaitEvent
+   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper, jbyteArray event_wrapper) {
+     CUstream stream;
+     env->GetByteArrayRegion(stream_wrapper, 0, sizeof(CUstream), reinterpret_cast<jbyte *>(&stream));
+
+     CUevent event;
+     event_from_array(env, &event, event_wrapper);
+
+     CUresult result = cuStreamWaitEvent(stream, event, 0);
+     LOG_PTX_AND_VALIDATE("cuStreamWaitEvent", result);
+  }
