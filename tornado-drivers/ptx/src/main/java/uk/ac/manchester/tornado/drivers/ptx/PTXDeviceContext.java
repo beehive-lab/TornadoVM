@@ -243,11 +243,32 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public int enqueueBarrier(long executionPlanId) {
+        if (isMultiStreamEnabled()) {
+            // Sync all active streams
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.enqueueBarrier(executionPlanId);
+                }
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId);
     }
 
     public int enqueueBarrier(long executionPlanId, int[] events) {
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.enqueueBarrier(executionPlanId, events);
+                }
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId, events);
     }
