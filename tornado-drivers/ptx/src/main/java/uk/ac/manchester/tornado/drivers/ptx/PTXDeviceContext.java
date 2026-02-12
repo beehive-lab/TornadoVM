@@ -454,41 +454,89 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      */
 
     public int readBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
@@ -498,41 +546,89 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      */
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_D2H);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            int localEventId = stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, null);
+            return getEventRegistry(executionPlanId).register(PTXStreamType.DATA_TRANSFER_D2H, localEventId);
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueAsyncRead(executionPlanId, address, length, array, hostOffset, waitEvents);
     }
