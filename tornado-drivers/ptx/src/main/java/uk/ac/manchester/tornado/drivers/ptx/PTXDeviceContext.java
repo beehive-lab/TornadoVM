@@ -318,6 +318,11 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             }
             executionIDs.remove(executionPlanId);
         }
+        // Clean event registry
+        EventRegistry registry = eventRegistries.remove(executionPlanId);
+        if (registry != null) {
+            registry.reset();
+        }
         getMemoryManager().releaseKernelStackFrame(executionPlanId);
         PTXCodeCache ptxCodeCache = getPTXCodeCache(executionPlanId);
         ptxCodeCache.reset();
@@ -777,18 +782,26 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public void dumpEvents(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        List<PTXEvent> events = stream.getEventPool().getEvents();
-
         final String deviceName = "PTX-" + device.getDeviceName();
-
-        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
-        if (events.isEmpty()) {
-            return;
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream == null) continue;
+                List<PTXEvent> events = stream.getEventPool().getEvents();
+                System.out.printf("Found %d events on device %s [%s]:%n", events.size(), deviceName, type);
+                if (!events.isEmpty()) {
+                    events.forEach((e) -> System.out.printf("event: %s, %s, %s%n", deviceName, e.getName(), e.getStatus()));
+                }
+            }
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            List<PTXEvent> events = stream.getEventPool().getEvents();
+            System.out.printf("Found %d events on device %s:%n", events.size(), deviceName);
+            if (!events.isEmpty()) return;
+            System.out.println("event: device, type, info, status");
+            events.forEach((e) -> System.out.printf("event: %s, %s, %s%n", deviceName, e.getName(), e.getStatus()));
         }
-
-        System.out.println("event: device, type, info, status");
-        events.forEach((e) -> System.out.printf("event: %s, %s, %s\n", deviceName, e.getName(), e.getStatus()));
     }
 
     /**
