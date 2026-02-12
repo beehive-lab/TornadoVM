@@ -213,6 +213,21 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return stream.resolveEvent(event);
     }
 
+    private void resolveAndWaitCrossStream(long executionPlanId, int[] waitEvents, PTXStream targetStream) {
+        if (waitEvents == null || !isMultiStreamEnabled()) return;
+        EventRegistry registry = getEventRegistry(executionPlanId);
+        for (int globalEventId : waitEvents) {
+            if (globalEventId == -1) continue;
+            EventRegistry.EventLocation location = registry.resolve(globalEventId);
+            if (location == null) continue;
+            PTXStream sourceStream = getStream(executionPlanId, location.streamType());
+            PTXEvent event = sourceStream.getEventPool().getEvent(location.localEventId());
+            if (event != null) {
+                event.waitOnStream(targetStream.getStreamHandle());
+            }
+        }
+    }
+
     public void flushEvents(long executionPlanId) {
         sync(executionPlanId);
     }
