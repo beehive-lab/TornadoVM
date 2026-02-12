@@ -43,12 +43,18 @@ public class PTXStream {
 
     private final byte[] streamPool;
     private final PTXEventPool ptxEventPool;
+    private final PTXStreamType streamType;
     private boolean isDestroy;
     private boolean capturing = false;
 
     public PTXStream() {
+        this(PTXStreamType.DEFAULT);
+    }
+
+    public PTXStream(PTXStreamType type) {
         streamPool = cuCreateStream();
         this.ptxEventPool = new PTXEventPool(EVENT_WINDOW);
+        this.streamType = type;
     }
 
     //@formatter:off
@@ -373,6 +379,10 @@ public class PTXStream {
 
     public boolean isDestroy() {
         return isDestroy;
+    }
+
+    public PTXStreamType getStreamType() {
+        return streamType;
     }
 
     public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType) {
