@@ -47,9 +47,11 @@ public class PTXEvent implements Event {
     private final String name;
     private boolean isCompleted;
 
-    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
     // Track which stream this event was recorded on
     private final PTXStreamType sourceStreamType;
+
+    // Native method for cross-stream synchronization
+    private static native void cuStreamWaitEvent(byte[] targetStream, byte[] event);
 
     public PTXEvent(byte[][] bytes, EventDescriptor descriptorId, PTXStreamType streamType) {
         eventWrapper = bytes;
