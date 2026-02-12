@@ -276,6 +276,16 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public int enqueueMarker(long executionPlanId) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.enqueueBarrier(executionPlanId);
+                }
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId);
     }
@@ -283,6 +293,16 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public int enqueueMarker(long executionPlanId, int[] events) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.enqueueBarrier(executionPlanId, events);
+                }
+            }
+            return -1;
+        }
         PTXStream stream = getStream(executionPlanId);
         return stream.enqueueBarrier(executionPlanId, events);
     }
