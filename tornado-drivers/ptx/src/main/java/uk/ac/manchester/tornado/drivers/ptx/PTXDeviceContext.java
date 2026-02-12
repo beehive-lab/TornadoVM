@@ -194,6 +194,12 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return eventRegistries.computeIfAbsent(executionPlanId, k -> new EventRegistry());
     }
 
+    private PTXStream getStreamIfExists(long executionPlanId, PTXStreamType type) {
+        PTXStreamTable table = streamTable.get(executionPlanId);
+        if (table == null) return null;
+        return table.getIfExists(device, type);
+    }
+
     public Event resolveEvent(long executionPlanId, int event) {
         PTXStream stream = getStream(executionPlanId);
         return stream.resolveEvent(event);
@@ -589,14 +595,21 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         events.forEach((e) -> System.out.printf("event: %s, %s, %s\n", deviceName, e.getName(), e.getStatus()));
     }
 
+    /**
+     * For backwards compatibility
+     */
     private PTXStream getStream(long executionPlanId) {
+        return getStream(executionPlanId, PTXStreamType.DEFAULT);
+    }
+
+    private PTXStream getStream(long executionPlanId, PTXStreamType type) {
         executionIDs.add(executionPlanId);
         if (!streamTable.containsKey(executionPlanId)) {
             PTXStreamTable ptxStreamTable = new PTXStreamTable();
-            ptxStreamTable.get(device);
+            ptxStreamTable.get(device, type);
             streamTable.put(executionPlanId, ptxStreamTable);
         }
-        return streamTable.get(executionPlanId).get(device);
+        return streamTable.get(executionPlanId).get(device, type);
     }
 
     private PTXCodeCache getPTXCodeCache(long executionPlanId) {
