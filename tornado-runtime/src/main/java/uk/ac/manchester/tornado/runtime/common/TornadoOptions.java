@@ -441,6 +441,13 @@ public class TornadoOptions {
     public static final boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
 
     /**
+     * Enable PTX multi-stream execution. When enabled, H2D, COMPUTE, and D2H
+     * operations are routed to separate CUDA streams with event-based
+     * cross-stream synchronization. Requires tornado.vm.deps=true.
+     */
+    public static final boolean ENABLE_PTX_MULTI_STREAM = getBooleanValue("tornado.ptx.multistream", FALSE);
+
+    /**
      * Enable OpenCL Profiling. Enabled by default.
      */
     public static final boolean ENABLE_OPENCL_PROFILING = getBooleanValue("tornado.opencl.profiling.enable", TRUE);
