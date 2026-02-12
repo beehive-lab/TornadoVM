@@ -269,8 +269,18 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public void sync(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        stream.sync();
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.sync();
+                }
+            }
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.sync();
+        }
     }
 
     /**
@@ -279,9 +289,19 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * @param executionPlanId
      */
     public void syncIfNeeded(long executionPlanId) {
-        PTXStream stream = getStreamIfNeeded(executionPlanId);
-        if (stream != null) {
-            stream.sync();
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null) {
+                    stream.sync();
+                }
+            }
+        } else {
+            PTXStream stream = getStreamIfNeeded(executionPlanId);
+            if (stream != null) {
+                stream.sync();
+            }
         }
     }
 
