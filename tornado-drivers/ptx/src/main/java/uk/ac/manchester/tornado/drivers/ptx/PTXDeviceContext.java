@@ -68,6 +68,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     private final TornadoBufferProvider bufferProvider;
     private final PowerMetric powerMetricHandler;
     private final Map<Long, PTXStreamTable> streamTable;
+    private final Map<Long, EventRegistry> eventRegistries;
     private boolean wasReset;
     private final Set<Long> executionIDs;
     private PTXKernelStackFrame pendingKernelContextWrite;
@@ -81,6 +82,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public PTXDeviceContext(PTXDevice device) {
         this.device = device;
         streamTable = new ConcurrentHashMap<>();
+        eventRegistries = new ConcurrentHashMap<>();
         this.scheduler = new PTXScheduler(device);
         this.powerMetricHandler = new PTXNvidiaPowerMetricHandler(this);
         codeCache = new ConcurrentHashMap<>();
@@ -188,6 +190,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public ByteOrder getByteOrder() {
         return device.getByteOrder();
+    }
+
+    private EventRegistry getEventRegistry(long executionPlanId) {
+        return eventRegistries.computeIfAbsent(executionPlanId, k -> new EventRegistry());
     }
 
     public Event resolveEvent(long executionPlanId, int event) {
@@ -647,5 +653,27 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public void destroyExecutionGraph(long executionGraphHandle) {
         PTXStream.destroyGraph(executionGraphHandle);
+    }
+
+    private static class EventRegistry {
+        private final AtomicInteger globalIdGen = new AtomicInteger(0);
+        private final Map<Integer, EventLocation> locations = new ConcurrentHashMap<>();
+
+        record EventLocation(PTXStreamType streamType, int localEventId) {}
+
+        int register(PTXStreamType streamType, int localEventId) {
+            int globalId = globalIdGen.getAndIncrement();
+            locations.put(globalId, new EventLocation(streamType, localEventId));
+            return globalId;
+        }
+
+        EventLocation resolve(int globalEventId) {
+            return locations.get(globalEventId);
+        }
+
+        void reset() {
+            locations.clear();
+            globalIdGen.set(0);
+        }
     }
 }
