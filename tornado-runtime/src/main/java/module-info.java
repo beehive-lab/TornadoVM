@@ -6,7 +6,7 @@ open module tornado.runtime {
     requires jdk.unsupported;
     requires org.graalvm.collections;
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.graal.compiler; // JDK25: use jdk.internal.vm.compiler
+    requires transitive jdk.graal.compiler;
     requires transitive tornado.api;
     requires commons.math3;
     requires snmp4j;
