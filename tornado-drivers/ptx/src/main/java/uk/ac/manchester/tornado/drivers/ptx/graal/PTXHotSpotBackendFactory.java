@@ -96,8 +96,6 @@ public class PTXHotSpotBackendFactory {
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, JavaKind.Long);
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
-            //            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-            //                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
 
             HotSpotIdentityHashCodeProvider hotSpotIdentityHashCodeProvider = new HotSpotIdentityHashCodeProvider();
             Providers p = new Providers(metaAccess, //
