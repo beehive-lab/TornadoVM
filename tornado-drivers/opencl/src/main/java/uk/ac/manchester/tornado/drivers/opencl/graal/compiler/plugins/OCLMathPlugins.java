@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -97,26 +97,6 @@ public class OCLMathPlugins {
 
         registerHalfFloatMathPlugins(registration);
     }
-
-//    private static void registerHalfFloatMathPlugins(Registration r) {
-//        r.register(new InvocationPlugin("min", HalfFloat.class, HalfFloat.class) {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-//                // Since HalfFloat is represented as short internally, we use JavaKind.Short
-//                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Short)));
-//                return true;
-//            }
-//        });
-//
-//        r.register(new InvocationPlugin("max", HalfFloat.class, HalfFloat.class) {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-//                // Since HalfFloat is represented as short internally, we use JavaKind.Short
-//                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Short)));
-//                return true;
-//            }
-//        });
-//    }
 
     private static void registerHalfFloatMathPlugins(Registration r) {
         r.register(new InvocationPlugin("min", HalfFloat.class, HalfFloat.class) {

@@ -139,13 +139,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private ReduceGPUSnippets.Templates gpuReduceSnippets;
     private ReduceCPUSnippets.Templates cpuReduceSnippets;
 
-//    public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
-//            ConstantReflectionProvider constantReflection, TornadoVMConfigAccess vmConfig, OCLTargetDescription target) {
-//        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
-//        this.vmConfig = vmConfig;
-//        this.constantReflection = constantReflection;
-//    }
-
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
             ConstantReflectionProvider constantReflection, TornadoVMConfigAccess vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false, null);

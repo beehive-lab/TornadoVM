@@ -59,7 +59,6 @@ public class OCLArchitecture extends Architecture {
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
-//        super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
         super("Tornado OpenCL", wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, 0, 0);
         abiRegisters = new OCLRegister[] { kernelContext, constantSpace, localSpace, atomicSpace };
     }
