@@ -1,14 +1,14 @@
-name: Prepare TornadoVM Release (JDK 25)
+name: Prepare TornadoVM Release (JDK 25.0.2)
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 2.0.1-jdk25)'
+        description: 'Release version (e.g., 2.0.1-jdk25.0.2)'
         required: true
         type: string
       previous_version:
-        description: 'Previous JDK 25 version for changelog (e.g., 2.0.0-jdk25)'
+        description: 'Previous JDK 25.0.2 version for changelog (e.g., 2.0.0-jdk25.0.2)'
         required: true
         type: string
       dry_run:
@@ -36,16 +36,16 @@ jobs:
     steps:
       - name: Validate version format
         run: |
-          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-jdk25$ ]]; then
-            echo "❌ Invalid version format. Expected: X.Y.Z-jdk25 (e.g., 2.0.1-jdk25)"
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-jdk25\.0\.2$ ]]; then
+            echo "❌ Invalid version format. Expected: X.Y.Z-jdk25.0.2 (e.g., 2.0.1-jdk25.0.2)"
             exit 1
           fi
           echo "✅ Version format valid: ${{ inputs.version }}"
 
-      - name: Checkout jdk25 branch
+      - name: Checkout jdk25.0.2 branch
         uses: actions/checkout@v4
         with:
-          ref: jdk25
+          ref: jdk25.0.2
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -61,8 +61,8 @@ jobs:
 
       - name: Create release branch
         run: |
-          git checkout -b release-jdk25/${{ env.VERSION }}
-          echo "✅ Created branch: release-jdk25/${{ env.VERSION }}"
+          git checkout -b release-jdk25.0.2/${{ env.VERSION }}
+          echo "✅ Created branch: release-jdk25.0.2/${{ env.VERSION }}"
 
       # ============================================
       # VERSION UPDATES
@@ -75,27 +75,27 @@ jobs:
 
       - name: Update tornadovm-installer version
         run: |
-          sed -i 's/__VERSION__ = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9]*\)\?"/__VERSION__ = "v${{ env.VERSION }}"/' bin/tornadovm-installer
+          sed -i 's/__VERSION__ = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9.]*\)\?"/__VERSION__ = "v${{ env.VERSION }}"/' bin/tornadovm-installer
           echo "Updated bin/tornadovm-installer:"
           grep -n "__VERSION__" bin/tornadovm-installer
 
       - name: Update tornado-test version
         run: |
-          sed -i 's/__VERSION__ = "[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?"/__VERSION__ = "${{ env.VERSION }}"/' tornado-assembly/src/bin/tornado-test
+          sed -i 's/__VERSION__ = "[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9.-]*\)\?"/__VERSION__ = "${{ env.VERSION }}"/' tornado-assembly/src/bin/tornado-test
           echo "Updated tornado-assembly/src/bin/tornado-test:"
           grep -n "__VERSION__" tornado-assembly/src/bin/tornado-test
 
       - name: Update README.md
         run: |
           # Update version badge
-          sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?-purple/version-${{ env.VERSION }}-purple/g' README.md
+          sed -i 's/version-[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\.0\.2\)\?-purple/version-${{ env.VERSION }}-purple/g' README.md
 
           # Update "Latest Release" line with current date (DD/MM/YYYY format)
           RELEASE_DATE=$(date +"%d/%m/%Y")
-          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\? - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
+          sed -i "s|\*\*Latest Release:\*\* TornadoVM [0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\.0\.2\)\? - [0-9/]\+|**Latest Release:** TornadoVM ${{ env.VERSION }} - ${RELEASE_DATE}|" README.md
 
           # Update Maven Central dependency versions (io.github.beehive-lab groupId)
-          sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?</version>|<version>${{ env.VERSION }}</version>|g' README.md
+          sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\.0\.2\)\?</version>|<version>${{ env.VERSION }}</version>|g' README.md
 
           echo "✅ Updated README.md"
 
@@ -103,8 +103,8 @@ jobs:
         run: |
           if [ -f docs/source/conf.py ]; then
             # conf.py uses "vX.Y.Z" format with double quotes
-            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
-            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\.0\.2\)\?"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\.0\.2\)\?"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
             echo "✅ Updated docs/source/conf.py"
             grep -E "(version|release) =" docs/source/conf.py
           fi
@@ -113,10 +113,9 @@ jobs:
         run: |
           if [ -f docs/source/installation.rst ]; then
             # Update Maven dependency versions in the XML examples
-            sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\)\?</version>|<version>${{ env.VERSION }}</version>|g' docs/source/installation.rst
+            sed -i 's|<version>[0-9]\+\.[0-9]\+\.[0-9]\+\(-jdk25\.0\.2\)\?</version>|<version>${{ env.VERSION }}</version>|g' docs/source/installation.rst
 
             # Add new version to "Versions available" list (insert before previous version)
-            PREV_BASE=$(echo "${{ env.PREV_VERSION }}" | sed 's/-jdk25//')
             sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
 
             echo "✅ Updated docs/source/installation.rst"
@@ -161,12 +160,12 @@ jobs:
               console.log(`Using fallback date: ${sinceDate}`);
             }
 
-            // Fetch merged PRs targeting jdk25 branch since last release
+            // Fetch merged PRs targeting jdk25.0.2 branch since last release
             const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'closed',
-              base: 'jdk25',
+              base: 'jdk25.0.2',
               sort: 'updated',
               direction: 'desc',
               per_page: 100
@@ -270,7 +269,7 @@ jobs:
 
       - name: Show changes summary
         run: |
-          echo "## 📋 Release ${{ env.VERSION }} Preparation (JDK 25)" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Release ${{ env.VERSION }} Preparation (JDK 25.0.2)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Files Modified:" >> $GITHUB_STEP_SUMMARY
           git diff --name-only | while read file; do
@@ -280,16 +279,16 @@ jobs:
           echo "### PRs included: ${{ steps.fetch_prs.outputs.pr_count }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next steps after PR merge:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Existing CI will run build & tests on JDK 25" >> $GITHUB_STEP_SUMMARY
-          echo "2. \`finalize-release-jdk25\` workflow will create tag and GitHub Release" >> $GITHUB_STEP_SUMMARY
-          echo "3. \`deploy-maven-central-jdk25\` workflow deploys to Maven Central" >> $GITHUB_STEP_SUMMARY
+          echo "1. Existing CI will run build & tests on JDK 25.0.2" >> $GITHUB_STEP_SUMMARY
+          echo "2. \`finalize-release-jdk25.0.2\` workflow will create tag and GitHub Release" >> $GITHUB_STEP_SUMMARY
+          echo "3. \`deploy-maven-central-jdk25.0.2\` workflow deploys to Maven Central" >> $GITHUB_STEP_SUMMARY
 
       - name: Commit and push
         if: ${{ inputs.dry_run == false }}
         run: |
           git add -A
           git commit -m "Prepare release ${{ env.VERSION }}"
-          git push origin release-jdk25/${{ env.VERSION }}
+          git push origin release-jdk25.0.2/${{ env.VERSION }}
 
       - name: Create Pull Request
         if: ${{ inputs.dry_run == false }}
@@ -303,11 +302,11 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Release ${version}`,
-              head: `release-jdk25/${version}`,
-              base: 'jdk25',
-              body: `## Release ${version} (JDK 25)
+              head: `release-jdk25.0.2/${version}`,
+              base: 'jdk25.0.2',
+              body: `## Release ${version} (JDK 25.0.2)
 
-            Auto-generated release preparation PR for JDK 25 branch.
+            Auto-generated release preparation PR for JDK 25.0.2 branch.
 
             ### Changes
             - ${prCount} PRs included in changelog
@@ -316,14 +315,14 @@ jobs:
             ### Review checklist
             - [ ] Version numbers correct in all files
             - [ ] CHANGELOG.rst content reviewed and edited
-            - [ ] CI passes (build + tests on JDK 25)
+            - [ ] CI passes (build + tests on JDK 25.0.2)
 
             ### After merge
             1. CI runs automatically ✅
-            2. \`finalize-release-jdk25\` creates tag \`v${version}\` and GitHub Release
-            3. \`deploy-maven-central-jdk25\` publishes to Maven Central
-            4. \`publish-archives-to-sdkman-jdk25\` publishes to SDKMAN
-            5. Bump jdk25 branch to next dev version
+            2. \`finalize-release-jdk25.0.2\` creates tag \`v${version}\` and GitHub Release
+            3. \`deploy-maven-central-jdk25.0.2\` publishes to Maven Central
+            4. \`publish-archives-to-sdkman-jdk25.0.2\` publishes to SDKMAN
+            5. Bump jdk25.0.2 branch to next dev version
             `
             });
 
