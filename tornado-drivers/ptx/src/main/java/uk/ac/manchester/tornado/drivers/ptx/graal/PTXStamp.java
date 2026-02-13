@@ -106,16 +106,6 @@ public class PTXStamp extends ObjectStamp {
         return false;
     }
 
-    //    @Override
-    //    public boolean isCompatible(Stamp stamp) {
-    //        if (stamp instanceof PTXStamp && ((PTXStamp) stamp).kind == kind) {
-    //            return true;
-    //        }
-    //
-    //        unimplemented("stamp is compat: %s + %s", this, stamp);
-    //        return false;
-    //    }
-
     @Override
     public boolean isCompatible(Stamp stamp) {
         if (stamp instanceof PTXStamp stamp1 && stamp1.kind == kind) {
