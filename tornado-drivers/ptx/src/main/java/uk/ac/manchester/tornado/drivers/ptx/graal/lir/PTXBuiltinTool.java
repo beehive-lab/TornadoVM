@@ -38,9 +38,9 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUna
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.SQRT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.TANH;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;

@@ -50,19 +50,9 @@ public class TornadoVMConfigAccess extends HotSpotVMConfigAccess {
         return metaAccessProvider.getArrayBaseOffset(kind);
     }
 
-    public int getArrayIndexScale(JavaKind kind) {
-        return metaAccessProvider.getArrayIndexScale(kind);
-    }
-
     public int instanceKlassFieldsOffset() {
         if (fieldOffset == -1) {
-            String javaVersionString = System.getProperty("java.version");
-            int javaVersion = Integer.parseInt(javaVersionString.split("\\.")[0]);
-            if (javaVersion <= 20) {
-                fieldOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
-            } else {
-                fieldOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
-            }
+            fieldOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
         }
         return fieldOffset;
     }

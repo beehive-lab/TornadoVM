@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.Variable;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;

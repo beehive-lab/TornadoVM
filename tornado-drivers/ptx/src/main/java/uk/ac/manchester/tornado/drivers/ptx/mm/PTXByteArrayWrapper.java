@@ -35,6 +35,10 @@ public class PTXByteArrayWrapper extends PTXArrayWrapper<byte[]> {
         super(deviceContext, JavaKind.Byte, access);
     }
 
+    public PTXByteArrayWrapper(final byte[] array, PTXDeviceContext deviceContext, Access access) {
+        super(array, deviceContext, JavaKind.Byte, access);
+    }
+
     /**
      * Copy data from the device to the main host.
      *

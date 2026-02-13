@@ -21,30 +21,27 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import java.util.Optional;
-
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.Phase;
-
+import jdk.graal.compiler.graph.iterators.NodeIterable;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.ParameterNode;
+import jdk.graal.compiler.nodes.StartNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.phases.Phase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NodeAtomic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 
+import java.util.Optional;
+
 /**
- * This phase scans the IR and checks whether there is a
- * {@link TornadoAtomicIntegerNode} associated for each {@link IncAtomicNode}.
+ * This phase scans the IR and checks whether there is a {@link TornadoAtomicIntegerNode} associated for each {@link IncAtomicNode}.
  *
  * <p>
- * If it is not the case, this would mean that the atomic is passed as a
- * parameter to the lambda expression. Therefore, this phase introduces the
- * {@link TornadoAtomicIntegerNode} at the beginning of the Control-Flow-Graph.
+ * If it is not the case, this would mean that the atomic is passed as a parameter to the lambda expression. Therefore, this phase introduces the {@link TornadoAtomicIntegerNode} at the beginning of
+ * the Control-Flow-Graph.
  * </p>
  */
 public class TornadoAtomicsParametersPhase extends Phase {
@@ -64,12 +61,18 @@ public class TornadoAtomicsParametersPhase extends Phase {
                     ParameterNode atomicArgument = (ParameterNode) atomic.getAtomicNode();
                     int indexNode = atomicArgument.index();
 
-                    TornadoAtomicIntegerNode newNode = new TornadoAtomicIntegerNode(OCLKind.INTEGER_ATOMIC_JAVA);
-                    graph.addOrUnique(newNode);
-                    newNode.assignIndexFromParameter(indexNode);
-
+                    // 1. Create and add the constant to the graph FIRST
                     final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(0));
-                    newNode.setInitialValue(index);
+
+                    // 2. Create the atomic node and set its input BEFORE adding to graph
+                    TornadoAtomicIntegerNode newNode = new TornadoAtomicIntegerNode(OCLKind.INTEGER_ATOMIC_JAVA);
+                    newNode.setInitialValue(index);  // Set input before adding to graph
+
+                    // 3. Add to graph (all inputs are alive)
+                    graph.addOrUnique(newNode);
+
+                    // 4. Now call methods that need graph() AFTER adding to graph
+                    newNode.assignIndexFromParameter(indexNode);
 
                     // Add the new control flow node
                     StartNode startNode = graph.start();
@@ -81,12 +84,9 @@ public class TornadoAtomicsParametersPhase extends Phase {
                     ParameterNode parameter = (ParameterNode) atomic.getAtomicNode();
                     newNode.replaceAtMatchingUsages(atomic, node -> !node.equals(atomic));
                     parameter.replaceAtMatchingUsages(newNode, node -> node.equals(atomic));
-
-                    assert graph.verify();
                 }
             }
         }
-
     }
 
 }

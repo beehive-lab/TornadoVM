@@ -23,7 +23,18 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.loop.BasicInductionVariable;
+import jdk.graal.compiler.nodes.loop.Loop;
+import jdk.graal.compiler.nodes.loop.LoopsData;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Signature;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -42,19 +53,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.loop.BasicInductionVariable;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
 public final class RuntimeUtilities {
 
@@ -93,9 +92,7 @@ public final class RuntimeUtilities {
      * @param bytes
      * @param si
      * @return humanReadableByteCount
-     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *     -byte-size-into-human-readable-format-in-java >Reference to
-     *     StackOverflow</a>
+     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert -byte-size-into-human-readable-format-in-java >Reference to StackOverflow</a>
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
         final int unit = si ? 1000 : 1024;
@@ -183,7 +180,7 @@ public final class RuntimeUtilities {
      * Returns true if object is a boxed type.
      *
      * @param klass
-     *     Class to check is boxed type.
+     *         Class to check is boxed type.
      * @return boolean
      */
     public static boolean isBoxedPrimitiveClass(final Class<?> klass) {
@@ -246,7 +243,7 @@ public final class RuntimeUtilities {
      * determines whether a given array is composed of primitives or objects.
      *
      * @param type
-     *     type to check
+     *         type to check
      * @return true if the array is composed of a primitive type
      */
     public static boolean isPrimitiveArray(final Class<?> type) {
@@ -357,28 +354,26 @@ public final class RuntimeUtilities {
     }
 
     /**
-     * It prints the induction variables for counted loops in the given
-     * StructuredGraph. This method can be used for post-processing parallel loops
-     * with identify information for the induction variables.
+     * It prints the induction variables for counted loops in the given StructuredGraph. This method can be used for post-processing parallel loops with identify information for the induction
+     * variables.
      *
      * @param graph
-     *     The StructuredGraph to analyze and print induction variables in
-     *     the graph.
+     *         The StructuredGraph to analyze and print induction variables in the graph.
      */
     private static void printInductionVariables(StructuredGraph graph) {
         final LoopsData data = new TornadoLoopsData(graph);
         data.detectCountedLoops();
 
-        final List<LoopEx> loops = data.outerFirst();
+        final List<Loop> loops = data.outerFirst();
 
         List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
-        for (LoopEx loop : loops) {
+        for (Loop loop : loops) {
             for (ParallelRangeNode parRange : parRanges) {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {
                         BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange
-                                .stride(), iv.getOp());
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
+                                parRange.stride(), iv.getOp());
                     }
                 }
             }
@@ -504,8 +499,7 @@ public final class RuntimeUtilities {
         }
 
         String filePath = getFilePath();
-        try (FileWriter fw = new FileWriter(filePath, true);
-             BufferedWriter bw = new BufferedWriter(fw)) {
+        try (FileWriter fw = new FileWriter(filePath, true); BufferedWriter bw = new BufferedWriter(fw)) {
             // Clean ANSI escape sequences before writing
             String cleanedString = removeAnsiEscapeCodes(logBuilder.toString());
             bw.write(cleanedString);
@@ -516,12 +510,11 @@ public final class RuntimeUtilities {
         }
     }
 
-
     /**
      * Removes ANSI escape sequences from the input string.
      *
      * @param input
-     *     String potentially containing ANSI escape codes
+     *         String potentially containing ANSI escape codes
      * @return String with all ANSI escape sequences removed
      */
     private static String removeAnsiEscapeCodes(String input) {

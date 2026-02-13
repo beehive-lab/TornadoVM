@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -50,11 +50,11 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsicNode.Operation.CLAMP;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.ABS;
 
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -102,8 +102,7 @@ public class OCLMathPlugins {
         r.register(new InvocationPlugin("min", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, JavaKind.Object)));
                 return true;
             }
         });
@@ -111,8 +110,7 @@ public class OCLMathPlugins {
         r.register(new InvocationPlugin("max", HalfFloat.class, HalfFloat.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                // Since HalfFloat is represented as short internally, we use JavaKind.Short
-                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Short)));
+                b.push(JavaKind.Object, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, JavaKind.Object)));
                 return true;
             }
         });

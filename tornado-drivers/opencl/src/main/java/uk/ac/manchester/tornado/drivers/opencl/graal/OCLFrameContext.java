@@ -23,8 +23,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+import jdk.graal.compiler.lir.asm.FrameContext;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 

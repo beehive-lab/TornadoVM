@@ -20,8 +20,8 @@
  */
 package uk.ac.manchester.tornado.drivers.providers;
 
-import org.graalvm.compiler.nodes.gc.BarrierSet;
-import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
+import jdk.graal.compiler.nodes.gc.BarrierSet;
+import jdk.graal.compiler.nodes.spi.PlatformConfigurationProvider;
 
 public class TornadoPlatformConfigurationProvider implements PlatformConfigurationProvider {
 

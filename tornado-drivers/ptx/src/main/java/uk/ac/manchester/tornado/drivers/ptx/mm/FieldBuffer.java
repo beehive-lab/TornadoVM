@@ -108,4 +108,12 @@ public class FieldBuffer {
     public long size() {
         return objectBuffer.size();
     }
+
+    void setBuffer(XPUBuffer.XPUBufferWrapper bufferWrapper) {
+        objectBuffer.setBuffer(bufferWrapper);
+    }
+
+    long getBufferOffset() {
+        return objectBuffer.getBufferOffset();
+    }
 }

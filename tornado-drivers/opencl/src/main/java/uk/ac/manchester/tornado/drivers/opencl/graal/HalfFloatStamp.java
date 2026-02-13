@@ -26,9 +26,9 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.core.common.type.Stamp;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.spi.LIRKindTool;
+import jdk.graal.compiler.core.common.type.Stamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class HalfFloatStamp extends Stamp {

@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.ConstantValue;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpCompositeInsert;

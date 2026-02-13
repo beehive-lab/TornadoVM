@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.lir.Variable;
+import jdk.graal.compiler.lir.Variable;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 

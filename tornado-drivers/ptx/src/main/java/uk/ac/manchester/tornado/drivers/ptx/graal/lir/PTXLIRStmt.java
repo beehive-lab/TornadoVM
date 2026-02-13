@@ -24,6 +24,23 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LIRInstructionClass;
+import jdk.graal.compiler.lir.Opcode;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
+
+import java.nio.charset.StandardCharsets;
+
+import static jdk.graal.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.ADD;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.DIV_APPROX;
@@ -48,24 +65,23 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.VECTOR;
 
-import java.nio.charset.StandardCharsets;
-
-import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-
-import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
-
 public class PTXLIRStmt {
+
+    /*
+     * This method helps to resolve the PTX type for the atom.add operation. The valid types for instruction 'atom'
+     * .u32 or .s32 or .u64 or .f64 or f16 or f16x2 or .f32 or .bf16 or .bf16x2.
+     * Hence, we need to return 'u64' as the type for Java 'long' types.
+     */
+    private static String resolvePTXTypeFromValueKind(ValueKind valueKind) {
+        switch (valueKind.toString().toLowerCase()) {
+            case "s64" -> {
+                return "u64";
+            }
+            default -> {
+                return valueKind.toString().toLowerCase();
+            }
+        }
+    }
 
     protected abstract static class AbstractInstruction extends LIRInstruction {
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
@@ -83,9 +99,9 @@ public class PTXLIRStmt {
     @Opcode("SET_PRED_CONST")
     public static class SetPredicateConstStmt extends AbstractInstruction {
         public static final LIRInstructionClass<SetPredicateConstStmt> TYPE = LIRInstructionClass.create(SetPredicateConstStmt.class);
-
-        @Def protected Value result;
         private final boolean value;
+        @Def
+        protected Value result;
 
         public SetPredicateConstStmt(Value result, boolean value) {
             super(TYPE);
@@ -203,7 +219,8 @@ public class PTXLIRStmt {
         @Def
         protected Value header_size;
 
-        public Dp4aStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value int8_b_base, Value load_four_int8_bytes_b, Value accumulator_c, Value offset_a, Value cnv_offset_a, Value add_header_offset_a, Value offset_b, Value cnv_offset_b, Value add_header_offset_b, Value offseted_address_a, Value offseted_address_b, Value header_size) {
+        public Dp4aStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value int8_b_base, Value load_four_int8_bytes_b, Value accumulator_c, Value offset_a, Value cnv_offset_a,
+                Value add_header_offset_a, Value offset_b, Value cnv_offset_b, Value add_header_offset_b, Value offseted_address_a, Value offseted_address_b, Value header_size) {
             super(TYPE);
             this.result = result;
             this.int8_a_base = int8_a_base;
@@ -334,7 +351,8 @@ public class PTXLIRStmt {
         @Def
         protected Value header_size;
 
-        public Dp4aLocalMemoryStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value offset_a, Value add_header_offset_a, Value offseted_address_a, Value accumulator_c, Value offset_b, Value load_four_int8_bytes_b, Value local_array_base, Value header_size) {
+        public Dp4aLocalMemoryStmt(Value result, Value int8_a_base, Value load_four_int8_bytes_a, Value offset_a, Value add_header_offset_a, Value offseted_address_a, Value accumulator_c,
+                Value offset_b, Value load_four_int8_bytes_b, Value local_array_base, Value header_size) {
             super(TYPE);
             this.result = result;
             this.int8_a_base = int8_a_base;
@@ -950,8 +968,6 @@ public class PTXLIRStmt {
         }
     }
 
-
-
     @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
 
@@ -1053,10 +1069,9 @@ public class PTXLIRStmt {
         public static final LIRInstructionClass<ConvertAddressStmt> TYPE = LIRInstructionClass.create(ConvertAddressStmt.class);
 
         @Use
-        private final Value src;
+        private Value src;
         @Use
-        private final Value dest;
-        @Use
+        private Value dest;
         private final PTXMemorySpace srcMemorySpace;
 
         public ConvertAddressStmt(Value dest, Value src, PTXMemorySpace srcMemorySpace) {
@@ -1119,10 +1134,9 @@ public class PTXLIRStmt {
         @Use
         protected Variable dest;
 
-        @Use
+        @Use( { COMPOSITE })
         PTXUnary.MemoryAccess address;
 
-        @Use
         PTXNullaryOp loadOp;
 
         public LoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op) {
@@ -1158,18 +1172,13 @@ public class PTXLIRStmt {
 
         @Use
         protected Variable dest;
-
-        @Use
-        PTXUnary.MemoryAccess address;
-
-        @Use
-        PTXNullaryOp loadOp;
-
         @Use
         protected Value index;
-
         @Use
         protected Value localArray;
+        @Use( { COMPOSITE })
+        PTXUnary.MemoryAccess address;
+        PTXNullaryOp loadOp;
 
         public HalfFloatLoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op) {
             super(TYPE);
@@ -1188,8 +1197,7 @@ public class PTXLIRStmt {
         }
 
         private boolean isLocalOrSharedLoad() {
-            return address.getBase().memorySpace == PTXMemorySpace.LOCAL ||
-                    address.getBase().memorySpace == PTXMemorySpace.SHARED;
+            return address.getBase().memorySpace == PTXMemorySpace.LOCAL || address.getBase().memorySpace == PTXMemorySpace.SHARED;
         }
 
         public void emitPointerBaseIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
@@ -1246,7 +1254,7 @@ public class PTXLIRStmt {
 
         @Def
         protected Variable dest;
-        @Use
+        @Use( { COMPOSITE })
         protected PTXUnary.MemoryAccess address;
 
         public VectorLoadStmt(Variable dest, PTXUnary.MemoryAccess address) {
@@ -1296,7 +1304,7 @@ public class PTXLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected PTXUnary.MemoryAccess address;
 
         public StoreStmt(PTXUnary.MemoryAccess address, Value rhs) {
@@ -1344,7 +1352,7 @@ public class PTXLIRStmt {
 
         @Use
         protected Value rhs;
-        @Use
+        @Use( { COMPOSITE })
         protected PTXUnary.MemoryAccess address;
         @Use
         protected Value index;
@@ -1367,8 +1375,7 @@ public class PTXLIRStmt {
         }
 
         private boolean isLocalOrSharedLoad() {
-            return address.getBase().memorySpace == PTXMemorySpace.LOCAL ||
-                    address.getBase().memorySpace == PTXMemorySpace.SHARED;
+            return address.getBase().memorySpace == PTXMemorySpace.LOCAL || address.getBase().memorySpace == PTXMemorySpace.SHARED;
         }
 
         public void emitPointerBaseIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
@@ -1427,7 +1434,7 @@ public class PTXLIRStmt {
 
         @Def
         protected Variable source;
-        @Use
+        @Use( { COMPOSITE })
         protected PTXUnary.MemoryAccess address;
 
         public VectorStoreStmt(Variable source, PTXUnary.MemoryAccess address) {
@@ -1469,13 +1476,11 @@ public class PTXLIRStmt {
         @Use
         protected Variable dest;
 
-        @Use
+        @Use( { COMPOSITE })
         PTXUnary.MemoryAccess address;
 
-        @Use
         PTXNullaryOp atomicOp;
 
-        @Use
         PTXAssembler.PTXBinaryOp arithmeticOp;
 
         @Use
@@ -1514,34 +1519,14 @@ public class PTXLIRStmt {
         }
     }
 
-    /*
-     * This method helps to resolve the PTX type for the atom.add operation. The valid types for instruction 'atom'
-     * .u32 or .s32 or .u64 or .f64 or f16 or f16x2 or .f32 or .bf16 or .bf16x2.
-     * Hence, we need to return 'u64' as the type for Java 'long' types.
-     */
-    private static String resolvePTXTypeFromValueKind(ValueKind valueKind) {
-        switch (valueKind.toString().toLowerCase()) {
-            case "s64" -> {
-                return "u64";
-            }
-            default -> {
-                return valueKind.toString().toLowerCase();
-            }
-        }
-    }
-
     @Opcode("GUARDED_STMT")
     public static class ConditionalStatement extends AbstractInstruction {
         public static final LIRInstructionClass<ConditionalStatement> TYPE = LIRInstructionClass.create(ConditionalStatement.class);
 
-        @Use
         private final AbstractInstruction instruction;
-
-        @Use
-        private final Variable guard;
-
-        @Use
         private final boolean isNegated;
+        @Use
+        private Variable guard;
 
         public ConditionalStatement(AbstractInstruction instr, Variable guard, boolean isNegated) {
             super(TYPE);
@@ -1554,8 +1539,9 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
             asm.emitSymbol(OP_GUARD);
-            if (isNegated)
+            if (isNegated) {
                 asm.emitSymbol(NEGATION);
+            }
             asm.emitValue(guard);
 
             asm.convertNextTabToSpace();
@@ -1567,12 +1553,10 @@ public class PTXLIRStmt {
     public static class PrintfStringDeclarationStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<PrintfStringDeclarationStmt> TYPE = LIRInstructionClass.create(PrintfStringDeclarationStmt.class);
-
         @Use
-        private final Value stringValue;
-
+        private Value dest;
         @Use
-        private final Value dest;
+        private Value stringValue;
 
         public PrintfStringDeclarationStmt(Value dest, Value stringValue) {
             super(TYPE);

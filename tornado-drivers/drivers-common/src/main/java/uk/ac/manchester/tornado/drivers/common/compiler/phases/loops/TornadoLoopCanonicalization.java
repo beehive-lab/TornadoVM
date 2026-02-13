@@ -21,20 +21,19 @@
  */
 package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
-import static uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.LoopCanonicalizer.canonicalizeLoop;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.loop.Loop;
+import jdk.graal.compiler.nodes.loop.LoopsData;
+import jdk.graal.compiler.phases.Phase;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-import org.graalvm.compiler.phases.Phase;
-
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
+import static uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.LoopCanonicalizer.canonicalizeLoop;
 
 public class TornadoLoopCanonicalization extends Phase {
     @Override
@@ -46,9 +45,9 @@ public class TornadoLoopCanonicalization extends Phase {
     protected void run(StructuredGraph graph) {
         if (graph.hasLoops()) {
             final LoopsData data = new TornadoLoopsData(graph);
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
             Collections.reverse(loops);
-            for (LoopEx loop : loops) {
+            for (Loop loop : loops) {
                 int numBackedges = loop.loopBegin().loopEnds().count();
                 if (numBackedges > 1) {
                     final LoopBeginNode loopBegin = loop.loopBegin();

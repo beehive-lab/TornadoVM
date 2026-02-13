@@ -2,7 +2,7 @@ import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 module tornado.drivers.spirv {
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+//    requires transitive jdk.internal.vm.compiler;
     requires transitive tornado.api;
     requires transitive tornado.runtime;
     requires tornado.drivers.common;
@@ -23,7 +23,6 @@ module tornado.drivers.spirv {
     exports uk.ac.manchester.tornado.drivers.spirv.graal.phases;
     exports uk.ac.manchester.tornado.drivers.spirv.mm;
     exports uk.ac.manchester.tornado.drivers.spirv.runtime;
-
     provides TornadoBackendProvider with
             uk.ac.manchester.tornado.drivers.spirv.SPIRVTornadoDriverProvider;
 }

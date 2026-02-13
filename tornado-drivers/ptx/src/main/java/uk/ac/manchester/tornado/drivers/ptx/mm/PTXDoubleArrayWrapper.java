@@ -35,6 +35,10 @@ public class PTXDoubleArrayWrapper extends PTXArrayWrapper<double[]> {
         super(deviceContext, JavaKind.Double, access);
     }
 
+    public PTXDoubleArrayWrapper(final double[] array, PTXDeviceContext deviceContext, Access access) {
+        super(array, deviceContext, JavaKind.Double, access);
+    }
+
     /**
      * Copy data from the device to the main host.
      *

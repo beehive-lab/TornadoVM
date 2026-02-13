@@ -2,15 +2,15 @@ import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 open module tornado.runtime {
     requires java.logging;
+    requires java.management;
     requires jdk.unsupported;
     requires org.graalvm.collections;
-
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
+    requires transitive jdk.graal.compiler;
     requires transitive tornado.api;
     requires commons.math3;
     requires snmp4j;
-    requires java.management;
+
 
     exports uk.ac.manchester.tornado.runtime;
     exports uk.ac.manchester.tornado.runtime.analyzer;

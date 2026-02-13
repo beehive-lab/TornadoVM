@@ -71,7 +71,8 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
+__LOG_JVM_EXCEPTIONS__ = "-Xlog:exceptions=info "
+__JAVA_BASE_OPTIONS__ = ("-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview ")
 __TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
@@ -535,12 +536,7 @@ class TornadoVMRunnerTool():
             graalEnabled = True
 
         if (matchJVMVersion != None):
-            major_version = int(matchJVMVersion.group(1))
-            # For older Java versions (1.8, 1.11), the real version is in the second group
-            if major_version == 1 and matchJVMVersion.group(2):
-                version = int(matchJVMVersion.group(2))
-            else:
-                version = major_version
+            version = int(matchJVMVersion.group(1))
             return version, graalEnabled
         else:
             print("[ERROR] JDK Version not found")
@@ -548,8 +544,9 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def checkCompatibilityWithTornadoVM(self):
-        if (self.java_version != 21):
-            print("TornadoVM supports only JDK version 21")
+        if (self.java_version != 25):
+            print(f"[ERROR] TornadoVM is only compatible with JDK version 25. Current JDK version: {self.java_version}")
+            print("TornadoVM supports only JDK version 25")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -1296,6 +1293,17 @@ class TornadoVMRunnerTool():
             if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+
+        # Enable native access for backend modules to avoid restricted method warnings
+        nativeAccessModules = []
+        if ("opencl-backend" in self.listOfBackends) or ("spirv-backend" in self.listOfBackends):
+            nativeAccessModules.append(__OPENCL_MODULE__)
+        if ("spirv-backend" in self.listOfBackends):
+            nativeAccessModules.append("tornado.drivers.spirv")
+        if ("ptx-backend" in self.listOfBackends):
+            nativeAccessModules.append(__PTX_MODULE__)
+        if nativeAccessModules:
+            javaFlags = javaFlags + "--enable-native-access=" + ",".join(nativeAccessModules) + " "
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
