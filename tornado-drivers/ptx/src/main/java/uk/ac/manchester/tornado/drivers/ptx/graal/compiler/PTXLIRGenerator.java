@@ -399,16 +399,6 @@ public class PTXLIRGenerator extends LIRGenerator {
         append(new PTXControlFlow.Branch(defaultTarget, false, false));
     }
 
-//    @Override
-//    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
-//        System.out.println("XXXXXX"
-//        );
-//        JavaConstant[] keyConstants = new JavaConstant[targets.length];
-//        for (int i = 0; i < targets.length; i++) {
-//            keyConstants[i] = JavaConstant.forInt(lowKey + i);
-//        }
-//    }
-
     @Override
     protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets,
             SwitchStrategy remainingStrategy, LabelRef[] remainingTargets, AllocatableValue key) {
