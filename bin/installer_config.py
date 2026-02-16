@@ -27,15 +27,15 @@ __LINUX__   = "linux"
 __APPLE__   = "darwin"
 __WINDOWS__ = "windows"
 
-__JDK21__        = "jdk21"
-__GRAALVM21__    = "graal-jdk-21"
-__MANDREL21__    = "mandrel-jdk-21"
-__CORRETTO21__   = "corretto-jdk-21"
-__MICROSOFT21__  = "microsoft-jdk-21"
-__ZULU21__       = "zulu-jdk-21"
-__TEMURIN21__    = "temurin-jdk-21"
-__SAPMACHINE21__ = "sapmachine-jdk-21"
-__LIBERICA21__   = "liberica-jdk-21"
+__JDK25__        = "jdk25"
+__GRAALVM25__    = "graal-jdk-25"
+__MANDREL25__    = "mandrel-jdk-25"
+__CORRETTO25__   = "corretto-jdk-25"
+__MICROSOFT25__  = "microsoft-jdk-25"
+__ZULU25__       = "zulu-jdk-25"
+__TEMURIN25__    = "temurin-jdk-25"
+__SAPMACHINE25__ = "sapmachine-jdk-25"
+__LIBERICA25__   = "liberica-jdk-25"
 
 ## cmake
 CMAKE = {
@@ -77,7 +77,7 @@ MAVEN = {
 
 ## JDK
 JDK = {
-    __JDK21__: {
+    __JDK25__: {
         __LINUX__: {
             __X86_64__: "https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz",
             __ARM__: "https://download.oracle.com/java/21/latest/jdk-21_linux-aarch64_bin.tar.gz",
@@ -94,7 +94,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __GRAALVM21__: {
+    __GRAALVM25__: {
         __LINUX__: {
             __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-x64_bin.tar.gz",
             __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-aarch64_bin.tar.gz",
@@ -111,7 +111,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __CORRETTO21__: {
+    __CORRETTO25__: {
         __LINUX__: {
             __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-linux-jdk.tar.gz",
             __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-linux-jdk.tar.gz",
@@ -128,7 +128,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __MANDREL21__: {
+    __MANDREL25__: {
         __LINUX__: {
             __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.0.0-Final/mandrel-java21-linux-amd64-23.1.0.0-Final.tar.gz",
             __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.0.0-Final/mandrel-java21-linux-aarch64-23.1.0.0-Final.tar.gz",
@@ -145,7 +145,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __MICROSOFT21__: {
+    __MICROSOFT25__: {
         __LINUX__: {
             __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz",
             __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-aarch64.tar.gz",
@@ -162,7 +162,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __ZULU21__: {
+    __ZULU25__: {
         __LINUX__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_x64.tar.gz",
             __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_aarch64.tar.gz",
@@ -179,7 +179,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __TEMURIN21__: {
+    __TEMURIN25__: {
         __LINUX__: {
             __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12.tar.gz",
             __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.1_12.tar.gz",
@@ -196,7 +196,7 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __SAPMACHINE21__: {
+    __SAPMACHINE25__: {
         __LINUX__: {
             __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-x64_bin.tar.gz",
             __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-aarch64_bin.tar.gz",
@@ -214,7 +214,7 @@ JDK = {
         },
     },
 
-    __LIBERICA21__ : {
+    __LIBERICA25__ : {
         __LINUX__: {
             __X86_64__  : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-amd64.tar.gz",
             __ARM__     : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-aarch64.tar.gz",
