@@ -28,6 +28,19 @@ import sys
 from pathlib import Path
 
 
+def is_graalvm():
+    """Check if the current JDK is GraalVM by inspecting 'java -version' output."""
+    try:
+        result = subprocess.run(
+            ["java", "-version"], capture_output=True, text=True
+        )
+        # java -version prints to stderr
+        version_output = result.stderr or result.stdout or ""
+        return "GraalVM" in version_output
+    except Exception:
+        return False
+
+
 def get_project_root():
     """Get the project root directory (two levels up from TORNADOVM_HOME)"""
     tornado_sdk = os.environ.get("TORNADOVM_HOME")
@@ -214,9 +227,13 @@ def generate_argfile(backends, output_dir=None):
     # Use OS-appropriate separators: ; on Windows, : on Unix for path lists
     # Use \ on Windows, / on Unix for file paths
     module_path = f"--module-path .{os.pathsep}${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}tornado"
-    upgrade_module_path = f"--upgrade-module-path ${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}graalJars"
     output_lines.append(module_path)
-    output_lines.append(upgrade_module_path)
+    # Only add --upgrade-module-path for non-GraalVM JDKs.
+    # GraalVM already includes jdk.graal.compiler; upgrading with external JARs
+    # causes module name mismatches (jdk.internal.vm.compiler vs jdk.graal.compiler).
+    if not is_graalvm():
+        upgrade_module_path = f"--upgrade-module-path ${{TORNADOVM_HOME}}{os.sep}share{os.sep}java{os.sep}graalJars"
+        output_lines.append(upgrade_module_path)
     # Extract and add --add-modules
     i = 0
     while i < len(java_flags):
@@ -227,6 +244,21 @@ def generate_argfile(backends, output_dir=None):
                 i += 2
                 continue
         i += 1
+    output_lines.append("")
+
+    # === Native access ===
+    # Enable native access for backend modules to avoid restricted method warnings
+    output_lines.append("# === Native access ===")
+    native_access_modules = []
+    if "opencl" in backend_list or "spirv" in backend_list:
+        native_access_modules.append("tornado.drivers.opencl")
+    if "spirv" in backend_list:
+        native_access_modules.append("tornado.drivers.spirv")
+        native_access_modules.append("beehive.levelzero.jni")
+    if "ptx" in backend_list:
+        native_access_modules.append("tornado.drivers.ptx")
+    if native_access_modules:
+        output_lines.append("--enable-native-access=" + ",".join(native_access_modules))
     output_lines.append("")
 
     # === Export lists ===
