@@ -180,26 +180,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     baseIndexNode.replaceAtUsages(constantNode);
                     deleteFixed(baseIndexNode);
                 }
-
-                // Remove FixedGuard nodes with its PI Node
-//                if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
-//                    FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
-//                    if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode) {
-//                        var elementKindSize = getElementKindSize(baseIndexNode);
-//                        var panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
-//                        var baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
-//                        var constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
-//                        baseIndexNode.replaceAtUsages(constantNode);
-//                        if (baseIndexNode.predecessor() instanceof FixedGuardNode outterFixedGuardNode) {
-//                            outterFixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
-//                                isNullNode.safeDelete();
-//                            });
-//                            deleteFixed(outterFixedGuardNode);
-//                        }
-//                        deleteFixed(baseIndexNode);
-//                    }
-//                }
-
                 // Remove FixedGuard nodes with its PI Node
                 if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
                     FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
