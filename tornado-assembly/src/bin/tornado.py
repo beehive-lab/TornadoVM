@@ -1300,6 +1300,7 @@ class TornadoVMRunnerTool():
             nativeAccessModules.append(__OPENCL_MODULE__)
         if ("spirv-backend" in self.listOfBackends):
             nativeAccessModules.append("tornado.drivers.spirv")
+            nativeAccessModules.append("beehive.levelzero.jni")
         if ("ptx-backend" in self.listOfBackends):
             nativeAccessModules.append(__PTX_MODULE__)
         if nativeAccessModules:
