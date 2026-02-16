@@ -63,15 +63,15 @@ import textwrap
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
 __VERSION__ = "v2.2.0"
 __SUPPORTED_JDKS__ = [
-    config.__JDK21__,
-    config.__GRAALVM21__,
-    config.__CORRETTO21__,
-    config.__MICROSOFT21__,
-    config.__MANDREL21__,
-    config.__ZULU21__,
-    config.__TEMURIN21__,
-    config.__SAPMACHINE21__,
-    config.__LIBERICA21__,
+    config.__JDK25__,
+    config.__GRAALVM25__,
+    config.__CORRETTO25__,
+    config.__MICROSOFT25__,
+    config.__MANDREL25__,
+    config.__ZULU25__,
+    config.__TEMURIN25__,
+    config.__SAPMACHINE25__,
+    config.__LIBERICA25__,
 ]
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
 
@@ -384,9 +384,9 @@ class BuildManager:
             if config.polyglot:
                 suffix = "polyglot"
             else:
-                suffix = "graal-jdk-21"
+                suffix = "graal-jdk-25"
         else:
-            suffix = "jdk21"
+            suffix = "jdk25"
 
         return f"{prefix}{suffix}"
 
@@ -470,10 +470,10 @@ class SystemValidator:
         """Match JDK version output to supported JDK profiles."""
         output_lower = output.lower()
 
-        if "21" in output and "graalvm" in output_lower:
-            return "graal-jdk-21"
-        elif "21" in output:
-            return "jdk21"
+        if "25" in output and "graalvm" in output_lower:
+            return "graal-jdk-25"
+        elif "25" in output:
+            return "jdk25"
 
         return None
 
@@ -583,7 +583,7 @@ class TornadoInstaller:
         if not config.jdk_keyword or "graal" not in config.jdk_keyword.lower():
             if config.auto_deps:
                 self.console.print("[WARNING] Polyglot requires GraalVM. You have enabled auto-deps, thus the script will download and use the GraalVM JDK.", style="yellow")
-                config.jdk_keyword = "graal-jdk-21"
+                config.jdk_keyword = "graal-jdk-25"
                 config.download_jdk = True
             else:
                 self.console.print("[ERROR] Polyglot requires GraalVM. Please select the GraalVM JDK.", style="bold red")
@@ -605,7 +605,7 @@ class TornadoInstaller:
                         self.console.print("\nOnce JAVA_HOME is set correctly, re-run this installer.", style="yellow")
                         sys.exit(0)
                     elif choice == 2:
-                        config.jdk_keyword = "graal-jdk-21"
+                        config.jdk_keyword = "graal-jdk-25"
                         config.download_jdk = True
                     else:
                         raise ValueError("Invalid choice")
@@ -619,7 +619,7 @@ def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU/FPGA drivers")
     parser.add_argument("--jdk", action="store", dest="jdk", default=None,
                         help=(
-                            "Specify a JDK to install by its keyword (e.g., 'jdk21', 'graal-jdk-21'). "
+                            "Specify a JDK to install by its keyword (e.g., 'jdk25', 'graal-jdk-25'). "
                             "Run with --listJDKs to view all available JDK keywords."
                         ))
     parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
@@ -741,15 +741,15 @@ class UserInterface:
 
     def _list_supported_jdks(self) -> None:
         descriptions = [
-            "Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)",
-            "Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)",
-            "Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)",
-            "Install TornadoVM with Corretto JDK 21",
-            "Install TornadoVM with Microsoft JDK 21",
-            "Install TornadoVM with Azul Zulu JDK 21",
-            "Install TornadoVM with Eclipse Temurin JDK 21",
-            "Install TornadoVM with SapMachine OpenJDK 21",
-            "Install TornadoVM with Liberica OpenJDK 21 (Only option for RISC-V 64)"
+            "Install TornadoVM with OpenJDK 25.0.2 (Oracle OpenJDK)",
+            "Install TornadoVM with GraalVM and JDK 25.0.2 (GraalVM 25.0.2)",
+            "Install TornadoVM with Mandrel and JDK 25.0.2 (GraalVM 25.0.2)",
+            "Install TornadoVM with Corretto JDK 25.0.2",
+            "Install TornadoVM with Microsoft JDK 25.0.2",
+            "Install TornadoVM with Azul Zulu JDK 25.0.2",
+            "Install TornadoVM with Eclipse Temurin JDK 25.0.2",
+            "Install TornadoVM with SapMachine OpenJDK 25.0.2",
+            "Install TornadoVM with Liberica OpenJDK 25.0.2 (Only option for RISC-V 64)"
         ]
 
         self.console.print(f"List of supported JDKs for TornadoVM {__VERSION__}", style="green")
