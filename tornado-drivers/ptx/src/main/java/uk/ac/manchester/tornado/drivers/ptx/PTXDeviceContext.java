@@ -424,7 +424,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                 blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getPotentialBlockSizeMaxOccupancy(), grid.dimension(), module.javaName);
                 System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
             }
-            gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
+            gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
         } else if (taskMeta.isParallel()) {
             scheduler.calculateGlobalWork(taskMeta, batchThreads);
             blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
@@ -432,15 +432,23 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
 
         PTXStreamType streamType = isMultiStreamEnabled() ? PTXStreamType.COMPUTE : PTXStreamType.DEFAULT;
-        PTXStream stream = getStream(executionPlanId);
+        PTXStream stream = getStream(executionPlanId, streamType);
+
+        // Write kernel context first (goes to H2D stream)
+        byte[] kernelParams = writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta);
 
         if (isMultiStreamEnabled()) {
-            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            // Sync COMPUTE stream on H2D
+            // Since H2D is in-order, waiting for the kernel context write event (the latest on H2D)
+            // implicitly waits for all prior H2D transfers too.
+            PTXStream h2dStream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            byte[][] syncEventWrapper = PTXStream.cuEventCreateAndRecord(false, h2dStream.getStreamHandle());
+            PTXEvent.cuStreamWaitEvent(stream.getStreamHandle(), syncEventWrapper[1]);
+            //resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
         }
 
         int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta,
-                writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta),
-                gridDimension, blockDimension);
+                kernelParams, gridDimension, blockDimension);
         updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
 
         if (isMultiStreamEnabled()) {

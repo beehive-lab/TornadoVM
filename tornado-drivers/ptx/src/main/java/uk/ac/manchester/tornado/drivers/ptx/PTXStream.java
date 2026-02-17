@@ -133,7 +133,7 @@ public class PTXStream {
 
     private static native long cuStreamSynchronize(byte[] streamWrapper);
 
-    private static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
+    protected static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
     private int registerEvent(EventDescriptor descriptorId) {
         return ptxEventPool.registerEvent(
