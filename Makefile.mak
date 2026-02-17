@@ -54,43 +54,43 @@ example:
 tests:
 	del /f tornado_unittests.log
 	%TORNADOVM_HOME%\bin\tornado.exe --devices
-	%TORNADOVM_HOME%\bin\tornado-test.exe --ea --verbose
-	%TORNADOVM_HOME%\bin\tornado-test.exe --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\tornado-test.exe --verbose
+	%TORNADOVM_HOME%\bin\tornado-test.exe -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 fast-tests:
 	del /f tornado_unittests.log
 	%TORNADOVM_HOME%\bin\tornado.exe --devices
-	%TORNADOVM_HOME%\bin\tornado-test.exe --ea --verbose --quickPass
-	%TORNADOVM_HOME%\bin\tornado-test.exe --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\tornado-test.exe --verbose --quickPass
+	%TORNADOVM_HOME%\bin\tornado-test.exe -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 tests-uncompressed:
 	del /f tornado_unittests.log
 	python %TORNADOVM_HOME%\bin\tornado --devices
-	python %TORNADOVM_HOME%\bin\tornado-test --ea --verbose --uncompressed
-	python %TORNADOVM_HOME%\bin\tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	python %TORNADOVM_HOME%\bin\tornado-test --verbose --uncompressed
+	python %TORNADOVM_HOME%\bin\tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 fast-tests-uncompressed:
 	del /f tornado_unittests.log
 	python %TORNADOVM_HOME%\bin\tornado --devices
-	python %TORNADOVM_HOME%\bin\tornado-test --ea --verbose --quickPass --uncompressed
-	python %TORNADOVM_HOME%\bin\tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	python %TORNADOVM_HOME%\bin\tornado-test --verbose --quickPass --uncompressed
+	python %TORNADOVM_HOME%\bin\tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 tests-spirv-levelzero:
 	del /f tornado_unittests.log
 	%TORNADOVM_HOME%\bin\tornado.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea --verbose
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" --verbose
+	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=levelzero" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 tests-spirv-opencl:
 	del /f tornado_unittests.log
 	%TORNADOVM_HOME%\bin\tornado.exe --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
-	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=opencl" --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=opencl" --verbose
+	%TORNADOVM_HOME%\bin\tornado-test.exe --jvm="-Dtornado.spirv.dispatcher=opencl" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADOVM_HOME%\bin\test-native.cmd
 
 test-slam:
