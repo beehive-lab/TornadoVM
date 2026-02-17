@@ -39,7 +39,6 @@ public class TornadoConstantFieldProvider implements ConstantFieldProvider {
         return ConstantFieldProvider.super.maybeFinal(field);
     }
 
-
     @Override
     public boolean isTrustedFinal(CanonicalizerTool tool, ResolvedJavaField field) {
         return false;
