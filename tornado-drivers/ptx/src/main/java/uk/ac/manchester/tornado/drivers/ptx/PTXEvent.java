@@ -50,9 +50,6 @@ public class PTXEvent implements Event {
     // Track which stream this event was recorded on
     private final PTXStreamType sourceStreamType;
 
-    // Native method for cross-stream synchronization
-    private static native void cuStreamWaitEvent(byte[] targetStream, byte[] event);
-
     public PTXEvent(byte[][] bytes, EventDescriptor descriptorId, PTXStreamType streamType) {
         eventWrapper = bytes;
         this.description = descriptorId.getNameDescription();
@@ -69,6 +66,9 @@ public class PTXEvent implements Event {
     private native static long cuEventDestroy(byte[] eventWrapper);
 
     private native static void tornadoCUDAEventsSynchronize(byte[][] wrappers);
+
+    // Native method for cross-stream synchronization
+    protected static native void cuStreamWaitEvent(byte[] targetStream, byte[] event);
 
     private native static long cuEventQuery(byte[] eventWrapper);
 
