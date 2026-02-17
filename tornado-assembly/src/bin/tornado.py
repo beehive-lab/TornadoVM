@@ -508,6 +508,17 @@ class TornadoVMRunnerTool():
             else:
                 setattr(self, attr, None)
 
+    def _checkJvmciCompatibility(self, major, minor, patch):
+        required = (25, 0, 2)
+        current = (major, minor, patch)
+
+        if current < required:
+            print("[ERROR] Incompatible Java version detected.")
+            print("[ERROR] JVMCI requires Java >= 25.0.2")
+            print(f"[ERROR] Detected Java version: {major}.{minor}.{patch}")
+            print("[ERROR] Please install a compatible JDK (e.g., OpenJDK / Corretto 25.0.2+).")
+            sys.exit(1)
+
     def getJavaVersion(self):
         try:
             if os.name == 'nt':
@@ -528,15 +539,20 @@ class TornadoVMRunnerTool():
                 print("[ERROR] On Windows, ensure %JAVA_HOME%\\bin is in your PATH.")
             sys.exit(1)
 
-        # Try to match version format: version "21.x.x" or version "1.8.x"
-        matchJVMVersion = re.search(r'version\s+"?(\d+)(?:\.(\d+))?', str(stderr))
-        matchGraal = re.search(r"GraalVM", str(stderr))
+        # Try to match version format: version "25.0.2" or version "21.0.1" or version "1.8.x"
+        stderr_str = stderr.decode("utf-8")
+        matchJVMVersion = re.search(r'version\s+"?(\d+)(?:\.(\d+)(?:\.(\d+))?)?', stderr_str)
+        matchGraal = re.search(r"GraalVM", stderr_str)
         graalEnabled = False
         if (matchGraal != None):
             graalEnabled = True
 
         if (matchJVMVersion != None):
             version = int(matchJVMVersion.group(1))
+            minor = int(matchJVMVersion.group(2)) if matchJVMVersion.group(2) else 0
+            patch = int(matchJVMVersion.group(3)) if matchJVMVersion.group(3) else 0
+            if version == 25:
+                self._checkJvmciCompatibility(version, minor, patch)
             return version, graalEnabled
         else:
             print("[ERROR] JDK Version not found")
