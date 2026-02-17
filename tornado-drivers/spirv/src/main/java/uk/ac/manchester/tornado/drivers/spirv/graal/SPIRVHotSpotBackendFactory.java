@@ -108,8 +108,6 @@ public class SPIRVHotSpotBackendFactory {
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
-//            Providers p = new Providers(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
-//                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
 
             Providers p = new Providers(metaAccess, //
                     codeCache, constantReflection, constantFieldProvider, //
@@ -128,8 +126,6 @@ public class SPIRVHotSpotBackendFactory {
 
             suites = new SPIRVSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-//            providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
-//                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
             providers = new SPIRVProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites, hotSpotIdentityHashCodeProvider);
             lowerer.initialize(options, new DummySnippetFactory(), providers);
