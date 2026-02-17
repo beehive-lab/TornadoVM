@@ -3,7 +3,6 @@ import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 module tornado.drivers.opencl {
     requires java.base;
     requires transitive jdk.internal.vm.ci;
-//    requires transitive jdk.graal.compiler;
     requires transitive org.graalvm.collections;
     requires transitive org.graalvm.word;
     requires transitive tornado.api;

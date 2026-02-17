@@ -82,9 +82,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     private final OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CoreProviders providers, LIRGenerationResult res) {
-        //        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(),
-        //                new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBarrierSetLIRGenerator() {
-        //                }, new uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLMoveFactory(), providers, res);
         super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool() {
         }, new BarrierSetLIRGeneratorTool() {
         }, new OCLMoveFactory(), providers, res);
