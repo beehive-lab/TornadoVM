@@ -111,32 +111,32 @@ JDK = {
            __RISCV_64__: None,
         },
     },
-    __CORRETTO25__: {
+       __CORRETTO25__: {
+           __LINUX__: {
+               __X86_64__: "https://corretto.aws/downloads/resources/25.0.2.10.1/amazon-corretto-25.0.2.10.1-linux-x64.tar.gz",
+               __ARM__: "https://corretto.aws/downloads/resources/25.0.2.10.1/amazon-corretto-25.0.2.10.1-linux-aarch64.tar.gz",
+               __RISCV_64__: None,
+           },
+           __APPLE__: {
+               __X86_64__: "https://corretto.aws/downloads/resources/25.0.2.10.1/amazon-corretto-25.0.2.10.1-macosx-x64.tar.gz",
+               __ARM__: "https://corretto.aws/downloads/resources/25.0.2.10.1/amazon-corretto-25.0.2.10.1-macosx-aarch64.tar.gz",
+               __RISCV_64__: None,
+           },
+           __WINDOWS__: {
+               __X86_64__: "https://corretto.aws/downloads/resources/25.0.2.10.1/amazon-corretto-25.0.2.10.1-windows-x64-jdk.zip",
+               __ARM__: None,
+               __RISCV_64__: None,
+           },
+       },
+        __MANDREL25__: {
         __LINUX__: {
-            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-linux-jdk.tar.gz",
-            __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-linux-jdk.tar.gz",
+            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-25.0.2.0-Final/mandrel-java25-linux-amd64-25.0.2.0-Final.tar.gz",
+            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-25.0.2.0-Final/mandrel-java25-linux-aarch64-25.0.2.0-Final.tar.gz",
            __RISCV_64__: None,
         },
         __APPLE__: {
-            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-21-x64-macos-jdk.tar.gz",
-            __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-macos-jdk.tar.gz",
-           __RISCV_64__: None,
-        },
-        __WINDOWS__: {
             __X86_64__: None,
-            __ARM__: None,
-           __RISCV_64__: None,
-        },
-    },
-    __MANDREL25__: {
-        __LINUX__: {
-            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.0.0-Final/mandrel-java21-linux-amd64-23.1.0.0-Final.tar.gz",
-            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.1.0.0-Final/mandrel-java21-linux-aarch64-23.1.0.0-Final.tar.gz",
-           __RISCV_64__: None,
-        },
-        __APPLE__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-25.0.2.0-Final/mandrel-java25-macos-aarch64-25.0.2.0-Final.tar.gz",
            __RISCV_64__: None,
         },
         __WINDOWS__: {
@@ -147,30 +147,30 @@ JDK = {
     },
     __MICROSOFT25__: {
         __LINUX__: {
-            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz",
-            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-aarch64.tar.gz",
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-25.0.2-linux-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-25.0.2-linux-aarch64.tar.gz",
            __RISCV_64__: None,
         },
         __APPLE__: {
-            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz",
-            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz",
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-25.0.2-macos-x64.tar.gz",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-25.0.2-macos-aarch64.tar.gz",
            __RISCV_64__: None,
         },
         __WINDOWS__: {
-            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip",
-            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-aarch64.zip",
+            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-25.0.2-windows-x64.zip",
+            __ARM__: "https://aka.ms/download-jdk/microsoft-jjdk-25.0.2-windows-aarch64.zip",
            __RISCV_64__: None,
         },
-    },
+    }
     __ZULU25__: {
         __LINUX__: {
-            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_x64.tar.gz",
-            __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-linux_aarch64.tar.gz",
+            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_x64.tar.gz",
+            __ARM__: "https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_aarch64.tar.gz",
            __RISCV_64__: None,
         },
         __APPLE__: {
-            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_x64.tar.gz",
-            __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_aarch64.tar.gz",
+            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-macosx_x64.tar.gz",
+            __ARM__: "https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-macosx_aarch64.tar.gz",
            __RISCV_64__: None,
         },
         __WINDOWS__: {
@@ -181,54 +181,54 @@ JDK = {
     },
     __TEMURIN25__: {
         __LINUX__: {
-            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12.tar.gz",
-            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.1_12.tar.gz",
-           __RISCV_64__: None,
+            __X86_64__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_linux_hotspot_25.0.2_10.tar.gz",
+            __ARM__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.2_10.tar.gz",
+            __RISCV_64__: null,
         },
         __APPLE__: {
-            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_mac_hotspot_21.0.1_12.tar.gz",
-            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.1_12.tar.gz",
-           __RISCV_64__: None,
+            __X86_64__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_mac_hotspot_25.0.2_10.tar.gz",
+            __ARM__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_aarch64_mac_hotspot_25.0.2_10.tar.gz",
+            __RISCV_64__: null,
         },
         __WINDOWS__: {
-            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.3_9.zip",
-            __ARM__: None,
-           __RISCV_64__: None,
+            __X86_64__: "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_windows_hotspot_25.0.2_10.zip",
+            __ARM__: null,
+            __RISCV_64__: null,
         },
     },
     __SAPMACHINE25__: {
         __LINUX__: {
-            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-x64_bin.tar.gz",
-            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-aarch64_bin.tar.gz",
-           __RISCV_64__: None,
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_linux-aarch64_bin.tar.gz",
+            __RISCV_64__: null,
         },
         __APPLE__: {
-            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-x64_bin.tar.gz",
-            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-aarch64_bin.tar.gz",
-           __RISCV_64__: None,
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_macos-aarch64_bin.tar.gz",
+            __RISCV_64__: null,
         },
         __WINDOWS__: {
-            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_windows-x64_bin.zip",
-            __ARM__: None,
-           __RISCV_64__: None,
+            __X86_64__: "https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.2/sapmachine-jdk-25.0.2_windows-x64_bin.zip",
+            __ARM__: null,
+            __RISCV_64__: null,
         },
     },
 
-    __LIBERICA25__ : {
-        __LINUX__: {
-            __X86_64__  : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-amd64.tar.gz",
-            __ARM__     : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-aarch64.tar.gz",
-            __RISCV_64__: "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-linux-riscv64.tar.gz",
+   __LIBERICA25__: {
+       __LINUX__: {
+           __X86_64__: "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-linux-amd64.tar.gz",
+           __ARM__:    "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-linux-aarch64.tar.gz",
+           __RISCV_64__:"https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-linux-riscv64.tar.gz",
        },
-        __APPLE__ : {
-            __X86_64__:  "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-macos-amd64.tar.gz",
-            __ARM__   : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-macos-aarch64.tar.gz",
-           __RISCV_64__: None,
+       __APPLE__: {
+           __X86_64__: "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-macos-amd64.tar.gz",
+           __ARM__:    "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-macos-aarch64.tar.gz",
+           __RISCV_64__: null,
        },
        __WINDOWS__: {
-           __X86_64__: "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-windows-amd64.zip",
-           __ARM__   : "https://download.bell-sw.com/java/21.0.5+11/bellsoft-jdk21.0.5+11-windows-aarch64.zip",
-           __RISCV_64__: None,
-      },
-    },
+           __X86_64__: "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-windows-amd64.zip",
+           __ARM__:    "https://download.bell-sw.com/java/25.0.2+12/bellsoft-jdk25.0.2+12-windows-aarch64.zip",
+           __RISCV_64__: null,
+       },
+   },
 }

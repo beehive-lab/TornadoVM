@@ -83,7 +83,6 @@ public class OCLHalfFloatPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
                 SubHalfFloatNode subNode = new SubHalfFloatNode(halfFloat1, halfFloat2);
-                //                b.getGraph().addOrUnique(subNode);
                 b.addPush(JavaKind.Object, subNode);
                 return true;
             }
