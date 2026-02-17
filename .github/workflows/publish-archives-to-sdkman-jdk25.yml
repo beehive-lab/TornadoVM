@@ -1,4 +1,4 @@
-name: Release to SDKMAN (JDK 25.0.2)
+name: Release to SDKMAN (JDK 25)
 
 on:
   release:
@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "GitHub release tag (e.g. v2.1.0-jdk25.0.2)"
+        description: "GitHub release tag (e.g. v2.1.0-jdk25)"
         required: true
-        default: "v2.1.0-jdk25.0.2"
+        default: "v2.1.0-jdk25"
       publish:
         description: "Actually publish to SDKMAN (true/false)"
         required: true
@@ -16,14 +16,14 @@ on:
 
 jobs:
   publish-to-sdkman:
-    # Only run for JDK 25.0.2 releases (tags ending with -jdk25.0.2)
+    # Only run for JDK 25 releases (tags ending with -jdk25)
     if: |
       github.repository == 'beehive-lab/TornadoVM' &&
       (
-        (github.event_name == 'release' && endsWith(github.event.release.tag_name, '-jdk25.0.2')) ||
-        (github.event_name == 'workflow_dispatch' && endsWith(inputs.tag, '-jdk25.0.2'))
+        (github.event_name == 'release' && endsWith(github.event.release.tag_name, '-jdk25')) ||
+        (github.event_name == 'workflow_dispatch' && endsWith(inputs.tag, '-jdk25'))
       )
-    name: Publish TornadoVM ${{ matrix.sdk_suffix }} / ${{ matrix.platform }} to SDKMAN (JDK 25.0.2)
+    name: Publish TornadoVM ${{ matrix.sdk_suffix }} / ${{ matrix.platform }} to SDKMAN (JDK 25)
     runs-on: [ self-hosted, Linux, x64 ]
 
     strategy:
@@ -82,7 +82,7 @@ jobs:
           echo "sdkman_version=${SDKMAN_VERSION}" >> "$GITHUB_OUTPUT"
           echo "url=${URL}" >> "$GITHUB_OUTPUT"
 
-          echo "Publishing (JDK 25.0.2):"
+          echo "Publishing (JDK 25):"
           echo "  TAG:            ${TAG}"
           echo "  SDKMAN version: ${SDKMAN_VERSION}"
           echo "  Platform:       ${{ matrix.platform }}"
@@ -101,5 +101,5 @@ jobs:
           url: ${{ steps.vars.outputs.url }}
 
   # NOTE: This workflow does NOT set the SDKMAN default version.
-  # The JDK 21 release remains the default. Users install the JDK 25.0.2
-  # variant explicitly via: sdk install tornadovm X.Y.Z-jdk25.0.2-opencl
+  # The JDK 21 release remains the default. Users install the JDK 25
+  # variant explicitly via: sdk install tornadovm X.Y.Z-jdk25-opencl

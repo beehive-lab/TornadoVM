@@ -1,26 +1,26 @@
-name: Finalize TornadoVM Release (JDK 25.0.2)
+name: Finalize TornadoVM Release (JDK 25)
 
 on:
   pull_request:
     types: [closed]
-    branches: [jdk25.0.2]
+    branches: [jdk25]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version to tag (e.g., 2.0.1-jdk25.0.2)'
+        description: 'Release version to tag (e.g., 2.0.1-jdk25)'
         required: true
         type: string
       next_dev_version:
-        description: 'Next development version (e.g., 2.0.2-jdk25.0.2-dev)'
+        description: 'Next development version (e.g., 2.0.2-jdk25-dev)'
         required: true
         type: string
 
 jobs:
   create-release-tag:
-    # Run when release PR merges into jdk25.0.2 OR manual trigger (upstream repo only)
+    # Run when release PR merges into jdk25 OR manual trigger (upstream repo only)
     if: |
       github.repository == 'beehive-lab/TornadoVM' &&
-      ((github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-jdk25.0.2/')) ||
+      ((github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-jdk25/')) ||
       github.event_name == 'workflow_dispatch')
     runs-on: [self-hosted, Linux, x64]
     permissions:
@@ -38,13 +38,13 @@ jobs:
             echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
           else
             BRANCH="${{ github.event.pull_request.head.ref }}"
-            echo "version=${BRANCH#release-jdk25.0.2/}" >> $GITHUB_OUTPUT
+            echo "version=${BRANCH#release-jdk25/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Checkout jdk25.0.2
+      - name: Checkout jdk25
         uses: actions/checkout@v4
         with:
-          ref: jdk25.0.2
+          ref: jdk25
           fetch-depth: 0
 
       - name: Configure Git
@@ -107,7 +107,7 @@ jobs:
 
             console.log(`✅ Created release: ${release.html_url}`);
 
-  bump-version:
+  bump-jdk25-version:
     if: github.repository == 'beehive-lab/TornadoVM'
     needs: create-release-tag
     runs-on: [self-hosted, Linux, x64]
@@ -119,10 +119,10 @@ jobs:
       MAVEN_HOME: /opt/maven
 
     steps:
-      - name: Checkout jdk25.0.2
+      - name: Checkout jdk25
         uses: actions/checkout@v4
         with:
-          ref: jdk25.0.2
+          ref: jdk25
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -143,10 +143,10 @@ jobs:
             echo "next_version=${{ inputs.next_dev_version }}" >> $GITHUB_OUTPUT
           else
             VERSION="${{ needs.create-release-tag.outputs.version }}"
-            # Strip -jdk25.0.2 suffix, increment patch, re-add suffix + -dev
-            BASE_VERSION="${VERSION%-jdk25.0.2}"
+            # Strip -jdk25 suffix, increment patch, re-add suffix + -dev
+            BASE_VERSION="${VERSION%-jdk25}"
             IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
-            echo "next_version=${MAJOR}.${MINOR}.$((PATCH + 1))-jdk25.0.2-dev" >> $GITHUB_OUTPUT
+            echo "next_version=${MAJOR}.${MINOR}.$((PATCH + 1))-jdk25-dev" >> $GITHUB_OUTPUT
           fi
 
       - name: Bump to next dev version
@@ -155,23 +155,23 @@ jobs:
 
           ./mvnw versions:set -DnewVersion=${NEXT} -DgenerateBackupPoms=false
 
-          sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9.-]*\)\?\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
+          sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
 
           git add -A
           git commit -m "Bump version to ${NEXT} for development"
-          git push origin jdk25.0.2
+          git push origin jdk25
 
       - name: Summary
         run: |
-          echo "## 🎉 Release Finalized (JDK 25.0.2)" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎉 Release Finalized (JDK 25)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Tag created | ✅ v${{ needs.create-release-tag.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Release | ✅ Created |" >> $GITHUB_STEP_SUMMARY
-          echo "| jdk25.0.2 bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| jdk25 bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Remaining steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. \`deploy-maven-central-jdk25.0.2\` workflow publishes to Maven Central" >> $GITHUB_STEP_SUMMARY
-          echo "2. \`publish-archives-to-sdkman-jdk25.0.2\` publishes to SDKMAN" >> $GITHUB_STEP_SUMMARY
+          echo "1. \`deploy-maven-central-jdk25\` workflow publishes to Maven Central" >> $GITHUB_STEP_SUMMARY
+          echo "2. \`publish-archives-to-sdkman-jdk25\` publishes to SDKMAN" >> $GITHUB_STEP_SUMMARY
           echo "3. Announce release" >> $GITHUB_STEP_SUMMARY

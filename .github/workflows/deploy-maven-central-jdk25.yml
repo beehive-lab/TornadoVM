@@ -1,23 +1,23 @@
-name: Deploy to Maven Central (JDK 25.0.2)
+name: Deploy to Maven Central (JDK 25)
 
 on:
   push:
     tags:
-      - 'v*-jdk25.0.2'
+      - 'v*-jdk25'
   workflow_run:
-    workflows: ["Finalize TornadoVM Release (JDK 25.0.2)"]
+    workflows: ["Finalize TornadoVM Release (JDK 25)"]
     types: [completed]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to deploy (e.g., v2.1.0-jdk25.0.2)'
+        description: 'Tag to deploy (e.g., v2.1.0-jdk25)'
         required: false
         type: string
 
 jobs:
   deploy:
     if: github.repository == 'beehive-lab/TornadoVM'
-    name: Deploy to Maven Central (JDK 25.0.2)
+    name: Deploy to Maven Central (JDK 25)
     runs-on: [self-hosted, Linux, x64]
     timeout-minutes: 15
     env:
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'push' && github.ref || (inputs.tag != '' && inputs.tag || 'jdk25.0.2') }}
+          ref: ${{ github.event_name == 'push' && github.ref || (inputs.tag != '' && inputs.tag || 'jdk25') }}
 
       - name: Setup environment
         run: |
