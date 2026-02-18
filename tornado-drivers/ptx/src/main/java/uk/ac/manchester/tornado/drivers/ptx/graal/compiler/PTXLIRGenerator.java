@@ -391,7 +391,6 @@ public class PTXLIRGenerator extends LIRGenerator {
         LIRKind kind = LIRKind.value(PTXKind.PRED);
         Variable predicate = newVariable(kind);
         Constant[] constants = strategy.getKeyConstants();
-        System.out.println("XXXXXX" + constants.length);
         for (int i = 0; i < keyTargets.length; i++) {
             append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, key, new ConstantValue(LIRKind.value(PTXKind.S32), constants[i]))));
             emitConditionalBranch(keyTargets[i], predicate, false, false);
