@@ -2,7 +2,7 @@ open module tornado.drivers.common {
     requires transitive jdk.internal.vm.ci;
     requires transitive jdk.graal.compiler;
     requires transitive tornado.runtime;
-    requires org.graalvm.word;  // Add this line
+    requires org.graalvm.word;
 
     exports uk.ac.manchester.tornado.drivers.providers;
     exports uk.ac.manchester.tornado.drivers.common;
