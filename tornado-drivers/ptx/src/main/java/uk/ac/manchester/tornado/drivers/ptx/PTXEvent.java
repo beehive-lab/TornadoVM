@@ -28,6 +28,26 @@ import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
+/**
+ * A <b>profiling/timing event</b> in the PTX backend.
+ *
+ * <p>Wraps a CUDA before/after event pair recorded around a single GPU operation
+ * (kernel launch, DtoH transfer, HtoD transfer, etc.). The elapsed time between
+ * the two events gives the operation's GPU-side duration.
+ *
+ * <p>These events are managed by {@link PTXEventPool} (one pool per {@link PTXStream}).
+ * Each event has a <b>local event ID</b> — an index into its owning pool.
+ *
+ * <p>In multi-stream mode, a separate {@code EventRegistry} in {@link PTXDeviceContext}
+ * assigns <b>global event IDs</b> that the TornadoVM interpreter uses for dependency
+ * tracking. The registry maps each global ID to (streamType, localEventId) so that
+ * the correct PTXEvent can be resolved from the correct stream's pool.
+ *
+ * <p>PTXEvents also serve as cross-stream synchronization points via
+ * {@link #waitOnStream(byte[])} which calls {@code cuStreamWaitEvent} using
+ * the afterEvent handle. This provides fine-grained, event-level cross-stream
+ * dependencies without creating additional CUDA events.
+ */
 public class PTXEvent implements Event {
 
     /**
