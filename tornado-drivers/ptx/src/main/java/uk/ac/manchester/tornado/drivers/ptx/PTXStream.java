@@ -44,6 +44,7 @@ public class PTXStream {
     private final byte[] streamPool;
     private final PTXEventPool ptxEventPool;
     private boolean isDestroy;
+    private boolean capturing = false;
 
     public PTXStream() {
         streamPool = cuCreateStream();
@@ -114,6 +115,13 @@ public class PTXStream {
 
     private static native byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream,
             byte[] args);
+
+    private static native long cuStreamBeginCapture(byte[] streamWrapper, int mode);
+    private static native byte[] cuStreamEndCapture(byte[] streamWrapper);
+    private static native byte[] cuGraphInstantiate(byte[] graphWrapper);
+    private static native long cuGraphLaunch(byte[] graphExecWrapper, byte[] streamWrapper);
+    private static native long cuGraphExecDestroy(byte[] graphExecWrapper);
+    private static native long cuGraphDestroy(byte[] graphWrapper);
 
     /**
      * This JNI call will create a CUDA Stream through an API call to
@@ -369,5 +377,59 @@ public class PTXStream {
 
     public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType) {
         return NativePTXStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeofType);
+    }
+
+    /**
+     * Put this stream into capture mode. All subsequent CUDA operations
+     * submitted to this stream will be recorded as graph nodes.
+     */
+    public void beginGraphCapture() {
+        long result = cuStreamBeginCapture(streamPool, 0);
+        if (result != 0) {
+            throw new RuntimeException("Failed to begin capture. Error: " + result);
+        }
+        capturing = true;
+    }
+
+    public long endGraphCaptureAndInstantiate() {
+        capturing = false;
+        byte[] graphWrapper = cuStreamEndCapture(streamPool);
+        byte[] graphExecWrapper = cuGraphInstantiate(graphWrapper);
+        cuGraphDestroy(graphWrapper);
+        return nativeHandleToLong(graphExecWrapper);
+    }
+
+    public boolean isCapturing() {
+        return capturing;
+    }
+
+    /**
+     * Launch a previously instantiated graph on this stream.
+     */
+    public int launchGraph(long graphExecHandle) {
+        byte[] graphExecWrapper = longToNativeHandle(graphExecHandle);
+        cuGraphLaunch(graphExecWrapper, streamPool);
+        return registerEvent(EventDescriptor.DESC_SYNC_BARRIER);
+    }
+
+    /**
+     * Destroy an instantiated graph.
+     */
+    public static void destroyGraph(long graphExecHandle) {
+        byte[] graphExecWrapper = longToNativeHandle(graphExecHandle);
+        cuGraphExecDestroy(graphExecWrapper);
+    }
+
+    // ─── Handle conversion helpers ───
+    private static long nativeHandleToLong(byte[] handle) {
+        return java.nio.ByteBuffer.wrap(handle)
+                .order(java.nio.ByteOrder.LITTLE_ENDIAN).getLong();
+    }
+
+    private static byte[] longToNativeHandle(long value) {
+        byte[] handle = new byte[8];
+        java.nio.ByteBuffer.wrap(handle)
+                .order(java.nio.ByteOrder.LITTLE_ENDIAN).putLong(value);
+        return handle;
     }
 }
