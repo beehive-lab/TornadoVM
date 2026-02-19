@@ -722,7 +722,6 @@ public class MetalCodeCache {
         logger.debug("\tMetal compiler flags = %s", meta.getCompilerFlags(TornadoVMBackendType.METAL));
         program.build(meta.getCompilerFlags(TornadoVMBackendType.METAL));
         final MetalBuildStatus status = program.getStatus(deviceContext.getDeviceId());
-        System.out.println("DEBUG: Metal compilation status = " + status.toString());
         logger.debug("\tMetal compilation status = %s", status.toString());
 
         if (status == MetalBuildStatus.CL_BUILD_ERROR) {
@@ -735,12 +734,11 @@ public class MetalCodeCache {
         MetalKernel kernel = null;
         if (status == CL_BUILD_SUCCESS) {
             kernel = program.clCreateKernel(entryPoint);
-            System.out.println("DEBUG: clCreateKernel returned kernel=" + kernel + " for entryPoint=" + entryPoint);
             kernelAvailable = true;
         } else {
-            System.out.println("DEBUG: Kernel not created - status is " + status + " (not CL_BUILD_SUCCESS)");
+            logger.debug("Kernel not created - status is %s", status);
             final String log = program.getBuildLog(deviceContext.getDeviceId());
-            System.out.println("DEBUG: Build log: " + log);
+            logger.debug("Build log: %s", log);
         }
 
         final MetalInstalledCode code = new MetalInstalledCode(entryPoint, source, (MetalDeviceContext) deviceContext, program, kernel, isSPIRVBinary);

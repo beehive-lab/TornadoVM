@@ -541,22 +541,15 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     @autoreleasepool {
         id<MTLBuffer> buf = (__bridge id<MTLBuffer>)(void*) ptr;
-        if (!buf) { fprintf(stderr, "JNI writeToDevice: buf is null\n"); return (jlong)-1; }
+        if (!buf) return (jlong)-1;
         void *dst = (void *)[buf contents];
-        if (!dst) { fprintf(stderr, "JNI writeToDevice: dst is null\n"); return (jlong)-1; }
+        if (!dst) return (jlong)-1;
 
         void *src = (void *)(uintptr_t)hostPointer;
-        if (!src) { fprintf(stderr, "JNI writeToDevice: src is null\n"); return (jlong)-1; }
+        if (!src) return (jlong)-1;
 
         void *src_ptr = (void *)((char *)src + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
-        fprintf(stderr, "JNI writeToDevice: %lld bytes, hostOff=%lld, devOff=%lld, bufContents=%p, first4bytes=",
-                (long long)bytes, (long long)hostOffset, (long long)offset, dst);
-        if (bytes >= 4) {
-            int32_t first; memcpy(&first, src_ptr, 4);
-            fprintf(stderr, "%d", first);
-        }
-        fprintf(stderr, "\n");
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
         return (jlong)0;
     }
@@ -578,13 +571,6 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 
                 void *src_ptr = (void *)((char *)src + (size_t)offset);
                 void *dst_ptr = (void *)((char *)dst + (size_t)hostOffset);
-                fprintf(stderr, "JNI readFromDevice: %lld bytes, devOff=%lld, hostOff=%lld, first4devBytes=",
-                        (long long)bytes, (long long)offset, (long long)hostOffset);
-                if (bytes >= 4) {
-                    int32_t first; memcpy(&first, src_ptr, 4);
-                    fprintf(stderr, "%d", first);
-                }
-                fprintf(stderr, "\n");
                 memcpy(dst_ptr, src_ptr, (size_t)bytes);
                 return (jlong)0;
         }
@@ -1451,30 +1437,18 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueNDRangeKe
         [encoder setComputePipelineState:kw.pipeline];
 
         // bind arguments
-        fprintf(stderr, "JNI dispatch: binding %lu args, gx=%lu gy=%lu gz=%lu\n",
-                (unsigned long)kw.args.count, (unsigned long)gx, (unsigned long)gy, (unsigned long)gz);
         for (NSUInteger i = 0; i < kw.args.count; i++) {
             id obj = [kw.args objectAtIndex:i];
-            if ((NSNull *)obj == [NSNull null]) { fprintf(stderr, "  arg[%lu]: NULL\n", (unsigned long)i); continue; }
+            if ((NSNull *)obj == [NSNull null]) continue;
             ArgItem *ai = (ArgItem *)obj;
             if (ai.kind == 0) {
                 id<MTLBuffer> mb = (id<MTLBuffer>)ai.obj;
-                if (mb) {
-                    [encoder setBuffer:mb offset:0 atIndex:(NSUInteger)i];
-                    // Dump first few ints of buffer for debugging
-                    int32_t *contents = (int32_t*)[mb contents];
-                    fprintf(stderr, "  arg[%lu]: buffer len=%lu first8ints=[%d,%d,%d,%d,%d,%d,%d,%d]\n",
-                            (unsigned long)i, (unsigned long)[mb length],
-                            contents[0], contents[1], contents[2], contents[3],
-                            contents[4], contents[5], contents[6], contents[7]);
-                }
+                if (mb) [encoder setBuffer:mb offset:0 atIndex:(NSUInteger)i];
             } else if (ai.kind == 1) {
                 NSData *d = (NSData *)ai.obj;
                 if (d && ai.size > 0) [encoder setBytes:[d bytes] length:ai.size atIndex:(NSUInteger)i];
-                fprintf(stderr, "  arg[%lu]: bytes size=%lu\n", (unsigned long)i, (unsigned long)ai.size);
             } else if (ai.kind == 2) {
                 [encoder setThreadgroupMemoryLength:ai.size atIndex:(NSUInteger)i];
-                fprintf(stderr, "  arg[%lu]: threadgroup size=%lu\n", (unsigned long)i, (unsigned long)ai.size);
             }
         }
 

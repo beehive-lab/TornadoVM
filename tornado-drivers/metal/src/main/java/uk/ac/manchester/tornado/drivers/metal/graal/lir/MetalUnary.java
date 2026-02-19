@@ -274,7 +274,8 @@ public class MetalUnary {
 
         @Override
         public String toString() {
-            return String.format("%s(CLK_%s_MEM_FENCE)", opcode.toString(), flags.toString().toUpperCase());
+            String metalFlags = (flags == MetalMemFenceFlags.LOCAL) ? "mem_flags::mem_threadgroup" : "mem_flags::mem_device";
+            return String.format("threadgroup_barrier(%s)", metalFlags);
         }
 
     }

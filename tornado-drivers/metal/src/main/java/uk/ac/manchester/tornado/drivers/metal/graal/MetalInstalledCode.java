@@ -273,7 +273,7 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
             }
 
             // Metal: use setArgRef for device buffer parameters, setArg for scalar inline data
-            if (argInfo != null && argInfo.type == MetalKernel.KernelArgInfo.ArgType.BUFFER) {
+            if (argInfo != null && argInfo.type == MetalKernel.KernelArgInfo.ArgType.BUFFER && arg.getValue() instanceof Long) {
                 // Device buffer - arg value is a Long containing the MTLBuffer pointer
                 kernel.setArgRef(nativeArgIndex, (Long) arg.getValue());
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
@@ -288,10 +288,9 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
     }
 
     private void printDebugLaunchInfo(final TaskDataContext meta) {
-        System.out.println("Running on: ");
-        System.out.println("\tPlatform: " + meta.getXPUDevice().getPlatformName());
-        if (meta.getXPUDevice() instanceof MetalTornadoDevice) {
-            System.out.println("\tDevice  : " + ((MetalTornadoDevice) meta.getXPUDevice()).getPhysicalDevice().getDeviceName());
+        logger.info("Running on: Platform=%s", meta.getXPUDevice().getPlatformName());
+        if (meta.getXPUDevice() instanceof MetalTornadoDevice metalDevice) {
+            logger.info("Device=%s", metalDevice.getPhysicalDevice().getDeviceName());
         }
     }
 
@@ -342,7 +341,6 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
     private int submitSequential(long executionPlanId, final TaskDataContext meta) {
         final int task;
 
-        System.out.println("DEBUG: submitSequential called");
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }

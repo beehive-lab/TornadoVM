@@ -99,7 +99,6 @@ public class MetalContext implements MetalContextInterface {
         try {
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
-            System.out.println("Device Version: " + device.getVersion());
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
 
             logger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());

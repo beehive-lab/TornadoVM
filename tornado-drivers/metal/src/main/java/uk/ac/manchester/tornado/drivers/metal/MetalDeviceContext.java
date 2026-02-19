@@ -188,7 +188,6 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     public int enqueueNDRangeKernel(long executionPlanId, MetalKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] waitEvents) {
-        System.out.println("DEBUG: MetalDeviceContext.enqueueNDRangeKernel called");
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         MetalEventPool eventPool = getMetalEventPool(executionPlanId);
         return eventPool.registerEvent(commandQueue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, eventPool.serialiseEvents(waitEvents, commandQueue)

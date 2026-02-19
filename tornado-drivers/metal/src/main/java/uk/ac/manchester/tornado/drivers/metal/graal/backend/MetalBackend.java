@@ -302,13 +302,20 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                 asm.emitLine("");
             }
 
+            // Metal Shading Language preamble
+            asm.emitLine("#include <metal_stdlib>");
+            asm.emitLine("using namespace metal;");
+            asm.emitLine("");
+
             asm.emit("%s void %s(%s", MetalAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
             int nextBufferIdx = emitMethodParameters(asm, method, incomingArguments, true);
-            // Add a Metal system value for thread position and a small device-side
-            // uint array '_global_sizes' which holds the global work sizes [x,y,z].
-            // The native enqueue will allocate and bind a 3-element MTLBuffer for this.
-            // Explicit [[buffer(N)]] ensures the index matches the Java-side arg index.
-            asm.emit(", uint3 _thread_position_in_grid [[thread_position_in_grid]], device uint* _global_sizes [[buffer(%d)]]", nextBufferIdx);
+            // Metal system values for thread/threadgroup positions and sizes.
+            // These are always declared so reduction kernels can use them.
+            asm.emit(", uint3 _thread_position_in_grid [[thread_position_in_grid]]");
+            asm.emit(", uint3 _thread_position_in_threadgroup [[thread_position_in_threadgroup]]");
+            asm.emit(", uint3 _threadgroup_position_in_grid [[threadgroup_position_in_grid]]");
+            asm.emit(", uint3 _local_size [[threads_per_threadgroup]]");
+            asm.emit(", device uint* _global_sizes [[buffer(%d)]]", nextBufferIdx);
             asm.emitLine(")");
 
             asm.beginScope();

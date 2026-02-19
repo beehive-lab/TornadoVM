@@ -771,10 +771,10 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryIntrinsic LOG = new MetalUnaryIntrinsic("log");
         public static final MetalUnaryIntrinsic RADIANS = new MetalUnaryIntrinsic("radians");
         public static final MetalUnaryIntrinsic RSQRT = new MetalUnaryIntrinsic("rsqrt");
-        public static final MetalUnaryIntrinsic NATIVE_COS = new MetalUnaryIntrinsic("native_cos");
-        public static final MetalUnaryIntrinsic NATIVE_SIN = new MetalUnaryIntrinsic("native_sin");
-        public static final MetalUnaryIntrinsic NATIVE_SQRT = new MetalUnaryIntrinsic("native_sqrt");
-        public static final MetalUnaryIntrinsic NATIVE_TAN = new MetalUnaryIntrinsic("native_tan");
+        public static final MetalUnaryIntrinsic NATIVE_COS = new MetalUnaryIntrinsic("cos");
+        public static final MetalUnaryIntrinsic NATIVE_SIN = new MetalUnaryIntrinsic("sin");
+        public static final MetalUnaryIntrinsic NATIVE_SQRT = new MetalUnaryIntrinsic("sqrt");
+        public static final MetalUnaryIntrinsic NATIVE_TAN = new MetalUnaryIntrinsic("tan");
         public static final MetalUnaryIntrinsic SIN = new MetalUnaryIntrinsic("sin");
         public static final MetalUnaryIntrinsic COS = new MetalUnaryIntrinsic("cos");
         public static final MetalUnaryIntrinsic TAN = new MetalUnaryIntrinsic("tan");
@@ -915,6 +915,14 @@ public final class MetalAssembler extends Assembler {
                     asm.emit(asm.toString(x));
                     asm.emit("]");
                 }
+                return;
+            }
+
+            // MSL does not have radians(); inline the conversion
+            if (opcode.equals("radians")) {
+                asm.emit("((");
+                asm.emitValueOrOp(crb, x);
+                asm.emit(") * M_PI_F / 180.0f)");
                 return;
             }
 

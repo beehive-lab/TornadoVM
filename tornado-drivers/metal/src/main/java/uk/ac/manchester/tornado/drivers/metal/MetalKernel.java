@@ -78,7 +78,6 @@ public class MetalKernel {
     }
 
     public void setArgRef(int index, long devicePtr) {
-        System.out.println("Calling the new function");
         try {
             clSetKernelArgRef(oclKernelID, index, devicePtr);
         } catch (MetalException e) {

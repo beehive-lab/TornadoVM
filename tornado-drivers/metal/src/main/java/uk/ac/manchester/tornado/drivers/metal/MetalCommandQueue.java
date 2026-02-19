@@ -204,7 +204,6 @@ public class MetalCommandQueue extends CommandQueue {
 
     public long enqueueNDRangeKernel(MetalKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] waitEvents) {
         try {
-            System.out.println("Java: invoking native clEnqueueNDRangeKernel");
             return clEnqueueNDRangeKernel(commandQueuePtr, kernel.getOclKernelID(), dim, (metalVersion > 100) ? globalWorkOffset : null, globalWorkSize, localWorkSize, waitEvents);
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -315,7 +314,6 @@ public class MetalCommandQueue extends CommandQueue {
     public long enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, int[] array, long hostOffset, long[] waitEvents) {
         guarantee(array != null, "null array");
         try {
-            System.out.println("Java: invoking native readArrayFromDevice (int[])");
             return readArrayFromDevice(commandQueuePtr, array, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
         } catch (MetalException e) {
             logger.error(e.getMessage());
