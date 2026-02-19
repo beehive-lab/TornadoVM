@@ -833,25 +833,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public boolean isSPIRVSupported() {
-        // An Metal device supports SPIR-V if the version is >= 2.1
-        String version = device.getDeviceContext().getPlatformContext().getPlatform().getVersion();
-
-        if (version.contains("CUDA")) {
-            // Currently, the CUDA platform does not allow dispatching SPIR-V kernels
-            return false;
-        }
-
-        Matcher matcher = NAME_PATTERN.matcher(version);
-        int majorVersion = 0;
-        int minorVersion = 0;
-        if (matcher.find()) {
-            majorVersion = Integer.parseInt(matcher.group(1));
-            minorVersion = Integer.parseInt(matcher.group(2));
-        }
-        if (majorVersion > 2) {
-            return true;
-        }
-        return majorVersion == 2 && minorVersion >= 1;
+        return false;
     }
 
     @Override

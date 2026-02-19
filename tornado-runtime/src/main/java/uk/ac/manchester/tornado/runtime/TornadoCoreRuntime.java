@@ -154,13 +154,9 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     private TornadoAcceleratorBackend[] loadBackends() {
         ServiceLoader<TornadoBackendProvider> loader = ServiceLoader.load(TornadoBackendProvider.class);
-        for (TornadoBackendProvider p : loader) {
-            System.out.println("provider = " + p.getClass());
-        }
         List<TornadoBackendProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
         TornadoAcceleratorBackend[] tornadoAcceleratorBackends = new TornadoAcceleratorBackend[TornadoBackends.values().length];
         int index = 0;
-        System.out.println("providerList size = " + providerList.size());
         for (TornadoBackendProvider provider : providerList) {
             if (TornadoOptions.FULL_DEBUG) {
                 System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());

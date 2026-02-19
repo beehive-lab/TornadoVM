@@ -85,7 +85,7 @@ public class MetalDevice implements MetalTargetDevice {
         this.buffer = ByteBuffer.allocate(MAX_BUFFER_SIZE);
         this.buffer.order(Metal.BYTE_ORDER);
         initialValues();
-        // obtainDeviceProperties();
+         obtainDeviceProperties();
     }
 
     private void initialValues() {
@@ -254,6 +254,7 @@ public class MetalDevice implements MetalTargetDevice {
                 return globalMemorySize;
             }
         } catch (UnsatisfiedLinkError e) {
+            throw new RuntimeException("link error on native");
             // native library not available, fall through to fallback
         }
 
