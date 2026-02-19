@@ -23,9 +23,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
@@ -42,17 +49,6 @@ import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
-
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.StackSlot;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
@@ -73,6 +69,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 /**
  * It traverses the OCL HIR and generates OCL LIR.
  */
@@ -83,39 +82,21 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
         super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLBarrierSetLIRGenerator() {
-
         }, new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
     }
 
     public static OCLBinaryOp getConditionalOp(Condition condition) {
-        switch (condition) {
-            case AE:
-            case GE:
-                return OCLBinaryOp.RELATIONAL_GTE;
-            case AT:
-            case GT:
-                return OCLBinaryOp.RELATIONAL_GT;
-
-            case EQ:
-                return OCLBinaryOp.RELATIONAL_EQ;
-
-            case BE:
-            case LE:
-                return OCLBinaryOp.RELATIONAL_LTE;
-
-            case BT:
-            case LT:
-                return OCLBinaryOp.RELATIONAL_LT;
-            case NE:
-                return OCLBinaryOp.RELATIONAL_NE;
-            default:
-                shouldNotReachHere();
-                break;
-
-        }
-        return null;
+        return switch (condition) {
+            case AE, GE -> OCLBinaryOp.RELATIONAL_GTE;
+            case AT, GT -> OCLBinaryOp.RELATIONAL_GT;
+            case EQ -> OCLBinaryOp.RELATIONAL_EQ;
+            case BE, LE -> OCLBinaryOp.RELATIONAL_LTE;
+            case BT, LT -> OCLBinaryOp.RELATIONAL_LT;
+            case NE -> OCLBinaryOp.RELATIONAL_NE;
+            default -> throw new IllegalStateException("Unexpected condition: " + condition);
+        };
     }
 
     @Override

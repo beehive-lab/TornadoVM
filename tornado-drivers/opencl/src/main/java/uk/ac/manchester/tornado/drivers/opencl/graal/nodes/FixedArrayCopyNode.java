@@ -33,18 +33,17 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 /**
  * This node generates a pointer copy between two arrays in private memory.
  */
 @NodeInfo
-public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable  {
+public class FixedArrayCopyNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<FixedArrayCopyNode> TYPE = NodeClass.create(FixedArrayCopyNode.class);
 

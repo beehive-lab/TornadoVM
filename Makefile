@@ -99,4 +99,9 @@ test-slam:
 docs:
 	sphinx-build -M html docs/source/ docs/build
 
-.PHONY: docs
+# Generate IntelliJ IDEA project files (developer-only)
+# Prerequisites: build TornadoVM first and source setvars.sh
+intellijinit:
+	bin/tornadovm-intellij-init
+
+.PHONY: docs intellijinit

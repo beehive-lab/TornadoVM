@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2023, 2026, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,6 +84,16 @@ def select_tornado_sdk(tornado_sdk_dir):
         elif os.path.exists(zip_file):
             return os.path.getmtime(zip_file)
         elif os.path.isdir(dir_path):
+            # For directories, check the inner SDK directory for more accurate mtime
+            # Structure: dist/tornadovm-X.Y.Z-backend-platform/tornadovm-X.Y.Z-backend/
+            for item in os.listdir(dir_path):
+                inner_path = os.path.join(dir_path, item)
+                if item.startswith('tornadovm-') and os.path.isdir(inner_path):
+                    # Use the mtime of the etc/tornado.backend file if it exists
+                    backend_file = os.path.join(inner_path, "etc", "tornado.backend")
+                    if os.path.exists(backend_file):
+                        return os.path.getmtime(backend_file)
+                    return os.path.getmtime(inner_path)
             return os.path.getmtime(dir_path)
         return 0
 
@@ -158,20 +168,18 @@ def update_tornado_paths():
 
     # Remove existing 'bin' and 'sdk' links
     for symlink in ["bin", "sdk"]:
-        if os.path.exists(symlink) or os.path.islink(symlink):
+        if os.name == 'nt':
+            # On Windows, always try to remove junctions unconditionally.
+            # os.path.exists() returns False for broken junctions (target doesn't exist),
+            # but the junction file itself still exists and blocks mklink.
+            # Using cmd /c ensures proper command execution.
+            subprocess.run(f'cmd /c rmdir "{symlink}" 2>nul', shell=True)
+        elif os.path.exists(symlink) or os.path.islink(symlink):
             try:
-                if os.name == 'nt':
-                    # On Windows, use rmdir for directory junctions
-                    if os.path.isdir(symlink):
-                        os.rmdir(symlink)
-                    else:
-                        os.unlink(symlink)
-                else:
-                    # On Unix-like systems, unlink works for both files and symlinks
-                    os.unlink(symlink)
-            except (FileNotFoundError, PermissionError, OSError):
-                # Ignore errors if the link cannot be removed
-                pass
+                # On Unix-like systems, unlink works for both files and symlinks
+                os.unlink(symlink)
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                print(f"Warning: Could not remove existing link '{symlink}': {e}")
 
     # Change back to the parent directory
     os.chdir("..")
@@ -199,8 +207,18 @@ def update_tornado_paths():
 
     # Create symbolic links 'bin' and 'sdk'
     if os.name == 'nt':
-        subprocess.run(["mklink", "/j", os.path.join("bin", "bin"), os.path.join(sdk_path, "bin")], shell=True)
-        subprocess.run(["mklink", "/j", os.path.join("bin", "sdk"), sdk_path], shell=True)
+        bin_link = os.path.join("bin", "bin")
+        sdk_link = os.path.join("bin", "sdk")
+        bin_target = os.path.join(sdk_path, "bin")
+
+        # Create junctions using cmd /c mklink
+        result1 = subprocess.run(f'cmd /c mklink /j "{bin_link}" "{bin_target}"', shell=True, capture_output=True, text=True)
+        if result1.returncode != 0:
+            print(f"Error creating bin junction: {result1.stderr.strip()}")
+
+        result2 = subprocess.run(f'cmd /c mklink /j "{sdk_link}" "{sdk_path}"', shell=True, capture_output=True, text=True)
+        if result2.returncode != 0:
+            print(f"Error creating sdk junction: {result2.stderr.strip()}")
     else:
         os.symlink(os.path.join(sdk_path, "bin"), "bin/bin")
         os.symlink(sdk_path, "bin/sdk")

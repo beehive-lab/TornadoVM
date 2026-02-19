@@ -67,3 +67,8 @@ tests-uncompressed:
 
 test-slam:
 	%TORNADOVM_HOME%\bin\tornado-test.exe -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+
+# Generate IntelliJ IDEA project files (developer-only)
+# Prerequisites: build TornadoVM first and run setvars.cmd
+intellijinit:
+	python bin\tornadovm-intellij-init

@@ -61,6 +61,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInliningException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -116,6 +117,9 @@ public class TornadoSketcher {
                 e.printStackTrace();
             }
             final Throwable cause = e.getCause();
+            if (cause instanceof TornadoInliningException inliningException) {
+                throw inliningException;
+            }
             if (cause instanceof TornadoRuntimeException runtimeException) {
                 throw runtimeException;
             }
@@ -191,7 +195,11 @@ public class TornadoSketcher {
             if (TornadoOptions.DEBUG) {
                 e.printStackTrace();
             }
-            throw new TornadoBailoutRuntimeException("Unable to build sketch for method: " + resolvedMethod.getName() + " (" + e.getMessage() + ")");
+            if (e instanceof TornadoInliningException) {
+                throw new TornadoInliningException(e.getMessage());
+            } else {
+                throw new TornadoBailoutRuntimeException("Unable to build sketch for method: " + resolvedMethod.getName() + " (" + e.getMessage() + ")");
+            }
         }
     }
 
@@ -265,7 +273,11 @@ public class TornadoSketcher {
             try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
                 return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
             } catch (Throwable e) {
-                throw getDebugContext().handle(e);
+                if (e instanceof TornadoInliningException) {
+                    throw (TornadoInliningException) e;
+                } else {
+                    throw getDebugContext().handle(e);
+                }
             }
         }
     }
