@@ -28,6 +28,26 @@ import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
+/**
+ * A <b>profiling/timing event</b> in the PTX backend.
+ *
+ * <p>Wraps a CUDA before/after event pair recorded around a single GPU operation
+ * (kernel launch, DtoH transfer, HtoD transfer, etc.). The elapsed time between
+ * the two events gives the operation's GPU-side duration.
+ *
+ * <p>These events are managed by {@link PTXEventPool} (one pool per {@link PTXStream}).
+ * Each event has a <b>local event ID</b> — an index into its owning pool.
+ *
+ * <p>In multi-stream mode, a separate {@code EventRegistry} in {@link PTXDeviceContext}
+ * assigns <b>global event IDs</b> that the TornadoVM interpreter uses for dependency
+ * tracking. The registry maps each global ID to (streamType, localEventId) so that
+ * the correct PTXEvent can be resolved from the correct stream's pool.
+ *
+ * <p>PTXEvents also serve as cross-stream synchronization points via
+ * {@link #waitOnStream(byte[])} which calls {@code cuStreamWaitEvent} using
+ * the afterEvent handle. This provides fine-grained, event-level cross-stream
+ * dependencies without creating additional CUDA events.
+ */
 public class PTXEvent implements Event {
 
     /**
@@ -47,16 +67,28 @@ public class PTXEvent implements Event {
     private final String name;
     private boolean isCompleted;
 
-    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
+    // Track which stream this event was recorded on
+    private final PTXStreamType sourceStreamType;
+
+    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId, PTXStreamType streamType) {
         eventWrapper = bytes;
         this.description = descriptorId.getNameDescription();
         this.name = String.format("%s: ", description);
         isCompleted = false;
+        this.sourceStreamType = streamType;
+    }
+
+    // Backward compatible constructor
+    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
+        this(bytes, descriptorId, PTXStreamType.DEFAULT);
     }
 
     private native static long cuEventDestroy(byte[] eventWrapper);
 
     private native static void tornadoCUDAEventsSynchronize(byte[][] wrappers);
+
+    // Native method for cross-stream synchronization
+    protected static native void cuStreamWaitEvent(byte[] targetStream, byte[] event);
 
     private native static long cuEventQuery(byte[] eventWrapper);
 
@@ -153,9 +185,24 @@ public class PTXEvent implements Event {
         return getElapsedTimeInSeconds();
     }
 
+    public PTXStreamType getSourceStreamType() {
+        return sourceStreamType;
+    }
+
     @Override
     public void waitOn() {
         waitForEvents(0);
+    }
+
+    /**
+     * === Cross-stream synchronization ===
+     * Make another stream wait for this event to complete.
+     * Uses the afterEvent since that marks operation completion.
+     *
+     * @param targetStreamHandle the stream that should wait
+     */
+    public void waitOnStream(byte[] targetStreamHandle) {
+        cuStreamWaitEvent(targetStreamHandle, eventWrapper[1]);  // afterEvent
     }
 
     public void destroy() {

@@ -309,7 +309,7 @@ public class TornadoVMInterpreter {
                 if (isWarmup) {
                     continue;
                 }
-                transferHostToDeviceOnce(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+                lastEvent = transferHostToDeviceOnce(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
@@ -319,7 +319,7 @@ public class TornadoVMInterpreter {
                 if (isWarmup) {
                     continue;
                 }
-                transferHostToDeviceAlways(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
+                lastEvent = transferHostToDeviceAlways(logBuilder, objectIndex, offset, eventId, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 final int eventId = bytecodeResult.getInt();
@@ -575,11 +575,11 @@ public class TornadoVMInterpreter {
         return -1;
     }
 
-    private void transferHostToDeviceOnce(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
+    private int transferHostToDeviceOnce(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
-            return;
+            return -1;
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
@@ -611,13 +611,19 @@ public class TornadoVMInterpreter {
                 timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
             }
         }
+
+        // return the eventId of the transfer event
+        if (allEvents != null && !allEvents.isEmpty()) {
+            return allEvents.getLast();
+        }
+        return -1;
     }
 
-    private void transferHostToDeviceAlways(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
+    private int transferHostToDeviceAlways(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
-            return;
+            return -1;
         }
 
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
@@ -645,6 +651,12 @@ public class TornadoVMInterpreter {
                 timeProfiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
             }
         }
+
+        // return the eventId of the transfer event
+        if (allEvents != null && !allEvents.isEmpty()) {
+            return allEvents.getLast();
+        }
+        return -1;
     }
 
     private int transferDeviceToHost(StringBuilder logBuilder, final int objectIndex, final long offset, final int eventId, final long sizeBatch, final int[] eventWaitList) {

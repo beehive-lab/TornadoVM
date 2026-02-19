@@ -43,11 +43,17 @@ public class PTXStream {
 
     private final byte[] streamPool;
     private final PTXEventPool ptxEventPool;
+    private final PTXStreamType streamType;
     private boolean isDestroy;
 
     public PTXStream() {
+        this(PTXStreamType.DEFAULT);
+    }
+
+    public PTXStream(PTXStreamType type) {
         streamPool = cuCreateStream();
         this.ptxEventPool = new PTXEventPool(EVENT_WINDOW);
+        this.streamType = type;
     }
 
     //@formatter:off
@@ -127,14 +133,17 @@ public class PTXStream {
 
     private static native long cuStreamSynchronize(byte[] streamWrapper);
 
-    private static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
+    protected static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
     private int registerEvent(EventDescriptor descriptorId) {
-        return ptxEventPool.registerEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamPool), descriptorId);
+        return ptxEventPool.registerEvent(
+                cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamPool),
+                descriptorId,
+                streamType);
     }
 
     private int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId) {
-        return ptxEventPool.registerEvent(eventWrapper, descriptorId);
+        return ptxEventPool.registerEvent(eventWrapper, descriptorId, streamType);
     }
 
     public void reset() {
@@ -159,17 +168,22 @@ public class PTXStream {
 
     private void waitForEvents(int[] localEventIds) {
         if (localEventIds == null) {
+            // we don't use dependencies (VM_USE_DEPS=false) -> DEFAULT stream -> no need for wait
             return;
         }
 
         ArrayList<PTXEvent> events = new ArrayList<>();
         for (int localEventId : localEventIds) {
+            if (localEventId == -1) {
+                // we use dependencies (VM_USE_DEPS=true) so we need to filter out independent events (with id=-1)
+                continue;
+            }
             PTXEvent cuEvent = this.ptxEventPool.getEvent(localEventId);
             if (cuEvent != null) {
                 events.add(cuEvent);
             }
         }
-        PTXEvent.waitForEventArray((PTXEvent[]) events.toArray());
+        PTXEvent.waitForEventArray(events.toArray(new PTXEvent[0]));
     }
 
     public int enqueueKernelLaunch(long executionPlanId, PTXModule module, TaskDataContext taskMeta, byte[] kernelParams, int[] gridDim, int[] blockDim) {
@@ -365,6 +379,14 @@ public class PTXStream {
 
     public boolean isDestroy() {
         return isDestroy;
+    }
+
+    public byte[] getStreamHandle() {
+        return streamPool;
+    }
+
+    public PTXStreamType getStreamType() {
+        return streamType;
     }
 
     public long mapOnDeviceMemoryRegion(long destDevicePtr, long srcDevicePtr, long offset, int sizeofType) {

@@ -51,6 +51,10 @@ public class PTXEventPool {
     }
 
     protected int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId) {
+        return registerEvent(eventWrapper, descriptorId, PTXStreamType.DEFAULT);
+    }
+
+    protected int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId, PTXStreamType streamType) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -69,7 +73,7 @@ public class PTXEventPool {
             events[currentEvent].destroy();
             events[currentEvent] = null;
         }
-        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId);
+        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId, streamType);
 
         findNextEventSlot();
         return currentEvent;
