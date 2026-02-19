@@ -27,14 +27,14 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.FloatConvert;
-import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.FloatConvert;
+import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
@@ -351,7 +351,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert op, Value inputVal) {
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
         return null;
     }
 
@@ -401,6 +401,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVUnary.ZeroExtend zeroExtend = new SPIRVUnary.ZeroExtend(lirKind, result, inputVal, fromBits, toBits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, zeroExtend));
         return result;
+    }
+
+    @Override
+    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        return emitZeroExtend(inputVal, fromBits, toBits);
     }
 
     @Override
@@ -504,6 +509,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
     }
 
     private void emitLoad(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {

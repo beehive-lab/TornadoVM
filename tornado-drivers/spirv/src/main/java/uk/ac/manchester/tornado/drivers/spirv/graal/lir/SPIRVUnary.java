@@ -23,13 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.cfg.BasicBlock;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRInstruction.Def;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.cfg.BasicBlock;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRInstruction.Def;
+import jdk.graal.compiler.lir.LIRInstruction.Use;
+import jdk.graal.compiler.lir.Opcode;
+import jdk.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Local;
@@ -331,6 +331,7 @@ public class SPIRVUnary {
 
         private final SPIRVMemoryBase memoryRegion;
 
+        @Use
         private Value index;
 
         MemoryAccess(SPIRVMemoryBase base, Value value) {
@@ -359,6 +360,7 @@ public class SPIRVUnary {
 
         private final SPIRVMemoryBase memoryRegion;
 
+        @Use
         private Value index;
 
         public MemoryIndexedAccess(SPIRVMemoryBase memoryRegion, Value baseValue, Value indexValue) {

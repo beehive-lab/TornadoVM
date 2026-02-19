@@ -1,13 +1,14 @@
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
 
 module tornado.drivers.opencl {
+    requires java.base;
     requires transitive jdk.internal.vm.ci;
-    requires transitive jdk.internal.vm.compiler;
     requires transitive org.graalvm.collections;
     requires transitive org.graalvm.word;
     requires transitive tornado.api;
     requires transitive tornado.runtime;
     requires tornado.drivers.common;
+    requires commons.math3;
 
     exports uk.ac.manchester.tornado.drivers.opencl;
     exports uk.ac.manchester.tornado.drivers.opencl.builtins;
@@ -30,8 +31,6 @@ module tornado.drivers.opencl {
     exports uk.ac.manchester.tornado.drivers.opencl.tests;
     exports uk.ac.manchester.tornado.drivers.opencl.power;
     exports uk.ac.manchester.tornado.drivers.opencl.scheduler;
-    exports uk.ac.manchester.tornado.drivers.opencl.natives;
-
-    provides TornadoBackendProvider with
-            uk.ac.manchester.tornado.drivers.opencl.OCLTornadoDriverProvider;
+    exports uk.ac.manchester.tornado.drivers.opencl.natives to tornado.drivers.spirv;
+    provides TornadoBackendProvider with uk.ac.manchester.tornado.drivers.opencl.OCLTornadoDriverProvider;
 }

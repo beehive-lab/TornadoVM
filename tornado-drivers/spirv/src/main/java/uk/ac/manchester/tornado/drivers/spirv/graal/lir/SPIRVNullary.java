@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.cfg.BasicBlock;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.cfg.BasicBlock;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpBranch;

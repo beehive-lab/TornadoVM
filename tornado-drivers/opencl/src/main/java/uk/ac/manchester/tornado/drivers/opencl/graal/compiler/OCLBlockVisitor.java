@@ -20,6 +20,27 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import jdk.graal.compiler.core.common.cfg.CFGLoop;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.graph.NodeMap;
+import jdk.graal.compiler.graph.iterators.NodeIterable;
+import jdk.graal.compiler.nodes.BeginNode;
+import jdk.graal.compiler.nodes.EndNode;
+import jdk.graal.compiler.nodes.IfNode;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.LoopEndNode;
+import jdk.graal.compiler.nodes.LoopExitNode;
+import jdk.graal.compiler.nodes.MergeNode;
+import jdk.graal.compiler.nodes.ReturnNode;
+import jdk.graal.compiler.nodes.StartNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.nodes.extended.IntegerSwitchNode;
+import jdk.vm.ci.meta.JavaConstant;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,29 +48,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
-
-import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeMap;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.BeginNode;
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
-import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.ReturnNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
-
-import jdk.vm.ci.meta.JavaConstant;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlock> {
 
@@ -126,9 +124,10 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                     }
                     // falseSuccessor's endScope is redundant, can be removed.
                     if (mergeA && mergeB) {
-                        if (((IfNode) dom.getEndNode()).falseSuccessor().equals(block.getBeginNode()) && (((IfNode) dom.getEndNode()).falseSuccessor().next().equals(block.getEndNode())) && block
-                                .getBeginNode() instanceof LoopExitNode)
+                        if (((IfNode) dom.getEndNode()).falseSuccessor().equals(block.getBeginNode()) && (((IfNode) dom.getEndNode()).falseSuccessor().next()
+                                                                                                                  .equals(block.getEndNode())) && block.getBeginNode() instanceof LoopExitNode) {
                             rmvEndBracket.add(block);
+                        }
                     }
                 }
             } else {
@@ -202,11 +201,19 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
             if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
                 emitBeginBlockForElseStatement(dom, block);
             } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
+                IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
+
                 emitBeginBlockForSwitchStatements(dom, block);
             }
             openclBuilder.emitBlock(block);
         }
         return null;
+    }
+
+    private boolean isFirstSwitchSuccessor(HIRBlock block, IntegerSwitchNode switchNode) {
+        // Check if this block is the first successor of the switch
+        Node firstSuccessor = switchNode.successors().first();
+        return firstSuccessor.equals(block.getBeginNode());
     }
 
     private boolean isLoopExitNode(HIRBlock block) {
@@ -348,7 +355,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
     }
 
     private boolean isComplexLoopCondition(HIRBlock block) {
-        Loop<HIRBlock> loop = block.getLoop();
+        CFGLoop<HIRBlock> loop = block.getLoop();
         LoopExitNode exitNode = block.getBeginNode() instanceof LoopExitNode ? (LoopExitNode) block.getBeginNode() : null;
 
         if (loop != null || exitNode != null) {
@@ -551,7 +558,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 block.getBeginNode() instanceof LoopExitNode && // The current block exits the block with a return
                 block.getEndNode() instanceof ReturnNode && //
                 !(dom.getFirstSuccessor().getEndNode() instanceof LoopEndNode && //
-                        dom.getFirstSuccessor().getBeginNode() instanceof BeginNode);
+                          dom.getFirstSuccessor().getBeginNode() instanceof BeginNode);
     }
 
     private void closeBranchBlock(HIRBlock block) {

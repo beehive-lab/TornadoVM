@@ -23,11 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction.Def;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.LIRInstruction.Def;
+import jdk.graal.compiler.lir.LIRInstruction.Use;
+import jdk.graal.compiler.nodes.DirectCallTargetNode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpFunctionCall;

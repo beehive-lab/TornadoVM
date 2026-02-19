@@ -32,14 +32,14 @@ import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.FloatConvert;
-import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.calc.FloatConvert;
+import jdk.graal.compiler.core.common.memory.MemoryExtendKind;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.lir.ConstantValue;
+import jdk.graal.compiler.lir.LIRFrameState;
+import jdk.graal.compiler.lir.Variable;
+import jdk.graal.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -139,7 +139,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return emitBinaryAssign(OCLBinaryOp.DIV, LIRKind.combine(x, y), x, y);
     }
 
-    @Override
     public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
@@ -262,6 +261,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitFloatConvert(FloatConvert op, Value inputVal, boolean canBeNaN, boolean canOverflow) {
+        return null;
+    }
+
+    @Override
     public Value emitXor(Value x, Value y) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitXor: %s ^ %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_XOR, LIRKind.combine(x, y), x, y);
@@ -292,6 +296,16 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = emitBinaryAssign(OCLBinaryOp.BITWISE_AND, toKind, value, mask);
         return result;
     }
+
+
+    @Override
+    public Value emitZeroExtend(Value value, int fromBits, int toBits, boolean requiresExplicitZeroExtend, boolean requiresLIRKindChange) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitZeroExtend: %s (from %d to %d, explicit=%b, kindChange=%b)",
+                value, fromBits, toBits, requiresExplicitZeroExtend, requiresLIRKindChange);
+        // Delegate to existing implementation - OpenCL always needs explicit zero extend via masking
+        return emitZeroExtend(value, fromBits, toBits);
+    }
+
 
     @Override
     protected boolean isNumericInteger(PlatformKind platformKind) {
@@ -421,6 +435,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
+        return null;
     }
 
     @Override

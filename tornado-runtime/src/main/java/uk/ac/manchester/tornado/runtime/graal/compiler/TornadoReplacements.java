@@ -23,24 +23,21 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.java.GraphBuilderPhase;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-import org.graalvm.compiler.replacements.ReplacementsImpl;
-
+import jdk.graal.compiler.bytecode.BytecodeProvider;
+import jdk.graal.compiler.java.GraphBuilderPhase;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import jdk.graal.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import jdk.graal.compiler.phases.OptimisticOptimizations;
+import jdk.graal.compiler.phases.util.Providers;
+import jdk.graal.compiler.printer.GraalDebugHandlersFactory;
+import jdk.graal.compiler.replacements.ReplacementsImpl;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class TornadoReplacements extends ReplacementsImpl {
 
-    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider,
-            TargetDescription target) {
-        super(graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
+    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, BytecodeProvider bytecodeProvider, TargetDescription target) {
+        super(graalDebugHandlersFactory, providers, bytecodeProvider, target);
     }
 
     @Override
@@ -50,7 +47,7 @@ public class TornadoReplacements extends ReplacementsImpl {
             @Override
             protected GraphBuilderPhase.Instance createGraphBuilder(Providers providers1, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
                     IntrinsicContext initialIntrinsicContext) {
-                return new GraphBuilderPhase.Instance(providers1, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
+                return new TornadoInternalGraphBuilder.Instance(providers1, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
             }
         };
     }

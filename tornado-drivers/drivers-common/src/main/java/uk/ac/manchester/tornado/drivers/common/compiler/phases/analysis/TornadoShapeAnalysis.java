@@ -25,16 +25,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.NodeBitMap;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-import org.graalvm.compiler.phases.BasePhase;
+import jdk.graal.compiler.graph.NodeBitMap;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.loop.Loop;
+import jdk.graal.compiler.nodes.loop.LoopFragmentInside;
+import jdk.graal.compiler.nodes.loop.LoopsData;
+import jdk.graal.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
@@ -72,9 +72,9 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
 
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
 
-            for (LoopEx loopEx : loops) {
+            for (Loop loopEx : loops) {
                 LoopFragmentInside inside = loopEx.inside();
                 NodeBitMap nodes = inside.nodes();
 

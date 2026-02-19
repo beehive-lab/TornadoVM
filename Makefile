@@ -4,35 +4,35 @@ all: build
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
-build jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND)
+build jdk25:
+	bin/compile --jdk jdk25 --backend $(BACKEND)
 
-rebuild-deps-jdk21:
-	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
+rebuild-deps-jdk25:
+	bin/compile --jdk jdk25 --rebuild --backend $(BACKEND)
 
-graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND)
+graal-jdk-25:
+	bin/compile --jdk graal-jdk-25 --backend $(BACKEND)
 
 polyglot:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --polyglot
+	bin/compile --jdk graal-jdk-25 --backend $(BACKEND) --polyglot
 
-mvn-single-threaded-jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
+mvn-single-threaded-jdk25:
+	bin/compile --jdk jdk25 --backend $(BACKEND) --mvn_single_threaded
 
-mvn-single-threaded-graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
+mvn-single-threaded-graal-jdk-25:
+	bin/compile --jdk graal-jdk-25 --backend $(BACKEND) --mvn_single_threaded
 
 mvn-single-threaded-polyglot:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
+	bin/compile --jdk graal-jdk-25 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
 ptx:
-	bin/compile --jdk jdk21 --backend ptx,opencl
+	bin/compile --jdk jdk25 --backend ptx,opencl
 
 spirv:
-	bin/compile --jdk jdk21 --backend spirv,ptx,opencl
+	bin/compile --jdk jdk25 --backend spirv,ptx,opencl
 
 sdk:
-	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
+	bin/compile --jdk jdk25 --sdk --backend $(BACKEND)
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
@@ -54,43 +54,43 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --quickPass
-	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --quickPass
+	tornado-test -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --uncompressed
-	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --uncompressed
+	tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 fast-tests-uncompressed:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test --ea --verbose --quickPass --uncompressed
-	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --verbose --quickPass --uncompressed
+	tornado-test -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh	
 
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" --verbose
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=levelzero" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-spirv-opencl:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=opencl" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" --ea --verbose
-	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"--ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl"  --verbose
+	tornado-test --jvm="-Dtornado.spirv.dispatcher=opencl" -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 test-slam:

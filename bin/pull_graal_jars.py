@@ -26,7 +26,7 @@ from urllib3.util.retry import Retry
 
 # Constants
 TARGET_DIR = "graalJars"
-VERSION = "23.1.0"
+VERSION = "25.0.2"
 BASE_URL = "https://repo1.maven.org/maven2/org/graalvm"
 GRAAL_JARS = [
     f"compiler/compiler/{VERSION}/compiler-{VERSION}.jar",

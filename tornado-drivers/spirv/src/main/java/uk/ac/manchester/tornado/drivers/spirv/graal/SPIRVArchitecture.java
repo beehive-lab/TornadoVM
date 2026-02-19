@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.amd64.AMD64;
@@ -61,9 +62,10 @@ public class SPIRVArchitecture extends Architecture {
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
     public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
+    private final static List<Register> EMPTY_LIST = List.of();
 
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder, SPIRVRuntimeType runtime) {
-        super(BACKEND_ARCHITECTURE + "@" + runtime.name(), wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
+        super(BACKEND_ARCHITECTURE + "@" + runtime.name(), wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
     }
 
     @Override

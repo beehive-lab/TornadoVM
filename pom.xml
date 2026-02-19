@@ -46,7 +46,7 @@
     <properties>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
-        <graalvm.version>23.1.0</graalvm.version>
+        <graalvm.version>25.0.2</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <cmake.download>false</cmake.download>
@@ -104,9 +104,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>21</source>
-                            <target>21</target>
-                            <showDeprecation>true</showDeprecation>
+                            <source>25</source>
+                            <target>25</target>
                             <annotationProcessorPaths>
                                 <path>
                                     <groupId>org.openjdk.jmh</groupId>
@@ -133,8 +132,8 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.6.3</version>
                         <configuration>
-                            <source>21</source>
-                            <release>21</release>
+                            <source>25</source>
+                            <release>25</release>
                             <skip>false</skip>
                             <failOnError>false</failOnError>
 
@@ -337,7 +336,7 @@
         </profile>
 
         <profile>
-            <id>jdk21</id>
+            <id>jdk25</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -369,8 +368,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>21</source>
-                            <target>21</target>
+                            <source>25</source>
+                            <target>25</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -411,7 +410,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-21</id>
+            <id>graal-jdk-25</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -423,8 +422,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>21</source>
-                            <target>21</target>
+                            <source>25</source>
+                            <target>25</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -651,7 +650,7 @@
         <dependency>
             <groupId>org.graalvm.compiler</groupId>
             <artifactId>compiler</artifactId>
-            <version>23.1.0</version>
+            <version>25.0.2</version>
             <scope>provided</scope>
         </dependency>
 

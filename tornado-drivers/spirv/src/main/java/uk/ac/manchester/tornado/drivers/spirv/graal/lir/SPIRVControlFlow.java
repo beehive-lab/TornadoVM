@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.cfg.BasicBlock;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.SwitchStrategy;
+import jdk.graal.compiler.core.common.cfg.BasicBlock;
+import jdk.graal.compiler.lir.LIRInstruction;
+import jdk.graal.compiler.lir.LIRInstructionClass;
+import jdk.graal.compiler.lir.LabelRef;
+import jdk.graal.compiler.lir.Opcode;
+import jdk.graal.compiler.lir.SwitchStrategy;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
@@ -176,7 +176,6 @@ public class SPIRVControlFlow {
 
         public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
 
-        @Use
         private LabelRef branch;
 
         public Branch(LabelRef branch) {
@@ -208,7 +207,6 @@ public class SPIRVControlFlow {
         public static final LIRInstructionClass<BranchIf> TYPE = LIRInstructionClass.create(BranchIf.class);
         private final boolean isConditional;
         private final boolean isLoopEdgeBack;
-        @Use
         private LabelRef branch;
 
         public BranchIf(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
@@ -254,16 +252,24 @@ public class SPIRVControlFlow {
 
         private SwitchStrategy strategy;
 
-        @Use
+        private Constant[] keyConstants;
+
         private LabelRef[] keytargets;
 
-        @Use
         private LabelRef defaultTarget;
 
         public SwitchStatement(AllocatableValue key, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);
             this.key = key;
             this.strategy = strategy;
+            this.keytargets = keyTargets;
+            this.defaultTarget = defaultTarget;
+        }
+
+        public SwitchStatement(AllocatableValue key, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
+            super(TYPE);
+            this.key = key;
+            this.keyConstants = keyConstants;
             this.keytargets = keyTargets;
             this.defaultTarget = defaultTarget;
         }
@@ -295,9 +301,10 @@ public class SPIRVControlFlow {
 
             SPIRVId defaultSelector = getIdForBranch(defaultTarget, asm);
 
-            SPIRVPairLiteralIntegerIdRef[] cases = new SPIRVPairLiteralIntegerIdRef[strategy.getKeyConstants().length];
+            Constant[] constants = (strategy != null) ? strategy.getKeyConstants() : keyConstants;
+            SPIRVPairLiteralIntegerIdRef[] cases = new SPIRVPairLiteralIntegerIdRef[constants.length];
             int i = 0;
-            for (Constant keyConstant : strategy.getKeyConstants()) {
+            for (Constant keyConstant : constants) {
                 SPIRVId labelCase = getIdForBranch(keytargets[i], asm);
                 int caseIntValue = Integer.parseInt(keyConstant.toValueString());
                 SPIRVPairLiteralIntegerIdRef pairId = new SPIRVPairLiteralIntegerIdRef(new SPIRVLiteralInteger(caseIntValue), labelCase);

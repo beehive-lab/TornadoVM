@@ -21,20 +21,18 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
-
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.core.common.spi.LIRKindTool;
+import jdk.graal.compiler.core.common.type.ObjectStamp;
+import jdk.graal.compiler.core.common.type.Stamp;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class PTXStamp extends ObjectStamp {
 
@@ -74,30 +72,16 @@ public class PTXStamp extends ObjectStamp {
     @Override
     public JavaKind getStackKind() {
         if (kind.isPrimitive()) {
-            switch (kind) {
-                case PRED:
-                    return JavaKind.Boolean;
-                case S8:
-                case U8:
-                    return JavaKind.Byte;
-                case S16:
-                case U16:
-                case F16:
-                case B16:
-                    return JavaKind.Short;
-                case S32:
-                case U32:
-                    return JavaKind.Int;
-                case S64:
-                case U64:
-                    return JavaKind.Long;
-                case F32:
-                    return JavaKind.Float;
-                case F64:
-                    return JavaKind.Double;
-                default:
-                    return JavaKind.Illegal;
-            }
+            return switch (kind) {
+                case PRED -> JavaKind.Boolean;
+                case S8, U8 -> JavaKind.Byte;
+                case S16, U16, F16, B16 -> JavaKind.Short;
+                case S32, U32 -> JavaKind.Int;
+                case S64, U64 -> JavaKind.Long;
+                case F32 -> JavaKind.Float;
+                case F64 -> JavaKind.Double;
+                default -> JavaKind.Illegal;
+            };
         } else if (kind.isVector()) {
             return JavaKind.Object;
         }
@@ -124,11 +108,18 @@ public class PTXStamp extends ObjectStamp {
 
     @Override
     public boolean isCompatible(Stamp stamp) {
-        if (stamp instanceof PTXStamp && ((PTXStamp) stamp).kind == kind) {
+        if (stamp instanceof PTXStamp stamp1 && stamp1.kind == kind) {
             return true;
         }
 
-        unimplemented("stamp is compat: %s + %s", this, stamp);
+        // In Graal 25, FixReadsPhase checks compatibility between PTXStamp
+        // and ObjectStamp for vector types (e.g., FLOAT4 vs Float4 object).
+        // PTXStamp extends ObjectStamp, so these are compatible when the
+        // PTXStamp represents the vector version of the Java object type.
+        if (stamp instanceof ObjectStamp && kind.isVector()) {
+            return true;
+        }
+
         return false;
     }
 

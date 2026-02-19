@@ -71,7 +71,8 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC__ = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview "
+__LOG_JVM_EXCEPTIONS__ = "-Xlog:exceptions=info "
+__JAVA_BASE_OPTIONS__ = ("-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --enable-preview ")
 __TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --enable-preview "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
@@ -507,6 +508,17 @@ class TornadoVMRunnerTool():
             else:
                 setattr(self, attr, None)
 
+    def _checkJvmciCompatibility(self, major, minor, patch):
+        required = (25, 0, 2)
+        current = (major, minor, patch)
+
+        if current < required:
+            print("[ERROR] Incompatible Java version detected.")
+            print("[ERROR] JVMCI requires Java >= 25.0.2")
+            print(f"[ERROR] Detected Java version: {major}.{minor}.{patch}")
+            print("[ERROR] Please install a compatible JDK (e.g., OpenJDK / Corretto 25.0.2+).")
+            sys.exit(1)
+
     def getJavaVersion(self):
         try:
             if os.name == 'nt':
@@ -527,20 +539,20 @@ class TornadoVMRunnerTool():
                 print("[ERROR] On Windows, ensure %JAVA_HOME%\\bin is in your PATH.")
             sys.exit(1)
 
-        # Try to match version format: version "21.x.x" or version "1.8.x"
-        matchJVMVersion = re.search(r'version\s+"?(\d+)(?:\.(\d+))?', str(stderr))
-        matchGraal = re.search(r"GraalVM", str(stderr))
+        # Try to match version format: version "25.0.2" or version "21.0.1" or version "1.8.x"
+        stderr_str = stderr.decode("utf-8")
+        matchJVMVersion = re.search(r'version\s+"?(\d+)(?:\.(\d+)(?:\.(\d+))?)?', stderr_str)
+        matchGraal = re.search(r"GraalVM", stderr_str)
         graalEnabled = False
         if (matchGraal != None):
             graalEnabled = True
 
         if (matchJVMVersion != None):
-            major_version = int(matchJVMVersion.group(1))
-            # For older Java versions (1.8, 1.11), the real version is in the second group
-            if major_version == 1 and matchJVMVersion.group(2):
-                version = int(matchJVMVersion.group(2))
-            else:
-                version = major_version
+            version = int(matchJVMVersion.group(1))
+            minor = int(matchJVMVersion.group(2)) if matchJVMVersion.group(2) else 0
+            patch = int(matchJVMVersion.group(3)) if matchJVMVersion.group(3) else 0
+            if version == 25:
+                self._checkJvmciCompatibility(version, minor, patch)
             return version, graalEnabled
         else:
             print("[ERROR] JDK Version not found")
@@ -548,8 +560,9 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
     def checkCompatibilityWithTornadoVM(self):
-        if (self.java_version != 21):
-            print("TornadoVM supports only JDK version 21")
+        if (self.java_version != 25):
+            print(f"[ERROR] TornadoVM is only compatible with JDK version 25. Current JDK version: {self.java_version}")
+            print("TornadoVM supports only JDK version 25")
             sys.exit(0)
 
     def checkOpenCLDriversWindows(self):
@@ -1296,6 +1309,18 @@ class TornadoVMRunnerTool():
             if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
+
+        # Enable native access for backend modules to avoid restricted method warnings
+        nativeAccessModules = []
+        if ("opencl-backend" in self.listOfBackends) or ("spirv-backend" in self.listOfBackends):
+            nativeAccessModules.append(__OPENCL_MODULE__)
+        if ("spirv-backend" in self.listOfBackends):
+            nativeAccessModules.append("tornado.drivers.spirv")
+            nativeAccessModules.append("beehive.levelzero.jni")
+        if ("ptx-backend" in self.listOfBackends):
+            nativeAccessModules.append(__PTX_MODULE__)
+        if nativeAccessModules:
+            javaFlags = javaFlags + "--enable-native-access=" + ",".join(nativeAccessModules) + " "
 
         javaFlags = javaFlags + tornadoAddModules + " "
 

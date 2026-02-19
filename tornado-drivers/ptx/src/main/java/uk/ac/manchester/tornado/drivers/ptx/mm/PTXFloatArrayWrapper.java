@@ -35,6 +35,10 @@ public class PTXFloatArrayWrapper extends PTXArrayWrapper<float[]> {
         super(deviceContext, JavaKind.Float, access);
     }
 
+    public PTXFloatArrayWrapper(final float[] array, PTXDeviceContext deviceContext, Access access) {
+        super(array, deviceContext, JavaKind.Float, access);
+    }
+
     /**
      * Copy data from the device to the main host
      * 

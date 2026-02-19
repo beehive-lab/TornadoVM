@@ -35,6 +35,10 @@ public class PTXShortArrayWrapper extends PTXArrayWrapper<short[]> {
         super(deviceContext, JavaKind.Short, access);
     }
 
+    public PTXShortArrayWrapper(final short[] array, PTXDeviceContext deviceContext, Access access) {
+        super(array, deviceContext, JavaKind.Short, access);
+    }
+
     /**
      * Copy data from the device to the main host.
      *
