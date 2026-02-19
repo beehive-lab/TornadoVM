@@ -418,7 +418,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         }
 
         PTXStream stream = getStream(executionPlanId);
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta, writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta), gridDimension,
+        KernelContextWriteResult ctxResult = writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta, ctxResult.params(), gridDimension,
                 blockDimension);
         updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
@@ -456,29 +457,35 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         PTXStream stream = getStream(executionPlanId, streamType);
 
         // Write kernel context first (goes to H2D stream)
-        byte[] kernelParams = writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta);
+        KernelContextWriteResult ctxResult = writePTXKernelContextOnDevice(executionPlanId, (PTXKernelStackFrame) kernelArgs, taskMeta);
 
         if (isMultiStreamEnabled()) {
-            // Sync COMPUTE stream on H2D
-            // Since H2D is in-order, waiting for the kernel context write event (the latest on H2D)
-            // implicitly waits for all prior H2D transfers too.
-            PTXStream h2dStream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
-            byte[][] syncEventWrapper = PTXStream.cuEventCreateAndRecord(false, h2dStream.getStreamHandle());
-            PTXEvent.cuStreamWaitEvent(stream.getStreamHandle(), syncEventWrapper[1]);
-            //resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            // Fine-grained synchronization of dependencies:
+            // make COMPUTE stream wait on specific H2D events this kernel depends on, plus the kernel context write
+            int[] allDeps = includeInDeps(waitEvents, ctxResult.writeEventId());
+            resolveAndWaitCrossStream(executionPlanId, allDeps, stream);
         }
 
         int kernelLaunchEvent = stream.enqueueKernelLaunch(executionPlanId, module, taskMeta,
-                kernelParams, gridDimension, blockDimension);
-        updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
+                ctxResult.params(), gridDimension, blockDimension);
 
         if (isMultiStreamEnabled()) {
-            return getEventRegistry(executionPlanId).register(streamType, kernelLaunchEvent);
+            int globalEventId = getEventRegistry(executionPlanId).register(streamType, kernelLaunchEvent);
+            updateProfiler(executionPlanId, globalEventId, taskMeta);
+            return globalEventId;
         }
+        updateProfiler(executionPlanId, kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
+    /**
+     * Represents a KernelContext write operation on the device.
+     * @param params the parameters of the kernel context.
+     * @param writeEventId the event ID of the write operation.
+     */
+    private record KernelContextWriteResult(byte[] params, int writeEventId) {}
+
+    private KernelContextWriteResult writePTXKernelContextOnDevice(long executionPlanId, PTXKernelStackFrame ptxKernelArgs, TaskDataContext meta) {
         int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
@@ -511,7 +518,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             }
         }
 
-        return args.array();
+        return new KernelContextWriteResult(args.array(), kernelContextWriteEventId);
     }
 
     private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, PTXKernelStackFrame callWrapper) {
@@ -568,6 +575,18 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         if (stream != null && !stream.isDestroy()) {
             stream.cuDestroyStream();
         }
+    }
+
+    /**
+     * Adds the additionalEvent into waitEvents to include it in the dependencies of the kernel launch.
+     */
+    private int[] includeInDeps(int[] waitEvents, int additionalEvent) {
+        if (waitEvents == null) {
+            return new int[] { additionalEvent };
+        }
+        int[] combinedDeps = Arrays.copyOf(waitEvents, waitEvents.length + 1);
+        combinedDeps[waitEvents.length] = additionalEvent;
+        return combinedDeps;
     }
 
     /*
