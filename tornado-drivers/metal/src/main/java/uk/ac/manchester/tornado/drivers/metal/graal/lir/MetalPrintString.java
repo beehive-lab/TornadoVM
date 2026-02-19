@@ -43,7 +43,8 @@ public class MetalPrintString extends MetalLIROp {
 
     @Override
     public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-        asm.emitLine("printf(" + string + ")");
+        // MSL does not support printf - emit as comment
+        asm.emitLine("// printf (not supported in MSL)");
     }
 
 }

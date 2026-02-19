@@ -692,9 +692,9 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryOp CAST_TO_INT = new MetalUnaryOp("(int) ", true);
         public static final MetalUnaryOp CAST_TO_SHORT = new MetalUnaryOp("(short) ", true);
     public static final MetalUnaryOp CAST_TO_LONG = new MetalUnaryOp("(long) ", true);
-    // Represent pointer-like casts as a device char* base so pointer arithmetic
-    // is emitted as (device char*)base + offset
-    public static final MetalUnaryOp CAST_TO_ULONG = new MetalUnaryOp("(device char*) ", true);
+    // Cast pointer to ulong so pointer arithmetic can be done as integer math.
+    // The result is later cast back to a device pointer for dereference.
+    public static final MetalUnaryOp CAST_TO_ULONG = new MetalUnaryOp("(ulong)(device char*) ", true);
         public static final MetalUnaryOp CAST_TO_FLOAT = new MetalUnaryOp("(float) ", true);
         public static final MetalUnaryOp CAST_TO_BYTE = new MetalUnaryOp("(char) ", true);
         public static final MetalUnaryOp CAST_TO_DOUBLE = new MetalUnaryOp("(double) ", true);
@@ -820,20 +820,20 @@ public final class MetalAssembler extends Assembler {
             final MetalAssembler asm = crb.getAssembler();
             // Map OpenCL builtins to Metal MSL equivalents
             if (opcode.equals("get_global_id")) {
-                // Metal: use thread_position_in_grid.x/y/z
+                // Metal: use _thread_position_in_grid.x/y/z
                 String idx = (x == null) ? "0" : asm.toString(x);
                 switch (idx.trim()) {
                     case "0":
-                        asm.emit("thread_position_in_grid.x");
+                        asm.emit("_thread_position_in_grid.x");
                         return;
                     case "1":
-                        asm.emit("thread_position_in_grid.y");
+                        asm.emit("_thread_position_in_grid.y");
                         return;
                     case "2":
-                        asm.emit("thread_position_in_grid.z");
+                        asm.emit("_thread_position_in_grid.z");
                         return;
                     default:
-                        asm.emit("thread_position_in_grid[");
+                        asm.emit("_thread_position_in_grid[");
                         asm.emit(asm.toString(x));
                         asm.emit("]");
                         return;
@@ -841,11 +841,11 @@ public final class MetalAssembler extends Assembler {
             }
 
             if (opcode.equals("get_global_size")) {
-                // Metal: use global_size array passed as kernel argument
+                // Metal: use _global_sizes array passed as kernel argument
                 if (x == null) {
-                    asm.emit("global_size[0]");
+                    asm.emit("_global_sizes[0]");
                 } else {
-                    asm.emit("global_size[");
+                    asm.emit("_global_sizes[");
                     asm.emit(asm.toString(x));
                     asm.emit("]");
                 }
@@ -853,20 +853,20 @@ public final class MetalAssembler extends Assembler {
             }
 
             if (opcode.equals("get_local_id")) {
-                // Metal: use thread_position_in_threadgroup.x/y/z
+                // Metal: use _thread_position_in_threadgroup.x/y/z
                 String idx = (x == null) ? "0" : asm.toString(x);
                 switch (idx.trim()) {
                     case "0":
-                        asm.emit("thread_position_in_threadgroup.x");
+                        asm.emit("_thread_position_in_threadgroup.x");
                         return;
                     case "1":
-                        asm.emit("thread_position_in_threadgroup.y");
+                        asm.emit("_thread_position_in_threadgroup.y");
                         return;
                     case "2":
-                        asm.emit("thread_position_in_threadgroup.z");
+                        asm.emit("_thread_position_in_threadgroup.z");
                         return;
                     default:
-                        asm.emit("thread_position_in_threadgroup[");
+                        asm.emit("_thread_position_in_threadgroup[");
                         asm.emit(asm.toString(x));
                         asm.emit("]");
                         return;
@@ -874,11 +874,11 @@ public final class MetalAssembler extends Assembler {
             }
 
             if (opcode.equals("get_local_size")) {
-                // Metal: use local_size array passed as kernel argument
+                // Metal: use _local_size array passed as kernel argument
                 if (x == null) {
-                    asm.emit("local_size[0]");
+                    asm.emit("_local_size[0]");
                 } else {
-                    asm.emit("local_size[");
+                    asm.emit("_local_size[");
                     asm.emit(asm.toString(x));
                     asm.emit("]");
                 }
@@ -886,20 +886,20 @@ public final class MetalAssembler extends Assembler {
             }
 
             if (opcode.equals("get_group_id")) {
-                // Metal: use threadgroup_position_in_grid.x/y/z
+                // Metal: use _threadgroup_position_in_grid.x/y/z
                 String idx = (x == null) ? "0" : asm.toString(x);
                 switch (idx.trim()) {
                     case "0":
-                        asm.emit("threadgroup_position_in_grid.x");
+                        asm.emit("_threadgroup_position_in_grid.x");
                         return;
                     case "1":
-                        asm.emit("threadgroup_position_in_grid.y");
+                        asm.emit("_threadgroup_position_in_grid.y");
                         return;
                     case "2":
-                        asm.emit("threadgroup_position_in_grid.z");
+                        asm.emit("_threadgroup_position_in_grid.z");
                         return;
                     default:
-                        asm.emit("threadgroup_position_in_grid[");
+                        asm.emit("_threadgroup_position_in_grid[");
                         asm.emit(asm.toString(x));
                         asm.emit("]");
                         return;
@@ -907,11 +907,11 @@ public final class MetalAssembler extends Assembler {
             }
 
             if (opcode.equals("get_group_size")) {
-                // Metal: use group_size array passed as kernel argument
+                // Metal: use _group_size array passed as kernel argument
                 if (x == null) {
-                    asm.emit("group_size[0]");
+                    asm.emit("_group_size[0]");
                 } else {
-                    asm.emit("group_size[");
+                    asm.emit("_group_size[");
                     asm.emit(asm.toString(x));
                     asm.emit("]");
                 }

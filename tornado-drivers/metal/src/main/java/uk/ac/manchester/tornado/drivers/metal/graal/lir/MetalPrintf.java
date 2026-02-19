@@ -43,28 +43,8 @@ public class MetalPrintf extends MetalLIROp {
 
     @Override
     public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-        asm.emit("printf( \"tornado[%%3d,%%3d,%%3d]> %s\"",
-            asm.formatConstant((ConstantValue) inputs[0]));
-
-        for (int i = 1; i < 4; i++) {
-            asm.emit(", ");
-            asm.emitValue(crb, inputs[i]);
-        }
-
-        if (inputs.length > 4) {
-            asm.emit(", ");
-        }
-
-        for (int i = 4; i < inputs.length - 1; i++) {
-            asm.emitValue(crb, inputs[i]);
-            asm.emit(", ");
-        }
-
-        if (inputs.length > 4) {
-            asm.emitValue(crb, inputs[inputs.length - 1]);
-        }
-
-        asm.emit(")");
+        // MSL does not support printf - emit as comment
+        asm.emit("// printf (not supported in MSL)");
     }
 
     @Override

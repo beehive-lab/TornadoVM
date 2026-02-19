@@ -134,7 +134,17 @@ public class MetalArchitecture extends Architecture {
     public String getABI() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < abiRegisters.length; i++) {
-            sb.append(abiRegisters[i].getDeclaration());
+            if (abiRegisters[i] instanceof MetalMemoryBase reg) {
+                sb.append(reg.getDeclaration());
+                // Explicit Metal attribute so buffer/threadgroup indices match Java arg indices
+                if (reg.getMemorySpace() == MetalMemorySpace.LOCAL) {
+                    sb.append(String.format(" [[threadgroup(%d)]]", i));
+                } else {
+                    sb.append(String.format(" [[buffer(%d)]]", i));
+                }
+            } else {
+                sb.append(abiRegisters[i].getDeclaration());
+            }
             if (i < abiRegisters.length - 1) {
                 sb.append(", ");
             }

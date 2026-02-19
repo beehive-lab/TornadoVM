@@ -165,9 +165,10 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
             }
         }
 
-        buffer.clear();
-        buffer.putLong(kernelArgs.toBuffer());
-        kernel.setArg(index, buffer);
+        // Metal requires setArgRef (setBuffer:) for device/constant buffer parameters,
+        // unlike OpenCL where clSetKernelArg handles both buffer refs and inline data.
+        // kernel context buffer
+        kernel.setArgRef(index, kernelArgs.toBuffer());
         index++;
 
         if (isSPIRVBinary) {
@@ -176,9 +177,7 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
                 KernelStackFrame.CallArgument arg = kernelArgs.getCallArguments().get(i);
                 // Include the extra kernel context argument for SPIR-V binaries.
                 if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
-                    buffer.clear();
-                    buffer.putLong(kernelArgs.toBuffer());
-                    kernel.setArg(index + argIndex, buffer);
+                    kernel.setArgRef(index + argIndex, kernelArgs.toBuffer());
                     argIndex++;
                     continue;
                 }
@@ -194,17 +193,14 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
             return;
         }
 
-        // constant memory
+        // constant memory buffer
         if (meta != null && meta.getConstantSize() > 0) {
             kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
         } else {
-            buffer.clear();
-            buffer.putLong(kernelArgs.toConstantAddress());
-            kernel.setArg(index, buffer);
+            kernel.setArgRef(index, kernelArgs.toConstantAddress());
         }
         index++;
 
-        // local memory buffers
         // local memory buffers
         final int localIndex = index; // remember where the driver previously expected local region
         // We'll defer setting local regions until we inspect native reflection. If reflection
@@ -212,10 +208,8 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         // index; otherwise fall back to the single local slot behaviour.
         index++;
 
-    // Atomics in Global Memory
-        buffer.clear();
-        buffer.putLong(kernelArgs.toAtomicAddress());
-        kernel.setArg(index, buffer);
+        // Atomics in Global Memory - use setArgRef for device buffer
+        kernel.setArgRef(index, kernelArgs.toAtomicAddress());
         index++;
 
         // Parameters
@@ -259,10 +253,10 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
 
             final int nativeArgIndex = paramBaseIndex + argIndex;
 
-            // If native reflection indicates this argument is threadgroup memory, allocate local region here
+            // Use native reflection at the correct Metal argument index (not user-arg index)
             MetalKernel.KernelArgInfo argInfo = null;
             try {
-                if (kernel != null) argInfo = kernel.getArgInfoObject(argIndex);
+                if (kernel != null) argInfo = kernel.getArgInfoObject(nativeArgIndex);
             } catch (Exception e) {
                 // ignore reflection errors per-argument
             }
@@ -278,7 +272,11 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
                 continue;
             }
 
-            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+            // Metal: use setArgRef for device buffer parameters, setArg for scalar inline data
+            if (argInfo != null && argInfo.type == MetalKernel.KernelArgInfo.ArgType.BUFFER) {
+                // Device buffer - arg value is a Long containing the MTLBuffer pointer
+                kernel.setArgRef(nativeArgIndex, (Long) arg.getValue());
+            } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 buffer.clear();
                 PrimitiveSerialiser.put(buffer, arg.getValue());
                 kernel.setArg(nativeArgIndex, buffer);

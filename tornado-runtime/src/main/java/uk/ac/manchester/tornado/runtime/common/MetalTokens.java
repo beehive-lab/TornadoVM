@@ -46,7 +46,12 @@ public class MetalTokens {
         metalTokens.add("atomic_compare_exchange_weak_explicit");
         metalTokens.add("atomic_compare_exchange_strong_explicit");
 
-        // Other keywords
+        // C++/MSL keywords
+        metalTokens.add("this");
+        metalTokens.add("class");
+        metalTokens.add("struct");
+        metalTokens.add("enum");
+        metalTokens.add("template");
         metalTokens.add("constexpr");
         metalTokens.add("typedef");
         metalTokens.add("using");

@@ -541,15 +541,22 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_writeArrayToDevice
 {
     @autoreleasepool {
         id<MTLBuffer> buf = (__bridge id<MTLBuffer>)(void*) ptr;
-        if (!buf) return (jlong)-1;
+        if (!buf) { fprintf(stderr, "JNI writeToDevice: buf is null\n"); return (jlong)-1; }
         void *dst = (void *)[buf contents];
-        if (!dst) return (jlong)-1;
+        if (!dst) { fprintf(stderr, "JNI writeToDevice: dst is null\n"); return (jlong)-1; }
 
         void *src = (void *)(uintptr_t)hostPointer;
-        if (!src) return (jlong)-1;
+        if (!src) { fprintf(stderr, "JNI writeToDevice: src is null\n"); return (jlong)-1; }
 
         void *src_ptr = (void *)((char *)src + (size_t)hostOffset);
         void *dst_ptr = (void *)((char *)dst + (size_t)offset);
+        fprintf(stderr, "JNI writeToDevice: %lld bytes, hostOff=%lld, devOff=%lld, bufContents=%p, first4bytes=",
+                (long long)bytes, (long long)hostOffset, (long long)offset, dst);
+        if (bytes >= 4) {
+            int32_t first; memcpy(&first, src_ptr, 4);
+            fprintf(stderr, "%d", first);
+        }
+        fprintf(stderr, "\n");
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
         return (jlong)0;
     }
@@ -571,6 +578,13 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 
                 void *src_ptr = (void *)((char *)src + (size_t)offset);
                 void *dst_ptr = (void *)((char *)dst + (size_t)hostOffset);
+                fprintf(stderr, "JNI readFromDevice: %lld bytes, devOff=%lld, hostOff=%lld, first4devBytes=",
+                        (long long)bytes, (long long)offset, (long long)hostOffset);
+                if (bytes >= 4) {
+                    int32_t first; memcpy(&first, src_ptr, 4);
+                    fprintf(stderr, "%d", first);
+                }
+                fprintf(stderr, "\n");
                 memcpy(dst_ptr, src_ptr, (size_t)bytes);
                 return (jlong)0;
         }
@@ -667,22 +681,15 @@ JNIEXPORT jlong JNICALL
 Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevice__J_3IJZJJJ_3J
   (JNIEnv *env, jclass clazz, jlong queueId, jintArray array, jlong hostOffset, jboolean blocking, jlong offset, jlong bytes, jlong ptr, jlongArray events)
 {
-    printf("DEBUG: readArrayFromDevice (int) called. QueueId: %lld, ptr: %lld, bytes: %lld\n", (long long)queueId, (long long)ptr, (long long)bytes);
     jint *dst = nullptr;
     jlong ret = -1;
     if (array) dst = (jint*) env->GetPrimitiveArrayCritical(array, NULL);
 
     @autoreleasepool {
         id<MTLBuffer> buf = (__bridge id<MTLBuffer>)(void*) ptr;
-        if (!buf) {
-            printf("DEBUG: readArrayFromDevice (int) failed: buf is null\n");
-            goto done;
-        }
+        if (!buf) goto done;
         void *src = (void *)[buf contents];
-        if (!src) {
-            printf("DEBUG: readArrayFromDevice (int) failed: src contents is null\n");
-            goto done;
-        }
+        if (!src) goto done;
 
         void *src_ptr = (void *)((char *)src + (size_t)offset);
         void *dst_ptr = (void *)dst;
@@ -690,7 +697,6 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_readArrayFromDevic
 
         memcpy(dst_ptr, src_ptr, (size_t)bytes);
         ret = (jlong)0;
-        printf("DEBUG: readArrayFromDevice (int) success. Copied %lld bytes.\n", (long long)bytes);
     }
 
 done:
@@ -1392,7 +1398,6 @@ JNIEXPORT jlong JNICALL
 Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueNDRangeKernel
     (JNIEnv *env, jclass clazz, jlong queueId, jlong kernelId, jint dim, jlongArray global_work_offset, jlongArray global_work_size, jlongArray local_work_size, jlongArray events)
 {
-    printf("DEBUG: clEnqueueNDRangeKernel called. Queue: %lld, Kernel: %lld, Dim: %d\n", (long long)queueId, (long long)kernelId, dim);
     (void) clazz;
     if (queueId == 0 || kernelId == 0) return (jlong)-1;
 
@@ -1446,18 +1451,30 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueNDRangeKe
         [encoder setComputePipelineState:kw.pipeline];
 
         // bind arguments
+        fprintf(stderr, "JNI dispatch: binding %lu args, gx=%lu gy=%lu gz=%lu\n",
+                (unsigned long)kw.args.count, (unsigned long)gx, (unsigned long)gy, (unsigned long)gz);
         for (NSUInteger i = 0; i < kw.args.count; i++) {
             id obj = [kw.args objectAtIndex:i];
-            if ((NSNull *)obj == [NSNull null]) continue;
+            if ((NSNull *)obj == [NSNull null]) { fprintf(stderr, "  arg[%lu]: NULL\n", (unsigned long)i); continue; }
             ArgItem *ai = (ArgItem *)obj;
             if (ai.kind == 0) {
                 id<MTLBuffer> mb = (id<MTLBuffer>)ai.obj;
-                if (mb) [encoder setBuffer:mb offset:0 atIndex:(NSUInteger)i];
+                if (mb) {
+                    [encoder setBuffer:mb offset:0 atIndex:(NSUInteger)i];
+                    // Dump first few ints of buffer for debugging
+                    int32_t *contents = (int32_t*)[mb contents];
+                    fprintf(stderr, "  arg[%lu]: buffer len=%lu first8ints=[%d,%d,%d,%d,%d,%d,%d,%d]\n",
+                            (unsigned long)i, (unsigned long)[mb length],
+                            contents[0], contents[1], contents[2], contents[3],
+                            contents[4], contents[5], contents[6], contents[7]);
+                }
             } else if (ai.kind == 1) {
                 NSData *d = (NSData *)ai.obj;
                 if (d && ai.size > 0) [encoder setBytes:[d bytes] length:ai.size atIndex:(NSUInteger)i];
+                fprintf(stderr, "  arg[%lu]: bytes size=%lu\n", (unsigned long)i, (unsigned long)ai.size);
             } else if (ai.kind == 2) {
                 [encoder setThreadgroupMemoryLength:ai.size atIndex:(NSUInteger)i];
+                fprintf(stderr, "  arg[%lu]: threadgroup size=%lu\n", (unsigned long)i, (unsigned long)ai.size);
             }
         }
 
@@ -1484,15 +1501,16 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueNDRangeKe
 
         [encoder dispatchThreadgroups:tg threadsPerThreadgroup:threadsPerThreadgroup];
         [encoder endEncoding];
-        [cb commit];
         // If we created a sizes buffer, release it after the command buffer completes
         if (sizesBuf) {
-            // Capture sizesBuf in a completion handler and release
+            // Capture sizesBuf in a completion handler and release (must be added before commit)
             __unsafe_unretained id localBuf = sizesBuf;
             [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
                 if (localBuf) CFRelease((__bridge CFTypeRef)localBuf);
             }];
         }
+        [cb commit];
+        [cb waitUntilCompleted]; // synchronous for now - ensure GPU is done before returning
         // release array elements
         if (gws) env->ReleaseLongArrayElements(global_work_size, gws, 0);
         if (lws) env->ReleaseLongArrayElements(local_work_size, lws, 0);
@@ -1557,6 +1575,144 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clFinish
                 [cb waitUntilCompleted];
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// MetalEvent native methods
+// Events in the Metal backend are retained MTLCommandBuffer pointers.
+// ---------------------------------------------------------------------------
+
+JNIEXPORT void JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clReleaseEvent
+    (JNIEnv *env, jclass clazz, jlong eventId)
+{
+    (void) env; (void) clazz;
+    fprintf(stderr, "JNI: clReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
+    if (eventId == 0) return;
+    @autoreleasepool {
+        id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) eventId;
+        CFRelease((__bridge CFTypeRef) cb);
+    }
+    fprintf(stderr, "JNI: clReleaseEvent done\n");
+}
+
+JNIEXPORT void JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clWaitForEvents
+    (JNIEnv *env, jclass clazz, jlongArray events)
+{
+    (void) clazz;
+    if (events == NULL) return;
+    jsize len = env->GetArrayLength(events);
+    if (len == 0) return;
+    jlong *evts = env->GetLongArrayElements(events, NULL);
+    @autoreleasepool {
+        for (jsize i = 0; i < len; i++) {
+            if (evts[i] == 0) continue;
+            id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
+            [cb waitUntilCompleted];
+        }
+    }
+    env->ReleaseLongArrayElements(events, evts, 0);
+}
+
+JNIEXPORT void JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clGetEventInfo
+    (JNIEnv *env, jclass clazz, jlong eventId, jint param, jbyteArray buffer)
+{
+    (void) clazz;
+    // Stub: Metal command buffers don't expose the same event info as OpenCL.
+    // Write zeros to the buffer.
+    if (buffer == NULL) return;
+    jsize len = env->GetArrayLength(buffer);
+    jbyte *buf = env->GetByteArrayElements(buffer, NULL);
+    memset(buf, 0, len);
+    env->ReleaseByteArrayElements(buffer, buf, 0);
+}
+
+JNIEXPORT void JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clGetEventProfilingInfo
+    (JNIEnv *env, jclass clazz, jlong eventId, jlong param, jbyteArray buffer)
+{
+    (void) clazz;
+    // Stub: Metal command buffers have timing info via GPUStartTime/GPUEndTime
+    // but the mapping to OpenCL profiling params is not direct.
+    // Write zeros for now.
+    if (buffer == NULL) return;
+    jsize len = env->GetArrayLength(buffer);
+    jbyte *buf = env->GetByteArrayElements(buffer, NULL);
+    memset(buf, 0, len);
+    env->ReleaseByteArrayElements(buffer, buf, 0);
+}
+
+// ---------------------------------------------------------------------------
+// MetalCommandQueue: clEnqueueMarkerWithWaitList, clEnqueueBarrierWithWaitList
+// ---------------------------------------------------------------------------
+
+JNIEXPORT jlong JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueMarkerWithWaitList
+    (JNIEnv *env, jclass clazz, jlong queueId, jlongArray events)
+{
+    (void) clazz;
+    fprintf(stderr, "JNI: clEnqueueMarkerWithWaitList entered\n");
+    @autoreleasepool {
+        id<MTLCommandQueue> q = (__bridge id<MTLCommandQueue>)(void*)(uintptr_t) queueId;
+        // Wait for all provided events (command buffers) to complete
+        if (events != NULL) {
+            jsize len = env->GetArrayLength(events);
+            fprintf(stderr, "JNI: marker - %d events\n", (int)len);
+            jlong *evts = env->GetLongArrayElements(events, NULL);
+            for (jsize i = 0; i < len; i++) {
+                fprintf(stderr, "JNI: marker - event[%d] = 0x%llx\n", (int)i, (unsigned long long)evts[i]);
+                if (evts[i] == 0) continue;
+                // Only wait on valid command buffer pointers (from clEnqueueNDRangeKernel)
+                id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
+                if (cb && [cb respondsToSelector:@selector(waitUntilCompleted)]) {
+                    fprintf(stderr, "JNI: marker - waiting on event[%d]\n", (int)i);
+                    [cb waitUntilCompleted];
+                    fprintf(stderr, "JNI: marker - event[%d] completed\n", (int)i);
+                }
+            }
+            env->ReleaseLongArrayElements(events, evts, 0);
+        }
+        fprintf(stderr, "JNI: clEnqueueMarkerWithWaitList done\n");
+        // Return 0 to indicate no event produced (marker is implicit in Metal)
+        return (jlong)0;
+    }
+}
+
+JNIEXPORT jlong JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueBarrierWithWaitList
+    (JNIEnv *env, jclass clazz, jlong queueId, jlongArray events)
+{
+    (void) clazz;
+    @autoreleasepool {
+        // In Metal, command buffers submitted to the same queue execute in order.
+        // A barrier just needs to wait for all provided events to complete.
+        if (events != NULL) {
+            jsize len = env->GetArrayLength(events);
+            jlong *evts = env->GetLongArrayElements(events, NULL);
+            for (jsize i = 0; i < len; i++) {
+                if (evts[i] == 0) continue;
+                id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
+                if (cb && [cb respondsToSelector:@selector(waitUntilCompleted)]) {
+                    [cb waitUntilCompleted];
+                }
+            }
+            env->ReleaseLongArrayElements(events, evts, 0);
+        }
+        return (jlong)0;
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clReleaseCommandQueue
+    (JNIEnv *env, jclass clazz, jlong queueId)
+{
+    (void) env; (void) clazz;
+    if (queueId == 0) return;
+    @autoreleasepool {
+        CFRelease((void*)(uintptr_t) queueId);
     }
 }
 

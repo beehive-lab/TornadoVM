@@ -86,6 +86,7 @@ def get_export_list_paths(tornado_sdk):
         "opencl": export_lists_dir / "opencl-exports",
         "spirv": export_lists_dir / "spirv-exports",
         "ptx": export_lists_dir / "ptx-exports",
+        "metal": export_lists_dir / "metal-exports",
     }
 
 
