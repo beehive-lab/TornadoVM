@@ -19,10 +19,7 @@
         <profile>
             <id>metal-backend</id>
             <activation>
-                <!-- Only activate the Metal backend profile on macOS hosts -->
-                <os>
-                    <family>mac</family>
-                </os>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <modules>
                 <module>metal</module>
