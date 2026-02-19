@@ -204,10 +204,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     public Event resolveEvent(long executionPlanId, int event) {
         if (isMultiStreamEnabled()) {
             EventRegistry registry = getEventRegistry(executionPlanId);
-            EventRegistry.EventLocation location = registry.resolve(event);
-            if (location != null) {
-                PTXStream stream = getStream(executionPlanId, location.streamType());
-                return stream.resolveEvent(location.localEventId());
+            EventRegistry.PTXEventEntry entry = registry.resolve(event);
+            if (entry != null) {
+                PTXStream stream = getStream(executionPlanId, entry.streamType());
+                return stream.resolveEvent(entry.localEventId());
             }
         }
         PTXStream stream = getStream(executionPlanId);
@@ -219,10 +219,10 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         EventRegistry registry = getEventRegistry(executionPlanId);
         for (int globalEventId : waitEvents) {
             if (globalEventId == -1) continue;
-            EventRegistry.EventLocation location = registry.resolve(globalEventId);
-            if (location == null) continue;
-            PTXStream sourceStream = getStream(executionPlanId, location.streamType());
-            PTXEvent event = sourceStream.getEventPool().getEvent(location.localEventId());
+            EventRegistry.PTXEventEntry entry = registry.resolve(globalEventId);
+            if (entry == null) continue;
+            PTXStream sourceStream = getStream(executionPlanId, entry.streamType());
+            PTXEvent event = sourceStream.getEventPool().getEvent(entry.localEventId());
             if (event != null) {
                 event.waitOnStream(targetStream.getStreamHandle());
             }
@@ -935,25 +935,57 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return ptxStream.mapOnDeviceMemoryRegion(destDevicePtr, srcDevicePtr, offset, sizeOfType);
     }
 
+    /**
+     * Provides a global scope mapping of {@code PTXEvent}s with {@code PTXStream}s
+     * to facilitate cross-stream synchronization.
+     *
+     * <p>In multi-stream mode, {@code PTXEvent}s are organized in {@code PTXEventPool}s
+     * and are associated with a *local* event id which is returned after every
+     * {@code PTXEventPool} operation. The EventRegistry class registers the local
+     * event id as a {@code PTXEventEntry} -a (streamType, localEventId) pair- and
+     * associates it with a unique *global* event id to enable cross-stream event reference.
+     * The global ID flows through the interpreter's ADD_DEPENDENCY/waitList mechanism.
+     *
+     * <p>The global ID is resolved back through this registry in two situations:
+     * <ul>
+     *   <li><b>Profiler</b>: to find the {@code PTXEvent} and read its timing data</li>
+     *   <li><b>Cross-stream sync</b>: to find the {@code PTXEvent} and call
+     *       {@code cuStreamWaitEvent} with its afterEvent handle, making a target
+     *       stream wait for a specific operation on a source stream</li>
+     * </ul>
+     *
+     * Note: In single-stream mode this class is not used — local event IDs are passed directly
+     */
     private static class EventRegistry {
-        private final AtomicInteger globalIdGen = new AtomicInteger(0);
-        private final Map<Integer, EventLocation> locations = new ConcurrentHashMap<>();
+        /**
+         * Unique/global id for a PTXEvent across all PTXEventPool instances.
+         */
+        private final AtomicInteger globalIdCounter = new AtomicInteger(0);
+        /**
+         * The core {@code EventRegistry} data structure.
+         */
+        private final Map<Integer, PTXEventEntry> registry = new ConcurrentHashMap<>();
 
-        record EventLocation(PTXStreamType streamType, int localEventId) {}
+        /**
+         * Represents a (PTXStreamType, localId) pair.
+         * @param streamType
+         * @param localEventId
+         */
+        record PTXEventEntry(PTXStreamType streamType, int localEventId) {}
 
         int register(PTXStreamType streamType, int localEventId) {
-            int globalId = globalIdGen.getAndIncrement();
-            locations.put(globalId, new EventLocation(streamType, localEventId));
+            int globalId = globalIdCounter.getAndIncrement();
+            registry.put(globalId, new PTXEventEntry(streamType, localEventId));
             return globalId;
         }
 
-        EventLocation resolve(int globalEventId) {
-            return locations.get(globalEventId);
+        PTXEventEntry resolve(int globalEventId) {
+            return registry.get(globalEventId);
         }
 
         void reset() {
-            locations.clear();
-            globalIdGen.set(0);
+            registry.clear();
+            globalIdCounter.set(0);
         }
     }
 }
