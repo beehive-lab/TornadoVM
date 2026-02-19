@@ -214,6 +214,22 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return stream.resolveEvent(event);
     }
 
+    /**
+     * Fine-grained cross-stream synchronization.
+     *
+     * <p>For each global event ID in {@code waitEvents}, resolves it through the
+     * {@link EventRegistry} to find the source stream and local event, then calls
+     * {@code cuStreamWaitEvent} to make {@code targetStream} wait for that specific
+     * operation to complete on the GPU.
+     *
+     * <p>This provides event-level granularity: COMPUTE waits only on the specific
+     * H2D transfers it depends on, D2H waits only on the specific COMPUTE operations
+     * it depends on. Same-stream events are handled by CUDA's in-order guarantee.
+     *
+     * @param executionPlanId the execution plan context
+     * @param waitEvents array of global event IDs (from the interpreter's dependency tracking)
+     * @param targetStream the stream that should wait for the source events
+     */
     private void resolveAndWaitCrossStream(long executionPlanId, int[] waitEvents, PTXStream targetStream) {
         if (waitEvents == null || !isMultiStreamEnabled()) return;
         EventRegistry registry = getEventRegistry(executionPlanId);
