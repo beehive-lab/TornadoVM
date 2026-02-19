@@ -1,0 +1,177 @@
+name: Finalize TornadoVM Release (JDK 25)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [jdk25]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to tag (e.g., 2.0.1-jdk25)'
+        required: true
+        type: string
+      next_dev_version:
+        description: 'Next development version (e.g., 2.0.2-jdk25-dev)'
+        required: true
+        type: string
+
+jobs:
+  create-release-tag:
+    # Run when release PR merges into jdk25 OR manual trigger (upstream repo only)
+    if: |
+      github.repository == 'beehive-lab/TornadoVM' &&
+      ((github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-jdk25/')) ||
+      github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: write
+    timeout-minutes: 10
+
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+
+    steps:
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            BRANCH="${{ github.event.pull_request.head.ref }}"
+            echo "version=${BRANCH#release-jdk25/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout jdk25
+        uses: actions/checkout@v4
+        with:
+          ref: jdk25
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          git tag -a "v${VERSION}" -m "Release ${VERSION}"
+          git push origin "v${VERSION}"
+          echo "✅ Created tag v${VERSION}"
+
+      - name: Extract changelog for release notes
+        id: changelog
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          CHANGELOG_FILE="docs/source/CHANGELOG.rst"
+
+          if [ -f "$CHANGELOG_FILE" ]; then
+            # Extract section for this version
+            awk -v ver="TornadoVM ${VERSION}" '
+              $0 ~ ver { found=1; next }
+              found && /^TornadoVM [0-9]+\.[0-9]+\.[0-9]+/ { exit }
+              found { print }
+            ' "$CHANGELOG_FILE" > /tmp/release_notes.txt
+
+            echo "Found changelog section for ${VERSION}"
+          else
+            echo "See CHANGELOG.rst for details." > /tmp/release_notes.txt
+          fi
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const version = '${{ steps.get_version.outputs.version }}';
+
+            let releaseNotes;
+            try {
+              releaseNotes = fs.readFileSync('/tmp/release_notes.txt', 'utf8').trim();
+              if (!releaseNotes) {
+                releaseNotes = `Release ${version}\n\nSee CHANGELOG.rst for details.`;
+              }
+            } catch (e) {
+              releaseNotes = `Release ${version}\n\nSee CHANGELOG.rst for details.`;
+            }
+
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${version}`,
+              name: `TornadoVM ${version}`,
+              body: releaseNotes,
+              draft: false,
+              prerelease: false
+            });
+
+            console.log(`✅ Created release: ${release.html_url}`);
+
+  bump-jdk25-version:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: create-release-tag
+    runs-on: [self-hosted, Linux, x64]
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
+      MAVEN_HOME: /opt/maven
+
+    steps:
+      - name: Checkout jdk25
+        uses: actions/checkout@v4
+        with:
+          ref: jdk25
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup environment
+        run: |
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+          echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine next dev version
+        id: next_version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "next_version=${{ inputs.next_dev_version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION="${{ needs.create-release-tag.outputs.version }}"
+            # Strip -jdk25 suffix, increment patch, re-add suffix + -dev
+            BASE_VERSION="${VERSION%-jdk25}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+            echo "next_version=${MAJOR}.${MINOR}.$((PATCH + 1))-jdk25-dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump to next dev version
+        run: |
+          NEXT="${{ steps.next_version.outputs.next_version }}"
+
+          ./mvnw versions:set -DnewVersion=${NEXT} -DgenerateBackupPoms=false
+
+          sed -i "s/__VERSION__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\(-[a-zA-Z0-9-]*\)\?\"/__VERSION__ = \"${NEXT}\"/" tornado-assembly/src/bin/tornado-test
+
+          git add -A
+          git commit -m "Bump version to ${NEXT} for development"
+          git push origin jdk25
+
+      - name: Summary
+        run: |
+          echo "## 🎉 Release Finalized (JDK 25)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag created | ✅ v${{ needs.create-release-tag.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ✅ Created |" >> $GITHUB_STEP_SUMMARY
+          echo "| jdk25 bumped | ✅ ${{ steps.next_version.outputs.next_version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Remaining steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. \`deploy-maven-central-jdk25\` workflow publishes to Maven Central" >> $GITHUB_STEP_SUMMARY
+          echo "2. \`publish-archives-to-sdkman-jdk25\` publishes to SDKMAN" >> $GITHUB_STEP_SUMMARY
+          echo "3. Announce release" >> $GITHUB_STEP_SUMMARY
