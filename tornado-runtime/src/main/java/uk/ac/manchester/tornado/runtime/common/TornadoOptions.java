@@ -27,6 +27,9 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
+import java.lang.management.ManagementFactory;
+import java.util.List;
+
 public class TornadoOptions {
 
     private static final String FALSE = "FALSE";
@@ -43,9 +46,10 @@ public class TornadoOptions {
     public static final String DEFAULT_METAL_COMPILER_FLAGS = getProperty("tornado.metal.compiler.flags", "");
 
     /**
-     * Default PTX Compiler Flags.
+     * Default PTX Compiler Flags. Make sure the flags are passed in the following format: <flag><space><flag value><another flag><space><another flag value> and so on.
+     * For example, CU_JIT_OPTIMIZATION_LEVEL 4 CU_JIT_TARGET 120
      */
-    public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "");
+    public static final String DEFAULT_PTX_COMPILER_FLAGS = getProperty("tornado.ptx.compiler.flags", "CU_JIT_OPTIMIZATION_LEVEL 4");
 
     /**
      * Default SPIR-V/LevelZero Flags.
@@ -506,5 +510,13 @@ public class TornadoOptions {
      */
     public static boolean cleanUpAtomicsSpace() {
         return getBooleanValue("tornado.clean.atomics.space", FALSE);
+    }
+
+    public static boolean coopsUsed() {
+        List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
+        boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") ||
+                jvmArgs.contains("-XX:-UseCompressedClassPointers");
+
+        return isUncompressed ? false : true;
     }
 }

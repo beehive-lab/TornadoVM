@@ -6,7 +6,7 @@ Pre-requisites
 
 These need to be installed before executing either automatic or manual TornadoVM installation:
 
-* GCC >= 10.0 or LLVM/clang (Linux)
+* GCC >= 13.0 or LLVM/clang (Linux)
 * Xcode >= 15 (macOS only)
 * Visual Studio Community 2022 (Windows 11 recommended)
 * Python >= 3.6 (all OSes)
@@ -718,24 +718,17 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
 
 .. code-block:: xml
 
-   <repositories>
-     <repository>
-       <id>universityOfManchester-graal</id>
-       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
-     </repository>
-   </repositories>
-
    <dependencies>
       <dependency>
-         <groupId>tornado</groupId>
+         <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.1.1</version>
+         <version>2.2.0</version>
       </dependency>
 
       <dependency>
-         <groupId>tornado</groupId>
+         <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.1.1</version>
+         <version>2.2.0</version>
       </dependency>
    </dependencies>
 
@@ -746,6 +739,8 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ==================
 
+ * 2.1.0
+* 2.0.0
 * 1.1.1
 * 1.1.0
 * 1.0.10

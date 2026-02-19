@@ -192,16 +192,16 @@ These examples can be executed using the ``polyglotTests.sh`` script.
 
 .. code-block:: bash
 
-   $ tornado --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
+   $ tornado --printKernel --truffle python $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.py
 
 * **JavaScript**
 
 .. code-block:: bash
 
-   $ tornado --printKernel --truffle js $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
+   $ tornado --printKernel --truffle js $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.js
 
 * **Ruby**
 
 .. code-block:: bash
 
-   $ tornado --printKernel --truffle ruby $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
+   $ tornado --printKernel --truffle ruby $TORNADOVM_HOME/examples/polyglotTruffle/mxmWithTornadoVM.rb

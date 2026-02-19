@@ -49,6 +49,39 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryI
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.core.common.memory.BarrierType;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
+import org.graalvm.compiler.nodes.extended.BoxNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.java.NewArrayNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -73,6 +106,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
@@ -99,7 +133,7 @@ public class SPIRVGraphBuilderPlugins {
         // FIXME: Atomics for SPIRV Backend not implemented.
     }
 
-    public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins) {
+    public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins, HotSpotMetaAccessProvider metaAccessProvider) {
 
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             plugins.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
@@ -118,7 +152,7 @@ public class SPIRVGraphBuilderPlugins {
 
         SPIRVHalfFloatPlugins.registerPlugins(plugins, invocationPlugins);
         // Register plugins for Off-Heap Arrays with Panama
-        registerMemoryAccessPlugins(plugins);
+        registerMemoryAccessPlugins(invocationPlugins, metaAccessProvider);
         registerQuantizationUtilsPlugins(invocationPlugins);
     }
 
@@ -136,7 +170,7 @@ public class SPIRVGraphBuilderPlugins {
         longRegistration.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Int, b.append(SPIRVIntUnaryIntrinsicNode.create(value, SPIRVIntUnaryIntrinsicNode.SPIRVIntOperation.POPCOUNT, JavaKind.Long)));
+                b.push(JavaKind.Int, b.append(SPIRVIntUnaryIntrinsicNode.create(value, SPIRVIntUnaryIntrinsicNode.SPIRVIntOperation.POPCOUNT, JavaKind.Int)));
                 return true;
             }
         });
@@ -163,6 +197,7 @@ public class SPIRVGraphBuilderPlugins {
         r.register(new InvocationPlugin("localBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 SPIRVBarrierNode localBarrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.LOCAL);
                 b.append(localBarrierNode);
                 return true;
@@ -174,6 +209,7 @@ public class SPIRVGraphBuilderPlugins {
         r.register(new InvocationPlugin("globalBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 SPIRVBarrierNode barrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL);
                 b.append(barrierNode);
                 return true;
@@ -188,17 +224,44 @@ public class SPIRVGraphBuilderPlugins {
         registerLocalArray(r, "allocateLongLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_64.asJavaKind());
         registerLocalArray(r, "allocateFloatLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
         registerLocalArray(r, "allocateDoubleLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_64.asJavaKind());
+        registerLocalArray(r, "allocateByteLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_8.asJavaKind());
+        registerLocalArray(r, "allocateHalfFloatLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_16.asJavaKind());
     }
 
-    private static void registerLocalArray(Registration r, final String method, JavaKind returnedJavaKind, JavaKind elementType) {
+    private static void registerLocalArray(Registration r, String method, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register(new InvocationPlugin(method, InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
+                receiver.get(true);
+                LocalArrayNode localArrayNode = createLocalArrayNode(b, elementType, size);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
+    }
+
+    private static LocalArrayNode createLocalArrayNode(GraphBuilderContext b, JavaKind elementType, ValueNode size) {
+        SPIRVKind spirvInt8 = SPIRVKind.OP_TYPE_INT_8;
+        SPIRVKind spirvFloat16 = SPIRVKind.OP_TYPE_FLOAT_16;
+
+        // Byte arrays need explicit type resolution (byte vs char ambiguity)
+        if (elementType == spirvInt8.asJavaKind()) {
+            ResolvedJavaType byteType = resolveType(b, byte.class);
+            return new LocalArrayNode(SPIRVArchitecture.localSpace, byteType, size);
+        }
+
+        // Half-float arrays need special handling with explicit SPIRV kind
+        if (elementType == spirvFloat16.asJavaKind()) {
+            ResolvedJavaType shortType = resolveType(b, short.class);
+            return new LocalArrayNode(SPIRVArchitecture.localSpace, shortType, size, spirvFloat16);
+        }
+
+        // Standard types can use elementType directly
+        return new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, size);
+    }
+
+    private static ResolvedJavaType resolveType(GraphBuilderContext b, Class<?> clazz) {
+        return b.getMetaAccess().lookupJavaType(clazz);
     }
 
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {
@@ -356,7 +419,7 @@ public class SPIRVGraphBuilderPlugins {
      * address works.
      *
      * @param plugins
-     *     {@link InvocationPlugins}
+     *         {@link InvocationPlugins}
      */
     private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, CompilerInternals.class);
@@ -385,7 +448,8 @@ public class SPIRVGraphBuilderPlugins {
         Registration r = new Registration(plugins, QuantizationUtils.class);
         r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
+                    ValueNode accumulator) {
                 unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
                 return false;
             }
@@ -393,7 +457,8 @@ public class SPIRVGraphBuilderPlugins {
 
         r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
+                    ValueNode accumulator) {
                 unimplemented("DP4A is a PTX instruction. It is not supported for SPIR-V.");
                 return false;
             }
@@ -415,62 +480,37 @@ public class SPIRVGraphBuilderPlugins {
         }
     }
 
-    private static void registerMemoryAccessPlugins(final Plugins ps) {
-        ps.appendNodePlugin(new NodePlugin() {
-            @Override
-            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                // "MemorySegment.getAtIndex(ValueLayout, long)"
-                if (!MemorySegment.class.getName().equals(method.getDeclaringClass().toJavaName())) {
-                    return false;
-                }
-                if (!"getAtIndex".equals(method.getName())) {
-                    return false;
-                }
-                if (args.length != 3) {
-                    throw new TornadoRuntimeException("Expecting 3 arguments for getAtIndex but got " + args.length);
-                }
-                ValueNode receiver = args[0];
-                ValueNode layout = args[1];
-                ValueNode index = args[2];
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+        var r = new Registration(plugins, TornadoMemorySegment.class);
+        for (JavaKind kind : JavaKind.values()) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", InvocationPlugin.Receiver.class, int.class, int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                        var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, 64));
+                        var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
+                        var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        var readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        b.addPush(kind, readNode);
+                        return true;
+                    }
+                });
+                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                        var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
 
-                Class valueLayoutClass = getValueLayoutClass(layout);
-                JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
+                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, 64));
 
-                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
-                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                b.addPush(kind, readNode);
-                return true;
+                        var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
+                        var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        var writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                        b.add(writeNode);
+                        return true;
+                    }
+                });
             }
-        });
-        ps.appendNodePlugin(new NodePlugin() {
-            @Override
-            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                // "MemorySegment.setAtIndex(ValueLayout, long, kind)"
-                if (!MemorySegment.class.getName().equals(method.getDeclaringClass().toJavaName())) {
-                    return false;
-                }
-                if (!"setAtIndex".equals(method.getName())) {
-                    return false;
-                }
-                if (args.length != 4) {
-                    throw new TornadoRuntimeException("Expecting 4 arguments for setAtIndex but got " + args.length);
-                }
-                ValueNode receiver = args[0];
-                ValueNode layout = args[1];
-                ValueNode index = args[2];
-                ValueNode value = args[3];
-
-                Class valueLayoutClass = getValueLayoutClass(layout);
-                JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
-
-                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
-                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        }
     }
-
 }

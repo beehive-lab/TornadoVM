@@ -80,7 +80,6 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -91,7 +90,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.MetalArchitecture;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalUnary;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.AtomAddNodeTemplate;
-import uk.ac.manchester.tornado.drivers.metal.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.GlobalThreadIdNode;
@@ -105,6 +103,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntBinaryIntrinsi
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.MetalIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.TornadoAtomicIntegerNode;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class MetalGraphBuilderPlugins {
@@ -117,9 +116,7 @@ public class MetalGraphBuilderPlugins {
         registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 
-        // Register Atomics
-        registerTornadoVMAtomicsPlugins(plugins);
-        // Register KernelContext Plugins
+        // Register KernelContext Plugins (includes atomics)
         registerKernelContextPlugins(plugins);
 
         MetalMathPlugins.registerTornadoMathPlugins(plugins);
@@ -130,24 +127,8 @@ public class MetalGraphBuilderPlugins {
         registerTornadoAtomicInteger(ps, plugins);
 
         MetalHalfFloatPlugins.registerPlugins(ps, plugins);
-        registerMemoryAccessPlugins(ps);
+        registerMemoryAccessPlugins(ps, plugins);
 
-    }
-
-    private static void registerTornadoVMAtomicsPlugins(Registration r) {
-        r.register(new InvocationPlugin("atomic_add", IntArray.class, Integer.TYPE, Integer.TYPE) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
-                AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, inc, JavaKind.Int);
-                b.addPush(JavaKind.Int, b.append(atomicIncNode));
-                return true;
-            }
-        });
-    }
-
-    private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, TornadoVMIntrinsics.class);
-        registerTornadoVMAtomicsPlugins(r);
     }
 
     private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
@@ -379,7 +360,38 @@ public class MetalGraphBuilderPlugins {
         registerAtomicAddOperation(r);
     }
 
-    private static void registerMemoryAccessPlugins(final Plugins ps) {
+    private static void registerMemoryAccessPlugins(final Plugins ps, InvocationPlugins plugins) {
+        // Register InvocationPlugins for TornadoMemorySegment get/set methods.
+        // This prevents inlining of TornadoMemorySegment methods during bytecode parsing,
+        // avoiding LoadField{TornadoMemorySegment#segment} nodes that break TornadoNativeTypeElimination.
+        Registration r = new Registration(plugins, TornadoMemorySegment.class);
+        for (JavaKind kind : JavaKind.values()) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        b.addPush(kind, readNode);
+                        return true;
+                    }
+                });
+                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                        b.add(writeNode);
+                        return true;
+                    }
+                });
+            }
+        }
+
         ps.appendNodePlugin(new NodePlugin() {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {

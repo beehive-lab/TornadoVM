@@ -25,6 +25,7 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.providers.TornadoMemoryOrder.GPU_MEMORY_MODE;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
@@ -97,10 +98,14 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXDecompressedReadFieldNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
@@ -447,19 +452,25 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead;
-
-        if (loadIndexed instanceof LoadIndexedVectorNode) {
-            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        if (loadIndexed.array() instanceof LocalArrayNode localArrayNode && localArrayNode.getPTXKind() == PTXKind.F16) {
+            ReadHalfFloatNode localHalfFloatRead = graph.add(new ReadHalfFloatNode(address, loadIndexed.index(), loadIndexed.array()));
+            loadIndexed.replaceAtUsages(localHalfFloatRead);
+            graph.replaceFixed(loadIndexed, localHalfFloatRead);
         } else {
-            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            ReadNode memoryRead;
+
+            if (loadIndexed instanceof LoadIndexedVectorNode) {
+                memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            } else {
+                memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            }
+            ValueNode readValue = memoryRead;
+            if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
+                readValue = implicitLoadConvert(graph, elementKind, memoryRead);
+            }
+            loadIndexed.replaceAtUsages(readValue);
+            graph.replaceFixed(loadIndexed, memoryRead);
         }
-        ValueNode readValue = memoryRead;
-        if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
-            readValue = implicitLoadConvert(graph, elementKind, memoryRead);
-        }
-        loadIndexed.replaceAtUsages(readValue);
-        graph.replaceFixed(loadIndexed, memoryRead);
     }
 
     @Override
@@ -469,14 +480,19 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        ValueNode writeValue = value;
-        Stamp valueStamp = value.stamp(NodeView.DEFAULT);
-        if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
-            writeValue = implicitStoreConvert(graph, elementKind, value);
+        if (array instanceof LocalArrayNode localArrayNode && localArrayNode.getPTXKind() == PTXKind.F16) {
+            WriteHalfFloatNode localHalfFloatWrite = graph.add(new WriteHalfFloatNode(address, value, storeIndexed.index(), storeIndexed.array()));
+            graph.replaceFixedWithFixed(storeIndexed, localHalfFloatWrite);
+        } else {
+            ValueNode writeValue = value;
+            Stamp valueStamp = value.stamp(NodeView.DEFAULT);
+            if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
+                writeValue = implicitStoreConvert(graph, elementKind, value);
+            }
+            AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, writeValue, array, address, graph, storeIndexed);
+            memoryWrite.setStateAfter(storeIndexed.stateAfter());
+            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
         }
-        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, writeValue, array, address, graph, storeIndexed);
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override
@@ -488,10 +504,18 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
-        loadField.replaceAtUsages(memoryRead);
-        graph.replaceFixed(loadField, memoryRead);
+        boolean areCoopsEnabled = TornadoOptions.coopsUsed();
+        // if coops are used and the field is a not a primitive (primitive data is not compressed)
+        if (areCoopsEnabled && !field.getJavaKind().isPrimitive()) {
+            PTXDecompressedReadFieldNode decompressedNode = graph.add(new PTXDecompressedReadFieldNode(object, address, loadStamp));
+            loadField.replaceAtUsages(decompressedNode);
+            graph.replaceFixed(loadField, decompressedNode);
+        } else {
+            FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
+            ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+            loadField.replaceAtUsages(memoryRead);
+            graph.replaceFixed(loadField, memoryRead);
+        }
     }
 
     @Override

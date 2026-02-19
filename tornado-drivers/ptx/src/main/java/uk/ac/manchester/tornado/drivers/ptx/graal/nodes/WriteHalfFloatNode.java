@@ -50,10 +50,25 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
     @Input
     private ValueNode valueNode;
 
+    @Input
+    private ValueNode indexNode;
+
+    @Input
+    private ValueNode localMemoryArrayNode;
+
+
     public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
         this.valueNode = valueNode;
+    }
+
+    public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode, ValueNode indexNode, ValueNode localMemoryArrayNode) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.valueNode = valueNode;
+        this.indexNode = indexNode;
+        this.localMemoryArrayNode = localMemoryArrayNode;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -72,6 +87,13 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
         }
         Value addressValue = generator.operand(addressNode);
         PTXUnary.MemoryAccess access = (PTXUnary.MemoryAccess) addressValue;
-        tool.append(new PTXLIRStmt.HalfFloatStoreStmt(access, valueToStore));
+        if (indexNode == null) {
+            // if the index is not passed, this is not a local/shared array access
+            tool.append(new PTXLIRStmt.HalfFloatStoreStmt(access, valueToStore));
+        } else {
+            Value index = generator.operand(indexNode);
+            Value localArray = generator.operand(localMemoryArrayNode);
+            tool.append(new PTXLIRStmt.HalfFloatStoreStmt(access, valueToStore, index, localArray));
+        }
     }
 }

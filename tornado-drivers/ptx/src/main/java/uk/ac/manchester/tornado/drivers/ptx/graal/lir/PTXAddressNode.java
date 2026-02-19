@@ -114,13 +114,14 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
 
     private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, PTXLIRGenerator tool) {
         Variable addressValue;
-        if (isLocalMemoryAccess()) {
+        // for local half float arrays we do not need to emit the address
+        if ((isLocalMemoryAccess() && baseValue.getValueKind().equals(LIRKind.value(PTXKind.F16)) || isSharedMemoryAccess())) {
+            gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, baseValue, indexValue));
+        } else if (isLocalMemoryAccess()) {
             Variable basePointer = tool.getArithmetic().emitUnaryAssign(PTXAssembler.PTXUnaryOp.MOV, LIRKind.value(PTXKind.U32), baseValue);
             Value indexOffset = tool.getArithmetic().emitMul(indexValue, new ConstantValue(LIRKind.value(PTXKind.U32), JavaConstant.forInt(baseValue.getPlatformKind().getSizeInBytes())), false);
             addressValue = tool.getArithmetic().emitAdd(basePointer, indexOffset, false);
             gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, addressValue, null));
-        } else if (isSharedMemoryAccess()) {
-            gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, baseValue, indexValue));
         } else {
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
             gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, addressValue, null));

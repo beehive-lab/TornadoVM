@@ -32,6 +32,7 @@ import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVDecompressedReadFieldNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 
@@ -86,6 +87,10 @@ public class SPIRVFP64SupportPhase extends Phase {
 
         graph.getNodes().filter(ReadNode.class).forEach(readNode -> {
             checkStampForFP64Support(readNode.getAccessStamp(NodeView.DEFAULT));
+        });
+
+        graph.getNodes().filter(SPIRVDecompressedReadFieldNode.class).forEach(node -> {
+            checkStampForFP64Support(node.stamp(NodeView.DEFAULT));
         });
 
         graph.getNodes().filter(SPIRVFPUnaryIntrinsicNode.class).forEach(node -> {

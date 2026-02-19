@@ -28,6 +28,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -47,10 +48,18 @@ public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable
 
     @Input
     private AddressNode addressNode;
+    @Input
+    private ValueNode indexNode;
 
     public ReadHalfFloatNode(AddressNode addressNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
+    }
+
+    public ReadHalfFloatNode(AddressNode addressNode, ValueNode indexNode) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.indexNode = indexNode;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -59,7 +68,13 @@ public class ReadHalfFloatNode extends FixedWithNextNode implements LIRLowerable
         Value addressValue = generator.operand(addressNode);
         OCLArchitecture.OCLMemoryBase base = ((OCLUnary.MemoryAccess) addressValue).getBase();
         OCLUnary.OCLAddressCast cast = new OCLUnary.OCLAddressCast(base, LIRKind.value(OCLKind.HALF));
-        tool.append(new OCLLIRStmt.LoadStmt(result, cast, (OCLUnary.MemoryAccess) addressValue));
+        if (indexNode == null) {
+            // if the index is not passed, this is not a local/shared array access
+            tool.append(new OCLLIRStmt.LoadStmt(result, cast, (OCLUnary.MemoryAccess) addressValue));
+        } else {
+            Value index = generator.operand(indexNode);
+            tool.append(new OCLLIRStmt.LoadStmt(result, cast, (OCLUnary.MemoryAccess) addressValue, index));
+        }
         generator.setResult(this, result);
     }
 }

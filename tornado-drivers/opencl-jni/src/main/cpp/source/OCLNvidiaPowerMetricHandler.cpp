@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, 2025, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,11 +24,11 @@
  */
 #include <jni.h>
 #include <iostream>
-#ifdef NVML_IS_SUPPORTED
-#include <nvml.h>
-#endif
 #include "OCLNvidiaPowerMetricHandler.h"
 #include "ocl_log.h"
+#ifdef NVML_IS_SUPPORTED
+#include "nvml_dynamic_loader.h"
+#endif
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler
@@ -38,7 +38,15 @@
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler_clNvmlInit
         (JNIEnv *env, jclass) {
 #ifdef NVML_IS_SUPPORTED
-    nvmlReturn_t result = nvmlInit();
+    // First, try to load the NVML library dynamically
+    if (!initNVMLLoader()) {
+        std::cerr << "TornadoVM-OpenCL: Failed to load NVML library. "
+                  << "NVIDIA power metrics will not be available." << std::endl;
+        return (jlong) -1;
+    }
+
+    // Now call nvmlInit through the dynamically loaded function pointer
+    nvmlReturn_t result = g_nvmlLoader.nvmlInit();
     LOG_NVML_AND_VALIDATE("nvmlInit", result);
 
     return (jlong) result;
@@ -55,9 +63,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNv
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler_clNvmlDeviceGetHandleByIndex
         (JNIEnv *env, jclass clazz, jlong deviceIndex, jlongArray array1) {
 #ifdef NVML_IS_SUPPORTED
+    // Check if NVML is loaded
+    if (!isNVMLAvailable()) {
+        return (jlong) -1;
+    }
+
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
-    nvmlReturn_t result = nvmlDeviceGetHandleByIndex(deviceIndex, (nvmlDevice_t*) device);
+    nvmlReturn_t result = g_nvmlLoader.nvmlDeviceGetHandleByIndex(deviceIndex, (nvmlDevice_t*) device);
     LOG_NVML_AND_VALIDATE("nvmlDeviceGetHandleByIndex", result);
 
     if (array1 != NULL) {
@@ -78,12 +91,17 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNv
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_power_OCLNvidiaPowerMetricHandler_clNvmlDeviceGetPowerUsage
         (JNIEnv *env, jclass clazz, jlongArray array1, jlongArray array2) {
 #ifdef NVML_IS_SUPPORTED
+    // Check if NVML is loaded
+    if (!isNVMLAvailable()) {
+        return (jlong) -1;
+    }
+
     jlong *device = static_cast<jlong *>((array1 != NULL) ? env->GetPrimitiveArrayCritical(array1, NULL)
                                                                       : NULL);
     jlong *powerUsage = static_cast<jlong *>((array2 != NULL) ? env->GetPrimitiveArrayCritical(array2, NULL)
                                                                       : NULL);
 
-    nvmlReturn_t result = nvmlDeviceGetPowerUsage((nvmlDevice_t) *device, (unsigned int*) powerUsage);
+    nvmlReturn_t result = g_nvmlLoader.nvmlDeviceGetPowerUsage((nvmlDevice_t) *device, (unsigned int*) powerUsage);
     LOG_NVML_AND_VALIDATE("nvmlDeviceGetPowerUsage", result);
 
     if (array1 != NULL) {

@@ -55,12 +55,13 @@ tornadoReq.check_python_dependencies()
 import wget
 import config_utils as cutils
 import installer_config as config
+import update_paths as updp
 from packaging import version
 import textwrap
 
 # Configuration
 __DIRECTORY_DEPENDENCIES__ = (Path("etc") / "dependencies").resolve()
-__VERSION__ = "v1.1.2-dev"
+__VERSION__ = "v2.2.0"
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
     config.__GRAALVM21__,
@@ -135,11 +136,11 @@ class Environment:
     """Environment variables container."""
     paths: List[str]
     java_home: str
-    tornado_sdk: str
+    tornadovm_home: str
 
     def __init__(self):
         self.paths = [str(Path.cwd() / "bin" / "bin")]
-        self.tornado_sdk = str(Path.cwd() / "bin" / "sdk")
+        self.tornadovm_home = str(Path.cwd() / "bin" / "sdk")
         self.java_home = ""
 
 # Abstract Base Classes
@@ -300,7 +301,7 @@ class EnvironmentManager:
         """Apply environment variables to current process."""
         os.environ["PATH"] = os.pathsep.join(str(p) for p in env.paths) + os.pathsep + os.environ["PATH"]
         os.environ["JAVA_HOME"] = env.java_home
-        os.environ["TORNADO_SDK"] = env.tornado_sdk
+        os.environ["TORNADOVM_HOME"] = env.tornadovm_home
 
     def create_setup_script(self, env: Environment) -> None:
         """Create environment setup script."""
@@ -313,32 +314,45 @@ class EnvironmentManager:
 
     def _create_windows_script(self, env: Environment) -> None:
         """Create Windows batch script."""
-        binaries_dist = Path(env.tornado_sdk) / "bin" / "dist"
-        level_zero_path = Path.cwd() / "level-zero" / "build" / "bin" / "Release"
+        # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME')
+        java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
-        cutils.runPyInstaller(str(Path.cwd()), env.tornado_sdk)
+        cutils.runPyInstaller(str(Path.cwd()), tornadovm_home)
 
-        content = f"""set JAVA_HOME={env.java_home}
-set PATH={os.pathsep.join(env.paths)}{os.pathsep}{level_zero_path}{os.pathsep}{binaries_dist}{os.pathsep}%PATH%
-set TORNADO_SDK={env.tornado_sdk}
+        content = f"""@echo off
+REM TornadoVM Environment Setup Script (Windows)
+REM Generated automatically by the build process
+
+set JAVA_HOME={java_home}
+set TORNADOVM_HOME={tornadovm_home}
+set PATH=%TORNADOVM_HOME%\\bin;%PATH%
 """
 
-        with open("setvars.cmd", "w") as f:
+        with open("setvars.cmd", "w", newline='\r\n') as f:
             f.write(content)
 
         self.console.print("[INFO] Run with: setvars.cmd", style="green")
 
     def _create_unix_script(self, env: Environment) -> None:
-        path_str = os.pathsep.join(str(p) for p in env.paths)
+        # Get the actual TORNADOVM_HOME from environment (set by update_tornado_paths)
+        tornadovm_home = os.environ.get('TORNADOVM_HOME')
+        java_home = env.java_home if env.java_home else os.environ.get('JAVA_HOME', '')
 
-        content = textwrap.dedent(f"""\
-            export JAVA_HOME={env.java_home}
-            export PATH={path_str}:$PATH
-            export TORNADO_SDK={env.tornado_sdk}
-        """)
+        content = f"""#!/bin/bash
+# TornadoVM Environment Setup Script (Unix/Linux/Mac)
+# Generated automatically by the build process
 
-        with open("setvars.sh", "w") as f:
+export JAVA_HOME="{java_home}"
+export TORNADOVM_HOME="{tornadovm_home}"
+export PATH="$TORNADOVM_HOME/bin:$PATH"
+"""
+
+        with open("setvars.sh", "w", newline='\n') as f:
             f.write(content)
+
+        # Make the script executable
+        os.chmod("setvars.sh", 0o755)
 
         self.console.print("[INFO] Run with: source setvars.sh", style="green")
 
@@ -483,6 +497,10 @@ class TornadoInstaller:
             self.env_manager.apply_environment(env)
 
             self.build_manager.build(config)
+
+            # Update paths to get the correct TORNADOVM_HOME location from the built SDK
+            updp.update_tornado_paths()
+
             self.env_manager.create_setup_script(env)
 
             self.console.print("[SUCCESS] Installation completed!", style="bold green")

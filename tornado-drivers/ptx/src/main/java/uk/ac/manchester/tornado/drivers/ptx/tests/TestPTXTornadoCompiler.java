@@ -88,7 +88,7 @@ public class TestPTXTornadoCompiler {
 
         byte[] source = PTX_KERNEL.getBytes();
         source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, backend);
-        PTXInstalledCode code = codeCache.installSource("add", source, "add", meta.isPrintKernelEnabled());
+        PTXInstalledCode code = codeCache.installSource(meta, "add", source, "add", meta.isPrintKernelEnabled());
 
         String generatedSourceCode = code.getGeneratedSourceCode();
         if (meta.isPrintKernelEnabled()) {

@@ -17,27 +17,23 @@
  */
 package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
- * This class represents an array of characters stored in native memory.
- * The char data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory.
- * The class also encapsulates methods for setting and getting char values,
- * for initializing the char array, and for converting the array to and from different representations.
+ * This class represents an array of characters stored in native memory. The char data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
+ * encapsulates methods for setting and getting char values, for initializing the char array, and for converting the array to and from different representations.
  */
 @SegmentElementSize(size = 2)
 public final class CharArray extends TornadoNativeArray {
     private static final int CHAR_BYTES = 2;
-    private MemorySegment segment;
+    private TornadoMemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
@@ -49,23 +45,42 @@ public final class CharArray extends TornadoNativeArray {
      * Constructs a new instance of the {@link CharArray} that will store a user-specified number of elements.
      *
      * @param numberOfElements
-     *     The number of elements in the array.
+     *         The number of elements in the array.
      */
     public CharArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / CHAR_BYTES;
         segmentByteSize = (long) numberOfElements * CHAR_BYTES + arrayHeaderSize;
+        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
+    }
 
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    /**
+     * Constructs a new instance of the {@link CharArray} by wrapping an existing {@link MemorySegment} without copying its contents.
+     *
+     * @param existingSegment
+     *         The {@link MemorySegment} containing *both* the off-heap char *header* and *data*.
+     */
+    private CharArray(MemorySegment existingSegment) {
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / CHAR_BYTES;
+
+        // Calculate number of elements from segment size
+        long dataSize = existingSegment.byteSize() - arrayHeaderSize;
+        ensureMultipleOfElementSize(dataSize, CHAR_BYTES);
+        this.numberOfElements = (int) (dataSize / CHAR_BYTES);
+
+        // Set up the segment and initialize header
+        this.segmentByteSize = existingSegment.byteSize();
+        this.segment = new TornadoMemorySegment(existingSegment);
+        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     /**
      * Constructs a new {@link CharArray} instance by concatenating the contents of the given array of {@link CharArray} instances.
      *
      * @param arrays
-     *     An array of {@link CharArray} instances to be concatenated into the new instance.
+     *         An array of {@link CharArray} instances to be concatenated into the new instance.
      */
     public CharArray(CharArray... arrays) {
         concat(arrays);
@@ -75,7 +90,7 @@ public final class CharArray extends TornadoNativeArray {
      * Internal method used to create a new instance of the {@link CharArray} from on-heap data.
      *
      * @param values
-     *     The on-heap char array to create the instance from.
+     *         The on-heap char array to create the instance from.
      * @return A new {@link CharArray} instance, initialized with values of the on-heap char array.
      */
     private static CharArray createSegment(char[] values) {
@@ -90,7 +105,7 @@ public final class CharArray extends TornadoNativeArray {
      * Creates a new instance of the {@link CharArray} class from an on-heap char array.
      *
      * @param values
-     *     The on-heap char array to create the instance from.
+     *         The on-heap char array to create the instance from.
      * @return A new {@link CharArray} instance, initialized with values of the on-heap char array.
      */
     public static CharArray fromArray(char[] values) {
@@ -101,7 +116,7 @@ public final class CharArray extends TornadoNativeArray {
      * Creates a new instance of the {@link CharArray} class from a set of char values.
      *
      * @param values
-     *     The char values to initialize the array with.
+     *         The char values to initialize the array with.
      * @return A new {@link CharArray} instance, initialized with the given values.
      */
     public static CharArray fromElements(char... values) {
@@ -112,7 +127,7 @@ public final class CharArray extends TornadoNativeArray {
      * Creates a new instance of the {@link CharArray} class from a {@link MemorySegment}.
      *
      * @param segment
-     *     The {@link MemorySegment} containing the off-heap char data.
+     *         The {@link MemorySegment} containing the off-heap char data.
      * @return A new {@link CharArray} instance, initialized with the segment data.
      */
     public static CharArray fromSegment(MemorySegment segment) {
@@ -120,15 +135,26 @@ public final class CharArray extends TornadoNativeArray {
         int numElements = (int) (byteSize / CHAR_BYTES);
         ensureMultipleOfElementSize(byteSize, CHAR_BYTES);
         CharArray charArray = new CharArray(numElements);
-        MemorySegment.copy(segment, 0, charArray.segment, (long) charArray.baseIndex * CHAR_BYTES, byteSize);
+        MemorySegment.copy(segment, 0, charArray.segment.getSegment(), (long) charArray.baseIndex * CHAR_BYTES, byteSize);
         return charArray;
+    }
+
+    /**
+     * Creates a new instance of the {@link CharArray} class by wrapping an existing {@link MemorySegment} without copying its contents.
+     *
+     * @param segment
+     *         The {@link MemorySegment} containing *both* the off-heap char *header* and *data*.
+     * @return A new {@link CharArray} instance that wraps the given segment.
+     */
+    public static CharArray fromSegmentShallow(MemorySegment segment) {
+        return new CharArray(segment);
     }
 
     /**
      * Creates a new instance of the {@link CharArray} class from a {@link CharBuffer}.
      *
      * @param buffer
-     *     The {@link CharBuffer} containing the float data.
+     *         The {@link CharBuffer} containing the float data.
      * @return A new {@link CharArray} instance, initialized with the buffer data.
      */
     public static CharArray fromCharBuffer(CharBuffer buffer) {
@@ -136,6 +162,38 @@ public final class CharArray extends TornadoNativeArray {
         CharArray charArray = new CharArray(numElements);
         charArray.getSegment().copyFrom(MemorySegment.ofBuffer(buffer));
         return charArray;
+    }
+
+    /**
+     * Factory method to initialize a {@link CharArray}. This method can be invoked from a Task-Graph.
+     *
+     * @param array
+     *         Input Array.
+     * @param value
+     *         The float value to initialize the {@code CharArray} instance with.
+     */
+    public static void initialize(CharArray array, char value) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, value);
+        }
+    }
+
+    /**
+     * Concatenates multiple {@link CharArray} instances into a single {@link CharArray}.
+     *
+     * @param arrays
+     *         Variable number of {@link CharArray} objects to be concatenated.
+     * @return A new {@link CharArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
+     */
+    public static CharArray concat(CharArray... arrays) {
+        int newSize = Arrays.stream(arrays).mapToInt(CharArray::getSize).sum();
+        CharArray concatArray = new CharArray(newSize);
+        long currentPositionBytes = 0;
+        for (CharArray array : arrays) {
+            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
+            currentPositionBytes += array.getNumBytesOfSegment();
+        }
+        return concatArray;
     }
 
     /**
@@ -152,8 +210,7 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Converts the char data from off-heap to on-heap, by copying the values of a {@link CharArray}
-     * instance into a new on-heap array.
+     * Converts the char data from off-heap to on-heap, by copying the values of a {@link CharArray} instance into a new on-heap array.
      *
      * @return A new on-heap char array, initialized with the values stored in the {@link CharArray} instance.
      */
@@ -169,34 +226,34 @@ public final class CharArray extends TornadoNativeArray {
      * Sets the char value at a specified index of the {@link CharArray} instance.
      *
      * @param index
-     *     The index at which to set the char value.
+     *         The index at which to set the char value.
      * @param value
-     *     The char value to store at the specified index.
+     *         The char value to store at the specified index.
      */
     public void set(int index, char value) {
-        segment.setAtIndex(JAVA_CHAR, baseIndex + index, value);
+        segment.setAtIndex(index, value, baseIndex);
     }
 
     /**
      * Gets the char value stored at the specified index of the {@link CharArray} instance.
      *
      * @param index
-     *     The index of which to retrieve the char value.
+     *         The index of which to retrieve the char value.
      * @return
      */
     public char get(int index) {
-        return segment.getAtIndex(JAVA_CHAR, baseIndex + index);
+        return segment.getCharAtIndex(index, baseIndex);
     }
 
     /**
      * Initializes all the elements of the {@link CharArray} instance with a specified value.
      *
      * @param value
-     *     The char value to initialize the {@link ByteArray} instance with.
+     *         The char value to initialize the {@link ByteArray} instance with.
      */
     public void init(char value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_CHAR, baseIndex + i, value);
+            segment.setAtIndex(i, value, baseIndex);
         }
     }
 
@@ -217,7 +274,7 @@ public final class CharArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        return segment.asSlice(TornadoNativeArray.ARRAY_HEADER);
+        return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
     /**
@@ -227,7 +284,7 @@ public final class CharArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        return segment;
+        return segment.getSegment();
     }
 
     /**
@@ -241,8 +298,7 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link CharArray} instance,
-     * excluding the header bytes.
+     * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@link CharArray} instance, excluding the header bytes.
      *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
@@ -252,49 +308,15 @@ public final class CharArray extends TornadoNativeArray {
     }
 
     /**
-     * Factory method to initialize a {@link CharArray}. This method can be invoked from a Task-Graph.
-     *
-     * @param array
-     *     Input Array.
-     * @param value
-     *     The float value to initialize the {@code CharArray} instance with.
-     */
-    public static void initialize(CharArray array, char value) {
-        for (@Parallel int i = 0; i < array.getSize(); i++) {
-            array.set(i, value);
-        }
-    }
-
-    /**
-     * Concatenates multiple {@link CharArray} instances into a single {@link CharArray}.
-     *
-     * @param arrays
-     *     Variable number of {@link CharArray} objects to be concatenated.
-     * @return A new {@link CharArray} instance containing all the elements of the input arrays,
-     *     concatenated in the order they were provided.
-     */
-    public static CharArray concat(CharArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(CharArray::getSize).sum();
-        CharArray concatArray = new CharArray(newSize);
-        long currentPositionBytes = 0;
-        for (CharArray array : arrays) {
-            MemorySegment.copy(array.getSegment(), 0, concatArray.getSegment(), currentPositionBytes, array.getNumBytesOfSegment());
-            currentPositionBytes += array.getNumBytesOfSegment();
-        }
-        return concatArray;
-    }
-
-    /**
      * Extracts a slice of elements from a given {@link CharArray}, creating a new {@link CharArray} instance.
      *
-     *
      * @param offset
-     *     The starting index from which to begin the slice, inclusive.
+     *         The starting index from which to begin the slice, inclusive.
      * @param length
-     *     The number of elements to include in the slice.
+     *         The number of elements to include in the slice.
      * @return A new {@link CharArray} instance representing the specified slice of the original array.
      * @throws IllegalArgumentException
-     *     if the specified slice is out of the bounds of the original array.
+     *         if the specified slice is out of the bounds of the original array.
      */
     public CharArray slice(int offset, int length) {
         if (offset < 0 || length < 0 || offset + length > getSize()) {
@@ -303,7 +325,7 @@ public final class CharArray extends TornadoNativeArray {
 
         long sliceOffsetInBytes = TornadoNativeArray.ARRAY_HEADER + (long) offset * CHAR_BYTES;
         long sliceByteLength = (long) length * CHAR_BYTES;
-        MemorySegment sliceSegment = segment.asSlice(sliceOffsetInBytes, sliceByteLength);
+        MemorySegment sliceSegment = segment.getSegment().asSlice(sliceOffsetInBytes, sliceByteLength);
         CharArray slice = fromSegment(sliceSegment);
         return slice;
     }

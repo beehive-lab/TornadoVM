@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (c) 2024-2025, APT Group, Department of Computer Science,
+# The University of Manchester.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+"""
+Developer-only script to generate IntelliJ IDEA project files for TornadoVM.
+
+This script is intended for developers working from a cloned source repository.
+It generates IntelliJ run configurations for building and testing TornadoVM.
+
+Prerequisites:
+    - TornadoVM must be built first (run `make` or `bin/compile`)
+    - Environment variables must be loaded (source setvars.sh)
+
+Usage:
+    make intellijinit
+    # or directly:
+    ./bin/tornadovm-intellij-init
+
+The script will create run configuration files in the .build/ directory,
+which IntelliJ will detect and make available in Run > Edit Configurations.
+"""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+# Determine the project root directory (parent of bin/)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
+# Paths for source tree
+TORNADO_ASSEMBLY_BIN = PROJECT_ROOT / "tornado-assembly" / "src" / "bin"
+TEMPLATES_DIR = PROJECT_ROOT / "scripts" / "templates" / "intellij-settings" / "ideinit"
+
+sys.path.insert(0, str(TORNADO_ASSEMBLY_BIN))
+
+try:
+    import idea_xml_utils as ideaUtils
+except ImportError:
+    print("[ERROR] Cannot import idea_xml_utils module.")
+    print(f"[ERROR] Expected location: {TORNADO_ASSEMBLY_BIN / 'idea_xml_utils.py'}")
+    print("[ERROR] Please ensure you are running this script from a TornadoVM source repository.")
+    sys.exit(1)
+
+
+def get_installed_backends(tornadovm_home):
+    """
+    Read the list of installed backends from the tornado.backend file.
+
+    Args:
+        tornadovm_home: Path to TORNADOVM_HOME
+
+    Returns:
+        list: List of backend names (e.g., ['opencl-backend', 'ptx-backend'])
+    """
+    backend_file = os.path.join(tornadovm_home, "etc", "tornado.backend")
+
+    if not os.path.exists(backend_file):
+        print(f"[ERROR] Backend configuration file not found: {backend_file}")
+        print("[ERROR] Please build TornadoVM first (run 'make' or 'bin/compile')")
+        sys.exit(1)
+
+    backends = []
+    with open(backend_file, 'r') as f:
+        for line in f:
+            if "tornado.backends" in line:
+                backends_str = line.split("=")[1].strip()
+                backends = backends_str.split(",")
+                break
+
+    if not backends:
+        print("[ERROR] No backends found in tornado.backend file.")
+        sys.exit(1)
+
+    return backends
+
+
+def get_python_home():
+    """Get the Python executable path."""
+    if os.name == 'nt':
+        python_home = subprocess.check_output(["where", "python"]).decode().strip().split("\r\n")
+        return Path(python_home[0])
+    else:
+        return subprocess.check_output(["which", "python3"]).decode().strip()
+
+
+def main():
+    print("=" * 60)
+    print("TornadoVM IntelliJ IDEA Project Generator")
+    print("=" * 60)
+    print()
+
+    # Check for TORNADOVM_HOME
+    tornadovm_home = os.environ.get('TORNADOVM_HOME')
+    if tornadovm_home is None:
+        print("[ERROR] TORNADOVM_HOME environment variable is not set.")
+        print()
+        print("Please build TornadoVM first and source the environment:")
+        print("  1. make                    # Build TornadoVM")
+        print("  2. source setvars.sh       # Load environment variables")
+        print("  3. make intellijinit       # Generate IntelliJ files")
+        sys.exit(1)
+
+    print(f"TORNADOVM_HOME: {tornadovm_home}")
+
+    # Check for JAVA_HOME
+    java_home = os.environ.get('JAVA_HOME')
+    if java_home is None:
+        print("[ERROR] JAVA_HOME environment variable is not set.")
+        sys.exit(1)
+
+    print(f"JAVA_HOME:      {java_home}")
+
+    # Verify templates exist
+    if not TEMPLATES_DIR.exists():
+        print(f"[ERROR] Templates directory not found: {TEMPLATES_DIR}")
+        print("[ERROR] Please ensure you are running from a TornadoVM source repository.")
+        sys.exit(1)
+
+    print(f"Project root:   {PROJECT_ROOT}")
+
+    # Get installed backends
+    backends = get_installed_backends(tornadovm_home)
+    print(f"Backends:       {', '.join(backends)}")
+    print()
+
+    # Get Python home
+    python_home = get_python_home()
+    if python_home is None:
+        print("[ERROR] Python is not found in the PATH.")
+        sys.exit(1)
+
+    # Generate the IntelliJ project files
+    # Use source tree for templates and project root for output
+    print("Generating IntelliJ IDEA run configurations...")
+    print()
+
+    project_directory = str(PROJECT_ROOT)
+    xml_templates_directory = str(TEMPLATES_DIR)
+
+    # Clean and prepare the .build directory
+    ideaUtils.cleanup_build_directory(os.path.join(project_directory, ".build"))
+
+    # Generate XML files using source tree paths
+    ideaUtils.generate_xml_files(
+        xml_templates_directory,
+        project_directory,
+        tornadovm_home,
+        java_home,
+        python_home,
+        backends
+    )
+
+    print()
+    print("=" * 60)
+    print("IntelliJ setup complete!")
+    print()
+    print("Next steps:")
+    print("  1. Open the TornadoVM project in IntelliJ IDEA")
+    print("  2. Go to Run > Edit Configurations")
+    print("  3. You should see the generated run configurations")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

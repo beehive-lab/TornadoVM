@@ -204,11 +204,11 @@ public enum PTXKind implements PlatformKind {
         return ILLEGAL;
     }
 
-    public static PTXAssembler.PTXBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
-        return resolveTemplateType(type.getJavaKind());
+    public static PTXAssembler.PTXBinaryTemplate resolveTemplateType(ResolvedJavaType type, PTXKind kind) {
+        return resolveTemplateType(type.getJavaKind(), kind);
     }
 
-    public static PTXAssembler.PTXBinaryTemplate resolveTemplateType(JavaKind type) {
+    public static PTXAssembler.PTXBinaryTemplate resolveTemplateType(JavaKind type, PTXKind kind) {
         if (type == JavaKind.Int) {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_INT_ARRAY;
         } else if (type == JavaKind.Double) {
@@ -216,7 +216,11 @@ public enum PTXKind implements PlatformKind {
         } else if (type == JavaKind.Float) {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_FLOAT_ARRAY;
         } else if (type == JavaKind.Short) {
-            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_SHORT_ARRAY;
+            if (kind == PTXKind.F16) {
+                return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_HALF_FLOAT_ARRAY;
+            } else {
+                return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_SHORT_ARRAY;
+            }
         } else if (type == JavaKind.Long) {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_LONG_ARRAY;
         } else if (type == JavaKind.Char) {

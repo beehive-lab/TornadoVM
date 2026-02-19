@@ -4,10 +4,9 @@
     <id>bin</id>
     <formats>
         <format>dir</format>
-        <format>tar.gz</format>
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>tornado-sdk-${project.version}-${buildNumber}/</baseDirectory>
+    <baseDirectory>tornadovm-${project.version}-${tornado.backend}/</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>../</directory>
@@ -32,16 +31,28 @@
         </fileSet>
         <fileSet>
             <directory>src/bin</directory>
-            <!-- tornado binaries -->
+            <!-- tornado scripts -->
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.sh</include>
                 <include>*.cmd</include>
                 <include>*.py</include>
-                <include>tornado*</include>
+                <include>tornado</include>
+                <include>tornado-test</include>
+                <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>
             <lineEnding>unix</lineEnding>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/bin</directory>
+            <!-- Windows executables (binary files - without line ending conversion) -->
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>*.exe</include>
+                <include>*.spec</include>
+            </includes>
             <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
@@ -51,7 +62,21 @@
             <includes>
                 <include>**/*</include>
             </includes>
+            <excludes>
+                <exclude>tornado.backend</exclude>
+            </excludes>
             <filtered>true</filtered>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0666</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/etc</directory>
+            <!-- tornado.backend file (pre-created by compile script, no filtering needed) -->
+            <outputDirectory>etc</outputDirectory>
+            <includes>
+                <include>tornado.backend</include>
+            </includes>
+            <filtered>false</filtered>
             <lineEnding>unix</lineEnding>
             <fileMode>0666</fileMode>
         </fileSet>
@@ -59,7 +84,6 @@
             <directory>src/etc</directory>
             <outputDirectory>./</outputDirectory>
             <includes>
-                <include>sourceSDK.sh</include>
                 <include>README.md</include>
             </includes>
             <filtered>true</filtered>
@@ -147,6 +171,15 @@
             </includes>
             <fileMode>0666</fileMode>
         </fileSet>
+        <fileSet>
+            <directory>../graalJars</directory>
+            <!-- Graal compiler JARs for JDK 21 -->
+            <outputDirectory>share/java/graalJars</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
     </fileSets>
     <moduleSets>
         <moduleSet>
@@ -156,18 +189,18 @@
             <includes>
                 <include>tornado:beehive-spirv-toolkit</include>
                 <include>tornado:beehive-levelzero-jni</include>
-                <include>tornado:tornado-api</include>
-                <include>tornado:tornado-runtime</include>
-                <include>tornado:tornado-annotation</include>
-                <include>tornado:tornado-matrices</include>
-                <include>tornado:tornado-drivers-common</include>
-                <include>tornado:tornado-drivers-ptx</include>
-                <include>tornado:tornado-drivers-opencl</include>
-                <include>tornado:tornado-drivers-metal</include>
-                <include>tornado:tornado-drivers-spirv</include>
-                <include>tornado:tornado-examples</include>
-                <include>tornado:tornado-benchmarks</include>
-                <include>tornado:tornado-unittests</include>
+                <include>io.github.beehive-lab:tornado-api</include>
+                <include>io.github.beehive-lab:tornado-runtime</include>
+                <include>io.github.beehive-lab:tornado-annotation</include>
+                <include>io.github.beehive-lab:tornado-matrices</include>
+                <include>io.github.beehive-lab:tornado-drivers-common</include>
+                <include>io.github.beehive-lab:tornado-drivers-ptx</include>
+                <include>io.github.beehive-lab:tornado-drivers-opencl</include>
+                <include>io.github.beehive-lab:tornado-drivers-spirv</include>
+                <include>io.github.beehive-lab:tornado-drivers-metal</include>
+                <include>io.github.beehive-lab:tornado-examples</include>
+                <include>io.github.beehive-lab:tornado-benchmarks</include>
+                <include>io.github.beehive-lab:tornado-unittests</include>
             </includes>
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
@@ -189,9 +222,9 @@
                 </includes>
             </unpackOptions>
             <includes>
-                <include>tornado:tornado-drivers-ptx-jni:jar:libs</include>
-                <include>tornado:tornado-drivers-opencl-jni:jar:libs</include>
-                <include>tornado:tornado-drivers-metal-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-metal-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-ptx-jni:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-opencl-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

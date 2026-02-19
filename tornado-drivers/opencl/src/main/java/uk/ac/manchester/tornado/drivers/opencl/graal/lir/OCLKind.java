@@ -282,7 +282,7 @@ public enum OCLKind implements PlatformKind {
         };
     }
 
-    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type, OCLKind kind) {
         if (type == JavaKind.Int) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
         } else if (type == JavaKind.Double) {
@@ -290,19 +290,22 @@ public enum OCLKind implements PlatformKind {
         } else if (type == JavaKind.Float) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
         } else if (type == JavaKind.Short) {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+            if (kind == OCLKind.HALF) {
+                return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_HALF_FLOAT_ARRAY;
+            } else {
+                return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+            }
         } else if (type == JavaKind.Long) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
-        } else if (type == JavaKind.Char) {
+        } else if (type == JavaKind.Char || type == JavaKind.Byte) {
+            // In OpenCL bytes are treated as chars
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-        } else if (type == JavaKind.Byte) {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
         }
         return null;
     }
 
-    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
-        return resolveTemplateType(type.getJavaKind());
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type, OCLKind kind) {
+        return resolveTemplateType(type.getJavaKind(), kind);
     }
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivateTemplateType(ResolvedJavaType type) {
@@ -331,39 +334,26 @@ public enum OCLKind implements PlatformKind {
     }
 
     public static int lookupTypeIndex(OCLKind kind) {
-        switch (kind) {
-            case SHORT:
-                return 0;
-            case INT:
-                return 1;
-            case FLOAT:
-                return 2;
-            case CHAR:
-                return 3;
-            case DOUBLE:
-                return 4;
-            case HALF:
-                return 5;
-            default:
-                return -1;
-        }
+        return switch (kind) {
+            case SHORT -> 0;
+            case INT -> 1;
+            case FLOAT -> 2;
+            case CHAR -> 3;
+            case DOUBLE -> 4;
+            case HALF -> 5;
+            default -> -1;
+        };
     }
 
     public static int lookupLengthIndex(int length) {
-        switch (length) {
-            case 2:
-                return 0;
-            case 3:
-                return 1;
-            case 4:
-                return 2;
-            case 8:
-                return 3;
-            case 16:
-                return 4;
-            default:
-                return -1;
-        }
+        return switch (length) {
+            case 2 -> 0;
+            case 3 -> 1;
+            case 4 -> 2;
+            case 8 -> 3;
+            case 16 -> 4;
+            default -> -1;
+        };
     }
 
     @Override

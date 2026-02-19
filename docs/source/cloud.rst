@@ -36,7 +36,7 @@ Pre-requisites:
       $ git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
 
 1. Install TornadoVM with the OpenCL backend, as a CentOS user. The Xilinx FPGA is not exposed to simple users.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
@@ -73,18 +73,18 @@ c. Load the environment variables of TornadoVM for root.
 
    $ tornado --devices
 
-3. Update the the FPGA Conguration file
+3. Update the FPGA Conguration file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Update the ``$TORNADO_SDK/etc/xilinx-fpga.conf`` file or create your own
-(e.g. ``$TORNADO_SDK/etc/aws-fpga.conf``), and append the necessary
+Update the ``$TORNADOVM_HOME/etc/xilinx-fpga.conf`` file or create your own
+(e.g. ``$TORNADOVM_HOME/etc/aws-fpga.conf``), and append the necessary
 information (i.e. FPGA plarform name (DEVICE_NAME), HLS compiler flags
 (FLAGS), HLS directory ( DIRECTORY_BITSTREAM), and AWS S3 configuration
 (s3_bucket, s3_dcp_key and s3_loogs_key)).
 
 .. code:: bash
 
-   $ vim $TORNADO_SDK/etc/aws-fpga.conf
+   $ vim $TORNADOVM_HOME/etc/aws-fpga.conf
 
 
 Example of configuration file:
@@ -107,7 +107,7 @@ Example of configuration file:
 
 You can run TornadoVM with your configuration file, by using the
 ``-Dtornado.fpga.conf.file=FILE`` flag. If this flag is not used, the
-default configuration file is the ``$TORNADO_SDK/etc/xilinx-fpga.conf``.
+default configuration file is the ``$TORNADOVM_HOME/etc/xilinx-fpga.conf``.
 
 4. Run a program that offloads a task on the FPGA.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

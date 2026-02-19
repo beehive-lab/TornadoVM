@@ -23,30 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getJavaKindFromValueLayoutClass;
-import static uk.ac.manchester.tornado.drivers.common.code.CodeUtil.getValueLayoutClass;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIGN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
-
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
-import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
@@ -64,9 +46,9 @@ import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -74,18 +56,14 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
-
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -100,28 +78,47 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import java.util.function.Supplier;
+
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIGN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 public class PTXGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
 
         registerFP16ConversionPlugins(plugins);
-        registerTornadoInstrinsicsPlugins(plugins);
+        registerTornadoIntrinsicsPlugins(plugins);
         registerPTXBuiltinPlugins(plugins);
         PTXMathPlugins.registerTornadoMathPlugins(plugins);
         PTXVectorPlugins.registerPlugins(ps, plugins);
         PTXHalfFloatPlugin.registerPlugins(ps, plugins);
-        registerMemoryAccessPlugins(ps);
+        registerMemoryAccessPlugins(plugins, metaAccessProvider);
         registerKernelContextPlugins(plugins);
         registerQuantizationUtilsPlugins(plugins);
     }
 
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, Float.class);
+        var r = new Registration(plugins, Float.class);
         r.register(new InvocationPlugin("float16ToFloat", short.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
@@ -133,10 +130,11 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerQuantizationUtilsPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, QuantizationUtils.class);
+        var r = new Registration(plugins, QuantizationUtils.class);
         r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, Int8Array.class, long.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
+                    ValueNode accumulator) {
                 Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
                 graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
                 return true;
@@ -145,7 +143,8 @@ public class PTXGraphBuilderPlugins {
 
         r.register(new InvocationPlugin("dp4a", Int8Array.class, long.class, byte[].class, long.class, int.class) {
             @Override
-            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b, ValueNode accumulator) {
+            public boolean apply(GraphBuilderContext graphBuilderContext, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode offset_a, ValueNode b, ValueNode offset_b,
+                    ValueNode accumulator) {
                 Dp4aNode dp4aOp = new Dp4aNode(a, offset_a, b, offset_b, accumulator);
                 graphBuilderContext.addPush(JavaKind.Int, dp4aOp);
                 return true;
@@ -163,9 +162,8 @@ public class PTXGraphBuilderPlugins {
 
     }
 
-    private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
-
-        final InvocationPlugin printfPlugin = new InvocationPlugin("printf", String.class, Object[].class) {
+    private static void registerTornadoIntrinsicsPlugins(InvocationPlugins plugins) {
+        final var printfPlugin = new InvocationPlugin("printf", String.class, Object[].class) {
 
             @Override
             public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
@@ -179,14 +177,12 @@ public class PTXGraphBuilderPlugins {
 
                 int argIndex = 0;
                 for (Node n : newArrayNode.usages()) {
-                    if (n instanceof StoreIndexedNode) {
-                        StoreIndexedNode storeNode = (StoreIndexedNode) n;
-                        ValueNode value = storeNode.value();
-                        if (value instanceof BoxNode) {
-                            BoxNode box = (BoxNode) value;
-                            value = box.getValue();
-                            GraphUtil.unlinkFixedNode(box);
-                            box.safeDelete();
+                    if (n instanceof StoreIndexedNode storeIndexedNode) {
+                        var value = storeIndexedNode.value();
+                        if (value instanceof BoxNode boxNode) {
+                            value = boxNode.getValue();
+                            GraphUtil.unlinkFixedNode(boxNode);
+                            boxNode.safeDelete();
                         }
                         actualArgs[argIndex + 1] = value;
                         argIndex++;
@@ -203,8 +199,8 @@ public class PTXGraphBuilderPlugins {
                     // however, we cannot remove all inputs as they may be used by the currently
                     // unbuilt part of the graph.
                     // We also need to ensure that we do not leave any gaps in between fixed nodes
-                    if (n instanceof FixedWithNextNode) {
-                        GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
+                    if (n instanceof FixedWithNextNode fixedWithNextNode) {
+                        GraphUtil.unlinkFixedNode(fixedWithNextNode);
                     }
                     n.clearInputs();
                     n.safeDelete();
@@ -221,8 +217,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerPTXBuiltinPlugins(InvocationPlugins plugins) {
-
-        Registration r = new Registration(plugins, Math.class);
+        var r = new Registration(plugins, Math.class);
         r.setAllowOverwrite(true);
         registerPTXOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerPTXOverridesForType(r, Double.TYPE, JavaKind.Double);
@@ -231,11 +226,11 @@ public class PTXGraphBuilderPlugins {
         registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
 
-        Registration longReg = new Registration(plugins, Long.class);
+        var longReg = new Registration(plugins, Long.class);
         longReg.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
+                b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
                 return true;
             }
         });
@@ -254,6 +249,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("localBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 PTXBarrierNode localBarrierNode = new PTXBarrierNode(0, -1);
                 b.add(localBarrierNode);
                 return true;
@@ -265,6 +261,7 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("globalBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                receiver.get(true);
                 PTXBarrierNode localBarrierNode = new PTXBarrierNode(1, -1);
                 b.add(localBarrierNode);
                 return true;
@@ -273,19 +270,34 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerAtomicAddOperation(Registration r) {
-        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, 3);
-        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, 6);
-        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, 3);
+        // Accessing the vmConfig during initialization was causing a NullPointerException.
+        // By using Suppliers, the getVMConfig() is only invoked at compile time, when the Supplier's get() is invoked in the plugins.
+        Supplier<Integer> headerSupplier4Byte = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Int);
+            return headerSize / JavaKind.Int.getByteCount(); // 16/4=4 or 24/4=6
+        };
+
+        Supplier<Integer> headerSupplier8Byte = () -> {
+            var vmConfig = TornadoCoreRuntime.getVMConfig();
+            int headerSize = vmConfig.getArrayBaseOffset(JavaKind.Long);
+            return headerSize / JavaKind.Long.getByteCount(); // 16/8=2 or 24/8=3
+        };
+
+        registerAtomicAddPlugin(r, "atomicAdd", IntArray.class, PTXKind.U32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", int[].class, PTXKind.U32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, PTXKind.U64, headerSupplier8Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", FloatArray.class, PTXKind.F32, headerSupplier4Byte);
+        registerAtomicAddPlugin(r, "atomicAdd", DoubleArray.class, PTXKind.F64, headerSupplier8Byte);
     }
 
-    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, int panamaOffset) {
+    private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, PTXKind kind, Supplier<Integer> headerSupplier) {
         r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
                 JavaKind javaKind = kind.asJavaKind();
-                AddressNode address = computeAddress(b, segment, index, panamaOffset, javaKind);
+                int header = headerSupplier.get();
+                AddressNode address = computeAddress(b, segment, index, header, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
                 b.add(b.append(atomicAddNode));
                 return true;
@@ -305,7 +317,10 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                receiver.get(true);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -316,7 +331,10 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateLongLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                receiver.get(true);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -327,7 +345,10 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                receiver.get(true);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -338,20 +359,42 @@ public class PTXGraphBuilderPlugins {
         r.register(new InvocationPlugin("allocateDoubleLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, size);
+                receiver.get(true);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, elementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
     }
 
-    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+    private static void registerByteLocalArray(Registration r, JavaKind returnedJavaKind) {
         r.register(new InvocationPlugin("allocateByteLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
                 MetaAccessProvider metaAccess = b.getMetaAccess();
                 ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
-                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, size);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.sharedSpace, resolvedElementType, sizeNode);
+                b.getGraph().addOrUnique(localArrayNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerHalfFloatLocalArray(Registration r, JavaKind returnedJavaKind) {
+        r.register(new InvocationPlugin("allocateHalfFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                receiver.get(true);
+                MetaAccessProvider metaAccess = b.getMetaAccess();
+                ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(short.class);
+                ValueNode sizeNode = b.getGraph().addOrUnique(size);
+                LocalArrayNode localArrayNode = new LocalArrayNode(PTXArchitecture.localSpace, resolvedElementType, sizeNode, PTXKind.F16);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -359,9 +402,9 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void localArraysPlugins(Registration r) {
-        JavaKind returnedJavaKind = JavaKind.Object;
+        var returnedJavaKind = JavaKind.Object;
 
-        JavaKind elementType = PTXKind.B32.asJavaKind();
+        var elementType = PTXKind.B32.asJavaKind();
         registerIntLocalArray(r, returnedJavaKind, elementType);
 
         elementType = PTXKind.B64.asJavaKind();
@@ -373,12 +416,14 @@ public class PTXGraphBuilderPlugins {
         elementType = PTXKind.B64.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
 
-        elementType = PTXKind.S8.asJavaKind();
-        registerByteLocalArray(r, returnedJavaKind, elementType);
+        registerByteLocalArray(r, returnedJavaKind);
+
+        returnedJavaKind = JavaKind.fromJavaClass(short.class);
+        registerHalfFloatLocalArray(r, returnedJavaKind);
     }
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, KernelContext.class);
+        var r = new Registration(plugins, KernelContext.class);
 
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
@@ -505,62 +550,36 @@ public class PTXGraphBuilderPlugins {
 
     }
 
-    private static void registerMemoryAccessPlugins(final Plugins ps) {
-        ps.appendNodePlugin(new NodePlugin() {
-            @Override
-            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                // "MemorySegment.getAtIndex(ValueLayout, long)"
-                if (!MemorySegment.class.getName().equals(method.getDeclaringClass().toJavaName())) {
-                    return false;
-                }
-                if (!"getAtIndex".equals(method.getName())) {
-                    return false;
-                }
-                if (args.length != 3) {
-                    throw new TornadoRuntimeException("Expecting 3 arguments for getAtIndex but got " + args.length);
-                }
-                ValueNode receiver = args[0];
-                ValueNode layout = args[1];
-                ValueNode index = args[2];
-
-                Class valueLayoutClass = getValueLayoutClass(layout);
-                JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
-
-                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
-                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                b.addPush(kind, readNode);
-                return true;
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+        var r = new Registration(plugins, TornadoMemorySegment.class);
+        for (JavaKind kind : JavaKind.values()) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                        var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, PTXKind.U64.asJavaKind().getBitCount()));
+                        var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
+                        var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        var readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        b.addPush(kind, readNode);
+                        return true;
+                    }
+                });
+                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                        var absoluteIndexNode = b.append(new AddNode(index, baseIndex));
+                        var signExtendNode = b.append(new SignExtendNode(absoluteIndexNode, PTXKind.U64.asJavaKind().getBitCount()));
+                        var mulNode = b.append(new MulNode(signExtendNode, ConstantNode.forLong(kind.getByteCount())));
+                        var addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
+                        var writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                        b.add(writeNode);
+                        return true;
+                    }
+                });
             }
-        });
-        ps.appendNodePlugin(new NodePlugin() {
-            @Override
-            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                // "MemorySegment.setAtIndex(ValueLayout, long, kind)"
-                if (!MemorySegment.class.getName().equals(method.getDeclaringClass().toJavaName())) {
-                    return false;
-                }
-                if (!"setAtIndex".equals(method.getName())) {
-                    return false;
-                }
-                if (args.length != 4) {
-                    throw new TornadoRuntimeException("Expecting 4 arguments for setAtIndex but got " + args.length);
-                }
-                ValueNode receiver = args[0];
-                ValueNode layout = args[1];
-                ValueNode index = args[2];
-                ValueNode value = args[3];
-
-                Class valueLayoutClass = getValueLayoutClass(layout);
-                JavaKind kind = getJavaKindFromValueLayoutClass(valueLayoutClass);
-
-                MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                AddressNode addressNode = b.append(new OffsetAddressNode(receiver, mulNode));
-                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        }
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {

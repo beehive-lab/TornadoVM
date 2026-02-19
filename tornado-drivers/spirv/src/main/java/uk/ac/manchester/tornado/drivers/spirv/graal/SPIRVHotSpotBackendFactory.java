@@ -152,7 +152,7 @@ public class SPIRVHotSpotBackendFactory {
                 false, //
                 false, //
                 loweringProvider);
-        SPIRVGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
+        SPIRVGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins, metaAccess);
 
         return plugins;
     }

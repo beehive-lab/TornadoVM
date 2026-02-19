@@ -18,18 +18,16 @@
 package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.MemorySegment;
-
-import uk.ac.manchester.tornado.api.types.tensors.Tensor;
+import java.lang.management.ManagementFactory;
+import java.util.List;
 
 import static java.lang.String.format;
 
 /**
- * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays,
- * (e.g., {@link ByteArray}, {@link IntArray}, etc.)
+ * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays, (e.g., {@link ByteArray}, {@link IntArray}, etc.)
  *
  * <p>
- * The class provides methods for retrieving the number of elements stored in the native arrays,
- * for obtaining the underlying memory segment, for clearing the data, for calculating the total number of
+ * The class provides methods for retrieving the number of elements stored in the native arrays, for obtaining the underlying memory segment, for clearing the data, for calculating the total number of
  * bytes occupied by the memory segment, and for getting the number of bytes, excluding the array header size.
  * </p>
  *
@@ -40,13 +38,29 @@ import static java.lang.String.format;
 public abstract sealed class TornadoNativeArray //
         permits ByteArray, CharArray, DoubleArray, //
         FloatArray, HalfFloatArray, IntArray, //
-        LongArray, ShortArray, Int8Array, Tensor {
+        LongArray, ShortArray, Int8Array {
 
     /**
-     * The size of the header in bytes. The default value is 24, but it can be configurable through
-     * the "tornado.panama.objectHeader" system property.
+     * The size of the header in bytes. It sets the default value either to 16 or 24, depending on whether the uncompressed flags are passed by the user. It can also be configurable through the
+     * "tornado.panama.objectHeader" system property.
      */
-    public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "24"));
+    public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", getDefaultHeaderSize()));
+
+    private static String getDefaultHeaderSize() {
+        List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
+        boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") || jvmArgs.contains("-XX:-UseCompressedClassPointers");
+
+        return isUncompressed ? "24" : "16";
+    }
+
+    /**
+     * Checks that the byte size is a multiple of the element size.
+     */
+    static void ensureMultipleOfElementSize(long byteSize, long elementSize) {
+        if (byteSize % elementSize != 0) {
+            throw new IllegalArgumentException(format("The byte size (%d) is not a multiple of the element size (%d)", byteSize, elementSize));
+        }
+    }
 
     /**
      * Returns the number of elements stored in the native array.
@@ -86,17 +100,10 @@ public abstract sealed class TornadoNativeArray //
     /**
      * Clears the contents of the native array.
      */
-    protected abstract void clear();
+    protected void clear() {
+
+    }
 
     public abstract int getElementSize();
-
-    /**
-     * Checks that the byte size is a multiple of the element size.
-     */
-    static void ensureMultipleOfElementSize(long byteSize, long elementSize) {
-        if (byteSize % elementSize != 0) {
-            throw new IllegalArgumentException(format("The byte size (%d) is not a multiple of the element size (%d)", byteSize, elementSize));
-        }
-    }
 
 }

@@ -74,8 +74,8 @@ public class OCLCodeCache {
     private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL_ONEAPI = "/etc/intel-oneapi-fpga.conf";
     private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_XILINX = "/etc/xilinx-fpga.conf";
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
-    private static final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
-    private static final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
+    private static final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADOVM_HOME") + "/bin/cleanFpga.sh";
+    private static final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADOVM_HOME") + "/bin/aws_post_processing.sh";
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -161,7 +161,7 @@ public class OCLCodeCache {
             return FPGA_CONFIGURATION_FILE;
         } else {
             StringBuilder sb = new StringBuilder();
-            sb.append(System.getenv("TORNADO_SDK"));
+            sb.append(System.getenv("TORNADOVM_HOME"));
             sb.append(fetchFPGAConfigurationFile());
             return sb.toString();
         }
@@ -302,7 +302,7 @@ public class OCLCodeCache {
     }
 
     private String resolveAbsoluteDirectory(String dir) {
-        final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
+        final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADOVM_HOME");
         if (Paths.get(dir).isAbsolute()) {
             if (!Files.exists(Paths.get(dir))) {
                 throw new TornadoRuntimeException("invalid directory: " + dir);
@@ -326,7 +326,7 @@ public class OCLCodeCache {
     }
 
     private Path resolveDirectory(String dir) {
-        final String tornadoRoot = System.getenv("TORNADO_SDK");
+        final String tornadoRoot = System.getenv("TORNADOVM_HOME");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
         final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         createOrReuseDirectory(outDir);

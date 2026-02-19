@@ -53,10 +53,20 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
     @Input
     private ValueNode valueNode;
 
+    @Input
+    private ValueNode indexNode;
+
     public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode) {
         super(TYPE, new HalfFloatStamp());
         this.addressNode = addressNode;
         this.valueNode = valueNode;
+    }
+
+    public WriteHalfFloatNode(AddressNode addressNode, ValueNode valueNode, ValueNode indexValue) {
+        super(TYPE, new HalfFloatStamp());
+        this.addressNode = addressNode;
+        this.valueNode = valueNode;
+        this.indexNode = indexValue;
     }
 
     public void generate(NodeLIRBuilderTool generator) {
@@ -71,7 +81,13 @@ public class WriteHalfFloatNode extends FixedWithNextNode implements LIRLowerabl
                 tool.append(new SPIRVLIRStmt.StoreStmt(cast, memoryAccess, valueToStore));
             }
         } else if (addressValue instanceof MemoryIndexedAccess indexedAccess) {
-            tool.append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, valueToStore));
+            Value index = generator.operand(indexNode);
+            SPIRVUnary.MemoryIndexedAccess localAccessIndex = new SPIRVUnary.MemoryIndexedAccess(
+                    indexedAccess.getMemoryRegion(),
+                    indexedAccess.getValue(),
+                    index
+            );
+            tool.append(new SPIRVLIRStmt.StoreIndexedMemAccess(localAccessIndex, valueToStore));
         }
 
     }

@@ -45,6 +45,14 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
+ * Method:    cuModuleLoadDataEx
+ * Signature: ([B[I[J)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleLoadDataEx
+        (JNIEnv *, jclass, jbyteArray, jintArray, jlongArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Method:    cuModuleUnload
  * Signature: ([B)J
  */

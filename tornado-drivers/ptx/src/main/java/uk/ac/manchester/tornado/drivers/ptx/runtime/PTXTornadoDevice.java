@@ -189,7 +189,7 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            TornadoInstalledCode installedCode = deviceContext.installCode(executionPlanId, result, resolvedMethod.getName());
+            TornadoInstalledCode installedCode = deviceContext.installCode(taskMeta, executionPlanId, result, resolvedMethod.getName());
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
@@ -213,10 +213,11 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
 
         final Path path = Paths.get(executable.getFilename());
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+        final TaskDataContext taskMeta = executable.meta();
         try {
             byte[] source = Files.readAllBytes(path);
             source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(executionPlanId, functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
+            return deviceContext.installCode(taskMeta, executionPlanId, functionName, source, executable.getEntryPoint(), task.meta().isPrintKernelEnabled());
         } catch (IOException e) {
             e.printStackTrace();
         }

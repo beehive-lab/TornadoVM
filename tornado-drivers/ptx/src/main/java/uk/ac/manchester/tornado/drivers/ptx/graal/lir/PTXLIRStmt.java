@@ -413,6 +413,103 @@ public class PTXLIRStmt {
 
     }
 
+    @Opcode("CAST_COMPRESSED")
+    public static class CastCompressedStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<CastCompressedStmt> TYPE = LIRInstructionClass.create(CastCompressedStmt.class);
+
+        @Def
+        protected Value compressed;
+        @Use
+        protected Value address;
+
+        public CastCompressedStmt(Value compressed, Value address) {
+            super(TYPE);
+            this.compressed = compressed;
+            this.address = address;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            // casts an 8-byte address to a 4-byte pointer
+            // ld.global.u32 %r_compressed, [%r_address];
+            asm.emit("ld.global.u32");
+            asm.space();
+            asm.emitValue(compressed);
+            asm.emit(", [");
+            asm.emitValue(address);
+            asm.emit("]");
+            asm.delimiter();
+            asm.eol();
+
+        }
+
+    }
+
+    @Opcode("DECOMPRESS_POINTER")
+    public static class DecompressPointerStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<DecompressPointerStmt> TYPE = LIRInstructionClass.create(DecompressPointerStmt.class);
+        @Def
+        protected Value decompressed;
+        @Use
+        protected Value base;
+        @Use
+        protected Value compressed;
+        @Def
+        protected Value temp64;
+        @Def
+        protected Value tempShifted;
+
+        public DecompressPointerStmt(Value decompressed, Value base, Value compressed, Value temp64, Value tempShifted) {
+            super(TYPE);
+            this.decompressed = decompressed;
+            this.base = base;
+            this.compressed = compressed;
+            this.temp64 = temp64;
+            this.tempShifted = tempShifted;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Convert the 32-bit compressed value to 64-bit
+            // cvt.s64.s32 %temp64, %compressed;
+            asm.emitSymbol(TAB);
+            asm.emit("cvt.s64.s32");
+            asm.space();
+            asm.emitValue(temp64);
+            asm.emit(", ");
+            asm.emitValue(compressed);
+            asm.delimiter();
+            asm.eol();
+
+            // Shift the 64-bit value left by 3
+            // shl.b64 %tempShifted, %temp64, 3;
+            asm.emitSymbol(TAB);
+            asm.emit("shl.b64");
+            asm.space();
+            asm.emitValue(tempShifted);
+            asm.emit(", ");
+            asm.emitValue(temp64);
+            asm.emit(", 3");
+            asm.delimiter();
+            asm.eol();
+
+            // Add the base address to the shifted offset
+            // add.u64 %decompressed, %base, %tempShifted;
+            asm.emitSymbol(TAB);
+            asm.emit("add.u64");
+            asm.space();
+            asm.emitValue(decompressed);
+            asm.emit(", ");
+            asm.emitValue(base);
+            asm.emit(", ");
+            asm.emitValue(tempShifted);
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("DIVHALF")
     public static class DivideHalfFloatStmt extends AbstractInstruction {
 
@@ -769,6 +866,35 @@ public class PTXLIRStmt {
 
     }
 
+    public static class ConvertFloatToHalfStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConvertFloatToHalfStmt> TYPE = LIRInstructionClass.create(ConvertFloatToHalfStmt.class);
+
+        @Use
+        protected Value floatValue;
+        @Def
+        protected Value halfValue;
+
+        public ConvertFloatToHalfStmt(Value floatValue, Value halfValue) {
+            super(TYPE);
+            this.floatValue = floatValue;
+            this.halfValue = halfValue;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit(CONVERT + DOT + "rn" + DOT + "f16" + DOT + "f32");
+            asm.emitSymbol(SPACE);
+            asm.emitValue(halfValue);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(floatValue);
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
     @Opcode("LOCAL_MEMORY_ACCESS")
     public static class LocalMemoryAccessStmt extends AbstractInstruction {
 
@@ -1039,6 +1165,12 @@ public class PTXLIRStmt {
         @Use
         PTXNullaryOp loadOp;
 
+        @Use
+        protected Value index;
+
+        @Use
+        protected Value localArray;
+
         public HalfFloatLoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op) {
             super(TYPE);
             this.dest = dest;
@@ -1046,8 +1178,22 @@ public class PTXLIRStmt {
             this.address = address;
         }
 
-        @Override
-        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public HalfFloatLoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op, Value index, Value localArray) {
+            super(TYPE);
+            this.dest = dest;
+            this.loadOp = op;
+            this.address = address;
+            this.index = index;
+            this.localArray = localArray;
+        }
+
+        private boolean isLocalOrSharedLoad() {
+            return address.getBase().memorySpace == PTXMemorySpace.LOCAL ||
+                    address.getBase().memorySpace == PTXMemorySpace.SHARED;
+        }
+
+        public void emitPointerBaseIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: ld.global.b16 dest, [address];
             loadOp.emit(crb, null);
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.getName());
@@ -1060,6 +1206,36 @@ public class PTXLIRStmt {
             address.emit(crb, asm, null);
             asm.delimiter();
             asm.eol();
+        }
+
+        public void emitIntegerBasedIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: ld.shared.b16 dest, arrayName[index];
+            loadOp.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit("shared");
+            asm.emit(DOT + PTXKind.B16);
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA);
+            asm.space();
+
+            asm.emitValue(localArray);
+            asm.emit("[");
+            asm.emitValue(index);
+            asm.emit("]");
+
+            asm.delimiter();
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            if (isLocalOrSharedLoad()) {
+                emitIntegerBasedIndexCode(crb, asm);
+            } else {
+                emitPointerBaseIndexCode(crb, asm);
+            }
         }
     }
 
@@ -1170,6 +1346,11 @@ public class PTXLIRStmt {
         protected Value rhs;
         @Use
         protected PTXUnary.MemoryAccess address;
+        @Use
+        protected Value index;
+
+        @Use
+        protected Value localArray;
 
         public HalfFloatStoreStmt(PTXUnary.MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -1177,7 +1358,21 @@ public class PTXLIRStmt {
             this.address = address;
         }
 
-        public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public HalfFloatStoreStmt(PTXUnary.MemoryAccess address, Value rhs, Value index, Value localArray) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.address = address;
+            this.index = index;
+            this.localArray = localArray;
+        }
+
+        private boolean isLocalOrSharedLoad() {
+            return address.getBase().memorySpace == PTXMemorySpace.LOCAL ||
+                    address.getBase().memorySpace == PTXMemorySpace.SHARED;
+        }
+
+        public void emitPointerBaseIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: st.global.b16 [address], value;
             PTXNullaryOp.ST.emit(crb, null);
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.getName());
@@ -1193,9 +1388,35 @@ public class PTXLIRStmt {
             asm.eol();
         }
 
+        public void emitIntegerBasedIndexCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            // Emit: st.shared.b16 arrayName[index], value;
+            PTXNullaryOp.ST.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit("shared");
+            asm.emit(DOT + PTXKind.B16);
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(localArray);
+            asm.emit("[");
+            asm.emitValue(index);
+            asm.emit("]");
+
+            asm.emitSymbol(COMMA);
+            asm.space();
+
+            asm.emitValueOrOp(crb, rhs, null);
+
+            asm.delimiter();
+            asm.eol();
+        }
+
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            emitNormalCode(crb, asm);
+            if (isLocalOrSharedLoad()) {
+                emitIntegerBasedIndexCode(crb, asm);
+            } else {
+                emitPointerBaseIndexCode(crb, asm);
+            }
         }
     }
 

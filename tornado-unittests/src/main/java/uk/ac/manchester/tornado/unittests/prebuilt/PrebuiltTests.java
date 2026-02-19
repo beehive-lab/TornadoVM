@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
@@ -56,17 +57,49 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
  * </code>
  */
 public class PrebuiltTests extends TornadoTestBase {
-    private static final String TORNADO_SDK = "TORNADO_SDK";
+    private static final String TORNADOVM_HOME = "TORNADOVM_HOME";
     private static TornadoDevice defaultDevice;
-    private static String FILE_PATH;
     private static TornadoVMBackendType backendType;
+    private static boolean coops;
 
     @BeforeClass
     public static void init() {
         backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
         defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
-        String tornadoSDK = System.getenv(TORNADO_SDK);
-        FILE_PATH = tornadoSDK + "/examples/generated/";
+        coops = TornadoNativeArray.ARRAY_HEADER == 16;
+    }
+
+    private String getPrebuiltKernelPath(String kernelName) {
+        String sdkPath = System.getenv(TORNADOVM_HOME);
+        String basePath = sdkPath + "/examples/generated/";
+        String fileStem = coops ? kernelName : kernelName + "_uncompressed";
+
+        String extension;
+        switch (backendType) {
+            case PTX:
+                extension = ".ptx";
+                break;
+            case OPENCL:
+                extension = ".cl";
+                break;
+            case SPIRV:
+                extension = ".spv";
+                break;
+            default:
+                throw new TornadoRuntimeException("Backend not supported");
+        }
+        return basePath + fileStem + extension;
+    }
+
+    private String getPrebuiltKernelPath(String kernelName, String extension) {
+        String sdkPath = System.getenv(TORNADOVM_HOME);
+        String basePath = sdkPath + "/examples/generated/";
+        String fileStem = coops ? kernelName : kernelName + "_uncompressed";
+
+        // Ensure the extension starts with a dot
+        String finalExtension = extension.startsWith(".") ? extension : "." + extension;
+
+        return basePath + fileStem + finalExtension;
     }
 
     @Test
@@ -80,32 +113,20 @@ public class PrebuiltTests extends TornadoTestBase {
         a.init(1);
         b.init(2);
 
-        switch (backendType) {
-            case PTX:
-                FILE_PATH += "add.ptx";
-                break;
-            case OPENCL:
-                FILE_PATH += "add.cl";
-                break;
-            case SPIRV:
-                FILE_PATH += "add.spv";
-                break;
-            default:
-                throw new TornadoRuntimeException("Backend not supported");
-        }
-
         // Define accessors for each parameter
         AccessorParameters accessorParameters = new AccessorParameters(3);
         accessorParameters.set(0, a, Access.READ_ONLY);
         accessorParameters.set(1, b, Access.READ_ONLY);
         accessorParameters.set(2, c, Access.WRITE_ONLY);
 
+        String kernelFile = getPrebuiltKernelPath("add");
+
         // Define the Task-Graph
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0",      //task name
                         "add",              // name of the low-level kernel to invoke
-                        FILE_PATH,          // file name
+                        kernelFile,          // file name
                         accessorParameters) // accessors
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
@@ -137,32 +158,20 @@ public class PrebuiltTests extends TornadoTestBase {
         a.init(1);
         b.init(2);
 
-        switch (backendType) {
-            case PTX:
-                FILE_PATH += "add.ptx";
-                break;
-            case OPENCL:
-                FILE_PATH += "add.cl";
-                break;
-            case SPIRV:
-                FILE_PATH += "add.spv";
-                break;
-            default:
-                throw new TornadoRuntimeException("Backend not supported");
-        }
-
         // Define accessors for each parameter
         AccessorParameters accessorParameters = new AccessorParameters(3);
         accessorParameters.set(0, a, Access.READ_WRITE);
         accessorParameters.set(1, b, Access.READ_WRITE);
         accessorParameters.set(2, c, Access.WRITE_ONLY);
 
+        String kernelFile = getPrebuiltKernelPath("add");
+
         // Define the Task-Graph
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .prebuiltTask("t0",      //task name
                         "add",              // name of the low-level kernel to invoke
-                        FILE_PATH,          // file name
+                        kernelFile,          // file name
                         accessorParameters) // accessors
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
@@ -195,7 +204,7 @@ public class PrebuiltTests extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
 
-        FILE_PATH += "reduce03.spv";
+        String kernelFile = getPrebuiltKernelPath("reduce03");
 
         final int size = 512;
         final int localSize = 256;
@@ -217,7 +226,7 @@ public class PrebuiltTests extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("t0",         //
                         "floatReductionAddLocalMemory", //
-                        FILE_PATH,          //
+                        kernelFile,          //
                         accessorParameters) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
@@ -252,7 +261,7 @@ public class PrebuiltTests extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
 
-        FILE_PATH += "reduce04.spv";
+        String kernelFile = getPrebuiltKernelPath("reduce04");
 
         final int size = 32;
         final int localSize = 32;
@@ -274,7 +283,7 @@ public class PrebuiltTests extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("b", //
                         "intReductionAddGlobalMemory", //
-                        FILE_PATH, //
+                        kernelFile, //
                         accessorParameters) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
@@ -305,7 +314,7 @@ public class PrebuiltTests extends TornadoTestBase {
             assertNotBackend(TornadoVMBackendType.OPENCL, "No SPIRV supported device found with the current OpenCL backend. The OpenCL version must be >= 2.1 to support SPIR-V execution.");
         }
 
-        FILE_PATH += "reduce03.spv";
+        String kernelFile = getPrebuiltKernelPath("reduce03", ".spv");
 
         final int size = 512;
         final int localSize = 256;
@@ -327,14 +336,14 @@ public class PrebuiltTests extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
-                        FILE_PATH, //
-                        accessorParameters) // 
+                        kernelFile, //
+                        accessorParameters) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
             executionPlan.withGridScheduler(gridScheduler) //
-                    .withDevice(device) // 
+                    .withDevice(device) //
                     .execute();
         }
 
@@ -357,7 +366,7 @@ public class PrebuiltTests extends TornadoTestBase {
      * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests#testPrebuiltMutiBackend
      * </code>
      * </p>
-     * 
+     *
      * @throws TornadoExecutionPlanException
      */
     @Test
@@ -372,7 +381,7 @@ public class PrebuiltTests extends TornadoTestBase {
         b.init(2);
 
         // Force to use the PTX Backend.
-        FILE_PATH += "add.ptx";
+        String kernelFile = getPrebuiltKernelPath("add", ".ptx");
 
         TornadoDeviceMap tornadoDeviceMap = TornadoExecutionPlan.getTornadoDeviceMap();
         if (tornadoDeviceMap.getNumBackends() < 2) {
@@ -399,7 +408,7 @@ public class PrebuiltTests extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .prebuiltTask("t0",      //task name
                         "add",              // name of the low-level kernel to invoke
-                        FILE_PATH,          // file name
+                        kernelFile,          // file name
                         accessorParameters) // accessors
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 

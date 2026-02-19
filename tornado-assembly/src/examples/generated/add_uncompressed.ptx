@@ -1,0 +1,44 @@
+ .visible .entry s0_t0_add_arrays_intarray_arrays_intarray_arrays_intarray(.param .u64 .ptr .global .align 8 kernel_context, .param .u64 .ptr .global .align 8 a, .param .u64 .ptr .global .align 8 b, .param .u64 .ptr .global .align 8 c) {
+    .reg .s64 rsd<3>;
+    .reg .pred rpb<2>;
+    .reg .u32 rui<5>;
+    .reg .s32 rsi<9>;
+    .reg .u64 rud<9>;
+
+ BLOCK_0:
+    ld.param.u64	rud0, [kernel_context];
+    ld.param.u64	rud1, [a];
+    ld.param.u64	rud2, [b];
+    ld.param.u64	rud3, [c];
+    mov.u32	rui0, %nctaid.x;
+    mov.u32	rui1, %ntid.x;
+    mul.wide.u32	rud4, rui0, rui1;
+    cvt.s32.u64	rsi0, rud4;
+    mov.u32	rui2, %tid.x;
+    mov.u32	rui3, %ctaid.x;
+    mad.lo.s32	rsi1, rui3, rui1, rui2;
+
+ BLOCK_1:
+    mov.s32	rsi2, rsi1;
+ LOOP_COND_1:
+    setp.lt.s32	rpb0, rsi2, 8;
+    @!rpb0 bra	BLOCK_3;
+
+ BLOCK_2:
+    add.s32	rsi3, rsi2, 6;
+    cvt.s64.s32	rsd0, rsi3;
+    shl.b64	rsd1, rsd0, 2;
+    add.u64	rud5, rud1, rsd1;
+    ld.global.s32	rsi4, [rud5];
+    add.u64	rud6, rud2, rsd1;
+    ld.global.s32	rsi5, [rud6];
+    add.u64	rud7, rud3, rsd1;
+    add.s32	rsi6, rsi4, rsi5;
+    st.global.s32	[rud7], rsi6;
+    add.s32	rsi7, rsi0, rsi2;
+    mov.s32	rsi2, rsi7;
+    bra.uni	LOOP_COND_1;
+
+ BLOCK_3:
+    ret;
+ }

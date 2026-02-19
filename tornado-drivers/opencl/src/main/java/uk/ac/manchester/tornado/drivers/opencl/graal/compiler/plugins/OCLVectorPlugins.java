@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.TORNADO_ENABLE_BIFS;
-
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -42,10 +42,6 @@ import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -92,6 +88,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreGlo
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.TORNADO_ENABLE_BIFS;
 
 public final class OCLVectorPlugins {
 
@@ -208,8 +207,8 @@ public final class OCLVectorPlugins {
 
     private static VectorValueNode resolveReceiver(ValueNode thisObject) {
         VectorValueNode vector = null;
-        if (thisObject instanceof PiNode) {
-            thisObject = ((PiNode) thisObject).getOriginalNode();
+        if (thisObject instanceof PiNode piNode) {
+            thisObject = piNode.getOriginalNode();
         }
         if (thisObject instanceof VectorValueNode vectorValueNode) {
             vector = vectorValueNode;
@@ -218,23 +217,14 @@ public final class OCLVectorPlugins {
         return vector;
     }
 
-    private static VectorValueNode resolveReceiver(Receiver receiver) {
-        ValueNode thisObject = receiver.get();
-        return resolveReceiver(thisObject);
-    }
-
     private static Class<?> resolveJavaClass(String panamaType) throws TornadoCompilationException {
-        if (panamaType.contains("IntArray")) {
-            return int.class;
-        } else if (panamaType.contains("DoubleArray")) {
-            return double.class;
-        } else if (panamaType.contains("FloatArray")) {
-            return float.class;
-        } else if (panamaType.contains("HalfFloatArray")) {
-            return short.class;
-        } else {
-            throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
-        }
+        return switch (panamaType) {
+            case String s when s.contains("IntArray") -> int.class;
+            case String s when s.contains("DoubleArray") -> double.class;
+            case String s when s.contains("FloatArray") -> float.class;
+            case String s when s.contains("HalfFloatArray") -> short.class;
+            default -> throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
+        };
     }
 
     private static void registerVectorCollectionsPlugins(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> vectorClass) {
@@ -278,8 +268,8 @@ public final class OCLVectorPlugins {
         ps.appendNodePlugin(new NodePlugin() {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
-                        "IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
+                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString()
+                        .contains("IntArray.<init>(int)") || method.toString().contains("HalfFloatArray.<init>(int)"))) {
                     Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;
@@ -291,7 +281,7 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(true), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
@@ -300,8 +290,8 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, vectorKind.getJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                if (receiver.get() instanceof ParameterNode) {
-                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                if (receiver.get(true) instanceof ParameterNode) {
+                    final AddressNode address = new OffsetAddressNode(receiver.get(true), null);
                     final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(vectorKind, address, value);
                     b.add(b.append(store));
                     return true;
@@ -313,7 +303,7 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -322,7 +312,7 @@ public final class OCLVectorPlugins {
         r.register(new InvocationPlugin("set", Receiver.class, int.class, storageType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(true), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -374,7 +364,7 @@ public final class OCLVectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
-                ValueNode array = receiver.get();
+                ValueNode array = receiver.get(true);
                 GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
                 b.push(JavaKind.Object, b.append(getArrayNode));
                 return true;

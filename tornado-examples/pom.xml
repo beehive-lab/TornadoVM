@@ -4,21 +4,23 @@
          xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>tornado</groupId>
+        <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>1.1.2-dev</version>
+        <version>2.2.1-dev</version>
     </parent>
+    <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
     <artifactId>tornado-examples</artifactId>
     <name>tornado-examples</name>
+    <description>TornadoVM Examples: A collection of accelerated Java compute with TornadoVM</description>
     <dependencies>
-
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-matrices</artifactId>

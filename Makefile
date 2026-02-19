@@ -34,6 +34,9 @@ spirv:
 metal:
 	bin/compile --jdk jdk21 --backend metal,opencl
 
+sdk:
+	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
+
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
 FPGA_PLATFORM       ?= xilinx_u50_gen3x16_xdma_201920_3
@@ -65,6 +68,20 @@ fast-tests:
 	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
+tests-uncompressed:
+	rm -f tornado_unittests.log
+	tornado --devices
+	tornado-test --ea --verbose --uncompressed
+	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
+fast-tests-uncompressed:
+	rm -f tornado_unittests.log
+	tornado --devices
+	tornado-test --ea --verbose --quickPass --uncompressed
+	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	test-native.sh
+
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
 	tornado --jvm="-Dtornado.spirv.dispatcher=levelzero" uk.ac.manchester.tornado.drivers.TornadoDeviceQuery --params="verbose"
@@ -85,4 +102,9 @@ test-slam:
 docs:
 	sphinx-build -M html docs/source/ docs/build
 
-.PHONY: docs
+# Generate IntelliJ IDEA project files (developer-only)
+# Prerequisites: build TornadoVM first and source setvars.sh
+intellijinit:
+	bin/tornadovm-intellij-init
+
+.PHONY: docs intellijinit

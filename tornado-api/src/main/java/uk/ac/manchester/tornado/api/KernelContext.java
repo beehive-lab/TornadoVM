@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -161,6 +162,19 @@ public class KernelContext implements ExecutionContext {
     @Override
     public byte[] allocateByteLocalArray(int size) {
         return new byte[size];
+    }
+
+    /**
+     * It allocates a single dimensional array in local memory (known as shared
+     * memory in PTX).
+     *
+     * @param size
+     *     the size of the array
+     * @return HalfFloatArray: reference to the byte array
+     */
+    @Override
+    public HalfFloat[] allocateHalfFloatLocalArray(int size) {
+        return new HalfFloat[size];
     }
 
     /**
