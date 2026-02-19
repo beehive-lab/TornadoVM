@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -106,6 +107,8 @@ public class TornadoVMInterpreter {
 
     private HashMap<Object, Integer> currentBatchNumberPerObject = new HashMap<>();
     private HashMap<Object, Integer> totalEvenBatchesPerObject = new HashMap<>();
+    private final HashMap<Integer, Long> executionGraphHandles = new HashMap<>();
+    private boolean insideCaptureRegion = false;
 
     private TornadoLogger logger = new TornadoLogger(this.getClass());
 
@@ -293,10 +296,22 @@ public class TornadoVMInterpreter {
                 if (isWarmup) {
                     continue;
                 }
+                if (!executionGraphHandles.isEmpty()) {
+                    continue;
+                }
                 lastEvent = executeAlloc(logBuilder, args, sizeBatch);
             } else if (op == TornadoVMBytecodes.DEALLOC.value()) {
                 final int objectIndex = bytecodeResult.getInt();
                 if (isWarmup) {
+                    continue;
+                }
+                if (!executionGraphHandles.isEmpty()) {
+                    if (TornadoOptions.LOG_BYTECODES()) {
+                        Object object = objects.get(objectIndex);
+                        logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightNonExecBC(
+                                        "DEALLOC")).append(" [SKIPPED - execution graph active] ")
+                                .append(object).append("\n");
+                    }
                     continue;
                 }
                 lastEvent = executeDeAlloc(logBuilder, objectIndex);
@@ -380,6 +395,50 @@ public class TornadoVMInterpreter {
                     continue;
                 }
                 lastEvent = executeBarrier(logBuilder, eventId, waitList);
+            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_LAUNCH.value()) {
+                final int graphId = bytecodeResult.getInt();
+                if (isWarmup) {
+                    continue;
+                }
+                lastEvent = executeGraphLaunch(logBuilder, graphId);
+                // Graph not yet captured — fall through to BEGIN_CAPTURE
+
+            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value()) {
+                final int graphId = bytecodeResult.getInt();
+                if (isWarmup) {
+                    continue;
+                }
+                if (executionGraphHandles.containsKey(graphId)) {
+                    // Graph already captured → skip entire capture region
+                    skipToAfterEndCapture(graphId);
+                } else {
+                    // First execution → force all lazy allocations, then capture
+                    preCompileLaunchesInCaptureRegion(logBuilder);
+                    executeGraphBeginCapture(logBuilder, graphId);
+                    insideCaptureRegion = true;
+                }
+
+            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_END_CAPTURE.value()) {
+                final int graphId = bytecodeResult.getInt();
+                if (isWarmup) {
+                    continue;
+                }
+                insideCaptureRegion = false;
+                executeGraphEndCapture(logBuilder, graphId);
+
+            } else if (op == TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value()) {
+                final int graphId = bytecodeResult.getInt();
+                if (isWarmup) {
+                    continue;
+                }
+                Long handle = executionGraphHandles.remove(graphId);
+                if (handle != null) {
+                    interpreterDevice.destroyExecutionGraph(handle);
+                    if (TornadoOptions.LOG_BYTECODES()) {
+                        logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
+                                "EXECUTION_GRAPH_DESTROY")).append(" graphId=").append(graphId).append("\n");
+                    }
+                }
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (!isWarmup && TornadoOptions.LOG_BYTECODES()) {
                     logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
@@ -424,6 +483,143 @@ public class TornadoVMInterpreter {
         }
 
         return barrier;
+    }
+
+    private void preCompileLaunchesInCaptureRegion(StringBuilder logBuilder) {
+        int savedPosition = bytecodeResult.position();  // save without corrupting mark
+
+        while (bytecodeResult.hasRemaining()) {
+            final byte op = bytecodeResult.get();
+
+            if (op == TornadoVMBytecodes.CUDA_GRAPH_END_CAPTURE.value()) {
+                bytecodeResult.getInt();
+                break;
+            } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
+                final int callWrapperIndex = bytecodeResult.getInt();
+                final int taskIndex = bytecodeResult.getInt();
+                final int numArgs = bytecodeResult.getInt();
+                final int eventId = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long batchThreads = bytecodeResult.getLong();
+
+                compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs,
+                        eventId, taskIndex, batchThreads);
+
+                for (int i = 0; i < numArgs; i++) {
+                    bytecodeResult.get();
+                    bytecodeResult.getInt();
+                }
+            } else {
+                skipBytecodeOperands(op);
+            }
+        }
+
+        bytecodeResult.position(savedPosition);  // restore without touching mark
+    }
+
+    private void skipToAfterEndCapture(int graphId) {
+        while (bytecodeResult.hasRemaining()) {
+            final byte op = bytecodeResult.get();
+            if (op == TornadoVMBytecodes.CUDA_GRAPH_END_CAPTURE.value()) {
+                int endGraphId = bytecodeResult.getInt();
+                if (endGraphId == graphId) {
+                    return;
+                }
+            } else {
+                skipBytecodeOperands(op);
+            }
+        }
+    }
+
+    public void destroyExecutionGraphs() {
+        for (Map.Entry<Integer, Long> entry : executionGraphHandles.entrySet()) {
+            System.out.println("[free() Function] Destroying execution graph " + entry.getKey());
+            interpreterDevice.destroyExecutionGraph(entry.getValue());
+        }
+        executionGraphHandles.clear();
+    }
+
+    private void skipBytecodeOperands(byte op) {
+        if (op == TornadoVMBytecodes.ALLOC.value()) {
+            bytecodeResult.getLong();  // sizeBatch
+            int argSize = bytecodeResult.getInt();
+            for (int i = 0; i < argSize; i++) {
+                bytecodeResult.getInt();
+            }
+        } else if (op == TornadoVMBytecodes.DEALLOC.value()) {
+            bytecodeResult.getInt();  // objectIndex
+        } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value()
+                || op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()
+                || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()
+                || op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value()) {
+            bytecodeResult.getInt();   // objectIndex
+            bytecodeResult.getInt();   // eventId
+            bytecodeResult.getLong();  // offset
+            bytecodeResult.getLong();  // sizeBatch
+        } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
+            bytecodeResult.getInt();   // callWrapperIndex
+            bytecodeResult.getInt();   // taskIndex
+            int numArgs = bytecodeResult.getInt();
+            bytecodeResult.getInt();   // eventId
+            bytecodeResult.getLong();  // offset
+            bytecodeResult.getLong();  // batchThreads
+            for (int i = 0; i < numArgs; i++) {
+                bytecodeResult.get();      // PUSH_CONSTANT or PUSH_REFERENCE opcode
+                bytecodeResult.getInt();   // argIndex
+            }
+        } else if (op == TornadoVMBytecodes.ADD_DEPENDENCY.value()
+                || op == TornadoVMBytecodes.BARRIER.value()
+                || op == TornadoVMBytecodes.CONTEXT.value()) {
+            bytecodeResult.getInt();
+        } else if (op == TornadoVMBytecodes.ON_DEVICE.value()
+                || op == TornadoVMBytecodes.PERSIST.value()) {
+            bytecodeResult.getInt();
+            bytecodeResult.getInt();
+        } else if (op == TornadoVMBytecodes.CUDA_GRAPH_BEGIN_CAPTURE.value()
+                || op == TornadoVMBytecodes.CUDA_GRAPH_LAUNCH.value()
+                || op == TornadoVMBytecodes.CUDA_GRAPH_DESTROY.value()) {
+            bytecodeResult.getInt();  // graphId
+        } else if (op == TornadoVMBytecodes.BEGIN.value()
+                || op == TornadoVMBytecodes.END.value()) {
+            // no operands
+        } else if (op == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()
+                || op == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
+            bytecodeResult.getInt();
+        }
+    }
+
+    private void executeGraphBeginCapture(StringBuilder logBuilder, int graphId) {
+        if (!interpreterDevice.supportsExecutionGraphs()) {
+            throw new TornadoBailoutRuntimeException(
+                    "EXECUTION_GRAPH_BEGIN_CAPTURE bytecode reached a device that does not support " +
+                            "execution graphs: " + interpreterDevice.getDeviceName() +
+                            ". This is a compiler bug — graph bytecodes should not have been emitted.");
+        }
+        if (TornadoOptions.LOG_BYTECODES()) {
+            logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
+                    "EXECUTION_GRAPH_BEGIN_CAPTURE")).append(" graphId=").append(graphId).append("\n");
+        }
+        interpreterDevice.beginExecutionGraphCapture(graphExecutionContext.getExecutionPlanId());
+    }
+
+    private void executeGraphEndCapture(StringBuilder logBuilder, int graphId) {
+        if (TornadoOptions.LOG_BYTECODES()) {
+            logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
+                    "EXECUTION_GRAPH_END_CAPTURE")).append(" graphId=").append(graphId).append("\n");
+        }
+        long handle = interpreterDevice.endExecutionGraphCaptureAndInstantiate(
+                graphExecutionContext.getExecutionPlanId());
+        executionGraphHandles.put(graphId, handle);
+    }
+
+    private int executeGraphLaunch(StringBuilder logBuilder, int graphId) {
+        if (TornadoOptions.LOG_BYTECODES()) {
+            logBuilder.append("bc: ").append(InterpreterUtilities.debugHighLightBC(
+                    "EXECUTION_GRAPH_LAUNCH")).append(" graphId=").append(graphId).append("\n");
+        }
+        return interpreterDevice.launchExecutionGraph(
+                graphExecutionContext.getExecutionPlanId(),
+                executionGraphHandles.get(graphId));
     }
 
     private void initWaitEventList() {
@@ -508,6 +704,7 @@ public class TornadoVMInterpreter {
             for (XPUDeviceBufferState state : objectStates) {
                 long size = state.getXPUBuffer().size();
                 if (!state.isBufferReused()) {
+                    logBuilder.append(captureIndent());
                     DebugInterpreter.logAllocObject(objects[objIndex], interpreterDevice, size, sizeBatch, logBuilder);
                 }
                 objIndex++;
@@ -595,6 +792,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             long sizeObject = objectState.getXPUBuffer().size();
+            logBuilder.append(captureIndent());
             DebugInterpreter.logTransferToDeviceOnce(allEvents, object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
@@ -627,6 +825,7 @@ public class TornadoVMInterpreter {
 
         if (TornadoOptions.LOG_BYTECODES() && isNotObjectAtomic(object)) {
             long sizeObject = objectState.getXPUBuffer().size();
+            logBuilder.append(captureIndent());
             DebugInterpreter.logTransferToDeviceAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
@@ -657,6 +856,7 @@ public class TornadoVMInterpreter {
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         if (TornadoOptions.LOG_BYTECODES()) {
             long sizeObject = objectState.getXPUBuffer().size();
+            logBuilder.append(captureIndent());
             DebugInterpreter.logTransferToHostAlways(object, interpreterDevice, sizeObject, sizeBatch, offset, eventId, logBuilder);
         }
 
@@ -691,6 +891,7 @@ public class TornadoVMInterpreter {
         final XPUDeviceBufferState objectState = resolveObjectState(objectIndex);
         if (TornadoOptions.LOG_BYTECODES()) {
             long sizeOfObject = objectState.getXPUBuffer().size();
+            logBuilder.append(captureIndent());
             DebugInterpreter.logTransferToHostAlwaysBlocking(object, interpreterDevice, logBuilder, sizeOfObject, sizeBatch, offset, eventId);
         }
         final int readEvent = interpreterDevice.streamOutBlocking(graphExecutionContext.getExecutionPlanId(), object, offset, objectState, eventWaitList);
@@ -899,12 +1100,14 @@ public class TornadoVMInterpreter {
                 }
             }
             if (TornadoOptions.LOG_BYTECODES()) {
+                logBuilder.append(captureIndent());
                 DebugInterpreter.logStreamInAtomic(bufferAtomics, interpreterDevice, eventId, logBuilder);
 
             }
         }
 
         if (TornadoOptions.LOG_BYTECODES()) {
+            logBuilder.append(captureIndent());
             DebugInterpreter.logLaunchTask(task, interpreterDevice, batchThreads, offset, eventId, logBuilder);
         }
 
@@ -1026,6 +1229,10 @@ public class TornadoVMInterpreter {
 
     public Event execute() {
         return execute(false);
+    }
+
+    private String captureIndent() {
+        return insideCaptureRegion ? "\t" : "";
     }
 
     public void clearInstalledCode() {

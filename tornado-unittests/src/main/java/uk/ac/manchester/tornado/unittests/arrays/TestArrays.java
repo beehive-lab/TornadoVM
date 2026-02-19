@@ -322,6 +322,72 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
+    public void testVectorAdditionDoubleCUDAGraph() throws TornadoExecutionPlanException {
+        final int numElements = 4096;
+        DoubleArray a = new DoubleArray(numElements);
+        DoubleArray b = new DoubleArray(numElements);
+        DoubleArray c = new DoubleArray(numElements);
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddDouble, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCUDAGraph();
+            executionPlan.execute();
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.01);
+        }
+    }
+
+    @Test
+    public void testVectorAdditionDoubleUpdateCUDAGraph() throws TornadoExecutionPlanException {
+        final int numElements = 4096;
+        DoubleArray a = new DoubleArray(numElements);
+        DoubleArray b = new DoubleArray(numElements);
+        DoubleArray a_s = new DoubleArray(numElements);
+        DoubleArray b_s = new DoubleArray(numElements);
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a.set(i, 1);
+            a_s.set(i, 1);
+            b.set(i, 2);
+            b_s.set(i, 2);
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddDouble, a, b, b) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
+            executionPlan.withCUDAGraph();
+            for (int i = 0; i < 3; i++) {
+                executionPlan.execute();
+            }
+        }
+
+        for (int i = 0; i < 3; i++) {
+            vectorAddDouble(a_s, b_s, b_s);
+        }
+
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(b.get(i), b_s.get(i), 0.01);
+        }
+    }
+
+    @Test
     public void testVectorAdditionFloat() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         FloatArray a = new FloatArray(numElements);
