@@ -125,14 +125,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>../tornado-drivers/metal-jni/src/main/mm</directory>
-            <outputDirectory>./lib/</outputDirectory>
-            <includes>
-                <include>libtornado-objc-metal.dylib</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
             <directory>../tornado-drivers/ptx-jni/target/windows-i386-release/cmake/Release</directory>
             <outputDirectory>./lib/</outputDirectory>
             <includes>

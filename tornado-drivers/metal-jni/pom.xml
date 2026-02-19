@@ -1,37 +1,105 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0"?>
+<project
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+        xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>tornado</groupId>
-        <artifactId>tornado</artifactId>
+        <artifactId>tornado-drivers</artifactId>
         <version>1.1.2-dev</version>
-        <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>tornado-drivers-metal-jni</artifactId>
-    <packaging>jar</packaging>
-    <name>tornado-drivers-metal-jni (native libs)</name>
-
+    <name>tornado-drivers-metal-jni</name>
     <build>
-        <resources>
-            <resource>
-                <directory>${project.basedir}/src/main/mm</directory>
-                <includes>
-                    <include>**/*</include>
-                </includes>
-                <filtering>false</filtering>
-            </resource>
-        </resources>
+
+        <directory>${basedir}/target/${platform}-${build.type}</directory>
+        <sourceDirectory>src/main/cpp</sourceDirectory>
         <plugins>
-            <!-- Package native libs located in src/main/mm into a classifier-jar 'libs' -->
+            <plugin>
+                <groupId>com.googlecode.cmake-maven-project</groupId>
+                <artifactId>cmake-maven-plugin</artifactId>
+                <version>3.26.3-b1</version>
+                <executions>
+                    <execution>
+                        <id>cmake-generate</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <sourcePath>${project.build.directory}/sources</sourcePath>
+                            <targetPath>${project.build.directory}/cmake</targetPath>
+                            <generator>${cmake.generator}</generator>
+                            <options>${cmake.options}</options>
+                            <environmentVariables>
+                                <CMAKE_CLASSIFIER>${cmake.classifier}</CMAKE_CLASSIFIER>
+                            </environmentVariables>
+                            <downloadBinaries>${cmake.download}</downloadBinaries>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>cmake-compile</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <projectDirectory>${project.build.directory}/cmake</projectDirectory>
+                            <config>${cmake.config}</config>
+                            <downloadBinaries>${cmake.download}</downloadBinaries>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/sources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.sourceDirectory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-binaries</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/cmake/build</directory>
+                                    <includes>
+                                        <!-- mac -->
+                                        <include>*.dylib</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.0.2</version>
                 <executions>
                     <execution>
-                        <id>attach-natives</id>
                         <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
@@ -39,19 +107,15 @@
                         <configuration>
                             <classifier>libs</classifier>
                             <includes>
-                                <include>**/*</include>
+                                <include>**/*.dylib</include>
                             </includes>
-                            <archive>
-                                <manifest>
-                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                                </manifest>
-                            </archive>
-                            <!-- resources from src/main/mm are packaged into the classifier jar -->
+                            <classesDirectory>${basedir}/target/${platform}-${build.type}/cmake</classesDirectory>
+                            <outputDirectory>${basedir}/target</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
-    </build>
 
+    </build>
 </project>
