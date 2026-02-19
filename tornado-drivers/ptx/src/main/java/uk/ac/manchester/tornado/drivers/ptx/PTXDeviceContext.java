@@ -302,6 +302,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                     stream.enqueueBarrier(executionPlanId);
                 }
             }
+            // Reset registry after full sync - all events are complete,
+            // prevents unbounded growth across iterations
+            getEventRegistry(executionPlanId).reset();
             return -1;
         }
         PTXStream stream = getStream(executionPlanId);
@@ -319,6 +322,8 @@ public class PTXDeviceContext implements TornadoDeviceContext {
                     stream.enqueueBarrier(executionPlanId, events);
                 }
             }
+            // Reset registry after sync - prevents unbounded growth across iterations
+            getEventRegistry(executionPlanId).reset();
             return -1;
         }
         PTXStream stream = getStream(executionPlanId);
