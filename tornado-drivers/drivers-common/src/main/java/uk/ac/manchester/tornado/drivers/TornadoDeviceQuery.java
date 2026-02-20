@@ -52,6 +52,7 @@ public class TornadoDeviceQuery {
         colourMapping.put(TornadoVMBackendType.OPENCL, ColoursTerminal.CYAN);
         colourMapping.put(TornadoVMBackendType.PTX, ColoursTerminal.GREEN);
         colourMapping.put(TornadoVMBackendType.SPIRV, ColoursTerminal.PURPLE);
+        colourMapping.put(TornadoVMBackendType.METAL, ColoursTerminal.YELLOW);
     }
 
     private static String formatSize(long v) {
@@ -77,7 +78,7 @@ public class TornadoDeviceQuery {
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex);
             TornadoVMBackendType backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(driverIndex);
-            String colour = colourMapping.get(backendType);
+            String colour = colourMapping.getOrDefault(backendType, "");
             final int numDevices = driver.getNumDevices();
             deviceInfoBuffer.append("Driver: " + colour + driver.getName() + ColoursTerminal.RESET + "\n");
             deviceInfoBuffer.append("  Total number of " + driver.getName() + " devices  : " + numDevices + "\n");

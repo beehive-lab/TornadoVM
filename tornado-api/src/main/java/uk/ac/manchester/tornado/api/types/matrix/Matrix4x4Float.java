@@ -197,6 +197,10 @@ public final class Matrix4x4Float implements TornadoMatrixInterface<FloatBuffer>
         return NUM_ELEMENTS;
     }
 
+    public FloatArray getArray() {
+        return storage;
+    }
+
     public FloatingPointError calculateULP(Matrix4x4Float ref) {
         float maxULP = Float.MIN_VALUE;
         float minULP = Float.MAX_VALUE;

@@ -199,6 +199,10 @@ public final class Byte3 implements TornadoVectorsInterface<ByteBuffer> {
         return storage;
     }
 
+    public byte[] getArray() {
+        return storage;
+    }
+
     @Override
     public long getNumBytes() {
         return NUM_ELEMENTS;

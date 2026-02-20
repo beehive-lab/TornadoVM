@@ -77,6 +77,26 @@
         </profile>
 
         <profile>
+            <id>metal-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-metal</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-metal-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
             <id>spirv-backend</id>
             <activation>
                 <activeByDefault>false</activeByDefault>

@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api.enums;
 public enum TornadoVMBackendType {
 
     OPENCL("OpenCL"), //
+    METAL("Metal"), //
     PTX("PTX"), //
     SPIRV("SPIRV"), //
     JAVA("Java"), //

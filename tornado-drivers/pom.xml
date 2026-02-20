@@ -23,6 +23,17 @@
 
     <profiles>
         <profile>
+            <id>metal-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>metal</module>
+                <module>metal-jni</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>opencl-backend</id>
             <activation>
                 <activeByDefault>false</activeByDefault>

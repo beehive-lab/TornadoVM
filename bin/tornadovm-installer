@@ -73,7 +73,7 @@ __SUPPORTED_JDKS__ = [
     config.__SAPMACHINE21__,
     config.__LIBERICA21__,
 ]
-__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
+__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx", "metal"]
 
 # Custom Exceptions
 class TornadoInstallerError(Exception):
@@ -725,6 +725,9 @@ class UserInterface:
         """Validate backend selection, especially for macOS."""
         if (self.system_info.platform == config.__APPLE__ and
                 (len(backends) > 1 or backends != ["opencl"])):
+
+            if backends == ["metal"]:
+                return True
 
             self.console.print(
                 "[WARNING] Multiple backends on macOS may cause issues. OpenCL is the only tested backend.",

@@ -31,6 +31,9 @@ ptx:
 spirv:
 	bin/compile --jdk jdk21 --backend spirv,ptx,opencl
 
+metal:
+	bin/compile --jdk jdk21 --backend metal,opencl
+
 sdk:
 	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
 
@@ -77,7 +80,7 @@ fast-tests-uncompressed:
 	tornado --devices
 	tornado-test --ea --verbose --quickPass --uncompressed
 	tornado-test --ea -V --uncompressed -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	test-native.sh	
+	test-native.sh
 
 tests-spirv-levelzero:
 	rm -f tornado_unittests.log
