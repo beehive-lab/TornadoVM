@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="MatrixMultiplication2D" type="Application" factoryName="Application"
+                   nameIsGenerated="true">
+        <option name="MAIN_CLASS_NAME" value="uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D"/>
+        <module name="tornado-examples"/>
+        <option name="VM_PARAMETERS"
+                value="-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=$PROJECT_DIR$/bin/sdk/lib  --module-path .:$PROJECT_DIR$/bin/sdk/share/java/tornado -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel  --upgrade-module-path $PROJECT_DIR$/bin/sdk/share/java/graalJars -XX:+UseParallelGC  @$PROJECT_DIR$/bin/sdk/etc/exportLists/common-exports @$PROJECT_DIR$/bin/sdk/etc/exportLists/opencl-exports --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl"/>
+        <extension name="coverage">
+            <pattern>
+                <option name="PATTERN" value="uk.ac.manchester.tornado.examples.compute.*"/>
+                <option name="ENABLED" value="true"/>
+            </pattern>
+        </extension>
+        <method v="2"/>
+    </configuration>
+</component>
