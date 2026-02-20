@@ -21,10 +21,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Optional;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
@@ -173,11 +169,10 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
 
         for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
-            if (loadFieldSegment.toString().contains("segment") && loadFieldSegment.field().getDeclaringClass().isAnnotationPresent(SegmentElementSize.class)) {
+            if (loadFieldSegment.toString().contains("segment")) {
 
                 // Remove the loadField#baseIndex and replace it with a Constant value
-                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode
-                        && baseIndexNode.field().getDeclaringClass().isAnnotationPresent(SegmentElementSize.class)) {
+                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
                     var elementKindSize = getElementKindSize(baseIndexNode);
                     var panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                     var baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
@@ -189,8 +184,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 // Remove FixedGuard nodes with its PI Node
                 if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
                     FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
-                    if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode
-                            && baseIndexNode.field().getDeclaringClass().isAnnotationPresent(SegmentElementSize.class)) {
+                    if (fixedGuardNode.successors().first() instanceof LoadFieldNode baseIndexNode) {
                         var elementKindSize = getElementKindSize(baseIndexNode);
                         var panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                         var baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
