@@ -7,6 +7,16 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 3.0.0-jdk25
+---------------------
+24/02/26
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#799 <https://github.com/beehive-lab/TornadoVM/pull/799>`_: Add JDK 25.0.2 release automation workflows
+
+
 TornadoVM 2.2.0
 ---------------
 17/12/25

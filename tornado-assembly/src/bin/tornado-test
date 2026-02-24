@@ -395,7 +395,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "2.2.1-dev"
+__VERSION__ = "3.0.0-jdk25"
 
 try:
     javaHome = os.environ["JAVA_HOME"]
