@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.drivers.common.utils;
 
 import java.lang.reflect.Method;
 
-import org.graalvm.compiler.phases.util.Providers;
+import jdk.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;

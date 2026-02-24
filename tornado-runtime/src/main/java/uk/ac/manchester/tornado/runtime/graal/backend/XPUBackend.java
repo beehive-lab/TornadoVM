@@ -21,17 +21,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.backend;
 
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.phases.util.Providers;
+import jdk.graal.compiler.core.common.CompilationIdentifier;
+import jdk.graal.compiler.core.common.alloc.RegisterAllocationConfig;
+import jdk.graal.compiler.core.target.Backend;
+import jdk.graal.compiler.lir.LIR;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+import jdk.graal.compiler.lir.framemap.FrameMapBuilder;
+import jdk.graal.compiler.lir.gen.LIRGenerationResult;
+import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.spi.NodeLIRBuilderTool;
+import jdk.graal.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -50,10 +50,6 @@ public abstract class XPUBackend<P extends Providers> extends Backend {
         return super.getProviders();
     }
 
-    @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
-        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
-    }
 
     public abstract String decodeDeopt(long value);
 

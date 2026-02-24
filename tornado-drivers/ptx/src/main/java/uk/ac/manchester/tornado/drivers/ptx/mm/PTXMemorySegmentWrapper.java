@@ -76,7 +76,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public long toBuffer() {
-        return this.bufferId;
+        return this.bufferId + this.bufferOffset;
     }
 
     @Override

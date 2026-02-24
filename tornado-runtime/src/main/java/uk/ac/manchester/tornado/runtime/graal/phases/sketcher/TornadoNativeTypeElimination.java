@@ -21,22 +21,22 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases.sketcher;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.calc.PointerEqualsNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.extended.LoadHubNode;
-import org.graalvm.compiler.nodes.java.InstanceOfNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.BasePhase;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedGuardNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.ParameterNode;
+import jdk.graal.compiler.nodes.PiNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.calc.IsNullNode;
+import jdk.graal.compiler.nodes.calc.PointerEqualsNode;
+import jdk.graal.compiler.nodes.extended.JavaReadNode;
+import jdk.graal.compiler.nodes.extended.JavaWriteNode;
+import jdk.graal.compiler.nodes.extended.LoadHubNode;
+import jdk.graal.compiler.nodes.java.InstanceOfNode;
+import jdk.graal.compiler.nodes.java.LoadFieldNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -180,7 +180,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     baseIndexNode.replaceAtUsages(constantNode);
                     deleteFixed(baseIndexNode);
                 }
-
                 // Remove FixedGuard nodes with its PI Node
                 if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
                     FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
@@ -191,10 +190,16 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                         var constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
                         baseIndexNode.replaceAtUsages(constantNode);
                         if (baseIndexNode.predecessor() instanceof FixedGuardNode outterFixedGuardNode) {
-                            outterFixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
-                                isNullNode.safeDelete();
-                            });
+                            // Collect inputs before deleting
+                            var isNullNodes = outterFixedGuardNode.inputs().filter(IsNullNode.class).snapshot();
+                            // Delete the FixedGuardNode FIRST
                             deleteFixed(outterFixedGuardNode);
+                            // Then safely delete unused inputs
+                            for (IsNullNode isNullNode : isNullNodes) {
+                                if (!isNullNode.isDeleted() && isNullNode.hasNoUsages()) {
+                                    isNullNode.safeDelete();
+                                }
+                            }
                         }
                         deleteFixed(baseIndexNode);
                     }

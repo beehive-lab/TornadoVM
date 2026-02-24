@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
+import jdk.graal.compiler.phases.PhaseSuite;
+import jdk.graal.compiler.phases.tiers.HighTierContext;
 
 public interface TornadoSuitesProvider {
 

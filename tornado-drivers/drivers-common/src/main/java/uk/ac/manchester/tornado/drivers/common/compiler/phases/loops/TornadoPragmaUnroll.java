@@ -21,25 +21,25 @@
  */
 package uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
 
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.debug.DebugContext.INFO_LEVEL;
-import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
-import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
+import static jdk.graal.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static jdk.graal.compiler.debug.DebugContext.INFO_LEVEL;
+import static jdk.graal.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
+import static jdk.graal.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.loop.phases.LoopTransformations;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
-import org.graalvm.compiler.nodes.loop.CountedLoopInfo;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-import org.graalvm.compiler.nodes.spi.CoreProviders;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.loop.phases.LoopTransformations;
+import jdk.graal.compiler.nodes.IfNode;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.debug.ControlFlowAnchorNode;
+import jdk.graal.compiler.nodes.loop.CountedLoopInfo;
+import jdk.graal.compiler.nodes.loop.Loop;
+import jdk.graal.compiler.nodes.loop.LoopsData;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.phases.BasePhase;
+import jdk.graal.compiler.phases.common.CanonicalizerPhase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
@@ -51,7 +51,7 @@ public class TornadoPragmaUnroll extends BasePhase<CoreProviders> {
         this.canonicalizer = canonicalizer;
     }
 
-    public static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
+    public static boolean shouldFullUnroll(OptionValues options, Loop loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
@@ -92,7 +92,7 @@ public class TornadoPragmaUnroll extends BasePhase<CoreProviders> {
                 peeled = false;
                 final LoopsData dataCounted = new TornadoLoopsData(graph);
                 dataCounted.detectCountedLoops();
-                for (LoopEx loop : dataCounted.countedLoops()) {
+                for (Loop loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
                         getDebugContext().log("FullUnroll %s", loop);
                         LoopTransformations.fullUnroll(loop, providers, canonicalizer);

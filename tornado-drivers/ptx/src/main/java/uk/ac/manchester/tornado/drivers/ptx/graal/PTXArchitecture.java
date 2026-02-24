@@ -25,12 +25,14 @@ import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Variable;
+import jdk.graal.compiler.core.common.LIRKind;
+import jdk.graal.compiler.lir.Variable;
 
 import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
@@ -68,9 +70,11 @@ public class PTXArchitecture extends Architecture {
     public static PTXBuiltInRegister GridDimX = new PTXBuiltInRegister("%nctaid.x");
     public static PTXBuiltInRegister GridDimY = new PTXBuiltInRegister("%nctaid.y");
     public static PTXBuiltInRegister GridDimZ = new PTXBuiltInRegister("%nctaid.z");
+    private final static Register[] EMPTY = new Register[0];
+    private final static List<Register> EMPTY_LIST = List.of();
 
     public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
-        super("Tornado PTX", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
+        super("Tornado PTX", wordKind, byteOrder, false, EMPTY_LIST, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
 
         KERNEL_CONTEXT = new PTXParam(PTXAssemblerConstants.KERNEL_CONTEXT_NAME, 8, wordKind);
 
@@ -89,44 +93,29 @@ public class PTXArchitecture extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        PTXKind ptxKind = PTXKind.ILLEGAL;
-        switch (javaKind) {
-            case Boolean:
-                ptxKind = PTXKind.U8;
-                break;
-            case Byte:
-                ptxKind = PTXKind.S8;
-                break;
-            case Char:
-                ptxKind = PTXKind.U16;
-                break;
-            case Short:
-                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U16 : PTXKind.S16;
-                break;
-            case Int:
-                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U32 : PTXKind.S32;
-                break;
-            case Long:
-                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U64 : PTXKind.S64;
-                break;
-            case Float:
-                ptxKind = PTXKind.F32;
-                break;
-            case Double:
-                ptxKind = PTXKind.F64;
-                break;
-            case Object:
-                ptxKind = (PTXKind) getWordKind();
-                break;
-            case Void:
-            case Illegal:
-                ptxKind = PTXKind.ILLEGAL;
-                break;
-            default:
-                throw new TornadoBailoutRuntimeException("illegal java type for " + javaKind.name());
-        }
-        return ptxKind;
+        return switch (javaKind) {
+            case Boolean -> PTXKind.U8;
+            case Byte    -> PTXKind.S8;
+            case Char    -> PTXKind.U16;
+            case Short -> javaKind.isUnsigned()
+                    ? PTXKind.U16
+                    : PTXKind.S16;
+            case Int -> javaKind.isUnsigned()
+                    ? PTXKind.U32
+                    : PTXKind.S32;
+            case Long -> javaKind.isUnsigned()
+                    ? PTXKind.U64
+                    : PTXKind.S64;
+            case Float  -> PTXKind.F32;
+            case Double -> PTXKind.F64;
+            case Object -> (PTXKind) getWordKind();
+            case Void, Illegal -> PTXKind.ILLEGAL;
+            default -> throw new TornadoBailoutRuntimeException(
+                    "illegal java type for " + javaKind.name()
+            );
+        };
     }
+
 
     /*
      * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the

@@ -22,12 +22,12 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.Phase;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValuePhiNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024-2025, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, 2024-2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -23,6 +23,34 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import jdk.graal.compiler.core.common.memory.BarrierType;
+import jdk.graal.compiler.core.common.memory.MemoryOrderMode;
+import jdk.graal.compiler.core.common.type.StampFactory;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FixedWithNextNode;
+import jdk.graal.compiler.nodes.NodeView;
+import jdk.graal.compiler.nodes.PiNode;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.AddNode;
+import jdk.graal.compiler.nodes.calc.MulNode;
+import jdk.graal.compiler.nodes.calc.SignExtendNode;
+import jdk.graal.compiler.nodes.extended.BoxNode;
+import jdk.graal.compiler.nodes.extended.JavaReadNode;
+import jdk.graal.compiler.nodes.extended.JavaWriteNode;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import jdk.graal.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import jdk.graal.compiler.nodes.graphbuilderconf.NodePlugin;
+import jdk.graal.compiler.nodes.java.NewArrayNode;
+import jdk.graal.compiler.nodes.java.StoreIndexedNode;
+import jdk.graal.compiler.nodes.memory.address.AddressNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.util.GraphUtil;
+import jdk.graal.compiler.replacements.InlineDuringParsingPlugin;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -30,33 +58,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.RawConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.core.common.memory.BarrierType;
-import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
-import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.extended.BoxNode;
-import org.graalvm.compiler.nodes.extended.JavaReadNode;
-import org.graalvm.compiler.nodes.extended.JavaWriteNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
@@ -89,7 +90,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.util.function.Supplier;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static jdk.graal.compiler.debug.GraalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.ATAN2;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
@@ -131,12 +132,14 @@ public class OCLGraphBuilderPlugins {
         OCLHalfFloatPlugins.registerPlugins(ps, plugins);
         registerMemoryAccessPlugins(plugins, metaAccessProvider);
         registerQuantizationUtilsPlugins(plugins);
-
     }
 
     private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
-        return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger") || method.getDeclaringClass().toJavaName()
-                .equals("java.util.concurrent.atomic.AtomicInteger");
+        return method.getDeclaringClass() //
+        .toJavaName() //
+            .equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger")  //
+            || method.getDeclaringClass().toJavaName() //
+            .equals("java.util.concurrent.atomic.AtomicInteger");
     }
 
     private static void registerAtomicCall(Registration r, JavaKind returnedJavaKind) {
@@ -144,7 +147,9 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.INCREMENT_AND_GET)));
+                IncAtomicNode atomicNode = new IncAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.INCREMENT_AND_GET);
+                b.getGraph().addOrUnique(atomicNode);
+                b.addPush(returnedJavaKind, atomicNode);
                 return true;
             }
         });
@@ -153,7 +158,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 receiver.get(true);
-                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get(true), OCLUnary.AtomicOperator.GET_AND_INCREMENT)));
                 return true;
             }
         });
@@ -205,7 +210,7 @@ public class OCLGraphBuilderPlugins {
                             if (value == 0) {
                                 atomic.setInitialValue(constantNode);
                             } else {
-                                atomic.setInitialValueAtUsages(constantNode);
+                                atomic.setInitialValueAtUsages(initialValue);
                             }
                         }
                         return true;
@@ -223,11 +228,11 @@ public class OCLGraphBuilderPlugins {
 
     private static TornadoAtomicIntegerNode resolveReceiverAtomic(ValueNode thisObject) {
         TornadoAtomicIntegerNode atomicNode = null;
-        if (thisObject instanceof PiNode piNode) {
-            thisObject = piNode.getOriginalNode();
+        if (thisObject instanceof PiNode objectAsPiNode) {
+            thisObject = objectAsPiNode.getOriginalNode();
         }
-        if (thisObject instanceof TornadoAtomicIntegerNode tornadoAtomicIntegerNode) {
-            atomicNode = tornadoAtomicIntegerNode;
+        if (thisObject instanceof TornadoAtomicIntegerNode returnedAtomicNode) {
+            atomicNode = returnedAtomicNode;
         }
         return atomicNode;
     }
@@ -274,18 +279,18 @@ public class OCLGraphBuilderPlugins {
         registerAtomicAddPlugin(r, "atomicAdd", int[].class, OCLKind.UINT, intHeaderSupplier);
         registerAtomicAddPlugin(r, "atomicAdd", LongArray.class, OCLKind.ULONG, longHeaderSupplier);
         registerUnsupportedAtomicAddPlugin(r);
-        registerUnsupportedAtomicAddPlugin(r);
     }
 
     private static void registerAtomicAddPlugin(Registration r, String methodName, Class<?> arrayType, OCLKind kind, Supplier<Integer> headerSupplier) {
         r.register(new InvocationPlugin(methodName, InvocationPlugin.Receiver.class, arrayType, Integer.TYPE, kind.asJavaKind().toJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                receiver.get(true);
                 JavaKind javaKind = kind.asJavaKind();
                 int header = headerSupplier.get();
                 AddressNode address = computeAddress(b, segment, index, header, javaKind);
                 AtomAddNodeTemplate atomicAddNode = new AtomAddNodeTemplate(address, inc, javaKind);
-                b.add(b.append(atomicAddNode));
+                b.add(atomicAddNode);
                 return true;
             }
         });
@@ -295,6 +300,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, FloatArray.class, Integer.TYPE, Float.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                receiver.get(true);
                 unimplemented("In OpenCL, the atom_add function does not support floating point operations.");
                 return false;
             }
@@ -302,6 +308,7 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("atomicAdd", InvocationPlugin.Receiver.class, DoubleArray.class, Integer.TYPE, Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode inc) {
+                receiver.get(true);
                 unimplemented("In OpenCL, the atom_add function does not support floating point operations.");
                 return false;
             }
@@ -322,6 +329,7 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -334,6 +342,7 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -346,6 +355,7 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -358,6 +368,7 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, size);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -369,10 +380,10 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 receiver.get(true);
-                // if we do not pass the resolved type, the compiler cannot deduct if the type is char or byte
                 MetaAccessProvider metaAccess = b.getMetaAccess();
                 ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(byte.class);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, resolvedElementType, size);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -387,6 +398,7 @@ public class OCLGraphBuilderPlugins {
                 MetaAccessProvider metaAccess = b.getMetaAccess();
                 ResolvedJavaType resolvedElementType = metaAccess.lookupJavaType(short.class);
                 LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, resolvedElementType, size, OCLKind.HALF);
+                b.getGraph().addOrUnique(localArrayNode);
                 b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
@@ -423,37 +435,6 @@ public class OCLGraphBuilderPlugins {
         registerAtomicAddOperation(r);
     }
 
-    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
-        Registration r = new Registration(plugins, TornadoMemorySegment.class);
-
-        for (JavaKind kind : JavaKind.values()) {
-            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
-                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
-                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
-                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                        b.addPush(kind, readNode);
-                        return true;
-                    }
-                });
-                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
-                        AddNode absoluteIndexNode = b.append(new AddNode(index, baseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forInt(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(true), mulNode));
-                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                        b.add(writeNode);
-                        return true;
-                    }
-                });
-            }
-        }
-    }
-
     private static void registerFP16ConversionPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, Float.class);
 
@@ -461,7 +442,8 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfValue) {
                 OCLConvertHalfToFloat convertHalfToFloat = new OCLConvertHalfToFloat(halfValue);
-                b.addPush(JavaKind.Float, convertHalfToFloat);
+                b.getGraph().addOrUnique(convertHalfToFloat);
+                b.push(JavaKind.Float, convertHalfToFloat);
                 return true;
             }
         });
@@ -559,10 +541,49 @@ public class OCLGraphBuilderPlugins {
 
     }
 
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins, HotSpotMetaAccessProvider metaAccessProvider) {
+        Registration r = new Registration(plugins, TornadoMemorySegment.class);
+
+        for (JavaKind kind : JavaKind.values()) {
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
+                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                        ValueNode receiverNode = receiver.get(true);  // Get receiver first (this adds null check)
+                        // Sign-extend int indices to long for 64-bit address arithmetic
+                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
+                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        b.addPush(kind, readNode);
+                        return true;
+                    }
+                });
+                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                        ValueNode receiverNode = receiver.get(true);  // Get receiver first (this adds null check)
+                        // Sign-extend int indices to long for 64-bit address arithmetic
+                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
+                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                        b.add(writeNode);
+                        return true;
+                    }
+                });
+            }
+        }
+    }
+
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
 
         Registration r = new Registration(plugins, java.lang.Math.class);
-        // We have to overwrite some of the standard math plugins
+        // We have to overwrite some standard math plugins
         r.setAllowOverwrite(true);
         registerOpenCLOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);

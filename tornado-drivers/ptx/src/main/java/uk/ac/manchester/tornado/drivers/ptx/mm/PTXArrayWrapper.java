@@ -49,6 +49,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     private int arrayLengthOffset;
     private long buffer;
     private long bufferSize;
+    private long bufferOffset;
     private JavaKind kind;
     private long setSubRegionSize;
     private final TornadoLogger logger;
@@ -59,11 +60,17 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
         this.kind = kind;
         this.buffer = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
+        this.bufferOffset = 0;
         this.access = access;
 
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         logger = new TornadoLogger(this.getClass());
+    }
+
+    protected PTXArrayWrapper(final T array, PTXDeviceContext deviceContext, JavaKind kind, Access access) {
+        this(deviceContext, kind, access);
+        bufferSize = sizeOf(array);
     }
 
     @SuppressWarnings("unchecked")
@@ -78,17 +85,20 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
 
     @Override
     public long toBuffer() {
-        return buffer;
+        return buffer + bufferOffset;
     }
 
     @Override
     public void setBuffer(XPUBufferWrapper bufferWrapper) {
-        TornadoInternalError.shouldNotReachHere();
+        this.buffer = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += size();
     }
 
     @Override
     public long getBufferOffset() {
-        return 0;
+        return bufferOffset;
     }
 
     @Override
@@ -119,7 +129,7 @@ public abstract class PTXArrayWrapper<T> implements XPUBuffer {
     }
 
     private PTXByteBuffer getArrayHeader() {
-        final PTXByteBuffer header = new PTXByteBuffer(buffer, arrayHeaderSize, 0, deviceContext);
+        final PTXByteBuffer header = new PTXByteBuffer(toBuffer(), arrayHeaderSize, 0, deviceContext);
         header.buffer.clear();
         return header;
     }

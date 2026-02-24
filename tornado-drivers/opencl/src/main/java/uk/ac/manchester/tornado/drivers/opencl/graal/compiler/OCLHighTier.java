@@ -21,20 +21,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
-
+import jdk.graal.compiler.phases.common.DisableOverflownCountedLoopsPhase;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
-import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
-import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
-import org.graalvm.compiler.nodes.loop.LoopPolicies;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.common.HighTierLoweringPhase;
-import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
-import org.graalvm.compiler.phases.schedule.SchedulePhase;
-import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import jdk.graal.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
+import jdk.graal.compiler.loop.phases.LoopFullUnrollPhase;
+import jdk.graal.compiler.nodes.loop.DefaultLoopPolicies;
+import jdk.graal.compiler.nodes.loop.LoopPolicies;
+import jdk.graal.compiler.options.OptionValues;
+import jdk.graal.compiler.phases.common.CanonicalizerPhase;
+import jdk.graal.compiler.phases.common.DeadCodeEliminationPhase;
+import jdk.graal.compiler.phases.common.HighTierLoweringPhase;
+import jdk.graal.compiler.phases.common.IterativeConditionalEliminationPhase;
+import jdk.graal.compiler.phases.common.inlining.InliningPhase;
+import jdk.graal.compiler.phases.schedule.SchedulePhase;
+import jdk.graal.compiler.virtual.phases.ea.PartialEscapePhase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.drivers.common.compiler.phases.guards.ExceptionSuppression;
@@ -54,11 +54,11 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoPartialInliningPolicy;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.OptConvertDeoptsToGuards;
-import static org.graalvm.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
-import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static jdk.graal.compiler.core.common.GraalOptions.ConditionalElimination;
+import static jdk.graal.compiler.core.common.GraalOptions.OptConvertDeoptsToGuards;
+import static jdk.graal.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
+import static jdk.graal.compiler.core.phases.HighTier.Options.Inline;
+import static jdk.graal.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 public class OCLHighTier extends TornadoHighTier {
 
@@ -106,6 +106,8 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
+
+        appendPhase(new DisableOverflownCountedLoopsPhase());
 
         if (!deviceContext.isPlatformFPGA()) {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();

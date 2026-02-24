@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
+import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.ValueKindFactory;
@@ -31,15 +31,22 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.PlatformKind;
 
+import java.util.List;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class PTXRegisterConfig implements RegisterConfig {
     private final static Register DUMMY = new Register(0, 0, "dummy", PTXArchitecture.PTX_ABI);
-    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
+    private final static Register[] EMPTY = new Register[0];
 
     @Override
-    public RegisterArray getCalleeSaveRegisters() {
-        return EMPTY;
+    public PlatformKind getCalleeSaveRegisterStorageKind(Architecture arch, Register calleeSaveRegister) {
+        return RegisterConfig.super.getCalleeSaveRegisterStorageKind(arch, calleeSaveRegister);
+    }
+
+    @Override
+    public List<RegisterAttributes> getAttributesMap() {
+        return List.of();
     }
 
     @Override
@@ -49,9 +56,24 @@ public class PTXRegisterConfig implements RegisterConfig {
     }
 
     @Override
+    public List<Register> getCallingConventionRegisters(CallingConvention.Type type, JavaKind kind) {
+        return List.of();
+    }
+
+    @Override
+    public List<Register> getAllocatableRegisters() {
+        return List.of();
+    }
+
+    @Override
     public Register getReturnRegister(JavaKind kind) {
         unimplemented("return register method not implemented yet.");
         return null;
+    }
+
+    @Override
+    public int getMaximumFrameSize() {
+        return RegisterConfig.super.getMaximumFrameSize();
     }
 
     @Override
@@ -59,31 +81,20 @@ public class PTXRegisterConfig implements RegisterConfig {
         return DUMMY;
     }
 
+
     @Override
-    public RegisterArray getCallingConventionRegisters(CallingConvention.Type type, JavaKind kind) {
-        return EMPTY;
+    public List<Register> getCallerSaveRegisters() {
+        return List.of();
     }
 
     @Override
-    public RegisterArray getAllocatableRegisters() {
-        return EMPTY;
+    public List<Register> getCalleeSaveRegisters() {
+        return List.of();
     }
 
     @Override
-    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
-        unimplemented("Filter allocation registers not implemented yet.");
-        return null;
-    }
-
-    @Override
-    public RegisterArray getCallerSaveRegisters() {
-        return EMPTY;
-    }
-
-    @Override
-    public RegisterAttributes[] getAttributesMap() {
-        unimplemented("Get attributes map not implemented yet");
-        return null;
+    public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
+        return List.of();
     }
 
     @Override

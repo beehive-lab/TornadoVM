@@ -21,19 +21,18 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.FixedGuardNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.PiNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.calc.IsNullNode;
+import jdk.graal.compiler.phases.BasePhase;
+import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
+
 import java.util.ArrayList;
 import java.util.Optional;
-
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.phases.BasePhase;
-
-import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 
 public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSketchTierContext> {
 
@@ -61,6 +60,14 @@ public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSket
 
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         ArrayList<ValueNode> nodesToBeDeleted = new ArrayList<ValueNode>();
+
+        for (PiNode piNode : graph.getNodes().filter(PiNode.class)) {
+            if (piNode.piStamp().toString().contains("HalfFloat")) {
+                piNode.replaceAtUsages(piNode.object());
+                piNode.safeDelete();
+            }
+        }
+
         for (HalfFloatPlaceholder placeholderNode : graph.getNodes().filter(HalfFloatPlaceholder.class)) {
             if (placeholderNode.getInput() instanceof PiNode placeholderInput) {
                 ValueNode halfFloatValue = placeholderInput.object();

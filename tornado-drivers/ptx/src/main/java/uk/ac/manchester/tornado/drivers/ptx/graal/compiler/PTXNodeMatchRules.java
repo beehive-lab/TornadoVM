@@ -22,8 +22,8 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import org.graalvm.compiler.core.gen.NodeMatchRules;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import jdk.graal.compiler.core.gen.NodeMatchRules;
+import jdk.graal.compiler.lir.gen.LIRGeneratorTool;
 
 public class PTXNodeMatchRules extends NodeMatchRules {
     public PTXNodeMatchRules(LIRGeneratorTool lirGen) {

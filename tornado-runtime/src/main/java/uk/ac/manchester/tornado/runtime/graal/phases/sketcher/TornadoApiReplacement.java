@@ -29,18 +29,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.loop.InductionVariable;
-import org.graalvm.compiler.nodes.loop.LoopEx;
-import org.graalvm.compiler.nodes.loop.LoopsData;
-import org.graalvm.compiler.phases.BasePhase;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.ConstantNode;
+import jdk.graal.compiler.nodes.FrameState;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.ValuePhiNode;
+import jdk.graal.compiler.nodes.calc.IntegerLessThanNode;
+import jdk.graal.compiler.nodes.loop.InductionVariable;
+import jdk.graal.compiler.nodes.loop.Loop;
+import jdk.graal.compiler.nodes.loop.LoopsData;
+import jdk.graal.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -131,7 +131,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
             int loopIndex = 0;
-            final List<LoopEx> loops = data.outerFirst();
+            final List<Loop> loops = data.outerFirst();
 
             // Enable loop interchange - Parallel Loops are processed in the IR reversed order
             // to set the ranges and offset of the corresponding <thread-ids> for each dimension.
@@ -139,7 +139,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                 Collections.reverse(loops);
             }
 
-            for (LoopEx loop : loops) {
+            for (Loop loop : loops) {
                 for (InductionVariable iv : loop.getInductionVariables().getValues()) {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
                         continue;

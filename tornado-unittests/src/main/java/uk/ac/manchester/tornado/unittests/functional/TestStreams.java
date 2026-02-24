@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+
 import static org.junit.Assert.fail;
 
 public class TestStreams {
@@ -57,15 +57,15 @@ public class TestStreams {
     @Test
     public void testParallelStreams() throws TornadoExecutionPlanException {
         ArrayList<Integer> s = new ArrayList<>();
-        for(int i = 0; i < 512; i++) {
+        for (int i = 0; i < 512; i++) {
             s.add(i);
         }
 
-        s.parallelStream().forEach(k->{
+        s.parallelStream().forEach(k -> {
             try {
                 hostComputeMethod();
             } catch (TornadoExecutionPlanException e) {
-                fail(STR."Got exception \{e}");
+                fail("Got exception executing TornadoExecutionPlan inside parallel stream: " + e.getMessage());
             }
         });
     }

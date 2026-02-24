@@ -24,8 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
+import jdk.graal.compiler.lir.asm.CompilationResultBuilder;
+import jdk.graal.compiler.lir.asm.FrameContext;
 
 /**
  * Mapping for a native frame.

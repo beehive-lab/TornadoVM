@@ -21,8 +21,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
-import static org.graalvm.compiler.graph.Graph.NodeEvent.NODE_ADDED;
-import static org.graalvm.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
+import static jdk.graal.compiler.graph.Graph.NodeEvent.NODE_ADDED;
+import static jdk.graal.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
 import static org.graalvm.word.LocationIdentity.any;
 import static org.graalvm.word.LocationIdentity.init;
 
@@ -31,54 +31,54 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import jdk.graal.compiler.core.common.cfg.CFGLoop;
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
 import org.graalvm.collections.Equivalence;
 import org.graalvm.collections.UnmodifiableMapCursor;
-import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.Graph;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.AbstractBeginNode;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
-import org.graalvm.compiler.nodes.MemoryMapControlSinkNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.ProxyNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValueNodeInterface;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.cfg.HIRBlock;
-import org.graalvm.compiler.nodes.cfg.HIRLoop;
-import org.graalvm.compiler.nodes.memory.AddressableMemoryAccess;
-import org.graalvm.compiler.nodes.memory.FloatableAccessNode;
-import org.graalvm.compiler.nodes.memory.FloatingAccessNode;
-import org.graalvm.compiler.nodes.memory.FloatingReadNode;
-import org.graalvm.compiler.nodes.memory.MemoryAccess;
-import org.graalvm.compiler.nodes.memory.MemoryAnchorNode;
-import org.graalvm.compiler.nodes.memory.MemoryKill;
-import org.graalvm.compiler.nodes.memory.MemoryMap;
-import org.graalvm.compiler.nodes.memory.MemoryMapNode;
-import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
-import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
-import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.CoreProviders;
-import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FloatingReadPhase;
-import org.graalvm.compiler.phases.common.PostRunCanonicalizationPhase;
-import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
-import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
+import jdk.graal.compiler.debug.DebugCloseable;
+import jdk.graal.compiler.debug.GraalError;
+import jdk.graal.compiler.graph.Graph;
+import jdk.graal.compiler.graph.Node;
+import jdk.graal.compiler.nodes.AbstractBeginNode;
+import jdk.graal.compiler.nodes.AbstractMergeNode;
+import jdk.graal.compiler.nodes.FixedNode;
+import jdk.graal.compiler.nodes.GraphState;
+import jdk.graal.compiler.nodes.LoopBeginNode;
+import jdk.graal.compiler.nodes.LoopEndNode;
+import jdk.graal.compiler.nodes.LoopExitNode;
+import jdk.graal.compiler.nodes.MemoryMapControlSinkNode;
+import jdk.graal.compiler.nodes.PhiNode;
+import jdk.graal.compiler.nodes.ProxyNode;
+import jdk.graal.compiler.nodes.StartNode;
+import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValueNode;
+import jdk.graal.compiler.nodes.ValueNodeInterface;
+import jdk.graal.compiler.nodes.calc.FloatingNode;
+import jdk.graal.compiler.nodes.cfg.ControlFlowGraph;
+import jdk.graal.compiler.nodes.cfg.HIRBlock;
+import jdk.graal.compiler.nodes.cfg.HIRLoop;
+import jdk.graal.compiler.nodes.memory.AddressableMemoryAccess;
+import jdk.graal.compiler.nodes.memory.FloatableAccessNode;
+import jdk.graal.compiler.nodes.memory.FloatingAccessNode;
+import jdk.graal.compiler.nodes.memory.FloatingReadNode;
+import jdk.graal.compiler.nodes.memory.MemoryAccess;
+import jdk.graal.compiler.nodes.memory.MemoryAnchorNode;
+import jdk.graal.compiler.nodes.memory.MemoryKill;
+import jdk.graal.compiler.nodes.memory.MemoryMap;
+import jdk.graal.compiler.nodes.memory.MemoryMapNode;
+import jdk.graal.compiler.nodes.memory.MemoryPhiNode;
+import jdk.graal.compiler.nodes.memory.MultiMemoryKill;
+import jdk.graal.compiler.nodes.memory.SingleMemoryKill;
+import jdk.graal.compiler.nodes.memory.address.AddressNode;
+import jdk.graal.compiler.nodes.memory.address.OffsetAddressNode;
+import jdk.graal.compiler.nodes.spi.CoreProviders;
+import jdk.graal.compiler.nodes.util.GraphUtil;
+import jdk.graal.compiler.phases.common.CanonicalizerPhase;
+import jdk.graal.compiler.phases.common.FloatingReadPhase;
+import jdk.graal.compiler.phases.common.PostRunCanonicalizationPhase;
+import jdk.graal.compiler.phases.common.util.EconomicSetNodeEventListener;
+import jdk.graal.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
@@ -95,7 +95,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorLoadEleme
  * loop.
  *
  * <p>
- * {@link org.graalvm.compiler.phases.common.FloatingReadPhase}
+ * {@link jdk.graal.compiler.phases.common.FloatingReadPhase}
  * </p>
  */
 public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase<CoreProviders> {
@@ -107,8 +107,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
     }
 
     /**
-     * @param createMemoryMapNodes
-     *            a {@link MemoryMapNode} will be created for each return if this
+     * @param createMemoryMapNodes a {@link MemoryMapNode} will be created for each return if this
      * @param canonicalizer
      */
     public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {
@@ -124,7 +123,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         boolean change;
         do {
             change = false;
-            for (Iterator<Node> iter = set.iterator(); iter.hasNext();) {
+            for (Iterator<Node> iter = set.iterator(); iter.hasNext(); ) {
                 Node node = iter.next();
                 for (Node usage : node.usages()) {
                     if (!set.contains(usage)) {
@@ -230,7 +229,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         }
 
         result = EconomicSet.create(Equivalence.DEFAULT);
-        for (Loop<HIRBlock> inner : loop.getChildren()) {
+        for (CFGLoop<HIRBlock> inner : loop.getChildren()) {
             result.addAll(processLoop((HIRLoop) inner, modifiedInLoops));
         }
 
@@ -252,8 +251,8 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops = null;
         if (graph.hasLoops()) {
             modifiedInLoops = EconomicMap.create(Equivalence.IDENTITY);
-            ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, false, false);
-            for (Loop<?> l : cfg.getLoops()) {
+            ControlFlowGraph cfg = ControlFlowGraph.newBuilder(graph).connectBlocks(true).computeLoops(true).computeFrequency(true).build();
+            for (CFGLoop<?> l : cfg.getLoops()) {
                 HIRLoop loop = (HIRLoop) l;
                 processLoop(loop, modifiedInLoops);
             }
@@ -329,7 +328,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         private boolean createMemoryMapNodes;
 
         public FloatingReadClosure(EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops, boolean createFloatingReads, boolean createMemoryMapNodes,
-                EconomicSet<ValueNode> initMemory) {
+                                   EconomicSet<ValueNode> initMemory) {
             this.modifiedInLoops = modifiedInLoops;
             this.createFloatingReads = createFloatingReads;
             this.createMemoryMapNodes = createMemoryMapNodes;
@@ -359,27 +358,25 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         private static void processAccess(MemoryAccess access, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             LocationIdentity locationIdentity = access.getLocationIdentity();
-            if (!locationIdentity.equals(LocationIdentity.any()) && locationIdentity.isMutable()) {
+            if (!locationIdentity.equals(any()) && locationIdentity.isMutable()) {
                 MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 access.setLastLocationAccess(lastLocationAccess);
             }
         }
 
         /**
-         * @param accessNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method checks if the node that is going
-         *            to be replaced has an {@link SPIRVBarrierNode} as next.
+         * @param accessNode is a {@link FixedNode} that will be replaced by a
+         *                   {@link FloatingNode}. This method checks if the node that is going
+         *                   to be replaced has an {@link SPIRVBarrierNode} as next.
          */
         private static boolean isNextNodeBarrierNode(FloatableAccessNode accessNode) {
             return (accessNode.next() instanceof SPIRVBarrierNode);
         }
 
         /**
-         * @param nextNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method removes the redundant
-         *            {@link SPIRVBarrierNode}.
+         * @param nextNode is a {@link FixedNode} that will be replaced by a
+         *                 {@link FloatingNode}. This method removes the redundant
+         *                 {@link SPIRVBarrierNode}.
          */
         private static void replaceRedundantBarrierNode(Node nextNode) {
             nextNode.replaceAtUsages(nextNode.successors().first());
@@ -406,7 +403,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         @SuppressWarnings("try")
         private static void createMemoryPhi(LoopBeginNode loop, TornadoFloatingReadReplacement.MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis,
-                LocationIdentity location) {
+                                            LocationIdentity location) {
             try (DebugCloseable position = loop.withNodeSourcePosition()) {
                 MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
                 phi.addInput(ValueNodeInterface.asNode(initialState.getLastLocationAccess(location)));
@@ -420,9 +417,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
             if (node instanceof LoopExitNode) {
                 final LoopExitNode loopExitNode = (LoopExitNode) node;
                 final EconomicSet<LocationIdentity> modifiedInLoop = modifiedInLoops.get(loopExitNode.loopBegin());
-                final boolean anyModified = modifiedInLoop.contains(LocationIdentity.any());
-                state.getMap().replaceAll(
-                        (locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity)) ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity) : memoryNode);
+                final boolean anyModified = modifiedInLoop.contains(any());
+                state.getMap().replaceAll((locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity))
+                        ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity) : memoryNode);
             }
 
             if (node instanceof MemoryAnchorNode) {
@@ -519,8 +516,8 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         protected EconomicMap<LoopExitNode, TornadoFloatingReadReplacement.MemoryMapImpl> processLoop(LoopBeginNode loop, TornadoFloatingReadReplacement.MemoryMapImpl initialState) {
             EconomicSet<LocationIdentity> modifiedLocations = modifiedInLoops.get(loop);
             EconomicMap<LocationIdentity, MemoryPhiNode> phis = EconomicMap.create(Equivalence.DEFAULT);
-            if (modifiedLocations.contains(LocationIdentity.any())) {
-                // create phis for all locations if ANY is modified in the loop
+
+            if (modifiedLocations.contains(any())) {                // create phis for all locations if ANY is modified in the loop                // create phis for all locations if ANY is modified in the loop
                 modifiedLocations = EconomicSet.create(Equivalence.DEFAULT, modifiedLocations);
                 modifiedLocations.addAll(initialState.getMap().getKeys());
             }
