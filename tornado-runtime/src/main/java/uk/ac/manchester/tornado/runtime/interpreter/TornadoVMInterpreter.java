@@ -623,6 +623,7 @@ public class TornadoVMInterpreter {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
+        Arrays.fill(eventsIndexes, 0);
     }
 
     /**
