@@ -444,6 +444,8 @@ public class TornadoOptions {
      * Enable PTX multi-stream execution. When enabled, H2D, COMPUTE, and D2H
      * operations are routed to separate CUDA streams with event-based
      * cross-stream synchronization. Requires tornado.vm.deps=true.
+     * This "two-step" requirement is selected to accommodate isolation between
+     * dep logic and multi-stream for correctness verification.
      */
     public static final boolean ENABLE_PTX_MULTI_STREAM = getBooleanValue("tornado.ptx.multistream", FALSE);
 
