@@ -276,11 +276,15 @@ public class PTXDeviceContext implements TornadoDeviceContext {
 
     public int enqueueBarrier(long executionPlanId, int[] events) {
         if (isMultiStreamEnabled()) {
+            if (events == null) {
+                return enqueueBarrier(executionPlanId);
+            }
+            // Use fine-grained sync: each stream waits only on cross-stream events
             for (PTXStreamType type : PTXStreamType.values()) {
                 if (type == PTXStreamType.DEFAULT) continue;
                 PTXStream stream = getStreamIfExists(executionPlanId, type);
                 if (stream != null) {
-                    stream.enqueueBarrier(executionPlanId, events);
+                    resolveAndWaitCrossStream(executionPlanId, events, stream);
                 }
             }
             return -1;
@@ -313,11 +317,14 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
         if (isMultiStreamEnabled()) {
-            for (PTXStreamType type : PTXStreamType.values()) {
-                if (type == PTXStreamType.DEFAULT) continue;
-                PTXStream stream = getStreamIfExists(executionPlanId, type);
-                if (stream != null) {
-                    stream.enqueueBarrier(executionPlanId, events);
+            if (events == null) {
+                return enqueueMarker(executionPlanId);
+            }
+            for (PTXStreamType targetType : PTXStreamType.values()) {
+                if (targetType == PTXStreamType.DEFAULT) continue;
+                PTXStream targetStream = getStreamIfExists(executionPlanId, targetType);
+                if (targetStream != null) {
+                    resolveAndWaitCrossStream(executionPlanId, events, targetStream);
                 }
             }
             // Reset registry after sync - prevents unbounded growth across iterations
