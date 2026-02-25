@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1-dev</version>
     </parent>
     <artifactId>tornado-drivers-opencl-jni</artifactId>
     <name>tornado-drivers-opencl-jni</name>
