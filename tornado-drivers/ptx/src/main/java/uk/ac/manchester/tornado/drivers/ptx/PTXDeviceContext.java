@@ -784,59 +784,91 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      * SYNC WRITES
      */
     public void writeBuffer(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, hostPointer, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, long[] array, int hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, float[] array, int hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     public void writeBuffer(long executionPlanId, long address, long length, double[] array, int hostOffset, int[] waitEvents) {
-        PTXStream stream = isMultiStreamEnabled()
-                ? getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D)
-                : getStream(executionPlanId);
-        stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        if (isMultiStreamEnabled()) {
+            PTXStream stream = getStream(executionPlanId, PTXStreamType.DATA_TRANSFER_H2D);
+            resolveAndWaitCrossStream(executionPlanId, waitEvents, stream);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, null);
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            stream.enqueueWrite(executionPlanId, address, length, array, hostOffset, waitEvents);
+        }
     }
 
     /*
