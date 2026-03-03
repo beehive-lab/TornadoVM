@@ -63,6 +63,7 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
+import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -244,14 +245,33 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
+        // First pass: identify ULONG variables that are targets of device-memory loads.
+        // These hold integer byte offsets, NOT device pointers. They must be declared as
+        // "ulong" so that tornado_ptr_t + ulong (pointer + integer) arithmetic is valid.
+        Set<Variable> ulongIntLoadVars = new HashSet<>();
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction instr : lir.getLIRforBlock(lir.getBlockById(b))) {
+                if (instr instanceof MetalLIRStmt.LoadStmt instrL) {
+                    AllocatableValue lhs =  instrL.getResult();
+                    if (lhs instanceof Variable variableLhs && lhs.getPlatformKind() == MetalKind.ULONG) {
+                        ulongIntLoadVars.add(variableLhs);
+                    }
+                }
+            }
+        }
+
+        // Second pass: collect variable definitions, excluding ULONG load targets from the
+        // normal kindToVariable map (they will be emitted separately as "ulong").
         for (int b : lir.linearScanOrder()) {
             for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
-                    if (value instanceof Variable) {
-                        Variable variable = (Variable) value;
+                    if (value instanceof Variable valueVar) {
+                        Variable variable = valueVar;
                         if (variable.toString() != null) {
-                            addVariableDef(kindToVariable, variable);
+                            if (!ulongIntLoadVars.contains(variable)) {
+                                addVariableDef(kindToVariable, variable);
+                            }
                             variableCount.incrementAndGet();
                         }
                     }
@@ -266,6 +286,18 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
             asm.indent();
             asm.emit("%s ", type);
             for (Variable var : kindToVariable.get(type)) {
+                asm.emitValue(crb, var);
+                asm.emit(", ");
+            }
+            asm.emitByte(';', asm.position() - 2);
+            asm.eol();
+        }
+
+        // Emit integer declarations for ULONG load targets (byte-offset variables).
+        if (!ulongIntLoadVars.isEmpty()) {
+            asm.indent();
+            asm.emit("ulong ");
+            for (Variable var : ulongIntLoadVars) {
                 asm.emitValue(crb, var);
                 asm.emit(", ");
             }

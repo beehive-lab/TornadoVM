@@ -46,7 +46,6 @@ import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.drivers.metal.power.MetalEmptyPowerMetricHandler;
-import uk.ac.manchester.tornado.drivers.metal.power.MetalNvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalBufferProvider;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;

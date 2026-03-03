@@ -275,21 +275,19 @@ public class MetalCodeCache {
         final MetalBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         logger.debug("\tMetal compilation status = %s", status.toString());
 
-        if (status == MetalBuildStatus.METAL_BUILD_ERROR) {
+        // METAL_BUILD_NONE (-1) is returned by the JNI when newLibraryWithSource: fails.
+        // Treat it the same as METAL_BUILD_ERROR (-2) to surface compilation errors.
+        if (status != METAL_BUILD_SUCCESS) {
             final String log = program.getBuildLog(deviceContext.getDeviceId());
-            System.err.println("\n[ERROR] TornadoVM JIT Compiler - Metal Build Error Log:\n\n" + log + "\n");
+            System.err.println("\n[ERROR] TornadoVM JIT Compiler - Metal Build Error (status=" + status + "):\n\n" + log + "\n");
             dumpKernelSource(id, entryPoint, log, source);
-            throw new TornadoBailoutRuntimeException("Error during code compilation with the Metal driver");
+            throw new TornadoBailoutRuntimeException("Error during code compilation with the Metal driver (status=" + status + ")");
         }
 
         MetalKernel kernel = null;
         if (status == METAL_BUILD_SUCCESS) {
             kernel = program.metalCreateKernel(entryPoint);
             kernelAvailable = true;
-        } else {
-            logger.debug("Kernel not created - status is %s", status);
-            final String log = program.getBuildLog(deviceContext.getDeviceId());
-            logger.debug("Build log: %s", log);
         }
 
         final MetalInstalledCode code = new MetalInstalledCode(entryPoint, source, (MetalDeviceContext) deviceContext, program, kernel, false);

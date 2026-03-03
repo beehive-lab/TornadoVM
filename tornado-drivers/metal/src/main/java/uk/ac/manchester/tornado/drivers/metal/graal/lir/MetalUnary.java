@@ -348,7 +348,11 @@ public class MetalUnary {
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
             MetalKind metalKind = getMetalPlatformKind();
-            asm.emit(((MetalUnaryTemplate) opcode).getTemplate(), base.getMemorySpace().name() + " " + metalKind.toString());
+            // ULONG values loaded from device memory are byte offsets (integers), not device
+            // pointers. Use "ulong" as the dereference type so the loaded value has integer
+            // type and can be used in valid Metal pointer arithmetic: tornado_ptr_t + ulong.
+            final String typeName = (metalKind == MetalKind.ULONG) ? "ulong" : metalKind.toString();
+            asm.emit(((MetalUnaryTemplate) opcode).getTemplate(), base.getMemorySpace().name() + " " + typeName);
         }
 
         MetalMemorySpace getMemorySpace() {
