@@ -46,6 +46,11 @@ public class PTXStream {
     private final PTXStreamType streamType;
     private boolean isDestroy;
 
+    /** Pinned host staging buffer for async Java-array H2D transfers. 0 = unallocated. */
+    private long stagingBufferPtr = 0L;
+    /** Current capacity of the staging buffer in bytes. */
+    private long stagingBufferSize = 0L;
+
     public PTXStream() {
         this(PTXStreamType.DEFAULT);
     }
@@ -102,20 +107,25 @@ public class PTXStream {
 
     private static native byte[][] writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
     private static native byte[][] writeArrayHtoDAsync(long address, long length, long hostPointer, long hostOffset, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
 
-    private static native byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, long stagingPtr, byte[] streamWrapper);
+
+    private static native long cuMemAllocHost(long numBytes);
+
+    private static native void cuMemFreeHost(long hostPtr);
+
     //@formatter:on
 
     private static native byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream,
@@ -146,6 +156,23 @@ public class PTXStream {
         return ptxEventPool.registerEvent(eventWrapper, descriptorId, streamType);
     }
 
+    /**
+     * Ensures the per-stream pinned staging buffer can hold at least {@code required} bytes.
+     * Grows lazily, doubling capacity on each expansion to amortise re-allocation cost.
+     *
+     * @param required minimum bytes needed for the next staged H2D transfer
+     */
+    private void ensureStagingCapacity(long required) {
+        if (stagingBufferPtr == 0L || stagingBufferSize < required) {
+            if (stagingBufferPtr != 0L) {
+                cuMemFreeHost(stagingBufferPtr);
+            }
+            long newSize = Math.max(required, stagingBufferSize * 2);
+            stagingBufferPtr = cuMemAllocHost(newSize);
+            stagingBufferSize = newSize;
+        }
+    }
+
     public void reset() {
         ptxEventPool.reset();
     }
@@ -155,6 +182,10 @@ public class PTXStream {
     }
 
     public void cuDestroyStream() {
+        if (stagingBufferPtr != 0L) {
+            cuMemFreeHost(stagingBufferPtr);
+            stagingBufferPtr = 0L;
+        }
         cuDestroyStream(streamPool);
         isDestroy = true;
     }
@@ -339,38 +370,44 @@ public class PTXStream {
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_BYTE);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_BYTE);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_SHORT);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_SHORT);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_INT);
-
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_INT);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, long[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_LONG);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_LONG);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, float[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_FLOAT);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_FLOAT);
     }
 
     public int enqueueAsyncWrite(long executionPlanId, long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_DOUBLE);
+        ensureStagingCapacity(length);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, stagingBufferPtr, streamPool), EventDescriptor.DESC_WRITE_DOUBLE);
     }
 
     public PTXEventPool getEventPool() {
