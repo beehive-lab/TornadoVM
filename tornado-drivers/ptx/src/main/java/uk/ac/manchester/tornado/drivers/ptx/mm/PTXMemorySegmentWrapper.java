@@ -55,6 +55,8 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     private long setSubRegionSize;
     private final Access access;
     private final int sizeOfType;
+    /** Native address of the registered host region, or 0 if not currently pinned. */
+    private long registeredHostPointer = 0L;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -186,6 +188,16 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
             bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER, access);
         }
 
+        // Register the full segment as pinned so that async H2D/D2H transfers
+        // can be non-blocking (DMA, avoids CUDA's internal staging copy)
+        if (registeredHostPointer == 0 && segment != null) {
+            boolean isAlreadyPinned = deviceContext.getDevice().getPTXContext().registerHostMemory(segment.address(), segment.byteSize());
+            if (isAlreadyPinned) {
+                // track ownership so markAsFreeBuffer() knows to unregister
+                registeredHostPointer = segment.address();
+            }
+        }
+
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
@@ -198,6 +210,12 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        // Unpin the host region before "recycling"; re-registered on the next allocate().
+        if (registeredHostPointer != 0L) {
+            deviceContext.getDevice().getPTXContext().unregisterHostMemory(registeredHostPointer);
+            registeredHostPointer = 0L;
+        }
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
