@@ -61,8 +61,7 @@ public class MetalVectorAssign {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-              // Emit Metal MSL vector constructor for 2 elements
-            asm.emit("float2(");
+            asm.emit(getMetalPlatformKind().toString() + "(");
             asm.emitValue(crb, s0);
             asm.emit(", ");
             asm.emitValue(crb, s1);
@@ -85,8 +84,7 @@ public class MetalVectorAssign {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-              // Emit Metal MSL vector constructor for 3 elements
-            asm.emit("float3(");
+            asm.emit(getMetalPlatformKind().toString() + "(");
             asm.emitValue(crb, s0);
             asm.emit(", ");
             asm.emitValue(crb, s1);
@@ -112,8 +110,7 @@ public class MetalVectorAssign {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-              // Emit Metal MSL vector constructor for 4 elements
-            asm.emit("float4(");
+            asm.emit(getMetalPlatformKind().toString() + "(");
             asm.emitValue(crb, s0);
             asm.emit(", ");
             asm.emitValue(crb, s1);
@@ -150,8 +147,12 @@ public class MetalVectorAssign {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-              // Emit Metal MSL vector constructor for 8 elements
-            asm.emit("float8(");
+            // float8/int8/half8 are custom structs { elem4 lo, hi }, not native Metal types.
+            // Use C++11 aggregate initialization: int8{int4(s0..s3), int4(s4..s7)}
+            String elem = ((MetalKind) getMetalPlatformKind()).getElementKind().toString();
+            String vec4 = elem + "4";
+            String kind = getMetalPlatformKind().toString();
+            asm.emit(kind + "{" + vec4 + "(");
             asm.emitValue(crb, s0);
             asm.emit(", ");
             asm.emitValue(crb, s1);
@@ -159,7 +160,7 @@ public class MetalVectorAssign {
             asm.emitValue(crb, s2);
             asm.emit(", ");
             asm.emitValue(crb, s3);
-            asm.emit(", ");
+            asm.emit("), " + vec4 + "(");
             asm.emitValue(crb, s4);
             asm.emit(", ");
             asm.emitValue(crb, s5);
@@ -167,7 +168,7 @@ public class MetalVectorAssign {
             asm.emitValue(crb, s6);
             asm.emit(", ");
             asm.emitValue(crb, s7);
-            asm.emit(")");
+            asm.emit(")}");
         }
 
     }
@@ -209,8 +210,13 @@ public class MetalVectorAssign {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-              // Emit Metal MSL vector constructor for 16 elements
-            asm.emit("float16(");
+            // float16/int16/half16 are structs { elem8 lo, hi } where elem8 = { elem4 lo, hi }.
+            // Use C++11 nested aggregate initialization.
+            String elem = ((MetalKind) getMetalPlatformKind()).getElementKind().toString();
+            String vec4 = elem + "4";
+            String vec8 = elem + "8";
+            String kind = getMetalPlatformKind().toString();
+            asm.emit(kind + "{" + vec8 + "{" + vec4 + "(");
             asm.emitValue(crb, s0);
             asm.emit(", ");
             asm.emitValue(crb, s1);
@@ -218,7 +224,7 @@ public class MetalVectorAssign {
             asm.emitValue(crb, s2);
             asm.emit(", ");
             asm.emitValue(crb, s3);
-            asm.emit(", ");
+            asm.emit("), " + vec4 + "(");
             asm.emitValue(crb, s4);
             asm.emit(", ");
             asm.emitValue(crb, s5);
@@ -226,7 +232,7 @@ public class MetalVectorAssign {
             asm.emitValue(crb, s6);
             asm.emit(", ");
             asm.emitValue(crb, s7);
-            asm.emit(", ");
+            asm.emit(")}, " + vec8 + "{" + vec4 + "(");
             asm.emitValue(crb, s8);
             asm.emit(", ");
             asm.emitValue(crb, s9);
@@ -234,7 +240,7 @@ public class MetalVectorAssign {
             asm.emitValue(crb, s10);
             asm.emit(", ");
             asm.emitValue(crb, s11);
-            asm.emit(", ");
+            asm.emit("), " + vec4 + "(");
             asm.emitValue(crb, s12);
             asm.emit(", ");
             asm.emitValue(crb, s13);
@@ -242,7 +248,7 @@ public class MetalVectorAssign {
             asm.emitValue(crb, s14);
             asm.emit(", ");
             asm.emitValue(crb, s15);
-            asm.emit(")");
+            asm.emit(")}}");
         }
 
     }
