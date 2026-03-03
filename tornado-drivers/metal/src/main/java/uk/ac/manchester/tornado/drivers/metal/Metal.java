@@ -56,8 +56,8 @@ public class Metal {
 
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
-    public static final int CL_TRUE = 1;
-    public static final int CL_FALSE = 0;
+    public static final int METAL_TRUE = 1;
+    public static final int METAL_FALSE = 0;
 
     static {
         if (VIRTUAL_DEVICE_ENABLED) {
@@ -170,7 +170,7 @@ public class Metal {
      *
      * @param tornadoDevice
      *     Metal device to run the application.
-     * @param openCLCode
+     * @param metalCode
      *     Metal code to run.
      * @param taskMeta
      *     TaskMetadata.
@@ -180,7 +180,7 @@ public class Metal {
      *     List of parameters.
      *
      */
-    public static void run(Long executionContextId, MetalTornadoDevice tornadoDevice, MetalInstalledCode openCLCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
+    public static void run(Long executionContextId, MetalTornadoDevice tornadoDevice, MetalInstalledCode metalCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
@@ -224,7 +224,7 @@ public class Metal {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(executionContextId, callWrapper, null, taskMeta, 0);
+        metalCode.launchWithoutDependencies(executionContextId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {

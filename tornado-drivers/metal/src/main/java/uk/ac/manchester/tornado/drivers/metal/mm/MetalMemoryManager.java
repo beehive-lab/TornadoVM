@@ -41,7 +41,7 @@ public class MetalMemoryManager implements TornadoMemoryProvider {
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 32;
     private static final int INTEGER_BYTES_SIZE = 4;
     private final MetalDeviceContext deviceContext;
-    private Map<Long, MetalKernelStackFrame> oclKernelStackFrame = new ConcurrentHashMap<>();
+    private Map<Long, MetalKernelStackFrame> metalKernelStackFrame = new ConcurrentHashMap<>();
     private long constantMemoryPointer;
     private long NON_EXISTING_ADDRESS = -1;
     private long atomicsRegionPointer = -1;
@@ -56,16 +56,16 @@ public class MetalMemoryManager implements TornadoMemoryProvider {
     }
 
     public MetalKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
-        if (!oclKernelStackFrame.containsKey(executionPlanId)) {
+        if (!metalKernelStackFrame.containsKey(executionPlanId)) {
             // Create one stack frame per execution plan ID 
-            long kernelStackFramePtr = deviceContext.getPlatformContext().createBuffer(MetalMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
-            oclKernelStackFrame.put(executionPlanId, new MetalKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
+            long kernelStackFramePtr = deviceContext.getPlatformContext().createBuffer(MetalMemFlags.METAL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
+            metalKernelStackFrame.put(executionPlanId, new MetalKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
         }
-        return oclKernelStackFrame.get(executionPlanId);
+        return metalKernelStackFrame.get(executionPlanId);
     }
 
     public void releaseKernelStackFrame(long executionPlanId) {
-        MetalKernelStackFrame stackFrame = oclKernelStackFrame.remove(executionPlanId);
+        MetalKernelStackFrame stackFrame = metalKernelStackFrame.remove(executionPlanId);
         if (stackFrame != null) {
             stackFrame.invalidate();
         }
@@ -79,7 +79,7 @@ public class MetalMemoryManager implements TornadoMemoryProvider {
      * Allocate regions on the device.
      */
     public void allocateDeviceMemoryRegions() {
-        this.constantMemoryPointer = createBuffer(4, MetalMemFlags.CL_MEM_READ_ONLY | MetalMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
+        this.constantMemoryPointer = createBuffer(4, MetalMemFlags.METAL_MEM_READ_ONLY | MetalMemFlags.METAL_MEM_ALLOC_HOST_PTR).getBuffer();
         allocateAtomicRegion();
     }
 
@@ -101,7 +101,7 @@ public class MetalMemoryManager implements TornadoMemoryProvider {
 
     void allocateAtomicRegion() {
         if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
-            this.atomicsRegionPointer = deviceContext.getPlatformContext().createBuffer(MetalMemFlags.CL_MEM_READ_WRITE | MetalMemFlags.CL_MEM_ALLOC_HOST_PTR, atomicRegionSize()).getBuffer();
+            this.atomicsRegionPointer = deviceContext.getPlatformContext().createBuffer(MetalMemFlags.METAL_MEM_READ_WRITE | MetalMemFlags.METAL_MEM_ALLOC_HOST_PTR, atomicRegionSize()).getBuffer();
         }
     }
 

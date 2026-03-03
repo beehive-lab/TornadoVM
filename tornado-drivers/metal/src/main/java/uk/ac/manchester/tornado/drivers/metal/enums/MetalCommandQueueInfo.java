@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.metal.enums;
 
 public enum MetalCommandQueueInfo {
-    CL_QUEUE_CONTEXT(0x1090), CL_QUEUE_DEVICE(0x1091), CL_QUEUE_REFERENCE_COUNT(0x1092), CL_QUEUE_PROPERTIES(0x1093);
+    METAL_QUEUE_CONTEXT(0x1090), METAL_QUEUE_DEVICE(0x1091), METAL_QUEUE_REFERENCE_COUNT(0x1092), METAL_QUEUE_PROPERTIES(0x1093);
 
     private final int value;
 

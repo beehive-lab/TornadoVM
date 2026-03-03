@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalVectorElementSelect
 public abstract class VectorElementOpNode extends FloatingNode implements LIRLowerable, Comparable<VectorElementOpNode> {
 
     public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
-    protected final MetalKind oclKind;
+    protected final MetalKind metalKind;
     @Input(InputType.Extension)
     ValueNode vector;
     @Input
@@ -61,7 +61,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     protected VectorElementOpNode(NodeClass<? extends VectorElementOpNode> c, MetalKind kind, ValueNode vector, ValueNode lane) {
         super(c, StampFactory.forKind(kind.asJavaKind()));
-        this.oclKind = kind;
+        this.metalKind = kind;
         this.vector = vector;
         this.lane = lane;
         Stamp vectorStamp = vector.stamp(NodeView.DEFAULT);
@@ -71,7 +71,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
             if (objectStamp.type() != null) {
                 vectorKind = MetalKind.fromResolvedJavaType(objectStamp.type());
                 guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
-                guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
+                guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), metalKind);
             }
         } else {
             shouldNotReachHere("invalid type on vector operation: %s (stamp=%s (class=%s))", vector, vector.stamp(NodeView.DEFAULT), vector.stamp(NodeView.DEFAULT).getClass().getName());
@@ -86,7 +86,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(StampFactory.forKind(oclKind.asJavaKind()));
+        return updateStamp(StampFactory.forKind(metalKind.asJavaKind()));
     }
 
     public final int laneId() {

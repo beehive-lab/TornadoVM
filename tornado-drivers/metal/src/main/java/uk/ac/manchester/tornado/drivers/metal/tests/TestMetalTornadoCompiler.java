@@ -50,13 +50,13 @@ public class TestMetalTornadoCompiler {
 
         MetalPlatform platform = (MetalPlatform) Metal.getPlatform(0);
         // Create context for the platform
-        MetalContext oclContext = platform.createContext();
+        MetalContext metalContext = platform.createContext();
 
         // Create command queue
-        oclContext.createCommandQueue(0);
+        metalContext.createCommandQueue(0);
 
         // 1. Compile the code:
-        MetalDeviceContext deviceContext = oclContext.createDeviceContext(0);
+        MetalDeviceContext deviceContext = metalContext.createDeviceContext(0);
         MetalCodeCache codeCache = new MetalCodeCache(deviceContext);
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();

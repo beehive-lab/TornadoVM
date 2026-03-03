@@ -180,7 +180,7 @@ public class VirtualMetalDeviceContext implements MetalDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return this.getDevice().getDeviceType() == MetalDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+        return this.getDevice().getDeviceType() == MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
     }
 
     @Override

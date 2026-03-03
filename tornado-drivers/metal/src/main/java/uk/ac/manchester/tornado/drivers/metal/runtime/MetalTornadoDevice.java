@@ -206,10 +206,10 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
         switch (Objects.requireNonNull(device.getDeviceType())) {
-            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
+            case METAL_DEVICE_TYPE_GPU, METAL_DEVICE_TYPE_ACCELERATOR, METAL_DEVICE_TYPE_CUSTOM, METAL_DEVICE_TYPE_ALL -> {
                 return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
-            case CL_DEVICE_TYPE_CPU -> {
+            case METAL_DEVICE_TYPE_CPU -> {
                 if (TornadoOptions.USE_BLOCK_SCHEDULER) {
                     return TornadoSchedulingStrategy.PER_CPU_BLOCK;
                 } else {
@@ -246,8 +246,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     }
 
     private boolean isMetalPreLoadBinary(long executionPlanId, MetalDeviceContextInterface deviceContext, String deviceInfo) {
-        MetalCodeCache installedCode = deviceContext.getCodeCache(executionPlanId);
-        return (installedCode.isLoadBinaryOptionEnabled() && (installedCode.getMetalBinary(deviceInfo) != null));
+        return false;
     }
 
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
@@ -358,17 +357,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     }
 
     private TornadoInstalledCode loadPreCompiledBinaryForTask(long executionPlanId, SchedulableTask task) {
-        final MetalDeviceContextInterface deviceContext = getDeviceContext();
-        final MetalCodeCache codeCache = deviceContext.getCodeCache(executionPlanId);
-        final String deviceFullName = getFullTaskIdDevice(task);
-        final Path lookupPath = Paths.get(codeCache.getMetalBinary(deviceFullName));
-        String entry = getTaskEntryName(task);
-
-        if (deviceContext.getInstalledCode(executionPlanId, task.getId(), entry) != null) {
-            return deviceContext.getInstalledCode(executionPlanId, task.getId(), entry);
-        } else {
-            return codeCache.installEntryPointForBinaryForFPGAs(task.getId(), lookupPath, entry);
-        }
+        throw new UnsupportedOperationException("Pre-compiled binary loading for FPGA is not supported on the Metal backend");
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
@@ -766,12 +755,12 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     public TornadoDeviceType getDeviceType() {
         MetalDeviceType deviceType = device.getDeviceType();
         return switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
-            case CL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.ACCELERATOR;
-            case CL_DEVICE_TYPE_CUSTOM -> TornadoDeviceType.CUSTOM;
-            case CL_DEVICE_TYPE_ALL -> TornadoDeviceType.ALL;
-            case CL_DEVICE_TYPE_DEFAULT -> TornadoDeviceType.DEFAULT;
+            case METAL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            case METAL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case METAL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.ACCELERATOR;
+            case METAL_DEVICE_TYPE_CUSTOM -> TornadoDeviceType.CUSTOM;
+            case METAL_DEVICE_TYPE_ALL -> TornadoDeviceType.ALL;
+            case METAL_DEVICE_TYPE_DEFAULT -> TornadoDeviceType.DEFAULT;
             default -> throw new RuntimeException("Device not supported");
         };
     }

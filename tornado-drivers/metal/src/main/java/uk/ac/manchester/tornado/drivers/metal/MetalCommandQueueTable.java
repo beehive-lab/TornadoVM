@@ -74,7 +74,7 @@ public class MetalCommandQueueTable {
                 long commandQueuePtr;
                 try {
                     // TODO: set max in flight here if needed
-                    commandQueuePtr = context.clCreateCommandQueue(device.getDevicePointer(), 0 /* maxInFlight */);
+                    commandQueuePtr = context.metalCreateCommandQueue(device.getDevicePointer(), 0 /* maxInFlight */);
                 } catch (MetalException e) {
                     throw new TornadoRuntimeException(e);
                 }

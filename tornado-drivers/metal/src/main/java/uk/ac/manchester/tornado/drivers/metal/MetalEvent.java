@@ -23,13 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandExecutionStatus.CL_COMPLETE;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandExecutionStatus.METAL_COMPLETE;
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandExecutionStatus.createMetalCommandExecutionStatus;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.CL_PROFILING_COMMAND_END;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.CL_PROFILING_COMMAND_START;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalEventInfo.METAL_EVENT_COMMAND_EXECUTION_STATUS;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_END;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_QUEUED;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_START;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_METAL_PROFILING;
 
 import java.nio.ByteBuffer;
@@ -48,7 +48,7 @@ public class MetalEvent implements Event {
 
     private MetalCommandQueue queue;
     private int localId;
-    private long oclEventID;
+    private long metalEventID;
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private String name;
     private int status;
@@ -59,27 +59,27 @@ public class MetalEvent implements Event {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    public MetalEvent(String eventNameDescription, final MetalCommandQueue queue, final int event, final long oclEventID) {
+    public MetalEvent(String eventNameDescription, final MetalCommandQueue queue, final int event, final long metalEventID) {
         this();
         this.queue = queue;
         this.localId = event;
-        this.oclEventID = oclEventID;
+        this.metalEventID = metalEventID;
         this.name = String.format("%s: 0x", eventNameDescription);
         this.status = -1;
     }
 
     void setEventId(int localId, long eventId) {
         this.localId = localId;
-        this.oclEventID = eventId;
+        this.metalEventID = eventId;
     }
 
-    native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws MetalException;
+    native static void metalGetEventInfo(long eventId, int param, byte[] buffer) throws MetalException;
 
-    native static void clGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws MetalException;
+    native static void metalGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws MetalException;
 
-    native static void clWaitForEvents(long[] events) throws MetalException;
+    native static void metalWaitForEvents(long[] events) throws MetalException;
 
-    native static void clReleaseEvent(long eventId) throws MetalException;
+    native static void metalReleaseEvent(long eventId) throws MetalException;
 
     private long readEventTime(MetalProfilingInfo eventType) {
         if (!ENABLE_METAL_PROFILING) {
@@ -88,7 +88,7 @@ public class MetalEvent implements Event {
         long time = 0;
         buffer.clear();
         try {
-            clGetEventProfilingInfo(oclEventID, eventType.getValue(), buffer.array());
+            metalGetEventProfilingInfo(metalEventID, eventType.getValue(), buffer.array());
             time = buffer.getLong();
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -99,37 +99,37 @@ public class MetalEvent implements Event {
     @Override
     public void waitForEvents(long executionPlanId) {
         try {
-            clWaitForEvents(new long[] { oclEventID });
+            metalWaitForEvents(new long[] { metalEventID });
         } catch (MetalException e) {
             e.printStackTrace();
         }
     }
 
     long getCLQueuedTime() {
-        return readEventTime(CL_PROFILING_COMMAND_QUEUED);
+        return readEventTime(METAL_PROFILING_COMMAND_QUEUED);
     }
 
     long getCLSubmitTime() {
-        return readEventTime(CL_PROFILING_COMMAND_SUBMIT);
+        return readEventTime(METAL_PROFILING_COMMAND_SUBMIT);
     }
 
     long getCLStartTime() {
-        return readEventTime(CL_PROFILING_COMMAND_START);
+        return readEventTime(METAL_PROFILING_COMMAND_START);
     }
 
     long getCLEndTime() {
-        return readEventTime(CL_PROFILING_COMMAND_END);
+        return readEventTime(METAL_PROFILING_COMMAND_END);
     }
 
     private MetalCommandExecutionStatus getCLStatus() {
         if (status == 0) {
-            return CL_COMPLETE;
+            return METAL_COMPLETE;
         }
 
         buffer.clear();
 
         try {
-            clGetEventInfo(oclEventID, CL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
+            metalGetEventInfo(metalEventID, METAL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
             status = buffer.getInt();
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -141,16 +141,16 @@ public class MetalEvent implements Event {
     @Override
     public void waitOn() {
         switch (getCLStatus()) {
-            case CL_COMPLETE:
+            case METAL_COMPLETE:
                 break;
-            case CL_SUBMITTED:
+            case METAL_SUBMITTED:
                 queue.flush();
-            case CL_QUEUED:
-            case CL_RUNNING:
+            case METAL_QUEUED:
+            case METAL_RUNNING:
                 waitOnPassive();
                 break;
-            case CL_ERROR:
-            case CL_UNKNOWN:
+            case METAL_ERROR:
+            case METAL_UNKNOWN:
                 logger.fatal("error on event: %s", name);
         }
     }
@@ -158,8 +158,8 @@ public class MetalEvent implements Event {
     private void waitOnPassive() {
         try {
             internalBuffer[0] = 1;
-            internalBuffer[1] = oclEventID;
-            clWaitForEvents(internalBuffer);
+            internalBuffer[1] = metalEventID;
+            metalWaitForEvents(internalBuffer);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -170,8 +170,8 @@ public class MetalEvent implements Event {
         return String.format("[MetalEVENT] event: name=%s, status=%s", name, getStatus());
     }
 
-    public long getOclEventID() {
-        return oclEventID;
+    public long getMetalEventID() {
+        return metalEventID;
     }
 
     @Override
@@ -226,7 +226,7 @@ public class MetalEvent implements Event {
 
     void release() {
         try {
-            clReleaseEvent(oclEventID);
+            metalReleaseEvent(metalEventID);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }

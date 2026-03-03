@@ -84,9 +84,9 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
          * and int value = 1, float x = &(value);
          */
         LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
-        MetalKind oclKind = (MetalKind) lirKind.getPlatformKind();
+        MetalKind metalKind = (MetalKind) lirKind.getPlatformKind();
         final Variable result = gen.getLIRGeneratorTool().newVariable(lirKind);
-        if (oclKind.isFloating()) {
+        if (metalKind.isFloating()) {
             gen.getLIRGeneratorTool().append(new AssignStmt(result, new MetalUnary.Expr(resolveOp(), lirKind, gen.operand(value))));
         } else {
             gen.getLIRGeneratorTool().append(new AssignStmt(result, new MetalUnary.FloatCast(MetalUnaryOp.CAST_TO_INT, lirKind, gen.operand(value))));

@@ -225,16 +225,16 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                 shouldNotReachHere();
             }
 
-            MetalKind oclKind = (MetalKind) value.getPlatformKind();
-            if (oclKind == MetalKind.ILLEGAL) {
+            MetalKind metalKind = (MetalKind) value.getPlatformKind();
+            if (metalKind == MetalKind.ILLEGAL) {
                 shouldNotReachHere();
             }
 
-            if (!kindToVariable.containsKey(oclKind)) {
-                kindToVariable.put(oclKind, new HashSet<>());
+            if (!kindToVariable.containsKey(metalKind)) {
+                kindToVariable.put(metalKind, new HashSet<>());
             }
 
-            final Set<Variable> varList = kindToVariable.get(oclKind);
+            final Set<Variable> varList = kindToVariable.get(metalKind);
             varList.add(value);
         }
     }
@@ -294,17 +294,103 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
-                String attribute = fpgaNode.createThreadAttribute();
 
-                asm.emitSymbol(attribute);
-                asm.emitLine("");
-            }
 
             // Metal Shading Language preamble
             asm.emitLine("#include <metal_stdlib>");
             asm.emitLine("using namespace metal;");
+            asm.emitLine("");
+            // tornado_ptr_t is used as the type for all address-computation variables (ul_N).
+            // device uchar* supports valid MSL pointer arithmetic with byte-level offsets,
+            // and can be reinterpret-cast to any typed device pointer for load/store.
+            asm.emitLine("typedef device uchar* tornado_ptr_t;");
+            asm.emitLine("");
+            // TornadoVM OpenCL-compatibility shims: vloadN / vstoreN for device memory
+            // float variants (vload2/3/4)
+            asm.emitLine("inline float2  vload2 (uint n, const device float*  p) { return ((const device float2* )p)[n]; }");
+            asm.emitLine("inline float3  vload3 (uint n, const device float*  p) { return ((const device float3* )p)[n]; }");
+            asm.emitLine("inline float4  vload4 (uint n, const device float*  p) { return ((const device float4* )p)[n]; }");
+            asm.emitLine("inline void    vstore2(float2  v, uint n, device float*  p) { ((device float2* )p)[n] = v; }");
+            asm.emitLine("inline void    vstore3(float3  v, uint n, device float*  p) { ((device float3* )p)[n] = v; }");
+            asm.emitLine("inline void    vstore4(float4  v, uint n, device float*  p) { ((device float4* )p)[n] = v; }");
+            // int variants (vload2/3/4)
+            asm.emitLine("inline int2    vload2 (uint n, const device int*    p) { return ((const device int2*  )p)[n]; }");
+            asm.emitLine("inline int3    vload3 (uint n, const device int*    p) { return ((const device int3*  )p)[n]; }");
+            asm.emitLine("inline int4    vload4 (uint n, const device int*    p) { return ((const device int4*  )p)[n]; }");
+            asm.emitLine("inline void    vstore2(int2    v, uint n, device int*    p) { ((device int2*  )p)[n] = v; }");
+            asm.emitLine("inline void    vstore3(int3    v, uint n, device int*    p) { ((device int3*  )p)[n] = v; }");
+            asm.emitLine("inline void    vstore4(int4    v, uint n, device int*    p) { ((device int4*  )p)[n] = v; }");
+            // half variants (vload2/3/4)
+            asm.emitLine("inline half2   vload2 (uint n, const device half*   p) { return ((const device half2*  )p)[n]; }");
+            asm.emitLine("inline half3   vload3 (uint n, const device half*   p) { return ((const device half3*  )p)[n]; }");
+            asm.emitLine("inline half4   vload4 (uint n, const device half*   p) { return ((const device half4*  )p)[n]; }");
+            asm.emitLine("inline void    vstore2(half2   v, uint n, device half*   p) { ((device half2*  )p)[n] = v; }");
+            asm.emitLine("inline void    vstore3(half3   v, uint n, device half*   p) { ((device half3*  )p)[n] = v; }");
+            asm.emitLine("inline void    vstore4(half4   v, uint n, device half*   p) { ((device half4*  )p)[n] = v; }");
+            // uchar variants (vload2/3/4) - used for byte data
+            asm.emitLine("inline uchar2  vload2 (uint n, const device uchar*  p) { return ((const device uchar2* )p)[n]; }");
+            asm.emitLine("inline uchar4  vload4 (uint n, const device uchar*  p) { return ((const device uchar4* )p)[n]; }");
+            asm.emitLine("inline void    vstore2(uchar2  v, uint n, device uchar*  p) { ((device uchar2* )p)[n] = v; }");
+            asm.emitLine("inline void    vstore4(uchar4  v, uint n, device uchar*  p) { ((device uchar4* )p)[n] = v; }");
+            // short variants (vload2/3/4)
+            asm.emitLine("inline short2  vload2 (uint n, const device short*  p) { return ((const device short2* )p)[n]; }");
+            asm.emitLine("inline short4  vload4 (uint n, const device short*  p) { return ((const device short4* )p)[n]; }");
+            asm.emitLine("inline void    vstore2(short2  v, uint n, device short*  p) { ((device short2* )p)[n] = v; }");
+            asm.emitLine("inline void    vstore4(short4  v, uint n, device short*  p) { ((device short4* )p)[n] = v; }");
+            // Extended vector types: float8/float16/int8/int16/half8/half16
+            // Metal reserves these names as incomplete types; complete the underlying structs.
+            asm.emitLine("struct __Reserved_Name__Do_not_use_float8  { float4 lo, hi; };");
+            asm.emitLine("struct __Reserved_Name__Do_not_use_float16 { float8 lo, hi; };");
+            asm.emitLine("struct __Reserved_Name__Do_not_use_int8    { int4   lo, hi; };");
+            asm.emitLine("struct __Reserved_Name__Do_not_use_int16   { int8   lo, hi; };");
+            asm.emitLine("struct __Reserved_Name__Do_not_use_half8   { half4  lo, hi; };");
+            asm.emitLine("struct __Reserved_Name__Do_not_use_half16  { half8  lo, hi; };");
+            // Arithmetic operators for extended float/int/half vector types
+            asm.emitLine("inline float8   operator+(float8   a,float8   b){return{a.lo+b.lo,a.hi+b.hi};}");
+            asm.emitLine("inline float8   operator-(float8   a,float8   b){return{a.lo-b.lo,a.hi-b.hi};}");
+            asm.emitLine("inline float8   operator*(float8   a,float8   b){return{a.lo*b.lo,a.hi*b.hi};}");
+            asm.emitLine("inline float8   operator/(float8   a,float8   b){return{a.lo/b.lo,a.hi/b.hi};}");
+            asm.emitLine("inline float16  operator+(float16  a,float16  b){return{a.lo+b.lo,a.hi+b.hi};}");
+            asm.emitLine("inline float16  operator-(float16  a,float16  b){return{a.lo-b.lo,a.hi-b.hi};}");
+            asm.emitLine("inline float16  operator*(float16  a,float16  b){return{a.lo*b.lo,a.hi*b.hi};}");
+            asm.emitLine("inline float16  operator/(float16  a,float16  b){return{a.lo/b.lo,a.hi/b.hi};}");
+            asm.emitLine("inline int8     operator+(int8     a,int8     b){return{a.lo+b.lo,a.hi+b.hi};}");
+            asm.emitLine("inline int8     operator-(int8     a,int8     b){return{a.lo-b.lo,a.hi-b.hi};}");
+            asm.emitLine("inline int8     operator*(int8     a,int8     b){return{a.lo*b.lo,a.hi*b.hi};}");
+            asm.emitLine("inline int16    operator+(int16    a,int16    b){return{a.lo+b.lo,a.hi+b.hi};}");
+            asm.emitLine("inline int16    operator-(int16    a,int16    b){return{a.lo-b.lo,a.hi-b.hi};}");
+            asm.emitLine("inline int16    operator*(int16    a,int16    b){return{a.lo*b.lo,a.hi*b.hi};}");
+            asm.emitLine("inline half8    operator+(half8    a,half8    b){return{a.lo+b.lo,a.hi+b.hi};}");
+            asm.emitLine("inline half8    operator-(half8    a,half8    b){return{a.lo-b.lo,a.hi-b.hi};}");
+            asm.emitLine("inline half8    operator*(half8    a,half8    b){return{a.lo*b.lo,a.hi*b.hi};}");
+            asm.emitLine("inline half8    operator/(half8    a,half8    b){return{a.lo/b.lo,a.hi/b.hi};}");
+            asm.emitLine("inline half16   operator+(half16   a,half16   b){return{a.lo+b.lo,a.hi+b.hi};}");
+            asm.emitLine("inline half16   operator-(half16   a,half16   b){return{a.lo-b.lo,a.hi-b.hi};}");
+            asm.emitLine("inline half16   operator*(half16   a,half16   b){return{a.lo*b.lo,a.hi*b.hi};}");
+            asm.emitLine("inline half16   operator/(half16   a,half16   b){return{a.lo/b.lo,a.hi/b.hi};}");
+            // vload8/vstore8 for float8 (device memory)
+            asm.emitLine("inline float8  vload8 (uint n,const device float* p){const device float4* q=(const device float4*)p+n*2;return{q[0],q[1]};}");
+            asm.emitLine("inline void    vstore8(float8  v,uint n,device float* p){device float4* q=(device float4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}");
+            asm.emitLine("inline float16 vload16(uint n,const device float* p){float8 lo=vload8(0,p+n*16);float8 hi=vload8(0,p+n*16+8);return{lo,hi};}");
+            asm.emitLine("inline void    vstore16(float16 v,uint n,device float* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}");
+            // vload8/vstore8 for int8 (device memory)
+            asm.emitLine("inline int8    vload8 (uint n,const device int* p){const device int4* q=(const device int4*)p+n*2;return{q[0],q[1]};}");
+            asm.emitLine("inline void    vstore8(int8    v,uint n,device int* p){device int4* q=(device int4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}");
+            asm.emitLine("inline int16   vload16(uint n,const device int* p){int8 lo=vload8(0,p+n*16);int8 hi=vload8(0,p+n*16+8);return{lo,hi};}");
+            asm.emitLine("inline void    vstore16(int16 v,uint n,device int* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}");
+            // vload8/vstore8 for half8 (device memory)
+            asm.emitLine("inline half8   vload8 (uint n,const device half* p){const device half4* q=(const device half4*)p+n*2;return{q[0],q[1]};}");
+            asm.emitLine("inline void    vstore8(half8  v,uint n,device half* p){device half4* q=(device half4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}");
+            asm.emitLine("inline half16  vload16(uint n,const device half* p){half8 lo=vload8(0,p+n*16);half8 hi=vload8(0,p+n*16+8);return{lo,hi};}");
+            asm.emitLine("inline void    vstore16(half16 v,uint n,device half* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}");
+            // MSL atomic helpers: integer multiply (no native intrinsic — CAS loop)
+            asm.emitLine("inline int atomicMul_Tornado_Int(device atomic_int* a, int val) {");
+            asm.emitLine("  int expected = atomic_load_explicit(a, memory_order_relaxed);");
+            asm.emitLine("  int desired;");
+            asm.emitLine("  do { desired = expected * val; }");
+            asm.emitLine("  while (!atomic_compare_exchange_weak_explicit(a, &expected, desired, memory_order_relaxed, memory_order_relaxed));");
+            asm.emitLine("  return desired;");
+            asm.emitLine("}");
             asm.emitLine("");
 
             asm.emit("%s void %s(%s", MetalAssemblerConstants.KERNEL_MODIFIER, methodName, architecture.getABI());
@@ -400,16 +486,16 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
                 }
             } else {
                 final AllocatableValue param = incomingArguments.getArgument(i);
-                MetalKind oclKind = (MetalKind) param.getPlatformKind();
+                MetalKind metalKind = (MetalKind) param.getPlatformKind();
                 if (javaKind.isObject()) {
                     MetalKind tmpKind = MetalKind.resolveToVectorKind(javaType.resolve(method.getDeclaringClass()));
                     if (tmpKind != MetalKind.ILLEGAL) {
-                        oclKind = tmpKind;
+                        metalKind = tmpKind;
                     }
                 }
-                guarantee(oclKind != MetalKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+                guarantee(metalKind != MetalKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit(", ");
-                asm.emit("%s %s", oclKind.toString(), locals[i].getName());
+                asm.emit("%s %s", metalKind.toString(), locals[i].getName());
             }
         }
         return metalArgIndex;

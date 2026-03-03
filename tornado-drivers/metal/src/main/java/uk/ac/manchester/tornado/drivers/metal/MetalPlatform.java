@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 public class MetalPlatform implements TornadoPlatformInterface {
 
     private final int index;
-    private final long oclPlatformPtr;
+    private final long metalPlatformPtr;
     private final List<MetalTargetDevice> devices;
 
     private enum Vendor {
@@ -59,26 +59,26 @@ public class MetalPlatform implements TornadoPlatformInterface {
 
     public MetalPlatform(int index, long platformPointers) {
         this.index = index;
-        this.oclPlatformPtr = platformPointers;
+        this.metalPlatformPtr = platformPointers;
         this.devices = new ArrayList<>();
 
         final int deviceCount;
 
         if (isVendor(Vendor.XILINX)) {
-            deviceCount = clGetDeviceCount(platformPointers, MetalDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
+            deviceCount = metalGetDeviceCount(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR.getValue());
         } else if (isVendor(Vendor.MESA)) {
-            deviceCount = clGetDeviceCount(platformPointers, MetalDeviceType.CL_DEVICE_TYPE_GPU.getValue());
+            deviceCount = metalGetDeviceCount(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_GPU.getValue());
         } else {
-            deviceCount = clGetDeviceCount(platformPointers, MetalDeviceType.CL_DEVICE_TYPE_ALL.getValue());
+            deviceCount = metalGetDeviceCount(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ALL.getValue());
         }
 
         final long[] ids = new long[deviceCount];
         if (isVendor(Vendor.XILINX)) {
-            clGetDeviceIDs(platformPointers, MetalDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
+            metalGetDeviceIDs(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
         } else if (isVendor(Vendor.MESA)) {
-            clGetDeviceIDs(platformPointers, MetalDeviceType.CL_DEVICE_TYPE_GPU.getValue(), ids);
+            metalGetDeviceIDs(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_GPU.getValue(), ids);
         } else {
-            clGetDeviceIDs(platformPointers, MetalDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
+            metalGetDeviceIDs(platformPointers, MetalDeviceType.METAL_DEVICE_TYPE_ALL.getValue(), ids);
         }
         for (int i = 0; i < ids.length; i++) {
             devices.add(new MetalDevice(i, ids[i]));
@@ -90,13 +90,13 @@ public class MetalPlatform implements TornadoPlatformInterface {
         return this.getVendor().toLowerCase().startsWith(vendor.getVendorName().toLowerCase());
     }
 
-    native String clGetPlatformInfo(long id, int info);
+    native String metalGetPlatformInfo(long id, int info);
 
-    native int clGetDeviceCount(long id, long type);
+    native int metalGetDeviceCount(long id, long type);
 
-    native int clGetDeviceIDs(long id, long type, long[] devices);
+    native int metalGetDeviceIDs(long id, long type, long[] devices);
 
-    native long clCreateContext(long platform, long[] devices) throws MetalException;
+    native long metalCreateContext(long platform, long[] devices) throws MetalException;
 
     public List<MetalTargetDevice> getDevices() {
         return devices;
@@ -107,7 +107,7 @@ public class MetalPlatform implements TornadoPlatformInterface {
         final LongBuffer deviceIds = LongBuffer.allocate(devices.size());
         devices.stream().mapToLong(MetalTargetDevice::getDevicePointer).forEach(deviceIds::put);
         try {
-            long contextPtr = clCreateContext(oclPlatformPtr, deviceIds.array());
+            long contextPtr = metalCreateContext(metalPlatformPtr, deviceIds.array());
             contextObject = new MetalContext(this, contextPtr, devices);
         } catch (MetalException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -119,12 +119,12 @@ public class MetalPlatform implements TornadoPlatformInterface {
     }
 
     public String getProfile() {
-        return clGetPlatformInfo(oclPlatformPtr, MetalPlatformInfo.CL_PLATFORM_PROFILE.getValue());
+        return metalGetPlatformInfo(metalPlatformPtr, MetalPlatformInfo.METAL_PLATFORM_PROFILE.getValue());
     }
 
     @Override
     public String getVersion() {
-        return clGetPlatformInfo(oclPlatformPtr, MetalPlatformInfo.CL_PLATFORM_VERSION.getValue());
+        return metalGetPlatformInfo(metalPlatformPtr, MetalPlatformInfo.METAL_PLATFORM_VERSION.getValue());
     }
 
     @Override
@@ -134,15 +134,15 @@ public class MetalPlatform implements TornadoPlatformInterface {
     }
 
     public String getName() {
-        return clGetPlatformInfo(oclPlatformPtr, MetalPlatformInfo.CL_PLATFORM_NAME.getValue());
+        return metalGetPlatformInfo(metalPlatformPtr, MetalPlatformInfo.METAL_PLATFORM_NAME.getValue());
     }
 
     public String getVendor() {
-        return clGetPlatformInfo(oclPlatformPtr, MetalPlatformInfo.CL_PLATFORM_VENDOR.getValue());
+        return metalGetPlatformInfo(metalPlatformPtr, MetalPlatformInfo.METAL_PLATFORM_VENDOR.getValue());
     }
 
     public String getExtensions() {
-        return clGetPlatformInfo(oclPlatformPtr, MetalPlatformInfo.CL_PLATFORM_EXTENSIONS.getValue());
+        return metalGetPlatformInfo(metalPlatformPtr, MetalPlatformInfo.METAL_PLATFORM_EXTENSIONS.getValue());
     }
 
     @Override

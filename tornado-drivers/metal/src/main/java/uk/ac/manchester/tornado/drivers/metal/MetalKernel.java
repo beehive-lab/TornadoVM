@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class MetalKernel {
 
-    private final long oclKernelID;
+    private final long metalKernelID;
     private final MetalDeviceContext deviceContext;
     private final ByteBuffer buffer;
     private String kernelName;
@@ -46,7 +46,7 @@ public class MetalKernel {
     private volatile KernelArgInfo[] argInfoCache;
 
     public MetalKernel(long id, MetalDeviceContext deviceContext) {
-        this.oclKernelID = id;
+        this.metalKernelID = id;
         this.deviceContext = deviceContext;
         this.buffer = ByteBuffer.allocate(1024);
         this.buffer.order(Metal.BYTE_ORDER);
@@ -56,22 +56,22 @@ public class MetalKernel {
 
     }
 
-    native static void clReleaseKernel(long kernelId) throws MetalException;
+    native static void metalReleaseKernel(long kernelId) throws MetalException;
 
-    native static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws MetalException;
+    native static void metalSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws MetalException;
 
-    native static void clSetKernelArgRef(long kernelId, int index, long buffer) throws MetalException;
+    native static void metalSetKernelArgRef(long kernelId, int index, long buffer) throws MetalException;
 
-    native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws MetalException;
+    native static void metalGetKernelInfo(long kernelId, int info, byte[] buffer) throws MetalException;
 
     // Reflection helpers implemented in the native JNI layer (objc_metal_jni.mm)
-    native static int clGetKernelArgCount(long kernelId) throws MetalException;
+    native static int metalGetKernelArgCount(long kernelId) throws MetalException;
 
-    native static void clGetKernelArgInfo(long kernelId, int index, byte[] buffer) throws MetalException;
+    native static void metalGetKernelArgInfo(long kernelId, int index, byte[] buffer) throws MetalException;
 
     public void setArg(int index, ByteBuffer buffer) {
         try {
-            clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());
+            metalSetKernelArg(metalKernelID, index, buffer.position(), buffer.array());
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -79,7 +79,7 @@ public class MetalKernel {
 
     public void setArgRef(int index, long devicePtr) {
         try {
-            clSetKernelArgRef(oclKernelID, index, devicePtr);
+            metalSetKernelArgRef(metalKernelID, index, devicePtr);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -87,7 +87,7 @@ public class MetalKernel {
 
     public void setArgUnused(int index) {
         try {
-            clSetKernelArg(oclKernelID, index, 8, null);
+            metalSetKernelArg(metalKernelID, index, 8, null);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -103,7 +103,7 @@ public class MetalKernel {
         long maxSize = deviceContext.getDevice().getDeviceLocalMemorySize();
         guarantee(size <= maxSize, "local allocation is too large for device");
         try {
-            clSetKernelArg(oclKernelID, index, size, null);
+            metalSetKernelArg(metalKernelID, index, size, null);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -111,7 +111,7 @@ public class MetalKernel {
 
     public void cleanup() {
         try {
-            clReleaseKernel(oclKernelID);
+            metalReleaseKernel(metalKernelID);
         } catch (MetalException e) {
             e.printStackTrace();
         }
@@ -125,7 +125,7 @@ public class MetalKernel {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         try {
-            clGetKernelInfo(oclKernelID, MetalKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
+            metalGetKernelInfo(metalKernelID, MetalKernelInfo.METAL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
             kernelName = new String(buffer.array(), StandardCharsets.US_ASCII);
         } catch (MetalException e) {
             e.printStackTrace();
@@ -198,7 +198,7 @@ public class MetalKernel {
      */
     public int getArgCount() {
         try {
-            return clGetKernelArgCount(oclKernelID);
+            return metalGetKernelArgCount(metalKernelID);
         } catch (MetalException e) {
             logger.error(e.getMessage());
             return 0;
@@ -213,7 +213,7 @@ public class MetalKernel {
     public String getArgInfo(int index) {
         byte[] buf = new byte[1024];
         try {
-            clGetKernelArgInfo(oclKernelID, index, buf);
+            metalGetKernelArgInfo(metalKernelID, index, buf);
             String s = new String(buf, StandardCharsets.US_ASCII);
             int z = s.indexOf('\0');
             if (z >= 0) s = s.substring(0, z);
@@ -263,8 +263,8 @@ public class MetalKernel {
         return argInfoCache[index];
     }
 
-    public long getOclKernelID() {
-        return oclKernelID;
+    public long getMetalKernelID() {
+        return metalKernelID;
     }
 
     // (no-op) end of class

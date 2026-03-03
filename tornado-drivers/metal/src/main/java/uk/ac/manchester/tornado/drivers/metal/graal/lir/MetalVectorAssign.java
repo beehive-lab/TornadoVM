@@ -52,8 +52,8 @@ public class MetalVectorAssign {
         @Use
         protected Value s1;
 
-        public Assign2Expr(MetalOp opcode, MetalKind oclKind, Value s0, Value s1) {
-            super(LIRKind.value(oclKind));
+        public Assign2Expr(MetalOp opcode, MetalKind metalKind, Value s0, Value s1) {
+            super(LIRKind.value(metalKind));
             this.opcode = opcode;
             this.s0 = s0;
             this.s1 = s1;

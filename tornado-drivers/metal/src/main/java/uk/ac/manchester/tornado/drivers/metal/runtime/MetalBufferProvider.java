@@ -50,14 +50,14 @@ public class MetalBufferProvider extends TornadoBufferProvider {
     private static long getMetalMemFlagForAccess(Access access) {
         switch (access) {
             case READ_ONLY:
-                return MetalMemFlags.CL_MEM_READ_ONLY;
+                return MetalMemFlags.METAL_MEM_READ_ONLY;
             case WRITE_ONLY:
-                return MetalMemFlags.CL_MEM_WRITE_ONLY;
+                return MetalMemFlags.METAL_MEM_WRITE_ONLY;
             case READ_WRITE:
-                return MetalMemFlags.CL_MEM_READ_WRITE;
+                return MetalMemFlags.METAL_MEM_READ_WRITE;
             default:
                 // if access has not been deducted by sketcher set it as RW
-                return MetalMemFlags.CL_MEM_READ_WRITE;
+                return MetalMemFlags.METAL_MEM_READ_WRITE;
         }
     }
 

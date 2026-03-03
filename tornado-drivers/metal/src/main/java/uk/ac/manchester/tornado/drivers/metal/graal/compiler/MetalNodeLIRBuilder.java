@@ -151,9 +151,9 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             if (stamp instanceof ObjectStamp) {
                 ObjectStamp os = (ObjectStamp) stamp;
                 ResolvedJavaType type = os.javaType(gen.getMetaAccess());
-                MetalKind oclKind = MetalKind.fromResolvedJavaType(type);
-                if (oclKind != MetalKind.ILLEGAL) {
-                    lirKind = LIRKind.value(oclKind);
+                MetalKind metalKind = MetalKind.fromResolvedJavaType(type);
+                if (metalKind != MetalKind.ILLEGAL) {
+                    lirKind = LIRKind.value(metalKind);
                 } else {
                     lirKind = gen.getLIRKind(stamp);
                 }
@@ -829,9 +829,9 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
             phi.setStamp(stamp);
         } else if (stamp instanceof ObjectStamp objectStamp) {
             ObjectStamp oStamp = objectStamp;
-            MetalKind oclKind = MetalKind.fromResolvedJavaType(oStamp.javaType(gen.getMetaAccess()));
-            if (oclKind != ILLEGAL && oclKind.isVector()) {
-                stamp = MetalStampFactory.getStampFor(oclKind);
+            MetalKind metalKind = MetalKind.fromResolvedJavaType(oStamp.javaType(gen.getMetaAccess()));
+            if (metalKind != ILLEGAL && metalKind.isVector()) {
+                stamp = MetalStampFactory.getStampFor(metalKind);
                 phi.setStamp(stamp);
             }
         }

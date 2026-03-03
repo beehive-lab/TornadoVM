@@ -407,8 +407,4 @@ public class MetalLIRGenerator extends LIRGenerator {
         return null;
     }
 
-    public MetalGenTool getOclGenTool() {
-        return oclGenTool;
-    }
-
 }

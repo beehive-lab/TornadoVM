@@ -54,11 +54,11 @@ public class MetalFP16SupportPhase extends Phase {
         boolean fp16Support = false;
         String extensions = null;
         if (deviceContext.getDevice() instanceof MetalDevice) {
-            MetalDevice oclDevice = (MetalDevice) deviceContext.getDevice();
-            extensions = oclDevice.getDeviceExtensions();
+            MetalDevice metalDevice = (MetalDevice) deviceContext.getDevice();
+            extensions = metalDevice.getDeviceExtensions();
         } else if (deviceContext.getDevice() instanceof VirtualMetalDevice) {
-            VirtualMetalDevice oclDevice = (VirtualMetalDevice) deviceContext.getDevice();
-            extensions = oclDevice.getDeviceExtensions();
+            VirtualMetalDevice metalDevice = (VirtualMetalDevice) deviceContext.getDevice();
+            extensions = metalDevice.getDeviceExtensions();
         }
         if (extensions != null && extensions.contains("cl_khr_fp16")) {
             fp16Support = true;

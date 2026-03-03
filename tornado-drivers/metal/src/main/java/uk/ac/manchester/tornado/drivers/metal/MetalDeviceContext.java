@@ -63,7 +63,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     private final MetalContext context;
     private final PowerMetric powerMetricHandler;
     private final MetalMemoryManager memoryManager;
-    private final Map<Long, MetalEventPool> oclEventPool;
+    private final Map<Long, MetalEventPool> metalEventPool;
     private final TornadoBufferProvider bufferProvider;
     private boolean wasReset;
     private final Set<Long> executionIDs;
@@ -78,21 +78,13 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         this.device = device;
         this.context = context;
         this.memoryManager = new MetalMemoryManager(this);
-        this.oclEventPool = new ConcurrentHashMap<>();
+        this.metalEventPool = new ConcurrentHashMap<>();
         this.bufferProvider = new MetalBufferProvider(this);
         this.commandQueueTable = new ConcurrentHashMap<>();
         this.device.setDeviceContext(this);
         this.executionIDs = Collections.synchronizedSet(new HashSet<>());
-        if (isDeviceContextOfNvidia()) {
-            this.powerMetricHandler = new MetalNvidiaPowerMetricHandler(this);
-        } else {
-            this.powerMetricHandler = new MetalEmptyPowerMetricHandler();
-        }
+        this.powerMetricHandler = new MetalEmptyPowerMetricHandler();
         codeCache = new ConcurrentHashMap<>();
-    }
-
-    private boolean isDeviceContextOfNvidia() {
-        return this.getPlatformContext().getPlatform().getName().toLowerCase().contains("nvidia");
     }
 
     public static String checkKernelName(String entryPoint) {
@@ -159,17 +151,17 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public int enqueueBarrier(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
-        long oclEvent = commandQueue.enqueueBarrier();
+        long metalEvent = commandQueue.enqueueBarrier();
         MetalEventPool eventPool = getMetalEventPool(executionPlanId);
-        return (commandQueue.getOpenclVersion() < 120) ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
+        return (commandQueue.getOpenclVersion() < 120) ? -1 : eventPool.registerEvent(metalEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
     @Override
     public int enqueueMarker(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
-        long oclEvent = commandQueue.enqueueMarker();
+        long metalEvent = commandQueue.enqueueMarker();
         MetalEventPool eventPool = getMetalEventPool(executionPlanId);
-        return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
+        return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(metalEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
     @Override
@@ -276,11 +268,11 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     private MetalEventPool getMetalEventPool(long executionPlanId) {
-        if (!oclEventPool.containsKey(executionPlanId)) {
+        if (!metalEventPool.containsKey(executionPlanId)) {
             MetalEventPool eventPool = new MetalEventPool(EVENT_WINDOW);
-            oclEventPool.put(executionPlanId, eventPool);
+            metalEventPool.put(executionPlanId, eventPool);
         }
-        return oclEventPool.get(executionPlanId);
+        return metalEventPool.get(executionPlanId);
     }
 
     public int enqueueWriteBuffer(long executionPlanId, long bufferId, long deviceOffset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
@@ -499,23 +491,23 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     public int enqueueBarrier(long executionPlanId, int[] events) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         MetalEventPool eventPool = getMetalEventPool(executionPlanId);
-        long oclEvent = commandQueue.enqueueBarrier(eventPool.serialiseEvents(events, commandQueue) ? eventPool.waitEventsBuffer : null);
-        return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
+        long metalEvent = commandQueue.enqueueBarrier(eventPool.serialiseEvents(events, commandQueue) ? eventPool.waitEventsBuffer : null);
+        return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(metalEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
     @Override
     public int enqueueMarker(long executionPlanId, int[] events) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         MetalEventPool eventPool = getMetalEventPool(executionPlanId);
-        long oclEvent = commandQueue.enqueueMarker(eventPool.serialiseEvents(events, commandQueue) ? eventPool.waitEventsBuffer : null);
-        return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
+        long metalEvent = commandQueue.enqueueMarker(eventPool.serialiseEvents(events, commandQueue) ? eventPool.waitEventsBuffer : null);
+        return commandQueue.getOpenclVersion() < 120 ? -1 : eventPool.registerEvent(metalEvent, EventDescriptor.DESC_SYNC_MARKER, commandQueue);
     }
 
     @Override
     public void reset(long executionPlanId) {
         MetalEventPool eventPool = getMetalEventPool(executionPlanId);
         eventPool.reset();
-        oclEventPool.remove(executionPlanId);
+        metalEventPool.remove(executionPlanId);
         MetalCommandQueueTable table = commandQueueTable.get(executionPlanId);
         if (table != null) {
             table.cleanup(device);
@@ -525,8 +517,8 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
             executionIDs.remove(executionPlanId);
         }
         getMemoryManager().releaseKernelStackFrame(executionPlanId);
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        oclCodeCache.reset();
+        MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
+        metalCodeCache.reset();
         codeCache.remove(executionPlanId);
         wasReset = true;
     }
@@ -540,7 +532,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     public void dumpEvents() {
-        Set<Long> executionPlanIds = oclEventPool.keySet();
+        Set<Long> executionPlanIds = metalEventPool.keySet();
         for (Long id : executionPlanIds) {
             MetalEventPool eventPool = getMetalEventPool(id);
             List<MetalEvent> events = eventPool.getEvents();
@@ -552,7 +544,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
             events.sort(Comparator.comparingLong(MetalEvent::getCLSubmitTime).thenComparingLong(MetalEvent::getCLStartTime));
             long base = events.getFirst().getCLSubmitTime();
             System.out.println("event: device,type,info,queued,submitted,start,end,status");
-            events.forEach(event -> System.out.printf("event: %s,%s,%s,0x%x,%d,%d,%d,%s\n", deviceName, event.getName(), event.getOclEventID(), event.getCLQueuedTime() - base, event
+            events.forEach(event -> System.out.printf("event: %s,%s,%s,0x%x,%d,%d,%d,%s\n", deviceName, event.getName(), event.getMetalEventID(), event.getCLQueuedTime() - base, event
                     .getCLSubmitTime() - base, event.getCLStartTime() - base, event.getCLEndTime() - base, event.getStatus()));
         }
     }
@@ -569,7 +561,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
 
     @Override
     public boolean isPlatformFPGA() {
-        return this.getDevice().getDeviceType() == MetalDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+        return this.getDevice().getDeviceType() == MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
     }
 
     @Override
@@ -623,8 +615,8 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
 
     @Override
     public boolean isKernelAvailable(long executionPlanId) {
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        return oclCodeCache.isKernelAvailable();
+        MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
+        return metalCodeCache.isKernelAvailable();
     }
 
     public MetalInstalledCode installCode(long executionPlanId, MetalCompilationResult result) {
@@ -634,35 +626,34 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public MetalInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
         entryPoint = checkKernelName(entryPoint);
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        return oclCodeCache.installSource(meta, id, entryPoint, code);
+        MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
+        return metalCodeCache.installSource(meta, id, entryPoint, code);
     }
 
     @Override
     public MetalInstalledCode installCode(long executionPlanId, String id, String entryPoint, byte[] code, boolean printKernel) {
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        return oclCodeCache.installFPGASource(id, entryPoint, code, printKernel);
+        throw new UnsupportedOperationException("FPGA source installation is not supported on the Metal backend");
     }
 
     @Override
     public boolean isCached(long executionPlanId, String id, String entryPoint) {
         entryPoint = checkKernelName(entryPoint);
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        return oclCodeCache.isCached(id + "-" + entryPoint);
+        MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
+        return metalCodeCache.isCached(id + "-" + entryPoint);
     }
 
     @Override
     public boolean isCached(long executionPlanId, String methodName, SchedulableTask task) {
         methodName = checkKernelName(methodName);
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        return oclCodeCache.isCached(task.getId() + "-" + methodName);
+        MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
+        return metalCodeCache.isCached(task.getId() + "-" + methodName);
     }
 
     @Override
     public MetalInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint) {
         entryPoint = checkKernelName(entryPoint);
-        MetalCodeCache oclCodeCache = getMetalCodeCache(executionPlanId);
-        return oclCodeCache.getInstalledCode(id, entryPoint);
+        MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
+        return metalCodeCache.getInstalledCode(id, entryPoint);
     }
 
     @Override

@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.metal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo.CL_QUEUE_CONTEXT;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo.CL_QUEUE_DEVICE;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo.METAL_QUEUE_CONTEXT;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueInfo.METAL_QUEUE_DEVICE;
 
 import java.nio.ByteBuffer;
 
@@ -66,9 +66,9 @@ public class MetalCommandQueue extends CommandQueue {
         return commandQueuePtr;
     }
 
-    static native void clReleaseCommandQueue(long queueId) throws MetalException;
+    static native void metalReleaseCommandQueue(long queueId) throws MetalException;
 
-    static native void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws MetalException;
+    static native void metalGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws MetalException;
 
     /**
      * Dispatch an Metal kernel via a JNI call.
@@ -91,7 +91,7 @@ public class MetalCommandQueue extends CommandQueue {
      * @throws MetalException
      *     Metal Exception
      */
-    static native long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws MetalException;
+    static native long metalEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws MetalException;
 
     static native long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
 
@@ -125,22 +125,22 @@ public class MetalCommandQueue extends CommandQueue {
 
     static native long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws MetalException;
 
-    static native void clEnqueueWaitForEvents(long queueId, long[] events) throws MetalException;
+    static native void metalEnqueueWaitForEvents(long queueId, long[] events) throws MetalException;
 
     /*
      * for Metal 1.2 implementations
      */
-    static native long clEnqueueMarkerWithWaitList(long queueId, long[] events) throws MetalException;
+    static native long metalEnqueueMarkerWithWaitList(long queueId, long[] events) throws MetalException;
 
-    static native long clEnqueueBarrierWithWaitList(long queueId, long[] events) throws MetalException;
+    static native long metalEnqueueBarrierWithWaitList(long queueId, long[] events) throws MetalException;
 
-    static native void clFlush(long queueId) throws MetalException;
+    static native void metalFlush(long queueId) throws MetalException;
 
-    static native void clFinish(long queueId) throws MetalException;
+    static native void metalFinish(long queueId) throws MetalException;
 
     public void flushEvents() {
         try {
-            clFlush(commandQueuePtr);
+            metalFlush(commandQueuePtr);
         } catch (MetalException e) {
             e.printStackTrace();
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -151,7 +151,7 @@ public class MetalCommandQueue extends CommandQueue {
         long result;
         buffer.clear();
         try {
-            clGetCommandQueueInfo(commandQueuePtr, CL_QUEUE_CONTEXT.getValue(), buffer.array());
+            metalGetCommandQueueInfo(commandQueuePtr, METAL_QUEUE_CONTEXT.getValue(), buffer.array());
             result = buffer.getLong();
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -164,7 +164,7 @@ public class MetalCommandQueue extends CommandQueue {
         long result;
         buffer.clear();
         try {
-            clGetCommandQueueInfo(commandQueuePtr, CL_QUEUE_DEVICE.getValue(), buffer.array());
+            metalGetCommandQueueInfo(commandQueuePtr, METAL_QUEUE_DEVICE.getValue(), buffer.array());
             result = buffer.getLong();
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -190,7 +190,7 @@ public class MetalCommandQueue extends CommandQueue {
 
     public void cleanup() {
         try {
-            clReleaseCommandQueue(commandQueuePtr);
+            metalReleaseCommandQueue(commandQueuePtr);
         } catch (MetalException e) {
             e.printStackTrace();
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -204,7 +204,7 @@ public class MetalCommandQueue extends CommandQueue {
 
     public long enqueueNDRangeKernel(MetalKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] waitEvents) {
         try {
-            return clEnqueueNDRangeKernel(commandQueuePtr, kernel.getOclKernelID(), dim, (metalVersion > 100) ? globalWorkOffset : null, globalWorkSize, localWorkSize, waitEvents);
+            return metalEnqueueNDRangeKernel(commandQueuePtr, kernel.getMetalKernelID(), dim, (metalVersion > 100) ? globalWorkOffset : null, globalWorkSize, localWorkSize, waitEvents);
         } catch (MetalException e) {
             logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -373,7 +373,7 @@ public class MetalCommandQueue extends CommandQueue {
 
     public void finish() {
         try {
-            clFinish(commandQueuePtr);
+            metalFinish(commandQueuePtr);
         } catch (MetalException e) {
             logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -382,7 +382,7 @@ public class MetalCommandQueue extends CommandQueue {
 
     public void flush() {
         try {
-            clFlush(commandQueuePtr);
+            metalFlush(commandQueuePtr);
         } catch (MetalException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
@@ -395,7 +395,7 @@ public class MetalCommandQueue extends CommandQueue {
     private int enqueueBarrier_Metalv1_1(long[] events) {
         try {
             if (events != null) {
-                clEnqueueWaitForEvents(commandQueuePtr, events);
+                metalEnqueueWaitForEvents(commandQueuePtr, events);
             }
         } catch (MetalException e) {
             logger.fatal(e.getMessage());
@@ -406,7 +406,7 @@ public class MetalCommandQueue extends CommandQueue {
 
     private long enqueueBarrier_Metalv1_2(long[] waitEvents) {
         try {
-            return clEnqueueBarrierWithWaitList(commandQueuePtr, waitEvents);
+            return metalEnqueueBarrierWithWaitList(commandQueuePtr, waitEvents);
         } catch (MetalException e) {
             logger.fatal(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -423,7 +423,7 @@ public class MetalCommandQueue extends CommandQueue {
 
     private long enqueueMarker12(long[] waitEvents) {
         try {
-            return clEnqueueMarkerWithWaitList(commandQueuePtr, waitEvents);
+            return metalEnqueueMarkerWithWaitList(commandQueuePtr, waitEvents);
         } catch (MetalException e) {
             logger.fatal(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());

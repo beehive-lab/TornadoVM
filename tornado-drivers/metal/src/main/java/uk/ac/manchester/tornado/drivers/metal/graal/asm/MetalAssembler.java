@@ -454,16 +454,16 @@ public final class MetalAssembler extends Assembler {
         emit(String.format("(device %s*)((device char*)%s + %s)", targetType, baseExpr, offsetExpr));
     }
 
-    private String addLiteralSuffix(MetalKind oclKind, String value) {
+    private String addLiteralSuffix(MetalKind metalKind, String value) {
         String result = value;
-        if (oclKind == FLOAT) {
+        if (metalKind == FLOAT) {
             result += "F";
-        } else if (oclKind.isInteger()) {
-            if (oclKind.isUnsigned()) {
+        } else if (metalKind.isInteger()) {
+            if (metalKind.isUnsigned()) {
                 result += "U";
             }
 
-            if (oclKind == LONG || oclKind == ULONG) {
+            if (metalKind == LONG || metalKind == ULONG) {
                 result += "L";
             }
         }
@@ -482,11 +482,11 @@ public final class MetalAssembler extends Assembler {
         String result = "";
         JavaConstant javaConstant = cv.getJavaConstant();
         Constant constant = cv.getConstant();
-        MetalKind oclKind = (MetalKind) cv.getPlatformKind();
+        MetalKind metalKind = (MetalKind) cv.getPlatformKind();
         if (javaConstant.isNull()) {
-            result = addLiteralSuffix(oclKind, "0");
-            if (oclKind.isVector()) {
-                result = String.format("(%s)(%s)", oclKind.name(), result);
+            result = addLiteralSuffix(metalKind, "0");
+            if (metalKind.isVector()) {
+                result = String.format("(%s)(%s)", metalKind.name(), result);
             }
         } else if (constant instanceof HotSpotObjectConstant) {
             HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
@@ -496,7 +496,7 @@ public final class MetalAssembler extends Assembler {
             }
         } else {
             result = constant.toValueString();
-            result = addLiteralSuffix(oclKind, result);
+            result = addLiteralSuffix(metalKind, result);
         }
         return result;
     }
@@ -692,18 +692,17 @@ public final class MetalAssembler extends Assembler {
         public static final MetalUnaryOp CAST_TO_INT = new MetalUnaryOp("(int) ", true);
         public static final MetalUnaryOp CAST_TO_SHORT = new MetalUnaryOp("(short) ", true);
     public static final MetalUnaryOp CAST_TO_LONG = new MetalUnaryOp("(long) ", true);
-    // Cast pointer to ulong so pointer arithmetic can be done as integer math.
-    // The result is later cast back to a device pointer for dereference.
-    public static final MetalUnaryOp CAST_TO_ULONG = new MetalUnaryOp("(ulong)(device char*) ", true);
+    // Cast any device pointer to tornado_ptr_t (device uchar*) for byte-level pointer arithmetic.
+    public static final MetalUnaryOp CAST_TO_ULONG = new MetalUnaryOp("(tornado_ptr_t) ", true);
         public static final MetalUnaryOp CAST_TO_FLOAT = new MetalUnaryOp("(float) ", true);
         public static final MetalUnaryOp CAST_TO_BYTE = new MetalUnaryOp("(char) ", true);
         public static final MetalUnaryOp CAST_TO_DOUBLE = new MetalUnaryOp("(double) ", true);
 
-        public static final MetalUnaryOp CAST_TO_INT_PTR = new MetalUnaryOp("(int *) ", true);
-        public static final MetalUnaryOp CAST_TO_SHORT_PTR = new MetalUnaryOp("(short *) ", true);
-        public static final MetalUnaryOp CAST_TO_LONG_PTR = new MetalUnaryOp("(long *) ", true);
-    public static final MetalUnaryOp CAST_TO_ULONG_PTR = new MetalUnaryOp("(device char*) ", true);
-        public static final MetalUnaryOp CAST_TO_FLOAT_PTR = new MetalUnaryOp("(float *) ", true);
+        public static final MetalUnaryOp CAST_TO_INT_PTR = new MetalUnaryOp("(device int *) ", true);
+        public static final MetalUnaryOp CAST_TO_SHORT_PTR = new MetalUnaryOp("(device short *) ", true);
+        public static final MetalUnaryOp CAST_TO_LONG_PTR = new MetalUnaryOp("(device long *) ", true);
+    public static final MetalUnaryOp CAST_TO_ULONG_PTR = new MetalUnaryOp("(device uchar*) ", true);
+        public static final MetalUnaryOp CAST_TO_FLOAT_PTR = new MetalUnaryOp("(device float *) ", true);
         public static final MetalUnaryOp CAST_TO_BYTE_PTR = new MetalUnaryOp("(char *) ", true);
         // @formatter:on
 

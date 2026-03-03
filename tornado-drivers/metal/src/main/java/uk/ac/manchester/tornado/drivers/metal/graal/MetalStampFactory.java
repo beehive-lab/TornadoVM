@@ -29,8 +29,8 @@ public class MetalStampFactory {
 
     public static MetalStamp getStampFor(MetalKind kind) {
         int index = 0;
-        for (MetalKind oclKind : MetalKind.values()) {
-            if (oclKind == kind) {
+        for (MetalKind metalKind : MetalKind.values()) {
+            if (metalKind == kind) {
                 break;
             }
             index++;
@@ -40,8 +40,7 @@ public class MetalStampFactory {
             stamps[index] = new MetalStamp(kind);
         }
 
-        // System.out.printf("MetalStampFactory: kind=%s -> stamp=%s\n", kind,
-        // stamps[index]);
+
         return stamps[index];
     }
 

@@ -87,7 +87,7 @@ public class TestMetalJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        MetalBackend openCLBackend = tornadoRuntime.getBackend(MetalBackendImpl.class).getDefaultBackend();
+        MetalBackend metalBackend = tornadoRuntime.getBackend(MetalBackendImpl.class).getDefaultBackend();
 
         // Get the default Metal device
         TornadoDevice device = tornadoRuntime.getBackend(MetalBackendImpl.class).getDefaultDevice();
@@ -101,23 +101,23 @@ public class TestMetalJITCompiler {
 
         // 1. Build Common Compiler Phase (Sketcher)
         // Utility to build a sketcher and insert into the HashMap for fast LookUps
-        Providers providers = openCLBackend.getProviders();
-        TornadoSuitesProvider suites = openCLBackend.getTornadoSuites();
+        Providers providers = metalBackend.getProviders();
+        TornadoSuitesProvider suites = metalBackend.getTornadoSuites();
         Sketch sketch = CompilerUtil.buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
-        MetalCompilationResult compilationResult = MetalCompiler.compileSketchForDevice(sketch, compilableTask, (MetalProviders) providers, openCLBackend, new EmptyProfiler());
+        MetalCompilationResult compilationResult = MetalCompiler.compileSketchForDevice(sketch, compilableTask, (MetalProviders) providers, metalBackend, new EmptyProfiler());
 
         // Install the Metal Code in the VM
-        MetalInstalledCode openCLCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, compilationResult);
+        MetalInstalledCode metalCode = tornadoDevice.getDeviceContext().installCode(executionPlanId, compilationResult);
 
-        return new MetaCompilation(taskMeta, openCLCode);
+        return new MetaCompilation(taskMeta, metalCode);
     }
 
-    public void runWithMetalAPI(Long executionPlanId, MetalTornadoDevice tornadoDevice, MetalInstalledCode openCLCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
-        Metal.run(executionPlanId, tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
+    public void runWithMetalAPI(Long executionPlanId, MetalTornadoDevice tornadoDevice, MetalInstalledCode metalCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
+        Metal.run(executionPlanId, tornadoDevice, metalCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, a, b, c);
     }
 
-    public void run(MetalTornadoDevice tornadoDevice, MetalInstalledCode openCLCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
+    public void run(MetalTornadoDevice tornadoDevice, MetalInstalledCode metalCode, TaskDataContext taskMeta, int[] a, int[] b, float[] c) {
         // First we allocate, A, B and C
         DataObjectState stateA = new DataObjectState();
         XPUDeviceBufferState objectStateA = stateA.getDeviceBufferState(tornadoDevice);
@@ -148,7 +148,7 @@ public class TestMetalJITCompiler {
         callWrapper.addCallArgument(objectStateC.getXPUBuffer().toBuffer(), true);
 
         // Run the code
-        openCLCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
+        metalCode.launchWithoutDependencies(executionPlanId, callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(executionPlanId, c, 0, objectStateC, null);

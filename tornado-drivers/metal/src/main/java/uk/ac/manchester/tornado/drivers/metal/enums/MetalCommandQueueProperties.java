@@ -24,6 +24,6 @@
 package uk.ac.manchester.tornado.drivers.metal.enums;
 
 public class MetalCommandQueueProperties {
-    public static final long CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE = (1 << 0);
-    public static final long CL_QUEUE_PROFILING_ENABLE = (1 << 1);
+    public static final long METAL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE = (1 << 0);
+    public static final long METAL_QUEUE_PROFILING_ENABLE = (1 << 1);
 }

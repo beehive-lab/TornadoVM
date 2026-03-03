@@ -36,19 +36,19 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 public class LoadIndexedVectorNode extends LoadIndexedNode {
 
     public static final NodeClass<LoadIndexedVectorNode> TYPE = NodeClass.create(LoadIndexedVectorNode.class);
-    private final MetalKind oclKind;
+    private final MetalKind metalKind;
 
-    public LoadIndexedVectorNode(MetalKind oclKind, ValueNode array, ValueNode index, JavaKind elementKind) {
-        super(TYPE, MetalStampFactory.getStampFor(oclKind), array, index, null, elementKind);
-        this.oclKind = oclKind;
+    public LoadIndexedVectorNode(MetalKind metalKind, ValueNode array, ValueNode index, JavaKind elementKind) {
+        super(TYPE, MetalStampFactory.getStampFor(metalKind), array, index, null, elementKind);
+        this.metalKind = metalKind;
     }
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(MetalStampFactory.getStampFor(oclKind));
+        return updateStamp(MetalStampFactory.getStampFor(metalKind));
     }
 
     public MetalKind getMetalKind() {
-        return oclKind;
+        return metalKind;
     }
 }

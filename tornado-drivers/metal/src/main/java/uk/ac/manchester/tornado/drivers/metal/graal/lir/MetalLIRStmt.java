@@ -764,15 +764,11 @@ public class MetalLIRStmt {
 
         private void emitAtomicAddStore(MetalCompilationResultBuilder crb, MetalAssembler asm) {
             asm.indent();
-            asm.emit("atomic_add( & (");
-            asm.emit("*(");
-            cast.emit(crb, asm);
-            asm.space();
+            asm.emit("atomic_fetch_add_explicit((device atomic_int*) ");
             address.emit(crb, asm);
-            asm.emit(")), ");
-            asm.space();
+            asm.emit(", ");
             asm.emitValue(crb, rhs);
-            asm.emit(")");
+            asm.emit(", memory_order_relaxed)");
             asm.delimiter();
             asm.eol();
         }
@@ -863,19 +859,13 @@ public class MetalLIRStmt {
 
         private void emitAtomicAddStore(MetalCompilationResultBuilder crb, MetalAssembler asm) {
             asm.indent();
-            asm.emit("atomicAdd_Tornado_Floats( &("); // Calling to the
-                                                     // intrinsic for Floats
-            asm.emit("*(");
-            cast.emit(crb, asm);
-            asm.space();
+            asm.emit("atomic_fetch_add_explicit((device atomic_float*) ");
             address.emit(crb, asm);
-            asm.emit(")), ");
-            asm.space();
+            asm.emit(", ");
             asm.emitValue(crb, rhs);
-            asm.emit(")");
+            asm.emit(", memory_order_relaxed)");
             asm.delimiter();
             asm.eol();
-
         }
 
         private void emitStore(MetalCompilationResultBuilder crb, MetalAssembler asm) {
@@ -963,15 +953,12 @@ public class MetalLIRStmt {
         }
 
         private void emitAtomicSubStore(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            asm.emit("atomic_add( & (");
-            asm.emit("*(");
-            cast.emit(crb, asm);
-            asm.space();
+            asm.indent();
+            asm.emit("atomic_fetch_sub_explicit((device atomic_int*) ");
             address.emit(crb, asm);
-            asm.emit(")), ");
-            asm.space();
+            asm.emit(", ");
             asm.emitValue(crb, rhs);
-            asm.emit(")");
+            asm.emit(", memory_order_relaxed)");
             asm.delimiter();
             asm.eol();
         }
@@ -1061,13 +1048,10 @@ public class MetalLIRStmt {
         }
 
         private void emitAtomicMulStore(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            asm.emit("atomicMul_Tornado_Int( &(");
-            asm.emit("*(");
-            cast.emit(crb, asm);
-            asm.space();
+            asm.indent();
+            asm.emit("atomicMul_Tornado_Int((device atomic_int*) ");
             address.emit(crb, asm);
-            asm.emit(")), ");
-            asm.space();
+            asm.emit(", ");
             asm.emitValue(crb, rhs);
             asm.emit(")");
             asm.delimiter();

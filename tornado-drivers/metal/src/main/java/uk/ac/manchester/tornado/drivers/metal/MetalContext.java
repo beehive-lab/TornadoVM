@@ -55,12 +55,12 @@ public class MetalContext implements MetalContextInterface {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    native void clReleaseContext(long id) throws MetalException;
+    native void metalReleaseContext(long id) throws MetalException;
 
-    native void clGetContextInfo(long id, int info, byte[] buffer) throws MetalException;
+    native void metalGetContextInfo(long id, int info, byte[] buffer) throws MetalException;
 
-    public native long clCreateCommandQueue(long deviceId, int maxInFlight) throws MetalException;
-    public native long clReleaseCommandQueue(long queue_id) throws MetalException;
+    public native long metalCreateCommandQueue(long deviceId, int maxInFlight) throws MetalException;
+    public native long metalReleaseCommandQueue(long queue_id) throws MetalException;
 
     native long allocateOffHeapMemory(long size, long alignment);
 
@@ -73,13 +73,13 @@ public class MetalContext implements MetalContextInterface {
 
     native long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws MetalException;
 
-    native void clReleaseMemObject(long memId) throws MetalException;
+    native void metalReleaseMemObject(long memId) throws MetalException;
 
-    native long clCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws MetalException;
+    native long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths) throws MetalException;
 
-    native long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws MetalException;
+    native long metalCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long[] lengths) throws MetalException;
 
-    native long clCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws MetalException;
+    native long metalCreateProgramWithIL(long contextId, byte[] spirvBinaryCode, long[] lengths) throws MetalException;
 
     public int getNumDevices() {
         return devices.size();
@@ -105,7 +105,7 @@ public class MetalContext implements MetalContextInterface {
             logger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
             // TODO: set max in flight here if needed
-            clCreateCommandQueue(device.getDevicePointer(), 0 /* maxInFlight */);
+            metalCreateCommandQueue(device.getDevicePointer(), 0 /* maxInFlight */);
         } catch (MetalException e) {
             logger.error(e.getMessage());
             throw new TornadoRuntimeException("[ERROR] Metal Command Queue Initialization not valid");
@@ -115,11 +115,11 @@ public class MetalContext implements MetalContextInterface {
     public long getProperties() {
         long properties = 0;
         if (TornadoOptions.ENABLE_METAL_PROFILING) {
-            properties |= MetalCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
+            properties |= MetalCommandQueueProperties.METAL_QUEUE_PROFILING_ENABLE;
         }
 
         if (TornadoOptions.ENABLE_OOO_EXECUTION) {
-            properties |= MetalCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+            properties |= MetalCommandQueueProperties.METAL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         return properties;
     }
@@ -134,7 +134,7 @@ public class MetalContext implements MetalContextInterface {
         MetalProgram program = null;
 
         try {
-            program = new MetalProgram(clCreateProgramWithSource(contextID, source, lengths), deviceContext);
+            program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths), deviceContext);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -145,9 +145,9 @@ public class MetalContext implements MetalContextInterface {
     public MetalProgram createProgramWithIL(byte[] spirvBinary, long[] lengths, MetalDeviceContext deviceContext) {
         MetalProgram program;
         try {
-            long programID = clCreateProgramWithIL(contextID, spirvBinary, lengths);
+            long programID = metalCreateProgramWithIL(contextID, spirvBinary, lengths);
             if (programID == -1) {
-                throw new TornadoNoMetalPlatformException("Metal version <= 2.1. clCreateProgramWithIL is not supported");
+                throw new TornadoNoMetalPlatformException("Metal version <= 2.1. metalCreateProgramWithIL is not supported");
             }
             program = new MetalProgram(programID, deviceContext);
         } catch (MetalException e) {
@@ -161,7 +161,7 @@ public class MetalContext implements MetalContextInterface {
         MetalProgram program = null;
 
         try {
-            program = new MetalProgram(clCreateProgramWithBinary(contextID, deviceId, binary, lengths), deviceContext);
+            program = new MetalProgram(metalCreateProgramWithBinary(contextID, deviceId, binary, lengths), deviceContext);
         } catch (MetalException e) {
             logger.error(e.getMessage());
         }
@@ -179,7 +179,7 @@ public class MetalContext implements MetalContextInterface {
 
         try {
             long t1 = System.nanoTime();
-            clReleaseContext(contextID);
+            metalReleaseContext(contextID);
             long t2 = System.nanoTime();
 
             if (TornadoOptions.FULL_DEBUG) {
@@ -222,7 +222,7 @@ public class MetalContext implements MetalContextInterface {
 
     public void releaseBuffer(long bufferId) {
         try {
-            clReleaseMemObject(bufferId);
+            metalReleaseMemObject(bufferId);
             logger.info("buffer released 0x%x", bufferId);
         } catch (MetalException e) {
             logger.error(e.getMessage());

@@ -25,10 +25,10 @@ package uk.ac.manchester.tornado.drivers.metal.enums;
 
 public enum MetalProgramBuildInfo {
 
-    CL_PROGRAM_BUILD_STATUS(0x1181), //
-    CL_PROGRAM_BUILD_OPTIONS(0x1182), //
-    CL_PROGRAM_BUILD_LOG(0x1183), //
-    CL_PROGRAM_BINARY_TYPE(0x1184);
+    METAL_PROGRAM_BUILD_STATUS(0x1181), //
+    METAL_PROGRAM_BUILD_OPTIONS(0x1182), //
+    METAL_PROGRAM_BUILD_LOG(0x1183), //
+    METAL_PROGRAM_BINARY_TYPE(0x1184);
 
     private final int value;
 

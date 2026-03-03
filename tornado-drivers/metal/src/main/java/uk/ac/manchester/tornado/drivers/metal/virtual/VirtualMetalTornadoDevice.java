@@ -153,13 +153,13 @@ public class VirtualMetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
         switch (Objects.requireNonNull(device.getDeviceType())) {
-            case CL_DEVICE_TYPE_GPU, //
-                    CL_DEVICE_TYPE_ACCELERATOR,//
-                    CL_DEVICE_TYPE_CUSTOM,//
-                    CL_DEVICE_TYPE_ALL -> {//
+            case METAL_DEVICE_TYPE_GPU, //
+                    METAL_DEVICE_TYPE_ACCELERATOR,//
+                    METAL_DEVICE_TYPE_CUSTOM,//
+                    METAL_DEVICE_TYPE_ALL -> {//
                 return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
-            case CL_DEVICE_TYPE_CPU -> {
+            case METAL_DEVICE_TYPE_CPU -> {
                 if (TornadoOptions.USE_BLOCK_SCHEDULER) {
                     return TornadoSchedulingStrategy.PER_CPU_BLOCK;
                 } else {
@@ -397,17 +397,17 @@ public class VirtualMetalTornadoDevice implements TornadoXPUDevice {
     public TornadoDeviceType getDeviceType() {
         MetalDeviceType deviceType = device.getDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case METAL_DEVICE_TYPE_CPU:
                 return TornadoDeviceType.CPU;
-            case CL_DEVICE_TYPE_GPU:
+            case METAL_DEVICE_TYPE_GPU:
                 return TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case METAL_DEVICE_TYPE_ACCELERATOR:
                 return TornadoDeviceType.ACCELERATOR;
-            case CL_DEVICE_TYPE_CUSTOM:
+            case METAL_DEVICE_TYPE_CUSTOM:
                 return TornadoDeviceType.CUSTOM;
-            case CL_DEVICE_TYPE_ALL:
+            case METAL_DEVICE_TYPE_ALL:
                 return TornadoDeviceType.ALL;
-            case CL_DEVICE_TYPE_DEFAULT:
+            case METAL_DEVICE_TYPE_DEFAULT:
                 return TornadoDeviceType.DEFAULT;
             default:
                 throw new RuntimeException("Device not supported");

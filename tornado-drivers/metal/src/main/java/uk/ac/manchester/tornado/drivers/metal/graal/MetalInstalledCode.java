@@ -54,9 +54,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetalInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
-    private static final int CL_MEM_SIZE = 8;
+    private static final int METAL_MEM_SIZE = 8;
     private final MetalKernelScheduler DEFAULT_SCHEDULER;
-    private final ByteBuffer buffer = ByteBuffer.allocate(CL_MEM_SIZE);
+    private final ByteBuffer buffer = ByteBuffer.allocate(METAL_MEM_SIZE);
     private final byte[] code;
     private final MetalProgram program;
     private final MetalDeviceContext deviceContext;
@@ -166,7 +166,7 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         }
 
         // Metal requires setArgRef (setBuffer:) for device/constant buffer parameters,
-        // unlike OpenCL where clSetKernelArg handles both buffer refs and inline data.
+        // unlike OpenCL where metalSetKernelArg handles both buffer refs and inline data.
         // kernel context buffer
         kernel.setArgRef(index, kernelArgs.toBuffer());
         index++;
@@ -298,7 +298,7 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         guarantee(kernel != null, "kernel is null");
 
         if (DEBUG) {
-            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getMetalKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
         /*
@@ -386,20 +386,20 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
         }
     }
 
-    private void submitWithoutEvents(long executionPlanId, final MetalKernelStackFrame oclKernelStackFrame, final XPUBuffer atomicSpace, final TaskDataContext meta, long batchThreads) {
+    private void submitWithoutEvents(long executionPlanId, final MetalKernelStackFrame metalKernelStackFrame, final XPUBuffer atomicSpace, final TaskDataContext meta, long batchThreads) {
         checkKernelNotNull();
         if (DEBUG) {
-            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
+            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getMetalKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
-        setKernelArgs(oclKernelStackFrame, atomicSpace, meta);
-        int kernelContextWriteEventId = oclKernelStackFrame.enqueueWrite(executionPlanId);
-        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, oclKernelStackFrame);
+        setKernelArgs(metalKernelStackFrame, atomicSpace, meta);
+        int kernelContextWriteEventId = metalKernelStackFrame.enqueueWrite(executionPlanId);
+        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, metalKernelStackFrame);
 
         if (meta == null) {
             executeSingleThread(executionPlanId);
         } else {
-            launchKernel(executionPlanId, oclKernelStackFrame, meta, batchThreads);
+            launchKernel(executionPlanId, metalKernelStackFrame, meta, batchThreads);
         }
     }
 

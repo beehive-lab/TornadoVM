@@ -92,7 +92,7 @@ public class MetalHotSpotBackendFactory {
         MetalArchitecture arch = new MetalArchitecture(wordKind, device.getByteOrder());
         MetalTargetDescription target = new MetalTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         MetalCodeProvider codeCache = new MetalCodeProvider(target);
-        MetalDeviceContextInterface oclDeviceContextImpl = (MetalDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
+        MetalDeviceContextInterface metalDeviceContextImpl = (MetalDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 
         MetalProviders providers;
         MetalLoweringProvider lowerer;
@@ -115,7 +115,7 @@ public class MetalHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new MetalSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new MetalSuitesProvider(options, metalDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new MetalProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
@@ -123,7 +123,7 @@ public class MetalHotSpotBackendFactory {
             lowerer.initialize(options, new DummySnippetFactory(), providers);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            return new MetalBackend(options, providers, target, codeCache, oclDeviceContextImpl);
+            return new MetalBackend(options, providers, target, codeCache, metalDeviceContextImpl);
         }
     }
 

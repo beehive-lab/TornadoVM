@@ -73,7 +73,7 @@ public class MetalAddressNode extends AddressNode implements LIRLowerable {
             MetalStamp stamp = (MetalStamp) base.stamp(NodeView.DEFAULT);
             MetalKind kind = stamp.getMetalKind();
             if (kind.isVector()) {
-                baseValue = tool.getOclGenTool().getParameterToVariable().get(base);
+                baseValue = tool.getMetalGenTool().getParameterToVariable().get(base);
             }
         }
 

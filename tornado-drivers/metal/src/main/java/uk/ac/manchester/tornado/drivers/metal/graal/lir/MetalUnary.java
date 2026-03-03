@@ -347,8 +347,8 @@ public class MetalUnary {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            MetalKind oclKind = getMetalPlatformKind();
-            asm.emit(((MetalUnaryTemplate) opcode).getTemplate(), base.getMemorySpace().name() + " " + oclKind.toString());
+            MetalKind metalKind = getMetalPlatformKind();
+            asm.emit(((MetalUnaryTemplate) opcode).getTemplate(), base.getMemorySpace().name() + " " + metalKind.toString());
         }
 
         MetalMemorySpace getMemorySpace() {

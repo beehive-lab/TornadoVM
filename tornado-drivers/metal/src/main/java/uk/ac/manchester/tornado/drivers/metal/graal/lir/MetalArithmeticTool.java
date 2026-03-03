@@ -346,13 +346,13 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
         final Variable result = getGen().newVariable(kind);
 
         guarantee(kind.getPlatformKind() instanceof MetalKind, "invalid LIRKind: %s", kind);
-        MetalKind oclKind = (MetalKind) kind.getPlatformKind();
+        MetalKind metalKind = (MetalKind) kind.getPlatformKind();
         MetalMemoryBase base = ((MemoryAccess) address).getBase();
 
-        if (oclKind.isVector()) {
-            MetalBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(oclKind);
-            MetalAddressCast cast = new MetalAddressCast(base, LIRKind.value(oclKind.getElementKind()));
-            emitVectorLoad(result, intrinsic, getOffsetValue(oclKind, (MemoryAccess) address), cast, (MemoryAccess) address);
+        if (metalKind.isVector()) {
+            MetalBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(metalKind);
+            MetalAddressCast cast = new MetalAddressCast(base, LIRKind.value(metalKind.getElementKind()));
+            emitVectorLoad(result, intrinsic, getOffsetValue(metalKind, (MemoryAccess) address), cast, (MemoryAccess) address);
         } else {
             MetalAddressCast cast = new MetalAddressCast(base, kind);
             emitLoad(result, cast, (MemoryAccess) address);
@@ -365,7 +365,7 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         guarantee(kind.getPlatformKind() instanceof MetalKind, "invalid LIRKind: %s", kind);
-        MetalKind oclKind = (MetalKind) kind.getPlatformKind();
+        MetalKind metalKind = (MetalKind) kind.getPlatformKind();
 
         MemoryAccess memAccess = null;
         Value accumulator = null;
@@ -375,47 +375,47 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
             accumulator = address;
         }
 
-        if (oclKind.isVector()) {
-            MetalTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(oclKind);
+        if (metalKind.isVector()) {
+            MetalTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(metalKind);
             assert memAccess != null;
-            MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(oclKind.getElementKind()));
-            getGen().append(new VectorStoreStmt(intrinsic, getOffsetValue(oclKind, memAccess), cast, memAccess, input));
+            MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(metalKind.getElementKind()));
+            getGen().append(new VectorStoreStmt(intrinsic, getOffsetValue(metalKind, memAccess), cast, memAccess, input));
         } else {
 
             /*
              * Handling atomic operations introduced during lowering.
              */
-            if (oclKind == MetalKind.ATOMIC_ADD_INT || oclKind == MetalKind.ATOMIC_ADD_LONG) {
+            if (metalKind == MetalKind.ATOMIC_ADD_INT || metalKind == MetalKind.ATOMIC_ADD_LONG) {
                 if (memAccess != null) {
-                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(metalKind));
                     getGen().append(new StoreAtomicAddStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicAddStmt(accumulator, input));
                 }
-            } else if (oclKind == MetalKind.ATOMIC_SUB_INT) {
+            } else if (metalKind == MetalKind.ATOMIC_SUB_INT) {
                 if (memAccess != null) {
-                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(metalKind));
                     getGen().append(new StoreAtomicSubStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicSubStmt(accumulator, input));
                 }
-            } else if (oclKind == MetalKind.ATOMIC_MUL_INT) {
+            } else if (metalKind == MetalKind.ATOMIC_MUL_INT) {
                 if (memAccess != null) {
-                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(metalKind));
                     getGen().append(new StoreAtomicMulStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicMulStmt(accumulator, input));
                 }
-            } else if (oclKind == MetalKind.ATOMIC_ADD_FLOAT) {
+            } else if (metalKind == MetalKind.ATOMIC_ADD_FLOAT) {
                 if (memAccess != null) {
-                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(metalKind));
                     getGen().append(new StoreAtomicAddFloatStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicAddFloatStmt(accumulator, input));
                 }
             } else {
                 if (memAccess != null) {
-                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    MetalAddressCast cast = new MetalAddressCast(memAccess.getBase(), LIRKind.value(metalKind));
                     if (memAccess.getIndex() == null) {
                         getGen().append(new StoreStmt(cast, memAccess, input));
                     } else {
@@ -431,9 +431,9 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitMathAbs(Value input) {
         MetalBuiltinTool builtinTool = getGen().getMetalBuiltinTool();
-        MetalKind oclKind = (MetalKind) input.getPlatformKind();
+        MetalKind metalKind = (MetalKind) input.getPlatformKind();
         Variable result = getGen().newVariable(input.getValueKind());
-        if (oclKind.isFloating()) {
+        if (metalKind.isFloating()) {
             getGen().append(new AssignStmt(result, builtinTool.genFloatAbs(input)));
         } else {
             shouldNotReachHere();
@@ -444,9 +444,9 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitMathSqrt(Value input) {
         MetalBuiltinTool builtinTool = getGen().getMetalBuiltinTool();
-        MetalKind oclKind = (MetalKind) input.getPlatformKind();
+        MetalKind metalKind = (MetalKind) input.getPlatformKind();
         Variable result = getGen().newVariable(input.getValueKind());
-        if (oclKind.isFloating()) {
+        if (metalKind.isFloating()) {
             getGen().append(new AssignStmt(result, builtinTool.genFloatSqrt(input)));
         } else {
             shouldNotReachHere();
@@ -473,31 +473,31 @@ public class MetalArithmeticTool extends ArithmeticLIRGenerator {
      * It calculates and returns the offset for vstore/vload operations as a Value
      * object.
      *
-     * @param oclKind
+     * @param metalKind
      *     the kind for getting the size of the element type in a vector
      * @param memoryAccess
      *     the object that holds the index of an element in a vector
      * @return {@link Value }
      */
-    private Value getPrivateOffsetValue(MetalKind oclKind, MemoryAccess memoryAccess) {
+    private Value getPrivateOffsetValue(MetalKind metalKind, MemoryAccess memoryAccess) {
         if (memoryAccess == null) {
             return null;
         }
         if (memoryAccess.getIndex() instanceof ConstantValue) {
             ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
             int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
-            int index = parsedIntegerIndex / oclKind.getVectorLength();
+            int index = parsedIntegerIndex / metalKind.getVectorLength();
             return new ConstantValue(LIRKind.value(MetalKind.INT), JavaConstant.forInt(index));
         }
-        int index = Integer.parseInt(MetalAssembler.getAbsoluteIndexFromValue(memoryAccess.getIndex())) / oclKind.getVectorLength();
+        int index = Integer.parseInt(MetalAssembler.getAbsoluteIndexFromValue(memoryAccess.getIndex())) / metalKind.getVectorLength();
         return new ConstantValue(LIRKind.value(MetalKind.INT), JavaConstant.forInt(index));
     }
 
-    private Value getOffsetValue(MetalKind oclKind, MemoryAccess memoryAccess) {
+    private Value getOffsetValue(MetalKind metalKind, MemoryAccess memoryAccess) {
         if (memoryAccess.getBase().getMemorySpace() == MetalMemorySpace.GLOBAL.getBase().getMemorySpace()) {
             return new ConstantValue(LIRKind.value(MetalKind.INT), PrimitiveConstant.INT_0);
         } else {
-            return getPrivateOffsetValue(oclKind, memoryAccess);
+            return getPrivateOffsetValue(metalKind, memoryAccess);
         }
     }
 

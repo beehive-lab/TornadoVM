@@ -25,11 +25,11 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramBuildInfo.CL_PROGRAM_BUILD_LOG;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramBuildInfo.CL_PROGRAM_BUILD_STATUS;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramInfo.CL_PROGRAM_BINARY_SIZES;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramInfo.CL_PROGRAM_DEVICES;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramInfo.CL_PROGRAM_NUM_DEVICES;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramBuildInfo.METAL_PROGRAM_BUILD_LOG;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramBuildInfo.METAL_PROGRAM_BUILD_STATUS;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramInfo.METAL_PROGRAM_BINARY_SIZES;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramInfo.METAL_PROGRAM_DEVICES;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProgramInfo.METAL_PROGRAM_NUM_DEVICES;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -63,15 +63,15 @@ public class MetalProgram {
         this.logger = new TornadoLogger(this.getClass());
     }
 
-    static native void clReleaseProgram(long programId) throws MetalException;
+    static native void metalReleaseProgram(long programId) throws MetalException;
 
-    static native void clBuildProgram(long programId, long[] devices, String options) throws MetalException;
+    static native void metalBuildProgram(long programId, long[] devices, String options) throws MetalException;
 
-    static native void clGetProgramInfo(long programId, int param, byte[] buffer) throws MetalException;
+    static native void metalGetProgramInfo(long programId, int param, byte[] buffer) throws MetalException;
 
-    static native void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws MetalException;
+    static native void metalGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws MetalException;
 
-    static native long clCreateKernel(long programId, String name) throws MetalException;
+    static native long metalCreateKernel(long programId, String name) throws MetalException;
 
     static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws MetalException;
 
@@ -79,7 +79,7 @@ public class MetalProgram {
         MetalBuildStatus result;
         buffer.clear();
         try {
-            clGetProgramBuildInfo(programPointer, deviceId, CL_PROGRAM_BUILD_STATUS.getValue(), buffer.array());
+            metalGetProgramBuildInfo(programPointer, deviceId, METAL_PROGRAM_BUILD_STATUS.getValue(), buffer.array());
             result = MetalBuildStatus.toEnum(buffer.getInt());
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -92,7 +92,7 @@ public class MetalProgram {
         String result = "";
         buffer.clear();
         try {
-            clGetProgramBuildInfo(programPointer, deviceId, CL_PROGRAM_BUILD_LOG.getValue(), buffer.array());
+            metalGetProgramBuildInfo(programPointer, deviceId, METAL_PROGRAM_BUILD_LOG.getValue(), buffer.array());
             result = new String(buffer.array(), "ASCII");
         } catch (MetalException | UnsupportedEncodingException e) {
             logger.error(e.getMessage());
@@ -105,7 +105,7 @@ public class MetalProgram {
     public void build(String options) {
         buffer.clear();
         try {
-            clBuildProgram(programPointer, devices, options);
+            metalBuildProgram(programPointer, devices, options);
         } catch (MetalException e) {
             logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
@@ -115,7 +115,7 @@ public class MetalProgram {
     public void cleanup() {
         try {
             kernels.forEach(MetalKernel::cleanup);
-            clReleaseProgram(programPointer);
+            metalReleaseProgram(programPointer);
         } catch (MetalException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
@@ -125,7 +125,7 @@ public class MetalProgram {
         int result = 0;
         buffer.clear();
         try {
-            clGetProgramInfo(programPointer, CL_PROGRAM_NUM_DEVICES.getValue(), buffer.array());
+            metalGetProgramInfo(programPointer, METAL_PROGRAM_NUM_DEVICES.getValue(), buffer.array());
             result = buffer.getInt();
         } catch (MetalException e) {
             logger.error(e.getMessage());
@@ -139,7 +139,7 @@ public class MetalProgram {
         long result[] = new long[numDevices];
         buffer.clear();
         try {
-            clGetProgramInfo(programPointer, CL_PROGRAM_DEVICES.getValue(), buffer.array());
+            metalGetProgramInfo(programPointer, METAL_PROGRAM_DEVICES.getValue(), buffer.array());
             for (int i = 0; i < numDevices; i++) {
                 result[i] = buffer.getLong();
             }
@@ -155,7 +155,7 @@ public class MetalProgram {
         long result[] = new long[numDevices];
         buffer.clear();
         try {
-            clGetProgramInfo(programPointer, CL_PROGRAM_BINARY_SIZES.getValue(), buffer.array());
+            metalGetProgramInfo(programPointer, METAL_PROGRAM_BINARY_SIZES.getValue(), buffer.array());
             for (int i = 0; i < numDevices; i++) {
                 result[i] = buffer.getLong();
             }
@@ -218,10 +218,10 @@ public class MetalProgram {
         return sb.toString();
     }
 
-    public MetalKernel clCreateKernel(String entryPoint) {
+    public MetalKernel metalCreateKernel(String entryPoint) {
         MetalKernel kernel;
         try {
-            kernel = new MetalKernel(clCreateKernel(programPointer, entryPoint), deviceContext);
+            kernel = new MetalKernel(metalCreateKernel(programPointer, entryPoint), deviceContext);
             kernels.add(kernel);
         } catch (MetalException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());

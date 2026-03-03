@@ -80,20 +80,20 @@ public class MetalGenTool {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
-        MetalKind oclKind = (MetalKind) lirKind.getPlatformKind();
+        MetalKind metalKind = (MetalKind) lirKind.getPlatformKind();
         MetalTargetDescription oclTarget = gen.target();
 
-        Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getMetalKind(JavaKind.Object))) : gen.newVariable(lirKind);
+        Variable result = (metalKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getMetalKind(JavaKind.Object))) : gen.newVariable(lirKind);
         String parameterName = getParameterName(local);
         gen.append(new AssignStmt(result, new MetalNullary.Parameter(MetalUnaryOp.CAST_TO_ULONG + parameterName, lirKind)));
         parameterToVariable.put(paramNode, result);
 
-        if (oclKind.isVector()) {
+        if (metalKind.isVector()) {
 
             Variable vector = gen.newVariable(lirKind);
             MetalMemoryBase base = MetalArchitecture.globalSpace;
-            MetalBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(oclKind);
-            MetalAddressCast cast = new MetalAddressCast(base, LIRKind.value(oclKind.getElementKind()));
+            MetalBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(metalKind);
+            MetalAddressCast cast = new MetalAddressCast(base, LIRKind.value(metalKind.getElementKind()));
             MemoryAccess address = new MemoryAccess(base, result);
 
             emitVectorLoad(vector, intrinsic, new ConstantValue(LIRKind.value(MetalKind.INT), PrimitiveConstant.INT_0), cast, address);

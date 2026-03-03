@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.metal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+import static uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueProperties.METAL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 import java.util.ArrayList;
@@ -116,7 +116,7 @@ public class MetalEventPool {
     }
 
     public boolean serialiseEvents(int[] dependencies, MetalCommandQueue queue) {
-        boolean outOfOrderQueue = (queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
+        boolean outOfOrderQueue = (queue.getProperties() & METAL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
         if (dependencies == null || dependencies.length == 0 || !outOfOrderQueue) {
             return false;
         }
@@ -137,7 +137,7 @@ public class MetalEventPool {
     }
 
     public boolean serialiseEvents(long[] dependencies, MetalCommandQueue queue) {
-        boolean outOfOrderQueue = (queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
+        boolean outOfOrderQueue = (queue.getProperties() & METAL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) == 1;
         if (dependencies == null || dependencies.length == 0 || !outOfOrderQueue) {
             return false;
         }

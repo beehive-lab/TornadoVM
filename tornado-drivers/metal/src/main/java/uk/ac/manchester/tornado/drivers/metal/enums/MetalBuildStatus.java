@@ -24,11 +24,11 @@
 package uk.ac.manchester.tornado.drivers.metal.enums;
 
 public enum MetalBuildStatus {
-    CL_BUILD_SUCCESS(0), //
-    CL_BUILD_NONE(-1), //
-    CL_BUILD_ERROR(-2), //
-    CL_BUILD_IN_PROGRESS(-3), //
-    CL_BUILD_UNKNOWN(-4);
+    METAL_BUILD_SUCCESS(0), //
+    METAL_BUILD_NONE(-1), //
+    METAL_BUILD_ERROR(-2), //
+    METAL_BUILD_IN_PROGRESS(-3), //
+    METAL_BUILD_UNKNOWN(-4);
 
     private final int buildStatusCode;
 
@@ -42,10 +42,10 @@ public enum MetalBuildStatus {
 
     public static MetalBuildStatus toEnum(final int errorCode) {
         return switch (errorCode) {
-            case 0 -> MetalBuildStatus.CL_BUILD_SUCCESS;
-            case -1 -> MetalBuildStatus.CL_BUILD_NONE;
-            case -2 -> MetalBuildStatus.CL_BUILD_ERROR;
-            case -3 -> MetalBuildStatus.CL_BUILD_IN_PROGRESS;
+            case 0 -> MetalBuildStatus.METAL_BUILD_SUCCESS;
+            case -1 -> MetalBuildStatus.METAL_BUILD_NONE;
+            case -2 -> MetalBuildStatus.METAL_BUILD_ERROR;
+            case -3 -> MetalBuildStatus.METAL_BUILD_IN_PROGRESS;
             default -> null;
         };
     }

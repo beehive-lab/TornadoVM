@@ -490,6 +490,9 @@ public enum MetalKind implements PlatformKind {
             return "long";
         } else if (this == MetalKind.ATOMIC_ADD_FLOAT) {
             return "float";
+        } else if (this == MetalKind.ULONG) {
+            // MSL has no pointer-to-integer cast; use a typed device pointer typedef instead.
+            return "tornado_ptr_t";
         } else {
             return name().toLowerCase();
         }

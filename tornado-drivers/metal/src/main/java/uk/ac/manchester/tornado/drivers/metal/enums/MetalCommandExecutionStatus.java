@@ -28,12 +28,12 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 public enum MetalCommandExecutionStatus {
 
     // @formatter:off
-	 CL_UNKNOWN (0x4),
-	 CL_COMPLETE(0x0),
-	 CL_RUNNING (0x1),
-	 CL_SUBMITTED (0x2),
-	 CL_QUEUED (0x3),
-	 CL_ERROR (-1);
+	 METAL_UNKNOWN (0x4),
+	 METAL_COMPLETE(0x0),
+	 METAL_RUNNING (0x1),
+	 METAL_SUBMITTED (0x2),
+	 METAL_QUEUED (0x3),
+	 METAL_ERROR (-1);
     // @formatter:on
 
     private final int value;
@@ -50,19 +50,19 @@ public enum MetalCommandExecutionStatus {
         MetalCommandExecutionStatus result;
         switch (v) {
             case 0:
-                result = MetalCommandExecutionStatus.CL_COMPLETE;
+                result = MetalCommandExecutionStatus.METAL_COMPLETE;
                 break;
             case 1:
-                result = MetalCommandExecutionStatus.CL_RUNNING;
+                result = MetalCommandExecutionStatus.METAL_RUNNING;
                 break;
             case 2:
-                result = MetalCommandExecutionStatus.CL_SUBMITTED;
+                result = MetalCommandExecutionStatus.METAL_SUBMITTED;
                 break;
             case 3:
-                result = MetalCommandExecutionStatus.CL_QUEUED;
+                result = MetalCommandExecutionStatus.METAL_QUEUED;
                 break;
             default:
-                result = MetalCommandExecutionStatus.CL_ERROR;
+                result = MetalCommandExecutionStatus.METAL_ERROR;
         }
         return result;
     }
@@ -70,16 +70,16 @@ public enum MetalCommandExecutionStatus {
     public TornadoExecutionStatus toTornadoExecutionStatus() {
         TornadoExecutionStatus result = TornadoExecutionStatus.UNKNOWN;
         switch (this) {
-            case CL_COMPLETE:
+            case METAL_COMPLETE:
                 result = TornadoExecutionStatus.COMPLETE;
                 break;
-            case CL_QUEUED:
+            case METAL_QUEUED:
                 result = TornadoExecutionStatus.QUEUED;
                 break;
-            case CL_RUNNING:
+            case METAL_RUNNING:
                 result = TornadoExecutionStatus.RUNNING;
                 break;
-            case CL_SUBMITTED:
+            case METAL_SUBMITTED:
                 result = TornadoExecutionStatus.SUBMITTED;
                 break;
             default:

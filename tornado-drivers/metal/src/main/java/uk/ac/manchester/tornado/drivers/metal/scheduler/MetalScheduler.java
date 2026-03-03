@@ -79,10 +79,10 @@ public class MetalScheduler {
 
     public static MetalKernelScheduler instanceScheduler(MetalDeviceType type, final MetalDeviceContext context) {
         switch (type) {
-            case CL_DEVICE_TYPE_GPU -> {
+            case METAL_DEVICE_TYPE_GPU -> {
                 return getInstanceGPUScheduler(context);
             }
-            case CL_DEVICE_TYPE_ACCELERATOR -> {
+            case METAL_DEVICE_TYPE_ACCELERATOR -> {
                 if (context.getDevice().getDeviceVendor().contains(SUPPORTED_VENDORS.CODEPLAY.getName())) {
                     return getInstanceGPUScheduler(context);
                 } else if (context.isPlatformFPGA()) {
@@ -91,7 +91,7 @@ public class MetalScheduler {
                     return new MetalCPUScheduler(context);
                 }
             }
-            case CL_DEVICE_TYPE_CPU -> {
+            case METAL_DEVICE_TYPE_CPU -> {
                 return TornadoOptions.USE_BLOCK_SCHEDULER ? new MetalCPUScheduler(context) : getInstanceGPUScheduler(context);
             }
             default -> new TornadoLogger().fatal("No scheduler available for device: %s", context);

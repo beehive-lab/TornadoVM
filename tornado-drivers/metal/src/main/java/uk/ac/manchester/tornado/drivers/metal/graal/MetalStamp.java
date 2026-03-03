@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 
 public class MetalStamp extends ObjectStamp {
 
-    private MetalKind oclKind;
+    private MetalKind metalKind;
 
     private static final ResolvedJavaType STAMP_TYPE = null;
     private static final boolean EXACT_TYPE = true;
@@ -48,7 +48,7 @@ public class MetalStamp extends ObjectStamp {
 
     public MetalStamp(MetalKind lirKind) {
         super(STAMP_TYPE, EXACT_TYPE, NON_NULL, ALWAYS_NULL, ALWAYS_ARRAY);
-        this.oclKind = lirKind;
+        this.metalKind = lirKind;
     }
 
     @Override
@@ -64,17 +64,17 @@ public class MetalStamp extends ObjectStamp {
 
     @Override
     public LIRKind getLIRKind(LIRKindTool lirKindTool) {
-        return LIRKind.value(oclKind);
+        return LIRKind.value(metalKind);
     }
 
     public MetalKind getMetalKind() {
-        return oclKind;
+        return metalKind;
     }
 
     @Override
     public JavaKind getStackKind() {
-        if (oclKind.isPrimitive()) {
-            switch (oclKind) {
+        if (metalKind.isPrimitive()) {
+            switch (metalKind) {
                 case BOOL:
                     return JavaKind.Boolean;
                 case CHAR:
@@ -97,7 +97,7 @@ public class MetalStamp extends ObjectStamp {
                 default:
                     return JavaKind.Illegal;
             }
-        } else if (oclKind.isVector()) {
+        } else if (metalKind.isVector()) {
             return JavaKind.Object;
         }
         return JavaKind.Illegal;
@@ -123,7 +123,7 @@ public class MetalStamp extends ObjectStamp {
 
     @Override
     public boolean isCompatible(Stamp stamp) {
-        if (stamp instanceof MetalStamp && ((MetalStamp) stamp).oclKind == oclKind) {
+        if (stamp instanceof MetalStamp && ((MetalStamp) stamp).metalKind == metalKind) {
             return true;
         }
 
@@ -133,8 +133,8 @@ public class MetalStamp extends ObjectStamp {
 
     @Override
     public ResolvedJavaType javaType(MetaAccessProvider metaAccess) {
-        if (oclKind.getJavaClass() != null) {
-            return metaAccess.lookupJavaType(oclKind.getJavaClass());
+        if (metalKind.getJavaClass() != null) {
+            return metaAccess.lookupJavaType(metalKind.getJavaClass());
         }
         shouldNotReachHere();
 
@@ -143,7 +143,7 @@ public class MetalStamp extends ObjectStamp {
 
     @Override
     public Stamp join(Stamp stamp) {
-        if (stamp instanceof MetalStamp && ((MetalStamp) stamp).oclKind == oclKind) {
+        if (stamp instanceof MetalStamp && ((MetalStamp) stamp).metalKind == metalKind) {
             return this;
         }
         return this;
@@ -162,7 +162,7 @@ public class MetalStamp extends ObjectStamp {
 
     @Override
     public String toString() {
-        return "ocl: " + oclKind.name();
+        return "ocl: " + metalKind.name();
     }
 
     @Override

@@ -62,34 +62,34 @@ public class MetalArchitecture extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        MetalKind oclKind = MetalKind.ILLEGAL;
+        MetalKind metalKind = MetalKind.ILLEGAL;
         switch (javaKind) {
             case Boolean:
-                oclKind = MetalKind.BOOL;
+                metalKind = MetalKind.BOOL;
                 break;
             case Byte:
-                oclKind = MetalKind.CHAR;
+                metalKind = MetalKind.CHAR;
                 break;
             case Short:
-                oclKind = (javaKind.isUnsigned()) ? MetalKind.USHORT : MetalKind.SHORT;
+                metalKind = (javaKind.isUnsigned()) ? MetalKind.USHORT : MetalKind.SHORT;
                 break;
             case Char:
-                oclKind = MetalKind.USHORT;
+                metalKind = MetalKind.USHORT;
                 break;
             case Int:
-                oclKind = (javaKind.isUnsigned()) ? MetalKind.UINT : MetalKind.INT;
+                metalKind = (javaKind.isUnsigned()) ? MetalKind.UINT : MetalKind.INT;
                 break;
             case Long:
-                oclKind = (javaKind.isUnsigned()) ? MetalKind.ULONG : MetalKind.LONG;
+                metalKind = (javaKind.isUnsigned()) ? MetalKind.ULONG : MetalKind.LONG;
                 break;
             case Float:
-                oclKind = MetalKind.FLOAT;
+                metalKind = MetalKind.FLOAT;
                 break;
             case Double:
-                oclKind = MetalKind.DOUBLE;
+                metalKind = MetalKind.DOUBLE;
                 break;
             case Object:
-                oclKind = (MetalKind) getWordKind();
+                metalKind = (MetalKind) getWordKind();
                 break;
             case Void:
             case Illegal:
@@ -98,7 +98,7 @@ public class MetalArchitecture extends Architecture {
                 shouldNotReachHere("illegal java type for %s", javaKind.name());
         }
 
-        return oclKind;
+        return metalKind;
     }
 
     /*

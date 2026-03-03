@@ -41,27 +41,27 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 public class GetArrayNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<GetArrayNode> TYPE = NodeClass.create(GetArrayNode.class);
-    private final MetalKind oclKind;
+    private final MetalKind metalKind;
 
     @Input
     private ValueNode arrayNode;
 
     private JavaKind elementKind;
 
-    public GetArrayNode(MetalKind oclKind, ValueNode array, JavaKind elementKind) {
-        super(TYPE, StampFactory.forKind(oclKind.asJavaKind()));
-        this.oclKind = oclKind;
+    public GetArrayNode(MetalKind metalKind, ValueNode array, JavaKind elementKind) {
+        super(TYPE, StampFactory.forKind(metalKind.asJavaKind()));
+        this.metalKind = metalKind;
         this.arrayNode = array;
         this.elementKind = elementKind;
     }
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(MetalStampFactory.getStampFor(oclKind));
+        return updateStamp(MetalStampFactory.getStampFor(metalKind));
     }
 
     public MetalKind getMetalKind() {
-        return oclKind;
+        return metalKind;
     }
 
     @Override

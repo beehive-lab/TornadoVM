@@ -256,11 +256,11 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         // Find Get Global ID node and Global Size;
-        GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
-        GlobalThreadSizeNode oclGlobalSize = graph.getNodes().filter(GlobalThreadSizeNode.class).first();
+        GlobalThreadIdNode metalIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
+        GlobalThreadSizeNode metalGlobalSize = graph.getNodes().filter(GlobalThreadSizeNode.class).first();
 
         ValueNode threadID = null;
-        Iterator<Node> usages = oclIdNode.usages().iterator();
+        Iterator<Node> usages = metalIdNode.usages().iterator();
 
         boolean cpuScheduler = false;
 
@@ -296,15 +296,15 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
             if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
-                cpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, oclIdNode, startIndexNode, tool);
+                cpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, metalIdNode, startIndexNode, tool);
             } else if (node instanceof WriteAtomicNode writeAtomicNode) {
-                cpuReduceSnippets.lower(writeAtomicNode, threadID, oclIdNode, startIndexNode, tool);
+                cpuReduceSnippets.lower(writeAtomicNode, threadID, metalIdNode, startIndexNode, tool);
             }
         } else {
             if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
-                gpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, oclGlobalSize, tool);
+                gpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, metalGlobalSize, tool);
             } else if (node instanceof WriteAtomicNode writeAtomicNode) {
-                gpuReduceSnippets.lower(writeAtomicNode, threadID, oclGlobalSize, tool);
+                gpuReduceSnippets.lower(writeAtomicNode, threadID, metalGlobalSize, tool);
             }
         }
     }
@@ -448,9 +448,9 @@ public class MetalLoweringProvider extends DefaultJavaLoweringProvider {
             if (returnStamp instanceof ObjectStamp) {
                 ObjectStamp os = (ObjectStamp) returnStamp;
                 ResolvedJavaType type = os.javaType(tool.getMetaAccess());
-                MetalKind oclKind = MetalKind.fromResolvedJavaType(type);
-                if (oclKind != MetalKind.ILLEGAL) {
-                    returnStampPair = StampPair.createSingle(MetalStampFactory.getStampFor(oclKind));
+                MetalKind metalKind = MetalKind.fromResolvedJavaType(type);
+                if (metalKind != MetalKind.ILLEGAL) {
+                    returnStampPair = StampPair.createSingle(MetalStampFactory.getStampFor(metalKind));
                 }
             }
 

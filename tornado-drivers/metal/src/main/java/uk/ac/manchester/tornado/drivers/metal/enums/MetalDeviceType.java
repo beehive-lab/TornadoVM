@@ -27,12 +27,12 @@ public enum MetalDeviceType {
 
     // @formatter:off
     Unknown (-1),
-	CL_DEVICE_TYPE_DEFAULT(1 << 0),
-	CL_DEVICE_TYPE_CPU(1 << 1),
-	CL_DEVICE_TYPE_GPU(1 << 2),
-	CL_DEVICE_TYPE_ACCELERATOR(1 << 3),
-	CL_DEVICE_TYPE_CUSTOM(1 << 4),
-	CL_DEVICE_TYPE_ALL(0xFFFFFFFFL);
+	METAL_DEVICE_TYPE_DEFAULT(1 << 0),
+	METAL_DEVICE_TYPE_CPU(1 << 1),
+	METAL_DEVICE_TYPE_GPU(1 << 2),
+	METAL_DEVICE_TYPE_ACCELERATOR(1 << 3),
+	METAL_DEVICE_TYPE_CUSTOM(1 << 4),
+	METAL_DEVICE_TYPE_ALL(0xFFFFFFFFL);
     // @formatter:on
 
     private final long value;
@@ -47,12 +47,12 @@ public enum MetalDeviceType {
 
     public static MetalDeviceType toDeviceType(final long v) {
         return switch ((int) v) {
-            case 1 -> MetalDeviceType.CL_DEVICE_TYPE_DEFAULT;
-            case 1 << 1 -> MetalDeviceType.CL_DEVICE_TYPE_CPU;
-            case 1 << 2 -> MetalDeviceType.CL_DEVICE_TYPE_GPU;
-            case 1 << 3 -> MetalDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
-            case 1 << 4 -> MetalDeviceType.CL_DEVICE_TYPE_CUSTOM;
-            case 0xFFFFFFFF -> MetalDeviceType.CL_DEVICE_TYPE_ALL;
+            case 1 -> MetalDeviceType.METAL_DEVICE_TYPE_DEFAULT;
+            case 1 << 1 -> MetalDeviceType.METAL_DEVICE_TYPE_CPU;
+            case 1 << 2 -> MetalDeviceType.METAL_DEVICE_TYPE_GPU;
+            case 1 << 3 -> MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR;
+            case 1 << 4 -> MetalDeviceType.METAL_DEVICE_TYPE_CUSTOM;
+            case 0xFFFFFFFF -> MetalDeviceType.METAL_DEVICE_TYPE_ALL;
             default -> MetalDeviceType.Unknown;
         };
     }

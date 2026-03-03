@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.metal.enums;
 
 public enum MetalLocalMemType {
 
-    CL_LOCAL(1), CL_GLOBAL(2);
+    METAL_LOCAL(1), METAL_GLOBAL(2);
 
     private final int value;
 
@@ -41,10 +41,10 @@ public enum MetalLocalMemType {
         MetalLocalMemType result = null;
         switch (v) {
             case 1:
-                result = MetalLocalMemType.CL_LOCAL;
+                result = MetalLocalMemType.METAL_LOCAL;
                 break;
             case 2:
-                result = MetalLocalMemType.CL_GLOBAL;
+                result = MetalLocalMemType.METAL_GLOBAL;
                 break;
         }
         return result;

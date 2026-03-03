@@ -140,7 +140,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_Metal_mtGetPlatformCount
 }
 
 JNIEXPORT jint JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_clGetDeviceCount
+Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_metalGetDeviceCount
         (JNIEnv *, jclass)
 {
   @autoreleasepool {
@@ -188,7 +188,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_Metal_mtGetPlatformIDs
 }
 
 JNIEXPORT jstring JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_clGetPlatformInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_metalGetPlatformInfo
   (JNIEnv *env, jclass, jlong platform_id, jint platform_info)
 {
     @autoreleasepool {
@@ -235,7 +235,7 @@ static inline bool wants_gpu(jlong device_type) {
 }
 
 JNIEXPORT jint JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_clGetDeviceIDs
+Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_metalGetDeviceIDs
   (JNIEnv *env, jclass, jlong /*platform_id*/, jlong device_type, jlongArray array)
 {
     @autoreleasepool {
@@ -261,7 +261,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_clGetDeviceIDs
 }
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_clCreateContext
+Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_metalCreateContext
   (JNIEnv* env, jclass, jlong /*platform_id*/, jlongArray devicesArray)
 {
     @autoreleasepool {
@@ -284,7 +284,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalPlatform_clCreateContext
 
 // Create
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateCommandQueue(
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalCreateCommandQueue(
     JNIEnv* env, jclass clazz, jlong device_id, jint maxInFlight /* use 0 to ignore */) {
   @autoreleasepool {
     id<MTLDevice> device = (__bridge id<MTLDevice>) (void*) device_id;
@@ -298,7 +298,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateCommandQueue(
 }
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clReleaseCommandQueue(
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalReleaseCommandQueue(
         JNIEnv* env, jclass clazz, jlong queue_id) {
     @autoreleasepool {
         id<MTLCommandQueue> q = (__bridge_transfer id<MTLCommandQueue>)(void*) queue_id;
@@ -854,7 +854,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_createSubBuffer
  * Release a Metal buffer object
  */
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clReleaseMemObject
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalReleaseMemObject
     (JNIEnv *env, jclass clazz, jlong memobj)
 {
     @autoreleasepool {
@@ -868,7 +868,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clReleaseMemObject
  * otherwise return without modifying the buffer.
  */
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clGetContextInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalGetContextInfo
     (JNIEnv *env, jclass clazz, jlong context_id, jint param_name, jbyteArray array)
 {
     jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
@@ -894,10 +894,10 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clGetContextInfo
 }
 
 /*
- * Release the 'context' (command queue) returned by clCreateContext
+ * Release the 'context' (command queue) returned by metalCreateContext
  */
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clReleaseContext
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalReleaseContext
     (JNIEnv *env, jclass clazz, jlong context_id)
 {
     @autoreleasepool {
@@ -911,7 +911,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clReleaseContext
  * the OpenCL JNI layer: return -1 for unsupported operations or 0 for failure.
  */
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateProgramWithSource
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalCreateProgramWithSource
     (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2)
 {
     if (array1 == NULL) return (jlong)0;
@@ -957,7 +957,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateProgramWithSour
 }
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateProgramWithBinary
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalCreateProgramWithBinary
     (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jbyteArray array1, jlongArray array2)
 {
     if (!array1) return (jlong)0;
@@ -1008,7 +1008,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateProgramWithBina
 }
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateProgramWithIL
+Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_metalCreateProgramWithIL
     (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray javaSourceBinaryArray, jlongArray javaSizeArray)
 {
     // Indicate not supported
@@ -1024,7 +1024,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalContext_clCreateProgramWithIL
  */
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clBuildProgram
+Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_metalBuildProgram
     (JNIEnv *env, jclass clazz, jlong programId, jlongArray devices, jstring options)
 {
     // No-op build: platform-specific compilation is not implemented here.
@@ -1033,7 +1033,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clBuildProgram
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clGetProgramInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_metalGetProgramInfo
     (JNIEnv *env, jclass clazz, jlong programId, jint param, jbyteArray buffer)
 {
     (void) clazz;
@@ -1065,7 +1065,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clGetProgramInfo
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clGetProgramBuildInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_metalGetProgramBuildInfo
     (JNIEnv *env, jclass clazz, jlong programId, jlong deviceId, jint param, jbyteArray buffer)
 {
     (void) clazz; (void) deviceId;
@@ -1109,7 +1109,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_getBinaries
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clReleaseProgram
+Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_metalReleaseProgram
     (JNIEnv *env, jclass clazz, jlong programId)
 {
     (void) env; (void) clazz;
@@ -1123,13 +1123,13 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clReleaseProgram
 /*
  * Kernel-related JNI stubs for Metal
  * We represent a "kernel" as a retained NSString containing the function name
- * so Java-side can query the function name via clGetKernelInfo. Argument
+ * so Java-side can query the function name via metalGetKernelInfo. Argument
  * setting and kernel execution plumbing are not implemented here and are
  * treated as no-ops to allow higher-level Java code to proceed.
  */
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clCreateKernel
+Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_metalCreateKernel
     (JNIEnv *env, jclass clazz, jlong programId, jstring name)
 {
     if (programId == 0 || name == NULL) return (jlong)0;
@@ -1182,7 +1182,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalProgram_clCreateKernel
 }
 
 JNIEXPORT jint JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clGetKernelArgCount
+Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_metalGetKernelArgCount
     (JNIEnv *env, jclass clazz, jlong kernelId)
 {
     (void) clazz;
@@ -1193,7 +1193,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clGetKernelArgCount
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clGetKernelArgInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_metalGetKernelArgInfo
     (JNIEnv *env, jclass clazz, jlong kernelId, jint index, jbyteArray buffer)
 {
     (void) clazz;
@@ -1257,7 +1257,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clGetKernelArgInfo
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clReleaseKernel
+Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_metalReleaseKernel
     (JNIEnv *env, jclass clazz, jlong kernelId)
 {
     (void) env; (void) clazz;
@@ -1268,7 +1268,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clReleaseKernel
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clGetKernelInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_metalGetKernelInfo
     (JNIEnv *env, jclass clazz, jlong kernelId, jint info, jbyteArray buffer)
 {
     (void) clazz; (void) info;
@@ -1309,7 +1309,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clGetKernelInfo
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clSetKernelArg
+Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_metalSetKernelArg
     (JNIEnv *env, jclass clazz, jlong kernelId, jint index, jlong size, jbyteArray buffer)
 {
     (void) clazz;
@@ -1353,7 +1353,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clSetKernelArg
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clSetKernelArgRef
+Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_metalSetKernelArgRef
     (JNIEnv *env, jclass clazz, jlong kernelId, jint index, jlong buffer)
 {
     (void) clazz;
@@ -1381,7 +1381,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalKernel_clSetKernelArgRef
  * kernel/function and argument binding into Metal compute pipelines.
  */
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueNDRangeKernel
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueNDRangeKernel
     (JNIEnv *env, jclass clazz, jlong queueId, jlong kernelId, jint dim, jlongArray global_work_offset, jlongArray global_work_size, jlongArray local_work_size, jlongArray events)
 {
     (void) clazz;
@@ -1496,7 +1496,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueNDRangeKe
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueWaitForEvents
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueWaitForEvents
     (JNIEnv *env, jclass clazz, jlong queueId, jlongArray array)
 {
     (void) clazz;
@@ -1520,12 +1520,12 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueWaitForEv
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clFlush
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalFlush
     (JNIEnv *env, jclass clazz, jlong queueId)
 {
     (void) env; (void) clazz;
     @autoreleasepool {
-        // Metal does not have a direct equivalent to OpenCL clFlush; in this
+        // Metal does not have a direct equivalent to OpenCL metalFlush; in this
         // stub we simply ensure the queue handle is valid and do nothing.
         id<MTLCommandQueue> q = (__bridge id<MTLCommandQueue>)(void*) queueId;
         (void) q;
@@ -1533,7 +1533,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clFlush
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clFinish
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalFinish
     (JNIEnv *env, jclass clazz, jlong queueId)
 {
     (void) env; (void) clazz;
@@ -1558,21 +1558,21 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clFinish
 // ---------------------------------------------------------------------------
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clReleaseEvent
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalReleaseEvent
     (JNIEnv *env, jclass clazz, jlong eventId)
 {
     (void) env; (void) clazz;
-    fprintf(stderr, "JNI: clReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
+    fprintf(stderr, "JNI: metalReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
     if (eventId == 0) return;
     @autoreleasepool {
         id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) eventId;
         CFRelease((__bridge CFTypeRef) cb);
     }
-    fprintf(stderr, "JNI: clReleaseEvent done\n");
+    fprintf(stderr, "JNI: metalReleaseEvent done\n");
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clWaitForEvents
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalWaitForEvents
     (JNIEnv *env, jclass clazz, jlongArray events)
 {
     (void) clazz;
@@ -1591,7 +1591,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clWaitForEvents
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clGetEventInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalGetEventInfo
     (JNIEnv *env, jclass clazz, jlong eventId, jint param, jbyteArray buffer)
 {
     (void) clazz;
@@ -1605,7 +1605,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clGetEventInfo
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clGetEventProfilingInfo
+Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalGetEventProfilingInfo
     (JNIEnv *env, jclass clazz, jlong eventId, jlong param, jbyteArray buffer)
 {
     (void) clazz;
@@ -1620,15 +1620,15 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_clGetEventProfilingInfo
 }
 
 // ---------------------------------------------------------------------------
-// MetalCommandQueue: clEnqueueMarkerWithWaitList, clEnqueueBarrierWithWaitList
+// MetalCommandQueue: metalEnqueueMarkerWithWaitList, metalEnqueueBarrierWithWaitList
 // ---------------------------------------------------------------------------
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueMarkerWithWaitList
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueMarkerWithWaitList
     (JNIEnv *env, jclass clazz, jlong queueId, jlongArray events)
 {
     (void) clazz;
-    fprintf(stderr, "JNI: clEnqueueMarkerWithWaitList entered\n");
+    fprintf(stderr, "JNI: metalEnqueueMarkerWithWaitList entered\n");
     @autoreleasepool {
         id<MTLCommandQueue> q = (__bridge id<MTLCommandQueue>)(void*)(uintptr_t) queueId;
         // Wait for all provided events (command buffers) to complete
@@ -1639,7 +1639,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueMarkerWit
             for (jsize i = 0; i < len; i++) {
                 fprintf(stderr, "JNI: marker - event[%d] = 0x%llx\n", (int)i, (unsigned long long)evts[i]);
                 if (evts[i] == 0) continue;
-                // Only wait on valid command buffer pointers (from clEnqueueNDRangeKernel)
+                // Only wait on valid command buffer pointers (from metalEnqueueNDRangeKernel)
                 id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) evts[i];
                 if (cb && [cb respondsToSelector:@selector(waitUntilCompleted)]) {
                     fprintf(stderr, "JNI: marker - waiting on event[%d]\n", (int)i);
@@ -1649,14 +1649,14 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueMarkerWit
             }
             env->ReleaseLongArrayElements(events, evts, 0);
         }
-        fprintf(stderr, "JNI: clEnqueueMarkerWithWaitList done\n");
+        fprintf(stderr, "JNI: metalEnqueueMarkerWithWaitList done\n");
         // Return 0 to indicate no event produced (marker is implicit in Metal)
         return (jlong)0;
     }
 }
 
 JNIEXPORT jlong JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueBarrierWithWaitList
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueBarrierWithWaitList
     (JNIEnv *env, jclass clazz, jlong queueId, jlongArray events)
 {
     (void) clazz;
@@ -1680,7 +1680,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clEnqueueBarrierWi
 }
 
 JNIEXPORT void JNICALL
-Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_clReleaseCommandQueue
+Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalReleaseCommandQueue
     (JNIEnv *env, jclass clazz, jlong queueId)
 {
     (void) env; (void) clazz;

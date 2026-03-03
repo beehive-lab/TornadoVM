@@ -55,10 +55,10 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 public final class MetalBackendImpl implements TornadoAcceleratorBackend {
 
     private static final List<MetalDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
-            MetalDeviceType.CL_DEVICE_TYPE_GPU, //
-            MetalDeviceType.CL_DEVICE_TYPE_CPU, //
-            MetalDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
-            MetalDeviceType.CL_DEVICE_TYPE_CUSTOM);
+            MetalDeviceType.METAL_DEVICE_TYPE_GPU, //
+            MetalDeviceType.METAL_DEVICE_TYPE_CPU, //
+            MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR, //
+            MetalDeviceType.METAL_DEVICE_TYPE_CUSTOM);
     private final MetalBackend[][] backends;
     private final List<MetalContextInterface> contexts;
     private MetalBackend[] flatBackends;

@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import static uk.ac.manchester.tornado.drivers.metal.Metal.CL_TRUE;
+import static uk.ac.manchester.tornado.drivers.metal.Metal.METAL_TRUE;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
@@ -142,7 +142,7 @@ public class MetalDevice implements MetalTargetDevice {
         getDeviceVendorId();
     }
 
-    static native void clGetDeviceInfo(long id, int info, byte[] buffer);
+    static native void metalGetDeviceInfo(long id, int info, byte[] buffer);
     static native String mtGetDeviceName(long id);
     static native long mtGetDeviceGlobalMemorySize(long id);
     static native long mtGetDeviceLocalMemorySize(long id);
@@ -158,7 +158,7 @@ public class MetalDevice implements MetalTargetDevice {
 
     public MetalDeviceType getDeviceType() {
         // always GPU for Metal, emulating CL semantics
-        return MetalDeviceType.CL_DEVICE_TYPE_GPU;
+        return MetalDeviceType.METAL_DEVICE_TYPE_GPU;
     }
 
     public int getDeviceVendorId() {
@@ -365,7 +365,7 @@ public class MetalDevice implements MetalTargetDevice {
 
     private long getDeviceSingleFPConfig() {
         // Metal devices behave as IEEE 754 single-precision compliant
-        // took bitfields from https://registry.khronos.org/OpenCL/sdk/3.0/docs/man/html/clGetDeviceInfo.html
+        // took bitfields from https://registry.khronos.org/OpenCL/sdk/3.0/docs/man/html/metalGetDeviceInfo.html
         return FP_DENORM |
             FP_INF_NAN |
             FP_ROUND_TO_NEAREST |
@@ -380,7 +380,7 @@ public class MetalDevice implements MetalTargetDevice {
     public boolean hasDeviceUnifiedMemory() {
         try {
             int v = mtHasUnifiedMemory(devicePtr);
-            return v == CL_TRUE;
+            return v == METAL_TRUE;
         } catch (UnsatisfiedLinkError e) {
             // native not available -> conservative fallback: assume no unified memory
             return false;
@@ -391,13 +391,13 @@ public class MetalDevice implements MetalTargetDevice {
         if (localMemoryType != null) {
             return localMemoryType;
         }
-        // Metal threadgroup memory behaves like OpenCL CL_LOCAL
-        localMemoryType = MetalLocalMemType.CL_LOCAL;
+        // Metal threadgroup memory behaves like OpenCL METAL_LOCAL
+        localMemoryType = MetalLocalMemType.METAL_LOCAL;
         return localMemoryType;
     }
 
     private int getDeviceEndianLittle() {
-        deviceEndianLittle = CL_TRUE;
+        deviceEndianLittle = METAL_TRUE;
         return deviceEndianLittle;
     }
 
