@@ -1562,13 +1562,13 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalEvent_metalReleaseEvent
     (JNIEnv *env, jclass clazz, jlong eventId)
 {
     (void) env; (void) clazz;
-    fprintf(stderr, "JNI: metalReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
+//     fprintf(stderr, "JNI: metalReleaseEvent(0x%llx)\n", (unsigned long long)eventId);
     if (eventId == 0) return;
     @autoreleasepool {
         id<MTLCommandBuffer> cb = (__bridge id<MTLCommandBuffer>)(void*)(uintptr_t) eventId;
         CFRelease((__bridge CFTypeRef) cb);
     }
-    fprintf(stderr, "JNI: metalReleaseEvent done\n");
+//     fprintf(stderr, "JNI: metalReleaseEvent done\n");
 }
 
 JNIEXPORT void JNICALL
@@ -1649,7 +1649,7 @@ Java_uk_ac_manchester_tornado_drivers_metal_MetalCommandQueue_metalEnqueueMarker
             }
             env->ReleaseLongArrayElements(events, evts, 0);
         }
-        fprintf(stderr, "JNI: metalEnqueueMarkerWithWaitList done\n");
+//         fprintf(stderr, "JNI: metalEnqueueMarkerWithWaitList done\n");
         // Return 0 to indicate no event produced (marker is implicit in Metal)
         return (jlong)0;
     }
