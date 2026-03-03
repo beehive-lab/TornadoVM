@@ -325,9 +325,6 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-
-
             // Metal Shading Language preamble
             asm.emitLine("#include <metal_stdlib>");
             asm.emitLine("using namespace metal;");
