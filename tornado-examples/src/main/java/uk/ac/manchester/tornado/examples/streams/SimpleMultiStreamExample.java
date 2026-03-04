@@ -42,7 +42,7 @@ public class SimpleMultiStreamExample {
     /**
      * A compute-intensive kernel: use {@code COMPUTE_ITERATIONS} to increase workload.
      */
-    public static void kernel(FloatArray x, FloatArray y, FloatArray result, float alpha) {
+    public static void computeKernel(FloatArray x, FloatArray y, FloatArray result, float alpha) {
         for (@Parallel int i = 0; i < result.getSize(); i++) {
             float xi = x.get(i);
             float yi = y.get(i);
@@ -98,9 +98,9 @@ public class SimpleMultiStreamExample {
         // the H2D stream while kernel0 is already executing on the COMPUTE stream.
         TaskGraph taskGraph = new TaskGraph("overlap")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA0, inputB0)
-                .task("t0", SimpleMultiStreamExample::kernel, inputA0, inputB0, result0, alpha)
+                .task("t0", SimpleMultiStreamExample::computeKernel, inputA0, inputB0, result0, alpha)
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA1, inputB1)
-                .task("t1", SimpleMultiStreamExample::kernel, inputA1, inputB1, result1, alpha)
+                .task("t1", SimpleMultiStreamExample::computeKernel, inputA1, inputB1, result1, alpha)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result0, result1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
