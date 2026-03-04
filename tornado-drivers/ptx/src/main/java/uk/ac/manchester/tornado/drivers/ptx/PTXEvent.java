@@ -87,7 +87,7 @@ public class PTXEvent implements Event {
 
     private native static void tornadoCUDAEventsSynchronize(byte[][] wrappers);
 
-    // Native method for cross-stream synchronization
+    /** Native method that makes all future work submitted to stream wait until event's completion. */
     protected static native void cuStreamWaitEvent(byte[] targetStream, byte[] event);
 
     private native static long cuEventQuery(byte[] eventWrapper);
