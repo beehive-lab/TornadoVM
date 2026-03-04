@@ -33,12 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Each thread has its own stream table entry.
  * Each stream table entry has its own set of streams.
  * Each set of streams contains:
- * <list>
+ * <ul>
  *     <li>A default stream ({@link PTXStreamType#DEFAULT})</li>
  *     <li>A stream for host-to-device transfers ({@link PTXStreamType#DATA_TRANSFER_H2D})</li>
  *     <li>A stream for kernel execution ({@link PTXStreamType#COMPUTE})</li>
  *     <li>A stream for device-to-host transfers ({@link PTXStreamType#DATA_TRANSFER_D2H})</li>
- * </list>
+ * </ul>
  *
  */
 public class PTXStreamTable {
