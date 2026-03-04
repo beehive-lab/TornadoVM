@@ -219,8 +219,9 @@ public class PTXDeviceContext implements TornadoDeviceContext {
      *
      * <p>For each global event ID in {@code waitEvents}, resolves it through the
      * {@link EventRegistry} to find the source stream and local event, then calls
-     * {@code cuStreamWaitEvent} to make {@code targetStream} wait for that specific
-     * operation to complete on the GPU.
+     * {@code cuStreamWaitEvent} to make work submitted on {@code targetStream} to
+     * wait upon event's completion before starting execution WITHOUT blocking the
+     * host, in our case the TornadoVM Interpreter thread.
      *
      * <p>This provides event-level granularity: COMPUTE waits only on the specific
      * H2D transfers it depends on, D2H waits only on the specific COMPUTE operations
