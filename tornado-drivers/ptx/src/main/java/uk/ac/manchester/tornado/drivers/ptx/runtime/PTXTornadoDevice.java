@@ -415,22 +415,28 @@ public class PTXTornadoDevice implements TornadoXPUDevice {
     }
 
     /**
-     * It allocates and copy in the content of the object to the target device.
+     * Copies the object to the device if it is not already present (lazy H2D transfer).
+     * If the object has already been transfered ({@code objectState.hasContent() == true}),
+     * this is a no-op and returns {@code null}.
      *
+     * @param executionPlanId
+     *     the execution plan context
      * @param object
-     *     to be allocated
+     *     to host object to transfer
      * @param objectState
      *     state of the object in the target device
      *     {@link DeviceBufferState}
      * @param events
-     *     list of pending events (dependencies)
+     *     array of event IDs this transfer depends on, or {@code null} for none
      * @param batchSize
-     *     size of the object to be allocated. If this value is <= 0, then it
-     *     allocates the sizeof(object).
+     *     number of bytes to transfer; if {@code <= 0} the full buffer size is used
      * @param hostOffset
-     *     offset in bytes for the copy within the host input array (or
-     *     object)
-     * @return an event ID
+     *     byte offset into the host buffer at which the copy starts
+     * @return a list containing the H2D transfer event ID, or {@code null} if no
+     *     transfer was needed. In single-stream mode it ID is a local
+     *     {@code PTXEventPool} index; in multi-stream mode it is a global
+     *     {@code EventRegistry} ID that the interpreter wuses to insert
+     *     {@code cuStreamWaitEvent} dependencies on the COMPUTE stream.
      */
     @Override
     public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState objectState, int[] events, long batchSize, long hostOffset) {
