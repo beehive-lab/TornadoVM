@@ -325,6 +325,23 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return stream.enqueueBarrier(executionPlanId, events);
     }
 
+    /**
+     * End-of-iteration full sync: waits for all in-flight GPU work and resets the
+     * {@link EventRegistry}.
+     *
+     * <p>Called by the interpreter after all bytecodes have been dispatched
+     * (when {@code VM_USE_DEPS=true}) to ensure the iteration is fully complete before
+     * returning the execution result. Also used as a null-events fallback from
+     * {@link #enqueueMarker(long, int[])}.
+     *
+     * <p>In single-stream mode, issues {@code cuStreamSynchronize} on the default stream.
+     * In multi-stream mode, issues {@code cuStreamSynchronize} on every active stream
+     * (H2D, COMPUTE, D2H) and then resets the {@link EventRegistry}, allowing global
+     * event IDs to be reused in the next iteration.
+     *
+     * @param executionPlanId the execution plan context
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueMarker(long executionPlanId) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
@@ -345,6 +362,28 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return stream.enqueueBarrier(executionPlanId);
     }
 
+    /**
+     * Enqueues a dependency-aware sync point, then resets the {@link EventRegistry}.
+     *
+     * <p>The primary caller is the interpreter's {@code BARRIER} bytecode handler, which
+     * passes global event IDs from the interpreter dependency lists. In multi-stream mode,
+     * each ID is resolved through the {@link EventRegistry} to its source stream and a
+     * {@code cuStreamWaitEvent} is inserted on every active stream — providing fine-grained,
+     * GPU-side synchronisation without blocking the CPU. The registry is reset afterwards
+     * so global IDs can be reused in the next iteration.
+     *
+     * <p>If {@code events} is null, delegates to {@link #enqueueMarker(long)} for a full
+     * barrier. In single-stream mode, forwards {@code events} (local pool IDs) directly to
+     * {@link PTXStream#enqueueBarrier(long, int[])}.
+     *
+     * <p>Note: {@code CUDAFieldBuffer} also calls this method with local (non-global) event
+     * IDs; in multi-stream mode those IDs will not be found in the registry and are silently
+     * skipped by {@link #resolveAndWaitCrossStream}.
+     *
+     * @param executionPlanId the execution plan context
+     * @param events array of global event IDs to wait on, or {@code null} for a full barrier
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueMarker(long executionPlanId, int[] events) {
         // Since streams are always in-order in CUDA there is no difference
         // between marker and barrier
