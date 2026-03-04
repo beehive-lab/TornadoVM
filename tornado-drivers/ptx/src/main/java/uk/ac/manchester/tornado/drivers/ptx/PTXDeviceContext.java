@@ -655,9 +655,19 @@ public class PTXDeviceContext implements TornadoDeviceContext {
     }
 
     public void destroyStream(long executionPlanId) {
-        PTXStream stream = getStream(executionPlanId);
-        if (stream != null && !stream.isDestroy()) {
-            stream.cuDestroyStream();
+        if (isMultiStreamEnabled()) {
+            for (PTXStreamType type : PTXStreamType.values()) {
+                if (type == PTXStreamType.DEFAULT) continue;
+                PTXStream stream = getStreamIfExists(executionPlanId, type);
+                if (stream != null && !stream.isDestroy()) {
+                    stream.cuDestroyStream();
+                }
+            }
+        } else {
+            PTXStream stream = getStream(executionPlanId);
+            if (stream != null && !stream.isDestroy()) {
+                stream.cuDestroyStream();
+            }
         }
     }
 
