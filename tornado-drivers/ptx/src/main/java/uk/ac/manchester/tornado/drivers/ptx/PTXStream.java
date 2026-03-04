@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.ptx.nstream.NativePTXStream;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
@@ -177,6 +178,11 @@ public class PTXStream {
             }
             long newSize = Math.max(required, stagingBufferSize * 2);
             stagingBufferPtr = cuMemAllocHost(newSize);
+            if (stagingBufferPtr == 0L) {
+                stagingBufferSize = 0L;
+                throw new TornadoOutOfMemoryException(
+                        "[PTX] cuMemAllocHost failed: could not allocate " + newSize + " bytes of pinned host memory");
+            }
             stagingBufferSize = newSize;
         }
     }
