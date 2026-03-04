@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
  * <p>How to run with multi-stream enabled:
  * <pre>
  *   tornado \
- *   --jvm="-Dtornado.ptx.multistream=true -Dtornado.vm.deps=true" \
+ *   --jvm="-Xmx6g -Dtornado.ptx.multistream=true -Dtornado.vm.deps=true" \
  *   -m tornado.examples/uk.ac.manchester.tornado.examples.streams.ChunkPipeline [totalSize] [numBatches]
  * </pre>
  *
@@ -61,10 +61,10 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 public class ChunkPipelineExample {
 
     /** Total number of floats across all batches. */
-    private static final int DEFAULT_TOTAL_SIZE = 640_000_000;
+    private static final int DEFAULT_TOTAL_SIZE = 64_000_000;
 
     /** Number of pipeline stages (batches). */
-    private static final int DEFAULT_NUM_CHUNKS = 8;
+    private static final int DEFAULT_NUM_CHUNKS = 4;
 
     /**
      * FMA rounds per element. Raises arithmetic intensity without adding memory traffic:
