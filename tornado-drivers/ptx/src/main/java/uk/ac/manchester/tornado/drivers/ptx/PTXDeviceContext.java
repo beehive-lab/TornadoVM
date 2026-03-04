@@ -261,6 +261,21 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         syncIfNeeded(executionPlanId);
     }
 
+    /**
+     * Enqueues a full barrier that waits for all in-flight GPU work to complete.
+     *
+     * <p>In single-stream mode, issues {@code cuStreamSynchronize} on the default stream
+     * (CPU-blocking). In multi-stream mode, issues {@code cuStreamSynchronize} on every
+     * active stream (H2D, COMPUTE, D2H).
+     *
+     * <p>Not called by the main interpreter path — the {@code BARRIER} bytecode routes
+     * through {@link #enqueueMarker(long, int[])} instead. Reachable from legacy
+     * {@code PTXMultiDimArrayWrapper} and as a null-events fallback from
+     * {@link #enqueueBarrier(long, int[])}.
+     *
+     * @param executionPlanId the execution plan context
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueBarrier(long executionPlanId) {
         if (isMultiStreamEnabled()) {
             // Sync all active streams
@@ -277,6 +292,22 @@ public class PTXDeviceContext implements TornadoDeviceContext {
         return stream.enqueueBarrier(executionPlanId);
     }
 
+    /**
+     * Enqueues a barrier with fine-grained dependency resolution.
+     *
+     * <p>In multi-stream mode, resolves each global event ID in {@code events} through
+     * the {@link EventRegistry} and inserts a {@code cuStreamWaitEvent} on every active
+     * stream for each dependency, so each stream only waits on the specific operations
+     * it depends on rather than all prior work. If {@code events} is null, delegates to
+     * {@link #enqueueBarrier(long)}.
+     *
+     * <p>In single-stream mode, forwards {@code events} (local pool IDs) directly to
+     * {@link PTXStream#enqueueBarrier(long, int[])} for CPU-side synchronisation.
+     *
+     * @param executionPlanId the execution plan context
+     * @param events array of global event IDs to wait on, or {@code null} for a full barrier
+     * @return a local event ID in single-stream mode, or {@code -1} in multi-stream mode
+     */
     public int enqueueBarrier(long executionPlanId, int[] events) {
         if (isMultiStreamEnabled()) {
             if (events == null) {
