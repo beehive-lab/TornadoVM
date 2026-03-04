@@ -1061,7 +1061,7 @@ public class PTXDeviceContext implements TornadoDeviceContext {
             PTXStream stream = getStream(executionPlanId);
             List<PTXEvent> events = stream.getEventPool().getEvents();
             System.out.printf("Found %d events on device %s:%n", events.size(), deviceName);
-            if (!events.isEmpty()) return;
+            if (events.isEmpty()) return;
             System.out.println("event: device, type, info, status");
             events.forEach((e) -> System.out.printf("event: %s, %s, %s%n", deviceName, e.getName(), e.getStatus()));
         }
