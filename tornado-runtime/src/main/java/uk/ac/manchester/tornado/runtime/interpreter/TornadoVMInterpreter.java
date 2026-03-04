@@ -271,6 +271,15 @@ public class TornadoVMInterpreter {
         }
 
         final long t0 = System.nanoTime();
+
+        // lastEvent: event ID produced by the most recently executed bytecode operation
+        // (H2D, D2H, LAUNCH, ALLOC, etc.). The immediately following ADD_DEPENDENCY
+        // bytecode stores it into events[slot], building the wait-list that is passed
+        // as waitList to the next dependent operation.
+        // In single-stream mode: a local PTXEventPool index.
+        // In multi-stream mode: a global EventRegistry ID resolved via
+        // resolveAndWaitCrossStream into cuStreamWaitEvent calls on the target stream.
+        // Initialised to -1; ADD_DEPENDENCY skips it when -1 (no-op or warmup).
         int lastEvent = -1;
         initWaitEventList();
 
@@ -946,6 +955,20 @@ public class TornadoVMInterpreter {
         }
     }
 
+    /**
+     * Records {@code lastEvent} as a dependency for the operation associated with
+     * {@code eventId}.
+     *
+     * <p>Appends {@code lastEvent} to {@code events[eventId]}, which is the wait-list
+     * later passed as {@code waitList} to the operation that holds dependency slot
+     * {@code eventId}. In multi-stream mode the stored value is a global
+     * {@code EventRegistry} ID; in single-stream mode it is a local
+     * {@code PTXEventPool} index. Skipped when {@code lastEvent == -1} (the preceding
+     * operation produced no event) or when {@code useDependencies} is false.
+     *
+     * @param lastEvent event ID of the most recently executed bytecode operation
+     * @param eventId   dependency slot index into the {@code events} array
+     */
     private void executeDependency(StringBuilder logBuilder, int lastEvent, int eventId) {
         if (useDependencies && lastEvent != -1) {
             if (TornadoOptions.LOG_BYTECODES()) {
