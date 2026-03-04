@@ -57,6 +57,7 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
     private final int sizeOfType;
     /** Native address of the registered host region, or 0 if not currently pinned. */
     private long registeredHostPointer = 0L;
+    private boolean ownsRegistration = false; // true only when this wrapper pinned the region
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -191,11 +192,12 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         // Register the full segment as pinned so that async H2D/D2H transfers
         // can be non-blocking (DMA, avoids CUDA's internal staging copy)
         if (registeredHostPointer == 0 && segment != null) {
-            boolean isAlreadyPinned = deviceContext.getDevice().getPTXContext().registerHostMemory(segment.address(), segment.byteSize());
-            if (isAlreadyPinned) {
-                // track ownership so markAsFreeBuffer() knows to unregister
-                registeredHostPointer = segment.address();
-            }
+            boolean pinnedByThisCall = deviceContext.getDevice().getPTXContext()
+                    .registerHostMemory(segment.address(), segment.byteSize());
+            // Always record the address to prevent repeated cuMemHostRegister attempts
+            // on the same region, even when another caller already holds the pin.
+            registeredHostPointer = segment.address();
+            ownsRegistration = pinnedByThisCall;
         }
 
         if (bufferSize <= 0) {
@@ -212,10 +214,12 @@ public class PTXMemorySegmentWrapper implements XPUBuffer {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
         // Unpin the host region before "recycling"; re-registered on the next allocate().
-        if (registeredHostPointer != 0L) {
+        if (registeredHostPointer != 0L && ownsRegistration) {
             deviceContext.getDevice().getPTXContext().unregisterHostMemory(registeredHostPointer);
-            registeredHostPointer = 0L;
         }
+        registeredHostPointer = 0L;
+        ownsRegistration = false;
+
         deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
