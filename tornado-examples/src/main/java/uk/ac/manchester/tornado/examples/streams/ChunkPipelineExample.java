@@ -66,7 +66,7 @@ public class ChunkPipelineExample {
     /**
      * A compute-intensive kernel: use {@code COMPUTE_ITERATIONS} to increase workload.
      */
-    public static void kernel(FloatArray x, FloatArray y, FloatArray result, float alpha) {
+    public static void computeKernel(FloatArray x, FloatArray y, FloatArray result, float alpha) {
         for (@Parallel int i = 0; i < result.getSize(); i++) {
             float xi = x.get(i);
             float yi = y.get(i);
@@ -158,7 +158,7 @@ public class ChunkPipelineExample {
 
         for (int c = 0; c < numChunks; c++) {
             tg.transferToDevice(DataTransferMode.EVERY_EXECUTION, chunkX[c], chunkY[c])
-                    .task("t" + c, ChunkPipelineExample::kernel,
+                    .task("t" + c, ChunkPipelineExample::computeKernel,
                             chunkX[c], chunkY[c], chunkResult[c], alpha)
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, chunkResult[c]);
         }
