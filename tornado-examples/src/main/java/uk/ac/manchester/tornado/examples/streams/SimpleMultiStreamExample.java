@@ -51,10 +51,10 @@ public class SimpleMultiStreamExample {
     /** Number of FMA iterations per element to artificially raise arithmetic intensity. */
     private static final int COMPUTE_ITERATIONS = 512;
     /**
-     * 16M floats = 64 MB per array. Large enough to make each H2D transfer and
+     * 32M floats = 128 MB per array. Large enough to make each H2D transfer and
      * each kernel execution individually visible as distinct bars in Nsight.
      */
-    private static final int N = 32_000_000;//16_000_000;
+    private static final int N = 32_000_000;
 
     /**
      * A compute-intensive kernel: use {@code COMPUTE_ITERATIONS} to increase workload.
