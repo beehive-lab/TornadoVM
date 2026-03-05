@@ -118,7 +118,8 @@ public class SimpleMultiStreamExample {
                 .task("t0", SimpleMultiStreamExample::computeKernel, inputA0, inputB0, result0, alpha)
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA1, inputB1)
                 .task("t1", SimpleMultiStreamExample::computeKernel, inputA1, inputB1, result1, alpha)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, result0, result1);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result0, result1)
+                .withCUDAStreams();
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
